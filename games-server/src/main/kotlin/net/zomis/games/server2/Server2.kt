@@ -6,7 +6,6 @@ import net.zomis.games.server2.ws.Server2WS
 import java.net.InetSocketAddress
 
 class Server2 {
-
     private val logger = KLoggers.logger(this)
     private val events = EventSystem()
 
@@ -24,7 +23,9 @@ class Server2 {
     }
 
 }
-
-fun main(args: Array<String>) {
-    Server2().start(args)
+object Main {
+    @JvmStatic
+    fun main(args: Array<String>) {
+        Server2().start(args)
+    }
 }
