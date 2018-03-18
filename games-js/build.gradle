@@ -22,6 +22,7 @@ repositories {
 }
 
 dependencies {
+    expectedBy project(':games-core')
     compile "org.jetbrains.kotlin:kotlin-stdlib-js:$kotlin_version"
 }
 
@@ -46,7 +47,3 @@ task assembleWeb(type: Sync) {
     dependsOn classes
 }
 assemble.dependsOn assembleWeb
-
-sourceSets {
-    main.kotlin.srcDirs += project(':games-core').file('src/main/kotlin')
-}

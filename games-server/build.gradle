@@ -15,7 +15,7 @@ plugins {
 }
 
 apply plugin: 'application'
-apply plugin: "kotlin"
+apply plugin: "kotlin-platform-jvm"
 apply plugin: "org.junit.platform.gradle.plugin"
 
 group 'net.zomis'
@@ -36,7 +36,7 @@ compileTestKotlin {
 }
 
 dependencies {
-    compile project(':games-core')
+    expectedBy project(":games-core")
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
     compile "org.jetbrains.kotlin:kotlin-reflect"
     compile "com.fasterxml.jackson.core:jackson-core:2.4.2"
@@ -52,8 +52,4 @@ dependencies {
     testCompile 'com.sksamuel.gwt:gwt-websockets:1.0.4'
     testCompile "org.junit.jupiter:junit-jupiter-api:5.0.3"
     testRuntime "org.junit.jupiter:junit-jupiter-engine:5.0.3"
-}
-
-sourceSets {
-    main.kotlin.srcDirs += project(':games-core').file('src/main/kotlin')
 }
