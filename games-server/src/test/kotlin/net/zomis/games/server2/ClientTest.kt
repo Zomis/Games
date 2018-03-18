@@ -15,7 +15,7 @@ class ClientTest {
 
     @BeforeEach
     fun startServer() {
-        server = Server2()
+        server = Server2(8378)
         server!!.start(arrayOf())
     }
 
@@ -26,7 +26,7 @@ class ClientTest {
 
     @Test
     fun conn() {
-        val client = WSClient(URI("ws://127.0.0.1:8081"))
+        val client = WSClient(URI("ws://127.0.0.1:8378"))
         client.connectBlocking()
         client.send("PING")
         Thread.sleep(1000)
