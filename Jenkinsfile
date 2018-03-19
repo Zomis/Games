@@ -20,7 +20,6 @@ pipeline {
         }
         stage('Results') {
             steps {
-                junit allowEmptyResults: true, testResults: '**/build/test-results/junit-platform/TEST-*.xml'
 /*
                 withSonarQubeEnv('My SonarQube Server') {
                     // requires SonarQube Scanner for Maven 3.2+
@@ -32,6 +31,9 @@ pipeline {
     }
 
     post {
+        always {
+            junit allowEmptyResults: true, testResults: '**/build/test-results/junit-platform/TEST-*.xml'
+        }
         success {
             zpost(0)
         }
