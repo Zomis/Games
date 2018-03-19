@@ -36,9 +36,10 @@ compileTestKotlin {
 }
 
 dependencies {
-    expectedBy project(":games-core")
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
-    compile "org.jetbrains.kotlin:kotlin-reflect"
+    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"
+    expectedBy project(":games-core")
+
     compile "com.fasterxml.jackson.core:jackson-core:2.4.2"
     compile "com.fasterxml.jackson.core:jackson-annotations:2.4.2"
     compile "com.fasterxml.jackson.core:jackson-databind:2.4.2"
