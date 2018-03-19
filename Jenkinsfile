@@ -23,7 +23,8 @@ pipeline {
             steps {
                 script {
                     def ps = sh(script: 'docker ps -q --filter ancestor=gamesserver2', returnStdOut: true)
-                    if (!ps.isEmpty()) {
+                    echo "Result from docker ps: '$ps'"
+                    if (ps && !ps.isEmpty()) {
                         sh "docker stop $ps"
                         sh "docker rm -f $ps"
                     }
