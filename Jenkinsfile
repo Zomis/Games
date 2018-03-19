@@ -21,10 +21,15 @@ pipeline {
 
         stage('Docker Image') {
             steps {
-                sh 'docker stop $(docker ps -q --filter ancestor=gamesserver2)'
-                sh 'docker rm -f $(docker ps -q --filter ancestor=gamesserver2)'
-                sh 'docker build . -t gamesserver2'
-                sh 'docker run -d -p 127.0.0.1:8082:8081 -v /home/zomis/jenkins/gamesserver2:/data/logs -w /data/logs gamesserver2'
+                script {
+                    def ps = sh(script: 'docker ps -q --filter ancestor=gamesserver2', returnStdOut: true)
+                    if (!ps.isEmpty()) {
+                        sh "docker stop $ps"
+                        sh "docker rm -f $ps"
+                    }
+                    sh 'docker build . -t gamesserver2'
+                    sh 'docker run -d -p 127.0.0.1:8082:8081 -v /home/zomis/jenkins/gamesserver2:/data/logs -w /data/logs gamesserver2'
+                }
             }
         }
 
