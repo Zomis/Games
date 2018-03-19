@@ -10,5 +10,5 @@ ADD games-server/build/libs/*-all.jar /server2/
 
 VOLUME /data/logs/
 
-CMD java -jar games-server-1.0-SNAPSHOT-all.jar
+CMD java -jar /server2/games-server-1.0-SNAPSHOT-all.jar
 
