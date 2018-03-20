@@ -7,6 +7,7 @@ enum class ListenerPriority { FIRST, EARLIER, EARLY, NORMAL, LATE, LATER, LAST }
 
 class ListenerList<E> {
 
+    private val logger = KLoggers.logger(this)
     private val list: MutableList<EventHandler<E>> = mutableListOf()
 
     fun add(eventHandler: EventHandler<E>) {
@@ -14,7 +15,14 @@ class ListenerList<E> {
     }
 
     fun execute(event: E) {
-        list.forEach({ it.invoke(event) })
+        list.forEach({
+            try {
+                it.invoke(event)
+            } catch (e: RuntimeException) {
+                logger.error(e, "Problem when handling event $event in $it")
+                throw e
+            }
+        })
     }
 
 }
