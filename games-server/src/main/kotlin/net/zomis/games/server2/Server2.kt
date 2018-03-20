@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import klogging.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.server2.games.GameSystem
+import net.zomis.games.server2.games.SimpleMatchMakingSystem
 import net.zomis.games.server2.ws.Server2WS
 import java.net.InetSocketAddress
 
@@ -29,6 +30,8 @@ class Server2(val port: Int) {
             }
         })
         val gameSystem = GameSystem(events)
+        SimpleMatchMakingSystem(gameSystem, events)
+
         events.execute(StartupEvent())
     }
 
