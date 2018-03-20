@@ -29,7 +29,7 @@ pipeline {
                         sh "docker rm -f $ps"
                     }
                     sh 'docker build . -t gamesserver2'
-                    sh 'docker run -d -p 192.168.0.110:8082:8081 -v /home/zomis/jenkins/gamesserver2:/data/logs -w /data/logs gamesserver2'
+                    sh 'docker run -d -p 192.168.0.110:8082:8081 -v /home/zomis/jenkins/gamesserver2:/data/logs -v /etc/localtime:/etc/localtime:ro -w /data/logs gamesserver2'
                 }
             }
         }
