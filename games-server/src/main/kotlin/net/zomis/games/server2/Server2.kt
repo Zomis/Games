@@ -4,8 +4,13 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import klogging.KLoggers
 import net.zomis.core.events.EventSystem
+import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.ws.Server2WS
 import java.net.InetSocketAddress
+
+fun JsonNode.getTextOrDefault(fieldName: String, default: String): String {
+    return if (this.hasNonNull(fieldName)) this.get(fieldName).asText() else default
+}
 
 class Server2(val port: Int) {
     private val logger = KLoggers.logger(this)
@@ -23,6 +28,7 @@ class Server2(val port: Int) {
                 events.execute(ClientJsonMessage(it.client, mapper.readTree(it.message.substring("v1:".length))))
             }
         })
+        val gameSystem = GameSystem(events)
         events.execute(StartupEvent())
     }
 
