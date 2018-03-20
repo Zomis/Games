@@ -43,4 +43,4 @@ class EventSystem {
 
 }
 
-typealias EventHandler<E> = (E) -> Any
+typealias EventHandler<E> = (E) -> Unit
