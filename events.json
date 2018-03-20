@@ -1,0 +1,55 @@
+[
+  "NOT IMPLEMENTED:",
+  {
+    "game": "Connect4",
+    "invite": {
+      "type": "open",
+      "invitees": ["Zomis"]
+    }
+  },
+
+  "FROM CLIENTS TO SERVER:",
+  {
+    "game": "Connect4",
+    "type": "matchMake"
+  },
+  {
+    "game": "Connect4",
+    "gameId": "Ysad213",
+    "type": "move",
+    "move": 3
+  },
+
+  "FROM SERVER TO CLIENTS:",
+  {
+    "type": "GameStarted",
+    "gameType": "Connect4",
+    "gameId": "Ysad213",
+
+    "yourIndex": 0,
+    "players": ["a", "b"]
+  },
+  {
+    "type": "GameMove",
+    "gameType": "Connect4",
+    "gameId": "Ysad213",
+
+    "player": 0,
+    "move": 4
+  },
+  {
+    "type": "PlayerEliminated",
+    "gameType": "Connect4",
+    "gameId": "Ysad213",
+
+    "player": 1,
+    "winner": false,
+    "position": 2
+  },
+  {
+    "type": "GameEnded",
+    "gameType": "Connect4",
+    "gameId": "Ysad213"
+  },
+  "END"
+]
