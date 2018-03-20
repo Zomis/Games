@@ -25,6 +25,9 @@ mainClassName = 'net.zomis.games.server2.Main'
 
 repositories {
     mavenCentral()
+    maven {
+        url "http://www.zomis.net/maven"
+    }
 }
 
 compileKotlin {
@@ -48,6 +51,8 @@ dependencies {
     compile "log4j:log4j:1.2.17"
     compile 'org.slf4j:slf4j-log4j12:1.7.25'
     compile "com.github.lewik.klogging:klogging.jvm:$kotlinVersion"
+
+    compile "net.zomis:uttt:0.1"
 
 //    testCompile "de.flapdoodle.embed:de.flapdoodle.embed.mongo"
     testCompile 'com.sksamuel.gwt:gwt-websockets:1.0.4'

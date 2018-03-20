@@ -6,6 +6,7 @@ import klogging.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.games.SimpleMatchMakingSystem
+import net.zomis.games.server2.games.impl.Connect4
 import net.zomis.games.server2.ws.Server2WS
 import java.net.InetSocketAddress
 
@@ -30,6 +31,9 @@ class Server2(val port: Int) {
             }
         })
         val gameSystem = GameSystem(events)
+
+        Connect4.init(events)
+
         SimpleMatchMakingSystem(gameSystem, events)
 
         events.execute(StartupEvent())
