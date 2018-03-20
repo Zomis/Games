@@ -33,12 +33,8 @@ class Server2WS(private val events: EventSystem, address: InetSocketAddress) : W
 
     override fun onMessage(conn: WebSocket?, message: String?) {
         val client = clients[conn!!]
-        logger.info("Message from $client: Non-decoded: $message")
-//        val decoded = String(Base64Utils.fromBase64(message), StandardCharsets.UTF_8)
+        logger.info("Message from $client: $message")
         events.execute(ClientMessage(client!!, message!!))
-
-//        logger.info("Message from $client: $decoded")
-//        events.execute(ClientMessage(client!!, decoded))
     }
 
     override fun onError(conn: WebSocket?, ex: Exception?) {
