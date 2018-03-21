@@ -24,6 +24,7 @@ class SimpleMatchMakingSystem(games: GameSystem, events: EventSystem) {
                     val game = games.gameTypes[gameType]!!.createGame()
                     game.players.addAll(listOf(opponent, it.client))
                     events.execute(GameStartedEvent(game))
+                    waiting.remove(gameType)
                 } else {
                     waiting[gameType] = it.client
                     logger.info { "Now waiting for a match to play $gameType: ${it.client}" }
