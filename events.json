@@ -17,6 +17,7 @@
     "game": "Connect4",
     "gameId": "Ysad213",
     "type": "move",
+    "moveType": "move",
     "move": 3
   },
 

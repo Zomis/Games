@@ -36,9 +36,9 @@ class Connect4 {
                             .filter { !it.isWon }
                             .lastOrNull()
 
-                        logger.info { "${it.game} Player ${it.player} played at $x" }
                         if (playAt != null && controller.play(playAt)) {
-                            events.execute(MoveEvent(it.game, it.player, x))
+                            logger.info { "${it.game} Player ${it.player} played at $x ${playAt.y}" }
+                            events.execute(MoveEvent(it.game, it.player, "move", x))
                         } else {
                             events.execute(it.illegalMove("Not allowed to play there"))
                         }
