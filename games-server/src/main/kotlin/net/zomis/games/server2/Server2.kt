@@ -3,12 +3,14 @@ package net.zomis.games.server2
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import klogging.KLoggers
+import net.zomis.core.events.EventHandler
 import net.zomis.core.events.EventSystem
 import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.games.SimpleMatchMakingSystem
 import net.zomis.games.server2.games.impl.Connect4
 import net.zomis.games.server2.ws.Server2WS
 import java.net.InetSocketAddress
+import kotlin.reflect.KClass
 
 fun JsonNode.getTextOrDefault(fieldName: String, default: String): String {
     return if (this.hasNonNull(fieldName)) this.get(fieldName).asText() else default
@@ -37,6 +39,10 @@ class Server2(val port: Int) {
         SimpleMatchMakingSystem(gameSystem, events)
 
         events.execute(StartupEvent())
+    }
+
+    fun <E : Any> register(clazz: KClass<E>, handler: EventHandler<E>) {
+        return events.addListener(clazz, handler)
     }
 
     fun stop() {
