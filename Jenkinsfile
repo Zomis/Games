@@ -22,7 +22,7 @@ pipeline {
         stage('Docker Image') {
             steps {
                 script {
-                    def ps = sh(script: 'docker ps -q --filter ancestor=gamesserver2', returnStdOut: true)
+                    def ps = sh(script: 'docker ps -q --filter ancestor=gamesserver2', returnStdout: true)
                     echo "Result from docker ps: '$ps'"
                     if (ps && !ps.isEmpty()) {
                         sh "docker stop $ps"
