@@ -1,11 +1,8 @@
 package net.zomis.games.server2
 
-import org.java_websocket.client.WebSocketClient
-import org.java_websocket.handshake.ServerHandshake
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.lang.Exception
 import java.net.URI
 
 class ClientTest {
@@ -16,6 +13,7 @@ class ClientTest {
     @BeforeEach
     fun startServer() {
         server = Server2(8378)
+        server?.register(ClientMessage::class, { if (it.message == "PING") it.client.sendData("PONG") })
         server!!.start(arrayOf())
     }
 
@@ -29,29 +27,10 @@ class ClientTest {
         val client = WSClient(URI("ws://127.0.0.1:8378"))
         client.connectBlocking()
         client.send("PING")
+        client.expectExact("PONG")
         Thread.sleep(1000)
         client.close()
     }
 
 }
 
-class WSClient(uri: URI): WebSocketClient(uri) {
-    private val logger = klogging.KLoggers.logger(this)
-
-    override fun onOpen(handshakedata: ServerHandshake?) {
-        logger.info { "Open: $handshakedata" }
-    }
-
-    override fun onClose(code: Int, reason: String?, remote: Boolean) {
-        logger.info { "Close: code $code reason $reason remote $remote" }
-    }
-
-    override fun onMessage(message: String?) {
-        logger.info { "Recieved: $message" }
-    }
-
-    override fun onError(ex: Exception?) {
-        logger.info { "Error: $ex" }
-    }
-
-}
