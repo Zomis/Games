@@ -18,6 +18,9 @@ fun Game.toJson(type: String): ObjectNode {
 }
 
 class Game(val gameType: GameType, val gameId: String) {
+    fun broadcast(message: (Client) -> Any) {
+        players.forEach { it.send(message.invoke(it)) }
+    }
 
     internal val players: MutableList<Client> = mutableListOf()
     var obj: Any? = null
@@ -29,6 +32,7 @@ data class MoveEvent(val game: Game, val player: Int, val moveType: String, val 
 data class GameStartedEvent(val game: Game)
 data class GameEndedEvent(val game: Game)
 data class PlayerEliminatedEvent(val game: Game, val player: Int, val winner: Boolean, val position: Int)
+data class GameStateEvent(val game: Game, val data: List<Pair<String, Any>>)
 
 data class PlayerGameMoveRequest(val game: Game, val player: Int, val moveType: String, val move: Any) {
     fun illegalMove(reason: String): IllegalMoveEvent {
@@ -82,6 +86,20 @@ class GameSystem(events: EventSystem) {
         events.addListener(GameEndedEvent::class, { it ->
             it.game.players.forEachIndexed { index, client ->
                 client.send(it.game.toJson("GameEnded"))
+            }
+        })
+        events.addListener(GameStateEvent::class, { event ->
+            event.game.broadcast {
+                val node = event.game.toJson("GameState")
+                event.data.forEach {
+                    val value = it.second
+                    when (value) {
+                        is Int -> node.put(it.first, value)
+                        is String -> node.put(it.first, value)
+                        is Double -> node.put(it.first, value)
+                        is Boolean -> node.put(it.first, value)
+                    }
+                }
             }
         })
         events.addListener(MoveEvent::class, {event ->
