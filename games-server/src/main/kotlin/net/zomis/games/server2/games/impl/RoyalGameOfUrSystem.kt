@@ -5,7 +5,6 @@ import klogging.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.server2.games.*
 import net.zomis.games.ur.RoyalGameOfUr
-import net.zomis.tttultimate.games.TTClassicControllerWithGravity
 
 class RoyalGameOfUrSystem {
 
@@ -27,7 +26,7 @@ class RoyalGameOfUrSystem {
 
                 val oldPlayer = controller.currentPlayer
                 if (it.moveType == "roll") {
-                    controller.roll()
+                    controller.doRoll()
                     events.execute(MoveEvent(it.game, it.player, "roll", ""))
                     events.execute(GameStateEvent(it.game, listOf(Pair("roll", controller.roll))))
                 } else {

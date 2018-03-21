@@ -57,7 +57,7 @@ class RoyalGameOfUr {
         return (0..1).shuffled().first() == 1
     }
 
-    fun roll(): Int {
+    fun doRoll(): Int {
         if (!isRollTime()) {
             throw IllegalStateException("Not time to roll. Current roll is $roll")
         }
