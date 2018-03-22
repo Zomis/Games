@@ -30,30 +30,30 @@ class Connect4 {
                         events.execute(it.illegalMove("Game already won by ${controller.wonBy}"))
                         return@addListener
                     }
-                    if (controller.currentPlayer.playerIndex() == it.player) {
-                        val playAt = (0 until controller.game.sizeY).asSequence()
-                            .map { controller.game.getSub(x, it) }
-                            .filter { !it.isWon }
-                            .lastOrNull()
-
-                        if (playAt != null && controller.play(playAt)) {
-                            logger.info { "${it.game} Player ${it.player} played at $x ${playAt.y}" }
-                            events.execute(MoveEvent(it.game, it.player, "move", x))
-                        } else {
-                            events.execute(it.illegalMove("Not allowed to play there"))
-                        }
-
-                        if (controller.isGameOver) {
-                            val winner = controller.wonBy
-                            it.game.players.indices.forEach({ playerIndex ->
-                                val won = winner.playerIndex() == playerIndex
-                                val losePositionPenalty = if (won) 0 else 1
-                                events.execute(PlayerEliminatedEvent(it.game, playerIndex, won, 1 + losePositionPenalty))
-                            })
-                            events.execute(GameEndedEvent(it.game))
-                        }
-                    } else {
+                    if (controller.currentPlayer.playerIndex() != it.player) {
                         events.execute(it.illegalMove("Not your turn"))
+                        return@addListener
+                    }
+                    val playAt = (0 until controller.game.sizeY).asSequence()
+                        .map { controller.game.getSub(x, it) }
+                        .filter { !it.isWon }
+                        .lastOrNull()
+
+                    if (playAt != null && controller.play(playAt)) {
+                        logger.info { "${it.game} Player ${it.player} played at $x ${playAt.y}" }
+                        events.execute(MoveEvent(it.game, it.player, "move", x))
+                    } else {
+                        events.execute(it.illegalMove("Not allowed to play there"))
+                    }
+
+                    if (controller.isGameOver) {
+                        val winner = controller.wonBy
+                        it.game.players.indices.forEach({ playerIndex ->
+                            val won = winner.playerIndex() == playerIndex
+                            val losePositionPenalty = if (won) 0 else 1
+                            events.execute(PlayerEliminatedEvent(it.game, playerIndex, won, 1 + losePositionPenalty))
+                        })
+                        events.execute(GameEndedEvent(it.game))
                     }
                 }
             })
