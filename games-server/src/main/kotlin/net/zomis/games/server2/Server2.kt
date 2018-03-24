@@ -23,6 +23,7 @@ class Server2(val port: Int) {
     private val mapper = ObjectMapper()
 
     fun start(args: Array<String>) {
+        Runtime.getRuntime().addShutdownHook(Thread({ events.execute(ShutdownEvent()) }))
         events.addListener(StartupEvent::class, {
             val ws = Server2WS(events, InetSocketAddress(port)).setup()
             logger.info("WebSocket server listening at ${ws.port}")
