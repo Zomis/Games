@@ -100,12 +100,14 @@ class GameSystem(events: EventSystem) {
                         is Boolean -> node.put(it.first, value)
                     }
                 }
+                return@broadcast node
             }
         })
         events.addListener(MoveEvent::class, {event ->
             event.game.players.forEach({
                 it.send(event.game.toJson("GameMove")
                     .put("player", event.player)
+                    .put("moveType", event.moveType)
                     .putPOJO("move", event.move))
             })
         })
