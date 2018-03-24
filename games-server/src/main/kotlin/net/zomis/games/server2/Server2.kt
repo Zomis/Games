@@ -8,6 +8,7 @@ import net.zomis.core.events.EventSystem
 import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.games.SimpleMatchMakingSystem
 import net.zomis.games.server2.games.impl.Connect4
+import net.zomis.games.server2.games.impl.RoyalGameOfUrSystem
 import net.zomis.games.server2.ws.Server2WS
 import java.net.InetSocketAddress
 import kotlin.reflect.KClass
@@ -35,6 +36,7 @@ class Server2(val port: Int) {
         val gameSystem = GameSystem(events)
 
         Connect4.init(events)
+        RoyalGameOfUrSystem.init(events)
 
         SimpleMatchMakingSystem(gameSystem, events)
 
