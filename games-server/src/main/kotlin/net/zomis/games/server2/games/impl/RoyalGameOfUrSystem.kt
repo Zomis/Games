@@ -26,18 +26,19 @@ class RoyalGameOfUrSystem {
 
                 val oldPlayer = controller.currentPlayer
                 if (it.moveType == "roll") {
-                    controller.doRoll()
+                    val rollResult = controller.doRoll()
+                    events.execute(GameStateEvent(it.game, listOf(Pair("roll", rollResult))))
                     events.execute(MoveEvent(it.game, it.player, "roll", ""))
-                    events.execute(GameStateEvent(it.game, listOf(Pair("roll", controller.roll))))
                 } else {
                     val x = (it.move as IntNode).intValue()
                     if (controller.currentPlayer != it.player) {
                         events.execute(it.illegalMove("Not your turn"))
                         return@addListener
                     }
-                    if (controller.isMoveTime && controller.canMove(x)) {
-                        controller.move(controller.currentPlayer, x, controller.roll)
-                        logger.info { "${it.game} Player ${it.player} made move $x" }
+                    val oldRoll = controller.roll
+                    if (controller.isMoveTime && controller.canMove(controller.currentPlayer, x, oldRoll)) {
+                        controller.move(controller.currentPlayer, x, oldRoll)
+                        logger.info { "${it.game} Player ${it.player} made move $x for roll $oldRoll" }
                     } else {
                         events.execute(it.illegalMove("Not allowed to play there"))
                         return@addListener
@@ -47,7 +48,6 @@ class RoyalGameOfUrSystem {
                 if (controller.currentPlayer != oldPlayer) {
                     events.execute(GameStateEvent(it.game, listOf(Pair("player", controller.currentPlayer))))
                 }
-
 
                 if (controller.isFinished) {
                     val winner = controller.winner

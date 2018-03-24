@@ -63,6 +63,10 @@ class RoyalGameOfUr {
         }
 
         val sum = (0..3).map { if (randomBoolean()) 1 else 0 }.sum()
+        return doRoll(sum)
+    }
+
+    fun doRoll(sum: Int): Int {
         if (canMove(sum)) {
             this.roll = sum
         } else {

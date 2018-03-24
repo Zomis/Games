@@ -1,6 +1,5 @@
 package net.zomis.games.server2
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import org.java_websocket.client.WebSocketClient
@@ -47,6 +46,11 @@ class WSClient(uri: URI): WebSocketClient(uri) {
     fun expectExact(expected: String) {
         val text = queue.take()
         assert(text == expected, { "Expected '$expected' but was '$text'" })
+    }
+
+    override fun send(text: String?) {
+        logger.info { "Sending $text" }
+        super.send(text)
     }
 
     fun expectJsonObject(predicate: (ObjectNode) -> Boolean): ObjectNode {
