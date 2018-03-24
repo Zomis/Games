@@ -40,6 +40,7 @@ class Server2(val port: Int) {
         RoyalGameOfUrSystem.init(events)
 
         SimpleMatchMakingSystem(gameSystem, events)
+        events.with(ServerConsole()::register)
 
         events.execute(StartupEvent())
     }

@@ -49,6 +49,11 @@ class EventSystem {
         listeners[kclass]?.execute(event)
     }
 
+    fun with(registrator: EventRegistrator) {
+        registrator.invoke(this)
+    }
+
 }
 
 typealias EventHandler<E> = (E) -> Unit
+typealias EventRegistrator = (EventSystem) -> Unit
