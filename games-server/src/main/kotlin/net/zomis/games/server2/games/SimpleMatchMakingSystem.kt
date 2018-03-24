@@ -17,6 +17,7 @@ class SimpleMatchMakingSystem(games: GameSystem, events: EventSystem) {
         events.addListener(ClientJsonMessage::class, {
             if (it.data.getTextOrDefault("type", "") == "matchMake") {
                 val gameType = it.data.get("game").asText()
+                synchronized(waiting, {
                 if (waiting.containsKey(gameType)) {
                     val opponent = waiting[gameType]!!
                     logger.info { "Pair up $gameType: Waiting $opponent now joining ${it.client}" }
@@ -29,6 +30,7 @@ class SimpleMatchMakingSystem(games: GameSystem, events: EventSystem) {
                     waiting[gameType] = it.client
                     logger.info { "Now waiting for a match to play $gameType: ${it.client}" }
                 }
+                })
             }
         })
     }
