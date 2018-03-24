@@ -40,6 +40,7 @@ class RoyalGameOfUrSystem {
                         logger.info { "${it.game} Player ${it.player} made move $x" }
                     } else {
                         events.execute(it.illegalMove("Not allowed to play there"))
+                        return@addListener
                     }
                     events.execute(MoveEvent(it.game, it.player, "move", x))
                 }
