@@ -1,5 +1,7 @@
 package net.zomis.games.server2
 
+import net.zomis.games.server2.clients.ur.RandomUrBot
+
 fun main(args: Array<String>) {
     val server2 = Server2(8389)
     server2.start(arrayOf())

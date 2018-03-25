@@ -1,6 +1,9 @@
 package net.zomis.games.server2
 
 import klogging.KLoggers
+import net.zomis.games.server2.clients.ur.WSClient
+import net.zomis.games.server2.clients.ur.getInt
+import net.zomis.games.server2.clients.ur.getText
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

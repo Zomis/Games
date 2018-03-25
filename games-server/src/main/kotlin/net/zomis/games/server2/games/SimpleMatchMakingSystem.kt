@@ -2,11 +2,9 @@ package net.zomis.games.server2.games
 
 import klogging.KLoggers
 import net.zomis.core.events.EventSystem
-import net.zomis.games.server2.Client
-import net.zomis.games.server2.ClientJsonMessage
+import net.zomis.games.server2.*
+import net.zomis.games.server2.clients.ur.RandomUrBot
 import net.zomis.games.server2.games.impl.Connect4
-
-import net.zomis.games.server2.getTextOrDefault
 
 class SimpleMatchMakingSystem(games: GameSystem, events: EventSystem) {
 
@@ -14,6 +12,16 @@ class SimpleMatchMakingSystem(games: GameSystem, events: EventSystem) {
     private val waiting: MutableMap<String, Client> = mutableMapOf()
 
     init {
+        events.addListener(ClientMessage::class, {
+            if (it.message != "VUEJS") {
+                return@addListener
+            }
+            if (!waiting.containsKey("UR")) {
+                logger.info { "Client connected and no UR-bot waiting, creating one." }
+                Thread({ RandomUrBot("ws://127.0.0.1:8081").play() }).start()
+            }
+        })
+
         events.addListener(ClientJsonMessage::class, {
             if (it.data.getTextOrDefault("type", "") == "matchMake") {
                 val gameType = it.data.get("game").asText()

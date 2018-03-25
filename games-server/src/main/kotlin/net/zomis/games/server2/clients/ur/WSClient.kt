@@ -1,4 +1,4 @@
-package net.zomis.games.server2
+package net.zomis.games.server2.clients.ur
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -62,7 +62,7 @@ class WSClient(uri: URI): WebSocketClient(uri) {
 
     fun takeUntilJson(predicate: (ObjectNode) -> Boolean): ObjectNode {
         while (true) {
-            val text = queue.poll(1, TimeUnit.MINUTES)
+            val text = queue.take()
             try {
                 val node = mapper.readTree(text) as ObjectNode
                 if (predicate.invoke(node)) {

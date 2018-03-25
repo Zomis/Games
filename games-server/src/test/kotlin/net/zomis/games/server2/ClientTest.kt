@@ -1,5 +1,6 @@
 package net.zomis.games.server2
 
+import net.zomis.games.server2.clients.ur.WSClient
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

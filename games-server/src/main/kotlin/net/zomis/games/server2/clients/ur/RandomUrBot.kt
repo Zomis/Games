@@ -1,9 +1,8 @@
-package net.zomis.games.server2
+package net.zomis.games.server2.clients.ur
 
 import klogging.KLoggers
 import net.zomis.games.ur.RoyalGameOfUr
 import java.net.URI
-import java.util.*
 
 class RandomUrBot(url: String) {
 
