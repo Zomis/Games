@@ -28,6 +28,10 @@ module.exports = {
       "@": resolve("src")
     }
   },
+  externals: {
+    kotlin: "kotlin",
+    klogging: "klogging"
+  },
   module: {
     rules: [
       {
