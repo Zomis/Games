@@ -1,25 +1,53 @@
 <template>
   <div>
-    <div>Current player is {{ currentPlayer }} steps to move: {{ stepsToMove }}</div>
+    <div>{{ game }} : {{ gameId }} Current player {{ currentPlayer }} your index {{ yourIndex }} rolled: {{ ur.roll }}</div>
     <div>
       <button :enabled="canPlaceNew" @click="action('move', 0)" class="placeNew">Place new</button>
-      <button :enabled="stepsToMove <= 0" @click="action('roll', {})" class="roll">Roll</button>
+      <button :enabled="ur.roll <= 0" @click="action('roll', -1)" class="roll">Roll</button>
       <div>Score: {{ posAt[0][15] }} vs. {{ posAt[1][15] }}. Remaining to be placed: {{ posAt[0][0] }} and {{ posAt[1][0] }}</div>
+      <div>Game: {{ ur }}</div>
+      <div>Status: {{ gameOverMessage }}</div>
     </div>
   </div>
 </template>
 
 <script>
+import Socket from "../socket";
+
+let games = require("../../../games-js/web/games-js");
+let ur = new games.net.zomis.games.ur.RoyalGameOfUr_init();
+console.log(ur.toString());
+
+//  ur.doRoll();
+//  if (ur.isMoveTime) {
+//    var player = ur.currentPlayer;
+//    var roll = ur.roll;
+//      if (ur.move_qt1dr2$(ur.currentPlayer, m, roll)) {
+
 export default {
   name: "RoyalGameOfUR",
-  props: ["games", "gameId", "token"],
+  props: ["yourIndex", "game", "gameId"],
   data() {
     return {
       lastMove: 0,
-      details: { turn: 0, roll: 0, positions: [[], []] }
+      ur: ur,
+      gameOverMessage: null
     };
   },
-  created: function() {},
+  created() {
+    console.log("Creating Vue Component...");
+    Socket.$on("type:PlayerEliminated", this.messageEliminated);
+    Socket.$on("type:GameMove", this.messageMove);
+    Socket.$on("type:GameState", this.messageState);
+    Socket.$on("type:IllegalMove", this.messageIllegal);
+    console.log("Created Vue Component - Done");
+  },
+  beforeDestroy() {
+    Socket.$off("type:PlayerEliminated", this.messageEliminated);
+    Socket.$off("type:GameMove", this.messageMove);
+    Socket.$off("type:GameState", this.messageState);
+    Socket.$off("type:IllegalMove", this.messageIllegal);
+  },
   components: {},
   methods: {
     positionFor: function(x, y) {
@@ -46,16 +74,41 @@ export default {
         name: player
       };
     },
-    action: function(name, data) {},
+    action: function(name, data) {
+      let json = `v1:{ "game": "UR", "gameId": "${
+        this.gameId
+      }", "type": "move", "moveType": "${name}", "move": ${data} }`;
+      Socket.send(json);
+    },
     onClick: function(x, y) {
       console.log("OnClick in URView: " + x + ", " + y);
       this.action("move", this.positionFor(x, y));
+    },
+    messageEliminated(e) {
+      console.log(`Recieved eliminated: ${JSON.stringify(e)}`);
+      this.gameOverMessage = e;
+    },
+    messageMove(e) {
+      console.log(`Recieved move: ${e.moveType}: ${e.move}`);
+      if (e.moveType == "move") {
+        this.ur.move_qt1dr2$(ur.currentPlayer, e.move, ur.roll);
+      }
+      // A move has been done - check if it is my turn.
+    },
+    messageState(e) {
+      console.log(`MessageState: ${e.roll}`);
+      if (e.roll) {
+        this.ur.doRoll_za3lpa$(e.roll);
+      }
+    },
+    messageIllegal(e) {
+      console.log("IllegalMove: " + JSON.stringify(e));
     }
   },
   computed: {
     posAt: function() {
       let result = [];
-      let positions = this.details.positions;
+      let positions = this.ur.piecesCopy;
       for (var player = 0; player < positions.length; player++) {
         result[player] = [];
         for (var i = 0; i <= 15; i++) {
@@ -70,19 +123,10 @@ export default {
       // posAt[0][15]
     },
     currentPlayer: function() {
-      return this.details.turn;
-    },
-    stepsToMove: function() {
-      return this.details.roll;
+      return this.ur.currentPlayer;
     },
     canPlaceNew: function() {
-      let places = this.details.positions[this.details.turn];
-      for (var i = 0; i < places.length; i++) {
-        if (places[i] === 0) {
-          return true;
-        }
-      }
-      return false;
+      return this.ur.currentPlayer == this.playerIndex;
     },
     pieces: function() {
       let result = [];
@@ -94,7 +138,7 @@ export default {
       }
       result.push({ x: 3, y: 1, name: "flower" });
 
-      let pieces = this.details.positions;
+      let pieces = this.ur.piecesCopy;
       for (var player = 0; player < pieces.length; player++) {
         for (var piece = 0; piece < pieces[player].length; piece++) {
           let value = pieces[player][piece];

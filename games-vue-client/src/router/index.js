@@ -20,7 +20,9 @@ export default new Router({
       name: "RoyalGameOfUR",
       component: RoyalGameOfUR,
       props: route => ({
-        playerIndex: route.params.playerIndex
+        game: "UR",
+        gameId: route.params.gameId,
+        yourIndex: route.query.playerIndex
       })
     }
   ]
