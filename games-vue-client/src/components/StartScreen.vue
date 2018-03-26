@@ -2,7 +2,7 @@
   <div class="start-screen">
     <input v-model="name" placeholder="your name" />
     <ul class="gamelist">
-      <li v-for="game in games"><button :enabled="!waiting" @click="matchMake(game)">{{ game }}</button></li>
+      <div v-for="game in games"><button :enabled="!waiting" @click="matchMake(game)">{{ game }}</button></div>
     </ul>
   </div>
 </template>
