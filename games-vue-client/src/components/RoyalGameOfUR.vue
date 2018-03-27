@@ -1,18 +1,51 @@
 <template>
   <div>
-    <div>{{ game }} : {{ gameId }} Current player {{ currentPlayer }} your index {{ yourIndex }} rolled: {{ ur.roll }}</div>
+    <div>{{ game }} : {{ gameId }} Current player {{ currentPlayer }} your index {{ yourIndex }}</div>
     <div>
       <button :enabled="canPlaceNew" @click="action('move', 0)" class="placeNew">Place new</button>
-      <button :enabled="ur.roll <= 0" @click="action('roll', -1)" class="roll">Roll</button>
+
       <div>Score: {{ posAt[0][15] }} vs. {{ posAt[1][15] }}. Remaining to be placed: {{ posAt[0][0] }} and {{ posAt[1][0] }}</div>
       <div>Game: {{ ur }}</div>
       <div>Status: {{ gameOverMessage }}</div>
+    </div>
+    <div>
+      <UrPlayerView v-bind:game="ur" v-bind:playerIndex="0" />
+      <div class="ur-board">
+        <UrFlower :x="0" :y="0" />
+        <UrFlower :x="3" :y="1" />
+        <UrFlower :x="0" :y="2" />
+        <UrFlower :x="6" :y="0" />
+        <UrFlower :x="6" :y="2" />
+
+        <UrPiece v-for="piece in playerPieces"
+          :key="piece.position"
+          class="piece"
+          :class="['piece-' + piece.player]"
+          :x="piece.x" :y="piece.y"
+          @:click="click(piece.position)">
+        </UrPiece>
+        <UrPiece v-for="piece in playerPieces"
+          :key="piece.position"
+          class="piece"
+          :class="['piece-' + piece.player]"
+          :x="piece.x" :y="piece.y"
+          @:click="click(piece.position)">
+        </UrPiece>
+      </div>
+      <UrPlayerView v-bind:game="ur" v-bind:playerIndex="1" />
+      <div class="ur-roll">
+        <span>{{ ur.roll }}</span>
+        <button :enabled="ur.roll <= 0" @click="action('roll', -1)" class="roll">Roll</button>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import Socket from "../socket";
+import UrPlayerView from "./ur/UrPlayerView";
+import UrPiece from "./ur/UrPiece";
+import UrFlower from "./ur/UrFlower";
 
 let games = require("../../../games-js/web/games-js");
 let ur = new games.net.zomis.games.ur.RoyalGameOfUr_init();
@@ -35,12 +68,10 @@ export default {
     };
   },
   created() {
-    console.log("Creating Vue Component...");
     Socket.$on("type:PlayerEliminated", this.messageEliminated);
     Socket.$on("type:GameMove", this.messageMove);
     Socket.$on("type:GameState", this.messageState);
     Socket.$on("type:IllegalMove", this.messageIllegal);
-    console.log("Created Vue Component - Done");
   },
   beforeDestroy() {
     Socket.$off("type:PlayerEliminated", this.messageEliminated);
@@ -48,7 +79,11 @@ export default {
     Socket.$off("type:GameState", this.messageState);
     Socket.$off("type:IllegalMove", this.messageIllegal);
   },
-  components: {},
+  components: {
+    UrPlayerView,
+    UrFlower,
+    UrPiece
+  },
   methods: {
     positionFor: function(x, y) {
       if (y === 1) {
@@ -106,6 +141,39 @@ export default {
     }
   },
   computed: {
+    playerPieces: function() {
+      let pieces = this.ur.piecesCopy;
+      console.log(pieces);
+      function piecesToObjects(array, playerIndex) {
+        console.log(array);
+        return array[playerIndex].filter(i => i > 0 && i < 15).map(i => {
+          var y = player == 0 ? 0 : 2;
+          if (position > 4 && position < 13) {
+            y = 1;
+          }
+          var x =
+            y == 1
+              ? position - 5
+              : position <= 4 ? 4 - position : 4 + 8 + 8 - position;
+          return {
+            x: x,
+            y: y,
+            name: playerIndex,
+            position: i
+          };
+        });
+      }
+      let obj0 = piecesToObjects(pieces, 0);
+      let obj1 = piecesToObjects(pieces, 1);
+      let result = [];
+      for (var i = 0; i < obj0.length; i++) {
+        result.push(obj0[i]);
+      }
+      for (var i = 0; i < obj1.length; i++) {
+        result.push(obj1[i]);
+      }
+      return result;
+    },
     posAt: function() {
       let result = [];
       let positions = this.ur.piecesCopy;
