@@ -23,6 +23,10 @@ class RoyalGameOfUrSystem {
                     events.execute(it.illegalMove("Game already won by ${controller.winner}"))
                     return@addListener
                 }
+                if (controller.currentPlayer != it.player) {
+                    events.execute(it.illegalMove("Not your turn"))
+                    return@addListener
+                }
 
                 val oldPlayer = controller.currentPlayer
                 if (it.moveType == "roll") {
@@ -31,10 +35,6 @@ class RoyalGameOfUrSystem {
                     events.execute(MoveEvent(it.game, it.player, "roll", ""))
                 } else {
                     val x = (it.move as IntNode).intValue()
-                    if (controller.currentPlayer != it.player) {
-                        events.execute(it.illegalMove("Not your turn"))
-                        return@addListener
-                    }
                     val oldRoll = controller.roll
                     if (controller.isMoveTime && controller.canMove(controller.currentPlayer, x, oldRoll)) {
                         controller.move(controller.currentPlayer, x, oldRoll)
