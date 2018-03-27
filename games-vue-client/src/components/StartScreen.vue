@@ -4,6 +4,7 @@
     <ul class="gamelist">
       <div v-for="game in games"><button :enabled="!waiting" @click="matchMake(game)">{{ game }}</button></div>
     </ul>
+    <button @click="createAI()">Create Bot</button>
   </div>
 </template>
 
@@ -30,6 +31,9 @@ export default {
     }
   },
   methods: {
+    createAI: function() {
+      Socket.send("VUEJS");
+    },
     matchMake: function(game) {
       this.waiting = true;
       this.waitingGame = game;

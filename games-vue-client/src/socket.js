@@ -13,9 +13,7 @@ const emitter = new Vue({
   }
 });
 
-socket.onopen = function(event) {
-  socket.send("VUEJS");
-};
+socket.onopen = function(event) {};
 
 socket.onmessage = function(msg) {
   console.log(" IN: " + msg.data);

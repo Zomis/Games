@@ -16,15 +16,19 @@ class SimpleMatchMakingSystem(games: GameSystem, events: EventSystem) {
             if (it.message != "VUEJS") {
                 return@addListener
             }
-            if (!waiting.containsKey("UR")) {
-                logger.info { "Client connected and no UR-bot waiting, creating one." }
-                Thread({ RandomUrBot("ws://127.0.0.1:8081").play() }).start()
-            }
+            val id = games.gameTypes["UR"]?.runningGames?.size ?: 0
+            logger.info { "Client connected and no UR-bot waiting, creating id $id" }
+            Thread({ RandomUrBot("ws://127.0.0.1:8081").play() }, "ur-bot-$id").start()
         })
 
         events.addListener(ClientJsonMessage::class, {
             if (it.data.getTextOrDefault("type", "") == "matchMake") {
                 val gameType = it.data.get("game").asText()
+                if (games.gameTypes[gameType] == null) {
+                    logger.warn { "Received unknown gametype: $gameType" }
+                    return@addListener
+                }
+
                 synchronized(waiting, {
                 if (waiting.containsKey(gameType)) {
                     val opponent = waiting[gameType]!!
