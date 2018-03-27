@@ -68,6 +68,13 @@ export default {
     };
   },
   created() {
+    if (this.yourIndex < 0) {
+      Socket.send(
+        `v1:{ "type": "observer", "game": "${this.game}", "gameId": "${
+          this.gameId
+        }", "observer": "start" }`
+      );
+    }
     Socket.$on("type:PlayerEliminated", this.messageEliminated);
     Socket.$on("type:GameMove", this.messageMove);
     Socket.$on("type:GameState", this.messageState);
