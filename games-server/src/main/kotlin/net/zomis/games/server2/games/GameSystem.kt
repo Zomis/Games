@@ -98,6 +98,7 @@ class GameSystem(events: EventSystem) {
                         is String -> node.put(it.first, value)
                         is Double -> node.put(it.first, value)
                         is Boolean -> node.put(it.first, value)
+                        else -> throw IllegalArgumentException("No support for ${value.javaClass}")
                     }
                 }
                 return@broadcast node
