@@ -84,42 +84,23 @@ class GameSystem(events: EventSystem) {
             }
         })
         events.addListener(GameEndedEvent::class, { it ->
-            it.game.players.forEachIndexed { index, client ->
+            it.game.broadcast { client ->
                 client.send(it.game.toJson("GameEnded"))
             }
         })
         events.addListener(GameStateEvent::class, { event ->
             event.game.broadcast {
-                val node = event.game.toJson("GameState")
-                event.data.forEach {
-                    val value = it.second
-                    when (value) {
-                        is Int -> node.put(it.first, value)
-                        is String -> node.put(it.first, value)
-                        is Double -> node.put(it.first, value)
-                        is Boolean -> node.put(it.first, value)
-                        else -> throw IllegalArgumentException("No support for ${value.javaClass}")
-                    }
-                }
-                return@broadcast node
+                event.stateMessage(it)
             }
         })
         events.addListener(MoveEvent::class, {event ->
-            event.game.players.forEach({
-                it.send(event.game.toJson("GameMove")
-                    .put("player", event.player)
-                    .put("moveType", event.moveType)
-                    .putPOJO("move", event.move))
-            })
+            event.game.broadcast {
+                event.moveMessage()
+            }
         })
         events.addListener(PlayerEliminatedEvent::class, {event ->
-            event.game.players.forEach {
-                it.send(
-                    event.game.toJson("PlayerEliminated")
-                    .put("player", event.player)
-                    .put("winner", event.winner)
-                    .put("position", event.position)
-                )
+            event.game.broadcast {
+                event.eliminatedMessage()
             }
         })
         events.addListener(IllegalMoveEvent::class, {event ->
@@ -132,5 +113,33 @@ class GameSystem(events: EventSystem) {
             gameTypes[it.gameType] = GameType(it.gameType)
         })
     }
+}
 
+fun MoveEvent.moveMessage(): ObjectNode {
+    return this.game.toJson("GameMove")
+            .put("player", this.player)
+            .put("moveType", this.moveType)
+            .putPOJO("move", this.move)
+}
+
+fun PlayerEliminatedEvent.eliminatedMessage(): ObjectNode {
+    return this.game.toJson("PlayerEliminated")
+            .put("player", this.player)
+            .put("winner", this.winner)
+            .put("position", this.position)
+}
+
+fun GameStateEvent.stateMessage(client: Client?): ObjectNode {
+    val node = this.game.toJson("GameState")
+    this.data.forEach {
+        val value = it.second
+        when (value) {
+            is Int -> node.put(it.first, value)
+            is String -> node.put(it.first, value)
+            is Double -> node.put(it.first, value)
+            is Boolean -> node.put(it.first, value)
+            else -> throw IllegalArgumentException("No support for ${value.javaClass}")
+        }
+    }
+    return node
 }
