@@ -1,9 +1,17 @@
 <template>
   <div class="start-screen">
     <input v-model="name" placeholder="your name" />
-    <ul class="gamelist">
+    <div class="gametypes">
+      <span>Waiting for game: {{ waitingGame }}</span>
       <div v-for="game in games"><button :enabled="!waiting" @click="matchMake(game)">{{ game }}</button></div>
-    </ul>
+    </div>
+    <button @click="requestGameList()">Request game list</button>
+    <div class="gamelist">
+      <div v-for="game in gameList">
+        <button :enabled="!waiting" @click="observe(game)">{{ game }}</button>
+      </div>
+    </div>
+
     <button @click="createAI()">Create Bot</button>
   </div>
 </template>
@@ -16,6 +24,7 @@ export default {
   name: "StartScreen",
   data() {
     return {
+      gameList: [],
       waiting: false,
       waitingGame: null,
       name: "(Unused at the moment)",
@@ -34,6 +43,22 @@ export default {
     createAI: function() {
       Socket.send("VUEJS");
     },
+    observe: function(game) {
+      Socket.send(
+        `v1:{ "type": "observer", "game": "${game.gameType}", "gameId": "${
+          game.gameId
+        }", "observer": "start" }`
+      );
+      this.$router.push(
+        `/games/${game.gameType}/${game.gameId}/?playerIndex=-42`
+      );
+    },
+    requestGameList: function() {
+      Socket.send(`v1:{ "type": "GameList" }`);
+    },
+    gameListMessage: function(message) {
+      this.gameList = message.list;
+    },
     matchMake: function(game) {
       this.waiting = true;
       this.waitingGame = game;
@@ -47,9 +72,11 @@ export default {
   },
   created() {
     Socket.$on("type:GameStarted", this.gameStartedMessage);
+    Socket.$on("type:GameList", this.gameListMessage);
   },
   beforeDestroy() {
     Socket.$off("type:GameStarted", this.gameStartedMessage);
+    Socket.$off("type:GameList", this.gameListMessage);
   }
 };
 </script>

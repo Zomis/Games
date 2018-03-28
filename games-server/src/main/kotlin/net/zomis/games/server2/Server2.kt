@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import klogging.KLoggers
 import net.zomis.core.events.EventHandler
 import net.zomis.core.events.EventSystem
+import net.zomis.games.server2.games.GameListSystem
 import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.games.ObserverSystem
 import net.zomis.games.server2.games.SimpleMatchMakingSystem
@@ -43,6 +44,7 @@ class Server2(val port: Int) {
         SimpleMatchMakingSystem(gameSystem, events)
         events.with(ServerConsole()::register)
         events.with(ObserverSystem(events, gameSystem)::register)
+        events.with(GameListSystem(gameSystem)::register)
 
         events.execute(StartupEvent())
     }
