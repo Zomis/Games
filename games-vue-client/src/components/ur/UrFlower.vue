@@ -1,5 +1,5 @@
 <template>
-  <div class="piece flower"
+  <div class="piece piece-flower"
      v-bind:style="{ transform: 'translate(' + x * 64 + 'px, ' + y * 64 + 'px)' }">
   </div>
 </template>

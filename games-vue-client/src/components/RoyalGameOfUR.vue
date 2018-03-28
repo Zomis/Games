@@ -1,36 +1,30 @@
 <template>
   <div>
-    <div>{{ game }} : {{ gameId }} Current player {{ currentPlayer }} your index {{ yourIndex }}</div>
+    <div>{{ game }} : {{ gameId }} Current player {{ ur.currentPlayer }} your index {{ yourIndex }}</div>
     <div>
-      <button :enabled="canPlaceNew" @click="action('move', 0)" class="placeNew">Place new</button>
+      <button :disabled="!canPlaceNew" @click="action('move', 0)" class="placeNew">Place new</button>
 
-      <div>Score: {{ posAt[0][15] }} vs. {{ posAt[1][15] }}. Remaining to be placed: {{ posAt[0][0] }} and {{ posAt[1][0] }}</div>
       <div>Game: {{ ur }}</div>
       <div>Status: {{ gameOverMessage }}</div>
     </div>
     <div>
       <UrPlayerView v-bind:game="ur" v-bind:playerIndex="0" />
-      <div class="ur-board">
-        <UrFlower :x="0" :y="0" />
-        <UrFlower :x="3" :y="1" />
-        <UrFlower :x="0" :y="2" />
-        <UrFlower :x="6" :y="0" />
-        <UrFlower :x="6" :y="2" />
+      <div class="ur-board gridview">
+        <div class="gridview-inside">
+          <UrFlower :x="0" :y="0" />
+          <UrFlower :x="3" :y="1" />
+          <UrFlower :x="0" :y="2" />
+          <UrFlower :x="6" :y="0" />
+          <UrFlower :x="6" :y="2" />
 
-        <UrPiece v-for="piece in playerPieces"
-          :key="piece.position"
-          class="piece"
-          :class="['piece-' + piece.player]"
-          :x="piece.x" :y="piece.y"
-          @:click="click(piece.position)">
-        </UrPiece>
-        <UrPiece v-for="piece in playerPieces"
-          :key="piece.position"
-          class="piece"
-          :class="['piece-' + piece.player]"
-          :x="piece.x" :y="piece.y"
-          @:click="click(piece.position)">
-        </UrPiece>
+          <UrPiece v-for="piece in playerPieces"
+            :key="piece.key"
+            class="piece"
+            :class="['piece-' + piece.player]"
+            :x="piece.x" :y="piece.y" :id="piece.key"
+            @:click="click(piece.position)">
+          </UrPiece>
+        </div>
       </div>
       <UrPlayerView v-bind:game="ur" v-bind:playerIndex="1" />
       <div class="ur-roll">
@@ -101,21 +95,6 @@ export default {
       }
       return 4 + 8 + 8 - x;
     },
-    getPiece: function(player, position) {
-      var y = player == 0 ? 0 : 2;
-      if (position > 4 && position < 13) {
-        y = 1;
-      }
-      var x =
-        y == 1
-          ? position - 5
-          : position <= 4 ? 4 - position : 4 + 8 + 8 - position;
-      return {
-        x: x,
-        y: y,
-        name: player
-      };
-    },
     action: function(name, data) {
       let json = `v1:{ "game": "UR", "gameId": "${
         this.gameId
@@ -150,11 +129,13 @@ export default {
   computed: {
     playerPieces: function() {
       let pieces = this.ur.piecesCopy;
-      console.log(pieces);
       function piecesToObjects(array, playerIndex) {
-        console.log(array);
-        return array[playerIndex].filter(i => i > 0 && i < 15).map(i => {
-          var y = player == 0 ? 0 : 2;
+        var playerPieces = array[playerIndex].filter(i => i > 0 && i < 15);
+        var arrayCopy = []; // Convert Int32Array to Object array
+        playerPieces.forEach(it => arrayCopy.push(it));
+
+        function mapping(position) {
+          var y = playerIndex == 0 ? 0 : 2;
           if (position > 4 && position < 13) {
             y = 1;
           }
@@ -165,10 +146,16 @@ export default {
           return {
             x: x,
             y: y,
-            name: playerIndex,
-            position: i
+            player: playerIndex,
+            key: playerIndex + "_" + position,
+            position: position
           };
-        });
+        }
+        for (var i = 0; i < arrayCopy.length; i++) {
+          var typeofm = typeof arrayCopy[i];
+          arrayCopy[i] = mapping(arrayCopy[i]);
+        }
+        return arrayCopy;
       }
       let obj0 = piecesToObjects(pieces, 0);
       let obj1 = piecesToObjects(pieces, 1);
@@ -179,51 +166,14 @@ export default {
       for (var i = 0; i < obj1.length; i++) {
         result.push(obj1[i]);
       }
+      console.log(result);
       return result;
-    },
-    posAt: function() {
-      let result = [];
-      let positions = this.ur.piecesCopy;
-      for (var player = 0; player < positions.length; player++) {
-        result[player] = [];
-        for (var i = 0; i <= 15; i++) {
-          result[player].push(0);
-        }
-        for (var pos = 0; pos < positions[player].length; pos++) {
-          let value = positions[player][pos];
-          result[player][value] += 1;
-        }
-      }
-      return result;
-      // posAt[0][15]
-    },
-    currentPlayer: function() {
-      return this.ur.currentPlayer;
     },
     canPlaceNew: function() {
-      return this.ur.currentPlayer == this.playerIndex;
-    },
-    pieces: function() {
-      let result = [];
-      for (var i = 0; i <= 2; i += 2) {
-        result.push({ x: 0, y: i, name: "flower" });
-        result.push({ x: 6, y: i, name: "flower" });
-        result.push({ x: 4, y: i, name: "black" });
-        result.push({ x: 5, y: i, name: "exit" });
-      }
-      result.push({ x: 3, y: 1, name: "flower" });
-
-      let pieces = this.ur.piecesCopy;
-      for (var player = 0; player < pieces.length; player++) {
-        for (var piece = 0; piece < pieces[player].length; piece++) {
-          let value = pieces[player][piece];
-          console.log("value at " + player + ", " + piece + " is: " + value);
-          if (value !== 0 && value !== 15) {
-            result.push(this.getPiece(player, value));
-          }
-        }
-      }
-      return result;
+      return (
+        this.ur.currentPlayer == this.yourIndex &&
+        this.ur.canMove_qt1dr2$(this.ur.currentPlayer, 0, this.ur.roll)
+      );
     }
   }
 };
@@ -231,11 +181,42 @@ export default {
 
 <style>
 .piece-0 {
-  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0yMiAxMGMxMC41IDEgMTYuNSA4IDE2IDI5SDE1YzAtOSAxMC02LjUgOC0yMSIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik0yNCAxOGMuMzggMi45MS01LjU1IDcuMzctOCA5LTMgMi0yLjgyIDQuMzQtNSA0LTEuMDQyLS45NCAxLjQxLTMuMDQgMC0zLTEgMCAuMTkgMS4yMy0xIDItMSAwLTQuMDAzIDEtNC00IDAtMiA2LTEyIDYtMTJzMS44OS0xLjkgMi0zLjVjLS43My0uOTk0LS41LTItLjUtMyAxLTEgMyAyLjUgMyAyLjVoMnMuNzgtMS45OTIgMi41LTNjMSAwIDEgMyAxIDMiIGZpbGw9IiNmZmYiLz48cGF0aCBkPSJNOS41IDI1LjVhLjUuNSAwIDEgMS0xIDAgLjUuNSAwIDEgMSAxIDB6bTUuNDMzLTkuNzVhLjUgMS41IDMwIDEgMS0uODY2LS41LjUgMS41IDMwIDEgMSAuODY2LjV6IiBmaWxsPSIjMDAwIi8+PC9nPjwvc3ZnPg==');
+  background-color: blue;
+  border: 2px solid black;
 }
 
 .piece-1 {
-  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PHBhdGggZD0iTTIyLjUgOWMtMi4yMSAwLTQgMS43OS00IDQgMCAuODkuMjkgMS43MS43OCAyLjM4QzE3LjMzIDE2LjUgMTYgMTguNTkgMTYgMjFjMCAyLjAzLjk0IDMuODQgMi40MSA1LjAzLTMgMS4wNi03LjQxIDUuNTUtNy40MSAxMy40N2gyM2MwLTcuOTItNC40MS0xMi40MS03LjQxLTEzLjQ3IDEuNDctMS4xOSAyLjQxLTMgMi40MS01LjAzIDAtMi40MS0xLjMzLTQuNS0zLjI4LTUuNjIuNDktLjY3Ljc4LTEuNDkuNzgtMi4zOCAwLTIuMjEtMS43OS00LTQtNHoiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjwvc3ZnPg==');
+  background-color: red;
+  border: 2px solid black;
+}
+
+.piece-flower {
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0yMi41IDExLjYzVjZNMjAgOGg1IiBzdHJva2UtbGluZWpvaW49Im1pdGVyIi8+PHBhdGggZD0iTTIyLjUgMjVzNC41LTcuNSAzLTEwLjVjMCAwLTEtMi41LTMtMi41cy0zIDIuNS0zIDIuNWMtMS41IDMgMyAxMC41IDMgMTAuNSIgZmlsbD0iI2ZmZiIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiLz48cGF0aCBkPSJNMTEuNSAzN2M1LjUgMy41IDE1LjUgMy41IDIxIDB2LTdzOS00LjUgNi0xMC41Yy00LTYuNS0xMy41LTMuNS0xNiA0VjI3di0zLjVjLTMuNS03LjUtMTMtMTAuNS0xNi00LTMgNiA1IDEwIDUgMTBWMzd6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0iTTExLjUgMzBjNS41LTMgMTUuNS0zIDIxIDBtLTIxIDMuNWM1LjUtMyAxNS41LTMgMjEgMG0tMjEgMy41YzUuNS0zIDE1LjUtMyAyMSAwIi8+PC9nPjwvc3ZnPg==');
+}
+
+.gridview {
+  background-color: cyan;
+  width: 512px;
+  height: 192px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.gridview-inside {
+  width: 512px;
+  height: 192px;
+  position: relative;
+}
+
+.piece {
+  position: absolute;
+  background-size: cover;
+  border: 1px solid black;
+  top: 0;
+  left: 0;
+  width: 64px;
+  height: 64px;
+  z-index: 2;
 }
 
 .piece-black {

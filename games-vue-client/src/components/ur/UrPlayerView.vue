@@ -13,5 +13,12 @@ export default {
   }
 };
 </script>
-<style>
+<style scoped>
+.pieces-remaining {
+  float: left;
+}
+
+.pieces-out {
+  float: right
+}
 </style>
