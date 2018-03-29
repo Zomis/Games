@@ -1,7 +1,6 @@
 import Vue from "vue";
 import Router from "vue-router";
 import HelloWorld from "@/components/HelloWorld";
-import VueWebsocket from "vue-websocket";
 import StartScreen from "@/components/StartScreen";
 import RoyalGameOfUR from "@/components/RoyalGameOfUR";
 
