@@ -1,7 +1,7 @@
 <template>
   <div class="player-view">
-    <div class="pieces-remaining">{{ game.piecesCopy[playerIndex].filter(i => i === 0).length }}</div>
-    <div class="pieces-out">{{ game.piecesCopy[playerIndex].filter(i => i === 15).length }}</div>
+    <div class="pieces-remaining">{{ remaining }}</div>
+    <div class="pieces-out">{{ out }}</div>
   </div>
 </template>
 <script>
@@ -10,6 +10,15 @@ export default {
   props: ["game", "playerIndex"],
   data() {
     return {};
+  },
+  computed: {
+    remaining: function() {
+      return this.game.piecesCopy[this.playerIndex].filter(i => i === 0).length;
+    },
+    out: function() {
+      return this.game.piecesCopy[this.playerIndex].filter(i => i === 15)
+        .length;
+    }
   }
 };
 </script>

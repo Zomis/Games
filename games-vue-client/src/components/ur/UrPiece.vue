@@ -1,12 +1,19 @@
 <template>
   <div class="piece"
-  :class="id"
-     v-bind:style="{ transform: 'translate(' + x * 64 + 'px, ' + y * 64 + 'px)' }">
+    v-on:click="click(piece)"
+    :class="piece.id"
+     v-bind:style="{ gridArea: (piece.y+1) + '/' + (piece.x+1) }">
   </div>
 </template>
 <script>
 export default {
   name: "UrPiece",
-  props: ["x", "y", "id"]
+  props: ["piece", "onclick"],
+  methods: {
+    click: function(piece) {
+      console.log(piece);
+      this.onclick(piece);
+    }
+  }
 };
 </script>

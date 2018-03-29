@@ -4,25 +4,35 @@
     <div>
       <button :disabled="!canPlaceNew" @click="action('move', 0)" class="placeNew">Place new</button>
 
-      <div>Game: {{ ur }}</div>
-      <div>Status: {{ gameOverMessage }}</div>
+      <div>{{ gameOverMessage }}</div>
     </div>
-    <div>
+    <div class="board-parent">
       <UrPlayerView v-bind:game="ur" v-bind:playerIndex="0" />
-      <div class="ur-board gridview">
-        <div class="gridview-inside">
+
+      <div class="ur-board">
+        <div class="ur-pieces-bg">
+          <div v-for="idx in 20" class="piece piece-bg">
+          </div>
+          <div class="piece-black" style="grid-area: 1 / 5 / 2 / 7"></div>
+          <div class="piece-black" style="grid-area: 3 / 5 / 4 / 7"></div>
+        </div>
+        <div class="ur-pieces-flowers">
           <UrFlower :x="0" :y="0" />
           <UrFlower :x="3" :y="1" />
           <UrFlower :x="0" :y="2" />
           <UrFlower :x="6" :y="0" />
           <UrFlower :x="6" :y="2" />
+        </div>
 
+        <div class="ur-pieces-player">
           <UrPiece v-for="piece in playerPieces"
             :key="piece.key"
             class="piece"
-            :class="['piece-' + piece.player]"
-            :x="piece.x" :y="piece.y" :id="piece.key"
-            @:click="click(piece.position)">
+            :class="{['piece-' + piece.player]: true, 'moveable':
+              ur.isMoveTime && piece.player == ur.currentPlayer &&
+              ur.canMove_qt1dr2$(ur.currentPlayer, piece.position, ur.roll)}"
+            :piece="piece"
+            :onclick="onClick">
           </UrPiece>
         </div>
       </div>
@@ -42,8 +52,8 @@ import UrPiece from "./ur/UrPiece";
 import UrFlower from "./ur/UrFlower";
 
 let games = require("../../../games-js/web/games-js");
-let ur = new games.net.zomis.games.ur.RoyalGameOfUr_init();
-console.log(ur.toString());
+let urgame = new games.net.zomis.games.ur.RoyalGameOfUr_init();
+console.log(urgame.toString());
 
 //  ur.doRoll();
 //  if (ur.isMoveTime) {
@@ -56,8 +66,9 @@ export default {
   props: ["yourIndex", "game", "gameId"],
   data() {
     return {
+      playerPieces: [],
       lastMove: 0,
-      ur: ur,
+      ur: urgame,
       gameOverMessage: null
     };
   },
@@ -73,6 +84,7 @@ export default {
     Socket.$on("type:GameMove", this.messageMove);
     Socket.$on("type:GameState", this.messageState);
     Socket.$on("type:IllegalMove", this.messageIllegal);
+    this.playerPieces = this.calcPlayerPieces();
   },
   beforeDestroy() {
     Socket.$off("type:PlayerEliminated", this.messageEliminated);
@@ -86,24 +98,16 @@ export default {
     UrPiece
   },
   methods: {
-    positionFor: function(x, y) {
-      if (y === 1) {
-        return 5 + x;
-      }
-      if (x < 4) {
-        return 4 - x;
-      }
-      return 4 + 8 + 8 - x;
-    },
     action: function(name, data) {
       let json = `v1:{ "game": "UR", "gameId": "${
         this.gameId
       }", "type": "move", "moveType": "${name}", "move": ${data} }`;
       Socket.send(json);
+        this.playerPieces = this.calcPlayerPieces();
     },
-    onClick: function(x, y) {
-      console.log("OnClick in URView: " + x + ", " + y);
-      this.action("move", this.positionFor(x, y));
+    onClick: function(piece) {
+      console.log("OnClick in URView: " + piece.x + ", " + piece.y);
+      this.action("move", piece.position);
     },
     messageEliminated(e) {
       console.log(`Recieved eliminated: ${JSON.stringify(e)}`);
@@ -112,8 +116,9 @@ export default {
     messageMove(e) {
       console.log(`Recieved move: ${e.moveType}: ${e.move}`);
       if (e.moveType == "move") {
-        this.ur.move_qt1dr2$(ur.currentPlayer, e.move, ur.roll);
+        this.ur.move_qt1dr2$(this.ur.currentPlayer, e.move, this.ur.roll);
       }
+      this.playerPieces = this.calcPlayerPieces();
       // A move has been done - check if it is my turn.
     },
     messageState(e) {
@@ -124,10 +129,8 @@ export default {
     },
     messageIllegal(e) {
       console.log("IllegalMove: " + JSON.stringify(e));
-    }
-  },
-  computed: {
-    playerPieces: function() {
+    },
+    calcPlayerPieces() {
       let pieces = this.ur.piecesCopy;
       function piecesToObjects(array, playerIndex) {
         var playerPieces = array[playerIndex].filter(i => i > 0 && i < 15);
@@ -168,7 +171,9 @@ export default {
       }
       console.log(result);
       return result;
-    },
+    }
+  },
+  computed: {
     canPlaceNew: function() {
       return (
         this.ur.currentPlayer == this.yourIndex &&
@@ -182,44 +187,99 @@ export default {
 <style>
 .piece-0 {
   background-color: blue;
-  border: 2px solid black;
+}
+
+.ur-pieces-player .piece {
+  margin: auto;
+  width: 48px;
+  height: 48px;
 }
 
 .piece-1 {
   background-color: red;
-  border: 2px solid black;
 }
 
 .piece-flower {
-  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0NSIgaGVpZ2h0PSI0NSI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0yMi41IDExLjYzVjZNMjAgOGg1IiBzdHJva2UtbGluZWpvaW49Im1pdGVyIi8+PHBhdGggZD0iTTIyLjUgMjVzNC41LTcuNSAzLTEwLjVjMCAwLTEtMi41LTMtMi41cy0zIDIuNS0zIDIuNWMtMS41IDMgMyAxMC41IDMgMTAuNSIgZmlsbD0iI2ZmZiIgc3Ryb2tlLWxpbmVjYXA9ImJ1dHQiIHN0cm9rZS1saW5lam9pbj0ibWl0ZXIiLz48cGF0aCBkPSJNMTEuNSAzN2M1LjUgMy41IDE1LjUgMy41IDIxIDB2LTdzOS00LjUgNi0xMC41Yy00LTYuNS0xMy41LTMuNS0xNiA0VjI3di0zLjVjLTMuNS03LjUtMTMtMTAuNS0xNi00LTMgNiA1IDEwIDUgMTBWMzd6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0iTTExLjUgMzBjNS41LTMgMTUuNS0zIDIxIDBtLTIxIDMuNWM1LjUtMyAxNS41LTMgMjEgMG0tMjEgMy41YzUuNS0zIDE1LjUtMyAyMSAwIi8+PC9nPjwvc3ZnPg==');
+  opacity: 0.5;
+  background-image: url('../assets/ur/flower.svg');
+  margin: auto;
 }
 
-.gridview {
-  background-color: cyan;
-  width: 512px;
-  height: 192px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.gridview-inside {
-  width: 512px;
-  height: 192px;
+.board-parent {
   position: relative;
 }
 
-.piece {
-  position: absolute;
-  background-size: cover;
+.piece-bg {
+  background-color: white;
   border: 1px solid black;
+}
+
+.ur-board {
+  position: relative;
+  /* width: 50vw; */
+  /* height: 50vw; */
+  width: 512px;
+  height: 192px;
+  min-width: 512px;
+  min-height: 192px;
+  overflow: hidden;
+  border: 12px solid #6D5720;
+  border-radius: 12px;
+  margin: auto;
+}
+
+.ur-pieces-flowers {
+  z-index: 60;
+}
+
+.ur-pieces-flowers, .ur-pieces-player,
+ .ur-pieces-bg {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  position: absolute;
   top: 0;
   left: 0;
-  width: 64px;
-  height: 64px;
-  z-index: 2;
+  width: 100%;
+  height: 100%;
+}
+
+.ur-pieces-player .piece {
+  z-index: 70;
+}
+
+.piece {
+  background-size: cover;
+  z-index: 40;
+  width: 100%;
+  height: 100%;
+  /* background-color: #ddf9fd; */
+  /* box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.05), inset -2px -2px 0 #665235; */
+  /* box-shadow: 0px 0px 0px 6px rgba(255, 255, 255, 0.05); */
 }
 
 .piece-black {
-  background-color: #ffffff;
+  background-color: #7f7f7f;
 }
+
+.player-view {
+  width: 512px;
+  height: 24px;
+  margin: auto;
+}
+
+.moveable {
+  cursor: pointer;
+  animation: glow 1s infinite alternate;
+}
+
+@keyframes glow {
+  from {
+    box-shadow: 0 0 10px -10px #aef4af;
+  }
+  to {
+    box-shadow: 0 0 10px 10px #aef4af;
+  }
+}
+
 </style>

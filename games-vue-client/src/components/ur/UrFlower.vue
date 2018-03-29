@@ -1,6 +1,6 @@
 <template>
   <div class="piece piece-flower"
-     v-bind:style="{ transform: 'translate(' + x * 64 + 'px, ' + y * 64 + 'px)' }">
+     v-bind:style="{ 'grid-area': (y+1) + '/' + (x+1) }">
   </div>
 </template>
 <script>
