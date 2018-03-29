@@ -133,7 +133,7 @@ export default {
     },
     messageState(e) {
       console.log(`MessageState: ${e.roll}`);
-      if (e.roll) {
+      if (typeof e.roll !== "undefined") {
         this.ur.doRoll_za3lpa$(e.roll);
       }
     },
