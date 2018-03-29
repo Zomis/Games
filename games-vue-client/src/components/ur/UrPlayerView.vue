@@ -1,15 +1,38 @@
 <template>
   <div class="player-view">
-    <div class="pieces-remaining">{{ remaining }}</div>
-    <div class="pieces-out">{{ out }}</div>
+    <div class="side side-remaining">
+      <div class="number">{{ remaining }}</div>
+      <div class="pieces-container">
+        <div v-for="n in remaining" class="piece-small pointer"
+          :class="{ ['piece-' + playerIndex]: true, moveable: canPlaceNew && n == remaining }"
+          style="position: absolute; top: 6px;"
+          :style="{ left: (n-1)*12 + 'px' }" v-on:click="placeNew()">
+        </div>
+      </div>
+    </div>
+    <div class="side side-out">
+      <div class="number">{{ out }}</div>
+      <div class="pieces-container">
+        <div v-for="n in out" class="piece-small"
+          :class="['piece-' + playerIndex]"
+          style="position: absolute; top: 6px;"
+          :style="{ right: (n-1)*12 + 'px' }">
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 <script>
 export default {
   name: "UrPlayerView",
-  props: ["game", "playerIndex"],
+  props: ["game", "playerIndex", "onPlaceNew"],
   data() {
     return {};
+  },
+  methods: {
+    placeNew: function() {
+      this.onPlaceNew(this.playerIndex);
+    }
   },
   computed: {
     remaining: function() {
@@ -18,16 +41,32 @@ export default {
     out: function() {
       return this.game.piecesCopy[this.playerIndex].filter(i => i === 15)
         .length;
+    },
+    canPlaceNew: function() {
+      return (
+        this.game.currentPlayer == this.playerIndex &&
+        this.game.isMoveTime &&
+        this.game.canMove_qt1dr2$(this.playerIndex, 0, this.game.roll)
+      );
     }
   }
 };
 </script>
 <style scoped>
-.pieces-remaining {
-  float: left;
+.number {
+  margin: 2px;
+  font-weight: bold;
+  font-size: 2em;
 }
 
-.pieces-out {
-  float: right
+.piece-small {
+  background-size: cover;
+  width: 24px;
+  height: 24px;
+  border: 1px solid black;
+}
+
+.pieces-container {
+  position: relative;
 }
 </style>

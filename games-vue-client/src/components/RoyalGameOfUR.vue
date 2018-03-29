@@ -7,7 +7,8 @@
       <div>{{ gameOverMessage }}</div>
     </div>
     <div class="board-parent">
-      <UrPlayerView v-bind:game="ur" v-bind:playerIndex="0" />
+      <UrPlayerView v-bind:game="ur" v-bind:playerIndex="0"
+        :onPlaceNew="placeNew" />
 
       <div class="ur-board">
         <div class="ur-pieces-bg">
@@ -36,7 +37,7 @@
           </UrPiece>
         </div>
       </div>
-      <UrPlayerView v-bind:game="ur" v-bind:playerIndex="1" />
+      <UrPlayerView v-bind:game="ur" v-bind:playerIndex="1" :onPlaceNew="placeNew" />
       <div class="ur-roll">
         <span>{{ ur.roll }}</span>
         <button :enabled="ur.roll <= 0" @click="action('roll', -1)" class="roll">Roll</button>
@@ -104,6 +105,11 @@ export default {
       }", "type": "move", "moveType": "${name}", "move": ${data} }`;
       Socket.send(json);
         this.playerPieces = this.calcPlayerPieces();
+    },
+    placeNew: function(playerIndex) {
+      if (this.canPlaceNew) {
+        this.action("move", 0);
+      }
     },
     onClick: function(piece) {
       console.log("OnClick in URView: " + piece.x + ", " + piece.y);
@@ -264,8 +270,20 @@ export default {
 
 .player-view {
   width: 512px;
-  height: 24px;
+  height: 50px;
   margin: auto;
+  display: flex;
+  flex-flow: row;
+  justify-content: space-between;
+}
+
+.side {
+  display: flex;
+  flex-flow: row;
+}
+
+.side-out {
+  flex-flow: row-reverse;
 }
 
 .moveable {
