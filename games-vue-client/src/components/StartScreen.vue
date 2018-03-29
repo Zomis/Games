@@ -44,11 +44,6 @@ export default {
       Socket.send("VUEJS");
     },
     observe: function(game) {
-      Socket.send(
-        `v1:{ "type": "observer", "game": "${game.gameType}", "gameId": "${
-          game.gameId
-        }", "observer": "start" }`
-      );
       this.$router.push(
         `/games/${game.gameType}/${game.gameId}/?playerIndex=-42`
       );
