@@ -8,6 +8,7 @@
     </div>
     <div class="board-parent">
       <UrPlayerView v-bind:game="ur" v-bind:playerIndex="0"
+        :gamePieces="gamePieces"
         :onPlaceNew="placeNew" />
 
       <div class="ur-board">
@@ -37,10 +38,12 @@
           </UrPiece>
         </div>
       </div>
-      <UrPlayerView v-bind:game="ur" v-bind:playerIndex="1" :onPlaceNew="placeNew" />
+      <UrPlayerView v-bind:game="ur" v-bind:playerIndex="1"
+       :gamePieces="gamePieces"
+       :onPlaceNew="placeNew" />
       <div class="ur-roll">
         <span>{{ ur.roll }}</span>
-        <button :enabled="ur.roll <= 0" @click="action('roll', -1)" class="roll">Roll</button>
+        <button :disabled="ur.roll >= 0 || ur.currentPlayer != yourIndex" @click="action('roll', -1)" class="roll">Roll</button>
       </div>
     </div>
   </div>
@@ -67,6 +70,7 @@ export default {
   props: ["yourIndex", "game", "gameId"],
   data() {
     return {
+      gamePieces: [],
       playerPieces: [],
       lastMove: 0,
       ur: urgame,
@@ -138,6 +142,7 @@ export default {
     },
     calcPlayerPieces() {
       let pieces = this.ur.piecesCopy;
+      this.gamePieces = this.ur.piecesCopy;
       function piecesToObjects(array, playerIndex) {
         var playerPieces = array[playerIndex].filter(i => i > 0 && i < 15);
         var arrayCopy = []; // Convert Int32Array to Object array

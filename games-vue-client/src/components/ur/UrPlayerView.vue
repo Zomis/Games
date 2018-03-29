@@ -25,7 +25,7 @@
 <script>
 export default {
   name: "UrPlayerView",
-  props: ["game", "playerIndex", "onPlaceNew"],
+  props: ["game", "playerIndex", "onPlaceNew", "gamePieces"],
   data() {
     return {};
   },
@@ -36,11 +36,10 @@ export default {
   },
   computed: {
     remaining: function() {
-      return this.game.piecesCopy[this.playerIndex].filter(i => i === 0).length;
+      return this.gamePieces[this.playerIndex].filter(i => i === 0).length;
     },
     out: function() {
-      return this.game.piecesCopy[this.playerIndex].filter(i => i === 15)
-        .length;
+      return this.gamePieces[this.playerIndex].filter(i => i === 15).length;
     },
     canPlaceNew: function() {
       return (
