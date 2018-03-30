@@ -3,7 +3,9 @@
     <input v-model="name" placeholder="your name" />
     <div class="gametypes">
       <span>Waiting for game: {{ waitingGame }}</span>
-      <div v-for="game in games"><button :enabled="!waiting" @click="matchMake(game)">{{ game }}</button></div>
+      <div v-for="game in games">
+        <button :enabled="!waiting" @click="matchMake(game)">{{ game }}</button>
+      </div>
     </div>
     <button @click="requestGameList()">Request game list</button>
     <div class="gamelist">
@@ -13,6 +15,9 @@
     </div>
 
     <button @click="createAI()">Create Bot</button>
+
+    <p>If you want to play Royal game of UR against an AI, click "UR" and then click "Create Bot"</p>
+    <p>You can observe existing games by clicking "Request game list" and then click on the game you want to observe.</p>
   </div>
 </template>
 
