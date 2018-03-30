@@ -43,7 +43,7 @@
        :onPlaceNew="placeNew" />
       <div class="ur-roll">
         <span>{{ ur.roll }}</span>
-        <button :disabled="ur.roll >= 0 || ur.currentPlayer != yourIndex" @click="action('roll', -1)" class="roll">Roll</button>
+        <button :disabled="ur.roll >= 0 || !canControlCurrentPlayer" @click="action('roll', -1)" class="roll">Roll</button>
       </div>
     </div>
   </div>
@@ -107,11 +107,29 @@ export default {
   },
   methods: {
     action: function(name, data) {
-      let json = `v1:{ "game": "UR", "gameId": "${
-        this.gameId
-      }", "type": "move", "moveType": "${name}", "move": ${data} }`;
-      Socket.send(json);
-        this.playerPieces = this.calcPlayerPieces();
+      if (Socket.isConnected()) {
+        let json = `v1:{ "game": "UR", "gameId": "${
+          this.gameId
+        }", "type": "move", "moveType": "${name}", "move": ${data} }`;
+        Socket.send(json);
+      } else {
+        console.log(this.ur.toString());
+        if (name === "roll") {
+          this.ur.doRoll();
+        } else {
+          console.log(
+            "move: " + name + " = " + data + " curr " + this.ur.currentPlayer
+          );
+          var moveResult = this.ur.move_qt1dr2$(
+            this.ur.currentPlayer,
+            data,
+            this.ur.roll
+          );
+          console.log("result: " + moveResult);
+          this.playerPieces = this.calcPlayerPieces();
+        }
+        console.log(this.ur.toString());
+      }
     },
     placeNew: function(playerIndex) {
       if (this.canPlaceNew) {
@@ -188,9 +206,12 @@ export default {
     }
   },
   computed: {
+    canControlCurrentPlayer: function() {
+      return this.ur.currentPlayer == this.yourIndex || !Socket.isConnected();
+    },
     canPlaceNew: function() {
       return (
-        this.ur.currentPlayer == this.yourIndex &&
+        this.canControlCurrentPlayer &&
         this.ur.canMove_qt1dr2$(this.ur.currentPlayer, 0, this.ur.roll)
       );
     }

@@ -16,7 +16,7 @@ const serverOptions = [
     name: "zomis"
   },
   {
-    url: "ws://127.0.0.1:8081",
+    url: "ws://127.0.0.1:42637",
     name: "localhost-development"
   }
 ];
