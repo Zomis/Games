@@ -16,6 +16,9 @@ pipeline {
             steps {
                 sh 'chmod +x gradlew'
                 sh './gradlew clean test :games-server:assemble :games-js:assemble'
+                dir('games-vue-client') {
+                    sh 'npm run build'
+                }
             }
         }
 
@@ -28,7 +31,7 @@ pipeline {
 
                     sh 'docker build . -t gamesserver2'
                     sh 'docker run -d --rm --name games_server -p 192.168.0.110:8082:8081 -v /home/zomis/jenkins/gamesserver2:/data/logs -v /etc/localtime:/etc/localtime:ro -w /data/logs gamesserver2'
-                    sh 'docker run -d --rm --name games_client -v $(pwd):/src -w /src/games-vue-client -p 42637:42637 node:6 bash -c "npm install && npm run dev"'
+                    sh 'docker run -d --rm --name games_client -v $(pwd)/games-vue-client/dist:/usr/share/nginx/html:ro -p 42637:80 nginx'
                 }
             }
         }
