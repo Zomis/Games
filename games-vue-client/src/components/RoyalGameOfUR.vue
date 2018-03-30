@@ -7,6 +7,8 @@
     <div class="board-parent">
       <UrPlayerView v-bind:game="ur" v-bind:playerIndex="0"
         :gamePieces="gamePieces"
+        :onPlaceNewHighlight="onPlaceNewHighlight"
+        :mouseleave="mouseleave"
         :onPlaceNew="placeNew" />
 
       <div class="ur-board">
@@ -45,6 +47,8 @@
       </div>
       <UrPlayerView v-bind:game="ur" v-bind:playerIndex="1"
        :gamePieces="gamePieces"
+       :onPlaceNewHighlight="onPlaceNewHighlight"
+       :mouseleave="mouseleave"
        :onPlaceNew="placeNew" />
       <UrRoll :roll="lastRoll" :usable="ur.roll < 0 && canControlCurrentPlayer" :onDoRoll="onDoRoll" />
     </div>
@@ -197,6 +201,12 @@ export default {
     },
     onDoRoll() {
       this.action("roll", -1);
+    },
+    onPlaceNewHighlight(playerIndex) {
+      if (playerIndex !== this.ur.currentPlayer) {
+        return;
+      }
+      this.highlighted = { player: playerIndex, position: 0 };
     },
     mouseover(piece) {
       if (piece.player !== this.ur.currentPlayer) {

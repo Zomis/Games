@@ -5,6 +5,7 @@
       <div class="pieces-container">
         <div v-for="n in remaining" class="piece-small pointer"
           :class="{ ['piece-' + playerIndex]: true, moveable: canPlaceNew && n == remaining }"
+          @mouseover="onPlaceNewHighlight(playerIndex)" @mouseleave="mouseleave()"
           style="position: absolute; top: 6px;"
           :style="{ left: (n-1)*12 + 'px' }" v-on:click="placeNew()">
         </div>
@@ -28,7 +29,14 @@
 <script>
 export default {
   name: "UrPlayerView",
-  props: ["game", "playerIndex", "onPlaceNew", "gamePieces"],
+  props: [
+    "game",
+    "playerIndex",
+    "onPlaceNew",
+    "gamePieces",
+    "onPlaceNewHighlight",
+    "mouseleave"
+  ],
   data() {
     return {};
   },
