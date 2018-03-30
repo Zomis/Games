@@ -17,8 +17,6 @@
 </template>
 
 <script>
-let games = require("../../../games-js/web/games-js");
-
 import Socket from "../socket";
 export default {
   name: "StartScreen",

@@ -1,29 +1,34 @@
 import Vue from "vue";
 
-const socket = new WebSocket("ws://127.0.0.1:8081");
-
 const emitter = new Vue({
+  data() {
+    return { socket: null };
+  },
   methods: {
+    connect(url) {
+      console.log("Connecting to " + url);
+      this.socket = new WebSocket(url);
+      this.socket.onopen = e => {
+        this.$emit("connected", e);
+      };
+      this.socket.onmessage = msg => {
+        console.log(" IN: " + msg.data);
+        this.$emit("message", msg.data);
+
+        let obj = JSON.parse(msg.data);
+        this.$emit(`type:${obj.type}`, obj);
+      };
+      this.socket.onerror = err => {
+        this.$emit("error", err);
+      };
+    },
     send(message) {
-      if (1 === socket.readyState) {
+      if (1 === this.socket.readyState) {
         console.log("OUT: " + message);
-        socket.send(message);
+        this.socket.send(message);
       }
     }
   }
 });
-
-socket.onopen = function(event) {};
-
-socket.onmessage = function(msg) {
-  console.log(" IN: " + msg.data);
-  emitter.$emit("message", msg.data);
-
-  let obj = JSON.parse(msg.data);
-  emitter.$emit(`type:${obj.type}`, obj);
-};
-socket.onerror = function(err) {
-  emitter.$emit("error", err);
-};
 
 export default emitter;
