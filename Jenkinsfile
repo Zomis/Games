@@ -15,8 +15,7 @@ pipeline {
         stage('Build') {
             steps {
                 sh 'chmod +x gradlew'
-                sh './gradlew test :games-server:assemble'
-                // Don't clean to hopefully only build Docker-file if changes are made.
+                sh './gradlew clean test :games-server:assemble'
             }
         }
 
