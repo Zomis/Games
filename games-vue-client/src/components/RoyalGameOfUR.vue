@@ -64,6 +64,7 @@ import UrFlower from "./ur/UrFlower";
 
 var games = require("../../../games-js/web/games-js");
 if (typeof games["games-js"] !== "undefined") {
+  // This is needed when doing a production build, but is not used for `npm run dev` locally.
   games = games["games-js"];
 }
 let urgame = new games.net.zomis.games.ur.RoyalGameOfUr_init();
