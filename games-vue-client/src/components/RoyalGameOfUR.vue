@@ -41,9 +41,9 @@
       <UrPlayerView v-bind:game="ur" v-bind:playerIndex="1"
        :gamePieces="gamePieces"
        :onPlaceNew="placeNew" />
+      <UrRoll :roll="lastRoll" :usable="ur.roll < 0 && canControlCurrentPlayer" :onDoRoll="onDoRoll" />
       <div class="ur-roll">
         <span>{{ ur.roll }}</span>
-        <button :disabled="ur.roll >= 0 || !canControlCurrentPlayer" @click="action('roll', -1)" class="roll">Roll</button>
       </div>
     </div>
   </div>
@@ -53,6 +53,7 @@
 import Socket from "../socket";
 import UrPlayerView from "./ur/UrPlayerView";
 import UrPiece from "./ur/UrPiece";
+import UrRoll from "./ur/UrRoll";
 import UrFlower from "./ur/UrFlower";
 
 var games = require("../../../games-js/web/games-js");
@@ -62,17 +63,12 @@ if (typeof games["games-js"] !== "undefined") {
 let urgame = new games.net.zomis.games.ur.RoyalGameOfUr_init();
 console.log(urgame.toString());
 
-//  ur.doRoll();
-//  if (ur.isMoveTime) {
-//    var player = ur.currentPlayer;
-//    var roll = ur.roll;
-//      if (ur.move_qt1dr2$(ur.currentPlayer, m, roll)) {
-
 export default {
   name: "RoyalGameOfUR",
   props: ["yourIndex", "game", "gameId"],
   data() {
     return {
+      lastRoll: 0,
       gamePieces: [],
       playerPieces: [],
       lastMove: 0,
@@ -102,6 +98,7 @@ export default {
   },
   components: {
     UrPlayerView,
+    UrRoll,
     UrFlower,
     UrPiece
   },
@@ -116,6 +113,7 @@ export default {
         console.log(this.ur.toString());
         if (name === "roll") {
           this.ur.doRoll();
+          this.rollUpdate();
         } else {
           console.log(
             "move: " + name + " = " + data + " curr " + this.ur.currentPlayer
@@ -156,10 +154,17 @@ export default {
       console.log(`MessageState: ${e.roll}`);
       if (typeof e.roll !== "undefined") {
         this.ur.doRoll_za3lpa$(e.roll);
+        this.rollUpdate();
       }
     },
     messageIllegal(e) {
       console.log("IllegalMove: " + JSON.stringify(e));
+    },
+    rollUpdate() {
+      this.lastRoll = this.ur.roll;
+    },
+    onDoRoll() {
+      this.action("roll", -1);
     },
     calcPlayerPieces() {
       let pieces = this.ur.piecesCopy;
