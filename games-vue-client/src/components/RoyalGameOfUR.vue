@@ -171,6 +171,12 @@ export default {
       }
     },
     onClick: function(piece) {
+      if (piece.player !== this.ur.currentPlayer) {
+        return;
+      }
+      if (!this.ur.isMoveTime) {
+        return;
+      }
       console.log("OnClick in URView: " + piece.x + ", " + piece.y);
       this.action("move", piece.position);
     },
