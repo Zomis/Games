@@ -25,9 +25,16 @@
         </div>
 
         <div class="ur-pieces-player">
+          <transition name="fade">
+            <UrPiece v-if="destination !== null" :piece="destination" class="piece highlighted"
+            :mouseover="doNothing" :mouseleave="doNothing"
+            :class="{['piece-' + destination.player]: true}">
+            </UrPiece>
+          </transition>
           <UrPiece v-for="piece in playerPieces"
             :key="piece.key"
             class="piece"
+            :mouseover="mouseover" :mouseleave="mouseleave"
             :class="{['piece-' + piece.player]: true, 'moveable':
               ur.isMoveTime && piece.player == ur.currentPlayer &&
               ur.canMove_qt1dr2$(ur.currentPlayer, piece.position, ur.roll)}"
@@ -58,11 +65,40 @@ if (typeof games["games-js"] !== "undefined") {
 let urgame = new games.net.zomis.games.ur.RoyalGameOfUr_init();
 console.log(urgame.toString());
 
+function piecesToObjects(array, playerIndex) {
+  var playerPieces = array[playerIndex].filter(i => i > 0 && i < 15);
+  var arrayCopy = []; // Convert Int32Array to Object array
+  playerPieces.forEach(it => arrayCopy.push(it));
+
+  function mapping(position) {
+    var y = playerIndex == 0 ? 0 : 2;
+    if (position > 4 && position < 13) {
+      y = 1;
+    }
+    var x =
+      y == 1
+        ? position - 5
+        : position <= 4 ? 4 - position : 4 + 8 + 8 - position;
+    return {
+      x: x,
+      y: y,
+      player: playerIndex,
+      key: playerIndex + "_" + position,
+      position: position
+    };
+  }
+  for (var i = 0; i < arrayCopy.length; i++) {
+    arrayCopy[i] = mapping(arrayCopy[i]);
+  }
+  return arrayCopy;
+}
+
 export default {
   name: "RoyalGameOfUR",
   props: ["yourIndex", "game", "gameId"],
   data() {
     return {
+      highlighted: null,
       lastRoll: 0,
       gamePieces: [],
       playerPieces: [],
@@ -98,6 +134,7 @@ export default {
     UrPiece
   },
   methods: {
+    doNothing: function() {},
     action: function(name, data) {
       if (Socket.isConnected()) {
         let json = `v1:{ "game": "UR", "gameId": "${
@@ -161,37 +198,18 @@ export default {
     onDoRoll() {
       this.action("roll", -1);
     },
+    mouseover(piece) {
+      if (piece.player !== this.ur.currentPlayer) {
+        return;
+      }
+      this.highlighted = piece;
+    },
+    mouseleave() {
+      this.highlighted = null;
+    },
     calcPlayerPieces() {
       let pieces = this.ur.piecesCopy;
       this.gamePieces = this.ur.piecesCopy;
-      function piecesToObjects(array, playerIndex) {
-        var playerPieces = array[playerIndex].filter(i => i > 0 && i < 15);
-        var arrayCopy = []; // Convert Int32Array to Object array
-        playerPieces.forEach(it => arrayCopy.push(it));
-
-        function mapping(position) {
-          var y = playerIndex == 0 ? 0 : 2;
-          if (position > 4 && position < 13) {
-            y = 1;
-          }
-          var x =
-            y == 1
-              ? position - 5
-              : position <= 4 ? 4 - position : 4 + 8 + 8 - position;
-          return {
-            x: x,
-            y: y,
-            player: playerIndex,
-            key: playerIndex + "_" + position,
-            position: position
-          };
-        }
-        for (var i = 0; i < arrayCopy.length; i++) {
-          var typeofm = typeof arrayCopy[i];
-          arrayCopy[i] = mapping(arrayCopy[i]);
-        }
-        return arrayCopy;
-      }
       let obj0 = piecesToObjects(pieces, 0);
       let obj1 = piecesToObjects(pieces, 1);
       let result = [];
@@ -208,6 +226,29 @@ export default {
   computed: {
     canControlCurrentPlayer: function() {
       return this.ur.currentPlayer == this.yourIndex || !Socket.isConnected();
+    },
+    destination: function() {
+      if (this.highlighted === null) {
+        return null;
+      }
+      if (!this.ur.isMoveTime) {
+        return null;
+      }
+      if (
+        !this.ur.canMove_qt1dr2$(
+          this.ur.currentPlayer,
+          this.highlighted.position,
+          this.ur.roll
+        )
+      ) {
+        return null;
+      }
+      let resultPosition = this.highlighted.position + this.ur.roll;
+      let result = piecesToObjects(
+        [[resultPosition], [resultPosition]],
+        this.highlighted.player
+      );
+      return result[0];
     },
     canPlaceNew: function() {
       return (
@@ -312,6 +353,11 @@ export default {
   flex-flow: row;
 }
 
+.piece.highlighted {
+  opacity: 0.5;
+  box-shadow: 0 0 10px 8px black;
+}
+
 .side-out {
   flex-flow: row-reverse;
 }
@@ -328,6 +374,15 @@ export default {
   to {
     box-shadow: 0 0 10px 10px #aef4af;
   }
+}
+
+
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity .5s;
+}
+.fade-enter, .fade-leave-to {
+  opacity: 0;
 }
 
 </style>
