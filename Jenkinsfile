@@ -15,21 +15,21 @@ pipeline {
         stage('Build') {
             steps {
                 sh 'chmod +x gradlew'
-                sh './gradlew clean test :games-server:assemble'
+                sh './gradlew test :games-server:assemble'
+                // Don't clean to hopefully only build Docker-file if changes are made.
             }
         }
 
         stage('Docker Image') {
             steps {
                 script {
-                    def ps = sh(script: 'docker ps -q --filter ancestor=gamesserver2', returnStdout: true)
-                    echo "Result from docker ps: '$ps'"
-                    if (ps && !ps.isEmpty()) {
-                        sh "docker stop $ps"
-                        sh "docker rm -f $ps"
-                    }
+                    // Stop running containers
+                    sh 'docker ps -q --filter name="games_server" | xargs -r docker stop'
+                    sh 'docker ps -q --filter name="games_client" | xargs -r docker stop'
+
                     sh 'docker build . -t gamesserver2'
-                    sh 'docker run -d -p 192.168.0.110:8082:8081 -v /home/zomis/jenkins/gamesserver2:/data/logs -v /etc/localtime:/etc/localtime:ro -w /data/logs gamesserver2'
+                    sh 'docker run -d --rm --name games_server -p 192.168.0.110:8082:8081 -v /home/zomis/jenkins/gamesserver2:/data/logs -v /etc/localtime:/etc/localtime:ro -w /data/logs gamesserver2'
+                    sh 'docker run -d --rm --name games_client -v $(pwd):/src -w /src/games-vue-client -p 42637:42637 node:6 bash -c "npm install && npm run dev"'
                 }
             }
         }
