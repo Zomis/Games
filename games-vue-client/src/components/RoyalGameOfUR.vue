@@ -146,7 +146,9 @@ export default {
         }", "type": "move", "moveType": "${name}", "move": ${data} }`;
         Socket.send(json);
       } else {
-        console.log(this.ur.toString());
+        console.log(
+          "Before Action: " + name + ":" + data + " - " + this.ur.toString()
+        );
         if (name === "roll") {
           let rollResult = this.ur.doRoll();
           this.rollUpdate(rollResult);
@@ -191,6 +193,7 @@ export default {
       }
       this.playerPieces = this.calcPlayerPieces();
       // A move has been done - check if it is my turn.
+      console.log("After Move: " + this.ur.toString());
     },
     messageState(e) {
       console.log(`MessageState: ${e.roll}`);
@@ -198,6 +201,7 @@ export default {
         this.ur.doRoll_za3lpa$(e.roll);
         this.rollUpdate(e.roll);
       }
+      console.log("AfterState: " + this.ur.toString());
     },
     messageIllegal(e) {
       console.log("IllegalMove: " + JSON.stringify(e));
