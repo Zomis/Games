@@ -15,7 +15,7 @@ pipeline {
         stage('Build') {
             steps {
                 sh 'chmod +x gradlew'
-                sh './gradlew clean test :games-server:assemble'
+                sh './gradlew clean test :games-server:assemble :games-js:assemble'
             }
         }
 
