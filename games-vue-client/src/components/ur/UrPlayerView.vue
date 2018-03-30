@@ -10,6 +10,9 @@
         </div>
       </div>
     </div>
+    <transition name="fade">
+      <div class="player-active-indicator" v-if="game.currentPlayer == playerIndex"></div>
+    </transition>
     <div class="side side-out">
       <div class="number">{{ out }}</div>
       <div class="pieces-container">
@@ -52,6 +55,20 @@ export default {
 };
 </script>
 <style scoped>
+.player-active-indicator {
+  background: black;
+  border-radius: 100%;
+  width: 20px;
+  height: 20px;
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity .5s;
+}
+.fade-enter, .fade-leave-to {
+  opacity: 0;
+}
+
 .number {
   margin: 2px;
   font-weight: bold;

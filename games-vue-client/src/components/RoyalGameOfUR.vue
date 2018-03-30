@@ -1,9 +1,7 @@
 <template>
   <div>
-    <div>{{ game }} : {{ gameId }} Current player {{ ur.currentPlayer }} your index {{ yourIndex }}</div>
+    <h1>{{ game }} : {{ gameId }}</h1>
     <div>
-      <button :disabled="!canPlaceNew" @click="action('move', 0)" class="placeNew">Place new</button>
-
       <div>{{ gameOverMessage }}</div>
     </div>
     <div class="board-parent">
@@ -42,9 +40,6 @@
        :gamePieces="gamePieces"
        :onPlaceNew="placeNew" />
       <UrRoll :roll="lastRoll" :usable="ur.roll < 0 && canControlCurrentPlayer" :onDoRoll="onDoRoll" />
-      <div class="ur-roll">
-        <span>{{ ur.roll }}</span>
-      </div>
     </div>
   </div>
 </template>
@@ -309,6 +304,7 @@ export default {
   display: flex;
   flex-flow: row;
   justify-content: space-between;
+  align-items: center;
 }
 
 .side {

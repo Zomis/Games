@@ -1,12 +1,11 @@
 <template>
   <div class="ur-roll">
-    <div class="ur-dice">
+    <div class="ur-dice" @click="onclick()" :class="{ moveable: usable }">
       <div v-for="i in 4" class="ur-die">
         <div v-if="rolls[i - 1]" class="ur-die-filled"></div>
       </div>
     </div>
     <span>{{ roll }}</span>
-    <button :disabled="!usable" @click="onclick()">Roll</button>
   </div>
 
 </template>
@@ -64,10 +63,15 @@ export default {
   margin-top: 10px;
 }
 
+.ur-roll span {
+  font-size: 2em;
+  font-weight: bold;
+}
+
 .ur-dice {
   width: 320px;
   height: 64px;
-  margin: auto;
+  margin: 5px auto 5px auto;
   display: flex;
   justify-content: space-between;
 }
