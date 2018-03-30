@@ -55,7 +55,10 @@ import UrPlayerView from "./ur/UrPlayerView";
 import UrPiece from "./ur/UrPiece";
 import UrFlower from "./ur/UrFlower";
 
-let games = require("../../../games-js/web/games-js");
+var games = require("../../../games-js/web/games-js");
+if (typeof games["games-js"] !== "undefined") {
+  games = games["games-js"];
+}
 let urgame = new games.net.zomis.games.ur.RoyalGameOfUr_init();
 console.log(urgame.toString());
 
