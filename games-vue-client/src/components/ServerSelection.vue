@@ -4,6 +4,10 @@
       <option v-for="server in serverOptions" :value="server.url">{{ server.name }}</option>
     </select>
     <button @click="connect()">Connect</button>
+    <p>The server "zomis" should be up and running always.<br />
+      If you want to start a local server, <a href="https://github.com/Zomis/Server2">clone my project on GitHub</a>.<br />
+      You can also <router-link :to="'/games/UR/1/'">play Royal Game of UR without connecting to a server</router-link>
+    </p>
   </div>
 </template>
 
