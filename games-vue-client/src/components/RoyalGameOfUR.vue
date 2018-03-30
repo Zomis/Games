@@ -112,8 +112,8 @@ export default {
       } else {
         console.log(this.ur.toString());
         if (name === "roll") {
-          this.ur.doRoll();
-          this.rollUpdate();
+          let rollResult = this.ur.doRoll();
+          this.rollUpdate(rollResult);
         } else {
           console.log(
             "move: " + name + " = " + data + " curr " + this.ur.currentPlayer
@@ -154,14 +154,14 @@ export default {
       console.log(`MessageState: ${e.roll}`);
       if (typeof e.roll !== "undefined") {
         this.ur.doRoll_za3lpa$(e.roll);
-        this.rollUpdate();
+        this.rollUpdate(e.roll);
       }
     },
     messageIllegal(e) {
       console.log("IllegalMove: " + JSON.stringify(e));
     },
-    rollUpdate() {
-      this.lastRoll = this.ur.roll;
+    rollUpdate(rollValue) {
+      this.lastRoll = rollValue;
     },
     onDoRoll() {
       this.action("roll", -1);
