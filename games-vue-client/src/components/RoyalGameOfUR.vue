@@ -308,8 +308,6 @@ export default {
 
 .ur-board {
   position: relative;
-  /* width: 50vw; */
-  /* height: 50vw; */
   width: 512px;
   height: 192px;
   min-width: 512px;
@@ -345,9 +343,6 @@ export default {
   z-index: 40;
   width: 100%;
   height: 100%;
-  /* background-color: #ddf9fd; */
-  /* box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.05), inset -2px -2px 0 #665235; */
-  /* box-shadow: 0px 0px 0px 6px rgba(255, 255, 255, 0.05); */
 }
 
 .piece-black {
@@ -391,8 +386,6 @@ export default {
     box-shadow: 0 0 10px 10px #aef4af;
   }
 }
-
-
 
 .fade-enter-active, .fade-leave-active {
   transition: opacity .5s;
