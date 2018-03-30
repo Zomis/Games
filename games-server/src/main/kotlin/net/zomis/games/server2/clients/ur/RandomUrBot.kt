@@ -24,6 +24,7 @@ class RandomUrBot(url: String) {
         loop@while (true) {
 
             if (allowMove && controller.currentPlayer == playerIndex) {
+                Thread.sleep(1200)
                 if (controller.isRollTime()) {
                     sendRoll()
                 } else if (controller.isMoveTime) {
