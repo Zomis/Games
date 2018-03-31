@@ -23,6 +23,9 @@ pipeline {
         }
 
         stage('Docker Image') {
+            when {
+                branch 'master'
+            }
             steps {
                 script {
                     // Stop running containers
