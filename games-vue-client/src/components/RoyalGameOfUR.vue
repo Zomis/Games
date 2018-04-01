@@ -1,9 +1,6 @@
 <template>
   <div>
     <h1>{{ game }} : {{ gameId }}</h1>
-    <div>
-      <div>{{ gameOverMessage }}</div>
-    </div>
     <div class="board-parent">
       <UrPlayerView v-bind:game="ur" v-bind:playerIndex="0"
         :gamePieces="gamePieces"
@@ -54,6 +51,11 @@
        :mouseleave="mouseleave"
        :onPlaceNew="placeNew" />
       <UrRoll :roll="lastRoll" :usable="ur.roll < 0 && canControlCurrentPlayer" :onDoRoll="onDoRoll" />
+    </div>
+    <div class="game-over" v-if="gameOverMessage">
+      <span class="you">YOU</span>
+      <span v-if="gameOverMessage.winner" class="win">WIN</span>
+      <span v-if="!gameOverMessage.winner" class="loss">LOSE</span>
     </div>
   </div>
 </template>
@@ -188,7 +190,9 @@ export default {
     },
     messageEliminated(e) {
       console.log(`Recieved eliminated: ${JSON.stringify(e)}`);
-      this.gameOverMessage = e;
+      if (this.yourIndex == e.player) {
+        this.gameOverMessage = e;
+      }
     },
     messageMove(e) {
       console.log(`Recieved move: ${e.moveType}: ${e.move}`);
@@ -427,5 +431,18 @@ export default {
 .fade-enter,
 .fade-leave-to {
   opacity: 0;
+}
+
+.game-over {
+  margin-top: 20px;
+  font-size: 2em;
+  font-weight: bolder;
+}
+
+.game-over .win {
+  color: green;
+}
+.game-over .loss {
+  color: red;
 }
 </style>
