@@ -8,6 +8,7 @@
       <UrPlayerView v-bind:game="ur" v-bind:playerIndex="0"
         :gamePieces="gamePieces"
         :onPlaceNewHighlight="onPlaceNewHighlight"
+        :class="{ opponent: !canControlPlayer[0] }"
         :mouseleave="mouseleave"
         :onPlaceNew="placeNew" />
 
@@ -39,7 +40,8 @@
             :mouseover="mouseover" :mouseleave="mouseleave"
             :class="{['piece-' + piece.player]: true, 'moveable':
               ur.isMoveTime && piece.player == ur.currentPlayer &&
-              ur.canMove_qt1dr2$(ur.currentPlayer, piece.position, ur.roll)}"
+              ur.canMove_qt1dr2$(ur.currentPlayer, piece.position, ur.roll),
+              opponent: !canControlCurrentPlayer}"
             :piece="piece"
             :onclick="onClick">
           </UrPiece>
@@ -48,6 +50,7 @@
       <UrPlayerView v-bind:game="ur" v-bind:playerIndex="1"
        :gamePieces="gamePieces"
        :onPlaceNewHighlight="onPlaceNewHighlight"
+       :class="{ opponent: !canControlPlayer[1] }"
        :mouseleave="mouseleave"
        :onPlaceNew="placeNew" />
       <UrRoll :roll="lastRoll" :usable="ur.roll < 0 && canControlCurrentPlayer" :onDoRoll="onDoRoll" />
@@ -245,7 +248,16 @@ export default {
     }
   },
   computed: {
+    canControlPlayer: function() {
+      return [
+        this.yourIndex == 0 || !Socket.isConnected(),
+        this.yourIndex == 1 || !Socket.isConnected()
+      ];
+    },
     canControlCurrentPlayer: function() {
+      if (this.ur.isFinished) {
+        return false;
+      }
       return this.ur.currentPlayer == this.yourIndex || !Socket.isConnected();
     },
     destination: function() {
@@ -381,6 +393,21 @@ export default {
 .moveable {
   cursor: pointer;
   animation: glow 1s infinite alternate;
+}
+
+.moveable.opponent,
+.opponent .moveable {
+  cursor: default;
+  animation: glow-opponent 1s infinite alternate;
+}
+
+@keyframes glow-opponent {
+  from {
+    box-shadow: 0 0 10px -10px #545454;
+  }
+  to {
+    box-shadow: 0 0 10px 10px #545454;
+  }
 }
 
 @keyframes glow {
