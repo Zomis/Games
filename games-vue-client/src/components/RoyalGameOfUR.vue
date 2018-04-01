@@ -310,7 +310,7 @@ export default {
 
 .piece-flower {
   opacity: 0.5;
-  background-image: url('../assets/ur/flower.svg');
+  background-image: url("../assets/ur/flower.svg");
   margin: auto;
 }
 
@@ -330,7 +330,7 @@ export default {
   min-width: 512px;
   min-height: 192px;
   overflow: hidden;
-  border: 12px solid #6D5720;
+  border: 12px solid #6d5720;
   border-radius: 12px;
   margin: auto;
 }
@@ -339,8 +339,9 @@ export default {
   z-index: 60;
 }
 
-.ur-pieces-flowers, .ur-pieces-player,
- .ur-pieces-bg {
+.ur-pieces-flowers,
+.ur-pieces-player,
+.ur-pieces-bg {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(3, 1fr);
@@ -419,11 +420,12 @@ export default {
   }
 }
 
-.fade-enter-active, .fade-leave-active {
-  transition: opacity .5s;
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s;
 }
-.fade-enter, .fade-leave-to {
+.fade-enter,
+.fade-leave-to {
   opacity: 0;
 }
-
 </style>
