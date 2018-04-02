@@ -18,7 +18,7 @@ pipeline {
                 sh 'cp /home/zomis/jenkins/server2-secrets.properties games-server/src/main/resources/secrets.properties'
                 sh './gradlew clean test :games-server:assemble :games-js:assemble'
                 dir('games-vue-client') {
-                    sh 'npm run build'
+                    sh 'npm install && npm run build'
                 }
             }
         }
