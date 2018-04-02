@@ -1,5 +1,6 @@
 package net.zomis.games.server2.games
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
 import klogging.KLoggers
@@ -63,6 +64,7 @@ class GameSystem(events: EventSystem) {
     val gameTypes: MutableMap<String, GameType> = mutableMapOf()
 
     init {
+        val objectMapper = ObjectMapper()
         events.addListener(ClientJsonMessage::class, {
             if (it.data.has("game") && it.data.getTextOrDefault("type", "") == "move") {
                 val gameType = it.data.get("game").asText()
@@ -79,8 +81,13 @@ class GameSystem(events: EventSystem) {
         })
 
         events.addListener(GameStartedEvent::class, {it ->
+            val playerNames = it.game.players
+                .asSequence()
+                .map { it.name ?: "(unknown)" }
+                .fold(objectMapper.createArrayNode(), { arr, name -> arr.add(name) })
+
             it.game.players.forEachIndexed { index, client ->
-                client.send(it.game.toJson("GameStarted").put("yourIndex", index))
+                client.send(it.game.toJson("GameStarted").put("yourIndex", index).set("players", playerNames))
             }
         })
         events.addListener(GameEndedEvent::class, { it ->
