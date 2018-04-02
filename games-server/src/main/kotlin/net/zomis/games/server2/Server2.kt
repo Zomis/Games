@@ -1,5 +1,8 @@
 package net.zomis.games.server2
 
+import com.beust.jcommander.JCommander
+import com.beust.jcommander.Parameter
+import com.beust.jcommander.ParameterException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import klogging.KLoggers
@@ -20,15 +23,25 @@ fun JsonNode.getTextOrDefault(fieldName: String, default: String): String {
     return if (this.hasNonNull(fieldName)) this.get(fieldName).asText() else default
 }
 
-class Server2(val port: Int) {
+class ServerConfig {
+
+    @Parameter(names = ["-wsport"], description = "Port number for WebSockets")
+    var wsport: Int = 8081
+
+    @Parameter(names = ["-httpPort"], description = "Port number for REST-server (0 to disable)")
+    var httpPort: Int = 42638
+
+}
+
+class Server2 {
     private val logger = KLoggers.logger(this)
     private val events = EventSystem()
     private val mapper = ObjectMapper()
 
-    fun start(args: Array<String>) {
+    fun start(config: ServerConfig) {
         Runtime.getRuntime().addShutdownHook(Thread({ events.execute(ShutdownEvent()) }))
         events.addListener(StartupEvent::class, {
-            val ws = Server2WS(events, InetSocketAddress(port)).setup()
+            val ws = Server2WS(events, InetSocketAddress(config.wsport)).setup()
             logger.info("WebSocket server listening at ${ws.port}")
         })
 
@@ -47,7 +60,9 @@ class Server2(val port: Int) {
         events.with(ObserverSystem(events, gameSystem)::register)
         events.with(GameListSystem(gameSystem)::register)
         events.with(AuthorizationSystem()::register)
-        events.with(LinAuth()::register)
+        if (config.httpPort != 0) {
+            events.with(LinAuth(config.httpPort)::register)
+        }
         events.execute(StartupEvent())
     }
 
@@ -64,6 +79,15 @@ class Server2(val port: Int) {
 object Main {
     @JvmStatic
     fun main(args: Array<String>) {
-        Server2(8081).start(args)
+        val config = ServerConfig()
+        val cmd = JCommander(config)
+        try {
+            cmd.parse(*args)
+        } catch (e: ParameterException) {
+            cmd.usage()
+            System.exit(1)
+        }
+
+        Server2().start(config)
     }
 }

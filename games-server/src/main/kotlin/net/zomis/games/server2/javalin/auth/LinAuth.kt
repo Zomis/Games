@@ -13,7 +13,7 @@ import java.util.*
 
 data class GithubAuthRequest(val clientId: String, val redirectUri: String, val code: String, val state: String?)
 
-class LinAuth {
+class LinAuth(val port: Int) {
 
     private val logger = LoggerFactory.getLogger(LinAuth::class.java)
 
@@ -32,7 +32,7 @@ class LinAuth {
             .enableDynamicGzip()
             .enableCorsForOrigin("http://localhost:42637", "http://gbg.zomis.net:42637")
             .apply {
-                port(42638)
+                port(port)
                 post("/auth/github") {
                     logger.info(it.toString())
                     val params = it.bodyAsClass(GithubAuthRequest::class.java)

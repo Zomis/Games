@@ -6,6 +6,13 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.net.URI
 
+fun testServerConfig(): ServerConfig {
+    val config = ServerConfig()
+    config.httpPort = 0
+    config.wsport = 8378
+    return config
+}
+
 class ClientTest {
     private val logger = klogging.KLoggers.logger(this)
 
@@ -13,9 +20,9 @@ class ClientTest {
 
     @BeforeEach
     fun startServer() {
-        server = Server2(8378)
+        server = Server2()
         server?.register(ClientMessage::class, { if (it.message == "PING") it.client.sendData("PONG") })
-        server!!.start(arrayOf())
+        server!!.start(testServerConfig())
     }
 
     @AfterEach

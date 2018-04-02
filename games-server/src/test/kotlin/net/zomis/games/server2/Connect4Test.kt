@@ -17,8 +17,8 @@ class Connect4Test {
 
     @BeforeEach
     fun startServer() {
-        server = Server2(8378)
-        server!!.start(arrayOf())
+        server = Server2()
+        server!!.start(testServerConfig())
     }
 
     @AfterEach
