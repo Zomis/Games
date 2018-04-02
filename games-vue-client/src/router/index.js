@@ -11,11 +11,11 @@ import axios from "axios";
 
 Vue.use(VueAxios, axios);
 Vue.use(VueAuthenticate, {
-  baseUrl: "http://localhost:42638", // Your API domain
+  baseUrl: "http://gbg.zomis.net:42638", // Your API domain
   providers: {
     github: {
       clientId: "ec9c694603f523bc6de8",
-      redirectUri: "http://localhost:42637/"
+      redirectUri: "http://gbg.zomis.net:42637/"
     }
   }
 });
