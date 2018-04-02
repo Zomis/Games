@@ -63,9 +63,14 @@ export default {
       Socket.send(`v1:{ "game": "${game}", "type": "matchMake" }`);
     },
     gameStartedMessage: function(e) {
-      this.$router.push(
-        `/games/${e.gameType}/${e.gameId}/?playerIndex=${e.yourIndex}`
-      );
+      this.$router.push({
+        name: "RoyalGameOfUR",
+        params: {
+          players: e.players,
+          gameId: e.gameId,
+          playerIndex: e.yourIndex
+        }
+      });
     }
   },
   created() {

@@ -41,7 +41,8 @@ export default new Router({
       props: route => ({
         game: "UR",
         gameId: route.params.gameId,
-        yourIndex: route.query.playerIndex
+        players: route.params.players,
+        yourIndex: route.params.playerIndex
       })
     }
   ]

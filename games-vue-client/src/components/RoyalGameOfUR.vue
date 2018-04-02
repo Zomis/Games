@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1>{{ game }} : {{ gameId }}</h1>
+    <h1>{{ game }} : {{ gameId }} - {{ playerVs }}</h1>
     <div class="board-parent">
       <UrPlayerView v-bind:game="ur" v-bind:playerIndex="0"
         :gamePieces="gamePieces"
@@ -105,7 +105,7 @@ function piecesToObjects(array, playerIndex) {
 
 export default {
   name: "RoyalGameOfUR",
-  props: ["yourIndex", "game", "gameId"],
+  props: ["yourIndex", "game", "gameId", "players"],
   data() {
     return {
       highlighted: null,
@@ -286,6 +286,12 @@ export default {
         this.highlighted.player
       );
       return result[0];
+    },
+    playerVs: function() {
+      if (typeof this.players !== "object") {
+        return "local game";
+      }
+      return this.players[0] + " vs. " + this.players[1];
     },
     canPlaceNew: function() {
       return (
