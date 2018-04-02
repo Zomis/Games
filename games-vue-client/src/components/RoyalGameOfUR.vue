@@ -281,6 +281,9 @@ export default {
         return null;
       }
       let resultPosition = this.highlighted.position + this.ur.roll;
+      if (resultPosition >= 15) {
+        return null;
+      }
       let result = piecesToObjects(
         [[resultPosition], [resultPosition]],
         this.highlighted.player
