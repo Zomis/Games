@@ -19,7 +19,17 @@ class GameListSystem(private val gameSystem: GameSystem) {
             val list = nodeFactory.arrayNode().addAll(
                 gameSystem.gameTypes.asSequence()
                     .flatMap { it.value.runningGames.values.asSequence() }
-                    .map { nodeFactory.objectNode().put("gameType", it.gameType.type).put("gameId", it.gameId) }
+                    .map {
+                        val playerNames = it.players
+                            .asSequence()
+                            .map { it.name ?: "(unknown)" }
+                            .fold(nodeFactory.arrayNode(), { arr, name -> arr.add(name) })
+
+                        nodeFactory.objectNode()
+                            .put("gameType", it.gameType.type)
+                            .put("gameId", it.gameId)
+                            .set("players", playerNames)
+                    }
                     .toMutableList())
             it.client.send(nodeFactory.objectNode().put("type", "GameList").set("list", list))
         })
