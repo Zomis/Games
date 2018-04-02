@@ -11,6 +11,7 @@ import net.zomis.games.server2.games.ObserverSystem
 import net.zomis.games.server2.games.SimpleMatchMakingSystem
 import net.zomis.games.server2.games.impl.Connect4
 import net.zomis.games.server2.games.impl.RoyalGameOfUrSystem
+import net.zomis.games.server2.javalin.auth.LinAuth
 import net.zomis.games.server2.ws.Server2WS
 import java.net.InetSocketAddress
 import kotlin.reflect.KClass
@@ -45,7 +46,8 @@ class Server2(val port: Int) {
         events.with(ServerConsole()::register)
         events.with(ObserverSystem(events, gameSystem)::register)
         events.with(GameListSystem(gameSystem)::register)
-
+        events.with(AuthorizationSystem()::register)
+        events.with(LinAuth()::register)
         events.execute(StartupEvent())
     }
 

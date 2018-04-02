@@ -5,8 +5,22 @@ import StartScreen from "@/components/StartScreen";
 import ServerSelection from "@/components/ServerSelection";
 import RoyalGameOfUR from "@/components/RoyalGameOfUR";
 
+import VueAxios from "vue-axios";
+import VueAuthenticate from "vue-authenticate";
+import axios from "axios";
+
+Vue.use(VueAxios, axios);
+Vue.use(VueAuthenticate, {
+  baseUrl: "http://localhost:42638", // Your API domain
+  providers: {
+    github: {
+      clientId: "ec9c694603f523bc6de8",
+      redirectUri: "http://localhost:42637/"
+    }
+  }
+});
+
 Vue.use(Router);
-//Vue.use(VueWebsocket, "ws://127.0.0.1:8081");
 
 export default new Router({
   routes: [

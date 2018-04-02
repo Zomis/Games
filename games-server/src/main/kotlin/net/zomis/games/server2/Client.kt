@@ -7,6 +7,8 @@ open class Client {
         val mapper = ObjectMapper()
     }
 
+    var name: String? = null
+
     fun connected() {}
 
     fun disconnected() {}
