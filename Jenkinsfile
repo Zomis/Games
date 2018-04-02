@@ -15,6 +15,7 @@ pipeline {
         stage('Build') {
             steps {
                 sh 'chmod +x gradlew'
+                sh 'cp /home/zomis/jenkins/server2-secrets.properties games-server/src/main/resources/secrets.properties'
                 sh './gradlew clean test :games-server:assemble :games-js:assemble'
                 dir('games-vue-client') {
                     sh 'npm run build'
