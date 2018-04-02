@@ -18,9 +18,6 @@ class LinAuth {
     private val logger = LoggerFactory.getLogger(LinAuth::class.java)
 
     fun startup() {
-        val text = LinAuth::class.java.getResource("test.txt").readText()
-        logger.info(text)
-
         val secretProperties = Properties()
         val resource = this.javaClass.classLoader.getResourceAsStream("secrets.properties")
         logger.info(resource.toString())
