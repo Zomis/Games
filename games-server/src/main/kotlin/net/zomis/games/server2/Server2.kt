@@ -50,6 +50,11 @@ class Server2 {
                 events.execute(ClientJsonMessage(it.client, mapper.readTree(it.message.substring("v1:".length))))
             }
         })
+        events.addListener(ClientMessage::class, {
+            if (it.message.trimStart().startsWith("{")) {
+                events.execute(ClientJsonMessage(it.client, mapper.readTree(it.message)))
+            }
+        })
         val gameSystem = GameSystem(events)
 
         Connect4.init(events)
