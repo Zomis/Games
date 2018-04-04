@@ -22,3 +22,9 @@ This project is a flexible server meant for games. It uses an event-based approa
 One of the goals with this project is to easily create implementations of several turn-based 2d multiplayer games, both logic and GUI.
 
 I am using Kotlin which allows me to also compile game-logic into JavaScript and use it in the games-vue-client project.
+
+## Why the event-based approach?
+
+It allows me to dynamically inject new functionality (hopefully) without disturbing existing functionality.
+This is especially benificial for tests as you can dynamically insert functionality that is useful for automatic tests, and you can choose at what level you want your tests to run at - you can execute any events in your tests and the implementation you specified will handle them.
+It is also possible that in the future I will with the event-based functionality re-use more logic between frontend and backend.
