@@ -9,6 +9,12 @@ OR
     ./gradlew :games-server:assemble
     java -jar games-server/build/libs/games-server-1.0-SNAPSHOT-all.jar
 
+### To run the client locally:
+
+    ./gradlew :games-js:assemble # this compiles Kotlin code to JavaScript
+    cd games-vue-client
+    npm run dev
+
 ## What is this?
 
 This project is a flexible server meant for games. It uses an event-based approach which is possible to use for any other application. The main idea is that it should be easy to add new features or new game implementations without changing in any other existing files, except the "Server2.kt" which is what bootstraps everything.
