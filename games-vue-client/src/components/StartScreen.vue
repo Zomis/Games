@@ -7,6 +7,18 @@
       <button class="username" :class="'user-' + key" v-for="name in users" @click="invite(key, name)">{{ name }}</button>
     </div>
 
+    <div class="invites-sent" v-if="inviteWaiting.inviteId">
+      Waiting for invitation response from
+      <div v-for="username in inviteWaiting.waitingFor">{{ username }}</div>
+    </div>
+    <div class="invites">
+      <div class="invite" v-for="invite in invites">
+        {{ invite.host }} invites you to play {{ invite.game }}
+        <button @click="inviteResponse(invite, true)">Accept</button>
+        <button @click="inviteResponse(invite, false)">Decline</button>
+      </div>
+    </div>
+
     <div class="gametypes">
       <span>Waiting for game: {{ waitingGame }}</span>
       <div v-for="game in games">
@@ -32,6 +44,8 @@ export default {
   name: "StartScreen",
   data() {
     return {
+      invites: [],
+      inviteWaiting: { waitingFor: [], inviteId: null },
       availableUsers: {},
       gameList: [],
       waiting: false,
@@ -59,6 +73,19 @@ export default {
       this.waitingGame = game;
       Socket.send(`v1:{ "game": "${game}", "type": "matchMake" }`);
     },
+    inviteMessage: function(e) {
+      this.invites.push(e);
+    },
+    inviteResponse: function(invite, accepted) {
+      Socket.send(
+        `{ "type": "InviteResponse", "invite": "${
+          invite.inviteId
+        }", "accepted": ${accepted} }`
+      );
+    },
+    inviteWaitingMessage: function(e) {
+      this.inviteWaiting = e;
+    },
     invite: function(gameType, username) {
       Socket.send(
         `{ "type": "Invite", "gameType": "${gameType}", "invite": ["${username}"] }`
@@ -80,6 +107,8 @@ export default {
   },
   created() {
     //    {"type":"Lobby","users":{"UR":["guest-44522"],"Connect4":["guest-44522"]}}
+    Socket.$on("type:InviteWaiting", this.inviteWaitingMessage);
+    Socket.$on("type:Invite", this.inviteMessage);
     Socket.$on("type:Lobby", this.lobbyMessage);
     Socket.$on("type:GameStarted", this.gameStartedMessage);
     Socket.$on("type:GameList", this.gameListMessage);
@@ -94,6 +123,8 @@ export default {
     }
   },
   beforeDestroy() {
+    Socket.$off("type:InviteWaiting", this.inviteWaitingMessage);
+    Socket.$off("type:Invite", this.inviteMessage);
     Socket.$off("type:Lobby", this.lobbyMessage);
     Socket.$off("type:GameStarted", this.gameStartedMessage);
     Socket.$off("type:GameList", this.gameListMessage);
