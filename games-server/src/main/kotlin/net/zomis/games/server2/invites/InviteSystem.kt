@@ -27,7 +27,7 @@ class InviteSystem(private val games: GameSystem) {
             val inviteTargets = it.data.get("invite")
             val inviteId = "${gameType.type}-${it.client.name}-${invites.size}"
             val invite = Invite(it.client, mutableListOf(), gameType, inviteId)
-
+            invites[inviteId] = invite
             val event = InviteEvent(it.client, invite, inviteTargets.map { it.asText() }.map { clientLookup.get(it) }
                 .filterIsInstance<Client>())
             events.execute(event)
