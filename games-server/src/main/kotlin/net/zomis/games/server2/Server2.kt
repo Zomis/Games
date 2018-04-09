@@ -71,7 +71,7 @@ class Server2 {
         events.with(AuthorizationSystem()::register)
         events.with(LobbySystem()::register)
         val clientsByName = ClientsByName()
-        events.with(ClientsByName()::register)
+        events.with(clientsByName::register)
         events.with { InviteSystem(gameSystem).register(it, clientsByName) }
         if (config.httpPort != 0) {
             events.with(LinAuth(config.httpPort)::register)
