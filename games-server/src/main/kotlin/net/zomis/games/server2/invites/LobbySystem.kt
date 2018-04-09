@@ -17,10 +17,9 @@ class LobbySystem {
 
     fun register(events: EventSystem) {
         clientData.register(events)
-        events.addListener(ClientJsonMessage::class, {
-            if (it.data.getTextOrDefault("type", "") != "ClientGames") {
-                return@addListener
-            }
+        events.listen("set client interesting games games", ClientJsonMessage::class, {
+            it.data.getTextOrDefault("type", "") == "ClientGames"
+        }, {
             val gameTypes = (it.data.get("gameTypes") as ArrayNode).map { it.asText() }.toSet()
             val maxGames = it.data.get("maxGames").asInt()
             clientData.setForClient(ClientInterestingGames(gameTypes, maxGames, mutableSetOf()), it.client)
