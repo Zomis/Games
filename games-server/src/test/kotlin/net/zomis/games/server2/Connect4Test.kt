@@ -14,11 +14,12 @@ class Connect4Test {
     private val logger = KLoggers.logger(this)
 
     var server: Server2? = null
+    val config = testServerConfig()
 
     @BeforeEach
     fun startServer() {
         server = Server2()
-        server!!.start(testServerConfig())
+        server!!.start(config)
     }
 
     @AfterEach
@@ -28,10 +29,10 @@ class Connect4Test {
 
     @Test
     fun connect4() {
-        val p1 = WSClient(URI("ws://127.0.0.1:8378"))
+        val p1 = WSClient(URI("ws://127.0.0.1:${config.wsport}"))
         p1.connectBlocking()
 
-        val p2 = WSClient(URI("ws://127.0.0.1:8378"))
+        val p2 = WSClient(URI("ws://127.0.0.1:${config.wsport}"))
         p2.connectBlocking()
 
 //        p1.send("""v1:{ "game": "Connect2", "type": "matchMake" }""")

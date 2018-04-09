@@ -4,25 +4,34 @@ import net.zomis.games.server2.clients.ur.WSClient
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.net.ServerSocket
 import java.net.URI
 
 fun testServerConfig(): ServerConfig {
     val config = ServerConfig()
     config.httpPort = 0
-    config.wsport = 8378
+    config.wsport = randomPort()
     return config
+}
+
+fun randomPort(): Int {
+    val tempServer = ServerSocket(0)
+    val port = tempServer.localPort
+    tempServer.close()
+    return port
 }
 
 class ClientTest {
     private val logger = klogging.KLoggers.logger(this)
 
     var server: Server2? = null
+    val config = testServerConfig()
 
     @BeforeEach
     fun startServer() {
         server = Server2()
         server?.register(ClientMessage::class, { if (it.message == "PING") it.client.sendData("PONG") })
-        server!!.start(testServerConfig())
+        server!!.start(config)
     }
 
     @AfterEach
@@ -32,7 +41,7 @@ class ClientTest {
 
     @Test
     fun conn() {
-        val client = WSClient(URI("ws://127.0.0.1:8378"))
+        val client = WSClient(URI("ws://127.0.0.1:${config.wsport}"))
         client.connectBlocking()
         client.send("PING")
         client.expectExact("PONG")
