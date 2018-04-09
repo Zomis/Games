@@ -14,6 +14,7 @@ import net.zomis.games.server2.games.ObserverSystem
 import net.zomis.games.server2.games.SimpleMatchMakingSystem
 import net.zomis.games.server2.games.impl.Connect4
 import net.zomis.games.server2.games.impl.RoyalGameOfUrSystem
+import net.zomis.games.server2.invites.InviteSystem
 import net.zomis.games.server2.invites.LobbySystem
 import net.zomis.games.server2.javalin.auth.LinAuth
 import net.zomis.games.server2.ws.Server2WS
@@ -23,6 +24,8 @@ import kotlin.reflect.KClass
 fun JsonNode.getTextOrDefault(fieldName: String, default: String): String {
     return if (this.hasNonNull(fieldName)) this.get(fieldName).asText() else default
 }
+
+data class IllegalClientRequest(val client: Client, val error: String)
 
 class ServerConfig {
 
@@ -67,6 +70,9 @@ class Server2 {
         events.with(GameListSystem(gameSystem)::register)
         events.with(AuthorizationSystem()::register)
         events.with(LobbySystem()::register)
+        val clientsByName = ClientsByName()
+        events.with(ClientsByName()::register)
+        events.with { InviteSystem(gameSystem).register(it, clientsByName) }
         if (config.httpPort != 0) {
             events.with(LinAuth(config.httpPort)::register)
         }
