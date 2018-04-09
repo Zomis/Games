@@ -33,7 +33,7 @@ class InviteSystemTest {
         val invite = Invite(host, mutableListOf(), GameType("MyGame"), "inv-1")
         events.execute(InviteEvent(host, invite, listOf(invitee)))
         Assertions.assertEquals("""{"type":"Invite","host":"Host","game":"MyGame","inviteId":"inv-1"}""", invitee.nextMessage())
-        Assertions.assertEquals("""{"type":"InviteWaiting","inviteId":"inv-1"}""", host.nextMessage())
+        Assertions.assertEquals("""{"type":"InviteWaiting","inviteId":"inv-1","waitingFor":["Invited"]}""", host.nextMessage())
 
         expect.event(events to GameStartedEvent::class).condition { true }.after {
             events.execute(InviteResponseEvent(invitee, invite, true))
@@ -48,7 +48,7 @@ class InviteSystemTest {
         val invite = Invite(host, mutableListOf(), GameType("MyGame"), "inv-1")
         events.execute(InviteEvent(host, invite, listOf(invitee)))
         Assertions.assertEquals("""{"type":"Invite","host":"Host","game":"MyGame","inviteId":"inv-1"}""", invitee.nextMessage())
-        Assertions.assertEquals("""{"type":"InviteWaiting","inviteId":"inv-1"}""", host.nextMessage())
+        Assertions.assertEquals("""{"type":"InviteWaiting","inviteId":"inv-1","waitingFor":["Invited"]}""", host.nextMessage())
 
         events.execute(InviteResponseEvent(invitee, invite, false))
         Assertions.assertEquals("""{"type":"InviteResponse","user":"Invited","accepted":false,"inviteId":"inv-1"}""", host.nextMessage())
