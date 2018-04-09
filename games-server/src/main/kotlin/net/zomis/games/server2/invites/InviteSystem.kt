@@ -51,7 +51,7 @@ class InviteSystem(private val games: GameSystem) {
             }
         })
         events.listen("send invite waiting to host", InviteEvent::class, {true}, {
-            it.host.send(mapOf("type" to "InviteWaiting", "inviteId" to it.invite.id))
+            it.host.send(mapOf("type" to "InviteWaiting", "inviteId" to it.invite.id, "waitingFor" to it.targets.map { it.name }.toList()))
         })
         events.listen("send invite response", InviteResponseEvent::class, {true}, {
             it.invite.host.send(mapOf("type" to "InviteResponse", "user" to it.source.name, "accepted" to it.accepted, "inviteId" to it.invite.id))
