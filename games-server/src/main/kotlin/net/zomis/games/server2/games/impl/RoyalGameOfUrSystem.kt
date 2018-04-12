@@ -3,6 +3,7 @@ package net.zomis.games.server2.games.impl
 import com.fasterxml.jackson.databind.node.IntNode
 import klogging.KLoggers
 import net.zomis.core.events.EventSystem
+import net.zomis.games.server2.StartupEvent
 import net.zomis.games.server2.games.*
 import net.zomis.games.ur.RoyalGameOfUr
 
@@ -59,7 +60,9 @@ class RoyalGameOfUrSystem {
                     events.execute(GameEndedEvent(it.game))
                 }
             })
-            events.execute(GameTypeRegisterEvent("UR"))
+            events.listen("register UR", StartupEvent::class, {true}, {
+                events.execute(GameTypeRegisterEvent("UR"))
+            })
         }
     }
 

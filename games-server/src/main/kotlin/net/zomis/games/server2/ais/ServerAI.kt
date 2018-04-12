@@ -1,0 +1,52 @@
+package net.zomis.games.server2.ais
+
+import com.fasterxml.jackson.databind.ObjectMapper
+import net.zomis.core.events.EventSystem
+import net.zomis.games.server2.Client
+import net.zomis.games.server2.ClientConnected
+import net.zomis.games.server2.ClientJsonMessage
+import net.zomis.games.server2.ClientLoginEvent
+import net.zomis.games.server2.games.Game
+import net.zomis.games.server2.games.MoveEvent
+import net.zomis.games.server2.games.PlayerGameMoveRequest
+import net.zomis.games.server2.invites.InviteEvent
+import net.zomis.games.server2.invites.InviteResponseEvent
+
+class ServerAI(val gameType: String, val name: String, val perform: (Game, Int) -> List<PlayerGameMoveRequest>) {
+    fun register(events: EventSystem) {
+        events.listen("ai move $name", MoveEvent::class, {
+            it.game.players.contains(client)
+        }, {
+            // TODO: This will not work if the AI is playing against itself.
+            it.game.players.asSequence().forEachIndexed { index, client ->
+                if (client == this.client) {
+                    val aiMoves = perform.invoke(it.game, index)
+                    aiMoves.forEach {
+                        Thread.sleep(1000)
+                        events.execute(it)
+                    }
+                }
+            }
+        })
+        events.listen("ServerAI accept invite $name", InviteEvent::class, {
+            it.targets.contains(client)
+        }, {
+            events.execute(InviteResponseEvent(client, it.invite, true))
+        })
+
+        events.execute(ClientConnected(client))
+        client.name = name
+        events.execute(ClientLoginEvent(client, name, "server-ai"))
+        val mapper = ObjectMapper()
+        val interestingGames = mapper.readTree(mapper.writeValueAsString(mapOf("type" to "ClientGames",
+            "gameTypes" to listOf("UR"), "maxGames" to 100
+        )))
+        events.execute(ClientJsonMessage(client, interestingGames))
+    }
+
+    val client = Client()
+
+
+
+
+}

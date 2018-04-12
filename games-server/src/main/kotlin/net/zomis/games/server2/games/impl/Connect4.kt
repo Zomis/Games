@@ -3,6 +3,7 @@ package net.zomis.games.server2.games.impl
 import com.fasterxml.jackson.databind.node.IntNode
 import klogging.KLoggers
 import net.zomis.core.events.EventSystem
+import net.zomis.games.server2.StartupEvent
 import net.zomis.games.server2.games.*
 import net.zomis.tttultimate.TTFactories
 import net.zomis.tttultimate.TTPlayer
@@ -57,7 +58,9 @@ class Connect4 {
                     }
                 }
             })
-            events.execute(GameTypeRegisterEvent("Connect4"))
+            events.listen("register Connect4", StartupEvent::class, {true}, {
+                events.execute(GameTypeRegisterEvent("Connect4"))
+            })
         }
     }
 

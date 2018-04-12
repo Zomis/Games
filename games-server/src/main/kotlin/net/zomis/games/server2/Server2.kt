@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import klogging.KLoggers
 import net.zomis.core.events.EventHandler
 import net.zomis.core.events.EventSystem
+import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.games.GameListSystem
 import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.games.ObserverSystem
@@ -69,6 +70,7 @@ class Server2 {
         events.with(ObserverSystem(events, gameSystem)::register)
         events.with(GameListSystem(gameSystem)::register)
         events.with(AuthorizationSystem()::register)
+        events.with(ServerAIs()::register)
         events.with(LobbySystem()::register)
         val clientsByName = ClientsByName()
         events.with(clientsByName::register)
