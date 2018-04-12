@@ -33,8 +33,17 @@ class Server2WS(private val events: EventSystem, address: InetSocketAddress) : W
 
     override fun onMessage(conn: WebSocket?, message: String?) {
         val client = clients[conn!!]
-        logger.info("Message from $client: $message")
-        events.execute(ClientMessage(client!!, message!!))
+        if (client == null) {
+            logger.warn { "Message from null--$conn: $message" }
+            return
+        }
+        try {
+            logger.info("Message from $client: $message")
+            events.execute(ClientMessage(client, message!!))
+        } catch (e: Exception) {
+            logger.warn(e, { "Error handling $message" })
+            events.execute(IllegalClientRequest(client, "Error occurred when processing message"))
+        }
     }
 
     override fun onError(conn: WebSocket?, ex: Exception?) {
@@ -42,7 +51,7 @@ class Server2WS(private val events: EventSystem, address: InetSocketAddress) : W
             logger.error(ex!!, "General error")
             return
         }
-        val client = clients.remove(conn!!)
+        val client = clients.remove(conn)
         val message = ex?.toString() ?: ""
         if (ex == null) {
             logger.warn("Error with unknown message: $client connection $conn")
