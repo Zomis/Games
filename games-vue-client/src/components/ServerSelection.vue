@@ -1,13 +1,12 @@
 <template>
   <div class="server-selection">
     <h2>Choose server</h2>
-    <select v-model="chosenServer">
-      <option v-for="server in serverOptions" :value="server.url">{{ server.name }}</option>
-    </select>
+    <v-select :items="serverOptions" item-text="name" item-value="url" v-model="chosenServer">
+    </v-select>
 
     <h2>Choose authentication type</h2>
-    <button @click="authenticate('github')">Login with Github</button>
-    <button @click="authenticateGuest()">Login as Guest</button>
+    <v-btn color="info" @click="authenticate('github')">Login with Github</v-btn>
+    <v-btn color="info" @click="authenticateGuest()">Login as Guest</v-btn>
 
     <p>The server "zomis" should be up and running always.<br />
       If you want to start a local server, <a href="https://github.com/Zomis/Server2">clone my project on GitHub</a>.<br />
@@ -83,4 +82,8 @@ export default {
 </script>
 
 <style scoped>
+.input-group {
+  width: 30%;
+  margin: auto;
+}
 </style>

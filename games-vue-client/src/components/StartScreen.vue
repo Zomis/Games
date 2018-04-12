@@ -1,31 +1,37 @@
 <template>
   <div class="start-screen">
-    <div class="login-name">Welcome, {{ loginName }}</div>
+    <h1 class="login-name">Welcome, {{ loginName }}</h1>
 
-    <div v-for="(users, key) in availableUsers" class="games">
-      <div class="gametitle">{{ key }}</div>
-      <button class="username" :class="'user-' + key" v-for="name in users" @click="invite(key, name)">{{ name }}</button>
-    </div>
+    <v-card v-for="(users, gameType) in availableUsers" :key="gameType" class="games">
+      <v-toolbar color="cyan" dark>
+        <v-toolbar-title>{{ gameType }}</v-toolbar-title>
+        <v-spacer></v-spacer>
+        <v-btn round :disabled="waiting" @click="matchMake(gameType)">Play anyone</v-btn>
+      </v-toolbar>
+      <v-list two-line>
+        <template v-for="name in users">
+          <v-btn class="username" :class="'user-' + gameType" @click="invite(gameType, name)">{{ name }}</v-btn>
+        </template>
+      </v-list>
+    </v-card>
 
-    <div class="invites-sent" v-if="inviteWaiting.inviteId">
-      Waiting for invitation response from
-      <div v-for="username in inviteWaiting.waitingFor">{{ username }}</div>
-    </div>
-    <div class="invites">
-      <div class="invite" v-for="invite in invites">
-        {{ invite.host }} invites you to play {{ invite.game }}
-        <button @click="inviteResponse(invite, true)">Accept</button>
-        <button @click="inviteResponse(invite, false)">Decline</button>
-      </div>
-    </div>
+    <v-card class="invites-sent" v-if="inviteWaiting.inviteId">
+      Waiting for response from
+      <v-chip v-for="username in inviteWaiting.waitingFor" :key="username">{{ username }}</v-chip>
+    </v-card>
 
-    <div class="gametypes">
-      <span>Waiting for game: {{ waitingGame }}</span>
-      <div v-for="game in games">
-        <button :enabled="!waiting" @click="matchMake(game)">{{ game }}</button>
-      </div>
-      <button @click="createAI()">Create UR Bot</button>
-    </div>
+    <v-card class="invites">
+      <v-list two-line>
+        <template v-for="invite in invites">
+          {{ invite.host }} invites you to play {{ invite.game }}
+          <v-btn color="success" @click="inviteResponse(invite, true)">Accept</v-btn>
+          <v-btn color="error" @click="inviteResponse(invite, false)">Decline</v-btn>
+        </template>
+      </v-list>
+    </v-card>
+
+    <v-btn @click="createAI()">Create UR Bot</v-btn>
+
     <div class="gamelist">
       <button @click="requestGameList()">Request game list</button>
       <div v-for="game in gameList">
@@ -141,5 +147,11 @@ h2 {
 .gametypes {
   margin-top: 24px;
   margin-bottom: 24px;
+}
+
+.games {
+  margin: 32px;
+  width: 25%;
+  margin: 32px auto 32px auto;
 }
 </style>
