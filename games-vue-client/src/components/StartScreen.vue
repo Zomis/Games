@@ -30,8 +30,6 @@
       </v-list>
     </v-card>
 
-    <v-btn @click="createAI()">Create UR Bot</v-btn>
-
     <div class="gamelist">
       <button @click="requestGameList()">Request game list</button>
       <div v-for="game in gameList">
@@ -60,9 +58,6 @@ export default {
     };
   },
   methods: {
-    createAI: function() {
-      Socket.send("VUEJS");
-    },
     observe: function(game) {
       this.$router.push(
         `/games/${game.gameType}/${game.gameId}/?playerIndex=-42`

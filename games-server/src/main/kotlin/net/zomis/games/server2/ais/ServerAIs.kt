@@ -27,6 +27,7 @@ class ServerAIs {
                     .withScorer(gotoFlower, 2.0)
                     .withScorer(riskOfBeingTaken, -0.1)
                     .withScorer(exit))
+            createURAI(events, "#AI_Random", RoyalGameOfUrAIs.scf())
             createURAI(events, "#AI_KnockoutAndFlower", RoyalGameOfUrAIs.scf()
                 .withScorer(knockout, 5.0)
                 .withScorer(gotoFlower, 2.0)

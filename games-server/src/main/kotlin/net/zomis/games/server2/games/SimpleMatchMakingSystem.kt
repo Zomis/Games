@@ -12,15 +12,6 @@ class SimpleMatchMakingSystem(games: GameSystem, events: EventSystem) {
     private val waiting: MutableMap<String, Client> = mutableMapOf()
 
     init {
-        events.addListener(ClientMessage::class, {
-            if (it.message != "VUEJS") {
-                return@addListener
-            }
-            val id = games.gameTypes["UR"]?.runningGames?.size ?: 0
-            logger.info { "Client connected and no UR-bot waiting, creating id $id" }
-            Thread({ RandomUrBot("ws://127.0.0.1:8081").play() }, "ur-bot-$id").start()
-        })
-
         events.addListener(ClientJsonMessage::class, {
             if (it.data.getTextOrDefault("type", "") == "matchMake") {
                 val gameType = it.data.get("game").asText()
