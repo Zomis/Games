@@ -60,6 +60,10 @@
   animation: glow 1s infinite alternate;
 }
 
+.pieces-bg .moveable {
+  animation: glow-inside 1s infinite alternate;
+}
+
 .moveable.opponent,
 .opponent .moveable {
   cursor: default;
@@ -81,6 +85,15 @@
   }
   to {
     box-shadow: 0 0 10px 10px #aef4af;
+  }
+}
+
+@keyframes glow-inside {
+  from {
+    box-shadow: inset 0 0 10px -10px #aef4af;
+  }
+  to {
+    box-shadow: inset 0 0 10px 10px #aef4af;
   }
 }
 
