@@ -1,6 +1,6 @@
 <template>
   <div class="game-ur">
-    <h1>{{ game }} : {{ gameId }} - {{ playerVs }}</h1>
+    <GameHead :game="game" :gameId="gameId" :players="players"></GameHead>
     <div class="board-parent">
       <UrPlayerView v-bind:game="ur" v-bind:playerIndex="0"
         :gamePieces="gamePieces"
@@ -52,11 +52,7 @@
        :onPlaceNew="placeNew" />
       <UrRoll :roll="lastRoll" :usable="ur.roll < 0 && canControlCurrentPlayer" :onDoRoll="onDoRoll" />
     </div>
-    <div class="game-over" v-if="gameOverMessage">
-      <span class="you">YOU</span>
-      <span v-if="gameOverMessage.winner" class="win">WIN</span>
-      <span v-if="!gameOverMessage.winner" class="loss">LOSE</span>
-    </div>
+    <GameResult :yourIndex="yourIndex"></GameResult>
   </div>
 </template>
 
@@ -66,6 +62,8 @@ import UrPlayerView from "./ur/UrPlayerView";
 import UrPiece from "./ur/UrPiece";
 import UrRoll from "./ur/UrRoll";
 import UrFlower from "./ur/UrFlower";
+import GameHead from "./games/common/GameHead";
+import GameResult from "./games/common/GameResult";
 
 var games = require("../../../games-js/web/games-js");
 if (typeof games["games-js"] !== "undefined") {
@@ -113,8 +111,7 @@ export default {
       gamePieces: [],
       playerPieces: [],
       lastMove: 0,
-      ur: urgame,
-      gameOverMessage: null
+      ur: urgame
     };
   },
   created() {
@@ -125,19 +122,19 @@ export default {
         }", "observer": "start" }`
       );
     }
-    Socket.$on("type:PlayerEliminated", this.messageEliminated);
     Socket.$on("type:GameMove", this.messageMove);
     Socket.$on("type:GameState", this.messageState);
     Socket.$on("type:IllegalMove", this.messageIllegal);
     this.playerPieces = this.calcPlayerPieces();
   },
   beforeDestroy() {
-    Socket.$off("type:PlayerEliminated", this.messageEliminated);
     Socket.$off("type:GameMove", this.messageMove);
     Socket.$off("type:GameState", this.messageState);
     Socket.$off("type:IllegalMove", this.messageIllegal);
   },
   components: {
+    GameHead,
+    GameResult,
     UrPlayerView,
     UrRoll,
     UrFlower,
