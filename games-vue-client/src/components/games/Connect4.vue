@@ -122,7 +122,7 @@ export default {
   height: 384px;
 }
 
-.pieces {
+.game-connect4 .pieces {
   grid-template-columns: repeat(7, 1fr);
   grid-template-rows: repeat(6, 1fr);
 }

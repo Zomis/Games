@@ -338,7 +338,7 @@ export default {
   flex-flow: row-reverse;
 }
 
-.pieces {
+.game-ur .pieces {
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(3, 1fr);
 }
