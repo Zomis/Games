@@ -70,8 +70,6 @@ if (typeof games["games-js"] !== "undefined") {
   // This is needed when doing a production build, but is not used for `npm run dev` locally.
   games = games["games-js"];
 }
-let urgame = new games.net.zomis.games.ur.RoyalGameOfUr_init();
-console.log(urgame.toString());
 
 function piecesToObjects(array, playerIndex) {
   var playerPieces = array[playerIndex].filter(i => i > 0 && i < 15);
@@ -111,7 +109,7 @@ export default {
       gamePieces: [],
       playerPieces: [],
       lastMove: 0,
-      ur: urgame
+      ur: new games.net.zomis.games.ur.RoyalGameOfUr_init()
     };
   },
   created() {
