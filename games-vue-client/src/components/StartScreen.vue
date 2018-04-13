@@ -96,8 +96,12 @@ export default {
       this.availableUsers = e.users;
     },
     gameStartedMessage: function(e) {
+      let games = {
+        UR: "RoyalGameOfUR",
+        Connect4: "Connect4"
+      };
       this.$router.push({
-        name: "RoyalGameOfUR",
+        name: games[e.gameType],
         params: {
           players: e.players,
           gameId: e.gameId,
