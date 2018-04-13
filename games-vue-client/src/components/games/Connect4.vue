@@ -5,7 +5,7 @@
       <div class="board connect4-board">
         <div class="pieces pieces-bg">
           <div v-for="idx in 7*6" class="piece piece-bg"
-            :class="{ 'moveable': moveableIndex[idx - 1] }"
+            :class="{ 'moveable': moveableIndex[idx - 1] && movesMade % 2 == yourIndex }"
             @click="onClick({ x: (idx-1) % 7, y: (idx-1) / 7 })">
           </div>
         </div>
@@ -34,6 +34,7 @@ export default {
   props: ["yourIndex", "game", "gameId", "players"],
   data() {
     return {
+      movesMade: 0,
       gamePieces: [],
       gameOverMessage: null
     };
@@ -75,11 +76,10 @@ export default {
     messageMove(e) {
       console.log(`Recieved move: ${e.moveType}: ${e.move}`);
       let calculatedY = 5;
-      console.log(this.gamePieces);
       while (this.gamePieces.find(p => p.y == calculatedY && p.x == e.move)) {
         calculatedY--;
-        console.log("decreasing calculatedY to " + calculatedY);
       }
+      this.movesMade++;
       this.gamePieces.push({ x: e.move, y: calculatedY, player: e.player });
     },
     messageIllegal(e) {
