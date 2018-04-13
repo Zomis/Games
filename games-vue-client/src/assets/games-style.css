@@ -1,0 +1,94 @@
+.piece-bg {
+  background-color: white;
+  border: 1px solid black;
+}
+
+.pieces {
+  display: grid;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.piece-0 {
+  background-color: blue;
+}
+
+.piece-1 {
+  background-color: red;
+}
+
+.player-pieces .piece {
+  z-index: 70;
+  margin: auto;
+  width: 48px;
+  height: 48px;
+}
+
+.board-parent {
+  position: relative;
+}
+
+.board {
+  position: relative;
+  overflow: hidden;
+  border: 12px solid #6d5720;
+  border-radius: 12px;
+  margin: auto;
+}
+
+.piece {
+  background-size: cover;
+  z-index: 40;
+  width: 100%;
+  height: 100%;
+}
+
+.piece-black {
+  background-color: #7f7f7f;
+}
+
+.piece.highlighted {
+  opacity: 0.5;
+  box-shadow: 0 0 10px 8px black;
+}
+
+.moveable {
+  cursor: pointer;
+  animation: glow 1s infinite alternate;
+}
+
+.moveable.opponent,
+.opponent .moveable {
+  cursor: default;
+  animation: glow-opponent 1s infinite alternate;
+}
+
+@keyframes glow-opponent {
+  from {
+    box-shadow: 0 0 10px -10px #545454;
+  }
+  to {
+    box-shadow: 0 0 10px 10px #545454;
+  }
+}
+
+@keyframes glow {
+  from {
+    box-shadow: 0 0 10px -10px #aef4af;
+  }
+  to {
+    box-shadow: 0 0 10px 10px #aef4af;
+  }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s;
+}
+.fade-enter,
+.fade-leave-to {
+  opacity: 0;
+}

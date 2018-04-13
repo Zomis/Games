@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="game-ur">
     <h1>{{ game }} : {{ gameId }} - {{ playerVs }}</h1>
     <div class="board-parent">
       <UrPlayerView v-bind:game="ur" v-bind:playerIndex="0"
@@ -9,14 +9,14 @@
         :mouseleave="mouseleave"
         :onPlaceNew="placeNew" />
 
-      <div class="ur-board">
-        <div class="ur-pieces-bg">
+      <div class="board ur-board">
+        <div class="pieces ur-pieces-bg">
           <div v-for="idx in 20" class="piece piece-bg">
           </div>
           <div class="piece-black" style="grid-area: 1 / 5 / 2 / 7"></div>
           <div class="piece-black" style="grid-area: 3 / 5 / 4 / 7"></div>
         </div>
-        <div class="ur-pieces-flowers">
+        <div class="pieces ur-pieces-flowers">
           <UrFlower :x="0" :y="0" />
           <UrFlower :x="3" :y="1" />
           <UrFlower :x="0" :y="2" />
@@ -24,7 +24,7 @@
           <UrFlower :x="6" :y="2" />
         </div>
 
-        <div class="ur-pieces-player">
+        <div class="pieces player-pieces">
           <transition name="fade">
             <UrPiece v-if="destination !== null" :piece="destination" class="piece highlighted"
             :mouseover="doNothing" :mouseleave="doNothing"
@@ -147,7 +147,7 @@ export default {
     doNothing: function() {},
     action: function(name, data) {
       if (Socket.isConnected()) {
-        let json = `v1:{ "game": "UR", "gameId": "${
+        let json = `{ "game": "${this.game}", "gameId": "${
           this.gameId
         }", "type": "move", "moveType": "${name}", "move": ${data} }`;
         Socket.send(json);
@@ -307,19 +307,7 @@ export default {
 </script>
 
 <style>
-.piece-0 {
-  background-color: blue;
-}
-
-.ur-pieces-player .piece {
-  margin: auto;
-  width: 48px;
-  height: 48px;
-}
-
-.piece-1 {
-  background-color: red;
-}
+@import "../assets/games-style.css";
 
 .piece-flower {
   opacity: 0.5;
@@ -327,57 +315,13 @@ export default {
   margin: auto;
 }
 
-.board-parent {
-  position: relative;
-}
-
-.piece-bg {
-  background-color: white;
-  border: 1px solid black;
-}
-
 .ur-board {
-  position: relative;
   width: 512px;
   height: 192px;
-  min-width: 512px;
-  min-height: 192px;
-  overflow: hidden;
-  border: 12px solid #6d5720;
-  border-radius: 12px;
-  margin: auto;
 }
 
 .ur-pieces-flowers {
   z-index: 60;
-}
-
-.ur-pieces-flowers,
-.ur-pieces-player,
-.ur-pieces-bg {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.ur-pieces-player .piece {
-  z-index: 70;
-}
-
-.piece {
-  background-size: cover;
-  z-index: 40;
-  width: 100%;
-  height: 100%;
-}
-
-.piece-black {
-  background-color: #7f7f7f;
 }
 
 .player-view {
@@ -395,63 +339,12 @@ export default {
   flex-flow: row;
 }
 
-.piece.highlighted {
-  opacity: 0.5;
-  box-shadow: 0 0 10px 8px black;
-}
-
 .side-out {
   flex-flow: row-reverse;
 }
 
-.moveable {
-  cursor: pointer;
-  animation: glow 1s infinite alternate;
-}
-
-.moveable.opponent,
-.opponent .moveable {
-  cursor: default;
-  animation: glow-opponent 1s infinite alternate;
-}
-
-@keyframes glow-opponent {
-  from {
-    box-shadow: 0 0 10px -10px #545454;
-  }
-  to {
-    box-shadow: 0 0 10px 10px #545454;
-  }
-}
-
-@keyframes glow {
-  from {
-    box-shadow: 0 0 10px -10px #aef4af;
-  }
-  to {
-    box-shadow: 0 0 10px 10px #aef4af;
-  }
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.5s;
-}
-.fade-enter,
-.fade-leave-to {
-  opacity: 0;
-}
-
-.game-over {
-  margin-top: 20px;
-  font-size: 2em;
-  font-weight: bolder;
-}
-
-.game-over .win {
-  color: green;
-}
-.game-over .loss {
-  color: red;
+.pieces {
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(3, 1fr);
 }
 </style>
