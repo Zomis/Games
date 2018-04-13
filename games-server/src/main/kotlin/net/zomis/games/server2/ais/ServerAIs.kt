@@ -9,6 +9,7 @@ import net.zomis.games.server2.games.GameTypeRegisterEvent
 import net.zomis.games.server2.games.PlayerGameMoveRequest
 import net.zomis.games.ur.RoyalGameOfUr
 import net.zomis.games.ur.ais.MonteCarloAI
+import net.zomis.tttultimate.games.TTClassicControllerWithGravity
 import java.util.function.ToIntFunction
 
 class ServerAIs {
@@ -33,6 +34,18 @@ class ServerAIs {
                 .withScorer(gotoFlower, 2.0)
             )
             createURAI(events, "#AI_MonteCarlo", MonteCarloAI(1000, ai))
+
+            ServerAI("Connect4", "#AI_C4Random", { game, playerIndex ->
+                val controller = game.obj as TTClassicControllerWithGravity
+                val possibles = (0 until controller.game.sizeX).flatMap {x ->
+                    (0 until controller.game.sizeY).map { y ->
+                        x to y
+                    }
+                }.filter { controller.isAllowedPlay(controller.game.getSub(it.first, it.second)) }
+                val chosen = possibles.shuffled().firstOrNull() ?: return@ServerAI listOf()
+
+                listOf(PlayerGameMoveRequest(game, playerIndex, "move", IntNode(chosen.first)))
+            }).register(events)
         })
     }
 

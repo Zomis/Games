@@ -39,7 +39,7 @@ class ServerAI(val gameType: String, val name: String, val perform: (Game, Int) 
         events.execute(ClientLoginEvent(client, name, "server-ai"))
         val mapper = ObjectMapper()
         val interestingGames = mapper.readTree(mapper.writeValueAsString(mapOf("type" to "ClientGames",
-            "gameTypes" to listOf("UR"), "maxGames" to 100
+            "gameTypes" to listOf(gameType), "maxGames" to 100
         )))
         events.execute(ClientJsonMessage(client, interestingGames))
     }
