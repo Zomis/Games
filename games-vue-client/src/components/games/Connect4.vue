@@ -12,6 +12,7 @@
         <div class="pieces player-pieces">
           <UrPiece v-for="piece in gamePieces"
             :key="piece.key"
+            :mouseover="doNothing" :mouseleave="doNothing"
             class="piece"
             :class="'piece-' + piece.player"
             :piece="piece">
@@ -58,6 +59,7 @@ export default {
     UrPiece
   },
   methods: {
+    doNothing: function() {},
     action: function(name, data) {
       if (Socket.isConnected()) {
         let json = `{ "game": "${this.game}", "gameId": "${
