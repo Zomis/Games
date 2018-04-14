@@ -8,6 +8,7 @@ import net.zomis.games.server2.games.GameType
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 
 class InviteSystemTest {
 
@@ -17,6 +18,8 @@ class InviteSystemTest {
 
     lateinit var games: GameSystem
 
+    @RegisterExtension
+    @JvmField
     val expect: EventsExpect = EventsExpect()
 
     @BeforeEach
@@ -35,9 +38,9 @@ class InviteSystemTest {
         Assertions.assertEquals("""{"type":"Invite","host":"Host","game":"MyGame","inviteId":"inv-1"}""", invitee.nextMessage())
         Assertions.assertEquals("""{"type":"InviteWaiting","inviteId":"inv-1","waitingFor":["Invited"]}""", host.nextMessage())
 
-        expect.event(events to GameStartedEvent::class).condition { true }.after {
-            events.execute(InviteResponseEvent(invitee, invite, true))
-        }
+        expect.event(events to GameStartedEvent::class).condition { true }
+        events.execute(InviteResponseEvent(invitee, invite, true))
+
         Assertions.assertEquals("""{"type":"InviteResponse","user":"Invited","accepted":true,"inviteId":"inv-1"}""", host.nextMessage())
         Assertions.assertEquals("""{"type":"GameStarted","gameType":"MyGame","gameId":"1","yourIndex":0,"players":["Host","Invited"]}""", host.nextMessage())
         Assertions.assertEquals("""{"type":"GameStarted","gameType":"MyGame","gameId":"1","yourIndex":1,"players":["Host","Invited"]}""", invitee.nextMessage())

@@ -9,7 +9,6 @@ import kotlin.reflect.KClass
 
 class EventsExpect : AfterEachCallback {
     override fun afterEach(context: ExtensionContext?) {
-        Assertions.assertEquals(0, 1)
         expectations.forEach { it.checkCondition() }
     }
 
