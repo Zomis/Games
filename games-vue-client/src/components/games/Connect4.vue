@@ -70,7 +70,6 @@ export default {
       }
     },
     onClick: function(piece) {
-      console.log("OnClick in URView: " + piece.x + ", " + piece.y);
       this.action("move", piece.x);
     },
     messageMove(e) {
@@ -92,9 +91,6 @@ export default {
       for (let i = 0; i < 7 * 6; i++) {
         result.push(false);
       }
-      // this.gamePieces.forEach(piece => {
-      // result[piece.x + piece.y * 7] = false;
-      // });
       for (let x = 0; x < 7; x++) {
         for (let y = 5; y >= 0; y--) {
           if (!this.gamePieces.find(e => e.y == y && e.x == x)) {
@@ -104,12 +100,6 @@ export default {
         }
       }
       return result;
-    },
-    canControlCurrentPlayer: function() {
-      if (this.ur.isFinished) {
-        return false;
-      }
-      return this.ur.currentPlayer == this.yourIndex || !Socket.isConnected();
     }
   }
 };
