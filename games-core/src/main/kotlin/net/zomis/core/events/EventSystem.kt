@@ -46,7 +46,7 @@ class EventSystem {
 
     fun <E : Any> listen(description: String, priority: ListenerPriority, clazz: KClass<E>,
          condition: (E) -> Boolean, handler: EventHandler<E>) {
-        logger.info("Add Listener with priority $priority to $clazz: $handler")
+        logger.info("Add Listener \"$description\" with priority $priority to $clazz: $handler")
         val list: ListenerList<E> = listeners.getOrElse(clazz as KClass<Any>, { ListenerList<E>() }) as ListenerList<E>
         list.add(Listener(description, condition, handler))
         listeners[clazz] = list as ListenerList<Any>
