@@ -35,7 +35,7 @@ class ServerConsole {
             val input = scanner.nextLine()
             events.execute(ConsoleEvent(input))
             if (input.equals("exit") || input.equals("stop")) {
-                events.execute(ShutdownEvent())
+                events.execute(ShutdownEvent("console"))
                 break
             }
         }

@@ -45,7 +45,7 @@ class Server2 {
     private val mapper = ObjectMapper()
 
     fun start(config: ServerConfig) {
-        Runtime.getRuntime().addShutdownHook(Thread({ events.execute(ShutdownEvent()) }))
+        Runtime.getRuntime().addShutdownHook(Thread({ events.execute(ShutdownEvent("runtime shutdown hook")) }))
         events.listen("Start WebSocket Server", StartupEvent::class, {true}, {
             val ws = Server2WS(events, InetSocketAddress(config.wsport)).setup()
             logger.info("WebSocket server listening at ${ws.port}")
@@ -78,11 +78,11 @@ class Server2 {
         if (config.httpPort != 0) {
             events.with(LinAuth(config.httpPort)::register)
         }
-        events.execute(StartupEvent())
+        events.execute(StartupEvent(System.currentTimeMillis()))
     }
 
     fun stop() {
-        events.execute(ShutdownEvent())
+        events.execute(ShutdownEvent("stop called"))
     }
 
 }

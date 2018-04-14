@@ -1,4 +1,4 @@
 package net.zomis.games.server2
 
-class StartupEvent
-class ShutdownEvent
+data class StartupEvent(val time: Long)
+data class ShutdownEvent(val reason: String)
