@@ -91,8 +91,8 @@ class GameSystem(events: EventSystem) {
             }
         })
         events.addListener(GameEndedEvent::class, { it ->
-            it.game.broadcast { client ->
-                client.send(it.game.toJson("GameEnded"))
+            it.game.broadcast { _ ->
+                it.game.toJson("GameEnded")
             }
         })
         events.addListener(GameStateEvent::class, { event ->
