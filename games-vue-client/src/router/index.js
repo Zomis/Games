@@ -4,6 +4,7 @@ import StartScreen from "@/components/StartScreen";
 import ServerSelection from "@/components/ServerSelection";
 import RoyalGameOfUR from "@/components/RoyalGameOfUR";
 import Connect4 from "@/components/games/Connect4";
+import UTTT from "@/components/games/UTTT";
 
 import VueAxios from "vue-axios";
 import VueAuthenticate from "vue-authenticate";
@@ -51,6 +52,17 @@ export default new Router({
       component: Connect4,
       props: route => ({
         game: "Connect4",
+        gameId: route.params.gameId,
+        players: route.params.players,
+        yourIndex: route.params.playerIndex
+      })
+    },
+    {
+      path: "/games/UTTT/:gameId/",
+      name: "UTTT",
+      component: UTTT,
+      props: route => ({
+        game: "UTTT",
         gameId: route.params.gameId,
         players: route.params.players,
         yourIndex: route.params.playerIndex

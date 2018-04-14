@@ -54,7 +54,7 @@ export default {
       gameList: [],
       waiting: false,
       waitingGame: null,
-      games: ["Connect4", "UR"]
+      games: ["Connect4", "UR", "UTTT"]
     };
   },
   methods: {
@@ -98,6 +98,7 @@ export default {
     gameStartedMessage: function(e) {
       let games = {
         UR: "RoyalGameOfUR",
+        UTTT: "UTTT",
         Connect4: "Connect4"
       };
       this.$router.push({
@@ -118,7 +119,7 @@ export default {
     Socket.$on("type:GameStarted", this.gameStartedMessage);
     Socket.$on("type:GameList", this.gameListMessage);
     Socket.send(
-      `{ "type": "ClientGames", "gameTypes": ["UR", "Connect4"], "maxGames": 1 }`
+      `{ "type": "ClientGames", "gameTypes": ["UR", "Connect4", "UTTT"], "maxGames": 1 }`
     );
     Socket.send(`{ "type": "ListRequest" }`);
   },
