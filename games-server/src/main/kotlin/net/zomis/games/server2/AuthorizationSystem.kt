@@ -39,22 +39,20 @@ class AuthorizationSystem {
     }
 
     fun register(events: EventSystem) {
-        events.addListener(ClientJsonMessage::class, {
-            if (it.data.getTextOrDefault("type", "") == "Auth") {
-                if (it.data.getTextOrDefault("provider", "") == "github") {
-                    fetchGithubUser(events, it.client, it.data.getTextOrDefault("token", ""))
-                }
-            }
+        events.listen("Github Authentication", ClientJsonMessage::class, {
+            it.data.getTextOrDefault("type", "") == "Auth" &&
+                it.data.getTextOrDefault("provider", "") == "github"
+        }, {
+            fetchGithubUser(events, it.client, it.data.getTextOrDefault("token", ""))
         })
-        events.addListener(ClientJsonMessage::class, {
-            if (it.data.getTextOrDefault("type", "") == "Auth") {
-                if (it.data.getTextOrDefault("provider", "") == "guest") {
-                    fetchGuestUser(events, it.client)
-                }
-            }
+        events.listen("Guest Authentication", ClientJsonMessage::class, {
+            it.data.getTextOrDefault("type", "") == "Auth" &&
+                it.data.getTextOrDefault("provider", "") == "guest"
+        }, {
+            fetchGuestUser(events, it.client)
         })
 
-        events.addListener(ClientLoginEvent::class, {
+        events.listen("Send Client Login", ClientLoginEvent::class, {true}, {
             it.client.send(mapper.createObjectNode().put("type", "Auth").put("name", it.loginName))
         })
     }

@@ -30,7 +30,7 @@ class ClientTest {
     @BeforeEach
     fun startServer() {
         server = Server2()
-        server?.register(ClientMessage::class, { if (it.message == "PING") it.client.sendData("PONG") })
+        server?.events?.listen("PONG", ClientMessage::class, { it.message == "PING" }, { it.client.sendData("PONG") })
         server!!.start(config)
     }
 

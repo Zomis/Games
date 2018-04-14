@@ -11,14 +11,11 @@ class ServerConsole {
     private val logger = KLoggers.logger(this)
 
     fun register(events: EventSystem) {
-        events.addListener(StartupEvent::class, { start(events) })
-        events.addListener(ConsoleEvent::class, { printAllThreads(it) })
+        events.listen("start Server Console", StartupEvent::class, {true}, { start(events) })
+        events.listen("print all stack traces", ConsoleEvent::class, {it.input == "threads"}, { printAllThreads() })
     }
 
-    private fun printAllThreads(event: ConsoleEvent) {
-        if (event.input != "threads") {
-            return
-        }
+    private fun printAllThreads() {
         Thread.getAllStackTraces().forEach {
             val thread = it.key
             val trace = it.value

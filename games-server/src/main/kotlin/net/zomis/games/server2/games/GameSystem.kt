@@ -65,8 +65,9 @@ class GameSystem(events: EventSystem) {
 
     init {
         val objectMapper = ObjectMapper()
-        events.addListener(ClientJsonMessage::class, {
-            if (it.data.has("game") && it.data.getTextOrDefault("type", "") == "move") {
+        events.listen("Trigger PlayerGameMoveRequest", ClientJsonMessage::class, {
+            it.data.has("game") && it.data.getTextOrDefault("type", "") == "move"
+        }, {
                 val gameType = it.data.get("game").asText()
                 val moveType = it.data.getTextOrDefault("moveType", "move")
                 val move = it.data.get("move")
@@ -77,10 +78,9 @@ class GameSystem(events: EventSystem) {
                     val playerIndex = game.players.indexOf(it.client)
                     events.execute(PlayerGameMoveRequest(game, playerIndex, moveType, move))
                 }
-            }
         })
 
-        events.addListener(GameStartedEvent::class, {it ->
+        events.listen("Send GameStarted", GameStartedEvent::class, {true}, {
             val playerNames = it.game.players
                 .asSequence()
                 .map { it.name ?: "(unknown)" }
@@ -90,33 +90,33 @@ class GameSystem(events: EventSystem) {
                 client.send(it.game.toJson("GameStarted").put("yourIndex", index).set("players", playerNames))
             }
         })
-        events.addListener(GameEndedEvent::class, { it ->
+        events.listen("Send GameEnded", GameEndedEvent::class, {true}, {
             it.game.broadcast { _ ->
                 it.game.toJson("GameEnded")
             }
         })
-        events.addListener(GameStateEvent::class, { event ->
+        events.listen("Send GameState", GameStateEvent::class, {true}, { event ->
             event.game.broadcast {
                 event.stateMessage(it)
             }
         })
-        events.addListener(MoveEvent::class, {event ->
+        events.listen("Send Move", MoveEvent::class, {true}, {event ->
             event.game.broadcast {
                 event.moveMessage()
             }
         })
-        events.addListener(PlayerEliminatedEvent::class, {event ->
+        events.listen("Send PlayerEliminated", PlayerEliminatedEvent::class, {true}, {event ->
             event.game.broadcast {
                 event.eliminatedMessage()
             }
         })
-        events.addListener(IllegalMoveEvent::class, {event ->
+        events.listen("Send IllegalMove", IllegalMoveEvent::class, {true}, {event ->
             event.game.players[event.player].send(event.game.toJson("IllegalMove")
                 .put("player", event.player)
                 .put("reason", event.reason)
             )
         })
-        events.addListener(GameTypeRegisterEvent::class, {
+        events.listen("Register GameType", GameTypeRegisterEvent::class, {true}, {
             gameTypes[it.gameType] = GameType(it.gameType)
         })
     }

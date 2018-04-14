@@ -65,7 +65,7 @@ class LinAuth(val port: Int) {
     }
 
     fun register(events: EventSystem) {
-        events.addListener(StartupEvent::class, {startup()})
+        events.listen("start LinAuth", StartupEvent::class, {true}, {startup()})
     }
 
 }

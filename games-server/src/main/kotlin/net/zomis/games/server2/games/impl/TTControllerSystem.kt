@@ -6,7 +6,14 @@ import net.zomis.core.events.EventSystem
 import net.zomis.games.server2.StartupEvent
 import net.zomis.games.server2.clients.ur.getInt
 import net.zomis.games.server2.games.*
+import net.zomis.tttultimate.TTPlayer
 import net.zomis.tttultimate.games.TTController
+
+fun TTPlayer.playerIndex(): Int {
+    if (this == TTPlayer.X) return 0
+    if (this == TTPlayer.O) return 1
+    throw IllegalArgumentException("Current player must be X or O but was $this")
+}
 
 class TTControllerSystem(val gameType: String, private val controller: () -> TTController) {
 

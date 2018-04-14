@@ -71,7 +71,7 @@ class Server2WS(private val events: EventSystem, address: InetSocketAddress) : W
 
     fun setup(): Server2WS {
         this.start()
-        events.addListener(ShutdownEvent::class, {e -> this.stop()})
+        events.listen("Stop WebSocket Server", ShutdownEvent::class, {true}, {e -> this.stop()})
         return this
     }
 

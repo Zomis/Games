@@ -12,21 +12,20 @@ class RoyalGameOfUrSystem {
     companion object {
         private val logger = KLoggers.logger(this)
         fun init(events: EventSystem) {
-            events.addListener(PlayerGameMoveRequest::class, {
-                if (it.game.gameType.type != "UR") {
-                    return@addListener
-                }
+            events.listen("RoyalGameOfUr Move", PlayerGameMoveRequest::class, {
+                it.game.gameType.type == "UR"
+            }, {
                 if (it.game.obj == null) {
                     it.game.obj = RoyalGameOfUr()
                 }
                 val controller = it.game.obj as RoyalGameOfUr
                 if (controller.isFinished) {
                     events.execute(it.illegalMove("Game already won by ${controller.winner}"))
-                    return@addListener
+                    return@listen
                 }
                 if (controller.currentPlayer != it.player) {
                     events.execute(it.illegalMove("Not your turn"))
-                    return@addListener
+                    return@listen
                 }
 
                 val oldPlayer = controller.currentPlayer
@@ -42,7 +41,7 @@ class RoyalGameOfUrSystem {
                         logger.info { "${it.game} Player ${it.player} made move $x for roll $oldRoll" }
                     } else {
                         events.execute(it.illegalMove("Not allowed to play there"))
-                        return@addListener
+                        return@listen
                     }
                     events.execute(MoveEvent(it.game, it.player, "move", x))
                 }

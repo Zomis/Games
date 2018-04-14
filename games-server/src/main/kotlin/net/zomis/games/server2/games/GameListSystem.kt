@@ -12,10 +12,9 @@ class GameListSystem(private val gameSystem: GameSystem) {
     fun register(events: EventSystem) {
         // When receiving { type: "GameList" }
         // then respond with { type: "GameList", game, gameId, <some summary info? - send event?> }
-        events.addListener(ClientJsonMessage::class, {
-            if (it.data.getTextOrDefault("type", "") != "GameList") {
-                return@addListener
-            }
+        events.listen("process GameList request", ClientJsonMessage::class, {
+            it.data.getTextOrDefault("type", "") == "GameList"
+        }, {
             val list = nodeFactory.arrayNode().addAll(
                 gameSystem.gameTypes.asSequence()
                     .flatMap { it.value.runningGames.values.asSequence() }

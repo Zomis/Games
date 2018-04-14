@@ -27,11 +27,11 @@ class LobbySystem {
             // set max number of concurrent games (defaults to 1, -1 = Infinite)
         })
 
-        events.addListener(GameStartedEvent::class, { gameEvent ->
+        events.listen("Lobby mark player as in game", GameStartedEvent::class, {true}, { gameEvent ->
             gameEvent.game.players.map(clientData::get).forEach { it?.currentGames?.add(gameEvent.game) }
         })
 
-        events.addListener(GameEndedEvent::class, { gameEvent ->
+        events.listen("Lobby remove player from game", GameEndedEvent::class, {true}, { gameEvent ->
             gameEvent.game.players.map(clientData::get).forEach { it?.currentGames?.remove(gameEvent.game) }
         })
 

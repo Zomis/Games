@@ -56,10 +56,6 @@ class EventSystem {
         return listen(description, ListenerPriority.NORMAL, clazz, condition, handler)
     }
 
-    fun <E : Any> addListener(clazz: KClass<E>, handler: EventHandler<E>) {
-        return listen(handler.toString(), ListenerPriority.NORMAL, clazz, {true}, handler)
-    }
-
     fun <E : Any> execute(event: E) {
         logger.info("Execute: $event")
         val kclass = event::class as KClass<Any>

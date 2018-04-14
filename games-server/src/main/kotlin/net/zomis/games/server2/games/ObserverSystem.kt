@@ -18,32 +18,34 @@ class ObserverSystem(private val events: EventSystem, private val gameSystem: Ga
     private val observers: MutableMap<Game, MutableSet<Client>> = mutableMapOf()
 
     fun register(events: EventSystem) {
-        events.addListener(ClientJsonMessage::class, this::observerRequest)
+        events.listen("Fire Observer Request", ClientJsonMessage::class, {
+            it.data.getTextOrDefault("type", "") == "observer"
+        }, this::observerRequest)
 
-        events.addListener(ObserverStart::class, {
+        events.listen("Add to observer list", ObserverStart::class, {true}, {
             observers.putIfAbsent(it.game, mutableSetOf())
             observers[it.game]!!.add(it.client)
         })
-        events.addListener(ObserverStart::class, {
+        events.listen("Send all history messages", ObserverStart::class, {true}, {
             store[it.game]?.forEach { mess -> it.client.send(mess) }
         })
-        events.addListener(ObserverStop::class, {
+        events.listen("Stop observing", ObserverStop::class, {true}, {
             observers[it.game]?.remove(it.client)
             if (observers[it.game]?.isEmpty() == true) {
                 observers.remove(it.game)
             }
         })
-        events.addListener(GameStartedEvent::class, {
+        events.listen("Create observer-store for new game", GameStartedEvent::class, {true}, {
             store[it.game] = mutableListOf()
         })
 
-        events.addListener(MoveEvent::class, {
+        events.listen("Store and send message to observers", MoveEvent::class, {true}, {
             addAndSend(it.game, it.moveMessage())
         })
-        events.addListener(GameStateEvent::class, {
+        events.listen("Store and send move to observers", GameStateEvent::class, {true}, {
             addAndSend(it.game, it.stateMessage(null))
         })
-        events.addListener(PlayerEliminatedEvent::class, {
+        events.listen("Store and send eliminated to observers", PlayerEliminatedEvent::class, {true}, {
             addAndSend(it.game, it.eliminatedMessage())
         })
     }

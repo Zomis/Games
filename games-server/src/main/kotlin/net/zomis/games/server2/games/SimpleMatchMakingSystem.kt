@@ -3,8 +3,6 @@ package net.zomis.games.server2.games
 import klogging.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.server2.*
-import net.zomis.games.server2.clients.ur.RandomUrBot
-import net.zomis.games.server2.games.impl.Connect4
 
 class SimpleMatchMakingSystem(games: GameSystem, events: EventSystem) {
 
@@ -12,12 +10,13 @@ class SimpleMatchMakingSystem(games: GameSystem, events: EventSystem) {
     private val waiting: MutableMap<String, Client> = mutableMapOf()
 
     init {
-        events.addListener(ClientJsonMessage::class, {
-            if (it.data.getTextOrDefault("type", "") == "matchMake") {
+        events.listen("Simple matchmaking", ClientJsonMessage::class, {
+            it.data.getTextOrDefault("type", "") == "matchMake"
+        }, {
                 val gameType = it.data.get("game").asText()
                 if (games.gameTypes[gameType] == null) {
                     logger.warn { "Received unknown gametype: $gameType" }
-                    return@addListener
+                    return@listen
                 }
 
                 synchronized(waiting, {
@@ -34,7 +33,6 @@ class SimpleMatchMakingSystem(games: GameSystem, events: EventSystem) {
                     logger.info { "Now waiting for a match to play $gameType: ${it.client}" }
                 }
                 })
-            }
         })
     }
 
