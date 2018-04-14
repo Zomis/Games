@@ -6,7 +6,6 @@
         <div v-for="n in remaining" class="piece-small pointer"
           :class="{ ['piece-' + playerIndex]: true, moveable: canPlaceNew && n == remaining }"
           @mouseover="onPlaceNewHighlight(playerIndex)" @mouseleave="mouseleave()"
-          style="position: absolute; top: 6px;"
           :style="{ left: (n-1)*12 + 'px' }" v-on:click="placeNew()">
         </div>
       </div>
@@ -19,7 +18,6 @@
       <div class="pieces-container">
         <div v-for="n in out" class="piece-small"
           :class="['piece-' + playerIndex]"
-          style="position: absolute; top: 6px;"
           :style="{ right: (n-1)*12 + 'px' }">
         </div>
       </div>
@@ -77,6 +75,8 @@ export default {
 }
 
 .piece-small {
+  position: absolute;
+  top: 6px;
   background-size: cover;
   width: 24px;
   height: 24px;

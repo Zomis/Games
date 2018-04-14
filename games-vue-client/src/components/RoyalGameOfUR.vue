@@ -71,32 +71,28 @@ if (typeof games["games-js"] !== "undefined") {
   games = games["games-js"];
 }
 
+function mapping(position, playerIndex) {
+  let y = playerIndex == 0 ? 0 : 2;
+  if (position > 4 && position < 13) {
+    y = 1;
+  }
+  let x = 0;
+  if (y == 1) {
+    x = position - 5;
+  } else {
+    x = position <= 4 ? 4 - position : 4 + 8 + 8 - position;
+  }
+  return {
+    x: x,
+    y: y,
+    player: playerIndex,
+    key: playerIndex + "_" + position,
+    position: position
+  };
+}
 function piecesToObjects(array, playerIndex) {
-  var playerPieces = array[playerIndex].filter(i => i > 0 && i < 15);
-  var arrayCopy = []; // Convert Int32Array to Object array
-  playerPieces.forEach(it => arrayCopy.push(it));
-
-  function mapping(position) {
-    var y = playerIndex == 0 ? 0 : 2;
-    if (position > 4 && position < 13) {
-      y = 1;
-    }
-    var x =
-      y == 1
-        ? position - 5
-        : position <= 4 ? 4 - position : 4 + 8 + 8 - position;
-    return {
-      x: x,
-      y: y,
-      player: playerIndex,
-      key: playerIndex + "_" + position,
-      position: position
-    };
-  }
-  for (var i = 0; i < arrayCopy.length; i++) {
-    arrayCopy[i] = mapping(arrayCopy[i]);
-  }
-  return arrayCopy;
+  let playerPieces = array[playerIndex].filter(i => i > 0 && i < 15);
+  return Array.from(playerPieces).map(e => mapping(e, playerIndex));
 }
 
 export default {
