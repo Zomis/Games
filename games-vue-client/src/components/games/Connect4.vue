@@ -6,7 +6,7 @@
         <div class="pieces pieces-bg">
           <div v-for="idx in 7*6" class="piece piece-bg"
             :class="{ 'moveable': moveableIndex[idx - 1] && movesMade % 2 == yourIndex }"
-            @click="onClick({ x: (idx-1) % 7, y: (idx-1) / 7 })">
+            @click="onClick({ x: (idx-1) % 7, y: Math.floor((idx-1) / 7) })">
           </div>
         </div>
         <div class="pieces player-pieces">
@@ -65,21 +65,19 @@ export default {
       if (Socket.isConnected()) {
         let json = `{ "game": "${this.game}", "gameId": "${
           this.gameId
-        }", "type": "move", "moveType": "${name}", "move": ${data} }`;
+        }", "type": "move", "moveType": "${name}", "move": ${JSON.stringify(
+          data
+        )} }`;
         Socket.send(json);
       }
     },
     onClick: function(piece) {
-      this.action("move", piece.x);
+      this.action("move", { x: piece.x, y: piece.y });
     },
     messageMove(e) {
       console.log(`Recieved move: ${e.moveType}: ${e.move}`);
-      let calculatedY = 5;
-      while (this.gamePieces.find(p => p.y == calculatedY && p.x == e.move)) {
-        calculatedY--;
-      }
       this.movesMade++;
-      this.gamePieces.push({ x: e.move, y: calculatedY, player: e.player });
+      this.gamePieces.push({ x: e.move.x, y: e.move.y, player: e.player });
     },
     messageIllegal(e) {
       console.log("IllegalMove: " + JSON.stringify(e));

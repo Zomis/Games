@@ -10,7 +10,7 @@
         :onPlaceNew="placeNew" />
 
       <div class="board ur-board">
-        <div class="pieces ur-pieces-bg">
+        <div class="pieces pieces-bg">
           <div v-for="idx in 20" class="piece piece-bg">
           </div>
           <div class="piece-black" style="grid-area: 1 / 5 / 2 / 7"></div>

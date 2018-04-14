@@ -1,15 +1,24 @@
 package net.zomis.games.server2.ais
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import net.zomis.games.ur.ais.RoyalGameOfUrAIs
 import net.zomis.games.ur.ais.RoyalGameOfUrAIs.*
 import com.fasterxml.jackson.databind.node.IntNode
+import com.fasterxml.jackson.databind.node.ObjectNode
+import net.zomis.aiscores.FieldScoreProducer
 import net.zomis.aiscores.ScoreConfigFactory
+import net.zomis.aiscores.ScoreParameters
+import net.zomis.aiscores.ScoreStrategy
+import net.zomis.aiscores.extra.ScoreUtils
 import net.zomis.core.events.EventSystem
+import net.zomis.games.server2.games.Game
 import net.zomis.games.server2.games.GameTypeRegisterEvent
 import net.zomis.games.server2.games.PlayerGameMoveRequest
 import net.zomis.games.ur.RoyalGameOfUr
 import net.zomis.games.ur.ais.MonteCarloAI
 import net.zomis.tttultimate.games.TTClassicControllerWithGravity
+import net.zomis.tttultimate.games.TTController
+import java.util.*
 import java.util.function.ToIntFunction
 
 class ServerAIs {
@@ -40,18 +49,45 @@ class ServerAIs {
             )
             createURAI(events, "#AI_MonteCarlo", MonteCarloAI(1000, ai))
 
-            ServerAI("Connect4", "#AI_C4Random", { game, playerIndex ->
-                val controller = game.obj as TTClassicControllerWithGravity
-                val possibles = (0 until controller.game.sizeX).flatMap {x ->
-                    (0 until controller.game.sizeY).map { y ->
-                        x to y
-                    }
-                }.filter { controller.isAllowedPlay(controller.game.getSub(it.first, it.second)) }
-                val chosen = possibles.shuffled().firstOrNull() ?: return@ServerAI listOf()
-
-                listOf(PlayerGameMoveRequest(game, playerIndex, "move", IntNode(chosen.first)))
-            }).register(events)
+            val ttAllowed: (TTController, Int, Int) -> Boolean = { game, x, y -> game.isAllowedPlay(game.game.getSmallestTile(x, y)) }
+            XYScorer("Connect4", "#AI_C4_Random", ScoreConfigFactory(), XYScoreStrategy(7, 6, ttAllowed)).create(events)
+            XYScorer("UTTT", "#AI_UTTT_Random", ScoreConfigFactory(), XYScoreStrategy(9, 9, ttAllowed)).create(events)
         })
+    }
+
+    class XYScoreStrategy<T>(val width: Int, val height: Int, val allowed: (T, Int, Int) -> Boolean) : ScoreStrategy<T, Pair<Int, Int>> {
+        override fun canScoreField(p0: ScoreParameters<T>?, p1: Pair<Int, Int>?): Boolean {
+            return allowed.invoke(p0!!.parameters, p1!!.first, p1.second)
+        }
+
+        override fun getFieldsToScore(p0: T): MutableCollection<Pair<Int, Int>> {
+            return (0 until width).flatMap {x ->
+                (0 until height).map { y ->
+                    x to y
+                }
+            }.toMutableList()
+        }
+    }
+
+    class XYScorer<T>(val gameType: String, val name: String, scoreConfig: ScoreConfigFactory<T, Pair<Int, Int>>,
+              val scoreStrategy: XYScoreStrategy<T>) {
+        val producer = FieldScoreProducer(scoreConfig.build(), scoreStrategy)
+        val mapper = ObjectMapper()
+
+        fun positionToMove(game: T): Pair<Int, Int>? {
+            val best = ScoreUtils.pickBest(producer, game, Random())
+                    ?: return null
+            return best.field
+        }
+
+        fun create(events: EventSystem) {
+            ServerAI(gameType, name, { game, index ->
+                val controller = game.obj as T
+                val move = positionToMove(controller) ?: return@ServerAI listOf()
+                listOf(PlayerGameMoveRequest(game, index, "move",
+                    mapper.createObjectNode().put("x", move.first).put("y", move.second)))
+            }).register(events)
+        }
     }
 
     private fun createURAI(events: EventSystem, name: String,

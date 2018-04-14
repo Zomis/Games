@@ -15,10 +15,15 @@ import net.zomis.games.server2.games.ObserverSystem
 import net.zomis.games.server2.games.SimpleMatchMakingSystem
 import net.zomis.games.server2.games.impl.Connect4
 import net.zomis.games.server2.games.impl.RoyalGameOfUrSystem
+import net.zomis.games.server2.games.impl.TTControllerSystem
 import net.zomis.games.server2.invites.InviteSystem
 import net.zomis.games.server2.invites.LobbySystem
 import net.zomis.games.server2.javalin.auth.LinAuth
 import net.zomis.games.server2.ws.Server2WS
+import net.zomis.tttultimate.TTFactories
+import net.zomis.tttultimate.games.TTClassicController
+import net.zomis.tttultimate.games.TTClassicControllerWithGravity
+import net.zomis.tttultimate.games.TTUltimateController
 import java.net.InetSocketAddress
 import kotlin.reflect.KClass
 
@@ -62,7 +67,8 @@ class Server2 {
         })
         val gameSystem = GameSystem(events)
 
-        Connect4.init(events)
+        TTControllerSystem("Connect4", {TTClassicControllerWithGravity(TTFactories().classicMNK(7, 6, 4))}).register(events)
+        TTControllerSystem("UTTT", {TTUltimateController(TTFactories().ultimate())}).register(events)
         RoyalGameOfUrSystem.init(events)
 
         SimpleMatchMakingSystem(gameSystem, events)

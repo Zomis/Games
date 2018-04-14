@@ -17,7 +17,6 @@ class ServerAI(val gameType: String, val name: String, val perform: (Game, Int) 
         events.listen("ai move $name", MoveEvent::class, {
             it.game.players.contains(client)
         }, {
-            // TODO: This will not work if the AI is playing against itself.
             it.game.players.asSequence().forEachIndexed { index, client ->
                 if (client == this.client) {
                     val aiMoves = perform.invoke(it.game, index)
@@ -28,7 +27,7 @@ class ServerAI(val gameType: String, val name: String, val perform: (Game, Int) 
                 }
             }
         })
-        events.listen("ServerAI accept invite $name", InviteEvent::class, {
+        events.listen("ServerAI $gameType accept invite $name", InviteEvent::class, {
             it.targets.contains(client)
         }, {
             events.execute(InviteResponseEvent(client, it.invite, true))
