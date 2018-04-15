@@ -1,26 +1,6 @@
-### Login
+# 301 Moved Permanently
 
-To login as a guest, send:
-
-    { "type": "Auth", "provider": "guest" }
-
-You should receive:
-
-    {"type":"Auth","name":"guest-679"}
-
-### Start a game
-
-Currently only simple match-making is available, which means that you say "I want to play a game of XYZ" and then the server will pair you up with someone else who also wants to play XYZ.
-
-Send:
-
-    { "game": "XYZ", "type": "matchMake" }
-
-Replace "XYZ" with the name of the game you really want to play, such as "UR" or "Connect4"
-
-When the game is started the server will send:
-
-    {"type":"GameStarted","gameType":"UR","gameId":"2","yourIndex":0,"players":["guest-679","some-other-player"]}
+See the `documentation` folder instead
 
 ### Make moves within a game
 
