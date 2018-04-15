@@ -27,6 +27,10 @@ class DocBlock(val events: EventSystem, val printer: PrintWriter) {
         printer.append("${client.name} will receive:\n\n    $expected\n\n")
     }
 
+    fun text(text: String) {
+        printer.append("$text\n\n")
+    }
+
 }
 
 class DocWriter(val filename: String, val docFile: String = "UNDEFINED") : AfterEachCallback, BeforeEachCallback {

@@ -7,13 +7,12 @@ import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.games.GameType
 
 data class Invite(val host: Client, val accepted: MutableList<Client>, val gameType: GameType, val id: String)
-//data class InviteCreateEvent(val host: Client, val targets: List<Client>, val gameType: GameType)
 data class InviteEvent(val host: Client, val invite: Invite, val targets: List<Client>)
 data class InviteResponseEvent(val source: Client, val invite: Invite, val accepted: Boolean)
 
 class InviteSystem(private val games: GameSystem) {
 
-    private val invites = mutableMapOf<String, Invite>()
+    val invites = mutableMapOf<String, Invite>()
 
     fun register(events: EventSystem, clientLookup: ClientsByName) {
         events.listen("trigger InviteEvent", ClientJsonMessage::class, {

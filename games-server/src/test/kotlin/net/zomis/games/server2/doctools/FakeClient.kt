@@ -20,6 +20,10 @@ class FakeClient : Client() {
         return messages.removeAt(0)
     }
 
+    fun clearMessages() {
+        return messages.clear()
+    }
+
     fun nextNode(): ObjectNode {
         return mapper.readTree(nextMessage()) as ObjectNode
     }

@@ -33,13 +33,16 @@ class InviteSystemTest {
     @JvmField
     val docWriter: DocWriter = testDocWriter("INVITES")
 
+    private lateinit var system: InviteSystem
+
     @BeforeEach
     fun before() {
         events = DocEventSystem(docWriter)
         games = GameSystem(events)
         val clientLookup = ClientsByName()
         events.with(clientLookup::register)
-        InviteSystem(games).register(events, clientLookup)
+        system = InviteSystem(games)
+        system.register(events, clientLookup)
     }
 
     @Test
@@ -53,6 +56,24 @@ class InviteSystemTest {
             send(host, """{ "type": "Invite", "gameType": "TestGameType", "invite": ["TestClientB"] }""")
             receive(host, """{"type":"InviteWaiting","inviteId":"TestGameType-TestClientA-0","waitingFor":["TestClientB"]}""")
             receive(invitee, """{"type":"Invite","host":"TestClientA","game":"TestGameType","inviteId":"TestGameType-TestClientA-0"}""")
+        }
+
+        docWriter.document(events, "Accepting an invite") {
+            send(invitee, """{ "type": "InviteResponse", "invite": "TestGameType-TestClientA-0", "accepted": true }""")
+            receive(host, """{"type":"InviteResponse","user":"TestClientB","accepted":true,"inviteId":"TestGameType-TestClientA-0"}""")
+
+            text("When a user accepts an invite the game is started automatically and both players will receive a `GameStarted` message.")
+            receive(invitee, """{"type":"GameStarted","gameType":"TestGameType","gameId":"1","yourIndex":1,"players":["TestClientA","TestClientB"]}""")
+        }
+
+        val invite = Invite(host, mutableListOf(), GameType("TestGameType"), "TestGameType-TestClientA-0")
+        system.invites[invite.id] = invite
+        events.execute(InviteEvent(host, invite, listOf(invitee)))
+        host.clearMessages()
+
+        docWriter.document(events, "Declining an invite") {
+            send(invitee, """{ "type": "InviteResponse", "invite": "TestGameType-TestClientA-0", "accepted": false }""")
+            receive(host, """{"type":"InviteResponse","user":"TestClientB","accepted":false,"inviteId":"TestGameType-TestClientA-0"}""")
         }
     }
 
