@@ -16,9 +16,11 @@ pipeline {
             steps {
                 sh 'cp /home/zomis/jenkins/server2-secrets.properties games-server/src/main/resources/secrets.properties'
                 sh './gradlew clean test :games-server:assemble :games-js:assemble'
-                def gitChanges = sh(script: 'git diff-index HEAD', returnStatus: true)
-                if (gitChanges) {
-                    error("There are git changes after build")
+                script {
+                    def gitChanges = sh(script: 'git diff-index HEAD', returnStatus: true)
+                    if (gitChanges) {
+                        error("There are git changes after build")
+                    }
                 }
                 dir('games-vue-client') {
                     sh 'npm install && npm run build'
