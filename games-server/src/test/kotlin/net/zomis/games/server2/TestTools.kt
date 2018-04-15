@@ -3,8 +3,8 @@ package net.zomis.games.server2
 import net.zomis.games.server2.doctools.DocWriter
 import java.net.ServerSocket
 
-fun testDocWriter(): DocWriter {
-    return DocWriter("../documentation/EVENTS.md")
+fun testDocWriter(file: String = "UNDEFINED"): DocWriter {
+    return DocWriter("../documentation/EVENTS.md", file)
 }
 
 fun testServerConfig(): ServerConfig {

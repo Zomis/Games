@@ -1,6 +1,9 @@
 package net.zomis.games.server2.doctools
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import net.zomis.core.events.EventSystem
+import net.zomis.games.server2.ClientJsonMessage
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.extension.*
 import java.io.File
 import java.io.FileWriter
@@ -9,14 +12,30 @@ import java.util.*
 import kotlin.concurrent.getOrSet
 import kotlin.reflect.KClass
 
-class DocWriter(val filename: String) : AfterEachCallback, BeforeEachCallback {
+class DocBlock(val events: EventSystem, val printer: PrintWriter) {
+
+    private val mapper = ObjectMapper()
+
+    fun send(client: FakeClient, message: String) {
+        val data = mapper.readTree(message)
+        printer.append("${client.name} sends:\n\n    $message\n\n")
+        events.execute(ClientJsonMessage(client, data))
+    }
+
+    fun receive(client: FakeClient, expected: String) {
+        assertEquals(expected, client.nextMessage())
+        printer.append("${client.name} will receive:\n\n    $expected\n\n")
+    }
+
+}
+
+class DocWriter(val filename: String, val docFile: String = "UNDEFINED") : AfterEachCallback, BeforeEachCallback {
+
     override fun afterEach(context: ExtensionContext?) {
-        println("AfterAll $filename")
         file.close()
     }
 
     override fun beforeEach(context: ExtensionContext?) {
-        println("BeforeEach $filename")
         file = PrintWriter(FileWriter(File(filename), true))
     }
 
@@ -24,6 +43,16 @@ class DocWriter(val filename: String) : AfterEachCallback, BeforeEachCallback {
 
     fun writeConnection(cause: KClass<*>, effect: KClass<*>) {
         file.append("- ${cause.qualifiedName} --> ${effect.qualifiedName}\n")
+    }
+
+    fun document(events: EventSystem, header: String, block: DocBlock.() -> Unit) {
+        val printer = PrintWriter(FileWriter(File("../documentation/$docFile.md"), true))
+        printer.use {
+            it.append("### $header\n\n")
+
+            val docBlock = DocBlock(events, printer)
+            block.invoke(docBlock)
+        }
     }
 
 }
