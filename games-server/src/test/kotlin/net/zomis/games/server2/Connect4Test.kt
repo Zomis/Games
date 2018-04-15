@@ -4,9 +4,12 @@ import klogging.KLoggers
 import net.zomis.games.server2.clients.ur.WSClient
 import net.zomis.games.server2.clients.ur.getInt
 import net.zomis.games.server2.clients.ur.getText
+import net.zomis.games.server2.doctools.DocEventSystem
+import net.zomis.games.server2.doctools.DocWriter
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 import java.net.URI
 
 class Connect4Test {
@@ -15,12 +18,16 @@ class Connect4Test {
 
     private val logger = KLoggers.logger(this)
 
+    @RegisterExtension
+    @JvmField
+    val docWriter: DocWriter = testDocWriter()
+
     var server: Server2? = null
     val config = testServerConfig()
 
     @BeforeEach
     fun startServer() {
-        server = Server2()
+        server = Server2(DocEventSystem(docWriter))
         server!!.start(config)
     }
 

@@ -1,0 +1,22 @@
+package net.zomis.games.server2
+
+import net.zomis.games.server2.doctools.DocWriter
+import java.net.ServerSocket
+
+fun testDocWriter(): DocWriter {
+    return DocWriter("../documentation/EVENTS.md")
+}
+
+fun testServerConfig(): ServerConfig {
+    val config = ServerConfig()
+    config.httpPort = 0
+    config.wsport = randomPort()
+    return config
+}
+
+fun randomPort(): Int {
+    val tempServer = ServerSocket(0)
+    val port = tempServer.localPort
+    tempServer.close()
+    return port
+}

@@ -1,4 +1,4 @@
-package net.zomis.games.server2.invites
+package net.zomis.games.server2.doctools
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode

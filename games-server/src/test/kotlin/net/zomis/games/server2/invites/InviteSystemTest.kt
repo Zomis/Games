@@ -2,9 +2,14 @@ package net.zomis.games.server2.invites
 
 import net.zomis.core.events.EventSystem
 import net.zomis.games.server2.ClientsByName
+import net.zomis.games.server2.doctools.DocEventSystem
+import net.zomis.games.server2.doctools.DocWriter
+import net.zomis.games.server2.doctools.EventsExpect
+import net.zomis.games.server2.doctools.FakeClient
 import net.zomis.games.server2.games.GameStartedEvent
 import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.games.GameType
+import net.zomis.games.server2.testDocWriter
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -22,9 +27,13 @@ class InviteSystemTest {
     @JvmField
     val expect: EventsExpect = EventsExpect()
 
+    @RegisterExtension
+    @JvmField
+    val docWriter: DocWriter = testDocWriter("INVITES2")
+
     @BeforeEach
     fun before() {
-        events = EventSystem()
+        events = DocEventSystem(docWriter)
         games = GameSystem(events)
         val clientLookup = ClientsByName()
         events.with(clientLookup::register)

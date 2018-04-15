@@ -1,4 +1,4 @@
-package net.zomis.games.server2.invites
+package net.zomis.games.server2.doctools
 
 import net.zomis.core.events.EventSystem
 import org.junit.jupiter.api.Assertions
@@ -9,6 +9,7 @@ import kotlin.reflect.KClass
 
 class EventsExpect : AfterEachCallback {
     override fun afterEach(context: ExtensionContext?) {
+        println("Check Event Expectations: $expectations")
         expectations.forEach { it.checkCondition() }
     }
 
@@ -37,6 +38,10 @@ class EventsExpect : AfterEachCallback {
 
         fun checkCondition() {
             Assertions.assertEquals(1, triggered.get())
+        }
+
+        override fun toString(): String {
+            return "Expectation(triggered=$triggered)"
         }
 
     }

@@ -39,7 +39,7 @@ class ListenerList<E> {
 
 }
 
-class EventSystem {
+open class EventSystem {
 
     private val logger = KLoggers.logger(this)
     private val listeners: MutableMap<KClass<Any>, ListenerList<Any>> = HashMap()
@@ -56,7 +56,7 @@ class EventSystem {
         return listen(description, ListenerPriority.NORMAL, clazz, condition, handler)
     }
 
-    fun <E : Any> execute(event: E) {
+    open fun <E : Any> execute(event: E) {
         logger.info("Execute: $event")
         val kclass = event::class as KClass<Any>
         listeners[kclass]?.execute(event)

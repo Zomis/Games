@@ -2,13 +2,18 @@ package net.zomis.games.server2.invites
 
 import net.zomis.core.events.EventSystem
 import net.zomis.games.server2.ClientDisconnected
+import net.zomis.games.server2.doctools.DocEventSystem
+import net.zomis.games.server2.doctools.DocWriter
+import net.zomis.games.server2.doctools.FakeClient
 import net.zomis.games.server2.games.Game
 import net.zomis.games.server2.games.GameEndedEvent
 import net.zomis.games.server2.games.GameStartedEvent
 import net.zomis.games.server2.games.GameType
+import net.zomis.games.server2.testDocWriter
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 
 class LobbySystemTest {
 
@@ -19,9 +24,13 @@ class LobbySystemTest {
     private lateinit var asker: FakeClient
     private val lobby = LobbySystem()
 
+    @RegisterExtension
+    @JvmField
+    val docWriter: DocWriter = testDocWriter()
+
     @BeforeEach
     fun setup() {
-        events = EventSystem().with(lobby::register)
+        events = DocEventSystem(docWriter).with(lobby::register)
         clientAB2 = FakeClient().apply { name = "AB2" }
         clientA1 = FakeClient().apply { name = "A1" }
         clientB1 = FakeClient().apply { name = "B1" }

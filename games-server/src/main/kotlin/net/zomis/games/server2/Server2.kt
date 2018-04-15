@@ -39,9 +39,8 @@ class ServerConfig {
 
 }
 
-class Server2 {
+class Server2(val events: EventSystem) {
     private val logger = KLoggers.logger(this)
-    val events = EventSystem()
     private val mapper = ObjectMapper()
 
     fun start(config: ServerConfig) {
@@ -99,6 +98,7 @@ object Main {
             System.exit(1)
         }
 
-        Server2().start(config)
+        // TODO: Run with auto-docs to print event chains.
+        Server2(EventSystem()).start(config)
     }
 }
