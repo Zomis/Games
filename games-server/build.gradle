@@ -66,4 +66,5 @@ dependencies {
 
 clean {
     delete "$rootDir/documentation/INVITES.md"
+    delete "$rootDir/documentation/LOGIN_AND_LOBBY.md"
 }

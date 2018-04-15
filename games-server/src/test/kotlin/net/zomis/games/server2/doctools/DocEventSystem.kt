@@ -16,10 +16,14 @@ class DocBlock(val events: EventSystem, val printer: PrintWriter) {
 
     private val mapper = ObjectMapper()
 
-    fun send(client: FakeClient, message: String) {
+    fun send(client: FakeClient, documentation: String, message: String) {
         val data = mapper.readTree(message)
-        printer.append("${client.name} sends:\n\n    $message\n\n")
+        printer.append("$documentation\n\n    $message\n\n")
         events.execute(ClientJsonMessage(client, data))
+    }
+
+    fun send(client: FakeClient, message: String) {
+        this.send(client, "${client.name} sends:", message)
     }
 
     fun receive(client: FakeClient, expected: String) {
