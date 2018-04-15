@@ -1,6 +1,7 @@
 package net.zomis.games.server2.invites
 
 import net.zomis.core.events.EventSystem
+import net.zomis.games.server2.ClientLoginEvent
 import net.zomis.games.server2.ClientsByName
 import net.zomis.games.server2.doctools.DocEventSystem
 import net.zomis.games.server2.doctools.DocWriter
@@ -9,6 +10,7 @@ import net.zomis.games.server2.doctools.FakeClient
 import net.zomis.games.server2.games.GameStartedEvent
 import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.games.GameType
+import net.zomis.games.server2.games.GameTypeRegisterEvent
 import net.zomis.games.server2.testDocWriter
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
@@ -29,7 +31,7 @@ class InviteSystemTest {
 
     @RegisterExtension
     @JvmField
-    val docWriter: DocWriter = testDocWriter("INVITES2")
+    val docWriter: DocWriter = testDocWriter("INVITES")
 
     @BeforeEach
     fun before() {
@@ -38,6 +40,20 @@ class InviteSystemTest {
         val clientLookup = ClientsByName()
         events.with(clientLookup::register)
         InviteSystem(games).register(events, clientLookup)
+    }
+
+    @Test
+    fun fullInvite() {
+        events.execute(GameTypeRegisterEvent("TestGameType"))
+        val host = FakeClient().apply { name = "TestClientA" }
+        val invitee = FakeClient().apply { name = "TestClientB" }
+        events.execute(ClientLoginEvent(host, host.name!!, "tests"))
+        events.execute(ClientLoginEvent(invitee, invitee.name!!, "tests"))
+        docWriter.document(events, "Inviting someone to play a game") {
+            send(host, """{ "type": "Invite", "gameType": "TestGameType", "invite": ["TestClientB"] }""")
+            receive(host, """{"type":"InviteWaiting","inviteId":"TestGameType-TestClientA-0","waitingFor":["TestClientB"]}""")
+            receive(invitee, """{"type":"Invite","host":"TestClientA","game":"TestGameType","inviteId":"TestGameType-TestClientA-0"}""")
+        }
     }
 
     @Test
