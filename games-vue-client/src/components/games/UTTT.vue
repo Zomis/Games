@@ -15,7 +15,6 @@
               v-if="piece.boardIndex == boardIndex - 1"
               :key="piece.key"
               :mouseover="doNothing" :mouseleave="doNothing"
-              class="piece"
               :class="'piece-' + piece.player"
               :piece="{ x: piece.tileIndex % 3, y: Math.floor(piece.tileIndex / 3) }">
             </UrPiece>
@@ -135,12 +134,13 @@ export default {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: 1fr 1fr 1fr;
+  grid-gap: 10px;
+  padding: 10px;
 }
 
 .smaller-board {
-  width: 196px;
-  height: 196px;
   position: relative;
+  border: 3px solid black;
 }
 
 .smaller-board .pieces {
