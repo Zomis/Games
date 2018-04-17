@@ -34,8 +34,8 @@ class ServerConfig {
     @Parameter(names = ["-wsport"], description = "Port number for WebSockets")
     var wsport: Int = 8081
 
-    @Parameter(names = ["-httpPort"], description = "Port number for REST-server (0 to disable)")
-    var httpPort: Int = 42638
+    @Parameter(names = ["-httpPort"], description = "Port number for Authentication REST-server (0 to disable)")
+    var httpPort: Int = 0
 
 }
 
