@@ -53,6 +53,34 @@
       <UrRoll :roll="lastRoll" :usable="ur.roll < 0 && canControlCurrentPlayer" :onDoRoll="onDoRoll" />
     </div>
     <GameResult :yourIndex="yourIndex"></GameResult>
+    <v-expansion-panel expand>
+      <v-expansion-panel-content>
+        <div slot="header">Objective</div>
+        <v-card>
+          <v-card-text>
+            Two players are fighting to be the first player who races all their 7 pieces to the exit.
+            Only player 1 can use the top row, only player 2 can use the bottom row. Both players share the middle row.
+          </v-card-text>
+        </v-card>
+      </v-expansion-panel-content>
+      <v-expansion-panel-content>
+        <div slot="header">Dice</div>
+        <v-card>
+          <v-card-text>
+            Players take turns in rolling the four dice. Each die can be 1 or 0. Then you move a piece a number of steps that equals the sum of these four dice.
+          </v-card-text>
+        </v-card>
+      </v-expansion-panel-content>
+      <v-expansion-panel-content>
+        <div slot="header">Flowers</div>
+        <v-card>
+          <v-card-text>
+            Five tiles are marked with flowers. When a piece lands on a flower the player get to roll again.
+            As long as a tile is on a flower another piece may not knock it out (only relevant for the middle flower).
+          </v-card-text>
+        </v-card>
+      </v-expansion-panel-content>
+    </v-expansion-panel>
   </div>
 </template>
 

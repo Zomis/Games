@@ -21,6 +21,16 @@
       </div>
     </div>
     <GameResult :yourIndex="yourIndex"></GameResult>
+    <v-expansion-panel>
+      <v-expansion-panel-content>
+        <div slot="header">Rules</div>
+        <v-card>
+          <v-card-text>
+            <a href="https://en.wikipedia.org/wiki/Connect_Four">See Connect Four on Wikipedia</a>
+          </v-card-text>
+        </v-card>
+      </v-expansion-panel-content>
+    </v-expansion-panel>
   </div>
 </template>
 <script>
