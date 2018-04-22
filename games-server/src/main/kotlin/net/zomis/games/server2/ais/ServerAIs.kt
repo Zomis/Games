@@ -49,7 +49,7 @@ class ServerAIs {
             )
             createURAI(events, "#AI_MonteCarlo", MonteCarloAI(1000, ai))
 
-            val ttAllowed: (TTController, Int, Int) -> Boolean = { game, x, y -> game.isAllowedPlay(game.game.getSmallestTile(x, y)) }
+            val ttAllowed: (TTController, Int, Int) -> Boolean = { game, x, y -> game.isAllowedPlay(game.game.getSmallestTile(x, y)!!) }
             XYScorer("Connect4", "#AI_C4_Random", ScoreConfigFactory(), XYScoreStrategy(7, 6, ttAllowed)).create(events)
             XYScorer("UTTT", "#AI_UTTT_Random", ScoreConfigFactory(), XYScoreStrategy(9, 9, ttAllowed)).create(events)
         })
