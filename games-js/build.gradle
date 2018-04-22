@@ -18,6 +18,7 @@ sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
+    maven { url "http://www.zomis.net/maven" }
 }
 
 dependencies {
@@ -26,6 +27,7 @@ dependencies {
     expectedBy project(':games-core')
 
     compile "com.github.lewik.klogging:klogging.js:1.2.30"
+    compile "net.zomis:uttt-js:0.3.0"
 }
 
 compileKotlin2Js {

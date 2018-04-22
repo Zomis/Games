@@ -19,11 +19,13 @@ sourceCompatibility = 1.6
 
 repositories {
     mavenCentral()
+    maven { url "http://www.zomis.net/maven" }
 }
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-common:$kotlin_version"
     compile "com.github.lewik.klogging:klogging.common:1.2.30"
+    compile "net.zomis:uttt-common:0.3.0"
 
     testCompile "org.jetbrains.kotlin:kotlin-test-common:$kotlin_version"
 }
