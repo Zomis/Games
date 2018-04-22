@@ -29,6 +29,7 @@ module.exports = {
     }
   },
   externals: {
+    uttt: "uttt-js",
     kotlin: "kotlin",
     klogging: "klogging"
   },

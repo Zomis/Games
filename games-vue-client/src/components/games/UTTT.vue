@@ -50,6 +50,11 @@ import Socket from "../../socket";
 import UrPiece from "../ur/UrPiece";
 import GameHead from "./common/GameHead";
 import GameResult from "./common/GameResult";
+import { net } from "uttt";
+// var games = require("uttt");
+
+let board = new net.zomis.tttultimate.games.TTControllers.ultimateTTT();
+console.log(board);
 
 function globalToBoardTile(position) {
   return {
