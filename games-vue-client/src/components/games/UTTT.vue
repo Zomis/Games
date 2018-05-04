@@ -6,7 +6,10 @@
         <div class="smaller-board" v-for="boardIndex in 9">
           <div class="pieces pieces-bg">
             <div v-for="tileIndex in 9" class="piece piece-bg"
-              :class="{ 'moveable': movesMade % 2 == yourIndex }"
+              :class="{ 'moveable': board.isAllowedPlay_1xfwev$(board.game.getSmallestTile_vux9f0$(
+                boardTileToGlobal({ boardIndex: boardIndex - 1, tileIndex: tileIndex - 1 }).x,
+                boardTileToGlobal({ boardIndex: boardIndex - 1, tileIndex: tileIndex - 1 }).y
+              )) }"
               @click="onClick({ boardIndex: boardIndex - 1, tileIndex: tileIndex - 1 })">
             </div>
           </div>
@@ -50,31 +53,15 @@ import Socket from "../../socket";
 import UrPiece from "../ur/UrPiece";
 import GameHead from "./common/GameHead";
 import GameResult from "./common/GameResult";
-import { net } from "uttt";
-// var games = require("uttt");
 
-let board = new net.zomis.tttultimate.games.TTControllers.ultimateTTT();
-console.log(board);
-
-function globalToBoardTile(position) {
-  return {
-    boardIndex: Math.floor(position.x / 3) + Math.floor(position.y / 3) * 3,
-    tileIndex: Math.floor(position.x % 3) + Math.floor(position.y % 3) * 3
-  };
-}
-
-function boardTileToGlobal(piece) {
-  let x = (piece.boardIndex % 3) * 3 + piece.tileIndex % 3;
-  let y =
-    Math.floor(piece.boardIndex / 3) * 3 + Math.floor(piece.tileIndex / 3);
-  return { x: x, y: y };
-}
+let uttt = window["uttt-js"];
 
 export default {
   name: "UTTT",
   props: ["yourIndex", "game", "gameId", "players"],
   data() {
     return {
+      board: new uttt.net.zomis.tttultimate.games.TTControllers.ultimateTTT(),
       movesMade: 0,
       gamePieces: [],
       gameOverMessage: null
@@ -113,12 +100,14 @@ export default {
       }
     },
     onClick: function(piece) {
-      this.action("move", boardTileToGlobal(piece));
+      this.action("move", this.boardTileToGlobal(piece));
     },
     messageMove(e) {
       console.log(`Recieved move: ${e.moveType}: ${e.move}`);
       this.movesMade++;
-      const boardTile = globalToBoardTile(e.move);
+      const boardTile = this.globalToBoardTile(e.move);
+
+      this.board.play_vux9f0$(e.move.x, e.move.y);
       this.gamePieces.push({
         x: e.move.x,
         y: e.move.y,
@@ -127,25 +116,20 @@ export default {
         tileIndex: boardTile.tileIndex
       });
     },
+    globalToBoardTile(position) {
+      return {
+        boardIndex: Math.floor(position.x / 3) + Math.floor(position.y / 3) * 3,
+        tileIndex: Math.floor(position.x % 3) + Math.floor(position.y % 3) * 3
+      };
+    },
+    boardTileToGlobal(piece) {
+      let x = (piece.boardIndex % 3) * 3 + piece.tileIndex % 3;
+      let y =
+        Math.floor(piece.boardIndex / 3) * 3 + Math.floor(piece.tileIndex / 3);
+      return { x: x, y: y };
+    },
     messageIllegal(e) {
       console.log("IllegalMove: " + JSON.stringify(e));
-    }
-  },
-  computed: {
-    moveableTiles: function() {
-      let result = [];
-      for (let i = 0; i < 7 * 6; i++) {
-        result.push(false);
-      }
-      for (let x = 0; x < 7; x++) {
-        for (let y = 5; y >= 0; y--) {
-          if (!this.gamePieces.find(e => e.y == y && e.x == x)) {
-            result[y * 7 + x] = true;
-            break;
-          }
-        }
-      }
-      return result;
     }
   }
 };
