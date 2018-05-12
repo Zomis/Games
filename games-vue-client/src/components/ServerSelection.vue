@@ -34,7 +34,7 @@ export default {
   data() {
     return {
       serverOptions: serverOptions,
-      chosenServer: "zomis"
+      chosenServer: serverOptions[0]
     };
   },
   methods: {
