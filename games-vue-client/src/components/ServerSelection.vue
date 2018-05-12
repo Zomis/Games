@@ -34,7 +34,7 @@ export default {
   data() {
     return {
       serverOptions: serverOptions,
-      chosenServer: serverOptions[0]
+      chosenServer: "ws://gbg.zomis.net:8082"
     };
   },
   methods: {
