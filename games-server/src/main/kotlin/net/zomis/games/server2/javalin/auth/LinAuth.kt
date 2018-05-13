@@ -30,7 +30,7 @@ class LinAuth(val port: Int) {
         val app = Javalin.create()
             .enableStandardRequestLogging()
             .enableDynamicGzip()
-            .enableCorsForOrigin("http://localhost:42637", "http://gbg.zomis.net:42637")
+            .enableCorsForOrigin("http://localhost:42637", "http://games.zomis.net")
             .apply {
                 port(port)
                 post("/auth/github") {
