@@ -34,3 +34,15 @@ I am using Kotlin which allows me to also compile game-logic into JavaScript and
 It allows me to dynamically inject new functionality (hopefully) without disturbing existing functionality.
 This is especially benificial for tests as you can dynamically insert functionality that is useful for automatic tests, and you can choose at what level you want your tests to run at - you can execute any events in your tests and the implementation you specified will handle them.
 It is also possible that in the future I will with the event-based functionality re-use more logic between frontend and backend.
+
+## Documentation and test-cases at the same time
+
+I wrote my own tool to generate documentation for how the client and server communicates. As I am sometimes not motivated to write test-cases and even less motivated to write documentation, I figured that I might as well generate the documentation from the test-cases. I have integrated a check in my build pipeline to make sure that the documentation is not outdated.
+
+## Future possibilities
+
+* As each listener has a description, it would be possible to check if there is a `System.getProperty`
+  for a cleaned version of that description and if it has a specific value then don't add the listener (automatic feature-toggling)
+* Make more of the Server-code be shared between clients, such as the InviteSystem, GamesSystem, etc.
+  Then it would be possible to construct a Client in JavaScript and the server as well, and use more of the real server-code in JavaScript (to avoid making local games special cases)
+* Use an Entity Component System approach in both the server-server code and in the games code
