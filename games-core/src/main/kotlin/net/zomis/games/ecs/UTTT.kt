@@ -24,7 +24,7 @@ class UTTT {
         return game
     }
 
-    class ActionableClick: GameSystem() {
+    class ActionableClick: GameSystem {
         override fun invoke(p1: EventSystem) {
             p1.listen("click", ActionEvent::class, {true}, {
             })

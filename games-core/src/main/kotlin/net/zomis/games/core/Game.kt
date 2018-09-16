@@ -3,7 +3,7 @@ package net.zomis.games.core
 import net.zomis.core.events.EventRegistrator
 import net.zomis.core.events.EventSystem
 
-abstract class GameSystem: EventRegistrator
+typealias GameSystem = EventRegistrator
 
 class Game {
 
