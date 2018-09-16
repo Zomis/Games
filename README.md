@@ -1,6 +1,12 @@
 # Server2
 
-## If you just want to run it...
+## If you just want to play...
+
+[Play Zomis' Games](http://games.zomis.net)
+
+## Building and running locally
+
+To run the server:
 
     ./gradlew :games-server:run
 
