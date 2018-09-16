@@ -26,12 +26,9 @@ class UTTT {
 
     class ActionableClick: GameSystem() {
         override fun invoke(p1: EventSystem) {
-            p1.listen("click", ActionEvent::class, {it.actionable}, {
-
+            p1.listen("click", ActionEvent::class, {true}, {
             })
         }
-
-
     }
 
     private fun createTiles(): Component {
