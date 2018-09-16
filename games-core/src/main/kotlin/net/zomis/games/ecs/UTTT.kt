@@ -19,16 +19,14 @@ class UTTT {
         }
 
         game.core.add(Container2D(boards))
-        game.system(ActionableClick())
+        game.system(this::actionableClick)
 
         return game
     }
 
-    class ActionableClick: GameSystem {
-        override fun invoke(p1: EventSystem) {
-            p1.listen("click", ActionEvent::class, {true}, {
-            })
-        }
+    fun actionableClick(p1: EventSystem) {
+        p1.listen("click", ActionEvent::class, {true}, {
+        })
     }
 
     private fun createTiles(): Component {
