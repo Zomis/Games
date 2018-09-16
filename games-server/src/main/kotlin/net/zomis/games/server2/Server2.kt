@@ -22,6 +22,7 @@ import net.zomis.tttultimate.TTFactories
 import net.zomis.tttultimate.games.TTClassicControllerWithGravity
 import net.zomis.tttultimate.games.TTUltimateController
 import java.net.InetSocketAddress
+import javax.script.ScriptEngineManager
 
 fun JsonNode.getTextOrDefault(fieldName: String, default: String): String {
     return if (this.hasNonNull(fieldName)) this.get(fieldName).asText() else default
@@ -77,6 +78,12 @@ class Server2(val events: EventSystem) {
         if (config.httpPort != 0) {
             events.with(LinAuth(config.httpPort)::register)
         }
+
+        val engine = ScriptEngineManager().getEngineByExtension("kts")!!
+        events.listen("Kotlin script", ConsoleEvent::class, {it.input.startsWith("kt ")}, {
+            val result = engine.eval(it.input.substring("kt ".length))
+            println(result)
+        })
         events.execute(StartupEvent(System.currentTimeMillis()))
     }
 
