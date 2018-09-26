@@ -7,11 +7,13 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import klogging.KLoggers
 import net.zomis.core.events.EventSystem
+import net.zomis.games.ecs.UTTT
 import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.games.GameListSystem
 import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.games.ObserverSystem
 import net.zomis.games.server2.games.SimpleMatchMakingSystem
+import net.zomis.games.server2.games.impl.ECSGameSystem
 import net.zomis.games.server2.games.impl.RoyalGameOfUrSystem
 import net.zomis.games.server2.games.impl.TTControllerSystem
 import net.zomis.games.server2.invites.InviteSystem
@@ -64,6 +66,7 @@ class Server2(val events: EventSystem) {
         TTControllerSystem("Connect4", {TTClassicControllerWithGravity(TTFactories().classicMNK(7, 6, 4))}).register(events)
         TTControllerSystem("UTTT", {TTUltimateController(TTFactories().ultimate())}).register(events)
         RoyalGameOfUrSystem.init(events)
+        events.with(ECSGameSystem(gameSystem, "UTTT-ECS", { UTTT().setup() })::register)
 
         SimpleMatchMakingSystem(gameSystem, events)
         events.with(ServerConsole()::register)
