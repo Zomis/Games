@@ -31,10 +31,11 @@ class Entity(val game: Game, val id: String) {
         return "[Entity $id]"
     }
 
-    fun <T: Component> updateComponent(component: KClass<T>, perform: (T) -> Unit) {
+    fun <T: Component> updateComponent(component: KClass<T>, perform: (T) -> Unit): T {
         val value = component(component)
         perform.invoke(value)
         game.execute(UpdateEntityEvent(this, component, value))
+        return value
     }
 
 }

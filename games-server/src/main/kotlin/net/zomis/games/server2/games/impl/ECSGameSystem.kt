@@ -3,14 +3,13 @@ package net.zomis.games.server2.games.impl
 import klogging.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.core.*
+import net.zomis.games.core.Game
 import net.zomis.games.ecs.ActiveBoard
 import net.zomis.games.ecs.Parent
 import net.zomis.games.server2.ClientJsonMessage
 import net.zomis.games.server2.StartupEvent
-import net.zomis.games.server2.games.GameStartedEvent
+import net.zomis.games.server2.games.*
 import net.zomis.games.server2.games.GameSystem
-import net.zomis.games.server2.games.GameTypeRegisterEvent
-import net.zomis.games.server2.games.IllegalMoveEvent
 import net.zomis.games.server2.getTextOrDefault
 import kotlin.reflect.KClass
 
@@ -33,13 +32,27 @@ class ECSGameSystem(private val gameSystem: GameSystem, val gameType: String, pr
             gameStartedEvent.game.obj = game
             game.execute(ECSGameStartedEvent(game))
 
-            sendFullData(game, gameStartedEvent.game)
-
             game.system {
                 it.listen("component update in $gameType", UpdateEntityEvent::class, {true}, {updateEvent ->
                     sendComponentData(gameStartedEvent.game, updateEvent.entity, updateEvent.componentClass, updateEvent.value)
                 })
+                it.listen("PlayerEliminated by event in $gameType", UpdateEntityEvent::class, {update ->
+                    update.componentClass == Player::class
+                }, {update ->
+                    val player = update.value as Player
+                    events.execute(PlayerEliminatedEvent(gameStartedEvent.game, player.index,
+                        player.result == WinStatus.WIN, player.resultPosition!!))
+                })
+                it.listen("game over because all players eliminated in $gameType", UpdateEntityEvent::class, {
+                    update -> update.componentClass == Player::class &&
+                        update.entity.game.core.component(Players::class).players.asSequence()
+                        .map { it.component(Player::class) }
+                        .all { it.eliminated }
+                }, {
+                    events.execute(GameEndedEvent(gameStartedEvent.game))
+                })
             }
+            sendFullData(game, gameStartedEvent.game)
         })
         events.listen("move in $gameType", ClientJsonMessage::class, {
             it.data.getTextOrDefault("type", "") == "action" &&
@@ -138,7 +151,7 @@ class ECSGameSystem(private val gameSystem: GameSystem, val gameType: String, pr
             is Player -> "player" to mapOf(
                 "index" to component.index,
                 "position" to component.resultPosition,
-                "winner" to component.winner
+                "result" to component.result
             )
             is OwnedByPlayer -> "owner" to component.owner?.index
             is PlayerTurn -> "currentPlayer" to component.currentPlayer.index

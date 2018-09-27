@@ -3,7 +3,6 @@ package net.zomis.games.ecs
 import klogging.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.core.*
-import net.zomis.tttultimate.TicUtils
 
 data class ActiveBoard(var active: Tile?): DataComponent()
 data class Parent(val parent: Entity): FixedComponent()
@@ -30,6 +29,7 @@ class UTTT {
         }
 
         game.core.add(Players(players))
+            .add(OwnedByPlayer(null))
             .add(PlayerTurn(players[0].component(Player::class)))
             .add(Container2D(boards))
             .add(ActiveBoard(null))
@@ -79,10 +79,15 @@ class UTTT {
                 activeBoard.active = if (target.component(OwnedByPlayer::class).owner != null) null else destination
             }
             checkWinner(it.actionable.component(Parent::class).parent)
+            val winner = checkWinner(it.actionable.game.core)
+            if (winner != null) {
+                core.component(Players::class).eliminate(winner.index, WinStatus.WIN).eliminateRemaining(WinStatus.LOSS)
+
+            }
         })
     }
 
-    private fun checkWinner(entity: Entity) {
+    private fun checkWinner(entity: Entity): Player? {
         val grid = entity.component(Container2D::class).container
 
         val range = (0..2)
@@ -107,12 +112,13 @@ class UTTT {
         if (diagonalTwo != null) {
             return setWinner(entity, diagonalTwo)
         }
+        return null
     }
 
-    private fun setWinner(entity: Entity, player: Player) {
-        entity.updateComponent(OwnedByPlayer::class) {
+    private fun setWinner(entity: Entity, player: Player): Player? {
+        return entity.updateComponent(OwnedByPlayer::class) {
             it.owner = player
-        }
+        }.owner
     }
 
     private fun checkWins(map: Iterable<Player?>): Player? {

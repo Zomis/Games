@@ -8,6 +8,7 @@ import net.zomis.games.server2.clients.ur.getInt
 import net.zomis.games.server2.clients.ur.getText
 import net.zomis.games.server2.doctools.DocEventSystem
 import net.zomis.games.server2.doctools.DocWriter
+import net.zomis.games.server2.games.PlayerEliminatedEvent
 import net.zomis.games.server2.testDocWriter
 import net.zomis.games.server2.testServerConfig
 import org.junit.jupiter.api.AfterEach
@@ -120,29 +121,23 @@ class ECSGameTest {
         println("Win the game")
         val finalId = data["game"]["grid"][0][0]["grid"][2][2]["id"].asText()
         p1.sendAndExpectResponse("""v1:{ "game": "$GAMETYPE", "gameId": "1", "type": "action", "performer": "$player1_id", "action": "$finalId" }""")
-        var obj = p1.takeUntilJson { it.getText("type") == "PlayerEliminated" }
+
+        val clients = listOf(p1, p2)
+        var obj = clients.map { it.takeUntilJson { it.getText("type") == "PlayerEliminated" } }.first()
         assert(obj.getText("gameType") == GAMETYPE)
         assert(obj.getInt("player") == 0)
         assert(obj.get("winner").asBoolean())
         assert(obj.getInt("position") == 1)
 
-        obj = p1.expectJsonObject { it.getText("type") == "PlayerEliminated" }
-        assert(obj.getText("gameType") == GAMETYPE)
-        assert(obj.getInt("player") == 1)
-        assert(!obj.get("winner").asBoolean())
-        assert(obj.getInt("position") == 2)
-
-        obj = p2.takeUntilJson { it.getText("type") == "PlayerEliminated" }
-        assert(obj.getText("gameType") == GAMETYPE)
-        assert(obj.getInt("player") == 0)
-        assert(obj.get("winner").asBoolean())
-        assert(obj.getInt("position") == 1)
-
-        obj = p2.expectJsonObject { it.getText("type") == "PlayerEliminated" }
-        assert(obj.getText("gameType") == GAMETYPE)
-        assert(obj.getInt("player") == 1)
-        assert(!obj.get("winner").asBoolean())
-        assert(obj.getInt("position") == 2)
+        clients.forEach { it.expectJsonObject {
+            it.getText("type") == "Update" && it["component"]["type"].asText() == "player" &&
+            it["component"]["value"]["index"].asInt() == 1 && it["component"]["value"]["position"].asInt() == 2 &&
+            it["component"]["value"]["result"].asText() == "LOSS"
+        }}
+        clients.forEach { it.expectJsonObject {
+            it.getText("type") == "PlayerEliminated" && it.getText("gameType") == GAMETYPE &&
+            it.getInt("player") == 1 && !it.get("winner").asBoolean() && it.getInt("position") == 2
+        }}
 
         p1.close()
         p2.close()
