@@ -87,36 +87,37 @@ class ECSGameTest {
 
         // Play some moves to make first player get the bottom left board
         sendAndExpect(data, p1, p2, listOf(
-            ECSAction(player1_id, data["game"]["grid"][0][2]["grid"][1][0]["id"].asText()),
-            ECSAction(player2_id, data["game"]["grid"][1][0]["grid"][0][2]["id"].asText()),
-            ECSAction(player1_id, data["game"]["grid"][0][2]["grid"][1][1]["id"].asText()),
-            ECSAction(player2_id, data["game"]["grid"][1][1]["grid"][0][2]["id"].asText()),
-            ECSAction(player1_id, data["game"]["grid"][0][2]["grid"][1][2]["id"].asText())
+            ECSAction(player1_id, data["game"]["grid"][2][0]["grid"][0][1]["id"].asText()),
+            ECSAction(player2_id, data["game"]["grid"][0][1]["grid"][2][0]["id"].asText()),
+            ECSAction(player1_id, data["game"]["grid"][2][0]["grid"][1][1]["id"].asText()),
+            ECSAction(player2_id, data["game"]["grid"][1][1]["grid"][2][0]["id"].asText()),
+            ECSAction(player1_id, data["game"]["grid"][2][0]["grid"][2][1]["id"].asText())
         ))
 
         println("Make sure that board 0 2 is won (bottom left)")
-        p1.expectJsonObject {
-            //  { type: Update, id: xyz, component: { type: owner, value: 0 } }
-            it.getText("type") == "Update" && it.getText("id") == data["game"]["grid"][0][2]["grid"]["id"].asText() &&
-                it["component"]["type"].asText() == "owner" && it["component"]["value"].asInt() == 0
-        }
+        expectWonBoard(data, p1, p2, Pair(2, 0))
 
         println("Prepare for winning")
         sendAndExpect(data, p1, p2, listOf(
-            ECSAction(player1_id, data["game"]["grid"][1][2]["grid"][0][1]["id"].asText()), // TODO: Fix the values for winning
-            ECSAction(player2_id, data["game"]["grid"][0][1]["grid"][2][2]["id"].asText()),
-            ECSAction(player1_id, data["game"]["grid"][2][2]["grid"][0][1]["id"].asText()),
-            ECSAction(player2_id, data["game"]["grid"][0][1]["grid"][2][1]["id"].asText()),
-            ECSAction(player1_id, data["game"]["grid"][2][1]["grid"][0][1]["id"].asText()),
-            ECSAction(player1_id, data["game"]["grid"][0][1]["grid"][2][0]["id"].asText()),
-
-            ECSAction(player1_id, data["game"]["grid"][2][0]["grid"][0][2]["id"].asText()), // Play anywhere after this
-            ECSAction(player1_id, data["game"]["grid"][0][0]["grid"][0][0]["id"].asText()),
-            ECSAction(player1_id, data["game"]["grid"][0][0]["grid"][0][1]["id"].asText()),
-            ECSAction(player1_id, data["game"]["grid"][0][0]["grid"][1][1]["id"].asText()),
-            ECSAction(player1_id, data["game"]["grid"][1][1]["grid"][0][0]["id"].asText())
+            ECSAction(player2_id, data["game"]["grid"][2][1]["grid"][1][0]["id"].asText()),
+            ECSAction(player1_id, data["game"]["grid"][1][0]["grid"][2][2]["id"].asText()),
+            ECSAction(player2_id, data["game"]["grid"][2][2]["grid"][1][0]["id"].asText()),
+            ECSAction(player1_id, data["game"]["grid"][1][0]["grid"][1][2]["id"].asText()),
+            ECSAction(player2_id, data["game"]["grid"][1][2]["grid"][1][0]["id"].asText()),
+            ECSAction(player1_id, data["game"]["grid"][1][0]["grid"][0][2]["id"].asText())
         ))
-        // Win the game
+        expectWonBoard(data, p1, p2, Pair(1, 0))
+
+        sendAndExpect(data, p1, p2, listOf(
+            ECSAction(player2_id, data["game"]["grid"][0][2]["grid"][2][0]["id"].asText()), // Play anywhere after this
+            ECSAction(player1_id, data["game"]["grid"][0][0]["grid"][0][0]["id"].asText()),
+            ECSAction(player2_id, data["game"]["grid"][0][0]["grid"][1][0]["id"].asText()),
+            ECSAction(player1_id, data["game"]["grid"][0][0]["grid"][1][1]["id"].asText()),
+            ECSAction(player2_id, data["game"]["grid"][1][1]["grid"][0][0]["id"].asText())
+//            ECSAction(player2_id, data["game"]["grid"][0][0]["grid"][2][2]["id"].asText())
+        ))
+//        expectWonBoard(data, p1, p2, Pair(0, 0))
+        println("Win the game")
         val finalId = data["game"]["grid"][0][0]["grid"][2][2]["id"].asText()
         p1.sendAndExpectResponse("""v1:{ "game": "$GAMETYPE", "gameId": "1", "type": "action", "performer": "$player1_id", "action": "$finalId" }""")
         var obj = p1.takeUntilJson { it.getText("type") == "PlayerEliminated" }
@@ -147,16 +148,20 @@ class ECSGameTest {
         p2.close()
     }
 
+    private fun expectWonBoard(data: ObjectNode, p1: WSClient, p2: WSClient, pair: Pair<Int, Int>) {
+        val expected: (ObjectNode) -> Boolean = {
+            //  { type: Update, id: xyz, component: { type: owner, value: 0 } }
+            it.getText("type") == "Update" && it.getText("id") == data["game"]["grid"][pair.first][pair.second]["id"].asText() &&
+                    it["component"]["type"].asText() == "owner" && it["component"]["value"].asInt() == 0
+        }
+        p1.expectJsonObject(expected)
+        p2.expectJsonObject(expected)
+    }
+
     private fun sendAndExpect(data: ObjectNode, p1: WSClient, p2: WSClient, pairs: List<ECSAction>) {
         pairs.forEach({ action ->
             val cl = if (action.performerId == this.player1_id) p1 else p2
             cl.send("""v1:{ "game": "$GAMETYPE", "gameId": "1", "type": "action", "performer": "${action.performerId}", "action": "${action.actionableId}" }""")
-//            p1.expectJsonObject {
-//                it.getText("type") == "GameMoveRequest" // or whatever it is called
-//            }
-//            p2.expectJsonObject {
-//                it.getText("type") == "GameMoveRequest" // or whatever it is called
-//            }
 
             val expectedOwner = if (action.performerId == this.player1_id) 0 else 1
 

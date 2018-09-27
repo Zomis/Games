@@ -3,6 +3,7 @@ package net.zomis.games.ecs
 import klogging.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.core.*
+import net.zomis.tttultimate.TicUtils
 
 data class ActiveBoard(var active: Tile?): DataComponent()
 data class Parent(val parent: Entity): FixedComponent()
@@ -74,9 +75,52 @@ class UTTT {
                 playerTurn.currentPlayer = players[(playerTurn.currentPlayer.index + 1) % players.size].component(Player::class)
             }
             it.actionable.game.core.updateComponent(ActiveBoard::class) {activeBoard ->
-                activeBoard.active = destination
+                val target = it.actionable.game.core.component(Container2D::class).container[destination.y][destination.x]
+                activeBoard.active = if (target.component(OwnedByPlayer::class).owner != null) null else destination
             }
+            checkWinner(it.actionable.component(Parent::class).parent)
         })
+    }
+
+    private fun checkWinner(entity: Entity) {
+        val grid = entity.component(Container2D::class).container
+
+        val range = (0..2)
+
+        for (xx in range) {
+            val horizontal = checkWins(range.map { grid[it][xx].component(OwnedByPlayer::class).owner })
+            if (horizontal != null) {
+                return setWinner(entity, horizontal)
+            }
+
+            val vertical = checkWins(range.map { grid[xx][it].component(OwnedByPlayer::class).owner })
+            if (vertical != null) {
+                return setWinner(entity, vertical)
+            }
+        }
+
+        val diagonalOne = checkWins(listOf(grid[0][0], grid[1][1], grid[2][2]).map { it.component(OwnedByPlayer::class).owner })
+        if (diagonalOne != null) {
+            return setWinner(entity, diagonalOne)
+        }
+        val diagonalTwo = checkWins(listOf(grid[0][2], grid[1][1], grid[2][0]).map { it.component(OwnedByPlayer::class).owner })
+        if (diagonalTwo != null) {
+            return setWinner(entity, diagonalTwo)
+        }
+    }
+
+    private fun setWinner(entity: Entity, player: Player) {
+        entity.updateComponent(OwnedByPlayer::class) {
+            it.owner = player
+        }
+    }
+
+    private fun checkWins(map: Iterable<Player?>): Player? {
+        val distinct = map.distinct()
+        if (distinct.size != 1 || distinct.firstOrNull() == null) {
+            return null
+        }
+        return map.first()
     }
 
     private fun createTiles(parent: Entity): Component {
