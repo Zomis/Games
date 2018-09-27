@@ -74,7 +74,11 @@ class ECSGameSystem(private val gameSystem: GameSystem, val gameType: String, pr
             val actionableId = it.data.get("action").asText()
             val actionable = game.entityById(actionableId) ?:
                 throw IllegalArgumentException("Unknown entity: $actionableId")
-            game.execute(ActionEvent(actionable, players.players[playerIndex], true))
+            val actionEvent = game.execute(ActionEvent(actionable, players.players[playerIndex]))
+            if (actionEvent.denyReason != null) {
+                events.execute(IllegalMoveEvent(serverGame, playerIndex, "click", actionable.id,
+                    actionEvent.denyReason!!))
+            }
 
 //            TODO("Inform all players about the fact that this action has been performed")
         })

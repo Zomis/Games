@@ -26,8 +26,8 @@ class Game {
         events.with(system)
     }
 
-    fun <E: Any> execute(event: E) {
-        this.events.execute(event)
+    fun <E: Any> execute(event: E): E {
+        return this.events.execute(event)
     }
 
 }

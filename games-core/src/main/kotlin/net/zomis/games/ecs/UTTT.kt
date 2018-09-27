@@ -48,21 +48,18 @@ class UTTT {
             val played = tile.component(OwnedByPlayer::class).owner != null
             val activeTile = core.component(ActiveBoard::class).active
             if (ownedByPlayer.owner != null) {
-                logger.info("Move not allowed because already owned: $tile")
-                return@listen
+                return@listen it.deny("Move not allowed because already owned: $tile")
             }
             val parent = tile.component(Parent::class).parent.component(Tile::class)
             if (activeTile != null && parent != activeTile) {
-                logger.info("Wrong parent. Active is $activeTile but parent is $parent")
-                return@listen
+                return@listen it.deny("Wrong parent. Active is $activeTile but parent is $parent")
             }
 
             val currentPlayer = core.component(PlayerTurn::class).currentPlayer
             val correctPlayer = it.initiatedBy.game.core.component(PlayerTurn::class).currentPlayer == currentPlayer
             val allowed = !played && correctPlayer
             if (!allowed) {
-                logger.info("Move not allowed: played $played currectPlayer $correctPlayer")
-                return@listen
+                return@listen it.deny("Move not allowed: played $played currectPlayer $correctPlayer")
             }
 
             it.actionable.updateComponent(OwnedByPlayer::class) {component ->

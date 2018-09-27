@@ -9,7 +9,11 @@ open class DynamicComponent: Component()
 open class LogicComponent: Component()
 class Targetable: LogicComponent()
 class Actionable: LogicComponent()
-data class ActionEvent(val actionable: Entity, val initiatedBy: Entity, var allowed: Boolean)
+data class ActionEvent(val actionable: Entity, val initiatedBy: Entity, var denyReason: String? = null) {
+    fun deny(reason: String) {
+        this.denyReason = reason
+    }
+}
 
 //import kotlin.reflect.KClass
 //data class LimitedVisibility(val componentClass: KClass<*>, val sees: (Entity) -> Any): LogicComponent()

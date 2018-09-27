@@ -98,6 +98,13 @@ class ECSGameTest {
         println("Make sure that board 0 2 is won (bottom left)")
         expectWonBoard(data, p1, p2, Pair(2, 0))
 
+        println("Perform illegal move")
+        val repeatId = data["game"]["grid"][2][0]["grid"][2][1]["id"].asText()
+
+        p1.sendAndExpectResponse("""v1:{ "game": "$GAMETYPE", "gameId": "1",
+            "type": "action", "performer": "$player1_id", "action": "$repeatId" }""".trimMargin())
+        p1.expectJsonObject { it.getText("type") == "IllegalMove" }
+
         println("Prepare for winning")
         sendAndExpect(data, p1, p2, listOf(
             ECSAction(player2_id, data["game"]["grid"][2][1]["grid"][1][0]["id"].asText()),
