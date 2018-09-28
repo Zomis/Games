@@ -1,9 +1,7 @@
 <template>
-  <div class="entity" @click="click(entity)">
-    <p>E:{{ entity.id }}</p>
-    <p v-if="entity.owner">O: {{entity.owner}}</p>
-    <p v-if="entity.activeBoard">AB: {{entity.activeBoard}}</p>
-    <p v-if="entity.currentPlayer">CP: {{entity.currentPlayer}}</p>
+  <div :data-entity="entity.id" class="entity" @click="click(entity)" :class="{['owner-' + entity.owner]: entity.owner !== null, owned: entity.owner !== null}">
+    <span v-if="entity.activeBoard">AB: {{entity.activeBoard}}</span>
+    <span v-if="entity.currentPlayer > -1">CP: {{entity.currentPlayer}}</span>
     <div v-if="entity.grid" class="grid-parent">
       <div class="grid">
         <Entity v-for="e in entity.grid.flatMap(row => row)" :entity="e"
@@ -21,9 +19,6 @@ export default {
     return {};
   },
   created() {
-    if (typeof this.entity.id === "undefined") {
-      console.log("ERROR: " + JSON.stringify(this.entity));
-    }
     this.game.entities[this.entity.id] = this.entity;
   },
   beforeDestroy() {},

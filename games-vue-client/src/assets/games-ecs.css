@@ -1,3 +1,19 @@
 .entity {
-  background-color: #ddf9fd;
+  background-color: white;
+  border: 1px solid black;
+}
+
+.entity.owner-0 {
+  background-color: blue;
+}
+
+.entity.owner-1 {
+  background-color: red;
+}
+
+.owned {
+  z-index: 70;
+  margin: auto;
+  width: 48px;
+  height: 48px;
 }
