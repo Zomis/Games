@@ -1,0 +1,45 @@
+.core {
+  /*  position: relative;
+  overflow: hidden;
+  border: 12px solid #6d5720;
+  border-radius: 12px;
+  margin: auto;*/
+}
+
+.core > .grid-parent > .grid {
+  width: 640px;
+  height: 640px;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  grid-gap: 10px;
+  padding: 10px;
+}
+
+.core > .grid-parent > .grid > .entity {
+  position: relative;
+  border: 3px solid black;
+}
+
+.core > .grid-parent > .grid > .entity > .grid-parent > .grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  background-color: #ffff00;
+}
+
+.core > .grid-parent > .grid > .entity > .grid-parent > .grid > .entity {
+  background-color: #7f7fff;
+}
+
+.grid-parent {
+  position: relative;
+}
+
+.grid {
+  display: grid;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}

@@ -1,7 +1,7 @@
 <template>
-  <div class="game" :class="gameType">
-    <GameHead :game="game" :gameId="gameId" :players="players"></GameHead>
-    <Entity :entity="core">
+  <div class="game" :class="gameType | lowerCase">
+    <GameHead :game="gameType" :gameId="gameId" :players="players"></GameHead>
+    <Entity :entity="core" class="core">
     </Entity>
     <GameResult :yourIndex="yourIndex"></GameResult>
   </div>
@@ -21,17 +21,22 @@ if (typeof games["games-js"] !== "undefined") {
 
 export default {
   name: "ECSGame",
-  props: ["yourIndex", "gameType", "game", "gameId", "players"],
+  props: ["yourIndex", "gameType", "gameId", "players"],
   data() {
     return {
       entities: {},
       core: {}
     };
   },
+  filters: {
+    lowerCase: function(value) {
+      return value.toLowerCase();
+    }
+  },
   created() {
     if (this.yourIndex < 0) {
       Socket.send(
-        `{ "type": "observer", "game": "${this.game}", "gameId": "${
+        `{ "type": "observer", "game": "${this.gameType}", "gameId": "${
           this.gameId
         }", "observer": "start" }`
       );
@@ -54,7 +59,7 @@ export default {
     doNothing: function() {},
     action: function(name, data) {
       if (Socket.isConnected()) {
-        let json = `{ "game": "${this.game}", "gameId": "${
+        let json = `{ "game": "${this.gameType}", "gameId": "${
           this.gameId
         }", "type": "move", "moveType": "${name}", "move": ${data} }`;
         Socket.send(json);
@@ -76,7 +81,7 @@ export default {
     },
     messageGameData(data) {
       console.log(`Recieved data: ${JSON.stringify(data)}`);
-      this.data = data;
+      this.core = data.game;
     },
     messageUpdate(updateInfo) {
       console.log(`MessageUpdate: ${JSON.stringify(updateInfo)}`);
