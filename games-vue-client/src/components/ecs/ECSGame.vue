@@ -1,7 +1,7 @@
 <template>
   <div class="game" :class="gameType | lowerCase">
     <GameHead :game="gameType" :gameId="gameId" :players="players"></GameHead>
-    <Entity :entity="core" class="core">
+    <Entity v-if="core" :entity="core" class="core" v-bind="{ game, click }">
     </Entity>
     <GameResult :yourIndex="yourIndex"></GameResult>
   </div>
@@ -24,8 +24,10 @@ export default {
   props: ["yourIndex", "gameType", "gameId", "players"],
   data() {
     return {
-      entities: {},
-      core: {}
+      core: null,
+      game: {
+        entities: {}
+      }
     };
   },
   filters: {
@@ -69,9 +71,20 @@ export default {
         );
       }
     },
-    onClick: function(entity) {
+    click: function(entity) {
       console.log("OnClick in ECSGame: " + entity.id);
-      this.action("click", entity.id);
+      if (entity.actionable && Socket.isConnected()) {
+        let performer = "";
+        if (this.core.players[this.yourIndex]) {
+          performer = this.core.players[this.yourIndex].id;
+        }
+        let json = `{ "game": "${this.gameType}", "gameId": "${
+          this.gameId
+        }", "type": "action", "performer": "${performer}", "action": "${
+          entity.id
+        }" }`;
+        Socket.send(json);
+      }
     },
     messageEliminated(e) {
       console.log(`Recieved eliminated: ${JSON.stringify(e)}`);
@@ -85,6 +98,8 @@ export default {
     },
     messageUpdate(updateInfo) {
       console.log(`MessageUpdate: ${JSON.stringify(updateInfo)}`);
+      this.game.entities[updateInfo.id][updateInfo.component.type] =
+        updateInfo.component.value;
     },
     messageIllegal(e) {
       console.log("IllegalMove: " + JSON.stringify(e));

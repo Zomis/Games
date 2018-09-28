@@ -1,9 +1,14 @@
 <template>
-  <div class="entity">
-    <p>E:{{ entity.id }};</p>
+  <div class="entity" @click="click(entity)">
+    <p>E:{{ entity.id }}</p>
+    <p v-if="entity.owner">O: {{entity.owner}}</p>
+    <p v-if="entity.activeBoard">AB: {{entity.activeBoard}}</p>
+    <p v-if="entity.currentPlayer">CP: {{entity.currentPlayer}}</p>
     <div v-if="entity.grid" class="grid-parent">
       <div class="grid">
-        <Entity v-for="e in entity.grid.flatMap(row => row)" :entity="e" :game="game" :key="e.id"></Entity>
+        <Entity v-for="e in entity.grid.flatMap(row => row)" :entity="e"
+           v-bind="{game, click}" :key="e.id">
+        </Entity>
       </div>
     </div>
   </div>
@@ -11,29 +16,20 @@
 <script>
 export default {
   name: "Entity",
-  props: ["game", "entity"],
+  props: ["game", "entity", "click"],
   data() {
     return {};
   },
-  created() {},
+  created() {
+    if (typeof this.entity.id === "undefined") {
+      console.log("ERROR: " + JSON.stringify(this.entity));
+    }
+    this.game.entities[this.entity.id] = this.entity;
+  },
   beforeDestroy() {},
   components: {},
   methods: {
-    doNothing: function() {},
-    action: function(name, data) {
-      if (Socket.isConnected()) {
-        let json = `{ "game": "${this.game}", "gameId": "${
-          this.gameId
-        }", "type": "move", "moveType": "${name}", "move": ${data} }`;
-        Socket.send(json);
-      }
-    },
     messageState(e) {
-      console.log(`MessageState: ${e.roll}`);
-      if (typeof e.roll !== "undefined") {
-        this.ur.doRoll_za3lpa$(e.roll);
-        this.rollUpdate(e.roll);
-      }
       console.log("AfterState: " + this.ur.toString());
     }
   },
