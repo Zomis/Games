@@ -1,11 +1,14 @@
 <template>
-  <div :data-entity="entity.id" class="entity" @click="click(entity)" :class="{['owner-' + entity.owner]: entity.owner !== null, owned: entity.owner !== null}">
-    <span v-if="entity.activeBoard">AB: {{entity.activeBoard}}</span>
-    <span v-if="entity.currentPlayer > -1">CP: {{entity.currentPlayer}}</span>
+  <div :data-entity="entity.id" class="entity" @click="click(entity)"
+    :class="{['owner-' + entity.owner]: entity.owner !== null, owned: entity.owner !== null, actionable: entity.actionable}">
+    <div v-if="entity.players" class="players">
+      <span v-if="entity.currentPlayer > -1">Current Player: {{entity.currentPlayer}}</span>
+    </div>
     <div v-if="entity.grid" class="grid-parent">
       <div class="grid">
         <Entity v-for="e in entity.grid.flatMap(row => row)" :entity="e"
-           v-bind="{game, click}" :key="e.id">
+           v-bind="{game, click}" :key="e.id"
+           :class="{ ['active-board']: entity.activeBoard && e.tile && e.tile.x == entity.activeBoard.x && e.tile.y == entity.activeBoard.y }">
         </Entity>
       </div>
     </div>
