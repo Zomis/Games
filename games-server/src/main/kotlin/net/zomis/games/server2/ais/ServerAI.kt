@@ -45,7 +45,4 @@ class ServerAI(val gameType: String, val name: String, val perform: (Game, Int) 
 
     val client = Client()
 
-
-
-
 }

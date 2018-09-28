@@ -13,12 +13,6 @@ import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.getTextOrDefault
 import kotlin.reflect.KClass
 
-data class ECSActionRequest(val game: net.zomis.games.server2.games.Game, val player: Int, val moveType: String, val move: Any) {
-    fun illegalMove(reason: String): IllegalMoveEvent {
-        return IllegalMoveEvent(game, player, moveType, move, reason)
-    }
-}
-
 data class ECSGameStartedEvent(val game: Game)
 
 class ECSGameSystem(private val gameSystem: GameSystem, val gameType: String, private val factory: () -> Game) {
