@@ -54,10 +54,10 @@ class UTTT {
             }
 
             val currentPlayer = core.component(PlayerTurn::class).currentPlayer
-            val correctPlayer = it.initiatedBy.game.core.component(PlayerTurn::class).currentPlayer == currentPlayer
+            val correctPlayer = it.initiatedBy.component(Player::class) == currentPlayer
             val allowed = !played && correctPlayer
             if (!allowed) {
-                return@listen it.deny("Move not allowed: played $played currectPlayer $correctPlayer")
+                return@listen it.deny("Move not allowed: played $played correctPlayer $correctPlayer")
             }
         })
 
