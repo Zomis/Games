@@ -1,14 +1,12 @@
 package net.zomis.games.server2.ecs
 
 import com.fasterxml.jackson.databind.node.ObjectNode
-import net.zomis.games.server2.Connect4Test
 import net.zomis.games.server2.Server2
 import net.zomis.games.server2.clients.ur.WSClient
 import net.zomis.games.server2.clients.ur.getInt
 import net.zomis.games.server2.clients.ur.getText
 import net.zomis.games.server2.doctools.DocEventSystem
 import net.zomis.games.server2.doctools.DocWriter
-import net.zomis.games.server2.games.PlayerEliminatedEvent
 import net.zomis.games.server2.testDocWriter
 import net.zomis.games.server2.testServerConfig
 import org.junit.jupiter.api.AfterEach
@@ -29,7 +27,7 @@ import java.net.URI
  */
 class ECSGameTest {
 
-    data class ECSAction(val performerId: String, val actionableId: String)
+    data class ECSAction(val performerId: String, val actionableId: String, val wonBoard: Pair<Int, Int>? = null)
 
     private lateinit var server: Server2
 
@@ -92,11 +90,8 @@ class ECSGameTest {
             ECSAction(player2_id, data["game"]["grid"][0][1]["grid"][2][0]["id"].asText()),
             ECSAction(player1_id, data["game"]["grid"][2][0]["grid"][1][1]["id"].asText()),
             ECSAction(player2_id, data["game"]["grid"][1][1]["grid"][2][0]["id"].asText()),
-            ECSAction(player1_id, data["game"]["grid"][2][0]["grid"][2][1]["id"].asText())
+            ECSAction(player1_id, data["game"]["grid"][2][0]["grid"][2][1]["id"].asText(), Pair(2, 0))
         ))
-
-        println("Make sure that board 0 2 is won (bottom left)")
-        expectWonBoard(data, p1, p2, Pair(2, 0))
 
         println("Perform illegal move")
         val repeatId = data["game"]["grid"][2][0]["grid"][2][1]["id"].asText()
@@ -112,9 +107,8 @@ class ECSGameTest {
             ECSAction(player2_id, data["game"]["grid"][2][2]["grid"][1][0]["id"].asText()),
             ECSAction(player1_id, data["game"]["grid"][1][0]["grid"][1][2]["id"].asText()),
             ECSAction(player2_id, data["game"]["grid"][1][2]["grid"][1][0]["id"].asText()),
-            ECSAction(player1_id, data["game"]["grid"][1][0]["grid"][0][2]["id"].asText())
+            ECSAction(player1_id, data["game"]["grid"][1][0]["grid"][0][2]["id"].asText(), Pair(1, 0))
         ))
-        expectWonBoard(data, p1, p2, Pair(1, 0))
 
         sendAndExpect(data, p1, p2, listOf(
             ECSAction(player2_id, data["game"]["grid"][0][2]["grid"][2][0]["id"].asText()), // Play anywhere after this
@@ -124,13 +118,12 @@ class ECSGameTest {
             ECSAction(player2_id, data["game"]["grid"][1][1]["grid"][0][0]["id"].asText())
 //            ECSAction(player2_id, data["game"]["grid"][0][0]["grid"][2][2]["id"].asText())
         ))
-//        expectWonBoard(data, p1, p2, Pair(0, 0))
         println("Win the game")
         val finalId = data["game"]["grid"][0][0]["grid"][2][2]["id"].asText()
         p1.sendAndExpectResponse("""v1:{ "game": "$GAMETYPE", "gameId": "1", "type": "action", "performer": "$player1_id", "action": "$finalId" }""")
 
         val clients = listOf(p1, p2)
-        var obj = clients.map { it.takeUntilJson { it.getText("type") == "PlayerEliminated" } }.first()
+        val obj = clients.map { it.takeUntilJson { it.getText("type") == "PlayerEliminated" } }.first()
         assert(obj.getText("gameType") == GAMETYPE)
         assert(obj.getInt("player") == 0)
         assert(obj.get("winner").asBoolean())
@@ -188,6 +181,32 @@ class ECSGameTest {
 
             p1.expectJsonObject(updateDestination)
             p2.expectJsonObject(updateDestination)
+
+            if (action.wonBoard != null) {
+                expectWonBoard(data, p1, p2, action.wonBoard)
+            }
+
+            val gameMoveInfo: (ObjectNode) -> Boolean = {
+                it.getText("type") == "GameMove" && it.getText("gameType") == GAMETYPE &&
+                    it.getText("gameId") == "1" && it.get("player").asInt() == expectedOwner &&
+                        it.getText("moveType") == "click" && it.getText("move") == action.actionableId
+            }
+            p1.expectJsonObject(gameMoveInfo)
+            p2.expectJsonObject(gameMoveInfo)
+
+            val same: (ObjectNode) -> Boolean = {
+                it.getText("type") == "allowed" && it.getText("game") == GAMETYPE &&
+                    it.getText("gameId") == "1"
+            }
+            fun allowedInfo(playerIndex: Int): (ObjectNode) -> Boolean {
+                if (playerIndex == expectedOwner) {
+                    return { same.invoke(it) && it.get("allowed").size() == 0 }
+                } else {
+                    return { same.invoke(it) && it.get("allowed").size() != 0 }
+                }
+            }
+            p1.expectJsonObject(allowedInfo(0))
+            p2.expectJsonObject(allowedInfo(1))
         })
     }
 
