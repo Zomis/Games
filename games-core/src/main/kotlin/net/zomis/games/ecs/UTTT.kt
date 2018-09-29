@@ -39,9 +39,7 @@ class UTTT {
     }
 
     fun actionableClick(events: EventSystem) {
-        events.listen("click", ActionEvent::class, {
-                true
-        }, {
+        events.listen("click allowed check", ActionAllowedCheck::class, {true}, {
             val core = it.actionable.game.core
             val tile = it.actionable
             val ownedByPlayer = tile.component(OwnedByPlayer::class)
@@ -61,17 +59,22 @@ class UTTT {
             if (!allowed) {
                 return@listen it.deny("Move not allowed: played $played currectPlayer $correctPlayer")
             }
+        })
 
+        events.listen("click", ActionEvent::class, {
+                true
+        }, {
+            val core = it.actionable.game.core
             it.actionable.updateComponent(OwnedByPlayer::class) {component ->
                 component.owner = it.initiatedBy.component(Player::class)
             }
 
             val destination = it.actionable.component(Tile::class)
             val players = it.actionable.game.core.component(Players::class).players
-            it.actionable.game.core.updateComponent(PlayerTurn::class) {playerTurn ->
+            core.updateComponent(PlayerTurn::class) {playerTurn ->
                 playerTurn.currentPlayer = players[(playerTurn.currentPlayer.index + 1) % players.size].component(Player::class)
             }
-            it.actionable.game.core.updateComponent(ActiveBoard::class) {activeBoard ->
+            core.updateComponent(ActiveBoard::class) {activeBoard ->
                 val target = it.actionable.game.core.component(Container2D::class).container[destination.y][destination.x]
                 activeBoard.active = if (target.component(OwnedByPlayer::class).owner != null) null else destination
             }
@@ -79,7 +82,6 @@ class UTTT {
             val winner = checkWinner(it.actionable.game.core)
             if (winner != null) {
                 core.component(Players::class).eliminate(winner.index, WinStatus.WIN).eliminateRemaining(WinStatus.LOSS)
-
             }
         })
     }

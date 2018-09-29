@@ -18,6 +18,10 @@ class Game {
         return result
     }
 
+    fun entities(): Sequence<Entity> {
+        return entitiesById.values.asSequence()
+    }
+
     fun entityById(id: String): Entity? {
         return entitiesById[id]
     }

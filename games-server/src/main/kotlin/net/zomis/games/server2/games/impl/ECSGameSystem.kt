@@ -53,7 +53,6 @@ class ECSGameSystem(private val gameSystem: GameSystem, val gameType: String, pr
                 it.data.get("game").asText() == gameType && it.data.has("game")
         }, {
             val gameId = it.data.get("gameId").asText()
-
             val serverGame = gameSystem.gameTypes[gameType]?.runningGames?.get(gameId) ?:
                 throw IllegalArgumentException("No such game: $gameId in gameType $gameType")
             val playerIndex = serverGame.players.indexOf(it.client)
@@ -68,12 +67,15 @@ class ECSGameSystem(private val gameSystem: GameSystem, val gameType: String, pr
             val actionableId = it.data.get("action").asText()
             val actionable = game.entityById(actionableId) ?:
                 throw IllegalArgumentException("Unknown entity: $actionableId")
-            val actionEvent = game.execute(ActionEvent(actionable, players.players[playerIndex]))
-            if (actionEvent.denyReason != null) {
-                events.execute(IllegalMoveEvent(serverGame, playerIndex, "click", actionable.id,
-                    actionEvent.denyReason!!))
-            }
 
+            val actionAllowedCheck = game.execute(
+                ActionAllowedCheck(actionable, players.players[playerIndex]))
+            if (actionAllowedCheck.allowed) {
+                game.execute(ActionEvent(actionable, players.players[playerIndex]))
+                return@listen
+            }
+            events.execute(IllegalMoveEvent(serverGame, playerIndex, "click", actionable.id,
+                actionAllowedCheck.denyReason!!))
 //            TODO("Inform all players about the fact that this action has been performed")
         })
         events.listen("register $gameType", StartupEvent::class, {true}, {
