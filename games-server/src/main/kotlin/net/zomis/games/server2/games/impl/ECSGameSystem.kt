@@ -48,6 +48,30 @@ class ECSGameSystem(private val gameSystem: GameSystem, val gameType: String, pr
             }
             sendFullData(game, gameStartedEvent.game)
         })
+
+        events.listen("send allowed moves in $gameType", MoveEvent::class, {
+            it.game.gameType.type == this.gameType
+        }, {
+            val serverGame = it.game
+            serverGame.broadcast {client ->
+                val playerIndex = serverGame.players.indexOf(client)
+                val game = serverGame.obj as Game
+                val players = game.core.component(Players::class)
+                val playerId = players.players[playerIndex].id
+                val player = game.entityById(playerId)!!
+                val allowed = game.entities().filter { it.componentOrNull(Actionable::class) != null }
+                        .filter { game.execute(ActionAllowedCheck(it, player)).allowed }
+                        .map { it.id }
+                        .toList()
+                val map = mutableMapOf<String, Any>()
+                map["type"] = "allowed"
+                map["game"] = gameType
+                map["gameId"] = serverGame.gameId
+                map["allowed"] = allowed
+                return@broadcast map
+            }
+        })
+
         events.listen("move in $gameType", ClientJsonMessage::class, {
             it.data.getTextOrDefault("type", "") == "action" &&
                 it.data.get("game").asText() == gameType && it.data.has("game")
@@ -72,11 +96,11 @@ class ECSGameSystem(private val gameSystem: GameSystem, val gameType: String, pr
                 ActionAllowedCheck(actionable, players.players[playerIndex]))
             if (actionAllowedCheck.allowed) {
                 game.execute(ActionEvent(actionable, players.players[playerIndex]))
+                events.execute(MoveEvent(serverGame, playerIndex, "click", actionableId))
                 return@listen
             }
             events.execute(IllegalMoveEvent(serverGame, playerIndex, "click", actionable.id,
                 actionAllowedCheck.denyReason!!))
-//            TODO("Inform all players about the fact that this action has been performed")
         })
         events.listen("register $gameType", StartupEvent::class, {true}, {
             events.execute(GameTypeRegisterEvent(gameType))
