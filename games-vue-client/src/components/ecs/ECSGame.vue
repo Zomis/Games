@@ -9,7 +9,7 @@
 
 <script>
 import Socket from "../../socket";
-import Entity from "./entity";
+import Entity from "./Entity";
 import GameHead from "../games/common/GameHead";
 import GameResult from "../games/common/GameResult";
 
