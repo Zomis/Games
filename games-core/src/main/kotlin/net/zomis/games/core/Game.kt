@@ -5,11 +5,10 @@ import net.zomis.core.events.EventSystem
 
 typealias GameSystem = EventRegistrator
 
-class Game {
+class Game(private val events: EventSystem = EventSystem()) {
 
     private val entitiesById = mutableMapOf<String, Entity>()
     val core: Entity = createEntity()
-    private val events = EventSystem()
     private var id = 0
 
     fun createEntity(): Entity {
