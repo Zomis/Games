@@ -4,11 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import net.zomis.core.events.EventSystem
 import net.zomis.games.server2.*
-import net.zomis.games.server2.games.Game
+import net.zomis.games.server2.games.ServerGame
 import net.zomis.games.server2.games.GameEndedEvent
 import net.zomis.games.server2.games.GameStartedEvent
 
-data class ClientInterestingGames(val interestingGames: Set<String>, val maxGames: Int, val currentGames: MutableSet<Game>)
+data class ClientInterestingGames(val interestingGames: Set<String>, val maxGames: Int, val currentGames: MutableSet<ServerGame>)
 data class ListRequest(val client: Client)
 
 class LobbySystem {

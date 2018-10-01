@@ -107,8 +107,8 @@ class ECSGameSystem(private val gameSystem: GameSystem, val gameType: String, pr
         })
     }
 
-    private fun sendComponentData(serverGame: net.zomis.games.server2.games.Game, entity: Entity,
-          componentClass: KClass<*>, value: Component) {
+    private fun sendComponentData(serverGame: net.zomis.games.server2.games.ServerGame, entity: Entity,
+                                  componentClass: KClass<*>, value: Component) {
         val playersComponent = entity.game.core.componentOrNull(Players::class)
         val data: Pair<String, Any?>? = if (playersComponent == null) componentData(value, null) else null
         serverGame.broadcast {client ->
@@ -130,7 +130,7 @@ class ECSGameSystem(private val gameSystem: GameSystem, val gameType: String, pr
         return result
     }
 
-    private fun sendFullData(game: Game, serverGame: net.zomis.games.server2.games.Game) {
+    private fun sendFullData(game: Game, serverGame: net.zomis.games.server2.games.ServerGame) {
         val playersComponent = game.core.componentOrNull(Players::class)
         val data: Any? = if (playersComponent == null) constructECSData(game, null) else null
         serverGame.broadcast {client ->

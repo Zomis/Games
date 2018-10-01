@@ -7,15 +7,15 @@ import net.zomis.games.server2.Client
 import net.zomis.games.server2.ClientJsonMessage
 import net.zomis.games.server2.getTextOrDefault
 
-data class ObserverStart(val client: Client, val game: Game)
-data class ObserverStop(val client: Client, val game: Game)
+data class ObserverStart(val client: Client, val game: ServerGame)
+data class ObserverStop(val client: Client, val game: ServerGame)
 
 class ObserverSystem(private val events: EventSystem, private val gameSystem: GameSystem) {
 
     private val logger = KLoggers.logger(this)
 
-    private val store: MutableMap<Game, MutableList<Any>> = mutableMapOf()
-    private val observers: MutableMap<Game, MutableSet<Client>> = mutableMapOf()
+    private val store: MutableMap<ServerGame, MutableList<Any>> = mutableMapOf()
+    private val observers: MutableMap<ServerGame, MutableSet<Client>> = mutableMapOf()
 
     fun register(events: EventSystem) {
         events.listen("Fire Observer Request", ClientJsonMessage::class, {
@@ -50,7 +50,7 @@ class ObserverSystem(private val events: EventSystem, private val gameSystem: Ga
         })
     }
 
-    private fun addAndSend(game: Game, message: ObjectNode) {
+    private fun addAndSend(game: ServerGame, message: ObjectNode) {
         store[game]?.add(message)
         observers[game]?.forEach { it.send(message) }
     }

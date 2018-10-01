@@ -5,7 +5,7 @@ import net.zomis.games.server2.ClientDisconnected
 import net.zomis.games.server2.doctools.DocEventSystem
 import net.zomis.games.server2.doctools.DocWriter
 import net.zomis.games.server2.doctools.FakeClient
-import net.zomis.games.server2.games.Game
+import net.zomis.games.server2.games.ServerGame
 import net.zomis.games.server2.games.GameEndedEvent
 import net.zomis.games.server2.games.GameStartedEvent
 import net.zomis.games.server2.games.GameType
@@ -63,7 +63,7 @@ class LobbySystemTest {
 
     @Test
     fun testGameStartEnd() {
-        val game = Game(GameType("A"), "game-a-1")
+        val game = ServerGame(GameType("A"), "game-a-1")
         game.players.add(clientAB2)
         game.players.add(clientA1)
         events.execute(GameStartedEvent(game))
