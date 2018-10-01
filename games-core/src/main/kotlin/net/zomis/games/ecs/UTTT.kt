@@ -14,8 +14,8 @@ class UTTT {
 
     private val logger = KLoggers.logger(this)
 
-    fun setup(): Game {
-        val game = Game()
+    fun setup(): World {
+        val game = World()
 
         val players = (0..1).map { Player(it, null, null) }.map {
             return@map game.createEntity().add(it)
@@ -40,7 +40,7 @@ class UTTT {
 
     fun actionableClick(events: EventSystem) {
         events.listen("click allowed check", ActionAllowedCheck::class, {true}, {
-            val core = it.actionable.game.core
+            val core = it.actionable.world.core
             val tile = it.actionable
             val ownedByPlayer = tile.component(OwnedByPlayer::class)
             val played = tile.component(OwnedByPlayer::class).owner != null
@@ -64,22 +64,22 @@ class UTTT {
         events.listen("click", ActionEvent::class, {
                 true
         }, {
-            val core = it.actionable.game.core
+            val core = it.actionable.world.core
             it.actionable.updateComponent(OwnedByPlayer::class) {component ->
                 component.owner = it.initiatedBy.component(Player::class)
             }
 
             val destination = it.actionable.component(Tile::class)
-            val players = it.actionable.game.core.component(Players::class).players
+            val players = it.actionable.world.core.component(Players::class).players
             core.updateComponent(PlayerTurn::class) {playerTurn ->
                 playerTurn.currentPlayer = players[(playerTurn.currentPlayer.index + 1) % players.size].component(Player::class)
             }
             core.updateComponent(ActiveBoard::class) {activeBoard ->
-                val target = it.actionable.game.core.component(Container2D::class).container[destination.y][destination.x]
+                val target = it.actionable.world.core.component(Container2D::class).container[destination.y][destination.x]
                 activeBoard.active = if (target.component(OwnedByPlayer::class).owner != null) null else destination
             }
             checkWinner(it.actionable.component(Parent::class).parent)
-            val winner = checkWinner(it.actionable.game.core)
+            val winner = checkWinner(it.actionable.world.core)
             if (winner != null) {
                 core.component(Players::class).eliminate(winner.index, WinStatus.WIN).eliminateRemaining(WinStatus.LOSS)
             }
@@ -131,7 +131,7 @@ class UTTT {
     private fun createTiles(parent: Entity): Component {
         return Container2D((0..2).map {y ->
             (0..2).map {x ->
-                parent.game.createEntity()
+                parent.world.createEntity()
                 .add(Tile(x, y))
                 .add(OwnedByPlayer(null))
                 .add(Parent(parent))

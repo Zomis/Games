@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import klogging.KLoggers
 import net.zomis.core.events.EventSystem
-import net.zomis.games.core.Game
+import net.zomis.games.core.World
 import net.zomis.games.ecs.UTTT
 import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.games.GameListSystem
@@ -46,7 +46,7 @@ class ServerConfig {
 class Server2(val events: EventSystem) {
     private val logger = KLoggers.logger(this)
     private val mapper = ObjectMapper()
-    private val world = Game(events)
+    private val world = World(events)
 
     fun start(config: ServerConfig) {
         Runtime.getRuntime().addShutdownHook(Thread({ events.execute(ShutdownEvent("runtime shutdown hook")) }))

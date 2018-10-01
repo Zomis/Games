@@ -4,7 +4,7 @@ import kotlin.reflect.KClass
 
 data class UpdateEntityEvent(val entity: Entity, val componentClass: KClass<*>, val value: Component)
 
-class Entity(val game: Game, val id: String) {
+class Entity(val world: World, val id: String) {
 
     fun <T: Component> component(clazz: KClass<T>): T {
         val value = components.find({ clazz.isInstance(it) })
@@ -34,7 +34,7 @@ class Entity(val game: Game, val id: String) {
     fun <T: Component> updateComponent(component: KClass<T>, perform: (T) -> Unit): T {
         val value = component(component)
         perform.invoke(value)
-        game.execute(UpdateEntityEvent(this, component, value))
+        world.execute(UpdateEntityEvent(this, component, value))
         return value
     }
 

@@ -3,7 +3,7 @@ package net.zomis.games.server2.games.impl
 import klogging.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.core.*
-import net.zomis.games.core.Game
+import net.zomis.games.core.World
 import net.zomis.games.ecs.ActiveBoard
 import net.zomis.games.ecs.Parent
 import net.zomis.games.server2.ClientJsonMessage
@@ -13,9 +13,9 @@ import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.getTextOrDefault
 import kotlin.reflect.KClass
 
-data class ECSGameStartedEvent(val game: Game)
+data class ECSGameStartedEvent(val game: World)
 
-class ECSGameSystem(private val gameSystem: GameSystem, val gameType: String, private val factory: () -> Game) {
+class ECSGameSystem(private val gameSystem: GameSystem, val gameType: String, private val factory: () -> World) {
     private val logger = KLoggers.logger(this)
 
     fun register(events: EventSystem) {
@@ -39,7 +39,7 @@ class ECSGameSystem(private val gameSystem: GameSystem, val gameType: String, pr
                 })
                 it.listen("game over because all players eliminated in $gameType", UpdateEntityEvent::class, {
                     update -> update.componentClass == Player::class &&
-                        update.entity.game.core.component(Players::class).players.asSequence()
+                        update.entity.world.core.component(Players::class).players.asSequence()
                         .map { it.component(Player::class) }
                         .all { it.eliminated }
                 }, {
@@ -55,7 +55,7 @@ class ECSGameSystem(private val gameSystem: GameSystem, val gameType: String, pr
             val serverGame = it.game
             serverGame.broadcast {client ->
                 val playerIndex = serverGame.players.indexOf(client)
-                val game = serverGame.obj as Game
+                val game = serverGame.obj as World
                 val players = game.core.component(Players::class)
                 val playerId = players.players[playerIndex].id
                 val player = game.entityById(playerId)!!
@@ -80,7 +80,7 @@ class ECSGameSystem(private val gameSystem: GameSystem, val gameType: String, pr
             val serverGame = gameSystem.gameTypes[gameType]?.runningGames?.get(gameId) ?:
                 throw IllegalArgumentException("No such game: $gameId in gameType $gameType")
             val playerIndex = serverGame.players.indexOf(it.client)
-            val game = serverGame.obj as Game
+            val game = serverGame.obj as World
             val players = game.core.component(Players::class)
             val expectedId = players.players[playerIndex].id
             val actualId = it.data.get("performer").asText()
@@ -109,7 +109,7 @@ class ECSGameSystem(private val gameSystem: GameSystem, val gameType: String, pr
 
     private fun sendComponentData(serverGame: net.zomis.games.server2.games.ServerGame, entity: Entity,
                                   componentClass: KClass<*>, value: Component) {
-        val playersComponent = entity.game.core.componentOrNull(Players::class)
+        val playersComponent = entity.world.core.componentOrNull(Players::class)
         val data: Pair<String, Any?>? = if (playersComponent == null) componentData(value, null) else null
         serverGame.broadcast {client ->
             if (data != null) {
@@ -130,7 +130,7 @@ class ECSGameSystem(private val gameSystem: GameSystem, val gameType: String, pr
         return result
     }
 
-    private fun sendFullData(game: Game, serverGame: net.zomis.games.server2.games.ServerGame) {
+    private fun sendFullData(game: World, serverGame: net.zomis.games.server2.games.ServerGame) {
         val playersComponent = game.core.componentOrNull(Players::class)
         val data: Any? = if (playersComponent == null) constructECSData(game, null) else null
         serverGame.broadcast {client ->
@@ -144,7 +144,7 @@ class ECSGameSystem(private val gameSystem: GameSystem, val gameType: String, pr
         }
     }
 
-    private fun constructECSData(game: Game, viewer: Entity?): Map<String, Any> {
+    private fun constructECSData(game: World, viewer: Entity?): Map<String, Any> {
         val data = mutableMapOf<String, Any>()
         data["type"] = "GameData"
         data["game"] = entityData(game.core, viewer)
