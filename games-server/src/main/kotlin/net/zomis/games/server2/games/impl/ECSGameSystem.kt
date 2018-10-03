@@ -2,6 +2,7 @@ package net.zomis.games.server2.games.impl
 
 import klogging.KLoggers
 import net.zomis.core.events.EventSystem
+import net.zomis.games.Features
 import net.zomis.games.core.*
 import net.zomis.games.core.World
 import net.zomis.games.ecs.ActiveBoard
@@ -15,10 +16,11 @@ import kotlin.reflect.KClass
 
 data class ECSGameStartedEvent(val game: World)
 
-class ECSGameSystem(private val gameSystem: GameSystem, val gameType: String, private val factory: () -> World) {
+class ECSGameSystem(val gameType: String, private val factory: () -> World) {
     private val logger = KLoggers.logger(this)
 
-    fun register(events: EventSystem) {
+    fun setup(features: Features, events: EventSystem) {
+        val gameTypes = features[GameSystem.GameTypes::class].gameTypes
         events.listen("start ECS Game $gameType", GameStartedEvent::class, {
             it.game.gameType.type == gameType
         }, {gameStartedEvent ->
@@ -77,7 +79,7 @@ class ECSGameSystem(private val gameSystem: GameSystem, val gameType: String, pr
                 it.data.get("game").asText() == gameType && it.data.has("game")
         }, {
             val gameId = it.data.get("gameId").asText()
-            val serverGame = gameSystem.gameTypes[gameType]?.runningGames?.get(gameId) ?:
+            val serverGame = gameTypes[gameType]?.runningGames?.get(gameId) ?:
                 throw IllegalArgumentException("No such game: $gameId in gameType $gameType")
             val playerIndex = serverGame.players.indexOf(it.client)
             val game = serverGame.obj as World

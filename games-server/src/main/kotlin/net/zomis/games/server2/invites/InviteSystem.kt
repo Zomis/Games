@@ -1,6 +1,7 @@
 package net.zomis.games.server2.invites
 
 import net.zomis.core.events.EventSystem
+import net.zomis.games.Features
 import net.zomis.games.server2.*
 import net.zomis.games.server2.games.GameStartedEvent
 import net.zomis.games.server2.games.GameSystem
@@ -10,15 +11,19 @@ data class Invite(val host: Client, val accepted: MutableList<Client>, val gameT
 data class InviteEvent(val host: Client, val invite: Invite, val targets: List<Client>)
 data class InviteResponseEvent(val source: Client, val invite: Invite, val accepted: Boolean)
 
-class InviteSystem(private val games: GameSystem) {
+/**
+ * Responsible for inviting specific players
+ */
+class InviteSystem {
 
     val invites = mutableMapOf<String, Invite>()
 
-    fun register(events: EventSystem, clientLookup: ClientsByName) {
+    fun setup(features: Features, events: EventSystem) {
+        val gameTypes = features[GameSystem.GameTypes::class].gameTypes
         events.listen("trigger InviteEvent", ClientJsonMessage::class, {
             it.data.getTextOrDefault("type", "") == "Invite"
         }, {
-            val gameType = games.gameTypes[it.data.getTextOrDefault("gameType", "")]
+            val gameType = gameTypes[it.data.getTextOrDefault("gameType", "")]
             if (gameType == null) {
                 events.execute(IllegalClientRequest(it.client, "No such gameType"))
                 return@listen
@@ -27,8 +32,10 @@ class InviteSystem(private val games: GameSystem) {
             val inviteId = "${gameType.type}-${it.client.name}-${invites.size}"
             val invite = Invite(it.client, mutableListOf(), gameType, inviteId)
             invites[inviteId] = invite
-            val event = InviteEvent(it.client, invite, inviteTargets.map { it.asText() }.map { clientLookup.get(it) }
-                .filterIsInstance<Client>())
+            val targetClients = inviteTargets.map { it.asText() }.map {name ->
+                gameTypes[gameType.type]!!.features[ClientList::class].clients.filter { it.name == name}.firstOrNull()
+            }.filterIsInstance<Client>()
+            val event = InviteEvent(it.client, invite, targetClients)
             events.execute(event)
         })
 

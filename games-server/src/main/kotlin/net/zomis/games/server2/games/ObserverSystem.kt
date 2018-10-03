@@ -3,6 +3,7 @@ package net.zomis.games.server2.games
 import com.fasterxml.jackson.databind.node.ObjectNode
 import klogging.KLoggers
 import net.zomis.core.events.EventSystem
+import net.zomis.games.Features
 import net.zomis.games.server2.Client
 import net.zomis.games.server2.ClientJsonMessage
 import net.zomis.games.server2.getTextOrDefault
@@ -17,10 +18,11 @@ class ObserverSystem(private val events: EventSystem, private val gameSystem: Ga
     private val store: MutableMap<ServerGame, MutableList<Any>> = mutableMapOf()
     private val observers: MutableMap<ServerGame, MutableSet<Client>> = mutableMapOf()
 
-    fun register(events: EventSystem) {
+    fun setup(features: Features, events: EventSystem) {
+        val gameSystem = features[GameSystem.GameTypes::class]
         events.listen("Fire Observer Request", ClientJsonMessage::class, {
             it.data.getTextOrDefault("type", "") == "observer"
-        }, this::observerRequest)
+        }, {observerRequest(gameSystem, it)})
 
         events.listen("Add to observer list", ObserverStart::class, {true}, {
             observers.putIfAbsent(it.game, mutableSetOf())
@@ -55,7 +57,7 @@ class ObserverSystem(private val events: EventSystem, private val gameSystem: Ga
         observers[game]?.forEach { it.send(message) }
     }
 
-    private fun observerRequest(message: ClientJsonMessage) {
+    private fun observerRequest(gameSystem: GameSystem.GameTypes, message: ClientJsonMessage) {
         if (message.data.getTextOrDefault("type", "") != "observer") {
             return
         }

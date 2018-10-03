@@ -4,7 +4,7 @@ import kotlin.reflect.KClass
 
 data class UpdateEntityEvent(val entity: Entity, val componentClass: KClass<*>, val value: Component)
 
-class Entity(val world: World, val id: String) {
+open class Entity(val world: World, val id: String) {
 
     fun <T: Component> component(clazz: KClass<T>): T {
         val value = components.find({ clazz.isInstance(it) })

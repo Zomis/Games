@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import klogging.KLoggers
 import net.zomis.core.events.EventSystem
+import net.zomis.games.Features
+import net.zomis.games.core.Component
 import net.zomis.games.core.World
 import net.zomis.games.ecs.UTTT
 import net.zomis.games.server2.ais.ServerAIs
@@ -26,6 +28,7 @@ import net.zomis.tttultimate.games.TTClassicControllerWithGravity
 import net.zomis.tttultimate.games.TTUltimateController
 import java.net.InetSocketAddress
 import javax.script.ScriptEngineManager
+import kotlin.reflect.KClass
 
 fun JsonNode.getTextOrDefault(fieldName: String, default: String): String {
     return if (this.hasNonNull(fieldName)) this.get(fieldName).asText() else default
@@ -43,13 +46,25 @@ class ServerConfig {
 
 }
 
+/*
+* Server2 should specify which features it wants to include
+* These features should hook themselves into Server2 -- store data and add event listeners
+*
+* Each feature can add its own state and store that in Server2 <-- also helps with debugging, as SimpleMatchMakingSystem is not accessible from everywhere in the code
+* Features should rely on listening to and executing events for messaging/performing stuff
+*
+* Some features require data from other features - in particular the GameFeature
+* Not all classes require dynamic data, primarily: Server, GameType, Game, Player, PlayerInGame
+*
+*/
 class Server2(val events: EventSystem) {
     private val logger = KLoggers.logger(this)
     private val mapper = ObjectMapper()
-    private val world = World(events)
+    val features = Features(events)
 
     fun start(config: ServerConfig) {
         Runtime.getRuntime().addShutdownHook(Thread({ events.execute(ShutdownEvent("runtime shutdown hook")) }))
+        logger.info("$this has features $features")
         events.listen("Start WebSocket Server", StartupEvent::class, {true}, {
             val ws = Server2WS(events, InetSocketAddress(config.wsport)).setup()
             logger.info("WebSocket server listening at ${ws.port}")
@@ -63,23 +78,24 @@ class Server2(val events: EventSystem) {
         }, {
             events.execute(ClientJsonMessage(it.client, mapper.readTree(it.message)))
         })
-        val gameSystem = GameSystem(events)
+
+        features.add(GameSystem()::setup)
 
         TTControllerSystem("Connect4", {TTClassicControllerWithGravity(TTFactories().classicMNK(7, 6, 4))}).register(events)
         TTControllerSystem("UTTT", {TTUltimateController(TTFactories().ultimate())}).register(events)
         RoyalGameOfUrSystem.init(events)
-        events.with(ECSGameSystem(gameSystem, "UTTT-ECS", { UTTT().setup() })::register)
+        features.add(ECSGameSystem("UTTT-ECS", { UTTT().setup() })::setup)
 
-        SimpleMatchMakingSystem(gameSystem, events)
+        features.add(SimpleMatchMakingSystem()::setup)
         events.with(ServerConsole()::register)
-        events.with(ObserverSystem(events, gameSystem)::register)
-        events.with(GameListSystem(gameSystem)::register)
+//        features.add(ObserverSystem()::setup)
+        features.add(GameListSystem()::setup)
         events.with(AuthorizationSystem()::register)
+        features.add(LobbySystem()::setup)
         events.with(ServerAIs()::register)
-        events.with(LobbySystem()::register)
         val clientsByName = ClientsByName()
         events.with(clientsByName::register)
-        events.with { InviteSystem(gameSystem).register(it, clientsByName) }
+        features.add(InviteSystem()::setup)
         if (config.httpPort != 0) {
             events.with(LinAuth(config.httpPort)::register)
         }
