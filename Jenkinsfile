@@ -38,9 +38,14 @@ pipeline {
                     sh 'docker ps -q --filter name="games_server" | xargs -r docker stop'
                     sh 'docker ps -q --filter name="games_client" | xargs -r docker stop'
 
+                    // Deploy server
                     sh 'docker build . -t gamesserver2'
                     sh 'docker run -d --rm --name games_server -p 192.168.0.110:8082:8081 -p 42638:42638 -v /home/zomis/jenkins/gamesserver2:/data/logs -v /etc/localtime:/etc/localtime:ro -w /data/logs gamesserver2'
-                    sh 'docker run -d --rm --name games_client -v $(pwd)/games-vue-client/dist:/usr/share/nginx/html:ro -p 42637:80 nginx'
+
+                    // Deploy client
+                    sh 'rm -rf /home/zomis/docker-volumes/games-vue-client'
+                    sh 'cp -r $(pwd)/games-vue-client/dist /home/zomis/docker-volumes/games-vue-client'
+                    sh 'docker run -d --rm --name games_client -v /home/zomis/docker-volumes/games-vue-client:/usr/share/nginx/html:ro -p 42637:80 nginx'
                 }
             }
         }
