@@ -33,7 +33,9 @@ export default {
   name: "ServerSelection",
   data() {
     return {
+      auth: { provider: null },
       serverOptions: serverOptions,
+      lastUsedProvider: null,
       chosenServer: "ws://gbg.zomis.net:8082"
     };
   },
@@ -44,6 +46,7 @@ export default {
     },
     authenticate: function(provider) {
       this.auth = { provider: provider };
+      localStorage.lastUsedProvider = provider;
       let controller = this;
       this.$auth.authenticate(provider).then(function() {
         console.log("Authenticated with " + provider);
@@ -60,6 +63,13 @@ export default {
     authenticated: function(e) {
       Socket.loginName = e.name;
       this.$router.push("/connected");
+    }
+  },
+  mounted() {
+    this.lastUsedProvider = localStorage.lastUsedProvider;
+    this.auth.provider = this.lastUsedProvider;
+    if (this.lastUsedProvider != null) {
+      Socket.connect(this.chosenServer);
     }
   },
   computed: {
