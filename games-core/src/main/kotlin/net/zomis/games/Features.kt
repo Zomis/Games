@@ -7,6 +7,10 @@ import kotlin.reflect.KClass
 // TODO: Is it possible to use a FeatureKey<T> and pass that to dependent features? Then use this key to fetch with some typesafety
 // TODO: Maybe even FeatureKey<T, R> to know what the feature was added *to* as well?
 typealias Feature = (Features, EventSystem) -> Unit
+
+/**
+ * Acts as both a data storage and a way to plugin new event listeners.
+ */
 class Features(val events: EventSystem?) {
 
     private val logger = KLoggers.logger(this)
