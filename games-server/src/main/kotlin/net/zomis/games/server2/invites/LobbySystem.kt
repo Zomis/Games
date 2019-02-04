@@ -1,6 +1,5 @@
 package net.zomis.games.server2.invites
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
@@ -10,6 +9,9 @@ import net.zomis.games.server2.games.*
 data class ClientInterestingGames(val interestingGames: Set<String>, val maxGames: Int, val currentGames: MutableSet<ServerGame>)
 data class ListRequest(val client: Client)
 data class ClientList(val clients: MutableList<Client> = mutableListOf())
+
+val Client.lobbyOptions: ClientInterestingGames get() = this.features[ClientInterestingGames::class]
+val GameType.clients: MutableList<Client> get() = this.features[ClientList::class].clients
 
 /**
  * Responsible for informing who is waiting to play which game
@@ -28,7 +30,11 @@ class LobbySystem {
             it.client.features.addData(ClientInterestingGames(interestingGameTypes, maxGames, mutableSetOf()))
             // set interesting games
             // set max number of concurrent games (defaults to 1, -1 = Infinite)
-            interestingGameTypes.forEach { gt -> gameTypes[gt]!!.features[ClientList::class].clients.add(it.client) }
+            val message = newClientMessage(it.client, interestingGameTypes)
+            interestingGameTypes.flatMap { gt -> gameTypes[gt]!!.clients }.toSet().send(message)
+            interestingGameTypes.forEach { gt ->
+                gameTypes[gt]!!.clients.add(it.client)
+            }
         })
 
         events.listen("add ClientList to GameType", GameTypeRegisterEvent::class, {true}, {
@@ -40,8 +46,10 @@ class LobbySystem {
         })
 
         events.listen("Disconnect Client remove ClientInterestingGames", ClientDisconnected::class, {true}, {
-            val oldInteresting = it.client.features[ClientInterestingGames::class]
-            oldInteresting.interestingGames.map { gameType -> gameTypes[gameType]!! }.forEach {gameType ->
+            val oldInteresting = it.client.features[ClientInterestingGames::class].interestingGames
+            val message = this.disconnectedMessage(it.client)
+            oldInteresting.flatMap { gt -> gameTypes[gt]!!.clients }.toSet().send(message)
+            oldInteresting.map { gameType -> gameTypes[gameType]!! }.forEach {gameType ->
                 gameType.features[ClientList::class].clients.remove(it.client)
             }
 //            it.client.features.remove(ClientInterestingGames::class)
@@ -59,7 +67,6 @@ class LobbySystem {
         data class InterestingClient(val client: Client, val gameType: String)
         events.listen("send available users", ListRequest::class, {true}, { event ->
             val interestingGames = clientData(event.client).interestingGames
-            val mapper = ObjectMapper()
 
             // Return Map<GameType, List<Client name>>
             val resultingMap = mutableMapOf<String, List<String>>()
@@ -74,6 +81,23 @@ class LobbySystem {
             }
             event.client.send(mapOf("type" to "Lobby", "users" to resultingMap))
         })
+    }
+
+    private fun disconnectedMessage(client: Client): Map<String, Any?> {
+        return mapOf(
+            "type" to "LobbyChange",
+            "client" to client.name,
+            "action" to "left"
+        )
+    }
+
+    private fun newClientMessage(client: Client, interestingGameTypes: Set<String>): Map<String, Any?> {
+        return mapOf(
+            "type" to "LobbyChange",
+            "client" to client.name,
+            "action" to "joined",
+            "gameTypes" to interestingGameTypes
+        )
     }
 
 }

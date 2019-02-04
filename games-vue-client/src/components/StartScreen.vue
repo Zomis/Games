@@ -73,6 +73,28 @@ export default {
         `{ "type": "Invite", "gameType": "${gameType}", "invite": [] }`
       );
     },
+    lobbyChangeMessage: function(e) {
+      // client, action, gameTypes
+      let user = e.client;
+      if (e.action === "joined") {
+        let gameTypes = e.gameTypes;
+        gameTypes.forEach(gt => {
+          let list = this.availableUsers[gt];
+          if (list == null) throw "No list for " + gt;
+        });
+        gameTypes.map(gt => this.availableUsers[gt]).forEach(list => list.push(user));
+      } else if (e.action === "left") {
+        let gameTypes = Object.keys(this.availableUsers);
+        gameTypes.map(gt => this.availableUsers[gt]).forEach(list => {
+          let index = list.indexOf(user);
+          if (index >= 0) {
+            list.splice(index, 1);
+          }
+        });
+      } else {
+        throw "Unknown action: " + e.action;
+      }
+    },
     lobbyMessage: function(e) {
       this.availableUsers = e.users;
     }
@@ -80,6 +102,7 @@ export default {
   created() {
     //    {"type":"Lobby","users":{"UR":["guest-44522"],"Connect4":["guest-44522"]}}
     Socket.$on("type:Lobby", this.lobbyMessage);
+    Socket.$on("type:LobbyChange", this.lobbyChangeMessage);
     Socket.$on("type:GameList", this.gameListMessage);
     Socket.send(
       `{ "type": "ClientGames", "gameTypes": ["UR", "Connect4", "UTTT", "UTTT-ECS"], "maxGames": 1 }`
@@ -93,6 +116,7 @@ export default {
   },
   beforeDestroy() {
     Socket.$off("type:Lobby", this.lobbyMessage);
+    Socket.$off("type:LobbyChange", this.lobbyChangeMessage);
     Socket.$off("type:GameList", this.gameListMessage);
   }
 };
