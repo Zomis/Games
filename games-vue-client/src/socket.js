@@ -2,14 +2,18 @@ import Vue from "vue";
 
 const emitter = new Vue({
   data() {
-    return { socket: null, connected: false };
+    return { socket: null, connected: false, serverURL: null };
   },
   methods: {
     isConnected() {
       return this.connected;
     },
+    getServerURL() {
+      return this.serverURL;
+    },
     connect(url) {
       console.log("Connecting to " + url);
+      this.serverURL = url;
       this.socket = new WebSocket(url);
       this.socket.onopen = e => {
         this.connected = true;
@@ -27,6 +31,9 @@ const emitter = new Vue({
       };
     },
     send(message) {
+      if (this.socket === null) {
+        throw "No socket.";
+      }
       if (1 === this.socket.readyState) {
         console.log("OUT: " + message);
         this.socket.send(message);

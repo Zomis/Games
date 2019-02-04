@@ -7,6 +7,7 @@
         <v-toolbar-title>{{ gameType }}</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn round :disabled="waiting" @click="matchMake(gameType)">Play anyone</v-btn>
+        <v-btn round :disabled="waiting" @click="inviteLink(gameType)">Invite with link</v-btn>
       </v-toolbar>
       <v-list two-line>
         <template v-for="name in users">
@@ -16,8 +17,13 @@
     </v-card>
 
     <v-card class="invites-sent" v-if="inviteWaiting.inviteId">
-      Waiting for response from
-      <v-chip v-for="username in inviteWaiting.waitingFor" :key="username">{{ username }}</v-chip>
+      <v-chip v-if="inviteWaiting.waitingFor.length > 0">
+        Waiting for response from
+        <v-chip v-for="username in inviteWaiting.waitingFor" :key="username">{{ username }}</v-chip>
+      </v-chip>
+      <v-chip v-if="inviteWaiting.waitingFor.length == 0">
+        <input type="text" :value="inviteURL"></input>
+      </v-chip>
     </v-card>
 
     <v-card class="invites">
@@ -73,6 +79,11 @@ export default {
       this.waitingGame = game;
       Socket.send(`v1:{ "game": "${game}", "type": "matchMake" }`);
     },
+    inviteLink(gameType, username) {
+      Socket.send(
+        `{ "type": "Invite", "gameType": "${gameType}", "invite": [] }`
+      );
+    },
     inviteMessage: function(e) {
       this.invites.push(e);
     },
@@ -125,6 +136,12 @@ export default {
     Socket.send(`{ "type": "ListRequest" }`);
   },
   computed: {
+    inviteURL() {
+      if (this.inviteWaiting.inviteId === null) {
+        return null;
+      }
+      return document.location.origin + "#/invite/" + this.inviteWaiting.inviteId + "?server=" + Socket.getServerURL();
+    },
     loginName() {
       return Socket.loginName;
     }

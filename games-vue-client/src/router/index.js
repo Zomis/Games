@@ -6,6 +6,7 @@ import RoyalGameOfUR from "@/components/RoyalGameOfUR";
 import Connect4 from "@/components/games/Connect4";
 import UTTT from "@/components/games/UTTT";
 import ECSGame from "@/components/ecs/ECSGame";
+import InviteByURL from "@/components/InviteByURL";
 
 import VueAxios from "vue-axios";
 import VueAuthenticate from "vue-authenticate";
@@ -35,6 +36,15 @@ export default new Router({
       path: "/connected",
       name: "StartScreen",
       component: StartScreen
+    },
+    {
+      path: "/invite/:inviteId/",
+      name: "InviteByURL",
+      component: InviteByURL,
+      props: route => ({
+        inviteId: route.params.inviteId,
+        server: route.query.server
+      })
     },
     {
       path: "/games/UR/:gameId/",
