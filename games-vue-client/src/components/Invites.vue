@@ -2,19 +2,23 @@
   <div class="invites">
     <v-card class="invites-recieved">
       <v-list two-line>
-        <template v-for="(invite, index) in invites" >
+        <div v-for="(invite, index) in invites" >
           {{ invite.host }} invites you to play {{ invite.game }}
-          <v-btn v-if="!invite.cancelled" color="success" @click="inviteResponse(invite, true)">Accept</v-btn>
-          <v-btn v-if="!invite.cancelled" color="error" @click="inviteResponse(invite, false)">Decline</v-btn>
+          <div class="invite-accept-options" v-if="!invite.cancelled && invite.response === null">
+            <v-btn color="success" @click="inviteResponse(invite, true)">Accept</v-btn>
+            <v-btn color="error" @click="inviteResponse(invite, false)">Decline</v-btn>
+          </div>
+          <div class="invite-response" v-if="invite.response !== null">
+            <v-btn color="success" disabled v-if="invite.response">Accepted</v-btn>
+            <v-btn color="error" disabled v-if="!invite.response">Declined</v-btn>
+          </div>
           <v-btn v-if="invite.cancelled"
             color="warning" @click="invites.splice(index, 1)">Invite cancelled</v-btn>
-        </template>
+        </div>
       </v-list>
     </v-card>
     <v-dialog v-model="inviteWaiting.inviteId !== null" persistent>
       <v-card class="invites-sent">
-        TODO Handle response accepted false
-        TODO Handle cancelled invites
         <v-chip v-if="inviteWaiting.waitingFor.length > 0">
           Waiting for response from
           <v-chip v-for="username in inviteWaiting.waitingFor" :key="username">{{ username }}</v-chip>
@@ -80,6 +84,7 @@ export default {
     },
     inviteMessage: function(e) {
       this.$set(e, "cancelled", false);
+      this.$set(e, "response", null);
       this.invites.push(e);
     },
     findInvite(inviteId) {
@@ -110,6 +115,7 @@ export default {
           invite.inviteId
         }", "accepted": ${accepted} }`
       );
+      this.$set(invite, "response", accepted);
     },
     inviteWaitingMessage: function(e) {
       this.inviteWaiting = e;
