@@ -1,15 +1,20 @@
 <template>
-  <AuthChoice :server="server" :onAuthenticated="onAuthenticated" />
+  <div class="invite-by-url">
+    <AuthChoice :server="server" :onAuthenticated="onAuthenticated" />
+
+    <Invites />
+  </div>
 </template>
 
 <script>
 import Socket from "../socket";
 import AuthChoice from "./AuthChoice";
+import Invites from "./Invites";
 
 export default {
   name: "ServerSelection",
   props: ["inviteId", "server"],
-  components: { AuthChoice },
+  components: { AuthChoice, Invites },
   methods: {
     onAuthenticated(authentication) {
       console.log("");
@@ -22,10 +27,3 @@ export default {
   }
 };
 </script>
-
-<style scoped>
-.input-group {
-  width: 30%;
-  margin: auto;
-}
-</style>
