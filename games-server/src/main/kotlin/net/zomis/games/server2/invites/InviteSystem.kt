@@ -7,7 +7,8 @@ import net.zomis.games.server2.games.GameStartedEvent
 import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.games.GameType
 
-data class Invite(val host: Client, val accepted: MutableList<Client>, val gameType: GameType, val id: String)
+data class Invite(val host: Client, val awaiting: MutableList<Client>,
+  val accepted: MutableList<Client>, val gameType: GameType, val id: String)
 data class InviteEvent(val host: Client, val invite: Invite, val targets: List<Client>)
 data class InviteResponseEvent(val source: Client, val invite: Invite, val accepted: Boolean)
 
@@ -30,12 +31,12 @@ class InviteSystem {
             }
             val inviteTargets = it.data.get("invite")
             val inviteId = "${gameType.type}-${it.client.name}-${invites.size}"
-            val invite = Invite(it.client, mutableListOf(), gameType, inviteId)
-            invites[inviteId] = invite
             val targetClients = inviteTargets.map { it.asText() }.map {name ->
                 gameTypes[gameType.type]!!.features[ClientList::class].clients.filter { it.name == name}.firstOrNull()
-            }.filterIsInstance<Client>()
-            val event = InviteEvent(it.client, invite, targetClients)
+            }.filterIsInstance<Client>().toMutableList()
+            val invite = Invite(it.client, targetClients, mutableListOf(), gameType, inviteId)
+            invites[inviteId] = invite
+            val event = InviteEvent(it.client, invite, targetClients.toList())
             events.execute(event)
         })
 
@@ -61,6 +62,19 @@ class InviteSystem {
         })
         events.listen("send invite response", InviteResponseEvent::class, {true}, {
             it.invite.host.send(mapOf("type" to "InviteResponse", "user" to it.source.name, "accepted" to it.accepted, "inviteId" to it.invite.id))
+        })
+        events.listen("send invite cancelled", InviteResponseEvent::class, {
+            it.source == it.invite.host
+        }, {
+            val message = mapOf("type" to "InviteCancelled", "inviteId" to it.invite.id)
+            it.invite.awaiting.forEach {cl ->
+                cl.send(message)
+            }
+            it.invite.accepted.forEach {cl ->
+                cl.send(message)
+            }
+            it.invite.host.send(message)
+            invites.remove(it.invite.id)
         })
         events.listen("add user to accepted on invite response", InviteResponseEvent::class, {it.accepted}, {
             it.invite.accepted.add(it.source)

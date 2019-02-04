@@ -63,6 +63,11 @@ export default {
       this.waitingGame = game;
       Socket.send(`v1:{ "game": "${game}", "type": "matchMake" }`);
     },
+    invite: function(gameType, username) {
+      Socket.send(
+        `{ "type": "Invite", "gameType": "${gameType}", "invite": ["${username}"] }`
+      );
+    },
     inviteLink(gameType, username) {
       Socket.send(
         `{ "type": "Invite", "gameType": "${gameType}", "invite": [] }`
