@@ -28,7 +28,7 @@ class LobbySystem {
             it.client.features.addData(ClientInterestingGames(interestingGameTypes, maxGames, mutableSetOf()))
             // set interesting games
             // set max number of concurrent games (defaults to 1, -1 = Infinite)
-            interestingGameTypes.forEach({ gt -> gameTypes[gt]!!.features[ClientList::class].clients.add(it.client) })
+            interestingGameTypes.forEach { gt -> gameTypes[gt]!!.features[ClientList::class].clients.add(it.client) }
         })
 
         events.listen("add ClientList to GameType", GameTypeRegisterEvent::class, {true}, {
@@ -41,9 +41,9 @@ class LobbySystem {
 
         events.listen("Disconnect Client remove ClientInterestingGames", ClientDisconnected::class, {true}, {
             val oldInteresting = it.client.features[ClientInterestingGames::class]
-            oldInteresting.interestingGames.map { gameTypes[it]!! }.forEach({gameType ->
+            oldInteresting.interestingGames.map { gameType -> gameTypes[gameType]!! }.forEach {gameType ->
                 gameType.features[ClientList::class].clients.remove(it.client)
-            })
+            }
 //            it.client.features.remove(ClientInterestingGames::class)
         })
 
@@ -63,7 +63,7 @@ class LobbySystem {
 
             // Return Map<GameType, List<Client name>>
             val resultingMap = mutableMapOf<String, List<String>>()
-            gameTypes.entries.forEach({gameType ->
+            gameTypes.entries.forEach {gameType ->
                 if (interestingGames.contains(gameType.key)) {
                     resultingMap[gameType.key] = gameType.value.features[ClientList::class].clients.filter {
                         val cig = it.features[ClientInterestingGames::class]
@@ -71,7 +71,7 @@ class LobbySystem {
                     }.filter { it != event.client }.filter { it.name != null }
                     .map { it.name!! }
                 }
-            })
+            }
             event.client.send(mapOf("type" to "Lobby", "users" to resultingMap))
         })
     }
