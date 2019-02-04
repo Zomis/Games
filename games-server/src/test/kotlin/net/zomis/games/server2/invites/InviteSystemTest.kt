@@ -74,7 +74,7 @@ class InviteSystemTest {
             receive(invitee, """{"type":"GameStarted","gameType":"TestGameType","gameId":"1","yourIndex":1,"players":["TestClientA","TestClientB"]}""")
         }
 
-        val invite = Invite(host, mutableListOf(), GameType("TestGameType", events), "TestGameType-TestClientA-0")
+        val invite = Invite(host, mutableListOf(), mutableListOf(), GameType("TestGameType", events), "TestGameType-TestClientA-0")
         system.invites[invite.id] = invite
         events.execute(InviteEvent(host, invite, listOf(invitee)))
         host.clearMessages()
@@ -90,7 +90,7 @@ class InviteSystemTest {
         events.execute(ClientLoginEvent(host, host.name!!, "tests"))
         events.execute(ClientLoginEvent(invitee, invitee.name!!, "tests"))
 
-        val invite = Invite(host, mutableListOf(), GameType("MyGame", events), "inv-1")
+        val invite = Invite(host, mutableListOf(), mutableListOf(), GameType("MyGame", events), "inv-1")
         events.execute(InviteEvent(host, invite, listOf(invitee)))
         Assertions.assertEquals("""{"type":"Invite","host":"Host","game":"MyGame","inviteId":"inv-1"}""", invitee.nextMessage())
         Assertions.assertEquals("""{"type":"InviteWaiting","inviteId":"inv-1","waitingFor":["Invited"]}""", host.nextMessage())
@@ -105,7 +105,7 @@ class InviteSystemTest {
 
     @Test
     fun inviteDeclined() {
-        val invite = Invite(host, mutableListOf(), GameType("MyGame", events), "inv-1")
+        val invite = Invite(host, mutableListOf(), mutableListOf(), GameType("MyGame", events), "inv-1")
         events.execute(InviteEvent(host, invite, listOf(invitee)))
         Assertions.assertEquals("""{"type":"Invite","host":"Host","game":"MyGame","inviteId":"inv-1"}""", invitee.nextMessage())
         Assertions.assertEquals("""{"type":"InviteWaiting","inviteId":"inv-1","waitingFor":["Invited"]}""", host.nextMessage())
