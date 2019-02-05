@@ -60,6 +60,7 @@ class LobbySystemTest {
 
         events.apply {
             execute(ListRequest(asker))
+            Assertions.assertEquals("""{"type":"LobbyChange","client":"A1","action":"left"}""", asker.nextMessage())
             Assertions.assertEquals("""{"type":"Lobby","users":{"A":["AB2"],"B":["AB2","B1"]}}""", asker.nextMessage())
         }
     }

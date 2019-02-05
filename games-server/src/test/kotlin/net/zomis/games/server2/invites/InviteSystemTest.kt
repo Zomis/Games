@@ -59,6 +59,7 @@ class InviteSystemTest {
         events.execute(ClientLoginEvent(invitee, invitee.name!!, "tests"))
         host.sendToServer(events, """{ "type": "ClientGames", "gameTypes": ["TestGameType", "OtherGameType"], "maxGames": 1 }""")
         invitee.sendToServer(events, """{ "type": "ClientGames", "gameTypes": ["TestGameType", "OtherGameType"], "maxGames": 1 }""")
+        Assertions.assertEquals("""{"type":"LobbyChange","client":"TestClientB","action":"joined","gameTypes":["TestGameType","OtherGameType"]}""", host.nextMessage())
 
         docWriter.document(events, "Inviting someone to play a game") {
             send(host, """{ "type": "Invite", "gameType": "TestGameType", "invite": ["TestClientB"] }""")
