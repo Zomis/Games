@@ -34,13 +34,13 @@
         </v-card-text>
         <v-card-text v-if="inviteWaiting.declined.length > 0">
           Declined:
-          <v-chip v-for="username in inviteWaiting.declined" :key="username">
+          <span v-for="username in inviteWaiting.declined" :key="username">
             {{ username }}
-          </v-chip>
+          </span>
         </v-card-text>
         <v-card-text v-if="inviteWaiting.waitingFor.length == 0 && inviteWaiting.declined.length == 0">
           <v-text-field label="Share invite link" placeholder="Invite link" readonly :value="inviteURL"></v-text-field>
-          <v-btn color="info" v-clipboard="inviteURL">Copy link</v-btn>
+          <v-btn color="info" v-clipboard="() => inviteURL">Copy link</v-btn>
         </v-card-text>
         <v-card-actions>
           <v-btn v-if="!inviteWaiting.cancelled"
@@ -108,7 +108,7 @@ export default {
       let invite = this.findInvite(e.inviteId);
       invite.waitingFor.splice(invite.waitingFor.indexOf(e.user), 1);
       let responseArray = e.accepted ? invite.accepted : invite.declined;
-      responseArray.push(e.name);
+      responseArray.push(e.user);
     },
     inviteCancelledMessage(e) {
       // This can be either an invite recieved or the inviteWaiting
@@ -159,7 +159,13 @@ export default {
       if (this.inviteWaiting.inviteId === null) {
         return null;
       }
-      return document.location.origin + "#/invite/" + this.inviteWaiting.inviteId + "?server=" + Socket.getServerURL();
+      return (
+        document.location.origin +
+        "#/invite/" +
+        this.inviteWaiting.inviteId +
+        "?server=" +
+        Socket.getServerURL()
+      );
     }
   },
   beforeDestroy() {
