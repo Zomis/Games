@@ -6,6 +6,12 @@ const emitter = new Vue({
   },
   methods: {
     isConnected() {
+      if (this.socket == null) {
+        return false;
+      }
+      if (this.socket.readyState != 1) {
+        return false;
+      }
       return this.connected;
     },
     getServerURL() {
@@ -29,6 +35,10 @@ const emitter = new Vue({
       this.socket.onerror = err => {
         this.$emit("error", err);
       };
+    },
+    disconnect() {
+      this.socket.close();
+      this.socket = null;
     },
     send(message) {
       if (this.socket === null) {

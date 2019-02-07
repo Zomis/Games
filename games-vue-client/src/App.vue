@@ -5,6 +5,10 @@
         <v-toolbar-title v-text="title"></v-toolbar-title>
       </router-link>
       <v-spacer></v-spacer>
+      <v-toolbar-items>
+        <v-btn flat to="/connected">Home</v-btn>
+        <v-btn flat @click="logout()">Logout</v-btn>
+      </v-toolbar-items>
     </v-toolbar>
     <v-content>
       <router-view/>
@@ -16,12 +20,23 @@
 </template>
 
 <script>
+import Socket from "./socket";
+
 export default {
   name: "App",
   data() {
     return {
       title: "Zomis Games"
     };
+  },
+  methods: {
+    logout() {
+      Socket.disconnect();
+      this.$router.push({
+        name: "ServerSelection",
+        params: { logout: true }
+      });
+    }
   }
 };
 </script>

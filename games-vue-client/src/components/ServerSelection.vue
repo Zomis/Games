@@ -4,7 +4,7 @@
     <v-select :items="serverOptions" item-text="name" item-value="url" v-model="chosenServer">
     </v-select>
 
-    <AuthChoice :server="chosenServer" :onAuthenticated="onAuthenticated" />
+    <AuthChoice :server="chosenServer" :onAuthenticated="onAuthenticated" :autoLogin="!logout" />
 
     <p>The server "zomis" should be up and running always.<br />
       If you want to start a local server, <a href="https://github.com/Zomis/Server2">clone my project on GitHub</a>.<br />
@@ -30,6 +30,7 @@ const serverOptions = [
 
 export default {
   name: "ServerSelection",
+  props: ["logout"],
   data() {
     return {
       serverOptions: serverOptions,
@@ -37,6 +38,11 @@ export default {
     };
   },
   components: { AuthChoice },
+  mounted() {
+    if (Socket.isConnected()) {
+      this.$router.push("/connected");
+    }
+  },
   methods: {
     onAuthenticated(auth) {
       this.$router.push("/connected");
