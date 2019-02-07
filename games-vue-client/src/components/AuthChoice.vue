@@ -13,7 +13,7 @@ import Socket from "../socket";
 
 export default {
   name: "AuthChoice",
-  props: ["server", "onAuthenticated"],
+  props: ["server", "onAuthenticated", "autoLogin"],
   data() {
     return {
       auth: { provider: null },
@@ -57,7 +57,7 @@ export default {
   mounted() {
     this.lastUsedProvider = localStorage.lastUsedProvider;
     this.auth.provider = this.lastUsedProvider;
-    if (this.lastUsedProvider != null) {
+    if (this.lastUsedProvider != null && this.autoLogin) {
       Socket.connect(this.server);
     }
   },
