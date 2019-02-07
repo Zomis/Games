@@ -17,31 +17,37 @@
         </div>
       </v-list>
     </v-card>
-    <v-dialog v-model="inviteWaiting.inviteId !== null" persistent>
+    <v-dialog v-model="inviteWaiting.inviteId !== null" max-width="42%" persistent>
       <v-card class="invites-sent">
-        <v-chip v-if="inviteWaiting.waitingFor.length > 0">
+        <v-card-title>
+          Invite
+        </v-card-title>
+        <v-card-text v-if="inviteWaiting.waitingFor.length > 0">
           Waiting for response from
           <v-chip v-for="username in inviteWaiting.waitingFor" :key="username">{{ username }}</v-chip>
-        </v-chip>
-        <v-chip v-if="inviteWaiting.accepted.length > 0">
+        </v-card-text>
+        <v-card-text v-if="inviteWaiting.accepted.length > 0">
           Accepted:
-          <v-chip v-for="username in inviteWaiting.accepted" :key="username">
+          <span v-for="username in inviteWaiting.accepted" :key="username">
             {{ username }}
-          </v-chip>
-        </v-chip>
-        <v-chip v-if="inviteWaiting.declined.length > 0">
+          </span>
+        </v-card-text>
+        <v-card-text v-if="inviteWaiting.declined.length > 0">
           Declined:
           <v-chip v-for="username in inviteWaiting.declined" :key="username">
             {{ username }}
           </v-chip>
-        </v-chip>
-        <v-chip v-if="inviteWaiting.waitingFor.length == 0">
-          <input type="text" :value="inviteURL"></input>
-        </v-chip>
-        <v-btn v-if="!inviteWaiting.cancelled"
-          color="error" @click="inviteResponse(inviteWaiting, false)">Cancel invite</v-btn>
-        <v-btn v-if="inviteWaiting.cancelled"
-          color="warning" @click="resetInviteWaiting()">Close</v-btn>
+        </v-card-text>
+        <v-card-text v-if="inviteWaiting.waitingFor.length == 0 && inviteWaiting.declined.length == 0">
+          <v-text-field label="Share invite link" placeholder="Invite link" readonly :value="inviteURL"></v-text-field>
+          <v-btn color="info" v-clipboard="inviteURL">Copy link</v-btn>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn v-if="!inviteWaiting.cancelled"
+            color="error" @click="inviteResponse(inviteWaiting, false)">Cancel invite</v-btn>
+          <v-btn v-if="inviteWaiting.cancelled"
+            color="warning" @click="resetInviteWaiting()">Close</v-btn>
+        </v-card-actions>
       </v-card>
     </v-dialog>
   </div>

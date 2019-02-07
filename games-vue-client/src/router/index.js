@@ -11,6 +11,7 @@ import InviteByURL from "@/components/InviteByURL";
 import VueAxios from "vue-axios";
 import VueAuthenticate from "vue-authenticate";
 import axios from "axios";
+import Clipboard from "v-clipboard";
 
 Vue.use(VueAxios, axios);
 Vue.use(VueAuthenticate, {
@@ -24,6 +25,7 @@ Vue.use(VueAuthenticate, {
 });
 
 Vue.use(Router);
+Vue.use(Clipboard);
 
 export default new Router({
   routes: [
