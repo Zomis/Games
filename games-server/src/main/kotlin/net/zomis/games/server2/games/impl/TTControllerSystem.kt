@@ -20,12 +20,12 @@ class TTControllerSystem(val gameType: String, private val controller: () -> TTC
     private val logger = KLoggers.logger(this)
 
     fun register(events: EventSystem) {
+        events.listen("setup $gameType", GameStartedEvent::class, {it.game.gameType.type == gameType}, {
+            it.game.obj = controller()
+        })
         events.listen("move in $gameType", PlayerGameMoveRequest::class, {
             it.game.gameType.type == gameType
         }, {
-            if (it.game.obj == null) {
-                it.game.obj = controller.invoke()
-            }
             val x = (it.move as ObjectNode).getInt("x")
             val y = it.move.getInt("y")
 

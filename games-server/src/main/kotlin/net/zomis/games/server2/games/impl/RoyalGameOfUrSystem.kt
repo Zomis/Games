@@ -12,12 +12,12 @@ class RoyalGameOfUrSystem {
     companion object {
         private val logger = KLoggers.logger(this)
         fun init(events: EventSystem) {
+            events.listen("RoyalGameOfUr Setup", GameStartedEvent::class, {it.game.gameType.type == "UR"}, {
+                it.game.obj = RoyalGameOfUr()
+            })
             events.listen("RoyalGameOfUr Move", PlayerGameMoveRequest::class, {
                 it.game.gameType.type == "UR"
             }, {
-                if (it.game.obj == null) {
-                    it.game.obj = RoyalGameOfUr()
-                }
                 val controller = it.game.obj as RoyalGameOfUr
                 if (controller.isFinished) {
                     events.execute(it.illegalMove("Game already won by ${controller.winner}"))
