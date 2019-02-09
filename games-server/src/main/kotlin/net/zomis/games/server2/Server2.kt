@@ -10,6 +10,7 @@ import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
 import net.zomis.games.ecs.UTTT
 import net.zomis.games.server2.ais.ServerAIs
+import net.zomis.games.server2.debug.AIGames
 import net.zomis.games.server2.games.GameListSystem
 import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.games.ObserverSystem
@@ -98,6 +99,7 @@ class Server2(val events: EventSystem) {
         if (config.httpPort != 0) {
             events.with(LinAuth(config.httpPort)::register)
         }
+        features.add(AIGames()::setup)
 
         val engine = ScriptEngineManager().getEngineByExtension("kts")!!
         events.listen("Kotlin script", ConsoleEvent::class, {it.input.startsWith("kt ")}, {
