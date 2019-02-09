@@ -21,9 +21,11 @@
 
 <script>
 import Socket from "./socket";
+import store from "./store";
 
 export default {
   name: "App",
+  store,
   data() {
     return {
       title: "Zomis Games"

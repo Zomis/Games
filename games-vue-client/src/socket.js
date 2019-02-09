@@ -1,4 +1,5 @@
 import Vue from "vue";
+import store from "./store";
 
 const emitter = new Vue({
   data() {
@@ -31,6 +32,7 @@ const emitter = new Vue({
 
         let obj = JSON.parse(msg.data);
         this.$emit(`type:${obj.type}`, obj);
+        store.dispatch("onSocketMessage", obj);
       };
       this.socket.onerror = err => {
         this.$emit("error", err);
