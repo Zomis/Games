@@ -11,7 +11,7 @@ import net.zomis.games.server2.getTextOrDefault
 data class ObserverStart(val client: Client, val game: ServerGame)
 data class ObserverStop(val client: Client, val game: ServerGame)
 
-class ObserverSystem(private val events: EventSystem, private val gameSystem: GameSystem) {
+class ObserverSystem {
 
     private val logger = KLoggers.logger(this)
 
@@ -22,7 +22,7 @@ class ObserverSystem(private val events: EventSystem, private val gameSystem: Ga
         val gameSystem = features[GameSystem.GameTypes::class]
         events.listen("Fire Observer Request", ClientJsonMessage::class, {
             it.data.getTextOrDefault("type", "") == "observer"
-        }, {observerRequest(gameSystem, it)})
+        }, {observerRequest(events, gameSystem, it)})
 
         events.listen("Add to observer list", ObserverStart::class, {true}, {
             observers.putIfAbsent(it.game, mutableSetOf())
@@ -57,7 +57,7 @@ class ObserverSystem(private val events: EventSystem, private val gameSystem: Ga
         observers[game]?.forEach { it.send(message) }
     }
 
-    private fun observerRequest(gameSystem: GameSystem.GameTypes, message: ClientJsonMessage) {
+    private fun observerRequest(events: EventSystem, gameSystem: GameSystem.GameTypes, message: ClientJsonMessage) {
         if (message.data.getTextOrDefault("type", "") != "observer") {
             return
         }

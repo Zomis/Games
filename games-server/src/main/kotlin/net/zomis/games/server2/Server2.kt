@@ -87,7 +87,7 @@ class Server2(val events: EventSystem) {
 
         features.add(SimpleMatchMakingSystem()::setup)
         events.with(ServerConsole()::register)
-//        features.add(ObserverSystem()::setup)
+        features.add(ObserverSystem()::setup)
         features.add(GameListSystem()::setup)
         events.with(AuthorizationSystem()::register)
         features.add(LobbySystem()::setup)

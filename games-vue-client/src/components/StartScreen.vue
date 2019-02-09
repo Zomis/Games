@@ -48,9 +48,21 @@ export default {
   },
   methods: {
     observe: function(game) {
-      this.$router.push(
-        `/games/${game.gameType}/${game.gameId}/?playerIndex=-42`
-      );
+      let games = {
+        UR: "RoyalGameOfUR",
+        UTTT: "UTTT",
+        "UTTT-ECS": "ECSGame",
+        Connect4: "Connect4"
+      };
+      this.$router.push({
+        name: games[game.gameType],
+        params: {
+          gameType: game.gameType,
+          players: game.players,
+          gameId: game.gameId,
+          playerIndex: -42
+        }
+      });
     },
     requestGameList: function() {
       Socket.send(`v1:{ "type": "GameList" }`);
