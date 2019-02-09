@@ -1,0 +1,30 @@
+.core {
+  /*  position: relative;
+  overflow: hidden;
+  border: 12px solid #6d5720;
+  border-radius: 12px;
+  margin: auto;*/
+  width: 640px;
+  height: 640px;
+}
+
+.core > .grid-parent > .grid {
+  width: 640px;
+  height: 640px;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  grid-gap: 10px;
+  padding: 10px;
+}
+
+.core > .grid-parent > .grid > .entity {
+  position: relative;
+  border: 3px solid black;
+}
+
+.core > .grid-parent > .grid > .entity > .grid-parent > .grid {
+  display: grid;
+  grid-template-columns: 64px 64px 64px;
+  grid-template-rows: 64px 64px 64px;
+  background-color: #ffff00;
+}

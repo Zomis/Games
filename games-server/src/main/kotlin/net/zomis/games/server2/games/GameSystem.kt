@@ -5,20 +5,19 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
 import klogging.KLoggers
 import net.zomis.core.events.EventSystem
-import net.zomis.games.server2.Client
-import net.zomis.games.server2.ClientJsonMessage
-import net.zomis.games.server2.getTextOrDefault
+import net.zomis.games.Features
+import net.zomis.games.server2.*
 import java.util.concurrent.atomic.AtomicInteger
 
 val nodeFactory = JsonNodeFactory(false)
-fun Game.toJson(type: String): ObjectNode {
+fun ServerGame.toJson(type: String): ObjectNode {
     return nodeFactory.objectNode()
         .put("type", type)
         .put("gameType", this.gameType.type)
         .put("gameId", this.gameId)
 }
 
-class Game(val gameType: GameType, val gameId: String) {
+class ServerGame(val gameType: GameType, val gameId: String) {
     fun broadcast(message: (Client) -> Any) {
         players.forEach { it.send(message.invoke(it)) }
     }
@@ -29,29 +28,34 @@ class Game(val gameType: GameType, val gameId: String) {
 }
 
 data class GameTypeRegisterEvent(val gameType: String)
-data class MoveEvent(val game: Game, val player: Int, val moveType: String, val move: Any)
-data class GameStartedEvent(val game: Game)
-data class GameEndedEvent(val game: Game)
-data class PlayerEliminatedEvent(val game: Game, val player: Int, val winner: Boolean, val position: Int)
-data class GameStateEvent(val game: Game, val data: List<Pair<String, Any>>)
+data class MoveEvent(val game: ServerGame, val player: Int, val moveType: String, val move: Any)
+data class GameStartedEvent(val game: ServerGame)
+data class GameEndedEvent(val game: ServerGame)
+data class PlayerEliminatedEvent(val game: ServerGame, val player: Int, val winner: Boolean, val position: Int)
+data class GameStateEvent(val game: ServerGame, val data: List<Pair<String, Any>>)
 
-data class PlayerGameMoveRequest(val game: Game, val player: Int, val moveType: String, val move: Any) {
+data class PlayerGameMoveRequest(val game: ServerGame, val player: Int, val moveType: String, val move: Any) {
     fun illegalMove(reason: String): IllegalMoveEvent {
         return IllegalMoveEvent(game, player, moveType, move, reason)
     }
 }
 
-data class IllegalMoveEvent(val game: Game, val player: Int, val moveType: String, val move: Any, val reason: String)
+data class IllegalMoveEvent(val game: ServerGame, val player: Int, val moveType: String, val move: Any, val reason: String)
 
-class GameType(val type: String) {
+class GameType(val type: String, events: EventSystem) {
 
     private val logger = KLoggers.logger(this)
-    val runningGames: MutableMap<String, Game> = mutableMapOf()
+    val runningGames: MutableMap<String, ServerGame> = mutableMapOf()
     private val gameIdCounter = AtomicInteger()
+    val features: Features = Features(events)
 
-    fun createGame(): Game {
+    init {
+        logger.info("$this has features $features")
+    }
+
+    fun createGame(): ServerGame {
         val gameId = gameIdCounter.incrementAndGet().toString()
-        val game = Game(this, gameId)
+        val game = ServerGame(this, gameId)
         runningGames[gameId] = game
         logger.info { "Create game with id $gameId of type $type" }
         return game
@@ -59,11 +63,12 @@ class GameType(val type: String) {
 
 }
 
-class GameSystem(events: EventSystem) {
+class GameSystem {
 
-    val gameTypes: MutableMap<String, GameType> = mutableMapOf()
+    data class GameTypes(val gameTypes: MutableMap<String, GameType> = mutableMapOf())
 
-    init {
+    fun setup(features: Features, events: EventSystem) {
+        val gameTypes = features.addData(GameTypes())
         val objectMapper = ObjectMapper()
         events.listen("Trigger PlayerGameMoveRequest", ClientJsonMessage::class, {
             it.data.has("game") && it.data.getTextOrDefault("type", "") == "move"
@@ -73,7 +78,7 @@ class GameSystem(events: EventSystem) {
                 val move = it.data.get("move")
                 val gameId = it.data.get("gameId").asText()
 
-                val game= gameTypes[gameType]?.runningGames?.get(gameId)
+                val game = gameTypes.gameTypes[gameType]?.runningGames?.get(gameId)
                 if (game != null) {
                     val playerIndex = game.players.indexOf(it.client)
                     events.execute(PlayerGameMoveRequest(game, playerIndex, moveType, move))
@@ -117,7 +122,7 @@ class GameSystem(events: EventSystem) {
             )
         })
         events.listen("Register GameType", GameTypeRegisterEvent::class, {true}, {
-            gameTypes[it.gameType] = GameType(it.gameType)
+            gameTypes.gameTypes[it.gameType] = GameType(it.gameType, events)
         })
     }
 }

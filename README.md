@@ -39,10 +39,12 @@ It is also possible that in the future I will with the event-based functionality
 
 I wrote my own tool to generate documentation for how the client and server communicates. As I am sometimes not motivated to write test-cases and even less motivated to write documentation, I figured that I might as well generate the documentation from the test-cases. I have integrated a check in my build pipeline to make sure that the documentation is not outdated.
 
-## Future possibilities
+## Future possibilities and random notes
 
 * As each listener has a description, it would be possible to check if there is a `System.getProperty`
   for a cleaned version of that description and if it has a specific value then don't add the listener (automatic feature-toggling)
 * Make more of the Server-code be shared between clients, such as the InviteSystem, GamesSystem, etc.
   Then it would be possible to construct a Client in JavaScript and the server as well, and use more of the real server-code in JavaScript (to avoid making local games special cases)
 * Use an Entity Component System approach in both the server-server code and in the games code
+  If ECS would be used throughout, then a WebSocketClient or CommunicationClient could just be added to the Player Entity
+  A Game could be the same Entity in both player-logic and server-logic. Would there be any downside to this?

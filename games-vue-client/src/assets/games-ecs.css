@@ -1,0 +1,50 @@
+.entity {
+  background-color: white;
+  border: 1px solid black;
+}
+
+.entity.owner-0 {
+  background-color: blue;
+}
+
+.entity.owner-1 {
+  background-color: red;
+}
+
+.owned {
+  z-index: 70;
+  margin: auto;
+  width: 48px;
+  height: 48px;
+}
+
+.grid-parent {
+  position: relative;
+}
+
+.grid {
+  display: grid;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.entity:hover {
+  background-color: yellow;
+}
+
+.actionable:hover {
+  cursor: pointer;
+  animation: glow-inside 1s infinite alternate;
+}
+
+@keyframes glow-inside {
+  from {
+    box-shadow: inset 0 0 10px -10px #aef4af;
+  }
+  to {
+    box-shadow: inset 0 0 10px 10px #aef4af;
+  }
+}

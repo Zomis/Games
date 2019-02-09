@@ -89,10 +89,11 @@ class DocEventSystem(val docWriter: DocWriter) : EventSystem() {
 
     private val eventsOnThreads = ThreadLocal<DocEventThread>()
 
-    override fun <E : Any> execute(event: E) {
+    override fun <E : Any> execute(event: E): E {
         beforeExecute(event)
         super.execute(event)
         afterExecute(event)
+        return event
     }
 
     private fun <E> afterExecute(event: E) {

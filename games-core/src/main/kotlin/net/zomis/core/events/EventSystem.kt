@@ -56,10 +56,11 @@ open class EventSystem {
         return listen(description, ListenerPriority.NORMAL, clazz, condition, handler)
     }
 
-    open fun <E : Any> execute(event: E) {
+    open fun <E : Any> execute(event: E): E {
         logger.info("Execute: $event")
         val kclass = event::class as KClass<Any>
         listeners[kclass]?.execute(event)
+        return event
     }
 
     fun with(registrator: EventRegistrator): EventSystem {

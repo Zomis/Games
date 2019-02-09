@@ -5,10 +5,13 @@ import ServerSelection from "@/components/ServerSelection";
 import RoyalGameOfUR from "@/components/RoyalGameOfUR";
 import Connect4 from "@/components/games/Connect4";
 import UTTT from "@/components/games/UTTT";
+import ECSGame from "@/components/ecs/ECSGame";
+import InviteByURL from "@/components/InviteByURL";
 
 import VueAxios from "vue-axios";
 import VueAuthenticate from "vue-authenticate";
 import axios from "axios";
+import Clipboard from "v-clipboard";
 
 Vue.use(VueAxios, axios);
 Vue.use(VueAuthenticate, {
@@ -22,18 +25,31 @@ Vue.use(VueAuthenticate, {
 });
 
 Vue.use(Router);
+Vue.use(Clipboard);
 
 export default new Router({
   routes: [
     {
       path: "/",
       name: "ServerSelection",
+      props: route => ({
+        logout: route.params.logout
+      }),
       component: ServerSelection
     },
     {
       path: "/connected",
       name: "StartScreen",
       component: StartScreen
+    },
+    {
+      path: "/invite/:inviteId/",
+      name: "InviteByURL",
+      component: InviteByURL,
+      props: route => ({
+        inviteId: route.params.inviteId,
+        server: route.query.server
+      })
     },
     {
       path: "/games/UR/:gameId/",
@@ -52,6 +68,17 @@ export default new Router({
       component: Connect4,
       props: route => ({
         game: "Connect4",
+        gameId: route.params.gameId,
+        players: route.params.players,
+        yourIndex: route.params.playerIndex
+      })
+    },
+    {
+      path: "/games/ECSGame/:gameId/",
+      name: "ECSGame",
+      component: ECSGame,
+      props: route => ({
+        gameType: route.params.gameType,
         gameId: route.params.gameId,
         players: route.params.players,
         yourIndex: route.params.playerIndex

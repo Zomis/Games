@@ -7,6 +7,7 @@
         <v-toolbar-title>{{ gameType }}</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn round :disabled="waiting" @click="matchMake(gameType)">Play anyone</v-btn>
+        <v-btn round :disabled="waiting" @click="inviteLink(gameType)">Invite with link</v-btn>
       </v-toolbar>
       <v-list two-line>
         <template v-for="name in users">
@@ -15,20 +16,7 @@
       </v-list>
     </v-card>
 
-    <v-card class="invites-sent" v-if="inviteWaiting.inviteId">
-      Waiting for response from
-      <v-chip v-for="username in inviteWaiting.waitingFor" :key="username">{{ username }}</v-chip>
-    </v-card>
-
-    <v-card class="invites">
-      <v-list two-line>
-        <template v-for="invite in invites">
-          {{ invite.host }} invites you to play {{ invite.game }}
-          <v-btn color="success" @click="inviteResponse(invite, true)">Accept</v-btn>
-          <v-btn color="error" @click="inviteResponse(invite, false)">Decline</v-btn>
-        </template>
-      </v-list>
-    </v-card>
+    <Invites />
 
     <div class="gamelist">
       <button @click="requestGameList()">Request game list</button>
@@ -44,17 +32,19 @@
 
 <script>
 import Socket from "../socket";
+import Invites from "./Invites";
 export default {
   name: "StartScreen",
   data() {
     return {
-      invites: [],
-      inviteWaiting: { waitingFor: [], inviteId: null },
       availableUsers: {},
       gameList: [],
       waiting: false,
       waitingGame: null
     };
+  },
+  components: {
+    Invites
   },
   methods: {
     observe: function(game) {
@@ -73,52 +63,49 @@ export default {
       this.waitingGame = game;
       Socket.send(`v1:{ "game": "${game}", "type": "matchMake" }`);
     },
-    inviteMessage: function(e) {
-      this.invites.push(e);
-    },
-    inviteResponse: function(invite, accepted) {
-      Socket.send(
-        `{ "type": "InviteResponse", "invite": "${
-          invite.inviteId
-        }", "accepted": ${accepted} }`
-      );
-    },
-    inviteWaitingMessage: function(e) {
-      this.inviteWaiting = e;
-    },
     invite: function(gameType, username) {
       Socket.send(
         `{ "type": "Invite", "gameType": "${gameType}", "invite": ["${username}"] }`
       );
     },
+    inviteLink(gameType, username) {
+      Socket.send(
+        `{ "type": "Invite", "gameType": "${gameType}", "invite": [] }`
+      );
+    },
+    lobbyChangeMessage: function(e) {
+      // client, action, gameTypes
+      let user = e.client;
+      if (e.action === "joined") {
+        let gameTypes = e.gameTypes;
+        gameTypes.forEach(gt => {
+          let list = this.availableUsers[gt];
+          if (list == null) throw "No list for " + gt;
+        });
+        gameTypes.map(gt => this.availableUsers[gt]).forEach(list => list.push(user));
+      } else if (e.action === "left") {
+        let gameTypes = Object.keys(this.availableUsers);
+        gameTypes.map(gt => this.availableUsers[gt]).forEach(list => {
+          let index = list.indexOf(user);
+          if (index >= 0) {
+            list.splice(index, 1);
+          }
+        });
+      } else {
+        throw "Unknown action: " + e.action;
+      }
+    },
     lobbyMessage: function(e) {
       this.availableUsers = e.users;
-    },
-    gameStartedMessage: function(e) {
-      let games = {
-        UR: "RoyalGameOfUR",
-        UTTT: "UTTT",
-        Connect4: "Connect4"
-      };
-      this.$router.push({
-        name: games[e.gameType],
-        params: {
-          players: e.players,
-          gameId: e.gameId,
-          playerIndex: e.yourIndex
-        }
-      });
     }
   },
   created() {
     //    {"type":"Lobby","users":{"UR":["guest-44522"],"Connect4":["guest-44522"]}}
-    Socket.$on("type:InviteWaiting", this.inviteWaitingMessage);
-    Socket.$on("type:Invite", this.inviteMessage);
     Socket.$on("type:Lobby", this.lobbyMessage);
-    Socket.$on("type:GameStarted", this.gameStartedMessage);
+    Socket.$on("type:LobbyChange", this.lobbyChangeMessage);
     Socket.$on("type:GameList", this.gameListMessage);
     Socket.send(
-      `{ "type": "ClientGames", "gameTypes": ["UR", "Connect4", "UTTT"], "maxGames": 1 }`
+      `{ "type": "ClientGames", "gameTypes": ["UR", "Connect4", "UTTT", "UTTT-ECS"], "maxGames": 1 }`
     );
     Socket.send(`{ "type": "ListRequest" }`);
   },
@@ -128,10 +115,8 @@ export default {
     }
   },
   beforeDestroy() {
-    Socket.$off("type:InviteWaiting", this.inviteWaitingMessage);
-    Socket.$off("type:Invite", this.inviteMessage);
     Socket.$off("type:Lobby", this.lobbyMessage);
-    Socket.$off("type:GameStarted", this.gameStartedMessage);
+    Socket.$off("type:LobbyChange", this.lobbyChangeMessage);
     Socket.$off("type:GameList", this.gameListMessage);
   }
 };

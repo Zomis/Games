@@ -2,6 +2,7 @@ package net.zomis.games.server2
 
 import net.zomis.core.events.EventSystem
 
+@Deprecated("use new Features system instead")
 class ClientData<T> {
 
     private val map = mutableMapOf<Client, T>()
