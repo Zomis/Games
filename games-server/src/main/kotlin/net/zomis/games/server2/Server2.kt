@@ -8,8 +8,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import klogging.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
-import net.zomis.games.core.Component
-import net.zomis.games.core.World
 import net.zomis.games.ecs.UTTT
 import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.games.GameListSystem
@@ -27,8 +25,8 @@ import net.zomis.tttultimate.TTFactories
 import net.zomis.tttultimate.games.TTClassicControllerWithGravity
 import net.zomis.tttultimate.games.TTUltimateController
 import java.net.InetSocketAddress
+import java.util.concurrent.Executors
 import javax.script.ScriptEngineManager
-import kotlin.reflect.KClass
 
 fun JsonNode.getTextOrDefault(fieldName: String, default: String): String {
     return if (this.hasNonNull(fieldName)) this.get(fieldName).asText() else default
@@ -92,7 +90,8 @@ class Server2(val events: EventSystem) {
         features.add(GameListSystem()::setup)
         events.with(AuthorizationSystem()::register)
         features.add(LobbySystem()::setup)
-        events.with(ServerAIs()::register)
+        val executor = Executors.newScheduledThreadPool(2)
+        events.with({ e -> ServerAIs().register(e, executor) })
         val clientsByName = ClientsByName()
         events.with(clientsByName::register)
         features.add(InviteSystem()::setup)

@@ -16,11 +16,20 @@ import net.zomis.games.ur.RoyalGameOfUr
 import net.zomis.games.ur.ais.MonteCarloAI
 import net.zomis.tttultimate.games.TTController
 import java.util.*
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 import java.util.function.ToIntFunction
 
 class ServerAIs {
 
-    fun register(events: EventSystem) {
+    fun register(events: EventSystem, executor: ScheduledExecutorService) {
+        events.listen("ServerAIs Delayed move", DelayedAIMoves::class, {true}, {
+            executor.schedule({
+                it.moves.forEach({
+                    events.execute(it)
+                })
+            }, 1000, TimeUnit.MILLISECONDS)
+        })
         events.listen("register ServerAIs for Game of UR", GameTypeRegisterEvent::class, { it.gameType == "UR" }, {
             createURAI(events, "#AI_KFE521S3", RoyalGameOfUrAIs.scf()
                 .withScorer(knockout, 5.0)
