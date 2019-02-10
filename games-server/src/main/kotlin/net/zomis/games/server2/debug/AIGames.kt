@@ -1,7 +1,6 @@
 package net.zomis.games.server2.debug
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import klogging.KLogger
 import klogging.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
@@ -9,12 +8,23 @@ import net.zomis.games.server2.ClientJsonMessage
 import net.zomis.games.server2.ConsoleEvent
 import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.invites.ClientList
+import java.util.*
 
 class AIGames {
 
     private val logger = KLoggers.logger(this)
+    private val random = Random()
 
     fun setup(features: Features, events: EventSystem) {
+        // ai UR #AI_Random #AI_Random
+        events.listen("AI UR shortcut", ConsoleEvent::class, {it.input == "aiur"}, {
+            createURGame(features, events)
+        })
+        events.listen("AI UR shortcut", ConsoleEvent::class, {it.input == "aiur3"}, {
+            createURGame(features, events)
+            createURGame(features, events)
+            createURGame(features, events)
+        })
         events.listen("create AI game", ConsoleEvent::class, {it.input.startsWith("ai ")}, {
             val params = it.input.split(" ")
             val gameTypeName = params[1]
@@ -39,6 +49,14 @@ class AIGames {
             val data = ObjectMapper().readTree("""{ "type": "Invite", "gameType": "$gameTypeName", "invite": ["$player2"] }""")
             events.execute(ClientJsonMessage(client1, data))
         })
+    }
+
+    private fun createURGame(features: Features, events: EventSystem) {
+        val ur = features[GameSystem.GameTypes::class].gameTypes["UR"]!!
+        val ais = ur.features[ClientList::class].clients.filter { it.name?.startsWith("#AI_") ?: false }.map { it.name!! }
+        val player1 = ais[random.nextInt(ais.size)]
+        val player2 = ais[random.nextInt(ais.size)]
+        events.execute(ConsoleEvent("ai ${ur.type} $player1 $player2"))
     }
 
 }
