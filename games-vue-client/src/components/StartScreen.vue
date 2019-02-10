@@ -149,6 +149,10 @@ export default {
     }
   },
   created() {
+    if (!Socket.isConnected()) {
+      this.$router.push("/login");
+      return;
+    }
     Socket.$on("type:LobbyChange", this.lobbyChangeMessage);
     Socket.$on("type:GameList", this.gameListMessage);
     Socket.send(

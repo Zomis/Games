@@ -30,7 +30,7 @@ Vue.use(Clipboard);
 export default new Router({
   routes: [
     {
-      path: "/",
+      path: "/login",
       name: "ServerSelection",
       props: route => ({
         logout: route.params.logout
@@ -38,7 +38,7 @@ export default new Router({
       component: ServerSelection
     },
     {
-      path: "/connected",
+      path: "/",
       name: "StartScreen",
       component: StartScreen
     },

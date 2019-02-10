@@ -6,7 +6,7 @@
       </router-link>
       <v-spacer></v-spacer>
       <v-toolbar-items>
-        <v-btn flat to="/connected">Home</v-btn>
+        <v-btn flat to="/">Home</v-btn>
         <v-btn flat @click="logout()">Logout</v-btn>
       </v-toolbar-items>
     </v-toolbar>

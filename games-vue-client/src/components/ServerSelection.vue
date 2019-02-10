@@ -40,12 +40,12 @@ export default {
   components: { AuthChoice },
   mounted() {
     if (Socket.isConnected()) {
-      this.$router.push("/connected");
+      this.$router.push("/");
     }
   },
   methods: {
     onAuthenticated(auth) {
-      this.$router.push("/connected");
+      this.$router.push("/");
     }
   }
 };

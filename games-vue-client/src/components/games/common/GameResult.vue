@@ -5,7 +5,7 @@
     <span v-if="gameOverMessage.winner" class="win">WIN</span>
     <span v-if="!gameOverMessage.winner" class="loss">LOSE</span>
     <div class="game-over-actions">
-      <router-link to="/connected">Back to Lobby</router-link>
+      <router-link to="/">Back to Lobby</router-link>
     </div>
   </div>
 </template>
