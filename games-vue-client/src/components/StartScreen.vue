@@ -9,7 +9,7 @@
     </div>
     <v-btn @click="newRandomGame()">New game</v-btn>
 
-    <v-card v-for="(users, gameType) in availableUsers" :key="gameType" class="games">
+    <v-card v-for="(users, gameType) in lobby" :key="gameType" class="games">
       <v-toolbar color="cyan" dark>
         <v-toolbar-title>{{ gameType }}</v-toolbar-title>
         <v-spacer></v-spacer>
@@ -52,6 +52,7 @@ import Invites from "./Invites";
 import RoyalGameOfUR from "@/components/RoyalGameOfUR";
 import Connect4 from "@/components/games/Connect4";
 import UTTT from "@/components/games/UTTT";
+import { mapState } from "vuex";
 
 let gameTypes = {
   UR: "RoyalGameOfUR",
@@ -65,7 +66,6 @@ export default {
   data() {
     return {
       myComponents: [],
-      availableUsers: {},
       gameList: [],
       waiting: false,
       waitingGame: null
@@ -149,14 +149,9 @@ export default {
       } else {
         throw "Unknown action: " + e.action;
       }
-    },
-    lobbyMessage: function(e) {
-      this.availableUsers = e.users;
     }
   },
   created() {
-    //    {"type":"Lobby","users":{"UR":["guest-44522"],"Connect4":["guest-44522"]}}
-    Socket.$on("type:Lobby", this.lobbyMessage);
     Socket.$on("type:LobbyChange", this.lobbyChangeMessage);
     Socket.$on("type:GameList", this.gameListMessage);
     Socket.send(
@@ -164,11 +159,7 @@ export default {
     );
     Socket.send(`{ "type": "ListRequest" }`);
   },
-  computed: {
-    loginName() {
-      return Socket.loginName;
-    }
-  },
+  computed: mapState(["loginName", "lobby"]),
   beforeDestroy() {
     Socket.$off("type:Lobby", this.lobbyMessage);
     Socket.$off("type:LobbyChange", this.lobbyChangeMessage);

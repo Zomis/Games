@@ -6,11 +6,9 @@ Vue.use(Vuex);
 
 const store = new Vuex.Store({
   state: {
-    playerName: null,
-    lobby: [], // key: gameType, value: players
-
+    loginName: null,
+    lobby: {}, // key: gameType, value: array of players (names)
     invites: [],
-    activeGame: null,
     games: [] // includes both playing and observing
   },
   getters: {
@@ -19,6 +17,12 @@ const store = new Vuex.Store({
     }
   },
   mutations: {
+    setPlayerName(state, name) {
+      state.loginName = name;
+    },
+    setLobbyUsers(state, data) {
+      state.lobby = data;
+    },
     addInvite(state, invite) {
       state.count++;
     }
@@ -26,9 +30,12 @@ const store = new Vuex.Store({
   actions: {
     onSocketMessage(context, data) {
       console.log(data);
-      if (data.type == "") {
+      if (data.type == "Auth") {
+        context.commit("setPlayerName", data.name);
       }
-      // context.commit("increment");
+      if (data.type == "Lobby") {
+        context.commit("setLobbyUsers", data.users);
+      }
     }
   }
 });
