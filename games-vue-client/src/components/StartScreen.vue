@@ -5,12 +5,10 @@
     <v-btn @click="newRandomGame()">New game</v-btn>
 
     <v-card v-for="(users, gameType) in lobby" :key="gameType" class="games">
-      <!-- Use v-list for users and games, with buttons for invite link + play anyone -->
-      <!-- also show current active/observing games here? using Vuex state -->
       <v-toolbar color="cyan" dark>
         <v-toolbar-title>{{ gameType }}</v-toolbar-title>
         <v-spacer></v-spacer>
-        <v-btn round :disabled="waiting" @click="matchMake(gameType)">Play anyone</v-btn>
+<!--        <v-btn round :disabled="waiting" @click="matchMake(gameType)">Play anyone</v-btn> -->
         <v-btn round :disabled="waiting" @click="inviteLink(gameType)">Invite with link</v-btn>
       </v-toolbar>
       <v-card-title>
