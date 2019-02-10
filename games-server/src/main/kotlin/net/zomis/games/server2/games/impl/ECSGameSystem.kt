@@ -21,7 +21,7 @@ class ECSGameSystem(val gameType: String, private val factory: () -> World) {
     private val logger = KLoggers.logger(this)
 
     fun setup(features: Features, events: EventSystem) {
-        val gameTypes = features[GameSystem.GameTypes::class].gameTypes
+        val gameTypes = features[GameSystem.GameTypes::class]!!.gameTypes
         events.listen("start ECS Game $gameType", ListenerPriority.LAST, GameStartedEvent::class, {
             it.game.gameType.type == gameType
         }, {gameStartedEvent ->

@@ -11,7 +11,7 @@ class GameListSystem {
     private val nodeFactory = JsonNodeFactory(false)
 
     fun setup(features: Features, events: EventSystem) {
-        val gameTypes = features[GameSystem.GameTypes::class].gameTypes
+        val gameTypes = features[GameSystem.GameTypes::class]!!.gameTypes
         // When receiving { type: "GameList" }
         // then respond with { type: "GameList", game, gameId, <some summary info? - send event?> }
         events.listen("process GameList request", ClientJsonMessage::class, {

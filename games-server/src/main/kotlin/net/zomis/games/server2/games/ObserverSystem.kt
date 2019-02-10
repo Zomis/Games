@@ -19,7 +19,7 @@ class ObserverSystem {
     private val observers: MutableMap<ServerGame, MutableSet<Client>> = mutableMapOf()
 
     fun setup(features: Features, events: EventSystem) {
-        val gameSystem = features[GameSystem.GameTypes::class]
+        val gameSystem = features[GameSystem.GameTypes::class]!!
         events.listen("Fire Observer Request", ClientJsonMessage::class, {
             it.data.getTextOrDefault("type", "") == "observer"
         }, {observerRequest(events, gameSystem, it)})

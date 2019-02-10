@@ -49,8 +49,8 @@ class LobbySystemTest {
     private fun setForClient(value: ClientInterestingGames, client: FakeClient) {
         client.features.addData(value)
         value.interestingGames.forEach({
-            val gameType = features[GameSystem.GameTypes::class].gameTypes[it]!!
-            gameType.features[ClientList::class].clients.add(client)
+            val gameType = features[GameSystem.GameTypes::class]!!.gameTypes[it]!!
+            gameType.clients.add(client)
         })
     }
 

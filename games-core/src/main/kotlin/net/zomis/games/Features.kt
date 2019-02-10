@@ -16,10 +16,9 @@ class Features(val events: EventSystem?) {
     private val logger = KLoggers.logger(this)
     val data = mutableSetOf<Any>()
 
-    operator fun <T: Any> get(clazz: KClass<T>): T {
+    operator fun <T: Any> get(clazz: KClass<T>): T? {
         val value = data.find({ clazz.isInstance(it) })
-        return if (value != null) value as T else
-            throw NullPointerException("No such component: $clazz on $this. Available features are ${data.map { it::class }}")
+        return value as T?
     }
 
     fun <T: Any> addData(dataToAdd: T): T {

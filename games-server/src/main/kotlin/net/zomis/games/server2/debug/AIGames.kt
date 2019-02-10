@@ -8,6 +8,7 @@ import net.zomis.games.server2.ClientJsonMessage
 import net.zomis.games.server2.ConsoleEvent
 import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.invites.ClientList
+import net.zomis.games.server2.invites.clients
 import java.util.*
 
 class AIGames {
@@ -30,12 +31,12 @@ class AIGames {
             val gameTypeName = params[1]
             val player1 = params[2]
             val player2 = params[3]
-            val gameType = features[GameSystem.GameTypes::class].gameTypes[gameTypeName]
+            val gameType = features[GameSystem.GameTypes::class]!!.gameTypes[gameTypeName]
             if (gameType == null) {
                 logger.warn { "No such gameType: $gameType" }
                 return@listen
             }
-            val clients = gameType.features[ClientList::class].clients
+            val clients = gameType.clients
             val client1 = clients.find { it.name == player1 }
             val client2 = clients.find { it.name == player2 }
             if (client1 == null) {
@@ -52,8 +53,8 @@ class AIGames {
     }
 
     private fun createURGame(features: Features, events: EventSystem) {
-        val ur = features[GameSystem.GameTypes::class].gameTypes["UR"]!!
-        val ais = ur.features[ClientList::class].clients.filter { it.name?.startsWith("#AI_") ?: false }.map { it.name!! }
+        val ur = features[GameSystem.GameTypes::class]!!.gameTypes["UR"]!!
+        val ais = ur.clients.filter { it.name?.startsWith("#AI_") ?: false }.map { it.name!! }
         val player1 = ais[random.nextInt(ais.size)]
         val player2 = ais[random.nextInt(ais.size)]
         events.execute(ConsoleEvent("ai ${ur.type} $player1 $player2"))

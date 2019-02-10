@@ -20,7 +20,7 @@ class InviteSystem {
     val invites = mutableMapOf<String, Invite>()
 
     fun setup(features: Features, events: EventSystem) {
-        val gameTypes = features[GameSystem.GameTypes::class].gameTypes
+        val gameTypes = features[GameSystem.GameTypes::class]!!.gameTypes
         events.listen("trigger InviteEvent", ClientJsonMessage::class, {
             it.data.getTextOrDefault("type", "") == "Invite"
         }, {
@@ -32,7 +32,7 @@ class InviteSystem {
             val inviteTargets = it.data.get("invite")
             val inviteId = "${gameType.type}-${it.client.name}-${invites.size}"
             val targetClients = inviteTargets.map { it.asText() }.map {name ->
-                gameTypes[gameType.type]!!.features[ClientList::class].clients.filter { it.name == name}.firstOrNull()
+                gameTypes[gameType.type]!!.clients.filter { it.name == name}.firstOrNull()
             }.filterIsInstance<Client>().toMutableList()
             val invite = Invite(it.client, targetClients, mutableListOf(), gameType, inviteId)
             invites[inviteId] = invite

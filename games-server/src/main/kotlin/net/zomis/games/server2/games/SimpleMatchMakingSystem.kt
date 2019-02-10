@@ -11,7 +11,7 @@ class SimpleMatchMakingSystem {
     private val waiting: MutableMap<String, Client> = mutableMapOf()
 
     fun setup(features: Features, events: EventSystem) {
-        val gameTypes = features[GameSystem.GameTypes::class].gameTypes
+        val gameTypes = features[GameSystem.GameTypes::class]!!.gameTypes
         events.listen("Simple matchmaking", ClientJsonMessage::class, {
             it.data.getTextOrDefault("type", "") == "matchMake"
         }, {
