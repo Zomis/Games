@@ -65,8 +65,10 @@ class Server2WS(private val events: EventSystem, address: InetSocketAddress) : W
             logger.warn(ex, "Error with $client connection $conn")
         }
 
-        client!!.disconnected()
-        events.execute(ClientDisconnected(client))
+        client?.disconnected()
+        if (client != null) {
+            events.execute(ClientDisconnected(client))
+        }
     }
 
     fun setup(): Server2WS {
