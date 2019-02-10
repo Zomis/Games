@@ -2,6 +2,7 @@ package net.zomis.games.server2.games.impl
 
 import klogging.KLoggers
 import net.zomis.core.events.EventSystem
+import net.zomis.core.events.ListenerPriority
 import net.zomis.games.Features
 import net.zomis.games.core.*
 import net.zomis.games.core.World
@@ -21,7 +22,7 @@ class ECSGameSystem(val gameType: String, private val factory: () -> World) {
 
     fun setup(features: Features, events: EventSystem) {
         val gameTypes = features[GameSystem.GameTypes::class].gameTypes
-        events.listen("start ECS Game $gameType", GameStartedEvent::class, {
+        events.listen("start ECS Game $gameType", ListenerPriority.LAST, GameStartedEvent::class, {
             it.game.gameType.type == gameType
         }, {gameStartedEvent ->
             val game = factory.invoke()

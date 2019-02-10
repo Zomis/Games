@@ -5,7 +5,8 @@ import kotlin.reflect.KClass
 
 enum class ListenerPriority { FIRST, EARLIER, EARLY, NORMAL, LATE, LATER, LAST }
 
-class Listener<in E>(val description: String, val condition: (E) -> Boolean, val handler: EventHandler<E>) {
+class Listener<in E>(val description: String, val priority: ListenerPriority,
+         val condition: (E) -> Boolean, val handler: EventHandler<E>) {
 
     private val logger = KLoggers.logger(this)
 
@@ -23,7 +24,13 @@ class ListenerList<E> {
     private val list: MutableList<Listener<E>> = mutableListOf()
 
     fun add(eventHandler: Listener<E>) {
-        list.add(eventHandler)
+        val nextPriority = eventHandler.priority.ordinal + 1
+        val insertIndex = list.indexOfFirst { it.priority.ordinal >= nextPriority }
+        if (insertIndex >= 0) {
+            list.add(insertIndex, eventHandler)
+        } else {
+            list.add(eventHandler)
+        }
     }
 
     fun execute(event: E) {
@@ -48,7 +55,7 @@ open class EventSystem {
          condition: (E) -> Boolean, handler: EventHandler<E>) {
         logger.info("Add Listener \"$description\" with priority $priority to $clazz: $handler")
         val list: ListenerList<E> = listeners.getOrElse(clazz as KClass<Any>, { ListenerList<E>() }) as ListenerList<E>
-        list.add(Listener(description, condition, handler))
+        list.add(Listener(description, priority, condition, handler))
         listeners[clazz] = list as ListenerList<Any>
     }
 

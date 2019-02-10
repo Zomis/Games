@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
 import klogging.KLoggers
 import net.zomis.core.events.EventSystem
+import net.zomis.core.events.ListenerPriority
 import net.zomis.games.Features
 import net.zomis.games.server2.*
 import java.util.concurrent.atomic.AtomicInteger
@@ -85,7 +86,7 @@ class GameSystem {
                 }
         })
 
-        events.listen("Send GameStarted", GameStartedEvent::class, {true}, {
+        events.listen("Send GameStarted", ListenerPriority.LATER, GameStartedEvent::class, {true}, {
             val playerNames = it.game.players
                 .asSequence()
                 .map { it.name ?: "(unknown)" }
