@@ -1,6 +1,7 @@
 <template>
   <div class="game-over" v-if="gameOverMessage">
-    <span class="you">YOU</span>
+    <span class="you" v-if="yourIndex >= 0">YOU</span>
+    <span class="you" v-else>{{ winnerName }}</span>
     <span v-if="gameOverMessage.winner" class="win">WIN</span>
     <span v-if="!gameOverMessage.winner" class="loss">LOSE</span>
     <div class="game-over-actions">
@@ -13,9 +14,10 @@ import Socket from "../../../socket";
 
 export default {
   name: "GameResult",
-  props: ["yourIndex"],
+  props: ["yourIndex", "players"],
   data() {
     return {
+      winnerName: null,
       gameOverMessage: null
     };
   },
@@ -30,6 +32,10 @@ export default {
       console.log(`Recieved eliminated: ${JSON.stringify(e)}`);
       if (this.yourIndex == e.player) {
         this.gameOverMessage = e;
+      }
+      if (this.yourIndex < 0 && e.winner) {
+        this.gameOverMessage = e;
+        this.winnerName = this.players[e.player];
       }
     }
   }

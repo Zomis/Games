@@ -52,7 +52,7 @@
        :onPlaceNew="placeNew" />
       <UrRoll :roll="lastRoll" :usable="ur.roll < 0 && canControlCurrentPlayer" :onDoRoll="onDoRoll" />
     </div>
-    <GameResult v-if="showRules" :yourIndex="yourIndex"></GameResult>
+    <GameResult v-if="showRules" :yourIndex="yourIndex" :players="players"></GameResult>
     <v-expansion-panel v-if="showRules" expand>
       <v-expansion-panel-content>
         <div slot="header">Objective</div>

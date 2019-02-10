@@ -56,6 +56,9 @@ const store = new Vuex.Store({
     }
   },
   actions: {
+    observe(context, game) {
+      context.commit(`${game.gameType}/createGame`, game);
+    },
     onSocketMessage(context, data) {
       console.log(data);
       if (data.type == "Auth") {

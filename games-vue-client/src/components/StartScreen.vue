@@ -34,18 +34,18 @@
       <v-divider></v-divider>
 
       <v-card-title>Your Games</v-card-title>
-      <template v-for="game in activeGames" v-if="game.props.gameType === gameType">
+      <template v-for="game in activeGames" v-if="game.props.gameType === gameType && game.props.yourIndex >= 0">
         <div class="active-game">
-          <component :is="game.component" v-bind="game.props"></component>
+          <component :key="gameType + game.props.gameId" :is="game.component" v-bind="game.props"></component>
         </div>
       </template>
 
       <v-divider></v-divider>
 
       <v-card-title>Other Games</v-card-title>
-      <template v-for="game in myComponents" v-if="game.props.gameType === gameType">
+      <template v-for="game in activeGames" v-if="game.props.gameType === gameType && game.props.yourIndex < 0">
         <div class="active-game">
-          <component :key="game.gameId" :is="game.component" v-bind="game.props"></component>
+          <component :key="gameType + game.props.gameId" :is="game.component" v-bind="game.props"></component>
         </div>
       </template>
     </v-card>
@@ -55,7 +55,7 @@
     <button @click="requestGameList()">Request game list</button>
     <v-list class="gamelist">
       <template v-for="(game, index) in gameList">
-        <v-list-tile :key="game.gameId">
+        <v-list-tile :key="game.gameType + game.gameId">
           <v-list-tile-content>
             <v-list-tile-title v-html="game.gameType + ' Game ' + game.gameId"></v-list-tile-title>
             <v-list-tile-sub-title v-html="vsify(game.players)"></v-list-tile-sub-title>
@@ -92,7 +92,6 @@ export default {
   name: "StartScreen",
   data() {
     return {
-      myComponents: [],
       gameList: [],
       waiting: false,
       waitingGame: null
@@ -116,20 +115,17 @@ export default {
       return result;
     },
     observe: function(game) {
-      let matchingGame = this.myComponents.find(
+      let matchingGame = this.activeGames.find(
         e => e.props.game == game.gameType && e.props.gameId == game.gameId
       );
       if (matchingGame) {
         return;
       }
-      this.myComponents.push({
-        component: gameTypes[game.gameType],
-        props: {
-          game: game.gameType,
-          gameId: game.gameId,
-          players: game.players,
-          yourIndex: -42
-        }
+      this.$store.dispatch("observe", {
+        gameType: game.gameType,
+        gameId: game.gameId,
+        players: game.players,
+        yourIndex: -42
       });
     },
     requestGameList: function() {

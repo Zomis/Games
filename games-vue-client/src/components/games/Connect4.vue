@@ -20,8 +20,8 @@
         </div>
       </div>
     </div>
-    <GameResult :yourIndex="yourIndex"></GameResult>
-    <v-expansion-panel>
+    <GameResult :yourIndex="yourIndex" :players="players"></GameResult>
+    <v-expansion-panel v-if="showRules">
       <v-expansion-panel-content>
         <div slot="header">Rules</div>
         <v-card>
@@ -42,7 +42,7 @@ import { mapState } from "vuex";
 
 export default {
   name: "Connect4",
-  props: ["yourIndex", "game", "gameId", "players"],
+  props: ["yourIndex", "game", "gameId", "players", "showRules"],
   data() {
     return {
       gameOverMessage: null

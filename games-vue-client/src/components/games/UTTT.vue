@@ -25,8 +25,8 @@
         </div>
       </div>
     </div>
-    <GameResult :yourIndex="yourIndex"></GameResult>
-    <v-expansion-panel>
+    <GameResult :yourIndex="yourIndex" :players="players"></GameResult>
+    <v-expansion-panel v-if="showRules">
       <v-expansion-panel-content>
         <div slot="header">Rules</div>
         <v-card>
@@ -58,7 +58,7 @@ let uttt = window["uttt-js"];
 
 export default {
   name: "UTTT",
-  props: ["yourIndex", "game", "gameId", "players"],
+  props: ["yourIndex", "game", "gameId", "players", "showRules"],
   data() {
     return {
       board: new uttt.net.zomis.tttultimate.games.TTControllers.ultimateTTT(),
