@@ -93,8 +93,6 @@ class Server2(val events: EventSystem) {
         features.add(LobbySystem()::setup)
         val executor = Executors.newScheduledThreadPool(2)
         events.with({ e -> ServerAIs().register(e, executor) })
-        val clientsByName = ClientsByName()
-        events.with(clientsByName::register)
         features.add(InviteSystem()::setup)
         if (config.httpPort != 0) {
             events.with(LinAuth(config.httpPort)::register)
