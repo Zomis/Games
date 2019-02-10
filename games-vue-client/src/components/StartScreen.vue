@@ -23,7 +23,7 @@
             </v-list-tile-content>
 
             <v-list-tile-action>
-              <v-btn color="info" @click="invite(gameType, name)">Invite</v-btn>
+              <v-btn color="info" @click="invite(gameType, name)" v-if="name !== loginName">Invite</v-btn>
             </v-list-tile-action>
           </v-list-tile>
         </template>
