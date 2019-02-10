@@ -52,8 +52,8 @@
        :onPlaceNew="placeNew" />
       <UrRoll :roll="lastRoll" :usable="ur.roll < 0 && canControlCurrentPlayer" :onDoRoll="onDoRoll" />
     </div>
-    <GameResult :yourIndex="yourIndex"></GameResult>
-    <v-expansion-panel expand>
+    <GameResult v-if="showRules" :yourIndex="yourIndex"></GameResult>
+    <v-expansion-panel v-if="showRules" expand>
       <v-expansion-panel-content>
         <div slot="header">Objective</div>
         <v-card>
@@ -125,7 +125,7 @@ function piecesToObjects(array, playerIndex) {
 
 export default {
   name: "RoyalGameOfUR",
-  props: ["yourIndex", "game", "gameId", "players"],
+  props: ["yourIndex", "game", "gameId", "players", "showRules"],
   data() {
     return {
       highlighted: null,

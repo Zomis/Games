@@ -57,6 +57,7 @@ export default new Router({
       component: RoyalGameOfUR,
       props: route => ({
         game: "UR",
+        showRules: true,
         gameId: route.params.gameId,
         players: route.params.players,
         yourIndex: route.params.playerIndex
