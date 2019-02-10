@@ -38,14 +38,13 @@ import Socket from "../../socket";
 import UrPiece from "../ur/UrPiece";
 import GameHead from "./common/GameHead";
 import GameResult from "./common/GameResult";
+import { mapState } from "vuex";
 
 export default {
   name: "Connect4",
   props: ["yourIndex", "game", "gameId", "players"],
   data() {
     return {
-      movesMade: 0,
-      gamePieces: [],
       gameOverMessage: null
     };
   },
@@ -57,11 +56,9 @@ export default {
         }", "observer": "start" }`
       );
     }
-    Socket.$on("type:GameMove", this.messageMove);
     Socket.$on("type:IllegalMove", this.messageIllegal);
   },
   beforeDestroy() {
-    Socket.$off("type:GameMove", this.messageMove);
     Socket.$off("type:IllegalMove", this.messageIllegal);
   },
   components: {
@@ -84,16 +81,19 @@ export default {
     onClick: function(piece) {
       this.action("move", { x: piece.x, y: piece.y });
     },
-    messageMove(e) {
-      console.log(`Recieved move: ${e.moveType}: ${e.move}`);
-      this.movesMade++;
-      this.gamePieces.push({ x: e.move.x, y: e.move.y, player: e.player });
-    },
     messageIllegal(e) {
       console.log("IllegalMove: " + JSON.stringify(e));
     }
   },
   computed: {
+    ...mapState("Connect4", {
+      movesMade(state) {
+        return state.games[this.gameId].gameData.movesMade;
+      },
+      gamePieces(state) {
+        return state.games[this.gameId].gameData.gamePieces;
+      }
+    }),
     moveableIndex: function() {
       let result = [];
       for (let i = 0; i < 7 * 6; i++) {

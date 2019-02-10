@@ -132,7 +132,6 @@ export default {
       lastRoll: 0,
       gamePieces: [],
       playerPieces: [],
-      lastMove: 0,
       ur: new games.net.zomis.games.ur.RoyalGameOfUr_init()
     };
   },

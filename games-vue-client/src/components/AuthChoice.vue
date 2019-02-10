@@ -50,7 +50,6 @@ export default {
       );
     },
     authenticated: function(e) {
-      Socket.loginName = e.name;
       this.onAuthenticated(e);
     }
   },

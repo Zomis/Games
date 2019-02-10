@@ -28,11 +28,9 @@ const emitter = new Vue({
       };
       this.socket.onmessage = msg => {
         console.log(" IN: " + msg.data);
-        this.$emit("message", msg.data);
-
         let obj = JSON.parse(msg.data);
-        this.$emit(`type:${obj.type}`, obj);
         store.dispatch("onSocketMessage", obj);
+        this.$emit(`type:${obj.type}`, obj);
       };
       this.socket.onclose = e => {
         console.log("Websocket closed");

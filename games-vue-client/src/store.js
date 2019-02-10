@@ -1,5 +1,6 @@
 import Vue from "vue";
 import Vuex from "vuex";
+import Connect4state from "./components/games/Connect4state";
 
 // const debug = process.env.NODE_ENV !== "production";
 Vue.use(Vuex);
@@ -11,6 +12,7 @@ const store = new Vuex.Store({
     invites: [],
     games: [] // includes both playing and observing
   },
+  modules: { Connect4: Connect4state },
   getters: {
     activeGames: state => {
       return state.games.length;
@@ -35,6 +37,9 @@ const store = new Vuex.Store({
       }
       if (data.type == "Lobby") {
         context.commit("setLobbyUsers", data.users);
+      }
+      if (data.gameType === "Connect4") {
+        context.dispatch("Connect4/onSocketMessage", data);
       }
     }
   }
