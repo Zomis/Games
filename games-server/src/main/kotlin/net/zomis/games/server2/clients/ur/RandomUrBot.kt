@@ -14,6 +14,7 @@ class RandomUrBot(url: String) {
 
     fun play() {
         client.connectBlocking()
+        client.send("""{ "type": "ClientGames", "gameTypes": ["UR"], "maxGames": 1 }""")
         client.send("""v1:{ "game": "UR", "type": "matchMake" }""")
         val controller = RoyalGameOfUr()
         val gameStart = client.takeUntilJson { it.getText("type") == "GameStarted" && it.getText("gameType") == "UR" }

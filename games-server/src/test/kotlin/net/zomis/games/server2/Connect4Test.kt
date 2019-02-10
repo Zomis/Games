@@ -44,7 +44,9 @@ class Connect4Test {
         val p2 = WSClient(URI("ws://127.0.0.1:${config.wsport}"))
         p2.connectBlocking()
 
-//        p1.send("""v1:{ "game": "Connect2", "type": "matchMake" }""")
+        p1.send("""{ "type": "ClientGames", "gameTypes": ["Connect4"], "maxGames": 1 }""")
+        p2.send("""{ "type": "ClientGames", "gameTypes": ["Connect4"], "maxGames": 1 }""")
+
         p1.send("""v1:{ "game": "Connect4", "type": "matchMake" }""")
         Thread.sleep(100)
         p2.send("""v1:{ "game": "Connect4", "type": "matchMake" }""")
