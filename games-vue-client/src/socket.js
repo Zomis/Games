@@ -34,12 +34,18 @@ const emitter = new Vue({
         this.$emit(`type:${obj.type}`, obj);
         store.dispatch("onSocketMessage", obj);
       };
+      this.socket.onclose = e => {
+        console.log("Websocket closed");
+      };
       this.socket.onerror = err => {
+        console.log("Websocket error");
         this.$emit("error", err);
       };
     },
     disconnect() {
-      this.socket.close();
+      if (this.socket != null) {
+        this.socket.close();
+      }
       this.socket = null;
     },
     send(message) {
