@@ -2,16 +2,6 @@
   <div class="start-screen">
     <h1 class="login-name">Welcome, {{ loginName }}</h1>
 
-    <div class="playing-games">
-      <div class="active-game" v-for="game in activeGames">
-        <component :key="game.gameId" :is="game.component" v-bind="game.props"></component>
-      </div>
-    </div>
-    <div class="observed-games">
-      <div class="active-game" v-for="game in myComponents">
-        <component :key="game.gameId" :is="game.component" v-bind="game.props"></component>
-      </div>
-    </div>
     <v-btn @click="newRandomGame()">New game</v-btn>
 
     <v-card v-for="(users, gameType) in lobby" :key="gameType" class="games">
@@ -23,11 +13,41 @@
         <v-btn round :disabled="waiting" @click="matchMake(gameType)">Play anyone</v-btn>
         <v-btn round :disabled="waiting" @click="inviteLink(gameType)">Invite with link</v-btn>
       </v-toolbar>
-      <v-list two-line>
-        <template v-for="name in users">
-          <v-btn class="username" :class="'user-' + gameType" @click="invite(gameType, name)">{{ name }}</v-btn>
+      <v-card-title>
+        Users
+      </v-card-title>
+      <v-list light>
+        <template v-for="(name, index) in users">
+          <v-divider v-if="index > 0"></v-divider>
+          <v-list-tile :key="index">
+            <v-list-tile-content>
+              <v-list-tile-title v-html="name"></v-list-tile-title>
+            </v-list-tile-content>
+
+            <v-list-tile-action>
+              <v-btn color="info" @click="invite(gameType, name)">Invite</v-btn>
+            </v-list-tile-action>
+          </v-list-tile>
         </template>
       </v-list>
+
+      <v-divider></v-divider>
+
+      <v-card-title>Your Games</v-card-title>
+      <template v-for="game in activeGames" v-if="game.props.gameType === gameType">
+        <div class="active-game">
+          <component :is="game.component" v-bind="game.props"></component>
+        </div>
+      </template>
+
+      <v-divider></v-divider>
+
+      <v-card-title>Other Games</v-card-title>
+      <template v-for="game in myComponents" v-if="game.props.gameType === gameType">
+        <div class="active-game">
+          <component :key="game.gameId" :is="game.component" v-bind="game.props"></component>
+        </div>
+      </template>
     </v-card>
 
     <Invites />
@@ -170,7 +190,7 @@ h2 {
 .games,
 .gamelist {
   margin: 32px;
-  width: 25%;
+  width: 42%;
   margin: 32px auto 32px auto;
 }
 </style>
