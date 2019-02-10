@@ -2,6 +2,13 @@
   <div class="start-screen">
     <h1 class="login-name">Welcome, {{ loginName }}</h1>
 
+    <div class="current-games">
+      <div class="active-game" v-for="game in myComponents">
+        <component :key="game.gameId" :is="game.component" v-bind="game.props"></component>
+      </div>
+    </div>
+    <v-btn @click="newRandomGame()">New game</v-btn>
+
     <v-card v-for="(users, gameType) in availableUsers" :key="gameType" class="games">
       <v-toolbar color="cyan" dark>
         <v-toolbar-title>{{ gameType }}</v-toolbar-title>
@@ -18,12 +25,20 @@
 
     <Invites />
 
-    <div class="gamelist">
-      <button @click="requestGameList()">Request game list</button>
-      <div v-for="game in gameList">
-        <button :enabled="!waiting" @click="observe(game)">{{ game }}</button>
-      </div>
-    </div>
+    <button @click="requestGameList()">Request game list</button>
+    <v-list class="gamelist">
+      <template v-for="(game, index) in gameList">
+        <v-list-tile :key="game.gameId">
+          <v-list-tile-content>
+            <v-list-tile-title v-html="game.gameType + ' Game ' + game.gameId"></v-list-tile-title>
+            <v-list-tile-sub-title v-html="vsify(game.players)"></v-list-tile-sub-title>
+          </v-list-tile-content>
+          <v-list-tile-action>
+            <v-btn color="info" @click="observe(game)">Observe</v-btn>
+          </v-list-tile-action>
+        </v-list-tile>
+      </template>
+    </v-list>
 
     <p>If you want to play Royal game of UR against an AI, click "UR" and then click "Create Bot"</p>
     <p>You can observe existing games by clicking "Request game list" and then click on the game you want to observe.</p>
@@ -33,10 +48,23 @@
 <script>
 import Socket from "../socket";
 import Invites from "./Invites";
+
+import RoyalGameOfUR from "@/components/RoyalGameOfUR";
+import Connect4 from "@/components/games/Connect4";
+import UTTT from "@/components/games/UTTT";
+
+let gameTypes = {
+  UR: "RoyalGameOfUR",
+  UTTT: "UTTT",
+  "UTTT-ECS": "ECSGame",
+  Connect4: "Connect4"
+};
+
 export default {
   name: "StartScreen",
   data() {
     return {
+      myComponents: [],
       availableUsers: {},
       gameList: [],
       waiting: false,
@@ -44,23 +72,36 @@ export default {
     };
   },
   components: {
+    RoyalGameOfUR,
+    Connect4,
+    UTTT,
     Invites
   },
   methods: {
+    vsify(players) {
+      let result = "";
+      for (var i = 0; i < players.length; i++) {
+        result += players[i];
+        if (i < players.length - 1) {
+          result += " vs. ";
+        }
+      }
+      return result;
+    },
     observe: function(game) {
-      let games = {
-        UR: "RoyalGameOfUR",
-        UTTT: "UTTT",
-        "UTTT-ECS": "ECSGame",
-        Connect4: "Connect4"
-      };
-      this.$router.push({
-        name: games[game.gameType],
-        params: {
-          gameType: game.gameType,
-          players: game.players,
+      let matchingGame = this.myComponents.find(
+        e => e.props.game == game.gameType && e.props.gameId == game.gameId
+      );
+      if (matchingGame) {
+        return;
+      }
+      this.myComponents.push({
+        component: gameTypes[game.gameType],
+        props: {
+          game: game.gameType,
           gameId: game.gameId,
-          playerIndex: -42
+          players: game.players,
+          yourIndex: -42
         }
       });
     },
@@ -94,7 +135,9 @@ export default {
           let list = this.availableUsers[gt];
           if (list == null) throw "No list for " + gt;
         });
-        gameTypes.map(gt => this.availableUsers[gt]).forEach(list => list.push(user));
+        gameTypes
+          .map(gt => this.availableUsers[gt])
+          .forEach(list => list.push(user));
       } else if (e.action === "left") {
         let gameTypes = Object.keys(this.availableUsers);
         gameTypes.map(gt => this.availableUsers[gt]).forEach(list => {
@@ -145,7 +188,8 @@ h2 {
   margin-bottom: 24px;
 }
 
-.games {
+.games,
+.gamelist {
   margin: 32px;
   width: 25%;
   margin: 32px auto 32px auto;

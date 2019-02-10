@@ -1,6 +1,6 @@
 <template>
   <div class="invites">
-    <v-card class="invites-recieved">
+    <v-card class="invites-recieved" v-if="invites.length > 0">
       <v-list two-line>
         <div v-for="(invite, index) in invites" >
           {{ invite.host }} invites you to play {{ invite.game }}

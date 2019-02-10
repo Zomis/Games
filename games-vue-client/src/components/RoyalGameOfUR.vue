@@ -208,12 +208,18 @@ export default {
       this.action("move", piece.position);
     },
     messageEliminated(e) {
+      if (this.game != e.gameType || this.gameId != e.gameId) {
+        return;
+      }
       console.log(`Recieved eliminated: ${JSON.stringify(e)}`);
       if (this.yourIndex == e.player) {
         this.gameOverMessage = e;
       }
     },
     messageMove(e) {
+      if (this.game != e.gameType || this.gameId != e.gameId) {
+        return;
+      }
       console.log(`Recieved move: ${e.moveType}: ${e.move}`);
       if (e.moveType == "move") {
         this.ur.move_qt1dr2$(this.ur.currentPlayer, e.move, this.ur.roll);
@@ -223,6 +229,9 @@ export default {
       console.log("After Move: " + this.ur.toString());
     },
     messageState(e) {
+      if (this.game != e.gameType || this.gameId != e.gameId) {
+        return;
+      }
       console.log(`MessageState: ${e.roll}`);
       if (typeof e.roll !== "undefined") {
         this.ur.doRoll_za3lpa$(e.roll);
@@ -231,6 +240,9 @@ export default {
       console.log("AfterState: " + this.ur.toString());
     },
     messageIllegal(e) {
+      if (this.game != e.gameType || this.gameId != e.gameId) {
+        return;
+      }
       console.log("IllegalMove: " + JSON.stringify(e));
     },
     rollUpdate(rollValue) {
