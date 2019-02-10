@@ -9,8 +9,14 @@ const gameStore = {
   mutations: {
     createGame(state, data) {
       Vue.set(state.games, data.gameId, {
-        yourIndex: data.yourIndex,
-        players: data.players,
+        component: "Connect4",
+        props: {
+          game: data.gameType, // Deprecated
+          gameType: data.gameType,
+          gameId: data.gameId,
+          yourIndex: data.yourIndex,
+          players: data.players
+        },
         gameData: {
           movesMade: 0,
           gamePieces: []

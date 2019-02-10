@@ -2,7 +2,12 @@
   <div class="start-screen">
     <h1 class="login-name">Welcome, {{ loginName }}</h1>
 
-    <div class="current-games">
+    <div class="playing-games">
+      <div class="active-game" v-for="game in activeGames">
+        <component :key="game.gameId" :is="game.component" v-bind="game.props"></component>
+      </div>
+    </div>
+    <div class="observed-games">
       <div class="active-game" v-for="game in myComponents">
         <component :key="game.gameId" :is="game.component" v-bind="game.props"></component>
       </div>
@@ -10,6 +15,8 @@
     <v-btn @click="newRandomGame()">New game</v-btn>
 
     <v-card v-for="(users, gameType) in lobby" :key="gameType" class="games">
+      <!-- Use v-list for users and games, with buttons for invite link + play anyone -->
+      <!-- also show current active/observing games here? using Vuex state -->
       <v-toolbar color="cyan" dark>
         <v-toolbar-title>{{ gameType }}</v-toolbar-title>
         <v-spacer></v-spacer>
@@ -125,30 +132,6 @@ export default {
       Socket.send(
         `{ "type": "Invite", "gameType": "${gameType}", "invite": [] }`
       );
-    },
-    lobbyChangeMessage: function(e) {
-      // client, action, gameTypes
-      let user = e.client;
-      if (e.action === "joined") {
-        let gameTypes = e.gameTypes;
-        gameTypes.forEach(gt => {
-          let list = this.availableUsers[gt];
-          if (list == null) throw "No list for " + gt;
-        });
-        gameTypes
-          .map(gt => this.availableUsers[gt])
-          .forEach(list => list.push(user));
-      } else if (e.action === "left") {
-        let gameTypes = Object.keys(this.availableUsers);
-        gameTypes.map(gt => this.availableUsers[gt]).forEach(list => {
-          let index = list.indexOf(user);
-          if (index >= 0) {
-            list.splice(index, 1);
-          }
-        });
-      } else {
-        throw "Unknown action: " + e.action;
-      }
     }
   },
   created() {
@@ -159,7 +142,12 @@ export default {
     );
     Socket.send(`{ "type": "ListRequest" }`);
   },
-  computed: mapState(["loginName", "lobby"]),
+  computed: {
+    activeGames() {
+      return this.$store.getters.activeGames;
+    },
+    ...mapState(["loginName", "lobby"])
+  },
   beforeDestroy() {
     Socket.$off("type:Lobby", this.lobbyMessage);
     Socket.$off("type:LobbyChange", this.lobbyChangeMessage);
