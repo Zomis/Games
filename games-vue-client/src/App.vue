@@ -11,7 +11,7 @@
       </v-toolbar-items>
     </v-toolbar>
     <v-content>
-      <router-view/>
+      <router-view :key="$route.path" />
     </v-content>
     <v-footer fixed app>
       <span>&copy; 2018 Zomis' Games - <a href="https://github.com/Zomis/Server2">Github</a></span>
