@@ -44,8 +44,13 @@ class WSClient(uri: URI): WebSocketClient(uri) {
     }
 
     fun expectExact(expected: String) {
-        val text = queue.take()
+        val text = queue.poll(30, TimeUnit.SECONDS) ?: failClose("Timeout waiting for new message")
         assert(text == expected, { "Expected '$expected' but was '$text'" })
+    }
+
+    private fun failClose(message: String): String {
+        close()
+        throw IllegalStateException(message)
     }
 
     override fun send(text: String?) {
@@ -54,7 +59,7 @@ class WSClient(uri: URI): WebSocketClient(uri) {
     }
 
     fun expectJsonObject(predicate: (ObjectNode) -> Boolean): ObjectNode {
-        val text = queue.take()
+        val text = queue.poll(30, TimeUnit.SECONDS) ?: failClose("Timeout waiting for new message")
         val node = mapper.readTree(text) as ObjectNode
         assert(predicate.invoke(node), { "Unexpected data for $node" })
         return node
@@ -62,7 +67,7 @@ class WSClient(uri: URI): WebSocketClient(uri) {
 
     fun takeUntilJson(predicate: (ObjectNode) -> Boolean): ObjectNode {
         while (true) {
-            val text = queue.take()
+            val text = queue.poll(30, TimeUnit.SECONDS) ?: failClose("Timeout waiting for new message")
             try {
                 val node = mapper.readTree(text) as ObjectNode
                 if (predicate.invoke(node)) {
@@ -76,8 +81,14 @@ class WSClient(uri: URI): WebSocketClient(uri) {
 
     fun sendAndExpectResponse(data: String) {
         send(data)
+        val sleep = 50L
+        var counter = 0
         while (queue.isEmpty()) {
-            Thread.sleep(10)
+            Thread.sleep(sleep)
+            counter++
+            if (counter > (15000 / sleep)) {
+                throw IllegalStateException("No response within 15 seconds")
+            }
         }
     }
 
