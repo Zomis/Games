@@ -152,7 +152,6 @@ export default {
       this.$router.push("/login");
       return;
     }
-    Socket.$on("type:LobbyChange", this.lobbyChangeMessage);
     Socket.$on("type:GameList", this.gameListMessage);
     Socket.send(
       `{ "type": "ClientGames", "gameTypes": ["UR", "Connect4", "UTTT", "UTTT-ECS"], "maxGames": 1 }`
@@ -166,8 +165,6 @@ export default {
     ...mapState(["loginName", "lobby"])
   },
   beforeDestroy() {
-    Socket.$off("type:Lobby", this.lobbyMessage);
-    Socket.$off("type:LobbyChange", this.lobbyChangeMessage);
     Socket.$off("type:GameList", this.gameListMessage);
   }
 };
