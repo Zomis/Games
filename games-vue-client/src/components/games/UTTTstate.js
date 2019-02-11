@@ -17,7 +17,7 @@ const gameStore = {
   getters: {},
   mutations: {
     createGame(state, data) {
-      state.games[data.gameId] = {
+      Vue.set(state.games, data.gameId, {
         component: "UTTT",
         props: {
           game: data.gameType, // Deprecated
@@ -31,7 +31,7 @@ const gameStore = {
           movesMade: 0,
           gamePieces: []
         }
-      };
+      });
     },
     makeMove(state, event) {
       let game = state.games[event.gameId].gameData;
