@@ -1,6 +1,7 @@
 import Vue from "vue";
 import Router from "vue-router";
 import StartScreen from "@/components/StartScreen";
+import TVScreen from "@/components/TVScreen";
 import ServerSelection from "@/components/ServerSelection";
 import RoyalGameOfUR from "@/components/RoyalGameOfUR";
 import Connect4 from "@/components/games/Connect4";
@@ -41,6 +42,11 @@ export default new Router({
       path: "/",
       name: "StartScreen",
       component: StartScreen
+    },
+    {
+      path: "/tv",
+      name: "TVScreen",
+      component: TVScreen
     },
     {
       path: "/invite/:inviteId/",

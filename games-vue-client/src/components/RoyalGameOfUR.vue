@@ -130,7 +130,7 @@ export default {
   created() {
     if (this.gameInfo.yourIndex < 0) {
       Socket.send(
-        `v1:{ "type": "observer", "game": "${
+        `v1:{ "type": "observer", "gameType": "${
           this.gameInfo.gameType
         }", "gameId": "${this.gameInfo.gameId}", "observer": "start" }`
       );

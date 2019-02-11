@@ -4,12 +4,16 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import klogging.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
+import net.zomis.games.server2.Client
 import net.zomis.games.server2.ClientJsonMessage
 import net.zomis.games.server2.ConsoleEvent
 import net.zomis.games.server2.games.GameSystem
+import net.zomis.games.server2.games.GameType
 import net.zomis.games.server2.invites.ClientList
 import net.zomis.games.server2.invites.clients
 import java.util.*
+
+fun Client.isAI(): Boolean { return this.name?.startsWith("#AI_") ?: false }
 
 class AIGames {
 
@@ -47,17 +51,26 @@ class AIGames {
                 logger.warn { "Client not found: $client2" }
                 return@listen
             }
-            val data = ObjectMapper().readTree("""{ "type": "Invite", "gameType": "$gameTypeName", "invite": ["$player2"] }""")
-            events.execute(ClientJsonMessage(client1, data))
+            startNewGame(events, gameType, client1, client2)
         })
     }
 
     private fun createURGame(features: Features, events: EventSystem) {
         val ur = features[GameSystem.GameTypes::class]!!.gameTypes["UR"]!!
-        val ais = ur.clients.filter { it.name?.startsWith("#AI_") ?: false }.map { it.name!! }
+        startNewAIGame(events, ur)
+    }
+
+    fun startNewAIGame(events: EventSystem, gameType: GameType) {
+        val ais = gameType.clients.filter { it.isAI() }
         val player1 = ais[random.nextInt(ais.size)]
         val player2 = ais[random.nextInt(ais.size)]
-        events.execute(ConsoleEvent("ai ${ur.type} $player1 $player2"))
+        startNewGame(events, gameType, player1, player2)
+    }
+
+    private fun startNewGame(events: EventSystem, gameType: GameType, player1: Client, player2: Client) {
+        val gameTypeName = gameType.type
+        val data = ObjectMapper().readTree("""{ "type": "Invite", "gameType": "$gameTypeName", "invite": ["${player2.name}"] }""")
+        events.execute(ClientJsonMessage(player1, data))
     }
 
 }

@@ -11,10 +11,7 @@ import net.zomis.games.Features
 import net.zomis.games.ecs.UTTT
 import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.debug.AIGames
-import net.zomis.games.server2.games.GameListSystem
-import net.zomis.games.server2.games.GameSystem
-import net.zomis.games.server2.games.ObserverSystem
-import net.zomis.games.server2.games.SimpleMatchMakingSystem
+import net.zomis.games.server2.games.*
 import net.zomis.games.server2.games.impl.ECSGameSystem
 import net.zomis.games.server2.games.impl.RoyalGameOfUrSystem
 import net.zomis.games.server2.games.impl.TTControllerSystem
@@ -98,6 +95,7 @@ class Server2(val events: EventSystem) {
             events.with(LinAuth(config.httpPort)::register)
         }
         features.add(AIGames()::setup)
+        features.add(TVSystem()::register)
 
         val engine = ScriptEngineManager().getEngineByExtension("kts")!!
         events.listen("Kotlin script", ConsoleEvent::class, {it.input.startsWith("kt ")}, {

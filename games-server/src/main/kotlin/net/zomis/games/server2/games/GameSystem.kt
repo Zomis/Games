@@ -19,6 +19,8 @@ fun ServerGame.toJson(type: String): ObjectNode {
 }
 
 class ServerGame(val gameType: GameType, val gameId: String) {
+    var gameOver: Boolean = false
+
     fun broadcast(message: (Client) -> Any) {
         players.forEach { it.send(message.invoke(it)) }
     }
@@ -97,6 +99,7 @@ class GameSystem {
             }
         })
         events.listen("Send GameEnded", GameEndedEvent::class, {true}, {
+            it.game.gameOver = true
             it.game.broadcast { _ ->
                 it.game.toJson("GameEnded")
             }
