@@ -45,11 +45,13 @@ class Connect4Test {
         p2.connectBlocking()
 
         p1.send("""{ "type": "ClientGames", "gameTypes": ["Connect4"], "maxGames": 1 }""")
+        Thread.sleep(100)
         p2.send("""{ "type": "ClientGames", "gameTypes": ["Connect4"], "maxGames": 1 }""")
 
         p1.send("""v1:{ "game": "Connect4", "type": "matchMake" }""")
         Thread.sleep(100)
         p2.send("""v1:{ "game": "Connect4", "type": "matchMake" }""")
+        p1.expectJsonObject { it.getText("type") == "LobbyChange" }
         p1.expectJsonObject {
             it.getText("type") == "GameStarted" && it.getText("gameType") == "Connect4" &&
                     it.getInt("yourIndex") == 0
@@ -69,11 +71,11 @@ class Connect4Test {
         ))
 
         // Try to cheat - wrong player
-        p2.sendAndExpectResponse("""v1:{ "game": "Connect4", "gameId": "1", "type": "move", "move": { "x": 6, "y": 5 } }""")
+        p2.sendAndExpectResponse("""{ "gameType": "Connect4", "gameId": "1", "type": "move", "move": { "x": 6, "y": 5 } }""")
         p2.takeUntilJson { it.getText("type") == "IllegalMove" }
 
         // Win the game
-        p1.sendAndExpectResponse("""v1:{ "game": "Connect4", "gameId": "1", "type": "move", "move": { "x": 0, "y": 5 } }""")
+        p1.sendAndExpectResponse("""{ "gameType": "Connect4", "gameId": "1", "type": "move", "move": { "x": 0, "y": 5 } }""")
         var obj = p1.takeUntilJson { it.getText("type") == "PlayerEliminated" }
         assert(obj.getText("gameType") == "Connect4")
         assert(obj.getInt("player") == 0)
@@ -105,7 +107,7 @@ class Connect4Test {
     private fun sendAndExpect(p1: WSClient, p2: WSClient, pairs: List<Connect4Move>) {
         pairs.forEach({
             val cl = if (it.playerIndex == 1) p1 else p2
-            cl.send("""v1:{ "game": "Connect4", "gameId": "1", "type": "move", "move": {"x": ${it.x}, "y": ${it.y} } }""")
+            cl.send("""v1:{ "gameType": "Connect4", "gameId": "1", "type": "move", "move": {"x": ${it.x}, "y": ${it.y} } }""")
             p1.expectJsonObject { true }
             p2.expectJsonObject { true }
         })
