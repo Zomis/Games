@@ -1,16 +1,16 @@
 <template>
-  <h1>{{ gameType }} : {{ gameId }} - {{ playerVs }}</h1>
+  <h1>{{ gameInfo.gameType }} : {{ gameInfo.gameId }} - {{ playerVs }}</h1>
 </template>
 <script>
 export default {
   name: "GameHead",
-  props: ["gameType", "gameId", "players"],
+  props: ["gameInfo"],
   computed: {
     playerVs: function() {
-      if (typeof this.players !== "object") {
+      if (typeof this.gameInfo.players !== "object") {
         return "local game";
       }
-      return this.players[0] + " vs. " + this.players[1];
+      return this.gameInfo.players[0] + " vs. " + this.gameInfo.players[1];
     }
   }
 };

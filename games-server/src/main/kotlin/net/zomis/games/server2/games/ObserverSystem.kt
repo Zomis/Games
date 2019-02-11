@@ -61,7 +61,7 @@ class ObserverSystem {
         if (message.data.getTextOrDefault("type", "") != "observer") {
             return
         }
-        val gameType = gameSystem.gameTypes[message.data.get("game").asText()]
+        val gameType = gameSystem.gameTypes[message.data.get("gameType").asText()]
         val gameId = message.data.get("gameId").asText()
         val game = gameType?.runningGames?.get(gameId)
         val observerState = message.data.get("observer").asText()

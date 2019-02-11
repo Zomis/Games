@@ -72,9 +72,9 @@ class GameSystem {
         val gameTypes = features.addData(GameTypes())
         val objectMapper = ObjectMapper()
         events.listen("Trigger PlayerGameMoveRequest", ClientJsonMessage::class, {
-            it.data.has("game") && it.data.getTextOrDefault("type", "") == "move"
+            it.data.has("gameType") && it.data.getTextOrDefault("type", "") == "move"
         }, {
-                val gameType = it.data.get("game").asText()
+                val gameType = it.data.get("gameType").asText()
                 val moveType = it.data.getTextOrDefault("moveType", "move")
                 val move = it.data.get("move")
                 val gameId = it.data.get("gameId").asText()

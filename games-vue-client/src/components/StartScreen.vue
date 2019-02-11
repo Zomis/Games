@@ -32,18 +32,18 @@
       <v-divider></v-divider>
 
       <v-card-title>Your Games</v-card-title>
-      <template v-for="game in activeGames" v-if="game.props.gameType === gameType && game.props.yourIndex >= 0">
+      <template v-for="game in activeGames" v-if="game.gameInfo.gameType === gameType && game.gameInfo.yourIndex >= 0">
         <div class="active-game">
-          <component :key="gameType + game.props.gameId" :is="game.component" v-bind="game.props"></component>
+          <component :key="gameType + game.gameInfo.gameId" :is="game.component" :gameInfo="game.gameInfo"></component>
         </div>
       </template>
 
       <v-divider></v-divider>
 
       <v-card-title>Other Games</v-card-title>
-      <template v-for="game in activeGames" v-if="game.props.gameType === gameType && game.props.yourIndex < 0">
+      <template v-for="game in activeGames" v-if="game.gameInfo.gameType === gameType && game.gameInfo.yourIndex < 0">
         <div class="active-game">
-          <component :key="gameType + game.props.gameId" :is="game.component" v-bind="game.props"></component>
+          <component :key="gameType + game.gameInfo.gameId" :is="game.component" :gameInfo="game.gameInfo"></component>
         </div>
       </template>
     </v-card>
@@ -114,7 +114,8 @@ export default {
     },
     observe: function(game) {
       let matchingGame = this.activeGames.find(
-        e => e.props.game == game.gameType && e.props.gameId == game.gameId
+        e =>
+          e.gameInfo.game == game.gameType && e.gameInfo.gameId == game.gameId
       );
       if (matchingGame) {
         return;

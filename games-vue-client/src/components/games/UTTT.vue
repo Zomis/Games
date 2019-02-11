@@ -1,6 +1,6 @@
 <template>
   <div class="game-uttt">
-    <GameHead :gameType="gameType" :gameId="gameId" :players="players"></GameHead>
+    <GameHead :gameInfo="gameInfo"></GameHead>
     <div class="board-parent">
       <div class="board uttt-big-board">
         <div class="smaller-board" v-for="boardIndex in 9">
@@ -25,7 +25,7 @@
         </div>
       </div>
     </div>
-    <GameResult :gameId="gameId" :gameType="gameType" :yourIndex="yourIndex" :players="players"></GameResult>
+    <GameResult :gameInfo="gameInfo"></GameResult>
     <v-expansion-panel v-if="showRules">
       <v-expansion-panel-content>
         <div slot="header">Rules</div>
@@ -57,13 +57,13 @@ import { mapState } from "vuex";
 
 export default {
   name: "UTTT",
-  props: ["yourIndex", "gameType", "gameId", "players", "showRules"],
+  props: ["gameInfo", "showRules"],
   created() {
-    if (this.yourIndex < 0) {
+    if (this.gameInfo.yourIndex < 0) {
       Socket.send(
-        `v1:{ "type": "observer", "game": "${this.gameType}", "gameId": "${
-          this.gameId
-        }", "observer": "start" }`
+        `v1:{ "type": "observer", "gameType": "${
+          this.gameInfo.gameType
+        }", "gameId": "${this.gameInfo.gameId}", "observer": "start" }`
       );
     }
     Socket.$on("type:IllegalMove", this.messageIllegal);
@@ -79,13 +79,13 @@ export default {
   computed: {
     ...mapState("UTTT", {
       board(state) {
-        return state.games[this.gameId].gameData.board;
+        return state.games[this.gameInfo.gameId].gameData.board;
       },
       movesMade(state) {
-        return state.games[this.gameId].gameData.movesMade;
+        return state.games[this.gameInfo.gameId].gameData.movesMade;
       },
       gamePieces(state) {
-        return state.games[this.gameId].gameData.gamePieces;
+        return state.games[this.gameInfo.gameId].gameData.gamePieces;
       }
     })
   },
@@ -93,8 +93,8 @@ export default {
     doNothing: function() {},
     action: function(name, data) {
       if (Socket.isConnected()) {
-        let json = `{ "game": "${this.gameType}", "gameId": "${
-          this.gameId
+        let json = `{ "gameType": "${this.gameInfo.gameType}", "gameId": "${
+          this.gameInfo.gameId
         }", "type": "move", "moveType": "${name}", "move": ${JSON.stringify(
           data
         )} }`;

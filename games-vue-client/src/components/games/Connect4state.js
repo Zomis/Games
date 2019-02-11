@@ -10,8 +10,7 @@ const gameStore = {
     createGame(state, data) {
       Vue.set(state.games, data.gameId, {
         component: "Connect4",
-        props: {
-          game: data.gameType, // Deprecated
+        gameInfo: {
           gameType: data.gameType,
           gameId: data.gameId,
           yourIndex: data.yourIndex,

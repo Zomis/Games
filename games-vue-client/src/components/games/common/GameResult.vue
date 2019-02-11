@@ -1,6 +1,6 @@
 <template>
   <div class="game-over" v-if="gameOverMessage">
-    <span class="you" v-if="yourIndex >= 0">YOU</span>
+    <span class="you" v-if="gameInfo.yourIndex >= 0">YOU</span>
     <span class="you" v-else>{{ winnerName }}</span>
     <span v-if="gameOverMessage.winner" class="win">WIN</span>
     <span v-if="!gameOverMessage.winner" class="loss">LOSE</span>
@@ -17,7 +17,7 @@ import Invites from "../../Invites";
 
 export default {
   name: "GameResult",
-  props: ["gameType", "gameId", "yourIndex", "players"],
+  props: ["gameInfo"],
   components: { Invites },
   data() {
     return {
@@ -33,21 +33,27 @@ export default {
   },
   methods: {
     playAgain() {
-      let opponent = this.players[1 - this.yourIndex];
+      let opponent = this.gameInfo.players[1 - this.gameInfo.yourIndex];
       Socket.send(
         `{ "type": "Invite", "gameType": "${
-          this.gameType
+          this.gameInfo.gameType
         }", "invite": ["${opponent}"] }`
       );
     },
     messageEliminated(e) {
+      if (
+        this.gameInfo.gameType !== e.gameType ||
+        this.gameInfo.gameId !== e.gameId
+      ) {
+        return;
+      }
       console.log(`Recieved eliminated: ${JSON.stringify(e)}`);
-      if (this.yourIndex == e.player) {
+      if (this.gameInfo.yourIndex == e.player) {
         this.gameOverMessage = e;
       }
-      if (this.yourIndex < 0 && e.winner) {
+      if (this.gameInfo.yourIndex < 0 && e.winner) {
         this.gameOverMessage = e;
-        this.winnerName = this.players[e.player];
+        this.winnerName = this.gameInfo.players[e.player];
       }
     }
   }

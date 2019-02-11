@@ -1,6 +1,6 @@
 <template>
   <div class="game-ur">
-    <GameHead :gameType="gameType" :gameId="gameId" :players="players"></GameHead>
+    <GameHead :gameInfo="gameInfo"></GameHead>
     <div class="board-parent">
       <UrPlayerView v-bind:game="ur" v-bind:playerIndex="0"
         :gamePieces="gamePieces"
@@ -52,7 +52,7 @@
        :onPlaceNew="placeNew" />
       <UrRoll :roll="lastRoll" :usable="ur.roll < 0 && canControlCurrentPlayer" :onDoRoll="onDoRoll" />
     </div>
-    <GameResult :gameId="gameId" :gameType="gameType" :yourIndex="yourIndex" :players="players"></GameResult>
+    <GameResult :gameInfo="gameInfo"></GameResult>
     <v-expansion-panel v-if="showRules" expand>
       <v-expansion-panel-content>
         <div slot="header">Objective</div>
@@ -121,22 +121,22 @@ function piecesToObjects(array, playerIndex) {
 
 export default {
   name: "RoyalGameOfUR",
-  props: ["yourIndex", "gameType", "gameId", "players", "showRules"],
+  props: ["gameInfo", "showRules"],
   data() {
     return {
       highlighted: null
     };
   },
   created() {
-    if (this.yourIndex < 0) {
+    if (this.gameInfo.yourIndex < 0) {
       Socket.send(
-        `v1:{ "type": "observer", "game": "${this.gameType}", "gameId": "${
-          this.gameId
-        }", "observer": "start" }`
+        `v1:{ "type": "observer", "game": "${
+          this.gameInfo.gameType
+        }", "gameId": "${this.gameInfo.gameId}", "observer": "start" }`
       );
     }
     Socket.$on("type:IllegalMove", this.messageIllegal);
-    this.$store.dispatch("UR/calcPlayerPieces", this.gameId);
+    this.$store.dispatch("UR/calcPlayerPieces", this.gameInfo.gameId);
   },
   beforeDestroy() {
     Socket.$off("type:IllegalMove", this.messageIllegal);
@@ -153,8 +153,8 @@ export default {
     doNothing: function() {},
     action: function(name, data) {
       if (Socket.isConnected()) {
-        let json = `{ "game": "${this.gameType}", "gameId": "${
-          this.gameId
+        let json = `{ "gameType": "${this.gameInfo.gameType}", "gameId": "${
+          this.gameInfo.gameId
         }", "type": "move", "moveType": "${name}", "move": ${data} }`;
         Socket.send(json);
       } else {
@@ -174,7 +174,7 @@ export default {
             this.ur.roll
           );
           console.log("result: " + moveResult);
-          this.$store.dispatch("UR/calcPlayerPieces", this.gameId);
+          this.$store.dispatch("UR/calcPlayerPieces", this.gameInfo.gameId);
         }
         console.log(this.ur.toString());
       }
@@ -195,16 +195,22 @@ export default {
       this.action("move", piece.position);
     },
     messageEliminated(e) {
-      if (this.gameType != e.gameType || this.gameId != e.gameId) {
+      if (
+        this.gameInfo.gameType != e.gameType ||
+        this.gameInfo.gameId != e.gameId
+      ) {
         return;
       }
       console.log(`Recieved eliminated: ${JSON.stringify(e)}`);
-      if (this.yourIndex == e.player) {
+      if (this.gameInfo.yourIndex == e.player) {
         this.gameOverMessage = e;
       }
     },
     messageIllegal(e) {
-      if (this.gameType != e.gameType || this.gameId != e.gameId) {
+      if (
+        this.gameInfo.gameType != e.gameType ||
+        this.gameInfo.gameId != e.gameId
+      ) {
         return;
       }
       console.log("IllegalMove: " + JSON.stringify(e));
@@ -231,29 +237,32 @@ export default {
   computed: {
     ...mapState("UR", {
       ur(state) {
-        return state.games[this.gameId].gameData.ur;
+        return state.games[this.gameInfo.gameId].gameData.ur;
       },
       lastRoll(state) {
-        return state.games[this.gameId].gameData.lastRoll;
+        return state.games[this.gameInfo.gameId].gameData.lastRoll;
       },
       playerPieces(state) {
-        return state.games[this.gameId].gameData.playerPieces;
+        return state.games[this.gameInfo.gameId].gameData.playerPieces;
       },
       gamePieces(state) {
-        return state.games[this.gameId].gameData.gamePieces;
+        return state.games[this.gameInfo.gameId].gameData.gamePieces;
       }
     }),
     canControlPlayer: function() {
       return [
-        this.yourIndex == 0 || !Socket.isConnected(),
-        this.yourIndex == 1 || !Socket.isConnected()
+        this.gameInfo.yourIndex == 0 || !Socket.isConnected(),
+        this.gameInfo.yourIndex == 1 || !Socket.isConnected()
       ];
     },
     canControlCurrentPlayer: function() {
       if (this.ur.isFinished) {
         return false;
       }
-      return this.ur.currentPlayer == this.yourIndex || !Socket.isConnected();
+      return (
+        this.ur.currentPlayer == this.gameInfo.yourIndex ||
+        !Socket.isConnected()
+      );
     },
     destination: function() {
       if (this.highlighted === null) {
@@ -280,12 +289,6 @@ export default {
         this.highlighted.player
       );
       return result[0];
-    },
-    playerVs: function() {
-      if (typeof this.players !== "object") {
-        return "local game";
-      }
-      return this.players[0] + " vs. " + this.players[1];
     },
     canPlaceNew: function() {
       return (

@@ -58,8 +58,8 @@ const store = new Vuex.Store({
     }
   },
   actions: {
-    observe(context, game) {
-      context.commit(`${game.gameType}/createGame`, game);
+    observe(context, gameInfo) {
+      context.commit(`${gameInfo.gameType}/createGame`, gameInfo);
     },
     onSocketMessage(context, data) {
       console.log(data);

@@ -56,11 +56,8 @@ export default new Router({
       name: "RoyalGameOfUR",
       component: RoyalGameOfUR,
       props: route => ({
-        gameType: "UR",
-        showRules: true,
-        gameId: route.params.gameId,
-        players: route.params.players,
-        yourIndex: route.params.playerIndex
+        gameInfo: route.params.gameInfo,
+        showRules: true
       })
     },
     {
@@ -68,10 +65,8 @@ export default new Router({
       name: "Connect4",
       component: Connect4,
       props: route => ({
-        gameType: "Connect4",
-        gameId: route.params.gameId,
-        players: route.params.players,
-        yourIndex: route.params.playerIndex
+        gameInfo: route.params.gameInfo,
+        showRules: true
       })
     },
     {
@@ -79,10 +74,8 @@ export default new Router({
       name: "ECSGame",
       component: ECSGame,
       props: route => ({
-        gameType: route.params.gameType,
-        gameId: route.params.gameId,
-        players: route.params.players,
-        yourIndex: route.params.playerIndex
+        gameInfo: route.params.gameInfo,
+        showRules: true
       })
     },
     {
@@ -90,10 +83,8 @@ export default new Router({
       name: "UTTT",
       component: UTTT,
       props: route => ({
-        gameType: "UTTT",
-        gameId: route.params.gameId,
-        players: route.params.players,
-        yourIndex: route.params.playerIndex
+        gameInfo: route.params.gameInfo,
+        showRules: true
       })
     }
   ]

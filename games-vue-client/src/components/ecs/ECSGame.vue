@@ -1,9 +1,9 @@
 <template>
   <div class="game" :class="gameType | lowerCase">
-    <GameHead :game="gameType" :gameId="gameId" :players="players"></GameHead>
+    <GameHead :gameInfo="gameInfo"></GameHead>
     <Entity v-if="core" :entity="core" class="core" v-bind="{ game, click }">
     </Entity>
-    <GameResult :yourIndex="yourIndex"></GameResult>
+    <GameResult :gameInfo="gameInfo"></GameResult>
   </div>
 </template>
 
@@ -21,7 +21,7 @@ if (typeof games["games-js"] !== "undefined") {
 
 export default {
   name: "ECSGame",
-  props: ["yourIndex", "gameType", "gameId", "players"],
+  props: ["gameInfo"],
   data() {
     return {
       core: null,
@@ -36,11 +36,11 @@ export default {
     }
   },
   created() {
-    if (this.yourIndex < 0) {
+    if (this.gameInfo.yourIndex < 0) {
       Socket.send(
-        `{ "type": "observer", "game": "${this.gameType}", "gameId": "${
-          this.gameId
-        }", "observer": "start" }`
+        `{ "type": "observer", "game": "${
+          this.gameInfo.gameType
+        }", "gameId": "${this.gameInfo.gameId}", "observer": "start" }`
       );
     }
     Socket.$on("type:GameData", this.messageGameData);
@@ -61,8 +61,8 @@ export default {
     doNothing: function() {},
     action: function(name, data) {
       if (Socket.isConnected()) {
-        let json = `{ "game": "${this.gameType}", "gameId": "${
-          this.gameId
+        let json = `{ "game": "${this.gameInfo.gameType}", "gameId": "${
+          this.gameInfo.gameId
         }", "type": "move", "moveType": "${name}", "move": ${data} }`;
         Socket.send(json);
       } else {
@@ -75,11 +75,11 @@ export default {
       console.log("OnClick in ECSGame: " + entity.id);
       if (entity.actionable && Socket.isConnected()) {
         let performer = "";
-        if (this.core.players[this.yourIndex]) {
-          performer = this.core.players[this.yourIndex].id;
+        if (this.core.players[this.gameInfo.yourIndex]) {
+          performer = this.core.players[this.gameInfo.yourIndex].id;
         }
-        let json = `{ "game": "${this.gameType}", "gameId": "${
-          this.gameId
+        let json = `{ "gameType": "${this.gameInfo.gameType}", "gameId": "${
+          this.gameInfo.gameId
         }", "type": "action", "performer": "${performer}", "action": "${
           entity.id
         }" }`;
@@ -88,7 +88,7 @@ export default {
     },
     messageEliminated(e) {
       console.log(`Recieved eliminated: ${JSON.stringify(e)}`);
-      if (this.yourIndex == e.player) {
+      if (this.gameInfo.yourIndex == e.player) {
         this.gameOverMessage = e;
       }
     },
@@ -103,14 +103,6 @@ export default {
     },
     messageIllegal(e) {
       console.log("IllegalMove: " + JSON.stringify(e));
-    }
-  },
-  computed: {
-    playerVs: function() {
-      if (typeof this.players !== "object") {
-        return "local game";
-      }
-      return this.players[0] + " vs. " + this.players[1];
     }
   }
 };
