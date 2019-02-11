@@ -43,9 +43,11 @@ class InviteSystem {
         events.listen("trigger InviteResponseEvent", ClientJsonMessage::class, {
             it.data.getTextOrDefault("type", "") == "InviteResponse"
         }, {
-            val invite = invites[it.data.get("invite").asText()]
+            val inviteId = it.data.get("invite").asText()
+            val invite = invites[inviteId]
             if (invite == null) {
                 events.execute(IllegalClientRequest(it.client, "No such invite id"))
+                it.client.send(mapOf("type" to "InviteCancelled", "inviteId" to inviteId))
                 return@listen
             }
             val response = it.data.get("accepted").asBoolean()
