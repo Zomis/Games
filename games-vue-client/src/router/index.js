@@ -56,7 +56,7 @@ export default new Router({
       name: "RoyalGameOfUR",
       component: RoyalGameOfUR,
       props: route => ({
-        game: "UR",
+        gameType: "UR",
         showRules: true,
         gameId: route.params.gameId,
         players: route.params.players,
@@ -68,7 +68,7 @@ export default new Router({
       name: "Connect4",
       component: Connect4,
       props: route => ({
-        game: "Connect4",
+        gameType: "Connect4",
         gameId: route.params.gameId,
         players: route.params.players,
         yourIndex: route.params.playerIndex
@@ -90,7 +90,7 @@ export default new Router({
       name: "UTTT",
       component: UTTT,
       props: route => ({
-        game: "UTTT",
+        gameType: "UTTT",
         gameId: route.params.gameId,
         players: route.params.players,
         yourIndex: route.params.playerIndex

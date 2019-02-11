@@ -1,6 +1,6 @@
 <template>
   <div class="game-ur">
-    <GameHead :game="game" :gameId="gameId" :players="players"></GameHead>
+    <GameHead :gameType="gameType" :gameId="gameId" :players="players"></GameHead>
     <div class="board-parent">
       <UrPlayerView v-bind:game="ur" v-bind:playerIndex="0"
         :gamePieces="gamePieces"
@@ -52,7 +52,7 @@
        :onPlaceNew="placeNew" />
       <UrRoll :roll="lastRoll" :usable="ur.roll < 0 && canControlCurrentPlayer" :onDoRoll="onDoRoll" />
     </div>
-    <GameResult v-if="showRules" :yourIndex="yourIndex" :players="players"></GameResult>
+    <GameResult :gameId="gameId" :gameType="gameType" :yourIndex="yourIndex" :players="players"></GameResult>
     <v-expansion-panel v-if="showRules" expand>
       <v-expansion-panel-content>
         <div slot="header">Objective</div>
@@ -121,7 +121,7 @@ function piecesToObjects(array, playerIndex) {
 
 export default {
   name: "RoyalGameOfUR",
-  props: ["yourIndex", "game", "gameId", "players", "showRules"],
+  props: ["yourIndex", "gameType", "gameId", "players", "showRules"],
   data() {
     return {
       highlighted: null
@@ -130,7 +130,7 @@ export default {
   created() {
     if (this.yourIndex < 0) {
       Socket.send(
-        `v1:{ "type": "observer", "game": "${this.game}", "gameId": "${
+        `v1:{ "type": "observer", "game": "${this.gameType}", "gameId": "${
           this.gameId
         }", "observer": "start" }`
       );
@@ -153,7 +153,7 @@ export default {
     doNothing: function() {},
     action: function(name, data) {
       if (Socket.isConnected()) {
-        let json = `{ "game": "${this.game}", "gameId": "${
+        let json = `{ "game": "${this.gameType}", "gameId": "${
           this.gameId
         }", "type": "move", "moveType": "${name}", "move": ${data} }`;
         Socket.send(json);
@@ -195,7 +195,7 @@ export default {
       this.action("move", piece.position);
     },
     messageEliminated(e) {
-      if (this.game != e.gameType || this.gameId != e.gameId) {
+      if (this.gameType != e.gameType || this.gameId != e.gameId) {
         return;
       }
       console.log(`Recieved eliminated: ${JSON.stringify(e)}`);
@@ -204,7 +204,7 @@ export default {
       }
     },
     messageIllegal(e) {
-      if (this.game != e.gameType || this.gameId != e.gameId) {
+      if (this.gameType != e.gameType || this.gameId != e.gameId) {
         return;
       }
       console.log("IllegalMove: " + JSON.stringify(e));

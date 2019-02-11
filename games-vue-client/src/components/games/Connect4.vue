@@ -1,6 +1,6 @@
 <template>
   <div class="game-connect4">
-    <GameHead :game="game" :gameId="gameId" :players="players"></GameHead>
+    <GameHead :gameType="gameType" :gameId="gameId" :players="players"></GameHead>
     <div class="board-parent">
       <div class="board connect4-board">
         <div class="pieces pieces-bg">
@@ -20,7 +20,7 @@
         </div>
       </div>
     </div>
-    <GameResult :yourIndex="yourIndex" :players="players"></GameResult>
+    <GameResult :gameId="gameId" :gameType="gameType" :yourIndex="yourIndex" :players="players"></GameResult>
     <v-expansion-panel v-if="showRules">
       <v-expansion-panel-content>
         <div slot="header">Rules</div>
@@ -42,11 +42,11 @@ import { mapState } from "vuex";
 
 export default {
   name: "Connect4",
-  props: ["yourIndex", "game", "gameId", "players", "showRules"],
+  props: ["yourIndex", "gameType", "gameId", "players", "showRules"],
   created() {
     if (this.yourIndex < 0) {
       Socket.send(
-        `v1:{ "type": "observer", "game": "${this.game}", "gameId": "${
+        `v1:{ "type": "observer", "game": "${this.gameType}", "gameId": "${
           this.gameId
         }", "observer": "start" }`
       );
@@ -65,7 +65,7 @@ export default {
     doNothing: function() {},
     action: function(name, data) {
       if (Socket.isConnected()) {
-        let json = `{ "game": "${this.game}", "gameId": "${
+        let json = `{ "game": "${this.gameType}", "gameId": "${
           this.gameId
         }", "type": "move", "moveType": "${name}", "move": ${JSON.stringify(
           data

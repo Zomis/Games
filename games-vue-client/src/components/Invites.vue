@@ -54,18 +54,22 @@
 </template>
 <script>
 import Socket from "../socket";
+function emptyInvite() {
+  return {
+    waitingFor: [],
+    inviteId: null,
+    cancelled: false,
+    accepted: [],
+    declined: []
+  };
+}
+
 export default {
   name: "Invites",
   data() {
     return {
       invites: [],
-      inviteWaiting: {
-        waitingFor: [],
-        inviteId: null,
-        cancelled: false,
-        accepted: [],
-        declined: []
-      }
+      inviteWaiting: emptyInvite()
     };
   },
   methods: {
@@ -136,6 +140,7 @@ export default {
         "UTTT-ECS": "ECSGame",
         Connect4: "Connect4"
       };
+      this.inviteWaiting = emptyInvite();
       this.$router.push({
         name: games[e.gameType],
         params: {
