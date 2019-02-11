@@ -2,8 +2,6 @@
   <div class="start-screen">
     <h1 class="login-name">Welcome, {{ loginName }}</h1>
 
-    <v-btn @click="newRandomGame()">New game</v-btn>
-
     <v-card v-for="(users, gameType) in lobby" :key="gameType" class="games">
       <v-toolbar color="cyan" dark>
         <v-toolbar-title>{{ gameType }}</v-toolbar-title>
