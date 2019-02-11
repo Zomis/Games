@@ -1,6 +1,8 @@
 import Vue from "vue";
 import Vuex from "vuex";
 import Connect4state from "./components/games/Connect4state";
+import URstate from "./components/RoyalGameOfURstate";
+import UTTTstate from "./components/games/UTTTstate";
 
 // const debug = process.env.NODE_ENV !== "production";
 Vue.use(Vuex);
@@ -12,10 +14,10 @@ const store = new Vuex.Store({
     invites: [],
     games: [] // includes both playing and observing
   },
-  modules: { Connect4: Connect4state },
+  modules: { Connect4: Connect4state, UR: URstate, UTTT: UTTTstate },
   getters: {
     activeGames: state => {
-      let modules = [state.Connect4];
+      let modules = [state.Connect4, state.UR, state.UTTT];
       return modules
         .flatMap(m => m.games)
         .map(i => Object.values(i))
@@ -72,6 +74,12 @@ const store = new Vuex.Store({
       }
       if (data.gameType === "Connect4") {
         context.dispatch("Connect4/onSocketMessage", data);
+      }
+      if (data.gameType === "UTTT") {
+        context.dispatch("UTTT/onSocketMessage", data);
+      }
+      if (data.gameType === "UR") {
+        context.dispatch("UR/onSocketMessage", data);
       }
     }
   }

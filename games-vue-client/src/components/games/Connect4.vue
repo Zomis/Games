@@ -43,11 +43,6 @@ import { mapState } from "vuex";
 export default {
   name: "Connect4",
   props: ["yourIndex", "game", "gameId", "players", "showRules"],
-  data() {
-    return {
-      gameOverMessage: null
-    };
-  },
   created() {
     if (this.yourIndex < 0) {
       Socket.send(

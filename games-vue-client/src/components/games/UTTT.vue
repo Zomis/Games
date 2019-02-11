@@ -53,20 +53,11 @@ import Socket from "../../socket";
 import UrPiece from "../ur/UrPiece";
 import GameHead from "./common/GameHead";
 import GameResult from "./common/GameResult";
-
-let uttt = window["uttt-js"];
+import { mapState } from "vuex";
 
 export default {
   name: "UTTT",
   props: ["yourIndex", "game", "gameId", "players", "showRules"],
-  data() {
-    return {
-      board: new uttt.net.zomis.tttultimate.games.TTControllers.ultimateTTT(),
-      movesMade: 0,
-      gamePieces: [],
-      gameOverMessage: null
-    };
-  },
   created() {
     if (this.yourIndex < 0) {
       Socket.send(
@@ -75,17 +66,28 @@ export default {
         }", "observer": "start" }`
       );
     }
-    Socket.$on("type:GameMove", this.messageMove);
     Socket.$on("type:IllegalMove", this.messageIllegal);
   },
   beforeDestroy() {
-    Socket.$off("type:GameMove", this.messageMove);
     Socket.$off("type:IllegalMove", this.messageIllegal);
   },
   components: {
     GameHead,
     GameResult,
     UrPiece
+  },
+  computed: {
+    ...mapState("UTTT", {
+      board(state) {
+        return state.games[this.gameId].gameData.board;
+      },
+      movesMade(state) {
+        return state.games[this.gameId].gameData.movesMade;
+      },
+      gamePieces(state) {
+        return state.games[this.gameId].gameData.gamePieces;
+      }
+    })
   },
   methods: {
     doNothing: function() {},
@@ -101,26 +103,6 @@ export default {
     },
     onClick: function(piece) {
       this.action("move", this.boardTileToGlobal(piece));
-    },
-    messageMove(e) {
-      console.log(`Recieved move: ${e.moveType}: ${e.move}`);
-      this.movesMade++;
-      const boardTile = this.globalToBoardTile(e.move);
-
-      this.board.play_vux9f0$(e.move.x, e.move.y);
-      this.gamePieces.push({
-        x: e.move.x,
-        y: e.move.y,
-        player: e.player,
-        boardIndex: boardTile.boardIndex,
-        tileIndex: boardTile.tileIndex
-      });
-    },
-    globalToBoardTile(position) {
-      return {
-        boardIndex: Math.floor(position.x / 3) + Math.floor(position.y / 3) * 3,
-        tileIndex: Math.floor(position.x % 3) + Math.floor(position.y % 3) * 3
-      };
     },
     boardTileToGlobal(piece) {
       let x = (piece.boardIndex % 3) * 3 + piece.tileIndex % 3;

@@ -92,13 +92,9 @@ import UrRoll from "./ur/UrRoll";
 import UrFlower from "./ur/UrFlower";
 import GameHead from "./games/common/GameHead";
 import GameResult from "./games/common/GameResult";
+import { mapState } from "vuex";
 
-var games = require("../../../games-js/web/games-js");
-if (typeof games["games-js"] !== "undefined") {
-  // This is needed when doing a production build, but is not used for `npm run dev` locally.
-  games = games["games-js"];
-}
-
+// TODO: Place mapping and piecesToObjects in a common JS file, shared with store
 function mapping(position, playerIndex) {
   let y = playerIndex == 0 ? 0 : 2;
   if (position > 4 && position < 13) {
@@ -128,11 +124,7 @@ export default {
   props: ["yourIndex", "game", "gameId", "players", "showRules"],
   data() {
     return {
-      highlighted: null,
-      lastRoll: 0,
-      gamePieces: [],
-      playerPieces: [],
-      ur: new games.net.zomis.games.ur.RoyalGameOfUr_init()
+      highlighted: null
     };
   },
   created() {
@@ -143,14 +135,10 @@ export default {
         }", "observer": "start" }`
       );
     }
-    Socket.$on("type:GameMove", this.messageMove);
-    Socket.$on("type:GameState", this.messageState);
     Socket.$on("type:IllegalMove", this.messageIllegal);
-    this.playerPieces = this.calcPlayerPieces();
+    this.$store.dispatch("UR/calcPlayerPieces", this.gameId);
   },
   beforeDestroy() {
-    Socket.$off("type:GameMove", this.messageMove);
-    Socket.$off("type:GameState", this.messageState);
     Socket.$off("type:IllegalMove", this.messageIllegal);
   },
   components: {
@@ -186,7 +174,7 @@ export default {
             this.ur.roll
           );
           console.log("result: " + moveResult);
-          this.playerPieces = this.calcPlayerPieces();
+          this.$store.dispatch("UR/calcPlayerPieces", this.gameId);
         }
         console.log(this.ur.toString());
       }
@@ -215,37 +203,11 @@ export default {
         this.gameOverMessage = e;
       }
     },
-    messageMove(e) {
-      if (this.game != e.gameType || this.gameId != e.gameId) {
-        return;
-      }
-      console.log(`Recieved move: ${e.moveType}: ${e.move}`);
-      if (e.moveType == "move") {
-        this.ur.move_qt1dr2$(this.ur.currentPlayer, e.move, this.ur.roll);
-      }
-      this.playerPieces = this.calcPlayerPieces();
-      // A move has been done - check if it is my turn.
-      console.log("After Move: " + this.ur.toString());
-    },
-    messageState(e) {
-      if (this.game != e.gameType || this.gameId != e.gameId) {
-        return;
-      }
-      console.log(`MessageState: ${e.roll}`);
-      if (typeof e.roll !== "undefined") {
-        this.ur.doRoll_za3lpa$(e.roll);
-        this.rollUpdate(e.roll);
-      }
-      console.log("AfterState: " + this.ur.toString());
-    },
     messageIllegal(e) {
       if (this.game != e.gameType || this.gameId != e.gameId) {
         return;
       }
       console.log("IllegalMove: " + JSON.stringify(e));
-    },
-    rollUpdate(rollValue) {
-      this.lastRoll = rollValue;
     },
     onDoRoll() {
       this.action("roll", -1);
@@ -264,24 +226,23 @@ export default {
     },
     mouseleave() {
       this.highlighted = null;
-    },
-    calcPlayerPieces() {
-      let pieces = this.ur.piecesCopy;
-      this.gamePieces = this.ur.piecesCopy;
-      let obj0 = piecesToObjects(pieces, 0);
-      let obj1 = piecesToObjects(pieces, 1);
-      let result = [];
-      for (var i = 0; i < obj0.length; i++) {
-        result.push(obj0[i]);
-      }
-      for (var i = 0; i < obj1.length; i++) {
-        result.push(obj1[i]);
-      }
-      console.log(result);
-      return result;
     }
   },
   computed: {
+    ...mapState("UR", {
+      ur(state) {
+        return state.games[this.gameId].gameData.ur;
+      },
+      lastRoll(state) {
+        return state.games[this.gameId].gameData.lastRoll;
+      },
+      playerPieces(state) {
+        return state.games[this.gameId].gameData.playerPieces;
+      },
+      gamePieces(state) {
+        return state.games[this.gameId].gameData.gamePieces;
+      }
+    }),
     canControlPlayer: function() {
       return [
         this.yourIndex == 0 || !Socket.isConnected(),
