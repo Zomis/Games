@@ -19,11 +19,11 @@ import AuthChoice from "./AuthChoice";
 
 const serverOptions = [
   {
-    url: "ws://gbg.zomis.net:8082",
+    url: "ws://gbg.zomis.net:42638/websocket",
     name: "zomis"
   },
   {
-    url: "ws://127.0.0.1:8081",
+    url: "ws://127.0.0.1:8081/websocket",
     name: "localhost-development"
   }
 ];

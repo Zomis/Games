@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.github.kittinunf.fuel.Fuel
 import io.javalin.Javalin
-import io.javalin.translator.json.JavalinJacksonPlugin
+import io.javalin.json.JavalinJackson
 import net.zomis.core.events.EventSystem
 import net.zomis.games.server2.StartupEvent
 import org.slf4j.LoggerFactory
@@ -13,7 +13,7 @@ import java.util.*
 
 data class GithubAuthRequest(val clientId: String, val redirectUri: String, val code: String, val state: String?)
 
-class LinAuth(val port: Int) {
+class LinAuth(val javalin: Javalin, val port: Int) {
 
     private val logger = LoggerFactory.getLogger(LinAuth::class.java)
 
@@ -26,10 +26,8 @@ class LinAuth(val port: Int) {
         val mapper = ObjectMapper()
         mapper.registerModule(KotlinModule())
 
-        JavalinJacksonPlugin.configure(mapper)
-        val app = Javalin.create()
-            .enableStandardRequestLogging()
-            .enableDynamicGzip()
+        JavalinJackson.configure(mapper)
+        val app = javalin
             .enableCorsForOrigin("http://localhost:42637", "http://games.zomis.net")
             .apply {
                 port(port)

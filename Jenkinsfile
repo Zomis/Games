@@ -40,7 +40,7 @@ pipeline {
 
                     // Deploy server
                     sh 'docker build . -t gamesserver2'
-                    sh 'docker run -d --rm --name games_server -p 192.168.0.110:8082:8081 -p 42638:42638 -v /home/zomis/jenkins/gamesserver2:/data/logs -v /etc/localtime:/etc/localtime:ro -w /data/logs gamesserver2'
+                    sh 'docker run -d --rm --name games_server -p 42638:42638 -v /home/zomis/jenkins/gamesserver2:/data/logs -v /etc/localtime:/etc/localtime:ro -w /data/logs gamesserver2'
 
                     // Deploy client
                     sh 'rm -rf /home/zomis/docker-volumes/games-vue-client'

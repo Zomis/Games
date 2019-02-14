@@ -1,10 +1,10 @@
 package net.zomis.games.server2.ws
 
+import io.javalin.websocket.WsSession
 import klogging.KLoggers
 import net.zomis.games.server2.Client
-import org.java_websocket.WebSocket
 
-internal class WebClient(val conn: WebSocket): Client() {
+internal class WebClient(val conn: WsSession): Client() {
 
     private val logger = KLoggers.logger(this)
 

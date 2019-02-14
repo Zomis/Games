@@ -5,6 +5,7 @@ import com.beust.jcommander.Parameter
 import com.beust.jcommander.ParameterException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.javalin.Javalin
 import klogging.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
@@ -22,7 +23,6 @@ import net.zomis.games.server2.ws.Server2WS
 import net.zomis.tttultimate.TTFactories
 import net.zomis.tttultimate.games.TTClassicControllerWithGravity
 import net.zomis.tttultimate.games.TTUltimateController
-import java.net.InetSocketAddress
 import java.util.concurrent.Executors
 import javax.script.ScriptEngineManager
 
@@ -59,12 +59,12 @@ class Server2(val events: EventSystem) {
     val features = Features(events)
 
     fun start(config: ServerConfig) {
+        val javalin = Javalin.create().port(config.wsport)
+        logger.info("Configuring Javalin at port ${config.wsport}")
+
         Runtime.getRuntime().addShutdownHook(Thread({ events.execute(ShutdownEvent("runtime shutdown hook")) }))
         logger.info("$this has features $features")
-        events.listen("Start WebSocket Server", StartupEvent::class, {true}, {
-            val ws = Server2WS(events, InetSocketAddress(config.wsport)).setup()
-            logger.info("WebSocket server listening at ${ws.port}")
-        })
+        Server2WS(javalin, events).setup()
 
         events.listen("v1: JsonMessage", ClientMessage::class, {it.message.startsWith("v1:")}, {
             events.execute(ClientJsonMessage(it.client, mapper.readTree(it.message.substring("v1:".length))))
@@ -92,7 +92,7 @@ class Server2(val events: EventSystem) {
         events.with({ e -> ServerAIs().register(e, executor) })
         features.add(InviteSystem()::setup)
         if (config.httpPort != 0) {
-            events.with(LinAuth(config.httpPort)::register)
+            events.with(LinAuth(javalin, config.httpPort)::register)
         }
         features.add(AIGames()::setup)
         features.add(TVSystem()::register)
@@ -102,6 +102,10 @@ class Server2(val events: EventSystem) {
             val result = engine.eval(it.input.substring("kt ".length))
             println(result)
         })
+
+        events.listen("Stop Javalin", ShutdownEvent::class, {true}, {javalin.stop()})
+        events.listen("Start Javalin", StartupEvent::class, {true}, {javalin.start()})
+
         events.execute(StartupEvent(System.currentTimeMillis()))
     }
 

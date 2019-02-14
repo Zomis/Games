@@ -1,6 +1,6 @@
 FROM openjdk:8u151-jre
 
-EXPOSE 8081
+EXPOSE 42638
 
 WORKDIR /server2/
 ADD games-server/build/libs/*-all.jar /server2/
