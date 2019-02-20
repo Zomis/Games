@@ -17,7 +17,7 @@ class LinAuth(val javalin: Javalin, val port: Int) {
 
     private val logger = LoggerFactory.getLogger(LinAuth::class.java)
 
-    fun startup() {
+    fun register() {
         val secretProperties = Properties()
         val resource = this.javaClass.classLoader.getResourceAsStream("secrets.properties")
         logger.info(resource.toString())
@@ -60,10 +60,6 @@ class LinAuth(val javalin: Javalin, val port: Int) {
             .map { val pair = it.split("="); Pair(pair[0], pair[1]) }
             .forEach { node.put(it.first, it.second) }
         return node
-    }
-
-    fun register(events: EventSystem) {
-        events.listen("start LinAuth", StartupEvent::class, {true}, {startup()})
     }
 
 }

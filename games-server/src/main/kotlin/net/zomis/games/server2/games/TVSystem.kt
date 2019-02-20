@@ -29,7 +29,7 @@ class TVSystem {
         events.listen("start tv", ClientJsonMessage::class, {it.data.getTextOrDefault("type", "") == "tv"}, {
             findOrStartTVGame(events, features.tvData, it.client, features[GameSystem.GameTypes::class]!!.gameTypes)
         })
-        events.listen("startup", StartupEvent::class, {true}, {
+        events.listen("add tv data", StartupEvent::class, {true}, {
             features.addData(TVData(mutableMapOf()))
         })
         events.listen("switch game for viewers", GameEndedEvent::class, {true}, {event ->

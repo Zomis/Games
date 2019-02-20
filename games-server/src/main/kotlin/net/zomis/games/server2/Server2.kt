@@ -92,7 +92,7 @@ class Server2(val events: EventSystem) {
         events.with({ e -> ServerAIs().register(e, executor) })
         features.add(InviteSystem()::setup)
         if (config.httpPort != 0) {
-            events.with(LinAuth(javalin, config.httpPort)::register)
+            LinAuth(javalin, config.httpPort).register()
         }
         features.add(AIGames()::setup)
         features.add(TVSystem()::register)
