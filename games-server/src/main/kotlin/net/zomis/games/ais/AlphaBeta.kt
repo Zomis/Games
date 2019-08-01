@@ -92,19 +92,12 @@ class AlphaBeta<S, A>(
     }
 
     fun score(node: S, depth: Int): Double {
-        if (depth <= 1) {
-            throw IllegalArgumentException("Depth ($depth) must be bigger than 1")
-        }
-        val result = alphaBeta(node, depth, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, true)
-        return result.second
-    }
-
-    fun alphaBeta(node: S, depth: Int): Pair<A, Double> {
+        // This is scoring the next step, so currentPlayer is already opponent
         if (depth <= 1) {
             throw IllegalArgumentException("Depth ($depth) must be bigger than 1")
         }
         val result = alphaBeta(node, depth, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, false)
-        return result.first!! to result.second
+        return result.second
     }
 
 /*

@@ -2,6 +2,7 @@ package net.zomis.games.server2
 
 import net.zomis.aiscores.*
 import net.zomis.games.ais.AlphaBeta
+import net.zomis.games.ais.Best
 import net.zomis.scorers.*
 import net.zomis.scorers.FieldScore
 import java.util.Scanner
@@ -199,6 +200,9 @@ class TTT3DIO(private val game: TTT3D) {
         val i = block.let { if (it) 30 else 0 } + doNotPlace.let { if (it) -40 else 0 }
         return@NamedScorer i.toDouble()
     }
+    // Trap scorer: Extra points for creating traps -- if you force opponent to play somewhere that will give you the win
+    // Field importance scorer: If you can create a win condition that will cause a trap (field is important for you)
+    // Trigger Trap scorer: Extra points if you only need 1 piece to win on BOTH of the levels above point.
     val nextLevelReveal = NamedScorer<TTT3DPiece, TTT3DPoint>("nextReveal") { piece, point ->
         if (point.z == RANGE.endInclusive) {
             return@NamedScorer 0.0
@@ -286,9 +290,10 @@ class TTT3DIO(private val game: TTT3D) {
         val scanner = Scanner(System.`in`)
 
         while (game.findWinner() == null && scorers.fieldsToScore(game.currentPlayer).toList().isNotEmpty()) {
-            if (game.currentPlayer == TTT3DPiece.O) {
+            if (game.currentPlayer == TTT3DPiece.X) {
 //                requestInput(scanner)
-                this.aiPlay()
+//                this.aiPlay()
+                alphaBetaPlay()
             } else {
                 this.alphaBetaPlay()
 //                this.aiPlay()
@@ -300,7 +305,12 @@ class TTT3DIO(private val game: TTT3D) {
         println(game.findWinner())
     }
 
-    private fun alphaBetaPlay() {
+    fun alphaBetaPlay() {
+        val move = alphaBeta()
+        game.playAt(move.y, move.x)
+    }
+
+    fun alphaBeta(): TTT3DPoint {
         val actions: (TTT3D) -> Sequence<TTT3DPoint> = {
             scorerStrategy.fieldsToScoreInGame(it)
         }
@@ -309,9 +319,9 @@ class TTT3DIO(private val game: TTT3D) {
             copy.playAt(position.y, position.x)
             copy
         }
-        val me = game.currentPlayer
-        val opp = me.opponent()
         val heuristic: (TTT3D) -> Double = { state ->
+            val opp = game.currentPlayer // 'I' just played so it's opponent's turn
+            val me = opp.opponent()
             var result = 0.0
             if (state.findWinner() != null) {
                 result = if (state.findWinner() == me) 100.0 else -100.0
@@ -322,22 +332,26 @@ class TTT3DIO(private val game: TTT3D) {
                 val negative = (opWins[1]?:0) * 4 + (opWins[2]?:0) * 2 + (opWins[3]?:0) * 0.1
                 result = positive - negative
             }
-            result.toDouble()
+            -result.toDouble()
         }
         val ab = AlphaBeta<TTT3D, TTT3DPoint>(actions, branching, { it.findWinner() != null || it.isDraw()}, heuristic)
-        ab.score(game, 5)
+//        ab.score(game, 5)
 
         val options = actions(game).map { action ->
             val newState = branching(game, action)
             action to ab.score(newState, 5)
         }.toList()
 
-        options.forEach { println(it) }
-        val move = options.maxBy { it.second }!!
+        val best = Best<Pair<TTT3DPoint, Double>>(true)
+        options.forEach {
+            println(it)
+            best.next(it, it.second)
+        }
+        val move = best.random() //options.maxBy { it.second }!!
 
 //        val move = ab.alphaBeta(game, 5)
         println("AI Decided on $move")
-        game.playAt(move.first.y, move.first.x)
+        return move.first
     }
 
     fun aiPlay() {
