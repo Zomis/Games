@@ -255,7 +255,7 @@ class TTT3DIO(private val game: TTT3D) {
             "${score.first}: ${format.format(score.second)}"
         }
 
-        val scores = factory.producer(game.currentPlayer, scorers.fieldsToScore(game.currentPlayer)).score()
+        val scores = factory.producer(game.currentPlayer).score()
         val maxLength: Int = scores.fieldScores.values.flatMap {
             it.scores.map { score -> scoreDetailsToString(score.key to score.value).length + 2 }
         }.max() ?: 0
@@ -358,7 +358,7 @@ class TTT3DIO(private val game: TTT3D) {
         this.printScores(this.factory)
         val random = Random()
 
-        val ai = factory.producer(game.currentPlayer, scorers.fieldsToScore(game.currentPlayer))
+        val ai = factory.producer(game.currentPlayer)
         val scores = ai.score()
 
 
