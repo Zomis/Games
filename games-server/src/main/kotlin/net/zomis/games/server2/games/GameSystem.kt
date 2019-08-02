@@ -3,7 +3,7 @@ package net.zomis.games.server2.games
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
-import klogging.KLoggers
+import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.core.events.ListenerPriority
 import net.zomis.games.Features

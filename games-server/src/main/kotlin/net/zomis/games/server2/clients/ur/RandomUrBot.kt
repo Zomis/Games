@@ -1,6 +1,6 @@
 package net.zomis.games.server2.clients.ur
 
-import klogging.KLoggers
+import klog.KLoggers
 import net.zomis.games.ur.RoyalGameOfUr
 import java.net.URI
 

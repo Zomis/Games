@@ -2,7 +2,7 @@ package net.zomis.games.server2.ws
 
 import io.javalin.Javalin
 import io.javalin.websocket.*
-import klogging.KLoggers
+import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.server2.*
 import java.lang.Exception

@@ -1,6 +1,6 @@
 package net.zomis.core.events
 
-import klogging.KLoggers
+import klog.KLoggers
 import kotlin.reflect.KClass
 
 enum class ListenerPriority { FIRST, EARLIER, EARLY, NORMAL, LATE, LATER, LAST }

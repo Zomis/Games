@@ -6,7 +6,7 @@ import com.beust.jcommander.ParameterException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.javalin.Javalin
-import klogging.KLoggers
+import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
 import net.zomis.games.ecs.UTTT

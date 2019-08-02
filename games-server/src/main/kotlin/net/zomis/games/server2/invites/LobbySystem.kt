@@ -1,7 +1,7 @@
 package net.zomis.games.server2.invites
 
 import com.fasterxml.jackson.databind.node.ArrayNode
-import klogging.KLoggers
+import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
 import net.zomis.games.server2.*

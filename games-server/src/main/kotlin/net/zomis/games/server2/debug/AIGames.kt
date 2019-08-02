@@ -1,7 +1,7 @@
 package net.zomis.games.server2.debug
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import klogging.KLoggers
+import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
 import net.zomis.games.server2.Client
@@ -9,7 +9,6 @@ import net.zomis.games.server2.ClientJsonMessage
 import net.zomis.games.server2.ConsoleEvent
 import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.games.GameType
-import net.zomis.games.server2.invites.ClientList
 import net.zomis.games.server2.invites.clients
 import java.util.*
 

@@ -12,7 +12,7 @@ import java.net.ServerSocket
 import java.net.URI
 
 class ClientTest {
-    private val logger = klogging.KLoggers.logger(this)
+    private val logger = klog.KLoggers.logger(this)
 
     var server: Server2? = null
     val config = testServerConfig()

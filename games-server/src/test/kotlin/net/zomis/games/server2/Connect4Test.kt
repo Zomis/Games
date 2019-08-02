@@ -1,6 +1,6 @@
 package net.zomis.games.server2
 
-import klogging.KLoggers
+import klog.KLoggers
 import net.zomis.games.server2.clients.ur.WSClient
 import net.zomis.games.server2.clients.ur.getInt
 import net.zomis.games.server2.clients.ur.getText

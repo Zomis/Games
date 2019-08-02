@@ -1,7 +1,7 @@
 package net.zomis.games.server2
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import klogging.KLoggers
+import klog.KLoggers
 import net.zomis.games.Features
 
 fun Collection<Client>.send(data: Map<String, Any?>) {
