@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.github.kittinunf.fuel.Fuel
+import com.github.kittinunf.fuel.core.extensions.cUrlString
+import com.github.kittinunf.fuel.core.extensions.jsonBody
 import io.javalin.Javalin
 import io.javalin.json.JavalinJackson
 import net.zomis.core.events.EventSystem
@@ -34,7 +36,7 @@ class LinAuth(val javalin: Javalin, val port: Int) {
                 post("/auth/github") {
                     logger.info(it.toString())
                     val params = it.bodyAsClass(GithubAuthRequest::class.java)
-                    val result = Fuel.Companion.post("https://github.com/login/oauth/access_token", listOf(
+                    val result = Fuel.post("https://github.com/login/oauth/access_token", listOf(
                         Pair("client_id", "ec9c694603f523bc6de8"),
                         Pair("client_secret", secretProperties.getProperty("github")),
                         Pair("code", params.code),

@@ -29,7 +29,7 @@ class AuthorizationSystem {
 
     fun fetchGithubUser(events: EventSystem, client: Client, token: String) {
         val api =
-                Fuel.Companion.get("https://api.github.com/user").header(Pair("Authorization", "token $token")).responseString()
+                Fuel.get("https://api.github.com/user").header(Pair("Authorization", "token $token")).responseString()
         val jsonResult = mapper.readTree(api.third.get())
 
         val loginName = jsonResult.get("login").asText()
