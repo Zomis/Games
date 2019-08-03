@@ -1,7 +1,5 @@
 package net.zomis.games.ais
 
-import java.util.*
-
 class Best<T>(val maximize: Boolean) {
 
     private var bestValue = if (maximize) Double.NEGATIVE_INFINITY else Double.POSITIVE_INFINITY
@@ -25,9 +23,8 @@ class Best<T>(val maximize: Boolean) {
         }
     }
 
-    private val rand = Random()
     fun random(): T {
-        return bestElements[rand.nextInt(bestElements.size)]
+        return bestElements.random()
     }
 
     fun getBest(): List<T> {
@@ -41,13 +38,13 @@ class Best<T>(val maximize: Boolean) {
 }
 
 class AlphaBeta<S, A>(
-    private val actions: (S) -> Sequence<A>,
+    private val actions: (S) -> List<A>,
     val branching: (S, A) -> S,
     val terminalState: (S) -> Boolean,
     val heuristic: (S) -> Double
 ) {
 
-    private fun alphaBeta(state: S, depth: Int, alpha: Double, beta: Double, maximizingPlayer: Boolean): Pair<A?, Double> {
+    private suspend fun alphaBeta(state: S, depth: Int, alpha: Double, beta: Double, maximizingPlayer: Boolean): Pair<A?, Double> {
         var newAlpha = alpha
         var newBeta = beta
         if (depth == 0 || terminalState(state)) {
@@ -91,7 +88,7 @@ class AlphaBeta<S, A>(
         }
     }
 
-    fun score(node: S, depth: Int): Double {
+    suspend fun score(node: S, depth: Int): Double {
         // This is scoring the next step, so currentPlayer is already opponent
         if (depth <= 1) {
             throw IllegalArgumentException("Depth ($depth) must be bigger than 1")

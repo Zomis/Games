@@ -1,10 +1,12 @@
 package net.zomis.games.server2
 
+import kotlinx.coroutines.*
 import net.zomis.aiscores.*
 import net.zomis.games.ais.AlphaBeta
 import net.zomis.games.ais.Best
 import net.zomis.scorers.*
 import net.zomis.scorers.FieldScore
+import org.jetbrains.kotlin.utils.addToStdlib.measureTimeMillisWithResult
 import java.util.Scanner
 import java.util.Random
 
@@ -30,6 +32,10 @@ data class TTT3DWinCondition(val pieces: List<TTT3DPoint>) {
         return pieces.count { it.piece == null }
     }
 
+}
+
+suspend fun <A, B> List<A>.pmap(f: suspend (A) -> B): List<B> = coroutineScope {
+    map { async(Dispatchers.Default) { f(it) } }.map { it.await() }
 }
 
 private val RANGE: IntRange = (0 until 4)
@@ -311,8 +317,8 @@ class TTT3DIO(private val game: TTT3D) {
     }
 
     fun alphaBeta(): TTT3DPoint {
-        val actions: (TTT3D) -> Sequence<TTT3DPoint> = {
-            scorerStrategy.fieldsToScoreInGame(it)
+        val actions: (TTT3D) -> List<TTT3DPoint> = {
+            scorerStrategy.fieldsToScoreInGame(it).toList()
         }
         val branching: (TTT3D, TTT3DPoint) -> TTT3D = { state, position ->
             val copy = state.copy()
@@ -335,12 +341,17 @@ class TTT3DIO(private val game: TTT3D) {
             -result.toDouble()
         }
         val ab = AlphaBeta<TTT3D, TTT3DPoint>(actions, branching, { it.findWinner() != null || it.isDraw()}, heuristic)
-//        ab.score(game, 5)
+        val timeAndOptions = measureTimeMillisWithResult {
+            runBlocking {
+                actions(game).pmap { action ->
+                    val newState = branching(game, action)
+                    action to ab.score(newState, 5)
+                }.toList()
+            }
+        }
 
-        val options = actions(game).map { action ->
-            val newState = branching(game, action)
-            action to ab.score(newState, 5)
-        }.toList()
+        println("AlphaBeta analyzed in ${timeAndOptions.first} ms")
+        val options = timeAndOptions.second
 
         val best = Best<Pair<TTT3DPoint, Double>>(true)
         options.forEach {
