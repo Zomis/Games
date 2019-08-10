@@ -12,6 +12,8 @@ import java.util.Scanner
 import java.util.Random
 import kotlin.streams.toList
 
+typealias TTT3DAI = (TTT3D) -> Pair<Int, Int>
+
 fun loadMap(text: String): TTT3D {
     val game = TTT3D()
     text.replace(" ", "").split("/").map { it.split('|') }
@@ -119,7 +121,6 @@ class TTT3D {
     }
 
     fun playAt(y: Int, x: Int): Boolean {
-//        println("$currentPlayer plays at $y $x")
         if (!RANGE.contains(x) || !RANGE.contains(y)) {
             return false
         }
@@ -316,12 +317,12 @@ class TTT3DIO(private val game: TTT3D) {
 
         while (game.findWinner() == null && scorers.fieldsToScore(game.currentPlayer).toList().isNotEmpty()) {
             if (game.currentPlayer == TTT3DPiece.X) {
-//                requestInput(scanner)
-//                this.aiPlay()
-                alphaBetaPlay()
+                makeMove(requestInput(scanner))
+//                makeMove(alphaBetaPlay(game, 5))
+//                makeMove(aiPlay())
             } else {
-                this.alphaBetaPlay()
-//                this.aiPlay()
+                makeMove(alphaBetaPlay(game, 5))
+//                makeMove(aiPlay())
             }
             this.print()
 //            Thread.sleep(2000)
@@ -330,9 +331,18 @@ class TTT3DIO(private val game: TTT3D) {
         println(game.findWinner())
     }
 
-    fun alphaBetaPlay() {
-        val move = alphaBeta()
-        game.playAt(move.y, move.x)
+    private fun makeMove(move: Pair<Int, Int>) {
+        val x = move.first
+        val y = move.second
+        println("${game.currentPlayer} moves at $x, $y")
+        if (!game.playAt(y, x)) {
+            println("Not a valid position to play at")
+        }
+    }
+
+    fun alphaBetaPlay(game: TTT3D, depth: Int): Pair<Int, Int> {
+        val move = alphaBeta(game, depth)
+        return move.x to move.y
     }
 
     fun canWin(state: TTT3D, field: TTT3DPoint): Boolean {
@@ -344,7 +354,7 @@ class TTT3DIO(private val game: TTT3D) {
         return state.winConditions.any { it.contains(field) && it.canWin(opponent) && it.emptySpaces() == 1 }
     }
 
-    fun alphaBeta(): TTT3DPoint {
+    fun alphaBeta(game: TTT3D, depth: Int): TTT3DPoint {
         val actions: (TTT3D) -> List<TTT3DPoint> = lambda@{ state ->
             val allFields = scorerStrategy.fieldsToScoreInGame(state).toList()
             val canWin = allFields.filter { canWin(state, it) }
@@ -379,44 +389,34 @@ class TTT3DIO(private val game: TTT3D) {
             -result.toDouble()
         }
         val ab = AlphaBeta<TTT3D, TTT3DPoint>(actions, branching, { it.findWinner() != null || it.isDraw()}, heuristic)
-        val timeAndOptions = measureTimeMillisWithResult {
-            runBlocking {
-                actions(game).pmap { action ->
-                    val newState = branching(game, action)
-                    action to ab.score(newState, 5)
-                }.toList()
-            }
-        }
 
-        println("AlphaBeta analyzed in ${timeAndOptions.first} ms")
-        val options = timeAndOptions.second
+        val options = runBlocking {
+            actions(game).pmap { action ->
+                val newState = branching(game, action)
+                action to ab.score(newState, depth)
+            }.toList()
+        }
 
         val best = Best<Pair<TTT3DPoint, Double>>(true)
         options.forEach {
-            println(it)
             best.next(it, it.second)
         }
         val move = best.random() //options.maxBy { it.second }!!
 
-//        val move = ab.alphaBeta(game, 5)
-        println("AI Decided on $move")
         return move.first
     }
 
-    fun aiPlay() {
+    fun aiPlay(): Pair<Int, Int> {
         this.printScores(this.factory)
-        val random = Random()
 
         val ai = factory.producer(game.currentPlayer)
         val scores = ai.score()
-
-
         val best = scores.best()
         if (best.isEmpty()) {
-            return
+            throw IllegalStateException("No place to move")
         }
-        val randomBestField = best[random.nextInt(best.size)]
-        game.playAt(randomBestField.y, randomBestField.x)
+        val randomBestField = best.random()
+        return randomBestField.x to randomBestField.y
     }
 
     fun play() {
@@ -430,7 +430,7 @@ class TTT3DIO(private val game: TTT3D) {
         this.print()
     }
 
-    private fun requestInput(scanner: Scanner) {
+    private fun requestInput(scanner: Scanner): Pair<Int, Int> {
         val alertConfig = scorers.config().withScorer(this.alerts)
         this.printScores(alertConfig)
         println()
@@ -438,20 +438,16 @@ class TTT3DIO(private val game: TTT3D) {
         println("Where do you want to move? Current Player ${game.currentPlayer}")
         val x = scanner.nextInt()
         val y = scanner.nextInt()
-
-        if (!game.playAt(y, x)) {
-            println("Not a valid position to play at")
-        }
+        return x to y
     }
+
+    data class MoveData(val floorsCount: List<Int>)
+    data class GameData(val ais: List<Any>, val winner: Any)
 /*
-    data class MoveData(floorsCount)
-    data class GameData(ais, winner)
     fun fight() {
-        val scorerAI = null0
-        val alphaBeta = null
-        val alphaBeta6 = null
-        val alphaBeta4 = null
         Fights()
+            .between(scorerAI(factory), alphaBetaAI(3), alphaBetaAI(4),
+                alphaBetaAI(5), alphaBetaAI(6))
             .fight { players ->
                 val game = TTT3D()
                 while (!game.isGameOver()) {
@@ -462,19 +458,51 @@ class TTT3DIO(private val game: TTT3D) {
                 }
                 this.finish(game)
             }
-            .vs(scorerAI, alphaBeta)
-            .index("player")
+            .fightEvenly(100)
+//            .index("player")
 //            .dataFinish(moveCount)
-
-            .fight(100)
     }
 */
-//    val a = Collectors.
+    private fun alphaBetaAI(depth: Int): TTT3DAI {
+        return { alphaBetaPlay(it, depth) }
+    }
+
+    private fun scorerAI(factory: ScorersConfig<TTT3DPiece, TTT3DPoint>): TTT3DAI {
+        return lambda@{
+            val position = factory.producer(it.currentPlayer).score().best().random()
+            return@lambda position.x to position.y
+        }
+    }
+
+/*
+floorsCountAverage0: IntSummaryStatistics{count=3228, sum=8823, min=0, average=2.733271, max=7}
+threats: IntSummaryStatistics{count=40, sum=677, min=10, average=16.925000, max=26}
+winnablesX: IntSummaryStatistics{count=40, sum=434, min=5, average=10.850000, max=19}
+winnablesO: IntSummaryStatistics{count=40, sum=434, min=5, average=10.850000, max=19}
+net.zomis.spring.games.impls.ur.MonteCarloAI@3590ccd
+  moveToFlower: IntSummaryStatistics{count=20, sum=349, min=12, average=17.450000, max=26}
+  winDiff: IntSummaryStatistics{count=7, sum=76, min=1, average=10.857143, max=23}
+  winResult: 20: 7/0/13 (35.00 %)
+  move: IntSummaryStatistics{count=20, sum=1656, min=66, average=82.800000, max=106}
+  unfinishedCount: IntSummaryStatistics{count=13, sum=48, min=1, average=3.692308, max=5}
+  loseDiff: IntSummaryStatistics{count=13, sum=375, min=1, average=28.846154, max=58}
+  knockouted: IntSummaryStatistics{count=20, sum=261, min=7, average=13.050000, max=19}
+  piecesInGame: IntSummaryStatistics{count=1656, sum=5094, min=0, average=3.076087, max=7}
+  moveFromFlower: IntSummaryStatistics{count=20, sum=338, min=10, average=16.900000, max=26}
+  knockouts: IntSummaryStatistics{count=20, sum=173, min=5, average=8.650000, max=15}
+  URScorer{name='KFE521T'}
+    moveToFlower: IntSummaryStatistics{count=20, sum=349, min=12, average=17.450000, max=26}
+    winDiff: IntSummaryStatistics{count=7, sum=76, min=1, average=10.857143, max=23}
+    winResult: 20: 7/0/13 (35.00 %)
+
+
+*/
+
 }
 
 fun main(args: Array<String>) {
     val game = loadMap("XXO  |      | XO   | OX   /      | OXO  | OOOX |      / XX   | XXO  |      | OO   / OX   |      |      | XX   ")
-    TTT3DIO(game).playVsAI()
+    TTT3DIO(TTT3D()).playVsAI()
 
 }
 /*
