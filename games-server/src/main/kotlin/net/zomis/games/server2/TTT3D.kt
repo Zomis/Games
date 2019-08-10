@@ -2,6 +2,7 @@ package net.zomis.games.server2
 
 import kotlinx.coroutines.*
 import net.zomis.aiscores.*
+import net.zomis.fight.ext.Fight
 import net.zomis.games.ais.AlphaBeta
 import net.zomis.games.ais.Best
 import net.zomis.scorers.*
@@ -9,9 +10,27 @@ import net.zomis.scorers.FieldScore
 import org.jetbrains.kotlin.utils.addToStdlib.measureTimeMillisWithResult
 import java.util.Scanner
 import java.util.Random
+import kotlin.streams.toList
 
-enum class TTT3DPiece {
-    X, O;
+fun loadMap(text: String): TTT3D {
+    val game = TTT3D()
+    text.replace(" ", "").split("/").map { it.split('|') }
+            .forEachIndexed { y, row ->
+                row.forEachIndexed { x, column ->
+                    column.chars().toList().forEachIndexed { z, ch ->
+                        if (ch.toChar() == 'X') {
+                            game.pieces[y][x][z].piece = TTT3DPiece.X
+                        } else {
+                            game.pieces[y][x][z].piece = TTT3DPiece.O
+                        }
+                    }
+                }
+            }
+    return game
+}
+
+enum class TTT3DPiece(val playerIndex: Int) {
+    X(0), O(1);
 
     fun opponent(): TTT3DPiece = if (this == TTT3DPiece.X) TTT3DPiece.O else TTT3DPiece.X
 }
@@ -316,9 +335,28 @@ class TTT3DIO(private val game: TTT3D) {
         game.playAt(move.y, move.x)
     }
 
+    fun canWin(state: TTT3D, field: TTT3DPoint): Boolean {
+        return state.winConditions.any { it.contains(field) && it.canWin(state.currentPlayer) && it.emptySpaces() == 1 }
+    }
+
+    fun mustBlock(state: TTT3D, field: TTT3DPoint): Boolean {
+        val opponent = state.currentPlayer.opponent()
+        return state.winConditions.any { it.contains(field) && it.canWin(opponent) && it.emptySpaces() == 1 }
+    }
+
     fun alphaBeta(): TTT3DPoint {
-        val actions: (TTT3D) -> List<TTT3DPoint> = {
-            scorerStrategy.fieldsToScoreInGame(it).toList()
+        val actions: (TTT3D) -> List<TTT3DPoint> = lambda@{ state ->
+            val allFields = scorerStrategy.fieldsToScoreInGame(state).toList()
+            val canWin = allFields.filter { canWin(state, it) }
+            if (canWin.isNotEmpty()) {
+                return@lambda canWin
+            }
+
+            val mustBlock = allFields.filter { mustBlock(state, it) }
+            if (mustBlock.isNotEmpty()) {
+                return@lambda mustBlock
+            }
+            allFields
         }
         val branching: (TTT3D, TTT3DPoint) -> TTT3D = { state, position ->
             val copy = state.copy()
@@ -398,18 +436,60 @@ class TTT3DIO(private val game: TTT3D) {
         println()
         this.print()
         println("Where do you want to move? Current Player ${game.currentPlayer}")
-        val y = scanner.nextInt()
         val x = scanner.nextInt()
+        val y = scanner.nextInt()
 
         if (!game.playAt(y, x)) {
             println("Not a valid position to play at")
         }
     }
+/*
+    data class MoveData(floorsCount)
+    data class GameData(ais, winner)
+    fun fight() {
+        val scorerAI = null0
+        val alphaBeta = null
+        val alphaBeta6 = null
+        val alphaBeta4 = null
+        Fights()
+            .fight { players ->
+                val game = TTT3D()
+                while (!game.isGameOver()) {
+                    val move = players[game.currentPlayer.playerIndex].play(game)
+                    game.playAt(move)
+                    this.save(move)
+                    this.save(game)
+                }
+                this.finish(game)
+            }
+            .vs(scorerAI, alphaBeta)
+            .index("player")
+//            .dataFinish(moveCount)
 
-
+            .fight(100)
+    }
+*/
+//    val a = Collectors.
 }
 
 fun main(args: Array<String>) {
-    TTT3DIO(TTT3D()).playVsAI()
+    val game = loadMap("XXO  |      | XO   | OX   /      | OXO  | OOOX |      / XX   | XXO  |      | OO   / OX   |      |      | XX   ")
+    TTT3DIO(game).playVsAI()
 
 }
+/*
+fun game() {
+    games.registerGame("TTT3D")
+        .websocket()
+        .players(2)
+        .lobby()
+        .setup { TTT3D() }
+        .action("play") { json ->
+
+        }
+        .fullState { playerInGame ->
+            return mapOf("tiles" to this.pieces)
+        }
+        .
+}
+*/
