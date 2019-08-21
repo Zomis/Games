@@ -13,10 +13,10 @@ class AlphaBetaTest {
     @Test
     fun test() {
         val map = loadMap("XXXO|OOXX|XXOO|XXOO / XOOX|OXO |XOXO|XXXO /      | X    |      |      / OXOX | XOOO | OOXO | OXOX");
-        val io = TTT3DIO(map)
-        io.print()
-        io.printScores(io.factory)
-        val move = io.alphaBeta()
+        val io = TTT3DIO()
+        io.print(map)
+        io.printScores(map, io.factory)
+        val move = io.alphaBeta(map, 6)
         assertNotEquals(0, move.x)
     }
 /*
