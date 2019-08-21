@@ -63,7 +63,7 @@ dependencies {
     compile "io.javalin:javalin:2.6.0"
     compile "com.github.kittinunf.fuel:fuel:2.0.1"
     compile "net.zomis:uttt-jvm:0.3.0"
-    compile "net.zomis:fights:0.2.1-SNAPSHOT"
+    compile "net.zomis:fights:0.3.0-SNAPSHOT"
     compile 'net.zomis:scorers:0.3.0-SNAPSHOT'
 
 //    testCompile "de.flapdoodle.embed:de.flapdoodle.embed.mongo"
