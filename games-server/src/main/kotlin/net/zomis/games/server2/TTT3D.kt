@@ -393,11 +393,11 @@ class TTT3DIO {
             }.toList()
         }
 
-        val best = Best<Pair<TTT3DPoint, Double>>(true)
+        val best = Best<Pair<TTT3DPoint, Double>> { it.second }
         options.forEach {
-            best.next(it, it.second)
+            best.next(it)
         }
-        val move = best.random() //options.maxBy { it.second }!!
+        val move = best.randomBest() //options.maxBy { it.second }!!
 
         return move.first
     }
@@ -496,9 +496,9 @@ net.zomis.spring.games.impls.ur.MonteCarloAI@3590ccd
 }
 
 fun main(args: Array<String>) {
-    val game = loadMap("XXO  |      | XO   | OX   /      | OXO  | OOOX |      / XX   | XXO  |      | OO   / OX   |      |      | XX   ")
-//    TTT3DIO(TTT3D()).playVsAI()
-    TTT3DIO().fight()
+//    val game = loadMap("XXO  |      | XO   | OX   /      | OXO  | OOOX |      / XX   | XXO  |      | OO   / OX   |      |      | XX   ")
+    TTT3DIO().playVsAI(TTT3D())
+//    TTT3DIO().fight()
 }
 /*
 fun game() {

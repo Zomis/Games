@@ -1,29 +1,21 @@
 package net.zomis
 
-class Best<T>(val maximize: Boolean) {
+class Best<T>(private val valueFunction: (T) -> Double) {
 
-    private var bestValue = if (maximize) Double.NEGATIVE_INFINITY else Double.POSITIVE_INFINITY
+    private var bestValue: Double = Double.NEGATIVE_INFINITY
     private var bestElements: MutableList<T> = mutableListOf()
 
-    fun next(element: T, value: Double) {
-        if (maximize) {
-            if (value > bestValue) {
-                bestValue = value
-                bestElements = mutableListOf(element)
-            } else if (value >= bestValue) {
-                bestElements.add(element)
-            }
-        } else {
-            if (value < bestValue) {
-                bestValue = value
-                bestElements = mutableListOf(element)
-            } else if (value <= bestValue) {
-                bestElements.add(element)
-            }
+    fun next(element: T) {
+        val value = valueFunction(element)
+        if (value > bestValue) {
+            bestValue = value
+            bestElements = mutableListOf(element)
+        } else if (value >= bestValue) {
+            bestElements.add(element)
         }
     }
 
-    fun random(): T {
+    fun randomBest(): T {
         return bestElements.random()
     }
 
@@ -31,8 +23,16 @@ class Best<T>(val maximize: Boolean) {
         return bestElements.toList()
     }
 
+    fun firstBest(): T {
+        return bestElements.first()
+    }
+
     fun isBest(element: T): Boolean {
         return bestElements.contains(element)
+    }
+
+    fun getBestValue(): Double {
+        return bestValue
     }
 
 }

@@ -76,12 +76,13 @@ class Map2D<T>(val sizeX: Int, val sizeY: Int, val factory: (x: Int, y: Int) -> 
 
         var position: Position? = Position(0, 0, sizeX, sizeY)
         while (possibleTransformations.size > 1 && position != null) {
-            val best = Best<Transformation>(false)
-            best.next()
-            possibleTransformations.forEach {
+            val best = Best<Transformation> {
                 val originalPos = it.reverseTransform(position!!)
                 val originalT = grid[originalPos.y][originalPos.x]
-                best.next(it, value(originalT).toDouble())
+                value(originalT).toDouble()
+            }
+            possibleTransformations.forEach {
+                best.next(it)
             }
             println("At $position: $possibleTransformations")
             possibleTransformations.retainAll(best.getBest())
