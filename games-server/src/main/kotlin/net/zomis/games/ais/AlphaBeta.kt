@@ -1,5 +1,6 @@
 package net.zomis.games.ais
 
+import kotlinx.coroutines.runBlocking
 import net.zomis.Best
 
 class AlphaBeta<S, A>(
@@ -21,35 +22,35 @@ class AlphaBeta<S, A>(
             throw IllegalStateException("No available actions but not terminal? $state")
         }
         if (maximizingPlayer) {
-            val best = Best<A>(maximizingPlayer)
-            var value = Double.NEGATIVE_INFINITY
-            for (action in availableActions) {
-                val child = branching(state, action)
-                val childValue = alphaBeta(child, depth - 1, newAlpha, newBeta, !maximizingPlayer).second
-                best.next(action, childValue)
-                if (childValue > value) {
-                    value = Math.max(value, childValue)
+            val best = Best<A> {action ->
+                return@Best runBlocking {
+                    val child = branching(state, action)
+                    alphaBeta(child, depth - 1, newAlpha, newBeta, !maximizingPlayer).second
                 }
-                newAlpha = Math.max(newAlpha, value)
+            }
+            for (action in availableActions) {
+                best.next(action)
+                newAlpha = Math.max(newAlpha, best.getBestValue())
                 if (newAlpha >= newBeta) {
                     break
                 }
             }
-            return best.random() to value
+            return best.randomBest() to best.getBestValue()
         } else {
-            val best = Best<A>(maximizingPlayer)
-            var value = Double.POSITIVE_INFINITY
+            val best = Best<A> {action ->
+                return@Best runBlocking {
+                    val child = branching(state, action)
+                    -alphaBeta(child, depth - 1, newAlpha, newBeta, !maximizingPlayer).second
+                }
+            }
             for (action in availableActions) {
-                val child = branching(state, action)
-                val childValue = alphaBeta(child, depth - 1, newAlpha, newBeta, !maximizingPlayer).second
-                best.next(action, childValue)
-                value = Math.min(value, childValue)
-                newBeta = Math.min(newBeta, value)
+                best.next(action)
+                newBeta = Math.min(newBeta, -best.getBestValue())
                 if (newAlpha >= newBeta) {
                     break
                 }
             }
-            return best.random() to value
+            return best.randomBest() to -best.getBestValue()
         }
     }
 
