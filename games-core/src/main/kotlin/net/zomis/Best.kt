@@ -15,24 +15,10 @@ class Best<T>(private val valueFunction: (T) -> Double) {
         }
     }
 
-    fun randomBest(): T {
-        return bestElements.random()
-    }
-
-    fun getBest(): List<T> {
-        return bestElements.toList()
-    }
-
-    fun firstBest(): T {
-        return bestElements.first()
-    }
-
-    fun isBest(element: T): Boolean {
-        return bestElements.contains(element)
-    }
-
-    fun getBestValue(): Double {
-        return bestValue
-    }
+    fun randomBest(): T = bestElements.random()
+    fun getBest(): List<T> = bestElements.toList()
+    fun firstBest(): T = bestElements.first()
+    fun isBest(element: T): Boolean = bestElements.contains(element)
+    fun getBestValue(): Double = bestValue
 
 }
