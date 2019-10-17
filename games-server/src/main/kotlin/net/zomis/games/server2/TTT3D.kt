@@ -1,12 +1,12 @@
 package net.zomis.games.server2
 
 import kotlinx.coroutines.*
+import net.zomis.Best
 import net.zomis.aiscores.*
 import net.zomis.fight.ext.Fight
 import net.zomis.fight.ext.WinResult
 import net.zomis.fights.Fights
 import net.zomis.games.ais.AlphaBeta
-import net.zomis.games.ais.Best
 import net.zomis.scorers.*
 import net.zomis.scorers.FieldScore
 import org.jetbrains.kotlin.utils.addToStdlib.measureTimeMillisWithResult
