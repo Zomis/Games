@@ -15,6 +15,8 @@ class Best<T>(private val valueFunction: (T) -> Double) {
         }
     }
 
+    fun asCollection(): Collection<T> = bestElements.toList()
+
     fun randomBest(): T = bestElements.random()
     fun getBest(): List<T> = bestElements.toList()
     fun firstBest(): T = bestElements.first()

@@ -50,11 +50,11 @@ class TTControllerSystem(val gameType: String, private val controller: () -> TTC
 
             if (controller.isGameOver) {
                 val winner = controller.wonBy
-                it.game.players.indices.forEach({ playerIndex ->
+                it.game.players.indices.forEach { playerIndex ->
                     val won = winner.playerIndex() == playerIndex
                     val losePositionPenalty = if (won) 0 else 1
                     events.execute(PlayerEliminatedEvent(it.game, playerIndex, won, 1 + losePositionPenalty))
-                })
+                }
                 events.execute(GameEndedEvent(it.game))
             }
         })
