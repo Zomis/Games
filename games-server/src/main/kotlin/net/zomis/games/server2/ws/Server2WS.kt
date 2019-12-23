@@ -66,12 +66,12 @@ class Server2WS(val javalin: Javalin, private val events: EventSystem) {
     }
 
     fun setup(): Server2WS {
-        javalin.ws("websocket", {
+        javalin.ws("websocket") {
             it.onClose(this::onClose)
             it.onMessage(this::onMessage)
             it.onConnect(this::onOpen)
             it.onError(this::onError)
-        })
+        }
         return this
     }
 
