@@ -6,6 +6,7 @@ import net.zomis.aiscores.*
 import net.zomis.fight.ext.Fight
 import net.zomis.fight.ext.WinResult
 import net.zomis.fights.Fights
+import net.zomis.games.Map2D
 import net.zomis.games.ais.AlphaBeta
 import net.zomis.scorers.*
 import net.zomis.scorers.FieldScore
@@ -173,6 +174,21 @@ class TTT3D {
         return findWinner() != null || isDraw()
     }
 
+    fun standardize() {
+        val getter: (x: Int, y: Int) -> List<TTT3DPiece?> = {x, y ->
+            this.pieces[y][x].map { it.piece }
+        }
+        val setter: (x: Int, y: Int, v: List<TTT3DPiece?>) -> Unit = {x, y, v ->
+            this.pieces[y][x].forEachIndexed {i, point ->
+                point.piece = v[i]
+            }
+        }
+
+        Map2D<List<TTT3DPiece?>>(4, 4, getter, setter).standardize {
+            it.mapIndexed{a, b -> a to b}.sumBy { (Math.pow(10.0, it.first.toDouble()) + (it.second?.ordinal?:5)).toInt() }
+        }
+    }
+
 }
 
 class TTT3DScorer {
@@ -312,6 +328,8 @@ class TTT3DIO {
         val scanner = Scanner(System.`in`)
 
         while (!game.isGameOver()) {
+            game.standardize()
+
             if (game.currentPlayer == TTT3DPiece.X) {
                 makeMove(game, requestInput(game, scanner))
 //                makeMove(alphaBetaPlay(game, 5))

@@ -48,19 +48,9 @@ enum class Transformation(private val transformations: List<TransformationType>)
     }
 }
 
-class Map2D<T>(val sizeX: Int, val sizeY: Int, val factory: (x: Int, y: Int) -> T) {
+class Map2D<T>(val sizeX: Int, val sizeY: Int, val getter: (x: Int, y: Int) -> T, val setter: (x: Int, y: Int, value: T) -> Unit) {
 
-    val grid: MutableList<MutableList<T>> = (0 until sizeY).map { y ->
-        (0 until sizeX).map { x ->
-            factory(x, y)
-        }.toMutableList()
-    }.toMutableList()
-
-    fun set(x: Int, y: Int, value: T) {
-        grid[y][x] = value
-    }
-
-    fun standardize(value: (T) -> Int): Map2D<T> {
+    fun standardize(valueFunction: (T) -> Int) {
         // keep a Set<Transformation>, start with all of them
         // loop through Transformations and find ones with the extremes
         // the goal is that of all the possible transformations, the result should be the one with the lowest/highest value
@@ -76,10 +66,10 @@ class Map2D<T>(val sizeX: Int, val sizeY: Int, val factory: (x: Int, y: Int) -> 
 
         var position: Position? = Position(0, 0, sizeX, sizeY)
         while (possibleTransformations.size > 1 && position != null) {
-            val best = Best<Transformation> {
-                val originalPos = it.reverseTransform(position!!)
-                val originalT = grid[originalPos.y][originalPos.x]
-                value(originalT).toDouble()
+            val best = Best<Transformation> {transformation ->
+                val originalPos = transformation.reverseTransform(position!!)
+                val originalT = getter(originalPos.x, originalPos.y)
+                valueFunction(originalT).toDouble()
             }
             possibleTransformations.forEach {
                 best.next(it)
@@ -93,11 +83,38 @@ class Map2D<T>(val sizeX: Int, val sizeY: Int, val factory: (x: Int, y: Int) -> 
         val transformation = possibleTransformations.first()
         println("Finished at $position possibles are $possibleTransformations")
 
-        return Map2D(sizeX, sizeY) { x, y ->
+        val rotated = Map2DX(sizeX, sizeY) { x, y ->
             val pos = Position(x, y, sizeX, sizeY)
             val oldPos = transformation.reverseTransform(pos)
-            grid[oldPos.y][oldPos.x]
+            getter(oldPos.x, oldPos.y)
         }
+
+        (0 until sizeY).forEach {y ->
+            (0 until sizeX).forEach {x ->
+                setter(x, y, rotated.grid[y][x])
+            }
+        }
+    }
+
+}
+
+class Map2DX<T>(val sizeX: Int, val sizeY: Int, val factory: (x: Int, y: Int) -> T) {
+
+    val grid: MutableList<MutableList<T>> = (0 until sizeY).map { y ->
+        (0 until sizeX).map { x ->
+            factory(x, y)
+        }.toMutableList()
+    }.toMutableList()
+
+    fun set(x: Int, y: Int, value: T) {
+        grid[y][x] = value
+    }
+
+    fun standardize(value: (T) -> Int): Map2DX<T> {
+        Map2D(sizeX, sizeY, { x, y -> grid[y][x] }) {x, y, v ->
+            grid[y][x] = v
+        }.standardize(value)
+        return this
     }
 
     override fun toString(): String {
