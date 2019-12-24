@@ -62,7 +62,7 @@ class Server2(val events: EventSystem) {
         val javalin = Javalin.create().port(config.wsport)
         logger.info("Configuring Javalin at port ${config.wsport}")
 
-        Runtime.getRuntime().addShutdownHook(Thread({ events.execute(ShutdownEvent("runtime shutdown hook")) }))
+        Runtime.getRuntime().addShutdownHook(Thread { events.execute(ShutdownEvent("runtime shutdown hook")) })
         logger.info("$this has features $features")
         Server2WS(javalin, events).setup()
 
@@ -77,8 +77,8 @@ class Server2(val events: EventSystem) {
 
         features.add(GameSystem()::setup)
 
-        TTControllerSystem("Connect4", {TTClassicControllerWithGravity(TTFactories().classicMNK(7, 6, 4))}).register(events)
-        TTControllerSystem("UTTT", {TTUltimateController(TTFactories().ultimate())}).register(events)
+        TTControllerSystem("Connect4") {TTClassicControllerWithGravity(TTFactories().classicMNK(7, 6, 4))}.register(events)
+        TTControllerSystem("UTTT") {TTUltimateController(TTFactories().ultimate())}.register(events)
         RoyalGameOfUrSystem.init(events)
         features.add(ECSGameSystem("UTTT-ECS", { UTTT().setup() })::setup)
 
@@ -89,7 +89,7 @@ class Server2(val events: EventSystem) {
         events.with(AuthorizationSystem()::register)
         features.add(LobbySystem()::setup)
         val executor = Executors.newScheduledThreadPool(2)
-        events.with({ e -> ServerAIs().register(e, executor) })
+        events.with { e -> ServerAIs().register(e, executor) }
         features.add(InviteSystem()::setup)
         if (config.httpPort != 0) {
             LinAuth(javalin, config.httpPort).register()
