@@ -17,7 +17,7 @@ export default {
   components: { AuthChoice, Invites },
   methods: {
     onAuthenticated(authentication) {
-      console.log("");
+      console.log(authentication);
       Socket.send(
         `{ "type": "InviteResponse", "invite": "${
           this.inviteId

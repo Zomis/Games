@@ -3,9 +3,9 @@
     <GameHead :gameInfo="gameInfo"></GameHead>
     <div class="board-parent">
       <div class="board uttt-big-board">
-        <div class="smaller-board" v-for="boardIndex in 9">
+        <div class="smaller-board" v-for="boardIndex in 9" :key="boardIndex">
           <div class="pieces pieces-bg">
-            <div v-for="tileIndex in 9" class="piece piece-bg"
+            <div v-for="tileIndex in 9" :key="tileIndex" class="piece piece-bg"
               :class="{ 'moveable': board.isAllowedPlay_1xfwev$(board.game.getSmallestTile_vux9f0$(
                 boardTileToGlobal({ boardIndex: boardIndex - 1, tileIndex: tileIndex - 1 }).x,
                 boardTileToGlobal({ boardIndex: boardIndex - 1, tileIndex: tileIndex - 1 }).y
@@ -14,8 +14,7 @@
             </div>
           </div>
           <div class="pieces player-pieces">
-            <UrPiece v-for="piece in gamePieces"
-              v-if="piece.boardIndex == boardIndex - 1"
+            <UrPiece v-for="piece in activeGamePieces[boardIndex - 1]"
               :key="piece.key"
               :mouseover="doNothing" :mouseleave="doNothing"
               :class="'piece-' + piece.player"
@@ -87,7 +86,18 @@ export default {
       gamePieces(state) {
         return state.games[this.gameInfo.gameId].gameData.gamePieces;
       }
-    })
+    }),
+    activeGamePieces() {
+      let result = [];
+      for (let piece of this.gamePieces) {
+        let i = piece.boardIndex
+        if (!result[i]) {
+          result[i] = []
+        }
+        result[i].push(piece)
+      }
+      return result
+    }
   },
   methods: {
     doNothing: function() {},

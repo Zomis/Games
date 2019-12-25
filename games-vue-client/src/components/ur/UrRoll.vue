@@ -1,7 +1,7 @@
 <template>
   <div class="ur-roll">
     <div class="ur-dice" @click="onclick()" :class="{ moveable: usable }">
-      <div v-for="i in 4" class="ur-die">
+      <div v-for="i in 4" :key="i" class="ur-die">
         <div v-if="rolls[i - 1]" class="ur-die-filled"></div>
       </div>
     </div>
@@ -39,7 +39,7 @@ export default {
   },
   watch: {
     roll: function(newValue, oldValue) {
-      console.log("Set roll to " + newValue);
+      console.log("Set roll to " + newValue + " from " + oldValue);
       if (newValue < 0) {
         return;
       }

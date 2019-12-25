@@ -7,7 +7,8 @@ if (process.env.NODE_ENV === "development") {
 }
 
 module.exports = {
-  "transpileDependencies": [
+  runtimeCompiler: true,
+  transpileDependencies: [
     "vuetify"
   ],
   devServer: {

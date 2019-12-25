@@ -40,7 +40,7 @@ export default {
       }
       return false;
     },
-    connected: function(e) {
+    connected: function() {
       console.log("WebSocket Connected!");
       let token = this.getToken();
       Socket.send(

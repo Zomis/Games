@@ -3,7 +3,7 @@
     <div class="side side-remaining">
       <div class="number">{{ remaining }}</div>
       <div class="pieces-container">
-        <div v-for="n in remaining" class="piece-small pointer"
+        <div v-for="n in remaining" :key="n" class="piece-small pointer"
           :class="{ ['piece-' + playerIndex]: true, moveable: canPlaceNew && n == remaining }"
           @mouseover="onPlaceNewHighlight(playerIndex)" @mouseleave="mouseleave()"
           :style="{ left: (n-1)*12 + 'px' }" v-on:click="placeNew()">
@@ -16,7 +16,7 @@
     <div class="side side-out">
       <div class="number">{{ out }}</div>
       <div class="pieces-container">
-        <div v-for="n in out" class="piece-small"
+        <div v-for="n in out" :key="n" class="piece-small"
           :class="['piece-' + playerIndex]"
           :style="{ right: (n-1)*12 + 'px' }">
         </div>

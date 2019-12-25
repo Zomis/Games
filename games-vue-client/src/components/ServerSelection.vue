@@ -44,7 +44,7 @@ export default {
     }
   },
   methods: {
-    onAuthenticated(auth) {
+    onAuthenticated() {
       this.$router.push("/");
     }
   }

@@ -5,7 +5,7 @@
     <Camera type="arcRotate"></Camera>
     <template v-for="x in indices">
       <template v-for="y in indices">
-        <Cylinder :position="[positions[x], positions[y], 0]" :scaling="[0.3, 0.3, 5]">
+        <Cylinder :key="`${x},${y},cylinder`" :position="[positions[x], positions[y], 0]" :scaling="[0.3, 0.3, 5]">
           <Material diffuse="#fff" :metallic="0" :roughness="1"> </Material>
         </Cylinder>
         <Box v-for="z in indices" :position="[positions[x], positions[y], positions[z]]"
@@ -20,7 +20,7 @@
   </Scene>
 </template>
 <script>
-let SPACE = 1;
+//let SPACE = 1;
 export default {
   name: "TTT3D",
   data() {
@@ -34,7 +34,7 @@ export default {
   },
   methods: {
     onPointer(event) {
-      //console.log(event, this);
+      console.log(event, this);
 /*      let scene = this.scene;
       let pick = scene.pick(scene.pointerX, scene.pointerY, e => true);
       if (pick.hit) {
@@ -48,9 +48,9 @@ export default {
       this.scene = evt.scene;
       sc.addEventListener("pointerdown", this.onPointerDown, false);
     },
-    onPointerDown(evt) {
+    onPointerDown() {
       let scene = this.scene;
-      let pickInfo = scene.pick(scene.pointerX, scene.pointerY, e => true);
+      let pickInfo = scene.pick(scene.pointerX, scene.pointerY, () => true);
       if (pickInfo.hit) {
 
         let hit = pickInfo.pickedMesh;

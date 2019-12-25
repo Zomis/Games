@@ -14,7 +14,7 @@
       </v-card-title>
       <v-list light>
         <template v-for="(name, index) in users">
-          <v-divider v-if="index > 0"></v-divider>
+          <v-divider :key="`divider-${index}`" v-if="index > 0"></v-divider>
           <v-list-tile :key="index">
             <v-list-tile-content>
               <v-list-tile-title v-html="name"></v-list-tile-title>
@@ -31,7 +31,7 @@
 
       <v-card-title>Your Games</v-card-title>
       <template v-for="game in activeGames" v-if="game.gameInfo.gameType === gameType && game.gameInfo.yourIndex >= 0">
-        <div class="active-game">
+        <div class="active-game" :key="game.gameId">
           <component :key="gameType + game.gameInfo.gameId" :is="game.component" :gameInfo="game.gameInfo"></component>
         </div>
       </template>
@@ -40,7 +40,7 @@
 
       <v-card-title>Other Games</v-card-title>
       <template v-for="game in activeGames" v-if="game.gameInfo.gameType === gameType && game.gameInfo.yourIndex < 0">
-        <div class="active-game">
+        <div class="active-game" :key="game.gameId">
           <component :key="gameType + game.gameInfo.gameId" :is="game.component" :gameInfo="game.gameInfo"></component>
         </div>
       </template>
@@ -50,7 +50,7 @@
 
     <button @click="requestGameList()">Request game list</button>
     <v-list class="gamelist">
-      <template v-for="(game, index) in gameList">
+      <template v-for="game in gameList">
         <v-list-tile :key="game.gameType + game.gameId">
           <v-list-tile-content>
             <v-list-tile-title v-html="game.gameType + ' Game ' + game.gameId"></v-list-tile-title>
@@ -76,14 +76,14 @@ import RoyalGameOfUR from "@/components/RoyalGameOfUR";
 import Connect4 from "@/components/games/Connect4";
 import UTTT from "@/components/games/UTTT";
 import { mapState } from "vuex";
-
+/*
 let gameTypes = {
   UR: "RoyalGameOfUR",
   UTTT: "UTTT",
   "UTTT-ECS": "ECSGame",
   Connect4: "Connect4"
 };
-
+*/
 export default {
   name: "StartScreen",
   data() {
@@ -141,7 +141,7 @@ export default {
         `{ "type": "Invite", "gameType": "${gameType}", "invite": ["${username}"] }`
       );
     },
-    inviteLink(gameType, username) {
+    inviteLink(gameType) {
       Socket.send(
         `{ "type": "Invite", "gameType": "${gameType}", "invite": [] }`
       );
