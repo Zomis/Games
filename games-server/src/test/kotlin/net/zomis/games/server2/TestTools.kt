@@ -9,8 +9,7 @@ fun testDocWriter(file: String = "UNDEFINED"): DocWriter {
 
 fun testServerConfig(): ServerConfig {
     val config = ServerConfig()
-    config.httpPort = 0
-    config.wsport = randomPort()
+    config.webSocketPort = randomPort()
     return config
 }
 

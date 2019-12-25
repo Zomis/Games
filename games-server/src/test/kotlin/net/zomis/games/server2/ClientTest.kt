@@ -36,7 +36,7 @@ class ClientTest {
     @Test
     @Disabled("having problems with Java-WebSocket clients connecting to Javalin server")
     fun conn() {
-        val client = WSClient(URI("ws://127.0.0.1:${config.wsport}/websocket"))
+        val client = WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket"))
         client.connectBlocking()
         client.send("PING")
         client.expectExact("PONG")
