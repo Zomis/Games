@@ -1,12 +1,13 @@
 package net.zomis.games.dsl
 
+import net.zomis.games.dsl.impl.*
 import net.zomis.tttultimate.games.TTController
 import java.util.*
 
 class DslConsoleView<T : Any> {
     val context = GameDslContext<T>()
 
-    fun play(game: GameDsl<T>, scanner: Scanner) {
+    fun play(game: GameSpec<T>, scanner: Scanner) {
         game(context)
         println(context.configClass)
 
