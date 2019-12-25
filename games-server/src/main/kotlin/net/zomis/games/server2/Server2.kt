@@ -5,7 +5,6 @@ import com.beust.jcommander.Parameter
 import com.beust.jcommander.ParameterException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.javalin.Javalin
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
@@ -51,9 +50,6 @@ class ServerConfig {
 
     @Parameter(names = arrayOf("-keypassword"), description = "Password for Java keystore for certificate")
     var certificatePassword: String? = null
-
-    @Parameter(names = ["-httpPort"], description = "Port number for Authentication REST-server (0 to disable)")
-    var httpPort: Int = 0
 
     @Parameter(names = ["-githubClient"], description = "Github Client Id")
     var githubClient: String = ""
@@ -115,8 +111,8 @@ class Server2(val events: EventSystem) {
         val executor = Executors.newScheduledThreadPool(2)
         events.with { e -> ServerAIs().register(e, executor) }
         features.add(InviteSystem()::setup)
-        if (config.httpPort != 0) {
-            LinAuth(javalin, config.httpPort, config.githubConfig()).register()
+        if (config.githubClient.isNotEmpty()) {
+            LinAuth(javalin, config.webSocketPort, config.githubConfig()).register()
         }
         features.add(AIGames()::setup)
         features.add(TVSystem()::register)

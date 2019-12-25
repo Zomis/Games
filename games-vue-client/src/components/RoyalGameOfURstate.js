@@ -6,13 +6,6 @@ if (typeof games["games-js"] !== "undefined") {
   games = games["games-js"];
 }
 
-function globalToBoardTile(position) {
-  return {
-    boardIndex: Math.floor(position.x / 3) + Math.floor(position.y / 3) * 3,
-    tileIndex: Math.floor(position.x % 3) + Math.floor(position.y % 3) * 3
-  };
-}
-
 function mapping(position, playerIndex) {
   let y = playerIndex == 0 ? 0 : 2;
   if (position > 4 && position < 13) {
@@ -43,10 +36,11 @@ function determinePlayerPieces(ur) {
   let obj0 = piecesToObjects(pieces, 0);
   let obj1 = piecesToObjects(pieces, 1);
   let result = [];
-  for (var i = 0; i < obj0.length; i++) {
+  var i;
+  for (i = 0; i < obj0.length; i++) {
     result.push(obj0[i]);
   }
-  for (var i = 0; i < obj1.length; i++) {
+  for (i = 0; i < obj1.length; i++) {
     result.push(obj1[i]);
   }
   return { gamePieces: gamePieces, playerPieces: result };

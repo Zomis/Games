@@ -23,7 +23,7 @@ const serverOptions = [
     name: "zomis"
   },
   {
-    url: "ws://127.0.0.1:8081/websocket",
+    url: "ws://127.0.0.1:42638/websocket",
     name: "localhost-development"
   }
 ];

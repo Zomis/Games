@@ -53,7 +53,7 @@ const store = new Vuex.Store({
         throw "Unknown action: " + e.action;
       }
     },
-    addInvite(state, invite) {
+    addInvite(state) { // other parameter: invite
       state.count++;
     }
   },
