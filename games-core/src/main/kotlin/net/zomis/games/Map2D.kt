@@ -46,11 +46,23 @@ enum class Transformation(private val transformations: List<TransformationType>)
     fun reverseTransform(position: Position): Position {
         return transformations.reversed().fold(position) { pos, trans -> trans.reverse(pos) }
     }
+
+    private val referencePoints = arrayOf(
+        Position(3, 2, 5, 5),
+        Position(4, 0, 5, 5)
+    )
+    fun apply(transformation: Transformation): Transformation {
+        val simplestTransformation = Transformation.values().filter {result ->
+            referencePoints.all {p -> transformation.transform(this.transform(p)) == result.transform(p) }
+        }
+        return simplestTransformation.single()
+    }
+
 }
 
 class Map2D<T>(val sizeX: Int, val sizeY: Int, val getter: (x: Int, y: Int) -> T, val setter: (x: Int, y: Int, value: T) -> Unit) {
 
-    fun standardize(valueFunction: (T) -> Int) {
+    fun standardizedTransformation(valueFunction: (T) -> Int): Transformation {
         // keep a Set<Transformation>, start with all of them
         // loop through Transformations and find ones with the extremes
         // the goal is that of all the possible transformations, the result should be the one with the lowest/highest value
@@ -66,7 +78,7 @@ class Map2D<T>(val sizeX: Int, val sizeY: Int, val getter: (x: Int, y: Int) -> T
 
         var position: Position? = Position(0, 0, sizeX, sizeY)
         while (possibleTransformations.size > 1 && position != null) {
-            val best = Best<Transformation> {transformation ->
+            val best = Best<Transformation> { transformation ->
                 val originalPos = transformation.reverseTransform(position!!)
                 val originalT = getter(originalPos.x, originalPos.y)
                 valueFunction(originalT).toDouble()
@@ -74,15 +86,16 @@ class Map2D<T>(val sizeX: Int, val sizeY: Int, val getter: (x: Int, y: Int) -> T
             possibleTransformations.forEach {
                 best.next(it)
             }
-            println("At $position: $possibleTransformations")
             possibleTransformations.retainAll(best.getBest())
 
             position = position.next()
         }
 
-        val transformation = possibleTransformations.first()
-        println("Finished at $position possibles are $possibleTransformations")
+        val transformation = possibleTransformations.first() // map can be symmetric so don't use .single
+        return transformation
+    }
 
+    fun transform(transformation: Transformation) {
         val rotated = Map2DX(sizeX, sizeY) { x, y ->
             val pos = Position(x, y, sizeX, sizeY)
             val oldPos = transformation.reverseTransform(pos)
@@ -94,6 +107,10 @@ class Map2D<T>(val sizeX: Int, val sizeY: Int, val getter: (x: Int, y: Int) -> T
                 setter(x, y, rotated.grid[y][x])
             }
         }
+    }
+
+    fun standardize(valueFunction: (T) -> Int) {
+        this.transform(this.standardizedTransformation(valueFunction))
     }
 
 }
@@ -110,10 +127,14 @@ class Map2DX<T>(val sizeX: Int, val sizeY: Int, val factory: (x: Int, y: Int) ->
         grid[y][x] = value
     }
 
-    fun standardize(value: (T) -> Int): Map2DX<T> {
-        Map2D(sizeX, sizeY, { x, y -> grid[y][x] }) {x, y, v ->
+    fun asMap2D(): Map2D<T> {
+        return Map2D(sizeX, sizeY, { x, y -> grid[y][x] }) {x, y, v ->
             grid[y][x] = v
-        }.standardize(value)
+        }
+    }
+
+    fun standardize(value: (T) -> Int): Map2DX<T> {
+        asMap2D().standardize(value)
         return this
     }
 
