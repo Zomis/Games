@@ -126,7 +126,7 @@ export default {
       });
     },
     requestGameList: function() {
-      Socket.send(`v1:{ "type": "GameList" }`);
+      Socket.send(`{ "type": "GameList" }`);
     },
     gameListMessage: function(message) {
       this.gameList = message.list;
@@ -134,7 +134,7 @@ export default {
     matchMake: function(game) {
       this.waiting = true;
       this.waitingGame = game;
-      Socket.send(`v1:{ "game": "${game}", "type": "matchMake" }`);
+      Socket.send(`{ "game": "${game}", "type": "matchMake" }`);
     },
     invite: function(gameType, username) {
       Socket.send(

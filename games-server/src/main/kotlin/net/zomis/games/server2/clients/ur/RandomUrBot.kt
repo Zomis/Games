@@ -15,7 +15,7 @@ class RandomUrBot(url: String) {
     fun play() {
         client.connectBlocking()
         client.send("""{ "type": "ClientGames", "gameTypes": ["UR"], "maxGames": 1 }""")
-        client.send("""v1:{ "game": "UR", "type": "matchMake" }""")
+        client.send("""{ "game": "UR", "type": "matchMake" }""")
         val controller = RoyalGameOfUr()
         val gameStart = client.takeUntilJson { it.getText("type") == "GameStarted" && it.getText("gameType") == "UR" }
         gameId = gameStart.getText("gameId")
@@ -66,14 +66,14 @@ class RandomUrBot(url: String) {
     }
 
     private fun sendRoll() {
-        client.send("""v1:{ "game": "UR", "gameId": "$gameId", "type": "move", "moveType": "roll", "move": "" }""")
+        client.send("""{ "game": "UR", "gameId": "$gameId", "type": "move", "moveType": "roll", "move": "" }""")
     }
 
     private fun sendMove(controller: RoyalGameOfUr) {
         val move = (0..15).filter { controller.canMove(controller.currentPlayer, it, controller.roll) }
                 .shuffled().first()
 
-        client.send("""v1:{ "game": "UR", "gameId": "$gameId", "type": "move", "moveType": "move", "move": $move }""")
+        client.send("""{ "game": "UR", "gameId": "$gameId", "type": "move", "moveType": "move", "move": $move }""")
     }
 
 }

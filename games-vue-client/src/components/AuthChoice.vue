@@ -44,7 +44,7 @@ export default {
       console.log("WebSocket Connected!");
       let token = this.getToken();
       Socket.send(
-        `v1:{ "type": "Auth", "provider": "${
+        `{ "type": "Auth", "provider": "${
           this.auth.provider
         }", "token": "${token}" }`
       );

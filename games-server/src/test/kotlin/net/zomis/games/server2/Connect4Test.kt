@@ -50,9 +50,9 @@ class Connect4Test {
         Thread.sleep(100)
         p2.send("""{ "type": "ClientGames", "gameTypes": ["Connect4"], "maxGames": 1 }""")
 
-        p1.send("""v1:{ "game": "Connect4", "type": "matchMake" }""")
+        p1.send("""{ "game": "Connect4", "type": "matchMake" }""")
         Thread.sleep(100)
-        p2.send("""v1:{ "game": "Connect4", "type": "matchMake" }""")
+        p2.send("""{ "game": "Connect4", "type": "matchMake" }""")
         p1.expectJsonObject { it.getText("type") == "LobbyChange" }
         p1.expectJsonObject {
             it.getText("type") == "GameStarted" && it.getText("gameType") == "Connect4" &&
@@ -107,12 +107,12 @@ class Connect4Test {
     }
 
     private fun sendAndExpect(p1: WSClient, p2: WSClient, pairs: List<Connect4Move>) {
-        pairs.forEach({
+        pairs.forEach {
             val cl = if (it.playerIndex == 1) p1 else p2
-            cl.send("""v1:{ "gameType": "Connect4", "gameId": "1", "type": "move", "move": {"x": ${it.x}, "y": ${it.y} } }""")
+            cl.send("""{ "gameType": "Connect4", "gameId": "1", "type": "move", "move": {"x": ${it.x}, "y": ${it.y} } }""")
             p1.expectJsonObject { true }
             p2.expectJsonObject { true }
-        })
+        }
     }
 
 }
