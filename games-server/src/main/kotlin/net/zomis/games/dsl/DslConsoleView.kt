@@ -66,7 +66,7 @@ class DslConsoleView<T : Any> {
     }
 
     fun showView(model: T) {
-        val viewContext = GameViewContext(model)
+        val viewContext = GameViewContext(model, 0)
         context.viewDsl(viewContext)
         val view = viewContext.result()
         println(view)

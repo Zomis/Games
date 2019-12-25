@@ -79,7 +79,7 @@ class GameGridBuilder<T : Any, P>(override val model: T) : GameGrid<T, P>, GridS
 
 }
 
-class GameViewContext<T : Any>(val model: T) : GameView<T> {
+class GameViewContext<T : Any>(val model: T, override val viewer: PlayerIndex) : GameView<T> {
     private val viewResult: MutableMap<String, Any?> = mutableMapOf()
 
     override fun result(): Map<String, Any?> {

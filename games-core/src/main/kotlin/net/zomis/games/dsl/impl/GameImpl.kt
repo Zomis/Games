@@ -3,6 +3,7 @@ package net.zomis.games.dsl.impl
 import net.zomis.games.dsl.Action2D
 import net.zomis.games.dsl.ActionLogic2D
 import net.zomis.games.dsl.GameSpec
+import net.zomis.games.dsl.PlayerIndex
 import kotlin.reflect.KClass
 
 class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
@@ -30,8 +31,8 @@ class GameImpl<T : Any>(val setupContext: GameDslContext<T>, config: Any?) {
         setupContext.logicDsl(logic)
     }
 
-    fun view(): Map<String, Any?> {
-        val view = GameViewContext(model)
+    fun view(playerIndex: PlayerIndex): Map<String, Any?> {
+        val view = GameViewContext(model, playerIndex)
         setupContext.viewDsl(view)
         return view.result()
     }

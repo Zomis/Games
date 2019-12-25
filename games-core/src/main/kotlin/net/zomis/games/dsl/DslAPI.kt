@@ -4,6 +4,9 @@ import kotlin.reflect.KClass
 
 data class Action2D<T, P>(val game: T, val playerIndex: Int, val x: Int, val y: Int, val target: P)
 
+typealias PlayerIndex = Int?
+fun PlayerIndex.isObserver(): Boolean = this == null
+
 typealias GameSpec<T> = GameDsl<T>.() -> Unit
 typealias GameModelDsl<T, C> = GameModel<T, C>.() -> Unit
 typealias GameLogicDsl<T> = GameLogic<T>.() -> Unit
