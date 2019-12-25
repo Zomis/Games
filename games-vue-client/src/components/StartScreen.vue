@@ -6,8 +6,8 @@
       <v-toolbar color="cyan" dark>
         <v-toolbar-title>{{ gameType }}</v-toolbar-title>
         <v-spacer></v-spacer>
-<!--        <v-btn round :disabled="waiting" @click="matchMake(gameType)">Play anyone</v-btn> -->
-        <v-btn round :disabled="waiting" @click="inviteLink(gameType)">Invite with link</v-btn>
+<!--        <v-btn rounded :disabled="waiting" @click="matchMake(gameType)">Play anyone</v-btn> -->
+        <v-btn rounded :disabled="waiting" @click="inviteLink(gameType)">Invite with link</v-btn>
       </v-toolbar>
       <v-card-title>
         Users
@@ -15,15 +15,15 @@
       <v-list light>
         <template v-for="(name, index) in users">
           <v-divider :key="`divider-${index}`" v-if="index > 0"></v-divider>
-          <v-list-tile :key="index">
-            <v-list-tile-content>
-              <v-list-tile-title v-html="name"></v-list-tile-title>
-            </v-list-tile-content>
+          <v-list-item :key="index">
+            <v-list-item-content>
+              <v-list-item-title v-html="name"></v-list-item-title>
+            </v-list-item-content>
 
-            <v-list-tile-action>
+            <v-list-item-action>
               <v-btn color="info" @click="invite(gameType, name)" v-if="name !== loginName">Invite</v-btn>
-            </v-list-tile-action>
-          </v-list-tile>
+            </v-list-item-action>
+          </v-list-item>
         </template>
       </v-list>
 
@@ -51,15 +51,15 @@
     <button @click="requestGameList()">Request game list</button>
     <v-list class="gamelist">
       <template v-for="game in gameList">
-        <v-list-tile :key="game.gameType + game.gameId">
-          <v-list-tile-content>
-            <v-list-tile-title v-html="game.gameType + ' Game ' + game.gameId"></v-list-tile-title>
-            <v-list-tile-sub-title v-html="vsify(game.players)"></v-list-tile-sub-title>
-          </v-list-tile-content>
-          <v-list-tile-action>
+        <v-list-item :key="game.gameType + game.gameId">
+          <v-list-item-content>
+            <v-list-item-title v-html="game.gameType + ' Game ' + game.gameId"></v-list-item-title>
+            <v-list-item-sub-title v-html="vsify(game.players)"></v-list-item-sub-title>
+          </v-list-item-content>
+          <v-list-item-action>
             <v-btn color="info" @click="observe(game)">Observe</v-btn>
-          </v-list-tile-action>
-        </v-list-tile>
+          </v-list-item-action>
+        </v-list-item>
       </template>
     </v-list>
 

@@ -1,15 +1,15 @@
 <template>
   <v-app>
-    <v-toolbar app>
+    <v-app-bar app>
       <router-link to="/">
         <v-toolbar-title v-text="title"></v-toolbar-title>
       </router-link>
       <v-spacer></v-spacer>
       <v-toolbar-items>
-        <v-btn flat to="/">Home</v-btn>
-        <v-btn flat @click="logout()">Logout</v-btn>
+        <v-btn text to="/">Home</v-btn>
+        <v-btn text @click="logout()">Logout</v-btn>
       </v-toolbar-items>
-    </v-toolbar>
+    </v-app-bar>
     <v-content>
       <router-view :key="$route.path" />
     </v-content>
