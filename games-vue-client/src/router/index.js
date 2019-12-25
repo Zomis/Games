@@ -16,15 +16,17 @@ import axios from "axios";
 import Clipboard from "v-clipboard";
 
 Vue.use(VueAxios, axios);
-Vue.use(VueAuthenticate, {
-  baseUrl: "http://localhost:42638", // Your API domain
+let authConfig = {
+  baseUrl: process.env.VUE_APP_AUTH_API_URL,
   providers: {
     github: {
-      clientId: "2388ed73e48da00d9894",
-      redirectUri: "http://localhost:42637/"
+      clientId: process.env.VUE_APP_AUTH_CLIENT_ID_GITHUB,
+      redirectUri: process.env.VUE_APP_AUTH_REDIRECT_URL
     }
   }
-});
+}
+console.log(authConfig)
+Vue.use(VueAuthenticate, authConfig);
 
 Vue.use(Router);
 Vue.use(Clipboard);

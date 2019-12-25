@@ -18,6 +18,7 @@ import net.zomis.games.server2.games.impl.RoyalGameOfUrSystem
 import net.zomis.games.server2.games.impl.TTControllerSystem
 import net.zomis.games.server2.invites.InviteSystem
 import net.zomis.games.server2.invites.LobbySystem
+import net.zomis.games.server2.javalin.auth.JavalinFactory
 import net.zomis.games.server2.javalin.auth.LinAuth
 import net.zomis.games.server2.ws.Server2WS
 import net.zomis.tttultimate.TTFactories
@@ -39,8 +40,17 @@ class ServerConfig {
         return OAuthConfig(this.githubClient, this.githubSecret)
     }
 
-    @Parameter(names = ["-wsport"], description = "Port number for WebSockets")
-    var wsport: Int = 8081
+    @Parameter(names = arrayOf("-wsPort"), description = "Port for websockets and API")
+    var webSocketPort = 8081
+
+    @Parameter(names = arrayOf("-wsPortSSL"), description = "Port for websockets and API with SSL (only used if certificate options are set)")
+    var webSocketPortSSL = 0
+
+    @Parameter(names = arrayOf("-certificate"), description = "Path to Let's Encrypt certificate. Leave empty if none.")
+    var certificatePath: String? = null
+
+    @Parameter(names = arrayOf("-keypassword"), description = "Password for Java keystore for certificate")
+    var certificatePassword: String? = null
 
     @Parameter(names = ["-httpPort"], description = "Port number for Authentication REST-server (0 to disable)")
     var httpPort: Int = 0
@@ -51,6 +61,9 @@ class ServerConfig {
     @Parameter(names = ["-githubSecret"], description = "Github Client Secret")
     var githubSecret: String = ""
 
+    fun useSecureWebsockets(): Boolean {
+        return certificatePath != null
+    }
 }
 
 /*
@@ -70,8 +83,8 @@ class Server2(val events: EventSystem) {
     val features = Features(events)
 
     fun start(config: ServerConfig) {
-        val javalin = Javalin.create().port(config.wsport)
-        logger.info("Configuring Javalin at port ${config.wsport}")
+        val javalin = JavalinFactory.javalin(config)
+        logger.info("Configuring Javalin at port ${config.webSocketPort} (SSL ${config.webSocketPortSSL})")
 
         Runtime.getRuntime().addShutdownHook(Thread { events.execute(ShutdownEvent("runtime shutdown hook")) })
         logger.info("$this has features $features")

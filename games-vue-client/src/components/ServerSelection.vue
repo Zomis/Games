@@ -19,7 +19,7 @@ import AuthChoice from "./AuthChoice";
 
 const serverOptions = [
   {
-    url: "ws://gbg.zomis.net:42638/websocket",
+    url: "wss://games.zomis.net:42638/websocket",
     name: "zomis"
   },
   {
@@ -34,7 +34,7 @@ export default {
   data() {
     return {
       serverOptions: serverOptions,
-      chosenServer: "ws://gbg.zomis.net:8082"
+      chosenServer: serverOptions[0].url
     };
   },
   components: { AuthChoice },
