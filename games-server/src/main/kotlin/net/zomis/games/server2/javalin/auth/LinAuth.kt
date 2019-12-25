@@ -31,7 +31,7 @@ class LinAuth(val javalin: Javalin, val port: Int, val githubConfig: OAuthConfig
 
         JavalinJackson.configure(mapper)
         val app = javalin
-            .enableCorsForOrigin("http://localhost:42637", "http://games.zomis.net")
+            .enableCorsForOrigin("http://localhost:42637", "https://games.zomis.net")
             .apply {
                 port(port)
                 post("/auth/github") {
