@@ -23,6 +23,7 @@ import net.zomis.games.server2.ws.Server2WS
 import net.zomis.tttultimate.TTFactories
 import net.zomis.tttultimate.games.TTClassicControllerWithGravity
 import net.zomis.tttultimate.games.TTUltimateController
+import java.io.File
 import java.util.concurrent.Executors
 import javax.script.ScriptEngineManager
 
@@ -31,14 +32,24 @@ fun JsonNode.getTextOrDefault(fieldName: String, default: String): String {
 }
 
 data class IllegalClientRequest(val client: Client, val error: String)
+data class OAuthConfig(val clientId: String, val clientSecret: String)
 
 class ServerConfig {
+    fun githubConfig(): OAuthConfig {
+        return OAuthConfig(this.githubClient, this.githubSecret)
+    }
 
     @Parameter(names = ["-wsport"], description = "Port number for WebSockets")
     var wsport: Int = 8081
 
     @Parameter(names = ["-httpPort"], description = "Port number for Authentication REST-server (0 to disable)")
     var httpPort: Int = 0
+
+    @Parameter(names = ["-githubClient"], description = "Github Client Id")
+    var githubClient: String = ""
+
+    @Parameter(names = ["-githubSecret"], description = "Github Client Secret")
+    var githubSecret: String = ""
 
 }
 
@@ -92,7 +103,7 @@ class Server2(val events: EventSystem) {
         events.with { e -> ServerAIs().register(e, executor) }
         features.add(InviteSystem()::setup)
         if (config.httpPort != 0) {
-            LinAuth(javalin, config.httpPort).register()
+            LinAuth(javalin, config.httpPort, config.githubConfig()).register()
         }
         features.add(AIGames()::setup)
         features.add(TVSystem()::register)
@@ -120,14 +131,19 @@ object Main {
     fun main(args: Array<String>) {
         val config = ServerConfig()
         val cmd = JCommander(config)
-        try {
-            cmd.parse(*args)
-        } catch (e: ParameterException) {
-            cmd.usage()
-            System.exit(1)
+        val configFile = File("server2.conf")
+        if (configFile.exists()) {
+            val fileArgs = configFile.readLines(Charsets.UTF_8).joinToString(" ").split(" ").toTypedArray()
+            cmd.parse(*fileArgs)
+        } else {
+            try {
+                cmd.parse(*args)
+            } catch (e: ParameterException) {
+                cmd.usage()
+                System.exit(1)
+            }
         }
 
-        // TODO: Run with auto-docs to print event chains.
         Server2(EventSystem()).start(config)
     }
 }
