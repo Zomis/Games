@@ -8,8 +8,22 @@ typealias GameSpec<T> = GameDsl<T>.() -> Unit
 typealias GameModelDsl<T, C> = GameModel<T, C>.() -> Unit
 typealias GameLogicDsl<T> = GameLogic<T>.() -> Unit
 typealias GameViewDsl<T> = GameView<T>.() -> Unit
+typealias GridDsl<T, P> = GameGrid<T, P>.() -> Unit
+
+interface GameGrid<T, P> {
+    val model: T
+    fun size(sizeX: Int, sizeY: Int)
+    fun getter(getter: (x: Int, y: Int) -> P)
+}
+
+interface GridSpec<T, P> {
+    val sizeX: (T) -> Int
+    val sizeY: (T) -> Int
+    fun get(model: T, x: Int, y: Int): P
+}
 
 interface GameDsl<T : Any> {
+    fun <P> gridSpec(spec: GridDsl<T, P>): GridDsl<T, P>
     fun <C : Any> setup(configClass: KClass<C>, modelDsl: GameModelDsl<T, C>)
     fun logic(logicDsl: GameLogicDsl<T>)
     fun view(viewDsl: GameViewDsl<T>)

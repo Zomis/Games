@@ -2,7 +2,7 @@ package net.zomis.games.dsl
 
 import net.zomis.games.dsl.impl.*
 import net.zomis.tttultimate.games.TTController
-import java.util.*
+import java.util.Scanner
 
 class DslConsoleView<T : Any> {
     val context = GameDslContext<T>()
@@ -14,7 +14,7 @@ class DslConsoleView<T : Any> {
         // Setup model
         val modelContext = GameModelContext<T, Any>()
         context.modelDsl(modelContext)
-        val config = modelContext.creator()
+        val config = modelContext.config()
 
         println(config)
         val model = modelContext.factory(config)
@@ -42,8 +42,7 @@ class DslConsoleView<T : Any> {
             return false
         }
 
-        val logic2dContext = GameLogicContext2D<T, Any?>(model)
-        actionLogic(logic2dContext)
+        val logic2dContext = actionLogic
         println("Enter position where you want to play")
         val x = scanner.nextLine().toInt()
         val y = scanner.nextLine().toInt()

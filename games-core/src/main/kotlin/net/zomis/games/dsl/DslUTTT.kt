@@ -18,19 +18,20 @@ fun TTPlayer.index(): Int {
 
 class DslTTT {
     val game = createGame<TTController>("TTT") {
-
+        val grid = gridSpec<TTBase> {
+            size(model.game.sizeX, model.game.sizeY)
+            getter { x, y -> model.game.getSub(x, y)!! }
+        }
         setup(TTOptions::class) {
             defaultConfig {
                 TTOptions(3, 3, 3)
             }
             init {conf ->
-                TTClassicController(TTFactories().classicMNK(conf.m, conf.n, conf.k))
+                TTClassicController(TTFactories().classicMNK(conf!!.m, conf.n, conf.k))
             }
         }
         logic {
-            action2D<TTBase>("play") {
-                size(model.game.sizeX, model.game.sizeY)
-                getter { x, y -> model.game.getSub(x, y) }
+            action2D("play", grid) {
                 allowed { it.playerIndex == it.game.currentPlayer.index() && it.game.isAllowedPlay(it.target) }
                 effect {
                     it.game.play(it.target)
@@ -40,9 +41,7 @@ class DslTTT {
         view {
             currentPlayer { it.currentPlayer.index() }
             winner { if (it.isGameOver) it.wonBy.index() else null }
-            grid<TTBase>("board") {
-                size(model.game.sizeX, model.game.sizeY)
-                getter { x, y -> model.game.getSub(x, y)!! }
+            grid("board", grid) {
                 owner { it.wonBy.index().takeIf {n -> n >= 0 } }
             }
         }
