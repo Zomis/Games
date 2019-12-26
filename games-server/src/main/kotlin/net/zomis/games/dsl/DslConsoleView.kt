@@ -5,19 +5,14 @@ import net.zomis.tttultimate.games.TTController
 import java.util.Scanner
 
 class DslConsoleView<T : Any> {
-    val context = GameDslContext<T>()
 
     fun play(game: GameSpec<T>, scanner: Scanner) {
-        game(context)
-        println(context.configClass)
+        val context = GameSetupImpl(game)
+        println(context.configClass())
 
-        // Setup model
-        val modelContext = GameModelContext<T, Any>()
-        context.modelDsl(modelContext)
-        val config = modelContext.config()
-
+        val config = context.getDefaultConfig()
         println(config)
-        val model = modelContext.factory(config)
+        val model = context.createGame(config)
         println(model)
 
         while (true) {
@@ -27,49 +22,34 @@ class DslConsoleView<T : Any> {
 
     }
 
-    fun queryInput(model: T, scanner: Scanner): Boolean {
-        val logicContext = GameLogicContext(model)
-        context.logicDsl(logicContext)
+    fun queryInput(game: GameImpl<T>, scanner: Scanner): Boolean {
 
         println("Who is playing?")
         val playerIndex = scanner.nextLine().toInt()
 
-        println("Available actions is: ${logicContext.actions.keys}. Choose your action:")
+        println("Available actions is: ${game.availableActionTypes()}. Choose your action:")
         val actionType = scanner.nextLine()
-        val actionLogic = logicContext.actions[actionType]
+        val actionLogic = game.actionType<Point>(actionType)
         if (actionLogic == null) {
             println("Invalid action")
             return false
         }
 
-        val logic2dContext = actionLogic
         println("Enter position where you want to play")
         val x = scanner.nextLine().toInt()
         val y = scanner.nextLine().toInt()
-        if ((0..logic2dContext.size.first).contains(x) && (0..logic2dContext.size.second).contains(y)) {
-            val tile = logic2dContext.getter(x, y)
-            if (tile == null) {
-                println("Tile not found: $x, $y")
-                return false
-            }
-            val action = Action2D<T, Any?>(model, playerIndex, x, y, tile)
-            val allowed = logic2dContext.allowedCheck(action)
-            println("Action at $x $y allowed: $allowed")
-            if (allowed) {
-                logic2dContext.effect(action)
-            }
-            return allowed
-        } else {
-            println("Tile is outside range: $x, $y")
-            return false
+
+        val action = actionLogic.createAction(playerIndex, game.model, Point(x, y))
+        val allowed = actionLogic.actionAllowed(action)
+        println("Action at $x $y allowed: $allowed")
+        if (allowed) {
+            actionLogic.performAction(action)
         }
+        return allowed
     }
 
-    fun showView(model: T) {
-        val viewContext = GameViewContext(model, 0)
-        context.viewDsl(viewContext)
-        val view = viewContext.result()
-        println(view)
+    fun showView(game: GameImpl<T>) {
+        println(game.view(0))
     }
 
 }

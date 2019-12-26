@@ -2,7 +2,18 @@ package net.zomis.games.dsl
 
 import kotlin.reflect.KClass
 
-data class Action2D<T, P>(val game: T, val playerIndex: Int, val x: Int, val y: Int, val target: P)
+data class Point(val x: Int, val y: Int)
+interface Actionable<T : Any, A : Any> {
+    val playerIndex: Int
+    val game: T
+    val parameter: A
+}
+data class Action2D<T : Any, P>(override val game: T, override val playerIndex: Int,
+        val x: Int, val y: Int, val target: P): Actionable<T, Point> {
+    override val parameter = Point(x, y)
+}
+data class Action<T : Any, A : Any>(override val game: T, override val playerIndex: Int,
+        override val parameter: A): Actionable<T, A>
 
 typealias PlayerIndex = Int?
 fun PlayerIndex.isObserver(): Boolean = this == null

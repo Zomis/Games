@@ -1,9 +1,6 @@
 package net.zomis.games.dsl.impl
 
-import net.zomis.games.dsl.Action2D
-import net.zomis.games.dsl.ActionLogic2D
-import net.zomis.games.dsl.GameSpec
-import net.zomis.games.dsl.PlayerIndex
+import net.zomis.games.dsl.*
 import kotlin.reflect.KClass
 
 class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
@@ -38,33 +35,30 @@ class GameImpl<T : Any>(val setupContext: GameDslContext<T>, config: Any?) {
     }
 
     fun availableActionTypes(): Set<String> = logic.actions.keys.toSet()
-    fun <P> availableActions(actionType: String, playerIndex: Int): List<Action2D<T, P>> {
-        val logic2dContext = logic.actions[actionType] as GameLogicContext2D<T, P>
+    fun <A : Any> availableActions(actionType: String, playerIndex: Int): Iterable<Actionable<T, A>> {
+        val logicContext = logic.actions[actionType] as GameLogicActionType<T, A>
 
-        return (0 until logic2dContext.size.second).flatMap {y ->
-            (0 until logic2dContext.size.first).mapNotNull { x ->
-                val target = logic2dContext.getter(x, y) ?: return@mapNotNull null
-                val action = Action2D(model, playerIndex, x, y, target)
-                val allowed = logic2dContext.allowedCheck(action)
-                return@mapNotNull if (allowed) action else null
-            }
-        }
+        return logicContext.availableActions(playerIndex, model)
     }
 
-    fun <P> actionIsAllowed(actionType: String, action: Action2D<T, P>): Boolean {
-        val logic2dContext = logic.actions[actionType] as GameLogicContext2D<T, P>
+    fun <A : Any> actionIsAllowed(actionType: String, action: Actionable<T, A>): Boolean {
+        val logicContext = logic.actions[actionType] as GameLogicActionType<T, A>
 
-        return logic2dContext.allowedCheck(action)
+        return logicContext.actionAllowed(action)
     }
 
-    fun <P> performAction(actionType: String, action: Action2D<T, P>): Boolean {
-        val logic2dContext = logic.actions[actionType] as GameLogicContext2D<T, P>
+    fun <A : Any> performAction(actionType: String, action: Actionable<T, A>): Boolean {
+        val logicContext = logic.actions[actionType] as GameLogicActionType<T, A>
 
-        if (logic2dContext.allowedCheck(action)) {
-            logic2dContext.effect(action)
+        if (logicContext.actionAllowed(action)) {
+            logicContext.performAction(action)
             return true
         }
         return false
+    }
+
+    fun <A : Any> actionType(actionType: String): GameLogicActionType<T, A> {
+        return logic.actions[actionType] as GameLogicActionType<T, A>
     }
 
 }
