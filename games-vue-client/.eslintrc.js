@@ -8,9 +8,9 @@ module.exports = {
     'eslint:recommended'
   ],
   rules: {
-    'vue/no-use-v-if-with-v-for': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
-    'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'off',
-    'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off'
+    'vue/no-use-v-if-with-v-for': 'warn',
+    'no-console': process.env.NODE_ENV === 'production' ? 'warn',
+    'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'warn'
   },
   parserOptions: {
     parser: 'babel-eslint'
