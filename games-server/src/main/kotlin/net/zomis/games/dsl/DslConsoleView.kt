@@ -39,7 +39,7 @@ class DslConsoleView<T : Any> {
         val x = scanner.nextLine().toInt()
         val y = scanner.nextLine().toInt()
 
-        val action = actionLogic.createAction(playerIndex, game.model, Point(x, y))
+        val action = actionLogic.createAction(playerIndex, Point(x, y))
         val allowed = actionLogic.actionAllowed(action)
         println("Action at $x $y allowed: $allowed")
         if (allowed) {

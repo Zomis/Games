@@ -39,21 +39,21 @@ class GameLogicActionType2D<T : Any, P : Any>(val model: T, grid: GridDsl<T, P>)
     }
 
     override fun actionAllowed(action: Actionable<T, Point>): Boolean {
-        return this.allowedCheck(createAction(action.playerIndex, action.game, action.parameter))
+        return this.allowedCheck(createAction(action.playerIndex, action.parameter))
     }
 
     override fun performAction(action: Actionable<T, Point>) {
-        return this.effect(createAction(action.playerIndex, action.game, action.parameter))
+        return this.effect(createAction(action.playerIndex, action.parameter))
     }
 
-    override fun createAction(playerIndex: Int, model: T, parameter: Point): Action2D<T, P> {
+    override fun createAction(playerIndex: Int, parameter: Point): Action2D<T, P> {
         return Action2D(model, playerIndex, parameter.x, parameter.y, this.getter(parameter.x, parameter.y))
     }
 
-    override fun availableActions(playerIndex: Int, model: T): Iterable<Actionable<T, Point>> {
+    override fun availableActions(playerIndex: Int): Iterable<Actionable<T, Point>> {
         return (0 until this.size.second).flatMap {y ->
             (0 until this.size.first).mapNotNull { x ->
-                val target = this.getter(x, y) ?: return@mapNotNull null
+                val target = this.getter(x, y)
                 val action = Action2D(model, playerIndex, x, y, target)
                 val allowed = this.allowedCheck(action)
                 return@mapNotNull if (allowed) action else null
@@ -63,10 +63,10 @@ class GameLogicActionType2D<T : Any, P : Any>(val model: T, grid: GridDsl<T, P>)
 }
 
 interface GameLogicActionType<T : Any, A : Any> {
-    fun availableActions(playerIndex: Int, model: T): Iterable<Actionable<T, A>>
+    fun availableActions(playerIndex: Int): Iterable<Actionable<T, A>>
     fun actionAllowed(action: Actionable<T, A>): Boolean
     fun performAction(action: Actionable<T, A>)
-    fun createAction(playerIndex: Int, model: T, parameter: A): Actionable<T, A>
+    fun createAction(playerIndex: Int, parameter: A): Actionable<T, A>
 }
 
 class GameLogicContext<T : Any>(val model: T) : GameLogic<T> {
