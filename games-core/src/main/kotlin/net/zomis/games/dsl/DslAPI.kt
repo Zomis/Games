@@ -46,3 +46,8 @@ interface GameDsl<T : Any> {
 fun <T : Any> createGame(name: String, dsl: GameDsl<T>.() -> Unit): GameSpec<T> {
     return dsl
 }
+
+data class ActionType<A>(val name: String)
+fun <A : Any> createActionType(name: String, parameterType: KClass<A>): ActionType<A> {
+    return ActionType<A>(name)
+}

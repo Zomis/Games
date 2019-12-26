@@ -2,7 +2,6 @@ package net.zomis.games.dsl
 
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.dsl.impl.GameSetupImpl
-import net.zomis.tttultimate.TTBase
 import net.zomis.tttultimate.TTPlayer
 import net.zomis.tttultimate.games.TTController
 import org.junit.jupiter.api.Assertions
@@ -22,6 +21,23 @@ class DslTest {
         val game = setup.createGame(TTOptions(3, 3, 3))
         Assertions.assertNotNull(game)
         return game
+    }
+
+    @Test
+    fun wrongActionType() {
+        val game = createGame()
+        val act = game.actionType<Int>("play") // should be <Point>
+        Assertions.assertNotNull(act)
+        Assertions.assertThrows(ClassCastException::class.java) {
+            act!!.createAction(0, 42)
+        }
+    }
+
+    @Test
+    fun wrongActionName() {
+        val game = createGame()
+        val act = game.actionType<Point>("missing")
+        Assertions.assertNull(act)
     }
 
     @Test

@@ -34,13 +34,14 @@ class GameImpl<T : Any>(val setupContext: GameDslContext<T>, config: Any?) {
         return view.result()
     }
 
-    fun availableActionTypes(): Set<String> = logic.actions.keys.toSet()
+    fun availableActionTypes(): Set<String> = logic.actions.keys.map { it.name }.toSet()
+
+    fun <A : Any> action(actionType: ActionType<A>): GameLogicActionType<T, A> {
+        return logic.actions[actionType] as GameLogicActionType<T, A>
+    }
 
     fun <A : Any> actionType(actionType: String): GameLogicActionType<T, A>? {
-        if (logic.actions[actionType] == null) {
-            return null
-        }
-        return logic.actions[actionType] as GameLogicActionType<T, A>
+        return logic.actions.entries.find { it.key.name == actionType }?.value as GameLogicActionType<T, A>?
     }
 
 }

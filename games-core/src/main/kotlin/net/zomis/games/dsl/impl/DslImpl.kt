@@ -70,12 +70,12 @@ interface GameLogicActionType<T : Any, A : Any> {
 }
 
 class GameLogicContext<T : Any>(val model: T) : GameLogic<T> {
-    val actions = mutableMapOf<String, GameLogicActionType<T, *>>()
+    val actions = mutableMapOf<ActionType<*>, GameLogicActionType<T, *>>()
 
-    override fun <P : Any> action2D(name: String, grid: GridDsl<T, P>, logic: ActionLogic2D<T, P>) {
+    override fun <P : Any> action2D(actionType: ActionType<Point>, grid: GridDsl<T, P>, logic: ActionLogic2D<T, P>) {
         val context = GameLogicActionType2D(model, grid)
         logic(context)
-        actions[name] = context
+        actions[actionType] = context
     }
 
 //    fun actionSimple(name: String, logic: ActionLogicSimple<T>) {}
