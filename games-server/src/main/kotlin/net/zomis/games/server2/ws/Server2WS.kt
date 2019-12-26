@@ -5,14 +5,13 @@ import io.javalin.websocket.*
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.server2.*
-import java.lang.Exception
 
-class Server2WS(val javalin: Javalin, private val events: EventSystem) {
+class Server2WS(private val javalin: Javalin, private val events: EventSystem) {
 
     private val logger = KLoggers.logger(this)
     private val clients = mutableMapOf<WsSession, Client>()
 
-    fun onOpen(conn: WsSession) {
+    private fun onOpen(conn: WsSession) {
         val client = WebClient(conn)
         logger.info("Connection opened: " + conn.remoteAddress)
         clients[conn] = client
@@ -20,7 +19,7 @@ class Server2WS(val javalin: Javalin, private val events: EventSystem) {
         events.execute(ClientConnected(client))
     }
 
-    fun onClose(conn: WsSession, code: Int, reason: String?) {
+    private fun onClose(conn: WsSession, code: Int, reason: String?) {
         val client = clients.remove(conn)
         logger.info("Connection closed: $conn user $client code $code reason $reason")
         client?.disconnected()
@@ -29,7 +28,7 @@ class Server2WS(val javalin: Javalin, private val events: EventSystem) {
         }
     }
 
-    fun onMessage(conn: WsSession, message: String?) {
+    private fun onMessage(conn: WsSession, message: String?) {
         val client = clients[conn]
         if (client == null) {
             logger.warn { "Message from null--$conn: $message" }
@@ -39,12 +38,12 @@ class Server2WS(val javalin: Javalin, private val events: EventSystem) {
             logger.info("Message from $client: $message")
             events.execute(ClientMessage(client, message!!))
         } catch (e: Exception) {
-            logger.warn(e, { "Error handling $message" })
+            logger.warn(e) { "Error handling $message" }
             events.execute(IllegalClientRequest(client, "Error occurred when processing message"))
         }
     }
 
-    fun onError(conn: WsSession, ex: Throwable?) {
+    private fun onError(conn: WsSession, ex: Throwable?) {
         val client = clients.remove(conn)
         if (ex == null) {
             logger.warn("Error with unknown message: $client connection $conn")
