@@ -32,6 +32,7 @@ class DslTTT {
             }
         }
         logic {
+            winner { if (it.isGameOver) it.wonBy.index() else null }
             action2D(playAction, grid) {
                 allowed { it.playerIndex == it.game.currentPlayer.index() && it.game.isAllowedPlay(it.target) }
                 effect {

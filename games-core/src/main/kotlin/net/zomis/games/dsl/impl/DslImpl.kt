@@ -71,11 +71,16 @@ interface GameLogicActionType<T : Any, A : Any> {
 
 class GameLogicContext<T : Any>(val model: T) : GameLogic<T> {
     val actions = mutableMapOf<ActionType<*>, GameLogicActionType<T, *>>()
+    var winner: (T) -> PlayerIndex = { null }
 
     override fun <P : Any> action2D(actionType: ActionType<Point>, grid: GridDsl<T, P>, logic: ActionLogic2D<T, P>) {
         val context = GameLogicActionType2D(model, grid)
         logic(context)
         actions[actionType] = context
+    }
+
+    override fun winner(function: (T) -> PlayerIndex) {
+        this.winner = function
     }
 
 //    fun actionSimple(name: String, logic: ActionLogicSimple<T>) {}

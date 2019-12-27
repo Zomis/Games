@@ -34,6 +34,14 @@ class GameImpl<T : Any>(val setupContext: GameDslContext<T>, config: Any?) {
         return view.result()
     }
 
+    fun isGameOver(): Boolean {
+        return getWinner() != null
+    }
+
+    fun getWinner(): PlayerIndex {
+        return logic.winner(model)
+    }
+
     fun availableActionTypes(): Set<String> = logic.actions.keys.map { it.name }.toSet()
 
     fun <A : Any> action(actionType: ActionType<A>): GameLogicActionType<T, A> {

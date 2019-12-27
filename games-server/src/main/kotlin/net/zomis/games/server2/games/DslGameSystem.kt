@@ -22,10 +22,10 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
             it.game.gameType.type == server2GameName
         }, {
             val controller = it.game.obj as GameImpl<T>
-//            if (controller.isFinished) {
-//                events.execute(it.illegalMove("Game already won by ${controller.winner}"))
-//                return@listen
-//            }
+            if (controller.isGameOver()) {
+                events.execute(it.illegalMove("Game already finished"))
+                return@listen
+            }
 
             val actionType = controller.actionType<Any>(it.moveType)
             if (actionType == null) {
@@ -46,15 +46,15 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
             events.execute(MoveEvent(it.game, it.player, it.moveType, parameter))
 //            events.execute(GameStateEvent(it.game, listOf(Pair("roll", rollResult)))) // TODO: Needs support for random results for serialization
 
-//            if (controller.isFinished) {
-//                val winner = controller.winner
-//                it.game.players.indices.forEach { playerIndex ->
-//                    val won = winner == playerIndex
-//                    val losePositionPenalty = if (won) 0 else 1
-//                    events.execute(PlayerEliminatedEvent(it.game, playerIndex, won, 1 + losePositionPenalty))
-//                }
-//                events.execute(GameEndedEvent(it.game))
-//            }
+            if (controller.isGameOver()) {
+                val winner = controller.getWinner()
+                it.game.players.indices.forEach { playerIndex ->
+                    val won = winner == playerIndex
+                    val losePositionPenalty = if (won) 0 else 1
+                    events.execute(PlayerEliminatedEvent(it.game, playerIndex, won, 1 + losePositionPenalty))
+                }
+                events.execute(GameEndedEvent(it.game))
+            }
         })
         events.listen("DslGameSystem register $name", StartupEvent::class, {true}, {
             events.execute(GameTypeRegisterEvent(server2GameName))
