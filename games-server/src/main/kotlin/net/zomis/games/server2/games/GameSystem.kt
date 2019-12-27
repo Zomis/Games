@@ -7,6 +7,7 @@ import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.core.events.ListenerPriority
 import net.zomis.games.Features
+import net.zomis.games.dsl.PlayerIndex
 import net.zomis.games.server2.*
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -23,6 +24,10 @@ class ServerGame(val gameType: GameType, val gameId: String) {
 
     fun broadcast(message: (Client) -> Any) {
         players.forEach { it.send(message.invoke(it)) }
+    }
+
+    fun clientPlayerIndex(client: Client): PlayerIndex {
+        return players.indexOf(client).takeIf { it >= 0 }
     }
 
     internal val players: MutableList<Client> = mutableListOf()
@@ -69,8 +74,10 @@ class GameType(val type: String, events: EventSystem) {
 class GameSystem {
 
     data class GameTypes(val gameTypes: MutableMap<String, GameType> = mutableMapOf())
+    private lateinit var features: Features
 
     fun setup(features: Features, events: EventSystem) {
+        this.features = features
         val gameTypes = features.addData(GameTypes())
         val objectMapper = ObjectMapper()
         events.listen("Trigger PlayerGameMoveRequest", ClientJsonMessage::class, {
@@ -128,6 +135,11 @@ class GameSystem {
         events.listen("Register GameType", GameTypeRegisterEvent::class, {true}, {
             gameTypes.gameTypes[it.gameType] = GameType(it.gameType, events)
         })
+    }
+
+    fun getGameType(gameType: String): GameType? {
+        val gameTypes = features[GameTypes::class]!!
+        return gameTypes.gameTypes[gameType]
     }
 }
 

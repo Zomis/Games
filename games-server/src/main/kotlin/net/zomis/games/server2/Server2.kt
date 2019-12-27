@@ -16,6 +16,7 @@ import net.zomis.games.server2.games.*
 import net.zomis.games.server2.games.impl.ECSGameSystem
 import net.zomis.games.server2.games.impl.RoyalGameOfUrSystem
 import net.zomis.games.server2.games.impl.TTControllerSystem
+import net.zomis.games.server2.handlers.games.ViewRequestHandler
 import net.zomis.games.server2.invites.InviteSystem
 import net.zomis.games.server2.invites.LobbySystem
 import net.zomis.games.server2.javalin.auth.JavalinFactory
@@ -80,7 +81,10 @@ class Server2(val events: EventSystem) {
     private val mapper = ObjectMapper()
     val features = Features(events)
 
-    private val messageHandler = MessageHandler(events)
+    private val gameSystem = GameSystem()
+    private val messageHandler = MessageHandler(events, mapOf(
+        "ViewRequest" to ViewRequestHandler(gameSystem)
+    ))
 
     fun start(config: ServerConfig) {
         val javalin = JavalinFactory.javalin(config)
@@ -99,7 +103,7 @@ class Server2(val events: EventSystem) {
             events.execute(ClientJsonMessage(it.client, mapper.readTree(it.message)))
         })
 
-        features.add(GameSystem()::setup)
+        features.add(gameSystem::setup)
 
         TTControllerSystem("Connect4") {TTClassicControllerWithGravity(TTFactories().classicMNK(7, 6, 4))}.register(events)
         TTControllerSystem("UTTT") {TTUltimateController(TTFactories().ultimate())}.register(events)
@@ -142,10 +146,8 @@ class Server2(val events: EventSystem) {
 
 typealias IncomingMessageHandler = (ClientJsonMessage) -> Unit
 
-class MessageHandler(private val backup: EventSystem): WebsocketMessageHandler {
+class MessageHandler(private val backup: EventSystem, private val handlers: Map<String, IncomingMessageHandler>): WebsocketMessageHandler {
     private val mapper = ObjectMapper()
-    private val handlers = mapOf<String, IncomingMessageHandler>(
-    )
 
     override fun connected(client: Client) {
         backup.execute(ClientConnected(client))
