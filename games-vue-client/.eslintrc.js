@@ -9,7 +9,7 @@ module.exports = {
   ],
   rules: {
     'vue/no-use-v-if-with-v-for': 'warn',
-    'no-console': process.env.NODE_ENV === 'production' ? 'warn',
+    'no-console': 'warn',
     'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'warn'
   },
   parserOptions: {
