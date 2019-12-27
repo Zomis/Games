@@ -1,12 +1,9 @@
 package net.zomis.games.ais
 
-import net.zomis.games.server2.TTT3D
-import net.zomis.games.server2.TTT3DIO
-import net.zomis.games.server2.TTT3DPiece
-import net.zomis.games.server2.loadMap
+import net.zomis.games.server2.games.ttt3d.TTT3DIO
+import net.zomis.games.server2.games.ttt3d.loadMap
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Test
-import kotlin.streams.toList
 
 class AlphaBetaTest {
 

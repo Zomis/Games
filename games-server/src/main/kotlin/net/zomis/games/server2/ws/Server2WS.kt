@@ -3,10 +3,15 @@ package net.zomis.games.server2.ws
 import io.javalin.Javalin
 import io.javalin.websocket.*
 import klog.KLoggers
-import net.zomis.core.events.EventSystem
 import net.zomis.games.server2.*
 
-class Server2WS(private val javalin: Javalin, private val events: EventSystem) {
+interface WebsocketMessageHandler {
+    fun connected(client: Client)
+    fun disconnected(client: Client)
+    fun incomingMessage(client: Client, message: String)
+}
+
+class Server2WS(private val javalin: Javalin, private val handler: WebsocketMessageHandler) {
 
     private val logger = KLoggers.logger(this)
     private val clients = mutableMapOf<WsSession, Client>()
@@ -16,7 +21,7 @@ class Server2WS(private val javalin: Javalin, private val events: EventSystem) {
         logger.info("Connection opened: " + conn.remoteAddress)
         clients[conn] = client
         client.connected()
-        events.execute(ClientConnected(client))
+        handler.connected(client)
     }
 
     private fun onClose(conn: WsSession, code: Int, reason: String?) {
@@ -24,7 +29,7 @@ class Server2WS(private val javalin: Javalin, private val events: EventSystem) {
         logger.info("Connection closed: $conn user $client code $code reason $reason")
         client?.disconnected()
         if (client != null) {
-            events.execute(ClientDisconnected(client))
+            handler.disconnected(client)
         }
     }
 
@@ -36,10 +41,10 @@ class Server2WS(private val javalin: Javalin, private val events: EventSystem) {
         }
         try {
             logger.info("Message from $client: $message")
-            events.execute(ClientMessage(client, message!!))
+            handler.incomingMessage(client, message!!)
         } catch (e: Exception) {
             logger.warn(e) { "Error handling $message" }
-            events.execute(IllegalClientRequest(client, "Error occurred when processing message"))
+            // events.execute(IllegalClientRequest(client, "Error occurred when processing message"))
         }
     }
 
@@ -60,7 +65,7 @@ class Server2WS(private val javalin: Javalin, private val events: EventSystem) {
 
         client?.disconnected()
         if (client != null) {
-            events.execute(ClientDisconnected(client))
+            handler.disconnected(client)
         }
     }
 

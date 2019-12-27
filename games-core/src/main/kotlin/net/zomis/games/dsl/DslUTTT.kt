@@ -17,7 +17,7 @@ fun TTPlayer.index(): Int {
 }
 
 class DslTTT {
-    val playAction = createActionType<Point>("play", Point::class)
+    val playAction = createActionType("play", Point::class)
     val game = createGame<TTController>("TTT") {
         val grid = gridSpec<TTBase> {
             size(model.game.sizeX, model.game.sizeY)

@@ -1,18 +1,14 @@
-package net.zomis.games.server2
+package net.zomis.games.server2.games.ttt3d
 
 import kotlinx.coroutines.*
 import net.zomis.Best
-import net.zomis.aiscores.*
-import net.zomis.fight.ext.Fight
 import net.zomis.fight.ext.WinResult
 import net.zomis.fights.Fights
 import net.zomis.games.Map2D
 import net.zomis.games.ais.AlphaBeta
 import net.zomis.scorers.*
 import net.zomis.scorers.FieldScore
-import org.jetbrains.kotlin.utils.addToStdlib.measureTimeMillisWithResult
 import java.util.Scanner
-import java.util.Random
 import kotlin.streams.toList
 
 typealias TTT3DAI = (TTT3D) -> Pair<Int, Int>
@@ -37,7 +33,7 @@ fun loadMap(text: String): TTT3D {
 enum class TTT3DPiece(val playerIndex: Int) {
     X(0), O(1);
 
-    fun opponent(): TTT3DPiece = if (this == TTT3DPiece.X) TTT3DPiece.O else TTT3DPiece.X
+    fun opponent(): TTT3DPiece = if (this == X) O else X
 }
 
 data class TTT3DPoint(val x: Int, val y: Int, val z: Int, var piece: TTT3DPiece?)
@@ -175,10 +171,10 @@ class TTT3D {
     }
 
     fun standardize() {
-        val getter: (x: Int, y: Int) -> List<TTT3DPiece?> = {x, y ->
+        val getter: (x: Int, y: Int) -> List<TTT3DPiece?> = { x, y ->
             this.pieces[y][x].map { it.piece }
         }
-        val setter: (x: Int, y: Int, v: List<TTT3DPiece?>) -> Unit = {x, y, v ->
+        val setter: (x: Int, y: Int, v: List<TTT3DPiece?>) -> Unit = { x, y, v ->
             this.pieces[y][x].forEachIndexed {i, point ->
                 point.piece = v[i]
             }

@@ -47,7 +47,7 @@ fun <T : Any> createGame(name: String, dsl: GameDsl<T>.() -> Unit): GameSpec<T> 
     return dsl
 }
 
-data class ActionType<A>(val name: String)
+data class ActionType<A : Any>(val name: String, val parameterType: KClass<A>)
 fun <A : Any> createActionType(name: String, parameterType: KClass<A>): ActionType<A> {
-    return ActionType<A>(name)
+    return ActionType(name, parameterType)
 }

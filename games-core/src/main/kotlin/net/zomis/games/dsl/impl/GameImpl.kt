@@ -40,6 +40,10 @@ class GameImpl<T : Any>(val setupContext: GameDslContext<T>, config: Any?) {
         return logic.actions[actionType] as GameLogicActionType<T, A>
     }
 
+    fun actionParameter(actionType: String): KClass<out Any>? {
+        return logic.actions.entries.find { it.key.name == actionType }?.key?.parameterType
+    }
+
     fun <A : Any> actionType(actionType: String): GameLogicActionType<T, A>? {
         return logic.actions.entries.find { it.key.name == actionType }?.value as GameLogicActionType<T, A>?
     }

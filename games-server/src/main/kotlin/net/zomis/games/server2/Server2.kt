@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
+import net.zomis.games.dsl.DslTTT
 import net.zomis.games.ecs.UTTT
 import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.debug.AIGames
@@ -20,6 +21,7 @@ import net.zomis.games.server2.invites.LobbySystem
 import net.zomis.games.server2.javalin.auth.JavalinFactory
 import net.zomis.games.server2.javalin.auth.LinAuth
 import net.zomis.games.server2.ws.Server2WS
+import net.zomis.games.server2.ws.WebsocketMessageHandler
 import net.zomis.tttultimate.TTFactories
 import net.zomis.tttultimate.games.TTClassicControllerWithGravity
 import net.zomis.tttultimate.games.TTUltimateController
@@ -78,13 +80,15 @@ class Server2(val events: EventSystem) {
     private val mapper = ObjectMapper()
     val features = Features(events)
 
+    private val messageHandler = MessageHandler(events)
+
     fun start(config: ServerConfig) {
         val javalin = JavalinFactory.javalin(config)
         logger.info("Configuring Javalin at port ${config.webSocketPort} (SSL ${config.webSocketPortSSL})")
 
         Runtime.getRuntime().addShutdownHook(Thread { events.execute(ShutdownEvent("runtime shutdown hook")) })
         logger.info("$this has features $features")
-        Server2WS(javalin, events).setup()
+        Server2WS(javalin, messageHandler).setup()
 
         events.listen("v1: JsonMessage", ClientMessage::class, {it.message.startsWith("v1:")}, {
             events.execute(ClientJsonMessage(it.client, mapper.readTree(it.message.substring("v1:".length))))
@@ -100,7 +104,8 @@ class Server2(val events: EventSystem) {
         TTControllerSystem("Connect4") {TTClassicControllerWithGravity(TTFactories().classicMNK(7, 6, 4))}.register(events)
         TTControllerSystem("UTTT") {TTUltimateController(TTFactories().ultimate())}.register(events)
         RoyalGameOfUrSystem.init(events)
-        features.add(ECSGameSystem("UTTT-ECS", { UTTT().setup() })::setup)
+        features.add(ECSGameSystem("UTTT-ECS") { UTTT().setup() }::setup)
+        events.with(DslGameSystem("TTT", DslTTT().game)::setup)
 
         features.add(SimpleMatchMakingSystem()::setup)
         events.with(ServerConsole()::register)
@@ -131,6 +136,30 @@ class Server2(val events: EventSystem) {
 
     fun stop() {
         events.execute(ShutdownEvent("stop called"))
+    }
+
+}
+
+typealias IncomingMessageHandler = (ClientJsonMessage) -> Unit
+
+class MessageHandler(private val backup: EventSystem): WebsocketMessageHandler {
+    private val mapper = ObjectMapper()
+    private val handlers = mapOf<String, IncomingMessageHandler>(
+    )
+
+    override fun connected(client: Client) {
+        backup.execute(ClientConnected(client))
+    }
+
+    override fun disconnected(client: Client) {
+        backup.execute(ClientDisconnected(client))
+    }
+
+    override fun incomingMessage(client: Client, message: String) {
+        val jsonMessage = mapper.readTree(message)
+        val handler = handlers[jsonMessage.getTextOrDefault("type", "")]
+        handler?.invoke(ClientJsonMessage(client, jsonMessage))
+        backup.execute(ClientMessage(client, message))
     }
 
 }
