@@ -16,7 +16,7 @@ class GameModelContext<T, C> : GameModel<T, C> {
     }
 }
 
-class GameLogicActionType2D<T : Any, P : Any>(val model: T, grid: GridDsl<T, P>): GameLogicActionType<T, Point> {
+class GameLogicActionType2D<T : Any, P : Any>(val model: T, grid: GridDsl<T, P>): GameLogic2D<T, P>, GameLogicActionType<T, Point> {
     var allowedCheck: (Action2D<T, P>) -> Boolean = { true }
     lateinit var effect: (Action2D<T, P>) -> Unit
     val gridSpec = GameGridBuilder<T, P>(model)
@@ -27,10 +27,10 @@ class GameLogicActionType2D<T : Any, P : Any>(val model: T, grid: GridDsl<T, P>)
     val size: Pair<Int, Int>
         get() = gridSpec.sizeX(model) to gridSpec.sizeY(model)
 
-    fun allowed(condition: (Action2D<T, P>) -> Boolean) {
+    override fun allowed(condition: (Action2D<T, P>) -> Boolean) {
         this.allowedCheck = condition
     }
-    fun effect(effect: (Action2D<T, P>) -> Unit) {
+    override fun effect(effect: (Action2D<T, P>) -> Unit) {
         this.effect = effect
     }
 
