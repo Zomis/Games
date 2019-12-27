@@ -20,14 +20,14 @@ class BestTest {
     fun empty() {
         val emptyBest = Best<Double> { it }
         assert(emptyBest.getBest().isEmpty())
-        assertThrows<NoSuchElementException> { emptyBest.randomBest() }
+        assertThrows<NoSuchElementException> { emptyBest.getBest().random() }
         assertThrows<NoSuchElementException> { emptyBest.firstBest() }
         assertFalse(emptyBest.isBest(4.2))
     }
 
     @Test
     fun random() {
-        val randomBest = createBest().randomBest()
+        val randomBest = createBest().getBest().random()
         assertTrue(randomBest == "hello" || randomBest == "world")
     }
 

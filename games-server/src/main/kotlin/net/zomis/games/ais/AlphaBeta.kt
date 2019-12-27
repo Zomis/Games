@@ -35,7 +35,7 @@ class AlphaBeta<S, A>(
                     break
                 }
             }
-            return best.randomBest() to best.getBestValue()
+            return best.getBest().random() to best.getBestValue()
         } else {
             val best = Best<A> {action ->
                 return@Best runBlocking {
@@ -50,7 +50,7 @@ class AlphaBeta<S, A>(
                     break
                 }
             }
-            return best.randomBest() to -best.getBestValue()
+            return best.getBest().random() to -best.getBestValue()
         }
     }
 

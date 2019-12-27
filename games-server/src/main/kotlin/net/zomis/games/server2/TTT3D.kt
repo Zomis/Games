@@ -415,7 +415,7 @@ class TTT3DIO {
         options.forEach {
             best.next(it)
         }
-        val move = best.randomBest() //options.maxBy { it.second }!!
+        val move = best.getBest().random() //options.maxBy { it.second }!!
 
         return move.first
     }
