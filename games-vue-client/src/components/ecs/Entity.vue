@@ -28,7 +28,7 @@ export default {
   components: {},
   methods: {
     messageState(e) {
-      console.log("AfterState: " + this.ur.toString());
+      console.log(e, "AfterState: " + this.ur.toString());
     }
   },
   computed: {}

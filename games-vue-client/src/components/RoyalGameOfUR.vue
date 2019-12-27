@@ -11,7 +11,7 @@
 
       <div class="board ur-board">
         <div class="pieces pieces-bg">
-          <div v-for="idx in 20" class="piece piece-bg">
+          <div v-for="idx in 20" class="piece piece-bg" :key="idx">
           </div>
           <div class="piece-black" style="grid-area: 1 / 5 / 2 / 7"></div>
           <div class="piece-black" style="grid-area: 3 / 5 / 4 / 7"></div>
@@ -130,7 +130,7 @@ export default {
   created() {
     if (this.gameInfo.yourIndex < 0) {
       Socket.send(
-        `v1:{ "type": "observer", "gameType": "${
+        `{ "type": "observer", "gameType": "${
           this.gameInfo.gameType
         }", "gameId": "${this.gameInfo.gameId}", "observer": "start" }`
       );
@@ -179,7 +179,7 @@ export default {
         console.log(this.ur.toString());
       }
     },
-    placeNew: function(playerIndex) {
+    placeNew: function() { // playerIndex parameter
       if (this.canPlaceNew) {
         this.action("move", 0);
       }

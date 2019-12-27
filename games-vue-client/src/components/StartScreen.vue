@@ -6,24 +6,24 @@
       <v-toolbar color="cyan" dark>
         <v-toolbar-title>{{ gameType }}</v-toolbar-title>
         <v-spacer></v-spacer>
-<!--        <v-btn round :disabled="waiting" @click="matchMake(gameType)">Play anyone</v-btn> -->
-        <v-btn round :disabled="waiting" @click="inviteLink(gameType)">Invite with link</v-btn>
+<!--        <v-btn rounded :disabled="waiting" @click="matchMake(gameType)">Play anyone</v-btn> -->
+        <v-btn rounded :disabled="waiting" @click="inviteLink(gameType)">Invite with link</v-btn>
       </v-toolbar>
       <v-card-title>
         Users
       </v-card-title>
       <v-list light>
         <template v-for="(name, index) in users">
-          <v-divider v-if="index > 0"></v-divider>
-          <v-list-tile :key="index">
-            <v-list-tile-content>
-              <v-list-tile-title v-html="name"></v-list-tile-title>
-            </v-list-tile-content>
+          <v-divider :key="`divider-${index}`" v-if="index > 0"></v-divider>
+          <v-list-item :key="index">
+            <v-list-item-content>
+              <v-list-item-title v-html="name"></v-list-item-title>
+            </v-list-item-content>
 
-            <v-list-tile-action>
+            <v-list-item-action>
               <v-btn color="info" @click="invite(gameType, name)" v-if="name !== loginName">Invite</v-btn>
-            </v-list-tile-action>
-          </v-list-tile>
+            </v-list-item-action>
+          </v-list-item>
         </template>
       </v-list>
 
@@ -31,7 +31,7 @@
 
       <v-card-title>Your Games</v-card-title>
       <template v-for="game in activeGames" v-if="game.gameInfo.gameType === gameType && game.gameInfo.yourIndex >= 0">
-        <div class="active-game">
+        <div class="active-game" :key="game.gameId">
           <component :key="gameType + game.gameInfo.gameId" :is="game.component" :gameInfo="game.gameInfo"></component>
         </div>
       </template>
@@ -40,7 +40,7 @@
 
       <v-card-title>Other Games</v-card-title>
       <template v-for="game in activeGames" v-if="game.gameInfo.gameType === gameType && game.gameInfo.yourIndex < 0">
-        <div class="active-game">
+        <div class="active-game" :key="game.gameId">
           <component :key="gameType + game.gameInfo.gameId" :is="game.component" :gameInfo="game.gameInfo"></component>
         </div>
       </template>
@@ -50,16 +50,16 @@
 
     <button @click="requestGameList()">Request game list</button>
     <v-list class="gamelist">
-      <template v-for="(game, index) in gameList">
-        <v-list-tile :key="game.gameType + game.gameId">
-          <v-list-tile-content>
-            <v-list-tile-title v-html="game.gameType + ' Game ' + game.gameId"></v-list-tile-title>
-            <v-list-tile-sub-title v-html="vsify(game.players)"></v-list-tile-sub-title>
-          </v-list-tile-content>
-          <v-list-tile-action>
+      <template v-for="game in gameList">
+        <v-list-item :key="game.gameType + game.gameId">
+          <v-list-item-content>
+            <v-list-item-title v-html="game.gameType + ' Game ' + game.gameId"></v-list-item-title>
+            <v-list-item-sub-title v-html="vsify(game.players)"></v-list-item-sub-title>
+          </v-list-item-content>
+          <v-list-item-action>
             <v-btn color="info" @click="observe(game)">Observe</v-btn>
-          </v-list-tile-action>
-        </v-list-tile>
+          </v-list-item-action>
+        </v-list-item>
       </template>
     </v-list>
 
@@ -76,14 +76,14 @@ import RoyalGameOfUR from "@/components/RoyalGameOfUR";
 import Connect4 from "@/components/games/Connect4";
 import UTTT from "@/components/games/UTTT";
 import { mapState } from "vuex";
-
+/*
 let gameTypes = {
   UR: "RoyalGameOfUR",
   UTTT: "UTTT",
   "UTTT-ECS": "ECSGame",
   Connect4: "Connect4"
 };
-
+*/
 export default {
   name: "StartScreen",
   data() {
@@ -126,7 +126,7 @@ export default {
       });
     },
     requestGameList: function() {
-      Socket.send(`v1:{ "type": "GameList" }`);
+      Socket.send(`{ "type": "GameList" }`);
     },
     gameListMessage: function(message) {
       this.gameList = message.list;
@@ -134,14 +134,14 @@ export default {
     matchMake: function(game) {
       this.waiting = true;
       this.waitingGame = game;
-      Socket.send(`v1:{ "game": "${game}", "type": "matchMake" }`);
+      Socket.send(`{ "game": "${game}", "type": "matchMake" }`);
     },
     invite: function(gameType, username) {
       Socket.send(
         `{ "type": "Invite", "gameType": "${gameType}", "invite": ["${username}"] }`
       );
     },
-    inviteLink(gameType, username) {
+    inviteLink(gameType) {
       Socket.send(
         `{ "type": "Invite", "gameType": "${gameType}", "invite": [] }`
       );

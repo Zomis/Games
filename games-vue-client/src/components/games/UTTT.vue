@@ -3,9 +3,9 @@
     <GameHead :gameInfo="gameInfo"></GameHead>
     <div class="board-parent">
       <div class="board uttt-big-board">
-        <div class="smaller-board" v-for="boardIndex in 9">
+        <div class="smaller-board" v-for="boardIndex in 9" :key="boardIndex">
           <div class="pieces pieces-bg">
-            <div v-for="tileIndex in 9" class="piece piece-bg"
+            <div v-for="tileIndex in 9" :key="tileIndex" class="piece piece-bg"
               :class="{ 'moveable': board.isAllowedPlay_1xfwev$(board.game.getSmallestTile_vux9f0$(
                 boardTileToGlobal({ boardIndex: boardIndex - 1, tileIndex: tileIndex - 1 }).x,
                 boardTileToGlobal({ boardIndex: boardIndex - 1, tileIndex: tileIndex - 1 }).y
@@ -14,8 +14,7 @@
             </div>
           </div>
           <div class="pieces player-pieces">
-            <UrPiece v-for="piece in gamePieces"
-              v-if="piece.boardIndex == boardIndex - 1"
+            <UrPiece v-for="piece in activeGamePieces[boardIndex - 1]"
               :key="piece.key"
               :mouseover="doNothing" :mouseleave="doNothing"
               :class="'piece-' + piece.player"
@@ -26,26 +25,28 @@
       </div>
     </div>
     <GameResult :gameInfo="gameInfo"></GameResult>
-    <v-expansion-panel v-if="showRules">
-      <v-expansion-panel-content>
-        <div slot="header">Rules</div>
-        <v-card>
-          <v-card-text>
-            <ul>
-              <li>Each turn, you mark one of the small squares.</li>
-              <li>When you get three in a row on a small board, you’ve won that board.</li>
-              <li>To win the game, you need to win three small boards in a row.</li>
-            </ul>
-          </v-card-text>
-          <v-card-text>
-            <p>You don’t get to pick which of the nine boards to play on. That’s determined by your opponent’s previous move. Whichever square he picks, that’s the board you must play in next. (And whichever square you pick will determine which board he plays on next.)</p>
-            <p>What if my opponent sends me to a board that’s already been won? In that case, congratulations – you get to go anywhere you like, on any of the other boards. (This means you should avoid sending your opponent to an already-won board!)</p>
-            <p>What if one of the small boards results in a tie? I recommend that the board counts for neither X nor O. But, if you feel like a crazy variant, you could agree before the game to count a tied board for both X and O.</p>
-            <a href="http://mathwithbaddrawings.com/2013/06/16/ultimate-tic-tac-toe/">Description from mathwithbaddrawings.com</a>
-          </v-card-text>
-        </v-card>
-      </v-expansion-panel-content>
-    </v-expansion-panel>
+    <v-expansion-panels>
+      <v-expansion-panel v-if="showRules">
+        <v-expansion-panel-header>Rules</v-expansion-panel-header>
+        <v-expansion-panel-content>
+          <v-card>
+            <v-card-text>
+              <ul>
+                <li>Each turn, you mark one of the small squares.</li>
+                <li>When you get three in a row on a small board, you’ve won that board.</li>
+                <li>To win the game, you need to win three small boards in a row.</li>
+              </ul>
+            </v-card-text>
+            <v-card-text>
+              <p>You don’t get to pick which of the nine boards to play on. That’s determined by your opponent’s previous move. Whichever square he picks, that’s the board you must play in next. (And whichever square you pick will determine which board he plays on next.)</p>
+              <p>What if my opponent sends me to a board that’s already been won? In that case, congratulations – you get to go anywhere you like, on any of the other boards. (This means you should avoid sending your opponent to an already-won board!)</p>
+              <p>What if one of the small boards results in a tie? I recommend that the board counts for neither X nor O. But, if you feel like a crazy variant, you could agree before the game to count a tied board for both X and O.</p>
+              <a href="http://mathwithbaddrawings.com/2013/06/16/ultimate-tic-tac-toe/">Description from mathwithbaddrawings.com</a>
+            </v-card-text>
+          </v-card>
+        </v-expansion-panel-content>
+      </v-expansion-panel>
+    </v-expansion-panels>
   </div>
 </template>
 <script>
@@ -61,7 +62,7 @@ export default {
   created() {
     if (this.gameInfo.yourIndex < 0) {
       Socket.send(
-        `v1:{ "type": "observer", "gameType": "${
+        `{ "type": "observer", "gameType": "${
           this.gameInfo.gameType
         }", "gameId": "${this.gameInfo.gameId}", "observer": "start" }`
       );
@@ -87,7 +88,18 @@ export default {
       gamePieces(state) {
         return state.games[this.gameInfo.gameId].gameData.gamePieces;
       }
-    })
+    }),
+    activeGamePieces() {
+      let result = [];
+      for (let piece of this.gamePieces) {
+        let i = piece.boardIndex
+        if (!result[i]) {
+          result[i] = []
+        }
+        result[i].push(piece)
+      }
+      return result
+    }
   },
   methods: {
     doNothing: function() {},

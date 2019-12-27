@@ -4,7 +4,7 @@
     <div class="board-parent">
       <div class="board connect4-board">
         <div class="pieces pieces-bg">
-          <div v-for="idx in 7*6" class="piece piece-bg"
+          <div v-for="idx in 7*6" :key="idx" class="piece piece-bg"
             :class="{ 'moveable': moveableIndex[idx - 1] && movesMade % 2 == gameInfo.yourIndex }"
             @click="onClick({ x: (idx-1) % 7, y: Math.floor((idx-1) / 7) })">
           </div>
@@ -46,7 +46,7 @@ export default {
   created() {
     if (this.gameInfo.yourIndex < 0) {
       Socket.send(
-        `v1:{ "type": "observer", "gameType": "${
+        `{ "type": "observer", "gameType": "${
           this.gameInfo.gameType
         }", "gameId": "${this.gameInfo.gameId}", "observer": "start" }`
       );

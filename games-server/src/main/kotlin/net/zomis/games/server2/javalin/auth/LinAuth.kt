@@ -4,16 +4,19 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.github.kittinunf.fuel.Fuel
+import com.github.kittinunf.fuel.core.extensions.cUrlString
+import com.github.kittinunf.fuel.core.extensions.jsonBody
 import io.javalin.Javalin
 import io.javalin.json.JavalinJackson
 import net.zomis.core.events.EventSystem
+import net.zomis.games.server2.OAuthConfig
 import net.zomis.games.server2.StartupEvent
 import org.slf4j.LoggerFactory
 import java.util.*
 
 data class GithubAuthRequest(val clientId: String, val redirectUri: String, val code: String, val state: String?)
 
-class LinAuth(val javalin: Javalin, val port: Int) {
+class LinAuth(val javalin: Javalin, val port: Int, val githubConfig: OAuthConfig) {
 
     private val logger = LoggerFactory.getLogger(LinAuth::class.java)
 
@@ -28,15 +31,15 @@ class LinAuth(val javalin: Javalin, val port: Int) {
 
         JavalinJackson.configure(mapper)
         val app = javalin
-            .enableCorsForOrigin("http://localhost:42637", "https://games.zomis.net")
+            .enableCorsForOrigin("http://localhost:8080", "https://games.zomis.net")
             .apply {
                 port(port)
                 post("/auth/github") {
                     logger.info(it.toString())
                     val params = it.bodyAsClass(GithubAuthRequest::class.java)
-                    val result = Fuel.Companion.post("https://github.com/login/oauth/access_token", listOf(
-                        Pair("client_id", "ec9c694603f523bc6de8"),
-                        Pair("client_secret", secretProperties.getProperty("github")),
+                    val result = Fuel.post("https://github.com/login/oauth/access_token", listOf(
+                        Pair("client_id", githubConfig.clientId),
+                        Pair("client_secret", githubConfig.clientSecret),
                         Pair("code", params.code),
                         Pair("redirect_uri", params.redirectUri),
                         Pair("state", params.state),

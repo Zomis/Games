@@ -1,6 +1,7 @@
 import Vue from "vue";
 import Router from "vue-router";
 import StartScreen from "@/components/StartScreen";
+import TestScreen from "@/components/TestScreen";
 import TVScreen from "@/components/TVScreen";
 import ServerSelection from "@/components/ServerSelection";
 import RoyalGameOfUR from "@/components/RoyalGameOfUR";
@@ -15,15 +16,17 @@ import axios from "axios";
 import Clipboard from "v-clipboard";
 
 Vue.use(VueAxios, axios);
-Vue.use(VueAuthenticate, {
-  baseUrl: "http://games.zomis.net:42638", // Your API domain
+let authConfig = {
+  baseUrl: process.env.VUE_APP_AUTH_API_URL,
   providers: {
     github: {
-      clientId: "ec9c694603f523bc6de8",
-      redirectUri: "http://games.zomis.net/"
+      clientId: process.env.VUE_APP_AUTH_CLIENT_ID_GITHUB,
+      redirectUri: process.env.VUE_APP_AUTH_REDIRECT_URL
     }
   }
-});
+}
+console.log(authConfig)
+Vue.use(VueAuthenticate, authConfig);
 
 Vue.use(Router);
 Vue.use(Clipboard);
@@ -44,9 +47,15 @@ export default new Router({
       component: StartScreen
     },
     {
+      path: "/test",
+      name: "TestScreen",
+      component: TestScreen
+    },
+    {
       path: "/tv",
       name: "TVScreen",
       component: TVScreen
+      // use more specific path to avoid re-using client component?
     },
     {
       path: "/invite/:inviteId/",

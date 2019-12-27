@@ -1,6 +1,6 @@
 package net.zomis.games.ecs
 
-import klogging.KLoggers
+import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.core.*
 

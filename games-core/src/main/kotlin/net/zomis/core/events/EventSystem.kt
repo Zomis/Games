@@ -1,6 +1,6 @@
 package net.zomis.core.events
 
-import klogging.KLoggers
+import klog.KLoggers
 import kotlin.reflect.KClass
 
 enum class ListenerPriority { FIRST, EARLIER, EARLY, NORMAL, LATE, LATER, LAST }
@@ -34,14 +34,14 @@ class ListenerList<E> {
     }
 
     fun execute(event: E) {
-        list.forEach({
+        list.forEach {
             try {
                 it.run(event)
             } catch (e: RuntimeException) {
                 logger.error(e, "Problem when handling event $event in $it")
                 throw e
             }
-        })
+        }
     }
 
 }
@@ -54,7 +54,7 @@ open class EventSystem {
     fun <E : Any> listen(description: String, priority: ListenerPriority, clazz: KClass<E>,
          condition: (E) -> Boolean, handler: EventHandler<E>) {
         logger.info("Add Listener \"$description\" with priority $priority to $clazz: $handler")
-        val list: ListenerList<E> = listeners.getOrElse(clazz as KClass<Any>, { ListenerList<E>() }) as ListenerList<E>
+        val list: ListenerList<E> = listeners.getOrElse(clazz as KClass<Any>) { ListenerList<E>() } as ListenerList<E>
         list.add(Listener(description, priority, condition, handler))
         listeners[clazz] = list as ListenerList<Any>
     }

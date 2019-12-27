@@ -1,6 +1,6 @@
 package net.zomis.games.server2
 
-import klogging.KLoggers
+import klog.KLoggers
 import net.zomis.games.server2.clients.ur.WSClient
 import net.zomis.games.server2.clients.ur.getInt
 import net.zomis.games.server2.clients.ur.getText
@@ -40,19 +40,19 @@ class Connect4Test {
     @Test
     @Disabled("having problems with Java-WebSocket clients connecting to Javalin server")
     fun connect4() {
-        val p1 = WSClient(URI("ws://127.0.0.1:${config.wsport}/websocket"))
+        val p1 = WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket"))
         p1.connectBlocking()
 
-        val p2 = WSClient(URI("ws://127.0.0.1:${config.wsport}/websocket"))
+        val p2 = WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket"))
         p2.connectBlocking()
 
         p1.send("""{ "type": "ClientGames", "gameTypes": ["Connect4"], "maxGames": 1 }""")
         Thread.sleep(100)
         p2.send("""{ "type": "ClientGames", "gameTypes": ["Connect4"], "maxGames": 1 }""")
 
-        p1.send("""v1:{ "game": "Connect4", "type": "matchMake" }""")
+        p1.send("""{ "game": "Connect4", "type": "matchMake" }""")
         Thread.sleep(100)
-        p2.send("""v1:{ "game": "Connect4", "type": "matchMake" }""")
+        p2.send("""{ "game": "Connect4", "type": "matchMake" }""")
         p1.expectJsonObject { it.getText("type") == "LobbyChange" }
         p1.expectJsonObject {
             it.getText("type") == "GameStarted" && it.getText("gameType") == "Connect4" &&
@@ -107,12 +107,12 @@ class Connect4Test {
     }
 
     private fun sendAndExpect(p1: WSClient, p2: WSClient, pairs: List<Connect4Move>) {
-        pairs.forEach({
+        pairs.forEach {
             val cl = if (it.playerIndex == 1) p1 else p2
-            cl.send("""v1:{ "gameType": "Connect4", "gameId": "1", "type": "move", "move": {"x": ${it.x}, "y": ${it.y} } }""")
+            cl.send("""{ "gameType": "Connect4", "gameId": "1", "type": "move", "move": {"x": ${it.x}, "y": ${it.y} } }""")
             p1.expectJsonObject { true }
             p2.expectJsonObject { true }
-        })
+        }
     }
 
 }

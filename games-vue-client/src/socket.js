@@ -32,7 +32,7 @@ const emitter = new Vue({
         store.dispatch("onSocketMessage", obj);
         this.$emit(`type:${obj.type}`, obj);
       };
-      this.socket.onclose = e => {
+      this.socket.onclose = () => {
         console.log("Websocket closed");
       };
       this.socket.onerror = err => {

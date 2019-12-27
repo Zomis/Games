@@ -21,7 +21,7 @@ fun ObjectNode.getText(fieldName: String): String {
 }
 
 class WSClient(uri: URI): WebSocketClient(uri) {
-    private val logger = klogging.KLoggers.logger(this)
+    private val logger = klog.KLoggers.logger(this)
 
     private val queue: BlockingQueue<String> = LinkedBlockingQueue<String>()
     private val mapper = ObjectMapper()

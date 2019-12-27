@@ -2,7 +2,7 @@
   <div class="invites">
     <v-card class="invites-recieved" v-if="invites.length > 0">
       <v-list two-line>
-        <div v-for="(invite, index) in invites" >
+        <div v-for="(invite, index) in invites" :key="invite.host" >
           {{ invite.host }} invites you to play {{ invite.game }}
           <div class="invite-accept-options" v-if="!invite.cancelled && invite.response === null">
             <v-btn color="success" @click="inviteResponse(invite, true)">Accept</v-btn>
@@ -17,7 +17,7 @@
         </div>
       </v-list>
     </v-card>
-    <v-dialog v-model="inviteWaiting.inviteId !== null" max-width="42%" persistent>
+    <v-dialog v-model="inviteWaiting.dialogActive" max-width="42%" persistent>
       <v-card class="invites-sent">
         <v-card-title>
           Invite
@@ -56,6 +56,7 @@
 import Socket from "../socket";
 function emptyInvite() {
   return {
+    dialogActive: false,
     waitingFor: [],
     inviteId: null,
     cancelled: false,
@@ -85,9 +86,9 @@ export default {
     matchMake: function(game) {
       this.waiting = true;
       this.waitingGame = game;
-      Socket.send(`v1:{ "game": "${game}", "type": "matchMake" }`);
+      Socket.send(`{ "game": "${game}", "type": "matchMake" }`);
     },
-    inviteLink(gameType, username) {
+    inviteLink(gameType) {
       Socket.send(
         `{ "type": "Invite", "gameType": "${gameType}", "invite": [] }`
       );
@@ -129,6 +130,7 @@ export default {
     },
     inviteWaitingMessage: function(e) {
       this.inviteWaiting = e;
+      this.inviteWaiting.dialogActive = true
       this.$set(this.inviteWaiting, "cancelled", false);
       this.$set(this.inviteWaiting, "accepted", []);
       this.$set(this.inviteWaiting, "declined", []);

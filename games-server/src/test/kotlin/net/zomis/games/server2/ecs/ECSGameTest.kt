@@ -58,18 +58,18 @@ class ECSGameTest {
     @Test
     @Disabled("having problems with Java-WebSocket clients connecting to Javalin server")
     fun uttt() {
-        val p1 = WSClient(URI("ws://127.0.0.1:${config.wsport}/websocket"))
+        val p1 = WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket"))
         p1.connectBlocking()
 
-        val p2 = WSClient(URI("ws://127.0.0.1:${config.wsport}/websocket"))
+        val p2 = WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket"))
         p2.connectBlocking()
 
         p1.send("""{ "type": "ClientGames", "gameTypes": ["$GAMETYPE"], "maxGames": 1 }""")
         p2.send("""{ "type": "ClientGames", "gameTypes": ["$GAMETYPE"], "maxGames": 1 }""")
 
-        p1.send("""v1:{ "game": "$GAMETYPE", "type": "matchMake" }""")
+        p1.send("""{ "game": "$GAMETYPE", "type": "matchMake" }""")
         Thread.sleep(100)
-        p2.send("""v1:{ "game": "$GAMETYPE", "type": "matchMake" }""")
+        p2.send("""{ "game": "$GAMETYPE", "type": "matchMake" }""")
         p1.takeUntilJson {
             it.getText("type") == "GameStarted" && it.getText("gameType") == GAMETYPE &&
                     it.getInt("yourIndex") == 0
@@ -101,7 +101,7 @@ class ECSGameTest {
         println("Perform illegal move")
         val repeatId = data["game"]["grid"][2][0]["grid"][2][1]["id"].asText()
 
-        p1.sendAndExpectResponse("""v1:{ "game": "$GAMETYPE", "gameId": "1",
+        p1.sendAndExpectResponse("""{ "game": "$GAMETYPE", "gameId": "1",
             "type": "action", "performer": "$player1_id", "action": "$repeatId" }""".trimMargin())
         p1.expectJsonObject { it.getText("type") == "IllegalMove" }
 
@@ -125,7 +125,7 @@ class ECSGameTest {
         ))
         println("Win the game")
         val finalId = data["game"]["grid"][0][0]["grid"][2][2]["id"].asText()
-        p1.sendAndExpectResponse("""v1:{ "game": "$GAMETYPE", "gameId": "1", "type": "action", "performer": "$player1_id", "action": "$finalId" }""")
+        p1.sendAndExpectResponse("""{ "game": "$GAMETYPE", "gameId": "1", "type": "action", "performer": "$player1_id", "action": "$finalId" }""")
 
         val clients = listOf(p1, p2)
         val obj = clients.map { it.takeUntilJson { it.getText("type") == "PlayerEliminated" } }.first()
@@ -159,9 +159,9 @@ class ECSGameTest {
     }
 
     private fun sendAndExpect(data: ObjectNode, p1: WSClient, p2: WSClient, pairs: List<ECSAction>) {
-        pairs.forEach({ action ->
+        pairs.forEach { action ->
             val cl = if (action.performerId == this.player1_id) p1 else p2
-            cl.send("""v1:{ "game": "$GAMETYPE", "gameId": "1", "type": "action", "performer": "${action.performerId}", "action": "${action.actionableId}" }""")
+            cl.send("""{ "game": "$GAMETYPE", "gameId": "1", "type": "action", "performer": "${action.performerId}", "action": "${action.actionableId}" }""")
 
             val expectedOwner = if (action.performerId == this.player1_id) 0 else 1
 
@@ -212,7 +212,7 @@ class ECSGameTest {
             }
             p1.expectJsonObject(allowedInfo(0))
             p2.expectJsonObject(allowedInfo(1))
-        })
+        }
     }
 
 }

@@ -1,6 +1,6 @@
 package net.zomis.games.server2
 
-import klogging.KLoggers
+import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import java.util.*
 

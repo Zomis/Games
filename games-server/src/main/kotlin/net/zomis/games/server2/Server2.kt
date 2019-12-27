@@ -5,8 +5,7 @@ import com.beust.jcommander.Parameter
 import com.beust.jcommander.ParameterException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.javalin.Javalin
-import klogging.KLoggers
+import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
 import net.zomis.games.ecs.UTTT
@@ -18,11 +17,13 @@ import net.zomis.games.server2.games.impl.RoyalGameOfUrSystem
 import net.zomis.games.server2.games.impl.TTControllerSystem
 import net.zomis.games.server2.invites.InviteSystem
 import net.zomis.games.server2.invites.LobbySystem
+import net.zomis.games.server2.javalin.auth.JavalinFactory
 import net.zomis.games.server2.javalin.auth.LinAuth
 import net.zomis.games.server2.ws.Server2WS
 import net.zomis.tttultimate.TTFactories
 import net.zomis.tttultimate.games.TTClassicControllerWithGravity
 import net.zomis.tttultimate.games.TTUltimateController
+import java.io.File
 import java.util.concurrent.Executors
 import javax.script.ScriptEngineManager
 
@@ -31,15 +32,34 @@ fun JsonNode.getTextOrDefault(fieldName: String, default: String): String {
 }
 
 data class IllegalClientRequest(val client: Client, val error: String)
+data class OAuthConfig(val clientId: String, val clientSecret: String)
 
 class ServerConfig {
+    fun githubConfig(): OAuthConfig {
+        return OAuthConfig(this.githubClient, this.githubSecret)
+    }
 
-    @Parameter(names = ["-wsport"], description = "Port number for WebSockets")
-    var wsport: Int = 8081
+    @Parameter(names = arrayOf("-wsPort"), description = "Port for websockets and API")
+    var webSocketPort = 8081
 
-    @Parameter(names = ["-httpPort"], description = "Port number for Authentication REST-server (0 to disable)")
-    var httpPort: Int = 0
+    @Parameter(names = arrayOf("-wsPortSSL"), description = "Port for websockets and API with SSL (only used if certificate options are set)")
+    var webSocketPortSSL = 0
 
+    @Parameter(names = arrayOf("-certificate"), description = "Path to Let's Encrypt certificate. Leave empty if none.")
+    var certificatePath: String? = null
+
+    @Parameter(names = arrayOf("-keypassword"), description = "Password for Java keystore for certificate")
+    var certificatePassword: String? = null
+
+    @Parameter(names = ["-githubClient"], description = "Github Client Id")
+    var githubClient: String = ""
+
+    @Parameter(names = ["-githubSecret"], description = "Github Client Secret")
+    var githubSecret: String = ""
+
+    fun useSecureWebsockets(): Boolean {
+        return certificatePath != null
+    }
 }
 
 /*
@@ -59,10 +79,10 @@ class Server2(val events: EventSystem) {
     val features = Features(events)
 
     fun start(config: ServerConfig) {
-        val javalin = Javalin.create().port(config.wsport)
-        logger.info("Configuring Javalin at port ${config.wsport}")
+        val javalin = JavalinFactory.javalin(config)
+        logger.info("Configuring Javalin at port ${config.webSocketPort} (SSL ${config.webSocketPortSSL})")
 
-        Runtime.getRuntime().addShutdownHook(Thread({ events.execute(ShutdownEvent("runtime shutdown hook")) }))
+        Runtime.getRuntime().addShutdownHook(Thread { events.execute(ShutdownEvent("runtime shutdown hook")) })
         logger.info("$this has features $features")
         Server2WS(javalin, events).setup()
 
@@ -77,8 +97,8 @@ class Server2(val events: EventSystem) {
 
         features.add(GameSystem()::setup)
 
-        TTControllerSystem("Connect4", {TTClassicControllerWithGravity(TTFactories().classicMNK(7, 6, 4))}).register(events)
-        TTControllerSystem("UTTT", {TTUltimateController(TTFactories().ultimate())}).register(events)
+        TTControllerSystem("Connect4") {TTClassicControllerWithGravity(TTFactories().classicMNK(7, 6, 4))}.register(events)
+        TTControllerSystem("UTTT") {TTUltimateController(TTFactories().ultimate())}.register(events)
         RoyalGameOfUrSystem.init(events)
         features.add(ECSGameSystem("UTTT-ECS", { UTTT().setup() })::setup)
 
@@ -89,10 +109,10 @@ class Server2(val events: EventSystem) {
         events.with(AuthorizationSystem()::register)
         features.add(LobbySystem()::setup)
         val executor = Executors.newScheduledThreadPool(2)
-        events.with({ e -> ServerAIs().register(e, executor) })
+        events.with { e -> ServerAIs().register(e, executor) }
         features.add(InviteSystem()::setup)
-        if (config.httpPort != 0) {
-            LinAuth(javalin, config.httpPort).register()
+        if (config.githubClient.isNotEmpty()) {
+            LinAuth(javalin, config.webSocketPort, config.githubConfig()).register()
         }
         features.add(AIGames()::setup)
         features.add(TVSystem()::register)
@@ -120,14 +140,19 @@ object Main {
     fun main(args: Array<String>) {
         val config = ServerConfig()
         val cmd = JCommander(config)
-        try {
-            cmd.parse(*args)
-        } catch (e: ParameterException) {
-            cmd.usage()
-            System.exit(1)
+        val configFile = File("server2.conf")
+        if (configFile.exists()) {
+            val fileArgs = configFile.readLines(Charsets.UTF_8).joinToString(" ").split(" ").toTypedArray()
+            cmd.parse(*fileArgs)
+        } else {
+            try {
+                cmd.parse(*args)
+            } catch (e: ParameterException) {
+                cmd.usage()
+                System.exit(1)
+            }
         }
 
-        // TODO: Run with auto-docs to print event chains.
         Server2(EventSystem()).start(config)
     }
 }

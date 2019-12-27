@@ -1,6 +1,6 @@
 package net.zomis.games
 
-import klogging.KLoggers
+import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import kotlin.reflect.KClass
 
@@ -17,7 +17,7 @@ class Features(val events: EventSystem?) {
     val data = mutableSetOf<Any>()
 
     operator fun <T: Any> get(clazz: KClass<T>): T? {
-        val value = data.find({ clazz.isInstance(it) })
+        val value = data.find { clazz.isInstance(it) }
         return value as T?
     }
 
