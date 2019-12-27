@@ -138,13 +138,16 @@ class Server2(val events: EventSystem) {
 object Main {
     @JvmStatic
     fun main(args: Array<String>) {
+        val logger = KLoggers.logger(this)
         val config = ServerConfig()
         val cmd = JCommander(config)
         val configFile = File("server2.conf")
         if (configFile.exists()) {
+            logger.info("Using config file $configFile")
             val fileArgs = configFile.readLines(Charsets.UTF_8).joinToString(" ").split(" ").toTypedArray()
             cmd.parse(*fileArgs)
         } else {
+            logger.info("Using config from command line")
             try {
                 cmd.parse(*args)
             } catch (e: ParameterException) {
