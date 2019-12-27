@@ -88,14 +88,14 @@ class GameSystem {
                 }
         })
 
-        events.listen("Send GameStarted", ListenerPriority.LATER, GameStartedEvent::class, {true}, {
-            val playerNames = it.game.players
+        events.listen("Send GameStarted", ListenerPriority.LATER, GameStartedEvent::class, {true}, {event ->
+            val playerNames = event.game.players
                 .asSequence()
                 .map { it.name ?: "(unknown)" }
-                .fold(objectMapper.createArrayNode(), { arr, name -> arr.add(name) })
+                .fold(objectMapper.createArrayNode()) { arr, name -> arr.add(name) }
 
-            it.game.players.forEachIndexed { index, client ->
-                client.send(it.game.toJson("GameStarted").put("yourIndex", index).set("players", playerNames))
+            event.game.players.forEachIndexed { index, client ->
+                client.send(event.game.toJson("GameStarted").put("yourIndex", index).set("players", playerNames))
             }
         })
         events.listen("Send GameEnded", GameEndedEvent::class, {true}, {

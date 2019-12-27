@@ -87,12 +87,12 @@ class ServerAIs {
         }
 
         fun create(events: EventSystem) {
-            ServerAI(gameType, name, { game, index ->
+            ServerAI(gameType, name) { game, index ->
                 val controller = game.obj as T
                 val move = positionToMove(controller) ?: return@ServerAI listOf()
                 listOf(PlayerGameMoveRequest(game, index, "move",
                     mapper.createObjectNode().put("x", move.first).put("y", move.second)))
-            }).register(events)
+            }.register(events)
         }
     }
 
@@ -103,7 +103,7 @@ class ServerAIs {
 
     private fun createURAI(events: EventSystem, name: String, ai: ToIntFunction<RoyalGameOfUr>):
         ToIntFunction<RoyalGameOfUr> {
-        ServerAI("UR", name, { game, index ->
+        ServerAI("UR", name) { game, index ->
             val ur = game.obj as RoyalGameOfUr
             if (index != ur.currentPlayer) {
                 return@ServerAI listOf()
@@ -116,7 +116,7 @@ class ServerAIs {
             // IntelliJ claims "Cannot access class net.zomis...RoyalGameOfUr" - I disagree, it works just fine.
             val move = ai.applyAsInt(ur)
             listOf(PlayerGameMoveRequest(game, index, "move", IntNode(move)))
-        }).register(events)
+        }.register(events)
         return ai
     }
 

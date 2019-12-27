@@ -51,11 +51,11 @@ class RoyalGameOfUrSystem {
 
                 if (controller.isFinished) {
                     val winner = controller.winner
-                    it.game.players.indices.forEach({ playerIndex ->
+                    it.game.players.indices.forEach { playerIndex ->
                         val won = winner == playerIndex
                         val losePositionPenalty = if (won) 0 else 1
                         events.execute(PlayerEliminatedEvent(it.game, playerIndex, won, 1 + losePositionPenalty))
-                    })
+                    }
                     events.execute(GameEndedEvent(it.game))
                 }
             })
