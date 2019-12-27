@@ -142,18 +142,19 @@ object Main {
         val config = ServerConfig()
         val cmd = JCommander(config)
         val configFile = File("server2.conf")
-        if (configFile.exists()) {
-            logger.info("Using config file $configFile")
-            val fileArgs = configFile.readLines(Charsets.UTF_8).joinToString(" ").split(" ").toTypedArray()
-            cmd.parse(*fileArgs)
-        } else {
-            logger.info("Using config from command line")
-            try {
+        try {
+            if (configFile.exists()) {
+                logger.info("Using config file $configFile")
+                val fileArgs = configFile.readLines(Charsets.UTF_8).joinToString(" ").split(" ").toTypedArray()
+                cmd.parse(*fileArgs)
+            } else {
+                logger.info("Using config from command line")
                 cmd.parse(*args)
-            } catch (e: ParameterException) {
-                cmd.usage()
-                System.exit(1)
             }
+        } catch (e: ParameterException) {
+            logger.error(e, "Unable to parse config")
+            cmd.usage()
+            System.exit(1)
         }
 
         Server2(EventSystem()).start(config)
