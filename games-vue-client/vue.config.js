@@ -17,8 +17,8 @@ module.exports = {
   },
   chainWebpack: config => {
     config.externals({
-      uttt: "uttt-js",
-      klogging: "klogging"
+      "uttt-js": "uttt-js",
+      klog: "klog"
     });
   },
   publicPath: "/" + branch

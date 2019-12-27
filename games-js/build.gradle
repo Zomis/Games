@@ -51,4 +51,15 @@ task assembleWeb(type: Sync) {
 
     dependsOn classes
 }
-assemble.dependsOn assembleWeb
+task adjustDependencies {
+    dependsOn assembleWeb
+    doLast {
+        def file = new File("${projectDir}/web/games-js.js")
+        def text = file.getText("UTF-8")
+        String searchString = "this\\['uttt-js']"
+        def replaceWith = "window['uttt-js']"
+        text = text.replaceAll(searchString, replaceWith)
+        file.write(text, "UTF-8")
+    }
+}
+assemble.dependsOn adjustDependencies
