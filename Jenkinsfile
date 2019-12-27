@@ -7,6 +7,20 @@ pipeline {
     agent any
 
     stages {
+        stage('Environment Vars') {
+            steps {
+                script {
+                    sh 'rm -f .env.local'
+                    def timestamp = new Date().format("yyyy-MM-dd HH:mm:ss", TimeZone.getTimeZone('UTC'))
+                    sh "echo 'VUE_APP_BUILD_TIME=$timestamp' >> .env.local"
+                    sh "echo 'VUE_APP_BUILD_NUMBER=$env.BUILD_NUMBER' >> .env.local"
+                    sh "echo 'VUE_APP_GIT_COMMIT=$env.GIT_COMMIT' >> .env.local"
+                    sh "echo 'VUE_APP_GIT_BRANCH=$env.GIT_BRANCH' >> .env.local"
+                    sh 'cat .env.local'
+                    sh 'cp .env.local games-vue-client/'
+                }
+            }
+        }
         stage('Build') {
             steps {
                 sh 'cp /home/zomis/jenkins/server2-secrets.properties games-server/src/main/resources/secrets.properties'
