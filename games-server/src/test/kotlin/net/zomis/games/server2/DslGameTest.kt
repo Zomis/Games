@@ -8,6 +8,7 @@ import net.zomis.games.server2.clients.ur.WSClient
 import net.zomis.games.server2.clients.ur.getInt
 import net.zomis.games.server2.clients.ur.getText
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.net.URI
@@ -57,7 +58,11 @@ class DslGameTest {
         }
 
         p1.sendAndExpectResponse("""{ "gameType": "$dslGame", "gameId": "1", "type": "ViewRequest" }""")
-        p1.expectJsonObject { it.getText("type") == "GameView" }
+        val viewResponse = p1.expectJsonObject { it.getText("type") == "GameView" }
+        Assertions.assertEquals(3, viewResponse["view"]["board"].size())
+        Assertions.assertEquals(3, viewResponse["view"]["board"][0].size())
+        Assertions.assertEquals(3, viewResponse["view"]["board"][1].size())
+        Assertions.assertEquals(3, viewResponse["view"]["board"][2].size())
         p2.sendAndExpectResponse("""{ "gameType": "$dslGame", "gameId": "1", "type": "ViewRequest" }""")
         p2.expectJsonObject { it.getText("type") == "GameView" }
 

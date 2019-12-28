@@ -9,6 +9,7 @@ import Connect4 from "@/components/games/Connect4";
 import UTTT from "@/components/games/UTTT";
 import ECSGame from "@/components/ecs/ECSGame";
 import InviteByURL from "@/components/InviteByURL";
+import DSLTTT from "@/components/games/DSLTTT";
 
 import VueAxios from "vue-axios";
 import VueAuthenticate from "vue-authenticate";
@@ -88,6 +89,15 @@ export default new Router({
       path: "/games/ECSGame/:gameId/",
       name: "ECSGame",
       component: ECSGame,
+      props: route => ({
+        gameInfo: route.params.gameInfo,
+        showRules: true
+      })
+    },
+    {
+      path: "/games/DSL-TTT/:gameId/",
+      name: "DSL-TTT",
+      component: DSLTTT,
       props: route => ({
         gameInfo: route.params.gameInfo,
         showRules: true

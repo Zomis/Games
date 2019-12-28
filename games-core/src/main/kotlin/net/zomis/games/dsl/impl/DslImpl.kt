@@ -134,7 +134,7 @@ class GameViewContext<T : Any>(val model: T, override val viewer: PlayerIndex) :
         gridSpec.apply(grid as GameGridBuilder<T, P>.() -> Unit)
         val context = GameViewContext2D<T, P>(model)
         view(context)
-        viewResult[name] = (0 until gridSpec.sizeY(model)).flatMap {y ->
+        viewResult[name] = (0 until gridSpec.sizeY(model)).map {y ->
             (0 until gridSpec.sizeX(model)).map {x ->
                 val p = gridSpec.get(model, x, y)
                 val tileMap = mutableMapOf<String, Any?>()

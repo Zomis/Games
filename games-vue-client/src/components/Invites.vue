@@ -136,15 +136,14 @@ export default {
       this.$set(this.inviteWaiting, "declined", []);
     },
     gameStartedMessage: function(e) {
-      let games = {
+      let routeNames = {
         UR: "RoyalGameOfUR",
-        UTTT: "UTTT",
-        "UTTT-ECS": "ECSGame",
-        Connect4: "Connect4"
+        "UTTT-ECS": "ECSGame"
       };
+      let routeName = routeNames[e.gameType] ? routeNames[e.gameType] : e.gameType;
       this.inviteWaiting = emptyInvite();
       this.$router.push({
-        name: games[e.gameType],
+        name: routeName,
         params: {
           gameId: e.gameId, // needed for route URL
           gameInfo: {

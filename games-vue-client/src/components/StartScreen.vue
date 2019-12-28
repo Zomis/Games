@@ -75,6 +75,7 @@ import Invites from "./Invites";
 import RoyalGameOfUR from "@/components/RoyalGameOfUR";
 import Connect4 from "@/components/games/Connect4";
 import UTTT from "@/components/games/UTTT";
+import DSLTTT from "@/components/games/DSLTTT";
 import { mapState } from "vuex";
 /*
 let gameTypes = {
@@ -97,6 +98,7 @@ export default {
     RoyalGameOfUR,
     Connect4,
     UTTT,
+    DSLTTT,
     Invites
   },
   methods: {
@@ -154,7 +156,7 @@ export default {
     }
     Socket.$on("type:GameList", this.gameListMessage);
     Socket.send(
-      `{ "type": "ClientGames", "gameTypes": ["UR", "Connect4", "UTTT", "UTTT-ECS"], "maxGames": 1 }`
+      `{ "type": "ClientGames", "gameTypes": ["UR", "Connect4", "UTTT", "DSL-TTT", "UTTT-ECS"], "maxGames": 1 }`
     );
     Socket.send(`{ "type": "ListRequest" }`);
   },
