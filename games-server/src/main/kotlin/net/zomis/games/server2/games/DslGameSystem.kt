@@ -33,9 +33,15 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
                 return@listen
             }
 
-            val clazz = controller.actionParameter(it.moveType)!!
-            val moveJsonText = mapper.writeValueAsString(it.move)
-            val parameter = mapper.readValue(moveJsonText, clazz.java)
+            val parameter: Any
+            try {
+                val clazz = controller.actionParameter(it.moveType)!!
+                val moveJsonText = mapper.writeValueAsString(it.move)
+                parameter = mapper.readValue(moveJsonText, clazz.java)
+            } catch (e: Exception) {
+                logger.error(e, "Error reading move: $it")
+                return@listen
+            }
 
             val action = actionType.createAction(it.player, parameter)
             if (!actionType.actionAllowed(action)) {
