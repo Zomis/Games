@@ -36,6 +36,7 @@ class ServerGame(val gameType: GameType, val gameId: String) {
 }
 
 data class GameTypeRegisterEvent(val gameType: String)
+data class PreMoveEvent(val game: ServerGame, val player: Int, val moveType: String, val move: Any)
 data class MoveEvent(val game: ServerGame, val player: Int, val moveType: String, val move: Any)
 data class GameStartedEvent(val game: ServerGame)
 data class GameEndedEvent(val game: ServerGame)

@@ -11,6 +11,7 @@ import net.zomis.games.Features
 import net.zomis.games.dsl.DslTTT
 import net.zomis.games.ecs.UTTT
 import net.zomis.games.server2.ais.ServerAIs
+import net.zomis.games.server2.ais.TTTQLearn
 import net.zomis.games.server2.debug.AIGames
 import net.zomis.games.server2.games.*
 import net.zomis.games.server2.games.impl.ECSGameSystem
@@ -131,6 +132,7 @@ class Server2(val events: EventSystem) {
             val result = engine.eval(it.input.substring("kt ".length))
             println(result)
         })
+        events.with(TTTQLearn()::setup)
 
         events.listen("Stop Javalin", ShutdownEvent::class, {true}, {javalin.stop()})
         events.listen("Start Javalin", StartupEvent::class, {true}, {javalin.start()})
