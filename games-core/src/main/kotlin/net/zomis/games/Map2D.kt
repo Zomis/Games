@@ -19,6 +19,10 @@ data class Position(val x: Int, val y: Int, val sizeX: Int, val sizeY: Int) {
         }
         return Position(this.x + 1, this.y, this.sizeX, this.sizeY)
     }
+
+    fun transform(transformation: Transformation): Position {
+        return transformation.transform(this)
+    }
 }
 
 enum class TransformationType(val transforming: (Position) -> Position, val reverse: (Position) -> Position) {
@@ -60,7 +64,17 @@ enum class Transformation(private val transformations: List<TransformationType>)
 
 }
 
-class Map2D<T>(val sizeX: Int, val sizeY: Int, val getter: (x: Int, y: Int) -> T, val setter: (x: Int, y: Int, value: T) -> Unit) {
+class Map2D<T>(val sizeX: Int, val sizeY: Int, val getter: (x: Int, y: Int) -> T, val setter: (x: Int, y: Int, value: T) -> Unit = {_,_,_->}) {
+
+    private fun originalPossibleTransformations(): MutableSet<Transformation> {
+        val possibleTransformations = Transformation.values().toMutableSet()
+        if (sizeX != sizeY) {
+            // Rotating 90 or 270 degrees only works if both width or height is the same
+            possibleTransformations.remove(Transformation.ROTATE_90)
+            possibleTransformations.remove(Transformation.ROTATE_270)
+        }
+        return possibleTransformations
+    }
 
     fun standardizedTransformation(valueFunction: (T) -> Int): Transformation {
         // keep a Set<Transformation>, start with all of them
@@ -69,12 +83,7 @@ class Map2D<T>(val sizeX: Int, val sizeY: Int, val getter: (x: Int, y: Int) -> T
 
         // start in the possible fields for the target map upper-left corner
         // then continue, line by line, beginning with increasing X and then increase Y
-        val possibleTransformations = Transformation.values().toMutableSet()
-        if (sizeX != sizeY) {
-            // Rotating 90 or 270 degrees only works if both width or height is the same
-            possibleTransformations.remove(Transformation.ROTATE_90)
-            possibleTransformations.remove(Transformation.ROTATE_270)
-        }
+        val possibleTransformations = originalPossibleTransformations()
 
         var position: Position? = Position(0, 0, sizeX, sizeY)
         while (possibleTransformations.size > 1 && position != null) {
@@ -95,6 +104,16 @@ class Map2D<T>(val sizeX: Int, val sizeY: Int, val getter: (x: Int, y: Int) -> T
         return transformation
     }
 
+    fun symmetryTransformations(equalsFunction: (T, T) -> Boolean): Set<Transformation> {
+        val possibleTransformations = originalPossibleTransformations()
+        return possibleTransformations.filter { transformation ->
+            positions().all { pos ->
+                val other = transformation.transform(pos)
+                equalsFunction(getter(pos.x, pos.y), getter(other.x, other.y))
+            }
+        }.toSet()
+    }
+
     fun transform(transformation: Transformation) {
         val rotated = Map2DX(sizeX, sizeY) { x, y ->
             val pos = Position(x, y, sizeX, sizeY)
@@ -105,6 +124,14 @@ class Map2D<T>(val sizeX: Int, val sizeY: Int, val getter: (x: Int, y: Int) -> T
         (0 until sizeY).forEach {y ->
             (0 until sizeX).forEach {x ->
                 setter(x, y, rotated.grid[y][x])
+            }
+        }
+    }
+
+    fun positions(): Sequence<Position> {
+        return (0 until sizeY).asSequence().flatMap { y ->
+            (0 until sizeX).asSequence().map { x ->
+                Position(x, y, sizeX, sizeY)
             }
         }
     }

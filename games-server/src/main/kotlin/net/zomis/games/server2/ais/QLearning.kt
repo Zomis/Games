@@ -34,7 +34,7 @@ data class QAwaitingReward<S>(val state: S, val stateAction: S, val action: Int)
 class MyQLearning<T, S>(val maxActions: Int,
                         private val stateFunction: (T) -> S,
                         private val actionPossible: ActionPossible<T>,
-                        private val stateActionFunction: (S, Int) -> S,
+                        private val stateActionFunction: (T, S, Int) -> S,
                         private val qTable: QStore<S>) {
 
     private val logger = KLoggers.logger(this)
@@ -82,7 +82,7 @@ class MyQLearning<T, S>(val maxActions: Int,
 
     fun prepareReward(environment: T, action: Int): QAwaitingReward<S> {
         val state = stateFunction(environment)
-        val stateAction = stateActionFunction(state, action)
+        val stateAction = stateActionFunction(environment, state, action)
         return QAwaitingReward(state, stateAction, action)
     }
 
@@ -107,7 +107,7 @@ class MyQLearning<T, S>(val maxActions: Int,
         val nextStateStr = stateFunction(nextState)
         val estimateOfOptimalFutureValue = (0 until maxActions)
                 .filter { i -> actionPossible(nextState, i) }
-                .map { i -> stateActionFunction(nextStateStr, i) }
+                .map { i -> stateActionFunction(rewardedState.state, nextStateStr, i) }
                 .map { str -> qTable.getOrDefault(str, DEFAULT_QVALUE) }.max() ?: 0.0
 
         val oldValue = qTable.getOrDefault(awaitReward.stateAction, DEFAULT_QVALUE)
@@ -123,7 +123,7 @@ class MyQLearning<T, S>(val maxActions: Int,
         val result = DoubleArray(maxActions)
         for (i in 0 until maxActions) {
             if (actionPossible(environment, i)) {
-                val st = stateActionFunction(state, i)
+                val st = stateActionFunction(environment, state, i)
                 val value = qTable.getOrDefault(st, 0.0)
                 result[i] = value
             }
@@ -146,7 +146,7 @@ class MyQLearning<T, S>(val maxActions: Int,
         val scores = DoubleArray(possibleActions.size)
         for (i in possibleActions.indices) {
             val action = possibleActions[i]
-            val stateAction = stateActionFunction(state, action)
+            val stateAction = stateActionFunction(environment, state, action)
             scores[i] = this.qTable.getOrDefault(stateAction, DEFAULT_QVALUE)
         }
         val min = scores.min() ?: 0.0
@@ -183,7 +183,7 @@ class MyQLearning<T, S>(val maxActions: Int,
             return possibleActions[0]
         }
         for (i in possibleActions) {
-            val stateAction = stateActionFunction(state, i)
+            val stateAction = stateActionFunction(environment, state, i)
             val value = qTable.getOrDefault(stateAction, DEFAULT_QVALUE)
             val diff = Math.abs(value - bestValue)
             val better = value > bestValue && diff >= EPSILON
@@ -199,7 +199,7 @@ class MyQLearning<T, S>(val maxActions: Int,
         var pickedAction = random.nextInt(numBestActions)
         logger.debug { "Pick best action chosed index $pickedAction of $possibleActions with value $bestValue" }
         for (i in possibleActions) {
-            val stateAction = stateActionFunction(state, i)
+            val stateAction = stateActionFunction(environment, state, i)
             val value = qTable.getOrDefault(stateAction, DEFAULT_QVALUE)
             val diff = Math.abs(value - bestValue)
 

@@ -132,7 +132,7 @@ class Server2(val events: EventSystem) {
             val result = engine.eval(it.input.substring("kt ".length))
             println(result)
         })
-        events.with(TTTQLearn()::setup)
+        events.with(TTTQLearn(gameSystem)::setup)
 
         events.listen("Stop Javalin", ShutdownEvent::class, {true}, {javalin.stop()})
         events.listen("Start Javalin", StartupEvent::class, {true}, {javalin.start()})

@@ -5,25 +5,27 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import net.zomis.core.events.EventSystem
-import net.zomis.games.Features
+import net.zomis.games.Map2D
+import net.zomis.games.Position
+import net.zomis.games.Transformation
 import net.zomis.games.dsl.PlayerIndex
 import net.zomis.games.dsl.Point
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.dsl.index
+import net.zomis.games.server2.ClientJsonMessage
 import net.zomis.games.server2.games.*
+import net.zomis.games.server2.getTextOrDefault
 import net.zomis.tttultimate.TTPlayer
 import net.zomis.tttultimate.games.TTController
 
-class TTTQLearn {
+class TTTQLearn(val games: GameSystem) {
     val gameType = "DSL-TTT"
 
     val logger = KLoggers.logger(this)
 
     val actionPossible: ActionPossible<TTController> = { tt, action ->
-        val columns = tt.game.sizeX
-        val x = action % columns
-        val y = action / columns
-        tt.isAllowedPlay(tt.game.getSub(x, y)!!)
+        val pos = actionToPosition(tt, action)
+        tt.isAllowedPlay(tt.game.getSub(pos.x, pos.y)!!)
     }
 
     fun newLearner(qStore: QStore<String>): MyQLearning<TTController, String> {
@@ -34,27 +36,57 @@ class TTTQLearn {
         return newLearner(controller.game.sizeX * controller.game.sizeY, qStore)
     }
 
+    private fun normalizeTransformation(controller: TTController): Transformation {
+        return Map2D(controller.game.sizeX, controller.game.sizeY, {x, y ->
+            controller.game.getSub(x, y)!!.wonBy
+        }).standardizedTransformation {
+            it.ordinal
+        }
+    }
+
     private fun newLearner(maxActions: Int, qStore: QStore<String>): MyQLearning<TTController, String> {
         val stateToString: (TTController) -> String = { g ->
+            val transformation = normalizeTransformation(g)
             val sizeX = g.game.sizeX
             val sizeY = g.game.sizeY
             val str = StringBuilder()
             for (y in 0 until sizeY) {
                 for (x in 0 until sizeX) {
-                    val sub = g.game.getSub(x, y)!!
+                    val p = Position(x, y, sizeX, sizeY).transform(transformation)
+                    val sub = g.game.getSub(p.x, p.y)!!
                     str.append(if (sub.wonBy.isExactlyOnePlayer) sub.wonBy.name else "_")
                 }
                 str.append('-')
             }
             str.toString()
         }
-        val learn = MyQLearning(maxActions, stateToString, actionPossible,
-                { state, action -> state + action }, qStore)
+        val learn = MyQLearning(maxActions, stateToString, actionPossible, this::stateActionString, qStore)
         // learn.setLearningRate(-0.01); // This leads to bad player moves. Like XOX-OXO-_X_ instead of XOX-OXO-X__
         learn.discountFactor = -0.9
         learn.learningRate = 1.0
         learn.randomMoveProbability = 0.05
         return learn
+    }
+
+    private fun stateActionString(environment: TTController, state: String, action: Int): String {
+        val transformation = normalizeTransformation(environment)
+        // Transform action
+        val point = actionToPosition(environment, action)
+        val resultingActionPoint = point.transform(transformation)
+        val resultingActionInt = positionToAction(environment, resultingActionPoint)
+        return state + resultingActionInt
+    }
+
+    private fun positionToAction(environment: TTController, position: Position): Int {
+        val columns = environment.game.sizeX
+        return position.y * columns + position.x
+    }
+
+    private fun actionToPosition(environment: TTController, action: Int): Position {
+        val columns = environment.game.sizeX
+        val x = action % columns
+        val y = action / columns
+        return Position(x, y, environment.game.sizeX, environment.game.sizeY)
     }
 
     fun isDraw(tt: TTController): Boolean {
@@ -107,6 +139,11 @@ class TTTQLearn {
             if (model.isGameOver || isDraw(model)) {
                 return@ServerAI listOf()
             }
+
+            // Always do actions based on the standardized state
+            // Find possible symmetry transformations
+            // Make move
+            // TODO: Learn the same value for all possible symmetries of action
 
             val action = learn.pickWeightedBestAction(model)
             val x = action % model.game.sizeX
