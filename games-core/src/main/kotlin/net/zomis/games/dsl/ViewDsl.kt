@@ -13,4 +13,5 @@ interface GameView<T> {
 interface GameView2D<T, P> {
     val model: T
     fun owner(function: (tile: P) -> Int?)
+    fun property(name: String, value: (tile: P) -> Any?)
 }

@@ -91,10 +91,26 @@ class GameLogicContext<T : Any>(private val model: T) : GameLogic<T> {
 
 class GameViewContext2D<T, P>(override val model: T) : GameView2D<T, P> {
 
-    var ownerFunction: ((tile: P) -> Int?)? = null
+    private var ownerFunction: ((tile: P) -> Int?)? = null
+    private val properties = mutableListOf<Pair<String, (P) -> Any?>>()
 
     override fun owner(function: (tile: P) -> Int?) {
         this.ownerFunction = function
+    }
+
+    override fun property(name: String, value: (tile: P) -> Any?) {
+        this.properties.add(name to value)
+    }
+
+    fun view(p: P): Map<String, Any?> {
+        val tileMap = mutableMapOf<String, Any?>()
+        for (property in properties) {
+            tileMap[property.first] = property.second(p)
+        }
+        if (this.ownerFunction != null) {
+            tileMap["owner"] = this.ownerFunction!!(p)
+        }
+        return tileMap
     }
 
 }
@@ -138,11 +154,7 @@ class GameViewContext<T : Any>(val model: T, override val viewer: PlayerIndex) :
         viewResult[name] = (0 until gridSpec.sizeY(model)).map {y ->
             (0 until gridSpec.sizeX(model)).map {x ->
                 val p = gridSpec.get(model, x, y)
-                val tileMap = mutableMapOf<String, Any?>()
-                if (context.ownerFunction != null) {
-                    tileMap["owner"] = context.ownerFunction!!(p)
-                }
-                tileMap
+                context.view(p)
             }
         }
     }

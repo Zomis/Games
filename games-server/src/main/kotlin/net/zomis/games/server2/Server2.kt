@@ -9,6 +9,7 @@ import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
 import net.zomis.games.dsl.DslTTT
+import net.zomis.games.dsl.DslTTT3D
 import net.zomis.games.ecs.UTTT
 import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.ais.TTTQLearn
@@ -113,6 +114,7 @@ class Server2(val events: EventSystem) {
         events.with(DslGameSystem("TTT", DslTTT().game)::setup)
         events.with(DslGameSystem("Connect4", DslTTT().gameConnect4)::setup)
         events.with(DslGameSystem("UTTT", DslTTT().gameUTTT)::setup)
+        events.with(DslGameSystem("TTT3D", DslTTT3D().game)::setup)
 
         features.add(SimpleMatchMakingSystem()::setup)
         events.with(ServerConsole()::register)

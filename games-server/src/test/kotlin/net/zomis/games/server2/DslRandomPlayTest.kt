@@ -37,7 +37,7 @@ class DslRandomPlayTest {
 
     @Test
     @ParameterizedTest(name = "Random play {0}")
-    @ValueSource(strings = ["TTT", "UTTT", "Connect4"])
+    @ValueSource(strings = ["TTT", "UTTT", "Connect4", "TTT3D"])
     fun dsl(gameName: String) {
         val dslGame = "DSL-$gameName"
         val p1 = WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket"))
