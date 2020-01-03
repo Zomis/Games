@@ -30,16 +30,16 @@ class ServerAIs {
     fun randomAction(game: ServerGame, index: Int): List<PlayerGameMoveRequest> {
         val controller = game.obj as GameImpl<Any>
         val actionTypes = controller.availableActionTypes().map {
-            it to controller.actionType<Any>(it)!!
+            controller.actionType<Any>(it)!!
         }
         val actions = actionTypes.flatMap {actionType ->
-            actionType.second.availableActions(index).map { actionType.first to it }
+            actionType.availableActions(index)
         }
         if (actions.isEmpty()) {
             return listOf()
         }
         val chosenAction = actions.random().let {
-            return@let PlayerGameMoveRequest(game, index, it.first, it.second.parameter)
+            return@let PlayerGameMoveRequest(game, it.playerIndex, it.actionType, it.parameter)
         }
         return listOf(chosenAction)
     }

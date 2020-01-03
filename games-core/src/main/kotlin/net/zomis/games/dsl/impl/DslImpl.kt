@@ -16,7 +16,7 @@ class GameModelContext<T, C> : GameModel<T, C> {
     }
 }
 
-class GameLogicActionType2D<T : Any, P : Any>(val model: T, grid: GridDsl<T, P>): GameLogic2D<T, P>, GameLogicActionType<T, Point> {
+class GameLogicActionType2D<T : Any, P : Any>(override val actionType: String, private val model: T, grid: GridDsl<T, P>): GameLogic2D<T, P>, GameLogicActionType<T, Point> {
     var allowedCheck: (Action2D<T, P>) -> Boolean = { true }
     lateinit var effect: (Action2D<T, P>) -> Unit
     val gridSpec = GameGridBuilder<T, P>(model)
@@ -47,14 +47,14 @@ class GameLogicActionType2D<T : Any, P : Any>(val model: T, grid: GridDsl<T, P>)
     }
 
     override fun createAction(playerIndex: Int, parameter: Point): Action2D<T, P> {
-        return Action2D(model, playerIndex, parameter.x, parameter.y, this.getter(parameter.x, parameter.y))
+        return Action2D(model, playerIndex, actionType, parameter.x, parameter.y, this.getter(parameter.x, parameter.y))
     }
 
     override fun availableActions(playerIndex: Int): Iterable<Actionable<T, Point>> {
         return (0 until this.size.second).flatMap {y ->
             (0 until this.size.first).mapNotNull { x ->
                 val target = this.getter(x, y)
-                val action = Action2D(model, playerIndex, x, y, target)
+                val action = Action2D(model, playerIndex, actionType, x, y, target)
                 val allowed = this.allowedCheck(action)
                 return@mapNotNull if (allowed) action else null
             }
@@ -63,18 +63,19 @@ class GameLogicActionType2D<T : Any, P : Any>(val model: T, grid: GridDsl<T, P>)
 }
 
 interface GameLogicActionType<T : Any, A : Any> {
+    val actionType: String
     fun availableActions(playerIndex: Int): Iterable<Actionable<T, A>>
     fun actionAllowed(action: Actionable<T, A>): Boolean
     fun performAction(action: Actionable<T, A>)
     fun createAction(playerIndex: Int, parameter: A): Actionable<T, A>
 }
 
-class GameLogicContext<T : Any>(val model: T) : GameLogic<T> {
+class GameLogicContext<T : Any>(private val model: T) : GameLogic<T> {
     val actions = mutableMapOf<ActionType<*>, GameLogicActionType<T, *>>()
     var winner: (T) -> PlayerIndex = { null }
 
     override fun <P : Any> action2D(actionType: ActionType<Point>, grid: GridDsl<T, P>, logic: ActionLogic2D<T, P>) {
-        val context = GameLogicActionType2D(model, grid)
+        val context = GameLogicActionType2D(actionType.name, model, grid)
         logic(context)
         actions[actionType] = context
     }
