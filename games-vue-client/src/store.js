@@ -1,14 +1,9 @@
 import Vue from "vue";
 import Vuex from "vuex";
-import Connect4state from "./components/games/Connect4state";
-import URstate from "./components/RoyalGameOfURstate";
-import UTTTstate from "./components/games/UTTTstate";
-import DslGameState from "./components/games/DslGameState";
+import supportedGames from "@/supportedGames"
 
 // const debug = process.env.NODE_ENV !== "production";
 Vue.use(Vuex);
-
-let dslGames = { "DSL-TTT": true };
 
 const store = new Vuex.Store({
   state: {
@@ -18,14 +13,11 @@ const store = new Vuex.Store({
     games: [] // includes both playing and observing
   },
   modules: {
-    Connect4: Connect4state,
-    UR: URstate,
-    UTTT: UTTTstate,
-    DslGameState: DslGameState
+    ...supportedGames.storeModules()
   },
   getters: {
     activeGames: state => {
-      let modules = [state.Connect4, state.UR, state.UTTT, state.DslGameState];
+      let modules = supportedGames.stateModules(state);
       return modules
         .flatMap(m => m.games)
         .map(i => Object.values(i))
@@ -81,14 +73,11 @@ const store = new Vuex.Store({
         context.commit("changeLobby", data);
       }
       if (data.gameType) {
-        if (data.gameType === "Connect4") {
-          context.dispatch("Connect4/onSocketMessage", data);
-        } else if (data.gameType === "UTTT") {
-          context.dispatch("UTTT/onSocketMessage", data);
-        } else if (data.gameType === "UR") {
-          context.dispatch("UR/onSocketMessage", data);
-        } else if (dslGames[data.gameType]) {
+        let game = supportedGames.games[data.gameType]
+        if (game.dsl) {
           context.dispatch("DslGameState/onSocketMessage", data);
+        } else if (game.store) {
+          context.dispatch(data.gameType + "/onSocketMessage", data);
         }
       }
     }

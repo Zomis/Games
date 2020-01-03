@@ -72,19 +72,9 @@
 import Socket from "../socket";
 import Invites from "./Invites";
 
-import RoyalGameOfUR from "@/components/RoyalGameOfUR";
-import Connect4 from "@/components/games/Connect4";
-import UTTT from "@/components/games/UTTT";
-import DSLTTT from "@/components/games/DSLTTT";
 import { mapState } from "vuex";
-/*
-let gameTypes = {
-  UR: "RoyalGameOfUR",
-  UTTT: "UTTT",
-  "UTTT-ECS": "ECSGame",
-  Connect4: "Connect4"
-};
-*/
+import supportedGames from "@/supportedGames";
+
 export default {
   name: "StartScreen",
   data() {
@@ -95,10 +85,7 @@ export default {
     };
   },
   components: {
-    RoyalGameOfUR,
-    Connect4,
-    UTTT,
-    DSLTTT,
+    ...supportedGames.components(),
     Invites
   },
   methods: {
@@ -155,8 +142,9 @@ export default {
       return;
     }
     Socket.$on("type:GameList", this.gameListMessage);
+    let gameTypes = JSON.stringify(supportedGames.enabledGameKeys());
     Socket.send(
-      `{ "type": "ClientGames", "gameTypes": ["UR", "Connect4", "UTTT", "DSL-TTT", "UTTT-ECS"], "maxGames": 1 }`
+      `{ "type": "ClientGames", "gameTypes": ${gameTypes}, "maxGames": 1 }`
     );
     Socket.send(`{ "type": "ListRequest" }`);
   },

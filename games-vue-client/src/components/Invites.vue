@@ -54,6 +54,8 @@
 </template>
 <script>
 import Socket from "../socket";
+import supportedGames from "@/supportedGames";
+
 function emptyInvite() {
   return {
     dialogActive: false,
@@ -136,11 +138,8 @@ export default {
       this.$set(this.inviteWaiting, "declined", []);
     },
     gameStartedMessage: function(e) {
-      let routeNames = {
-        UR: "RoyalGameOfUR",
-        "UTTT-ECS": "ECSGame"
-      };
-      let routeName = routeNames[e.gameType] ? routeNames[e.gameType] : e.gameType;
+      let game = supportedGames.games[e.gameType]
+      let routeName = game.routeName || e.gameType;
       this.inviteWaiting = emptyInvite();
       this.$router.push({
         name: routeName,
