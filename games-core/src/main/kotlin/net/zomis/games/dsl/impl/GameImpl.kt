@@ -20,7 +20,7 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
 
 }
 
-class GameImpl<T : Any>(val setupContext: GameDslContext<T>, config: Any?) {
+class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, config: Any?) {
 
     val model = setupContext.model.factory(config)
     private val logic = GameLogicContext(model)

@@ -78,6 +78,11 @@ class DslRandomPlayTest {
             val actions = playerRange.mapNotNull {playerIndex ->
                 ServerAIs().randomAction(game, playerIndex).firstOrNull()
             }
+            if (actions.isEmpty()) {
+                p1.sendAndExpectResponse("""{ "gameType": "$dslGame", "gameId": "1", "type": "ViewRequest" }""")
+                p1.expectJsonObject { it.getText("type") == "GameView" }
+                throw IllegalStateException("Game is not over but no actions available. Is the game a draw?")
+            }
             val request = actions.first()
             val playerSocket = players[request.player]
             val moveString = jacksonObjectMapper().writeValueAsString(request.move)
@@ -86,31 +91,36 @@ class DslRandomPlayTest {
             p2.expectJsonObject { true }
         }
 
-/*        // Game is finished
+        // Game is finished
         var obj = p1.takeUntilJson { it.getText("type") == "PlayerEliminated" }
         assert(obj.getText("gameType") == dslGame)
-        assert(obj.getInt("player") == 0)
-        assert(obj.get("winner").asBoolean())
-        assert(obj.getInt("position") == 1)
+        assert(obj.get("winner").isBoolean)
+//        assert(obj.getInt("player") == 0)
+//        assert(obj.getInt("position") == 1)
 
         obj = p1.expectJsonObject { it.getText("type") == "PlayerEliminated" }
         assert(obj.getText("gameType") == dslGame)
-        assert(obj.getInt("player") == 1)
-        assert(!obj.get("winner").asBoolean())
-        assert(obj.getInt("position") == 2)
+        assert(obj.get("winner").isBoolean)
 
         obj = p2.takeUntilJson { it.getText("type") == "PlayerEliminated" }
         assert(obj.getText("gameType") == dslGame)
-        assert(obj.getInt("player") == 0)
-        assert(obj.get("winner").asBoolean())
-        assert(obj.getInt("position") == 1)
+        assert(obj.get("winner").isBoolean)
 
         obj = p2.expectJsonObject { it.getText("type") == "PlayerEliminated" }
         assert(obj.getText("gameType") == dslGame)
-        assert(obj.getInt("player") == 1)
-        assert(!obj.get("winner").asBoolean())
-        assert(obj.getInt("position") == 2)
-*/
+        assert(obj.get("winner").isBoolean)
+
+        p1.expectJsonObject { it.getText("type") == "GameEnded" }
+        p2.expectJsonObject { it.getText("type") == "GameEnded" }
+
+        p1.sendAndExpectResponse("""{ "gameType": "$dslGame", "gameId": "1", "type": "ViewRequest" }""")
+        p1.expectJsonObject { it.getText("type") == "GameView" }
+        p2.sendAndExpectResponse("""{ "gameType": "$dslGame", "gameId": "1", "type": "ViewRequest" }""")
+        obj = p2.expectJsonObject { it.getText("type") == "GameView" }
+        val winner = obj["view"]["winner"]
+        println("Winner is $winner")
+        assert(winner.isInt) { "Winner is not an int" }
+
         p1.close()
         p2.close()
     }

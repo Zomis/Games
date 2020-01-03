@@ -15,6 +15,7 @@ fun TTPlayer.index(): Int {
         TTPlayer.O -> 1
         TTPlayer.NONE -> -1
         TTPlayer.XO -> -1
+        TTPlayer.BLOCKED -> -1
     }
 }
 
@@ -72,16 +73,24 @@ class DslTTT {
         view(ttView(grid)) // TODO: Needs view improvements. (Logic can still work, perhaps...
     }
 
+    private val winner: (TTController) -> Int? = {
+        when {
+            it.isGameOver -> it.wonBy.index()
+            isPlacesLeft(it.game) -> null
+            else -> -1 // TODO: Make a better way to represent 'draw'
+        }
+    }
+
     private fun ttView(grid: GridDsl<TTController, TTBase>): GameViewDsl<TTController> = {
         currentPlayer { it.currentPlayer.index() }
-        winner { if (it.isGameOver) it.wonBy.index() else null }
+        winner(winner)
         grid("board", grid) {
             owner { it.wonBy.index().takeIf {n -> n >= 0 } }
         }
     }
 
     private fun ttLogic(grid: GridDsl<TTController, TTBase>): GameLogicDsl<TTController> = {
-        winner { if (it.isGameOver) it.wonBy.index() else null }
+        winner(winner)
         action2D(playAction, grid) {
             allowed { it.playerIndex == it.game.currentPlayer.index() && it.game.isAllowedPlay(it.target) }
             effect {
@@ -89,4 +98,16 @@ class DslTTT {
             }
         }
     }
+
+    private fun isPlacesLeft(tt: TTBase): Boolean {
+        if (!tt.hasSubs()) {
+            return !tt.isWon
+        }
+        return !tt.isWon && (0 until tt.sizeY).asSequence().flatMap { y ->
+            (0 until tt.sizeX).asSequence().map { x ->
+                tt.getSub(x, y)!!
+            }
+        }.any { isPlacesLeft(it) }
+    }
+
 }
