@@ -1,6 +1,7 @@
 import Vue from "vue";
 import Vuex from "vuex";
 import supportedGames from "@/supportedGames"
+import Socket from "@/socket";
 
 // const debug = process.env.NODE_ENV !== "production";
 Vue.use(Vuex);
@@ -60,6 +61,21 @@ const store = new Vuex.Store({
   actions: {
     observe(context, gameInfo) {
       context.commit(`${gameInfo.gameType}/createGame`, gameInfo);
+    },
+    viewRequest(context, gameInfo) {
+      Socket.send(
+        `{ "type": "ViewRequest", "gameType": "${
+          gameInfo.gameType
+        }", "gameId": "${gameInfo.gameId}" }`
+      );
+    },
+    makeMove(context, data) {
+      let json = `{ "gameType": "${data.gameInfo.gameType}", "gameId": "${
+        data.gameInfo.gameId
+      }", "type": "move", "moveType": "${data.moveType}", "move": ${JSON.stringify(
+        data.move
+      )} }`;
+      Socket.send(json);
     },
     onSocketMessage(context, data) {
       console.log(data);

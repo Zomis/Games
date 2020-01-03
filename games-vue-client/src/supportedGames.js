@@ -12,6 +12,7 @@ import Connect4 from "@/components/games/Connect4";
 import UTTT from "@/components/games/UTTT";
 import ECSGame from "@/components/ecs/ECSGame";
 import DSLTTT from "@/components/games/DSLTTT";
+import TTT3D from "@/components/games/TTT3D";
 
 import Connect4state from "./components/games/Connect4state";
 import URstate from "./components/RoyalGameOfURstate";
@@ -30,6 +31,11 @@ const supportedGames = {
         dsl: false,
         store: URstate,
         component: RoyalGameOfUR,
+        routeProps: defaultRouteProps
+    },
+    "DSL-TTT3D": {
+        dsl: true,
+        component: TTT3D,
         routeProps: defaultRouteProps
     },
     "Connect4": {
@@ -52,7 +58,6 @@ const supportedGames = {
     },
     "DSL-TTT": {
         dsl: true,
-        store: DslGameState,
         component: DSLTTT,
         routeProps: defaultRouteProps
     }
