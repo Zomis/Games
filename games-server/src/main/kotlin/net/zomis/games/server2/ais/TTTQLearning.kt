@@ -170,7 +170,7 @@ class TTTQLearn(val games: GameSystem) {
         }
         serverAI.register(events)
         events.listen("#AI_QLearn_$gameType pre-move", PreMoveEvent::class, {
-            true
+            it.game.players.contains(serverAI.client)
         }, {
             val game = it.game.obj as GameImpl<TTController>
             val point = it.move as Point

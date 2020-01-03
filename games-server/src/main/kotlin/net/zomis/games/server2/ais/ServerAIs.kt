@@ -10,9 +10,11 @@ import net.zomis.aiscores.ScoreParameters
 import net.zomis.aiscores.ScoreStrategy
 import net.zomis.aiscores.extra.ScoreUtils
 import net.zomis.core.events.EventSystem
+import net.zomis.games.dsl.PlayerIndex
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.server2.games.GameTypeRegisterEvent
 import net.zomis.games.server2.games.PlayerGameMoveRequest
+import net.zomis.games.server2.games.ServerGame
 import net.zomis.games.ur.RoyalGameOfUr
 import net.zomis.games.ur.ais.MonteCarloAI
 import net.zomis.tttultimate.games.TTController
@@ -25,6 +27,23 @@ class ServerAIs {
 
     fun isDSLGameType(gameType: String) = gameType.startsWith("DSL")
 
+    fun randomAction(game: ServerGame, index: Int): List<PlayerGameMoveRequest> {
+        val controller = game.obj as GameImpl<Any>
+        val actionTypes = controller.availableActionTypes().map {
+            it to controller.actionType<Any>(it)!!
+        }
+        val actions = actionTypes.flatMap {actionType ->
+            actionType.second.availableActions(index).map { actionType.first to it }
+        }
+        if (actions.isEmpty()) {
+            return listOf()
+        }
+        val chosenAction = actions.random().let {
+            return@let PlayerGameMoveRequest(game, index, it.first, it.second.parameter)
+        }
+        return listOf(chosenAction)
+    }
+
     fun register(events: EventSystem, executor: ScheduledExecutorService) {
         events.listen("ServerAIs Delayed move", DelayedAIMoves::class, {true}, {
             executor.schedule({
@@ -35,20 +54,7 @@ class ServerAIs {
         })
         events.listen("register ServerAIs for DSL Game", GameTypeRegisterEvent::class, { isDSLGameType(it.gameType) }, {event ->
             ServerAI(event.gameType, "#AI_Random_" + event.gameType) { game, index ->
-                val controller = game.obj as GameImpl<Any>
-                val actionTypes = controller.availableActionTypes().map {
-                    it to controller.actionType<Any>(it)!!
-                }
-                val actions = actionTypes.flatMap {actionType ->
-                    actionType.second.availableActions(index).map { actionType.first to it }
-                }
-                if (actions.isEmpty()) {
-                    return@ServerAI listOf()
-                }
-                val chosenAction = actions.random().let {
-                    return@let PlayerGameMoveRequest(game, index, it.first, it.second.parameter)
-                }
-                listOf(chosenAction)
+                return@ServerAI randomAction(game, index)
             }.register(events)
         })
         events.listen("register ServerAIs for Game of UR", GameTypeRegisterEvent::class, { it.gameType == "UR" }, {

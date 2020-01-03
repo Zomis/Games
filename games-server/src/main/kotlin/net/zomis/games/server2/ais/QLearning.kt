@@ -175,7 +175,7 @@ class MyQLearning<T, S>(val maxActions: Int,
         var numBestActions = 0
         var bestValue = -1000.0
         val possibleActions = getPossibleActions(environment)
-        if (possibleActions.size == 0) {
+        if (possibleActions.isEmpty()) {
             throw IllegalStateException("No successful action in $environment: $state")
         }
         if (possibleActions.size == 1) {

@@ -22,7 +22,6 @@ export default {
   methods: {
     doNothing() {},
     onClick(data) {
-      console.log(`Click at background ${data.x}, ${data.y}. Handler ${this.clickHandler}`)
       if (this.clickHandler) {
         this.clickHandler(data.x, data.y)
       }
@@ -30,17 +29,12 @@ export default {
   },
   computed: {
     gridTiles() {
-      console.log("Grid is " + JSON.stringify(this.grid));
       if (typeof this.grid === 'undefined') {
-        console.log("Grid is apparently undefined");
         return []
       }
       let gridTiles = []
-      console.log("not undefined, checking rows...")
       this.grid.forEach((row, y) => {
-        console.log("Found row", row, y)
         row.forEach((tile, x) => {
-          console.log(x, y, tile, "equals", this.grid[y][x])
           if (this.grid[y][x]) {
             gridTiles.push({ key: `tile-${x}-${y}`, x: x, y: y, tile: tile })
           }

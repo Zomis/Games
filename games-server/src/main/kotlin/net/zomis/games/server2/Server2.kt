@@ -82,7 +82,7 @@ class Server2(val events: EventSystem) {
     private val mapper = ObjectMapper()
     val features = Features(events)
 
-    private val gameSystem = GameSystem()
+    val gameSystem = GameSystem()
     private val messageHandler = MessageHandler(events, mapOf(
         "ViewRequest" to ViewRequestHandler(gameSystem)
     ))
@@ -111,6 +111,8 @@ class Server2(val events: EventSystem) {
         RoyalGameOfUrSystem.init(events)
         features.add(ECSGameSystem("UTTT-ECS") { UTTT().setup() }::setup)
         events.with(DslGameSystem("TTT", DslTTT().game)::setup)
+        events.with(DslGameSystem("Connect4", DslTTT().gameConnect4)::setup)
+        events.with(DslGameSystem("UTTT", DslTTT().gameUTTT)::setup)
 
         features.add(SimpleMatchMakingSystem()::setup)
         events.with(ServerConsole()::register)
