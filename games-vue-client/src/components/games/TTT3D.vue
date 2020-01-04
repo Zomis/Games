@@ -8,16 +8,16 @@
     <Camera type="arcRotate"></Camera>
     <template v-for="y in indices">
       <template v-for="x in indices">
-        <Cylinder :key="`${y},${x},cylinder`" :position="[positions[y], 0, positions[x]]" :scaling="[0.3, 3.4, 0.3]">
-          <Material diffuse="#fff" :metallic="0" :roughness="1"> </Material>
+        <Cylinder :key="`${y},${x},cylinder`" :position="[positions[y], 0, positions[x]]" :scaling="cylinderScaling">
+          <Material diffuse="#505050" :metallic="0" :roughness="1"> </Material>
         </Cylinder>
-        <Box v-for="(color, z) in colors[y][x]" :position="[positions[y], positions[z], positions[x]]"
+        <Sphere v-for="(color, z) in colors[y][x]" :position="[positions[y], positions[z], positions[x]]"
          :key="`${y},${x},${z}`"
          @onPointerOver="pointerOver"
          :name="`box_${y}_${x}_${z}`">
           <Material :diffuse="color" :roughness="1" :metallic="0.5">
           </Material>
-        </Box>
+        </Sphere>
       </template>
     </template>
   </Scene>
@@ -35,8 +35,9 @@ export default {
   data() {
     return {
       scene: null,
+      cylinderScaling: [0.3, 2.0, 0.3],
       indices: [0, 1, 2, 3],
-      positions: [-3, -1, 1, 3]
+      positions: [-2.1, -0.7, 0.7, 2.1]
 //      positions: [-2 - SPACE, -1 - SPACE / 2, 0 + SPACE / 2, 1 + SPACE]
 //      -3     -1.5    0.5    2
     }
