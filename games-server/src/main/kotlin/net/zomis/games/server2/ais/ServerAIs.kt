@@ -11,10 +11,13 @@ import net.zomis.aiscores.ScoreStrategy
 import net.zomis.aiscores.extra.ScoreUtils
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.PlayerIndex
+import net.zomis.games.dsl.Point
 import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.impl.TTT3D
 import net.zomis.games.server2.games.GameTypeRegisterEvent
 import net.zomis.games.server2.games.PlayerGameMoveRequest
 import net.zomis.games.server2.games.ServerGame
+import net.zomis.games.server2.games.ttt3d.TTT3DIO
 import net.zomis.games.ur.RoyalGameOfUr
 import net.zomis.games.ur.ais.MonteCarloAI
 import net.zomis.tttultimate.games.TTController
@@ -57,6 +60,11 @@ class ServerAIs {
                 return@ServerAI randomAction(game, index)
             }.register(events)
         })
+        events.listen("register AlphaBeta for TTT3D", GameTypeRegisterEvent::class, { it.gameType == "DSL-TTT3D" }, {event ->
+            (0..5).forEach {level ->
+                createTTT3DAlphaBeta(event.gameType, events, level)
+            }
+        })
         events.listen("register ServerAIs for Game of UR", GameTypeRegisterEvent::class, { it.gameType == "UR" }, {
             createURAI(events, "#AI_KFE521S3", RoyalGameOfUrAIs.scf()
                 .withScorer(knockout, 5.0)
@@ -86,6 +94,17 @@ class ServerAIs {
             XYScorer("Connect4", "#AI_C4_Random", ScoreConfigFactory(), XYScoreStrategy(7, 6, ttAllowed)).create(events)
             XYScorer("UTTT", "#AI_UTTT_Random", ScoreConfigFactory(), XYScoreStrategy(9, 9, ttAllowed)).create(events)
         })
+    }
+
+    private fun createTTT3DAlphaBeta(gameType: String, events: EventSystem, level: Int) {
+        ServerAI(gameType, "#AI_AlphaBeta_" + gameType + "_" + level) { game, index ->
+            val model = game.obj as GameImpl<TTT3D>
+            if (model.model.currentPlayer.playerIndex != index) {
+                return@ServerAI emptyList()
+            }
+            val move = TTT3DIO().alphaBeta(model.model, level)
+            return@ServerAI listOf(PlayerGameMoveRequest(game, index, "play", Point(move.x, move.y)))
+        }.register(events)
     }
 
     class XYScoreStrategy<T>(val width: Int, val height: Int, val allowed: (T, Int, Int) -> Boolean) : ScoreStrategy<T, Pair<Int, Int>> {

@@ -2,14 +2,13 @@ package net.zomis.games.server2.games.ttt3d
 
 import kotlinx.coroutines.*
 import net.zomis.Best
+import net.zomis.best
+import net.zomis.bestBy
 import net.zomis.common.pmap
 import net.zomis.fight.ext.WinResult
 import net.zomis.fights.Fights
 import net.zomis.games.ais.AlphaBeta
-import net.zomis.games.impl.TTT3D
-import net.zomis.games.impl.TTT3DAI
-import net.zomis.games.impl.TTT3DPiece
-import net.zomis.games.impl.TTT3DPoint
+import net.zomis.games.impl.*
 import net.zomis.scorers.*
 import net.zomis.scorers.FieldScore
 import java.util.Scanner
@@ -166,19 +165,16 @@ class TTT3DIO {
         println()
     }
 
-    fun playVsAI(game: TTT3D) {
+    fun playVsAI(game: TTT3D, ai: NamedAI, human: TTT3DPiece) {
         val scanner = Scanner(System.`in`)
 
         while (!game.isGameOver()) {
             game.standardize()
 
-            if (game.currentPlayer == TTT3DPiece.X) {
+            if (game.currentPlayer == human) {
                 makeMove(game, requestInput(game, scanner))
-//                makeMove(alphaBetaPlay(game, 5))
-//                makeMove(aiPlay())
             } else {
-                makeMove(game, alphaBetaPlay(game, 5))
-//                makeMove(aiPlay())
+                makeMove(game, ai.ai(game))
             }
             this.print(game)
 //            Thread.sleep(2000)
@@ -253,13 +249,20 @@ class TTT3DIO {
             }.toList()
         }
 
-        val best = Best<Pair<TTT3DPoint, Double>> { it.second }
-        options.forEach {
-            best.next(it)
-        }
-        val move = best.getBest().random() //options.maxBy { it.second }!!
+//        println("Scores for AlphaBeta $depth")
+//        printScores(game, scorers.config().withScorer(scorerAlphaBeta(options)))
+        val move = options.bestBy { it.second }.random() //options.maxBy { it.second }!!
 
         return move.first
+    }
+
+    fun scorerAlphaBeta(options: List<Pair<TTT3DPoint, Double>>) = NamedScorer<TTT3D, TTT3DPoint>("alphaBeta") { params, point ->
+        val foundValue = options.find { it.first == point }?.second
+        if (foundValue == null) {
+            println("WARNING: No such point found: $point in $options")
+            return@NamedScorer -420.0
+        }
+        return@NamedScorer foundValue
     }
 
     fun aiPlay(game: TTT3D): Pair<Int, Int> {
@@ -318,7 +321,7 @@ class TTT3DIO {
 //            .dataFinish(moveCount)
     }
 
-    private fun alphaBetaAI(depth: Int): NamedAI {
+    fun alphaBetaAI(depth: Int): NamedAI {
         return NamedAI("AlphaBeta $depth") { alphaBetaPlay(it, depth) }
     }
 
@@ -327,6 +330,19 @@ class TTT3DIO {
             val position = factory.producer(it).score().best().random()
             return@lambda position.x to position.y
         }
+    }
+
+    fun aiVs(game: TTT3D, playerX: NamedAI, playerO: NamedAI) {
+        print(game)
+        while (!game.isGameOver()) {
+            if (game.currentPlayer == TTT3DPiece.X) {
+                makeMove(game, playerX.ai(game))
+            } else {
+                makeMove(game, playerO.ai(game))
+            }
+            this.print(game)
+        }
+        println(game.findWinner())
     }
 
 /*
@@ -357,6 +373,9 @@ net.zomis.spring.games.impls.ur.MonteCarloAI@3590ccd
 
 fun main(args: Array<String>) {
 //    val game = loadMap("XXO  |      | XO   | OX   /      | OXO  | OOOX |      / XX   | XXO  |      | OO   / OX   |      |      | XX   ")
-    TTT3DIO().playVsAI(TTT3D())
-//    TTT3DIO().fight()
+    val io = TTT3DIO()
+    val game = TTT3D()
+//    io.aiVs(game, io.alphaBetaAI(3), io.alphaBetaAI(2))
+    io.playVsAI(game, io.alphaBetaAI(5), randomTTT3DPiece())
+//    io.fight()
 }

@@ -56,8 +56,8 @@ class AlphaBeta<S, A>(
 
     suspend fun score(node: S, depth: Int): Double {
         // This is scoring the next step, so currentPlayer is already opponent
-        if (depth <= 1) {
-            throw IllegalArgumentException("Depth ($depth) must be bigger than 1")
+        if (depth < 0) {
+            throw IllegalArgumentException("Depth ($depth) may not be negative.")
         }
         val result = alphaBeta(node, depth, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, false)
         return result.second
