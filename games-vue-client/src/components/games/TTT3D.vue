@@ -8,14 +8,14 @@
     <Camera type="arcRotate"></Camera>
     <template v-for="y in indices">
       <template v-for="x in indices">
-        <Cylinder :key="`${y},${x},cylinder`" :position="[positions[y], positions[x], 0]" :scaling="[0.3, 0.3, 5]">
+        <Cylinder :key="`${y},${x},cylinder`" :position="[positions[y], 0, positions[x]]" :scaling="[0.3, 3.4, 0.3]">
           <Material diffuse="#fff" :metallic="0" :roughness="1"> </Material>
         </Cylinder>
-        <Box v-for="z in indices" :position="[positions[y], positions[x], positions[z]]"
+        <Box v-for="(color, z) in colors[y][x]" :position="[positions[y], positions[z], positions[x]]"
          :key="`${y},${x},${z}`"
          @onPointerOver="pointerOver"
          :name="`box_${y}_${x}_${z}`">
-          <Material :diffuse="colors[y][x][z]" :roughness="1" :metallic="0.5">
+          <Material :diffuse="color" :roughness="1" :metallic="0.5">
           </Material>
         </Box>
       </template>
@@ -111,9 +111,16 @@ export default {
       // {"type":"GameView","gameType":"DSL-TTT3D","gameId":"1","viewer":1,"view":{"currentPlayer":1,"winner":0,"board":[[{"row":[0,0,0,null]},{"row":[1,null,null,null]},{"row":[0,1,null,null]},{"row":[1,0,null,null]}],[{"row":[null,null,null,null]},{"row":[1,1,0,1]},{"row":[null,null,null,null]},{"row":[0,0,1,null]}],[{"row":[0,0,0,null]},{"row":[null,null,null,null]},{"row":[null,null,null,null]},{"row":[1,0,1,1]}],[{"row":[null,null,null,null]},{"row":[null,null,null,null]},{"row":[1,1,null,null]},{"row":[1,0,0,null]}]]}}
       return this.view.board.map(yy => {
         return yy.map(xx => {
-          return xx.row.map(zz => {
-            return zz == null ? "#000000" : zz == 0 ? "#ff0000" : "#0000ff"
-          })
+          let row = [];
+          for (let z = 0; z < xx.row.length; z++) {
+            let zz = xx.row[z];
+            row.push(zz == null ? "#000000" : zz == 0 ? "#ff0000" : "#0000ff");
+            let previousNotEmpty = (z === 0) || (xx.row[z - 1] !== null)
+            if (zz === null && previousNotEmpty) {
+              return row;
+            }
+          }
+          return row;
         })
       })
     }
