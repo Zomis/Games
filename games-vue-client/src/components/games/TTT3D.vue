@@ -2,7 +2,7 @@
   <div class="game-ttt3d">
     <GameHead :gameInfo="gameInfo"></GameHead>
     <GameResult :gameInfo="gameInfo"></GameResult>
-  <Scene @complete="initialized" v-model="scene" @pointer$="onPointer" v-if="view.board">
+  <Scene @complete="initialized" v-model="scene" v-if="view.board"> <!-- @pointer$="onPointer" -->
 <!--    <HemisphericLight emissive="#00FF00"></HemisphericLight>-->
     <HemisphericLight diffuse="#fff" />
     <Camera type="arcRotate"></Camera>
@@ -12,9 +12,9 @@
           <Material diffuse="#505050" :metallic="0" :roughness="1"> </Material>
         </Cylinder>
         <Sphere v-for="(color, z) in colors[y][x]" :position="[positions[y], positions[z], positions[x]]"
+         :scaling="pieceScaling"
          :key="`${y},${x},${z}`"
-         @onPointerOver="pointerOver"
-         :name="`box_${y}_${x}_${z}`">
+         :name="`box_${y}_${x}_${z}`"><!-- @onPointerOver="pointerOver" -->
           <Material :diffuse="color" :roughness="1" :metallic="0.5">
           </Material>
         </Sphere>
@@ -35,11 +35,10 @@ export default {
   data() {
     return {
       scene: null,
-      cylinderScaling: [0.3, 2.0, 0.3],
+      pieceScaling: [1.3, 1.7, 1.3],
+      cylinderScaling: [0.3, 3.6, 0.3],
       indices: [0, 1, 2, 3],
-      positions: [-2.1, -0.7, 0.7, 2.1]
-//      positions: [-2 - SPACE, -1 - SPACE / 2, 0 + SPACE / 2, 1 + SPACE]
-//      -3     -1.5    0.5    2
+      positions: [-3, -1, 1, 3]
     }
   },
   components: {
@@ -50,18 +49,16 @@ export default {
     this.$store.dispatch("viewRequest", this.gameInfo)
   },
   methods: {
+/*
     onPointer(event) {
       console.log(event, this);
-/*      let scene = this.scene;
-      let pick = scene.pick(scene.pointerX, scene.pointerY, e => true);
-      if (pick.hit) {
-        console.log("onPointer", pick);
-      }*/
     },
+    pointerOver(evt) {
+      console.log("POINT_OVER", evt);
+    },
+*/
     initialized(evt) {
-      console.log("test", evt, this.scene);
       let sc = evt.scene.getEngine().getRenderingCanvas();
-      console.log("sc", sc);
       this.scene = evt.scene;
       sc.addEventListener("pointerdown", this.onPointerDown, false);
     },
@@ -77,29 +74,15 @@ export default {
         }
         let y = parseInt(splitted[1], 10);
         let x = parseInt(splitted[2], 10);
+/*        
         let z = parseInt(splitted[3], 10);
         console.log(hit, hit.name, y, x, z);
         let b = hit.material.albedoColor.b;
         let r = hit.material.albedoColor.r;
         console.log("Current:", r, b);
-
-        this.$store.dispatch("makeMove", { gameInfo: this.gameInfo, moveType: "play", move: { x: x, y: y } });
-/*
-        if (r == 0 && b == 0) {
-          hit.material.albedoColor.r = 0;
-          hit.material.albedoColor.b = 1;
-        } else if (b == 1 && r == 0) {
-          hit.material.albedoColor.r = 1;
-          hit.material.albedoColor.b = 0;
-        } else {
-          hit.material.albedoColor.r = 0;
-          hit.material.albedoColor.b = 0;
-        }
 */
+        this.$store.dispatch("makeMove", { gameInfo: this.gameInfo, moveType: "play", move: { x: x, y: y } });
       }
-    },
-    pointerOver(evt) {
-      console.log("POINT_OVER", evt);
     }
   },
   computed: {
