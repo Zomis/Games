@@ -18,13 +18,14 @@ class DBIntegration {
 
     private val logger = KLoggers.logger(this)
 
-    private val dynamoDB = AmazonDynamoDBClientBuilder.standard()
+    val dynamoDB = AmazonDynamoDBClientBuilder.standard()
         .withRegion(Regions.EU_CENTRAL_1)
         .build()
 
     fun register(events: EventSystem) {
         val tables = listOf<CreateTableRequest>()
             .plus(AuthTable(dynamoDB).register(events))
+            .plus(GamesTables(dynamoDB).register(events))
         createTables(dynamoDB, tables)
     }
 
@@ -84,15 +85,18 @@ data class MyPrimaryIndex(
 
 }
 
-class MyTable(dynamoDB: AmazonDynamoDB, private val tableName: String) {
+class MyTable(dynamoDB: AmazonDynamoDB, val tableName: String) {
     private val indices = mutableListOf<MyIndex>()
     private val attributeDefinitions = mutableListOf<AttributeDefinition>()
     private lateinit var primaryIndex: MyPrimaryIndex
     val table = DynamoDB(dynamoDB).getTable(tableName)!!
 
-    fun strings(vararg names: String): MyTable {
-        names.forEach {
-            attributeDefinitions.add(AttributeDefinition(it, ScalarAttributeType.S))
+    fun strings(vararg fieldNames: String): MyTable = this.fields(ScalarAttributeType.S, fieldNames)
+    fun bools(vararg fieldNames: String): MyTable = this.fields(ScalarAttributeType.B, fieldNames)
+    fun numbers(vararg fieldNames: String): MyTable = this.fields(ScalarAttributeType.N, fieldNames)
+    private fun fields(type: ScalarAttributeType, fieldNames: Array<out String>): MyTable {
+        fieldNames.forEach {
+            attributeDefinitions.add(AttributeDefinition(it, type))
         }
         return this
     }

@@ -1,5 +1,7 @@
 package net.zomis.games.core
 
+import net.zomis.games.WinResult
+
 open class Component
 open class FixedComponent: Component()
 open class DataComponent: Component()
@@ -31,14 +33,13 @@ data class EntityComponent<out T: Component>(val entity: Entity, val component: 
 data class Tile(val x: Int, val y: Int): FixedComponent()
 data class Container2D(val container: List<List<Entity>>): ContainerComponent()
 
-enum class WinStatus { WIN, LOSS, DRAW }
-data class Player(val index: Int, var result: WinStatus?, var resultPosition: Int?): DataComponent() {
+data class Player(val index: Int, var result: WinResult?, var resultPosition: Int?): DataComponent() {
     val eliminated: Boolean
         get() = result != null
 }
 data class OwnedByPlayer(var owner: Player?): DataComponent()
 data class Players(val players: List<Entity>): ContainerComponent() {
-    fun eliminate(index: Int, result: WinStatus, position: Int): Players {
+    fun eliminate(index: Int, result: WinResult, position: Int): Players {
         players[index].updateComponent(Player::class) {
             it.result = result
             it.resultPosition = position
@@ -46,26 +47,26 @@ data class Players(val players: List<Entity>): ContainerComponent() {
         return this
     }
 
-    fun getResultPosition(result: WinStatus): Int {
+    fun getResultPosition(result: WinResult): Int {
         // if no one else has been eliminated, the player is at 1st place. Because the player itself has not been eliminated, it should get increased below.
         var playerResultPosition = players.size + 1
-        if (result != WinStatus.LOSS) {
+        if (result != WinResult.LOSS) {
             playerResultPosition = 0
         }
 
         var posTaken: Boolean
         do {
-            playerResultPosition += if (result == WinStatus.LOSS) -1 else +1
+            playerResultPosition += if (result == WinResult.LOSS) -1 else +1
             posTaken = this.players.asSequence().map { it.component(Player::class) }.any { it.eliminated && it.resultPosition == playerResultPosition }
         } while (posTaken)
         return playerResultPosition
     }
 
-    fun eliminate(index: Int, result: WinStatus): Players {
+    fun eliminate(index: Int, result: WinResult): Players {
 		return this.eliminate(index, result, getResultPosition(result))
     }
 
-    fun eliminateRemaining(result: WinStatus): Players {
+    fun eliminateRemaining(result: WinResult): Players {
         val position = getResultPosition(result)
         players.forEachIndexed {index, player ->
             if (!player.component(Player::class).eliminated) {

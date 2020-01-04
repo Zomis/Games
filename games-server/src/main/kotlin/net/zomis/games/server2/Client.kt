@@ -3,11 +3,14 @@ package net.zomis.games.server2
 import com.fasterxml.jackson.databind.ObjectMapper
 import klog.KLoggers
 import net.zomis.games.Features
+import java.util.UUID
 
 fun Collection<Client>.send(data: Map<String, Any?>) {
     val text = Client.mapper.writeValueAsString(data)
     this.forEach { cl -> cl.sendData(text) }
 }
+
+typealias PlayerId = UUID
 
 open class Client {
 
@@ -20,7 +23,7 @@ open class Client {
     @Deprecated("Change the client name to a feature")
     var name: String? = null
 
-    var playerId: String? = null
+    var playerId: PlayerId? = null
 
     fun connected() {}
 

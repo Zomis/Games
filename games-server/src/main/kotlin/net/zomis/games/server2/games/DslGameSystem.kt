@@ -3,6 +3,7 @@ package net.zomis.games.server2.games
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
+import net.zomis.games.WinResult
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.dsl.impl.GameSetupImpl
@@ -55,11 +56,12 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
 //            events.execute(GameStateEvent(it.game, listOf(Pair("roll", rollResult)))) // TODO: Needs support for random results for serialization
 
             if (controller.isGameOver()) {
-                val winner = controller.getWinner()
+                val winner = controller.getWinner()!!
                 it.game.players.indices.forEach { playerIndex ->
+                    val winResult = if (winner < 0) WinResult.DRAW else WinResult.forWinner(winner, playerIndex)
                     val won = winner == playerIndex
                     val losePositionPenalty = if (won) 0 else 1
-                    events.execute(PlayerEliminatedEvent(it.game, playerIndex, won, 1 + losePositionPenalty))
+                    events.execute(PlayerEliminatedEvent(it.game, playerIndex, winResult, 1 + losePositionPenalty))
                 }
                 events.execute(GameEndedEvent(it.game))
             }

@@ -3,6 +3,7 @@ package net.zomis.games.server2.games.impl
 import com.fasterxml.jackson.databind.node.ObjectNode
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
+import net.zomis.games.WinResult
 import net.zomis.games.server2.StartupEvent
 import net.zomis.games.server2.clients.ur.getInt
 import net.zomis.games.server2.games.*
@@ -53,7 +54,7 @@ class TTControllerSystem(val gameType: String, private val controller: () -> TTC
                 it.game.players.indices.forEach { playerIndex ->
                     val won = winner.playerIndex() == playerIndex
                     val losePositionPenalty = if (won) 0 else 1
-                    events.execute(PlayerEliminatedEvent(it.game, playerIndex, won, 1 + losePositionPenalty))
+                    events.execute(PlayerEliminatedEvent(it.game, playerIndex, winner.toWinResult(playerIndex), 1 + losePositionPenalty))
                 }
                 events.execute(GameEndedEvent(it.game))
             }
@@ -63,4 +64,12 @@ class TTControllerSystem(val gameType: String, private val controller: () -> TTC
         })
     }
 
+}
+
+private fun TTPlayer.toWinResult(playerIndex: Int): WinResult {
+    return when {
+        this.ordinal == playerIndex -> WinResult.WIN
+        this == TTPlayer.BLOCKED -> WinResult.DRAW
+        else -> WinResult.LOSS
+    }
 }

@@ -3,6 +3,7 @@ package net.zomis.games.server2.db
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import com.amazonaws.services.dynamodbv2.document.*
 import com.amazonaws.services.dynamodbv2.model.*
+import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.server2.Client
 import net.zomis.games.server2.ClientJsonMessage
@@ -13,6 +14,8 @@ import java.time.Instant
 import java.util.UUID
 
 class AuthTable(private val dynamoDB: AmazonDynamoDB) {
+
+    private val logger = KLoggers.logger(this)
 
     private val tableName = "Server2-Players"
     private val playerId = "PlayerId"
@@ -60,7 +63,7 @@ class AuthTable(private val dynamoDB: AmazonDynamoDB) {
 
     private fun authenticationDone(event: ClientLoginEvent) {
         if (event.provider == ServerAIProvider) {
-            return
+            // Should be done also for AIs, because they need to be recognized in database
         }
         // Check if user exists (authType + authId)
         // If not then create
@@ -68,20 +71,27 @@ class AuthTable(private val dynamoDB: AmazonDynamoDB) {
         val existing = authIndex.query(authType to event.provider, authId to event.token).singleOrNull()
         val timestamp = Instant.now().epochSecond
         if (existing != null) {
-            myTable.table.updateItem(playerId, existing.getString(playerId),
-                AttributeUpdate(timeLastConnected).put(timestamp))
+            val uuid = existing.getString(this.playerId)
+            event.client.playerId = UUID.fromString(uuid)
+            val updateResult = myTable.table.updateItem(
+                playerId, existing.getString(playerId), AttributeUpdate(timeLastConnected).put(timestamp))
+            logger.info("Update ${event.client.name}. Found $uuid. Update result $updateResult")
             return
         }
+        if (event.client.playerId == null) {
+            throw IllegalStateException("Client should have playerId set: ${event.client.name}")
+        }
 
-        val uuid = UUID.randomUUID().toString()
+        val uuid = event.client.playerId!!
         val putItemRequest = PutItemRequest(tableName, mapOf(
-            playerId to AttributeValue(uuid),
+            playerId to AttributeValue(uuid.toString()),
             authType to AttributeValue(event.provider),
             authId to AttributeValue(event.token),
             timeLastConnected to timeStamp(),
             playerName to AttributeValue(event.loginName)
         ))
-        dynamoDB.putItem(putItemRequest)
+        val updateResult = dynamoDB.putItem(putItemRequest)
+        logger.info("Update ${event.client.name}. Adding as $uuid. Update result $updateResult")
     }
 
 }

@@ -38,7 +38,7 @@ class ECSGameSystem(val gameType: String, private val factory: () -> World) {
                 }, {update ->
                     val player = update.value as Player
                     events.execute(PlayerEliminatedEvent(gameStartedEvent.game, player.index,
-                        player.result == WinStatus.WIN, player.resultPosition!!))
+                        player.result!!, player.resultPosition!!))
                 })
                 it.listen("game over because all players eliminated in $gameType", UpdateEntityEvent::class, {
                     update -> update.componentClass == Player::class &&

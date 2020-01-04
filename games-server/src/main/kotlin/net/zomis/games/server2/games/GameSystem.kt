@@ -7,8 +7,10 @@ import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.core.events.ListenerPriority
 import net.zomis.games.Features
+import net.zomis.games.WinResult
 import net.zomis.games.dsl.PlayerIndex
 import net.zomis.games.server2.*
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
 val nodeFactory = JsonNodeFactory(false)
@@ -19,8 +21,10 @@ fun ServerGame.toJson(type: String): ObjectNode {
         .put("gameId", this.gameId)
 }
 
+typealias GameId = UUID
 class ServerGame(val gameType: GameType, val gameId: String) {
     var gameOver: Boolean = false
+    val uuid = UUID.randomUUID()
 
     fun broadcast(message: (Client) -> Any) {
         players.forEach { it.send(message.invoke(it)) }
@@ -40,7 +44,7 @@ data class PreMoveEvent(val game: ServerGame, val player: Int, val moveType: Str
 data class MoveEvent(val game: ServerGame, val player: Int, val moveType: String, val move: Any)
 data class GameStartedEvent(val game: ServerGame)
 data class GameEndedEvent(val game: ServerGame)
-data class PlayerEliminatedEvent(val game: ServerGame, val player: Int, val winner: Boolean, val position: Int)
+data class PlayerEliminatedEvent(val game: ServerGame, val player: Int, val winner: WinResult, val position: Int)
 data class GameStateEvent(val game: ServerGame, val data: List<Pair<String, Any>>)
 
 data class PlayerGameMoveRequest(val game: ServerGame, val player: Int, val moveType: String, val move: Any) {
@@ -154,7 +158,8 @@ fun MoveEvent.moveMessage(): ObjectNode {
 fun PlayerEliminatedEvent.eliminatedMessage(): ObjectNode {
     return this.game.toJson("PlayerEliminated")
             .put("player", this.player)
-            .put("winner", this.winner)
+            .put("winner", this.winner.isWinner())
+            .put("winResult", this.winner.name)
             .put("position", this.position)
 }
 

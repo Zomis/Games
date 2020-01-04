@@ -3,6 +3,7 @@ package net.zomis.games.server2.games.impl
 import com.fasterxml.jackson.databind.node.IntNode
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
+import net.zomis.games.WinResult
 import net.zomis.games.server2.StartupEvent
 import net.zomis.games.server2.games.*
 import net.zomis.games.ur.RoyalGameOfUr
@@ -54,7 +55,7 @@ class RoyalGameOfUrSystem {
                     it.game.players.indices.forEach { playerIndex ->
                         val won = winner == playerIndex
                         val losePositionPenalty = if (won) 0 else 1
-                        events.execute(PlayerEliminatedEvent(it.game, playerIndex, won, 1 + losePositionPenalty))
+                        val e = events.execute(PlayerEliminatedEvent(it.game, playerIndex, WinResult.forWinner(winner, playerIndex), 1 + losePositionPenalty))
                     }
                     events.execute(GameEndedEvent(it.game))
                 }
