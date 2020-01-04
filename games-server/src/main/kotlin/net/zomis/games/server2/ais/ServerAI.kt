@@ -16,6 +16,8 @@ import net.zomis.games.server2.invites.InviteResponseEvent
 data class AIMoveRequest(val client: Client, val game: ServerGame)
 data class DelayedAIMoves(val moves: List<PlayerGameMoveRequest>)
 
+val ServerAIProvider = "server-ai"
+
 class ServerAI(val gameType: String, val name: String, val perform: (game: ServerGame, playerIndex: Int) -> List<PlayerGameMoveRequest>) {
     fun register(events: EventSystem) {
         events.listen("ai move check $name", MoveEvent::class, {
@@ -46,7 +48,7 @@ class ServerAI(val gameType: String, val name: String, val perform: (game: Serve
 
         events.execute(ClientConnected(client))
         client.name = name
-        events.execute(ClientLoginEvent(client, name, "server-ai"))
+        events.execute(ClientLoginEvent(client, name, ServerAIProvider, "ai"))
         val mapper = ObjectMapper()
         val interestingGames = mapper.readTree(mapper.writeValueAsString(mapOf("type" to "ClientGames",
             "gameTypes" to listOf(gameType), "maxGames" to 100

@@ -20,6 +20,8 @@ open class Client {
     @Deprecated("Change the client name to a feature")
     var name: String? = null
 
+    var playerId: String? = null
+
     fun connected() {}
 
     fun disconnected() {}

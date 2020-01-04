@@ -13,6 +13,7 @@ import net.zomis.games.dsl.DslTTT3D
 import net.zomis.games.ecs.UTTT
 import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.ais.TTTQLearn
+import net.zomis.games.server2.db.DBIntegration
 import net.zomis.games.server2.debug.AIGames
 import net.zomis.games.server2.games.*
 import net.zomis.games.server2.games.impl.ECSGameSystem
@@ -46,6 +47,9 @@ class ServerConfig {
 
     @Parameter(names = arrayOf("-wsPort"), description = "Port for websockets and API")
     var webSocketPort = 8081
+
+    @Parameter(names = ["-db"], description = "Use database")
+    var database = false
 
     @Parameter(names = arrayOf("-wsPortSSL"), description = "Port for websockets and API with SSL (only used if certificate options are set)")
     var webSocketPortSSL = 0
@@ -127,6 +131,9 @@ class Server2(val events: EventSystem) {
         features.add(InviteSystem()::setup)
         if (config.githubClient.isNotEmpty()) {
             LinAuth(javalin, config.webSocketPort, config.githubConfig()).register()
+        }
+        if (config.database) {
+            events.with(DBIntegration()::register)
         }
         features.add(AIGames()::setup)
         features.add(TVSystem()::register)

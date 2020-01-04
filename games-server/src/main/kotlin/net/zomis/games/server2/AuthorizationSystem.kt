@@ -6,7 +6,7 @@ import net.zomis.core.events.EventSystem
 import org.slf4j.LoggerFactory
 import java.util.*
 
-data class ClientLoginEvent(val client: Client, val loginName: String, val provider: String)
+data class ClientLoginEvent(val client: Client, val loginName: String, val provider: String, val token: String)
 
 class AuthorizationSystem {
 
@@ -20,14 +20,15 @@ class AuthorizationSystem {
     // Provides: ClientLoginEvent
 
     private val guestRandom = Random()
-    fun fetchGuestUser(events: EventSystem, client: Client) {
-        val loginName = "guest-" + guestRandom.nextInt(100000)
+    private fun fetchGuestUser(events: EventSystem, client: Client) {
+        val token: String = guestRandom.nextInt(100000).toString()
+        val loginName = "guest-$token"
         logger.info("$client with token (empty) is guest/$loginName")
         client.name = loginName
-        events.execute(ClientLoginEvent(client, loginName, "guest"))
+        events.execute(ClientLoginEvent(client, loginName, "guest", token))
     }
 
-    fun fetchGithubUser(events: EventSystem, client: Client, token: String) {
+    private fun fetchGithubUser(events: EventSystem, client: Client, token: String) {
         val api =
                 Fuel.get("https://api.github.com/user").header(Pair("Authorization", "token $token")).responseString()
         val jsonResult = mapper.readTree(api.third.get())
@@ -35,7 +36,7 @@ class AuthorizationSystem {
         val loginName = jsonResult.get("login").asText()
         logger.info("$client with token $token is https://github.com/$loginName")
         client.name = loginName
-        events.execute(ClientLoginEvent(client, loginName, "github"))
+        events.execute(ClientLoginEvent(client, loginName, "github", token))
     }
 
     fun register(events: EventSystem) {
