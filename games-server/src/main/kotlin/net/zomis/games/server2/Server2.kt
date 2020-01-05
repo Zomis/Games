@@ -189,7 +189,8 @@ object Main {
         try {
             if (configFile.exists()) {
                 logger.info("Using config file $configFile")
-                val fileArgs = configFile.readLines(Charsets.UTF_8).joinToString(" ").split(" ").toTypedArray()
+                val fileArgs = configFile.readLines(Charsets.UTF_8).joinToString(" ")
+                    .trim().split(" ").toTypedArray()
                 cmd.parse(*fileArgs)
             } else {
                 logger.info("Using config from command line")
