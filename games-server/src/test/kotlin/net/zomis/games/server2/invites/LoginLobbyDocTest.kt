@@ -22,7 +22,7 @@ class LoginLobbyDocTest {
                     it.data.getTextOrDefault("provider", "") == "test"
         }, {
             it.client.name = it.data.getTextOrDefault("name", "")
-            events.execute(ClientLoginEvent(it.client, it.client.name!!, "test"))
+            events.execute(ClientLoginEvent(it.client, it.client.name!!, "test", "token"))
         })
         val server2 = Server2(events)
         server2.start(testServerConfig())
