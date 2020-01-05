@@ -13,6 +13,7 @@ import net.zomis.games.server2.games.PlayerGameMoveRequest
 import net.zomis.games.server2.invites.InviteEvent
 import net.zomis.games.server2.invites.InviteResponseEvent
 import java.util.UUID
+import java.util.concurrent.Executors
 
 data class AIMoveRequest(val client: Client, val game: ServerGame)
 data class DelayedAIMoves(val moves: List<PlayerGameMoveRequest>)
@@ -20,6 +21,8 @@ data class DelayedAIMoves(val moves: List<PlayerGameMoveRequest>)
 val ServerAIProvider = "server-ai"
 
 class ServerAI(val gameType: String, val name: String, val perform: (game: ServerGame, playerIndex: Int) -> List<PlayerGameMoveRequest>) {
+    private val executor = Executors.newSingleThreadExecutor()
+
     fun register(events: EventSystem) {
         events.listen("ai move check $name", MoveEvent::class, {
             it.game.players.contains(client)
@@ -32,12 +35,14 @@ class ServerAI(val gameType: String, val name: String, val perform: (game: Serve
             events.execute(AIMoveRequest(client, it.game))
         })
         events.listen("ai move $name", AIMoveRequest::class, {it.client == client}, {
-            it.game.players.asSequence().forEachIndexed { index, client ->
-                if (client == this.client) {
-                    val aiMoves = perform.invoke(it.game, index)
-                    if (!aiMoves.isEmpty()) {
-                        events.execute(DelayedAIMoves(aiMoves))
-                    }
+            val playerIndex = it.game.players.indexOf(client)
+            if (playerIndex < 0) {
+                return@listen
+            }
+            executor.submit {
+                val aiMoves = perform.invoke(it.game, playerIndex)
+                if (!aiMoves.isEmpty()) {
+                    events.execute(DelayedAIMoves(aiMoves))
                 }
             }
         })
