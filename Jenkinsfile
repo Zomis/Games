@@ -59,8 +59,8 @@ pipeline {
 
                             def result = sh(script: """docker run -d --rm --name games_server -p 42638:42638 \
                               -e TZ=Europe/Amsterdam \
-                              -e AWS_SECRET_ACCESS_KEY=$ENV_AWS_SECRET_ACCESS_KEY
-                              -e AWS_ACCESS_KEY_ID=$ENV_AWS_ACCESS_KEY_ID
+                              -e AWS_SECRET_ACCESS_KEY=$ENV_AWS_SECRET_ACCESS_KEY \
+                              -e AWS_ACCESS_KEY_ID=$ENV_AWS_ACCESS_KEY_ID \
                               -v /etc/letsencrypt:/etc/letsencrypt \
                               -v /home/zomis/jenkins/gamesserver2:/data/logs \
                               -v /etc/localtime:/etc/localtime:ro \
