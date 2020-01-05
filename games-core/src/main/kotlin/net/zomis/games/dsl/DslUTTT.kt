@@ -3,10 +3,7 @@ package net.zomis.games.dsl
 import net.zomis.tttultimate.TTBase
 import net.zomis.tttultimate.TTFactories
 import net.zomis.tttultimate.TTPlayer
-import net.zomis.tttultimate.games.TTClassicController
-import net.zomis.tttultimate.games.TTClassicControllerWithGravity
-import net.zomis.tttultimate.games.TTController
-import net.zomis.tttultimate.games.TTUltimateController
+import net.zomis.tttultimate.games.*
 
 data class TTOptions(val m: Int, val n: Int, val k: Int)
 fun TTPlayer.index(): Int {
@@ -71,6 +68,19 @@ class DslTTT {
         }
         logic(ttLogic(grid))
         view(ttView(grid)) // TODO: Needs view improvements. (Logic can still work, perhaps...
+    }
+
+    val gameReversi = createGame<TTController>("Reversi") {
+        val grid = gridSpec<TTBase> {
+            size(model.game.sizeX, model.game.sizeY)
+            getter { x, y -> model.game.getSmallestTile(x, y)!! }
+        }
+        setup(Unit::class) {
+            defaultConfig { Unit }
+            init { TTOthello(8) }
+        }
+        logic(ttLogic(grid))
+        view(ttView(grid))
     }
 
     private val winner: (TTController) -> Int? = {

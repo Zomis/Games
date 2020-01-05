@@ -118,6 +118,7 @@ class Server2(val events: EventSystem) {
         events.with(DslGameSystem("TTT", DslTTT().game)::setup)
         events.with(DslGameSystem("Connect4", DslTTT().gameConnect4)::setup)
         events.with(DslGameSystem("UTTT", DslTTT().gameUTTT)::setup)
+        events.with(DslGameSystem("Reversi", DslTTT().gameReversi)::setup)
         events.with(DslGameSystem("TTT3D", DslTTT3D().game)::setup)
 
         features.add(SimpleMatchMakingSystem()::setup)
