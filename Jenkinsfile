@@ -51,12 +51,19 @@ pipeline {
 
                     // Deploy server
                     sh 'docker build . -t gamesserver2'
-                    sh """docker run -d --rm --name games_server -p 42638:42638 \
-                    -e TZ=Europe/Amsterdam \
-                    -v /etc/letsencrypt:/etc/letsencrypt \
-                    -v /home/zomis/jenkins/gamesserver2:/data/logs \
-                    -v /etc/localtime:/etc/localtime:ro \
-                    -w /data/logs gamesserver2"""
+                    withCredentials([usernamePassword(
+                         credentialsId: 'AWS_CREDENTIALS',
+                         passwordVariable: 'AWS_SECRET_ACCESS_KEY',
+                         usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
+                        sh """docker run -d --rm --name games_server -p 42638:42638 \
+                        -e TZ=Europe/Amsterdam \
+                        -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                        -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                        -v /etc/letsencrypt:/etc/letsencrypt \
+                        -v /home/zomis/jenkins/gamesserver2:/data/logs \
+                        -v /etc/localtime:/etc/localtime:ro \
+                        -w /data/logs gamesserver2"""
+                    }
 
                     // Deploy client
                     sh 'rm -rf /home/zomis/docker-volumes/games-vue-client'
