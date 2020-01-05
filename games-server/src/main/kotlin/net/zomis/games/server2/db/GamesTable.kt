@@ -141,8 +141,12 @@ S1  - TimeLastAction: Number (timestamp)
         }
     }
 
+    private fun dbEnabled(game: ServerGame): Boolean {
+        return game.gameMeta.database
+    }
+
     fun register(events: EventSystem): List<CreateTableRequest> {
-        events.listen("save game in Database", GameStartedEvent::class, {true}, {event ->
+        events.listen("save game in Database", GameStartedEvent::class, { dbEnabled(it.game) }, {event ->
             val playerIds = event.game.players
                 .map { it.playerId ?: throw IllegalStateException("Missing playerId for ${it.name}") }
             games.createGame(event.game, mapOf())
@@ -150,13 +154,13 @@ S1  - TimeLastAction: Number (timestamp)
                 gamePlayers.addPlayerInGame(event.game, index, playerId)
             }
         })
-        events.listen("save game move in Database", MoveEvent::class, {true}, {event ->
+        events.listen("save game move in Database", MoveEvent::class, { dbEnabled(it.game) }, {event ->
             games.addMove(event)
         })
-        events.listen("finish game in Database", GameEndedEvent::class, {true}, {event ->
+        events.listen("finish game in Database", GameEndedEvent::class, { dbEnabled(it.game) }, {event ->
             games.finishGame(event.game)
         })
-        events.listen("eliminate player in Database", PlayerEliminatedEvent::class, {true}, {event ->
+        events.listen("eliminate player in Database", PlayerEliminatedEvent::class, { dbEnabled(it.game) }, {event ->
             val result = event.winner.result
             gamePlayers.eliminatePlayer(event.game, event.player, result, event.position, "eliminated", mapOf())
         })

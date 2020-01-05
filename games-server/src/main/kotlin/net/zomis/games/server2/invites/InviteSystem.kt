@@ -6,6 +6,7 @@ import net.zomis.games.server2.*
 import net.zomis.games.server2.games.GameStartedEvent
 import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.games.GameType
+import net.zomis.games.server2.games.ServerGameOptions
 
 data class Invite(val host: Client, val awaiting: MutableList<Client>,
   val accepted: MutableList<Client>, val gameType: GameType, val id: String)
@@ -82,7 +83,7 @@ class InviteSystem {
             it.invite.accepted.add(it.source)
         })
         events.listen("start game on invite response", InviteResponseEvent::class, {it.accepted}, {
-            val game = it.invite.gameType.createGame()
+            val game = it.invite.gameType.createGame(ServerGameOptions(true))
             game.players.add(it.invite.host)
             game.players.addAll(it.invite.accepted)
             events.execute(GameStartedEvent(game))

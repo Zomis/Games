@@ -22,7 +22,8 @@ fun ServerGame.toJson(type: String): ObjectNode {
 }
 
 typealias GameId = UUID
-class ServerGame(val gameType: GameType, val gameId: String) {
+data class ServerGameOptions(val database: Boolean)
+class ServerGame(val gameType: GameType, val gameId: String, val gameMeta: ServerGameOptions) {
     var gameOver: Boolean = false
     val uuid = UUID.randomUUID()
 
@@ -66,9 +67,9 @@ class GameType(val type: String, events: EventSystem) {
         logger.info("$this has features $features")
     }
 
-    fun createGame(): ServerGame {
+    fun createGame(serverGameOptions: ServerGameOptions): ServerGame {
         val gameId = gameIdCounter.incrementAndGet().toString()
-        val game = ServerGame(this, gameId)
+        val game = ServerGame(this, gameId, serverGameOptions)
         runningGames[gameId] = game
         logger.info { "Create game with id $gameId of type $type" }
         return game
