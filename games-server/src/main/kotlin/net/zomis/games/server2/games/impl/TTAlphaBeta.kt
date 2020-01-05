@@ -21,11 +21,16 @@ class TTAlphaBeta(val level: Int) {
         val copied = when (game) {
             is TTOthello -> TTOthello()
             is TTUltimateController -> TTUltimateController(factories.ultimateMNK(3, 3, 3))
-            is TTClassicController -> TTClassicController(factories.classicMNK(3, 3, 3))
             is TTClassicControllerWithGravity -> TTClassicControllerWithGravity(factories.classicMNK(7, 6, 4))
+            is TTClassicController -> TTClassicController(factories.classicMNK(3, 3, 3))
             else -> throw IllegalArgumentException("$this is not able to copy $game")
         }
-        copied.makeMoves(history)
+        try {
+            copied.makeMoves(history)
+        } catch (e: Exception) {
+            logger.error(e, "Unable to repeat moves: $history in $copied")
+            throw e
+        }
         return copied
     }
 
