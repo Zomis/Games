@@ -49,18 +49,21 @@ const supportedGames = {
         routeProps: defaultRouteProps
     },
     "Connect4": {
+        enabled: false,
         dsl: false,
         store: Connect4state,
         component: Connect4,
         routeProps: defaultRouteProps
     },
     "UTTT": {
+        enabled: false,
         dsl: false,
         store: UTTTstate,
         component: UTTT,
         routeProps: defaultRouteProps
     },
     "UTTT-ECS": {
+        enabled: false,
         dsl: false,
         store: null,
         component: ECSGame,
