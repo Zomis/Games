@@ -1,7 +1,7 @@
 <template>
   <div class="game-dsl">
     <GameHead :gameInfo="gameInfo"></GameHead>
-    <Map2D :width="3" :height="3" :grid="view.board" :clickHandler="onClick">
+    <Map2D :width="width" :height="height" :grid="view.board" :clickHandler="onClick">
       <template v-slot:default="slotProps">
         <UrPiece
           :key="slotProps.key"
@@ -71,6 +71,14 @@ export default {
     }
   },
   computed: {
+    width() {
+      if (!this.view.board) { return 0 }
+      return this.view.board[0].length
+    },
+    height() {
+      if (!this.view.board) { return 0 }
+      return this.view.board.length
+    },
     ...mapState("DslGameState", {
       view(state) {
         return state.games[this.gameInfo.gameId].gameData.view;
@@ -81,14 +89,4 @@ export default {
 </script>
 <style>
 @import "../../assets/games-style.css";
-
-.connect4-board {
-  width: 448px;
-  height: 384px;
-}
-
-.game-connect4 .pieces {
-  grid-template-columns: repeat(7, 1fr);
-  grid-template-rows: repeat(6, 1fr);
-}
 </style>
