@@ -26,6 +26,12 @@ import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 import java.util.function.ToIntFunction
 
+private enum class AlphaBetaSpeedMode(val nameSuffix: String, val depthRemainingBonus: Double) {
+    NORMAL("", 0.0),
+    SLOW("_Evil", -0.01),
+    QUICK("_Nice", 0.01),
+}
+
 class ServerAIs {
 
     fun isDSLGameType(gameType: String) = gameType.startsWith("DSL")
@@ -70,9 +76,11 @@ class ServerAIs {
             ttGames.containsKey(it.gameType)
         }, {event ->
             val maxLevel = ttGames[event.gameType]!!
-            (0..maxLevel).forEach {level ->
-                createTTControllerAlphaBetaAI(event.gameType, events, level)
+            (0 until maxLevel).forEach {level ->
+                createTTControllerAlphaBetaAI(event.gameType, events, level, AlphaBetaSpeedMode.NORMAL)
             }
+            createTTControllerAlphaBetaAI(event.gameType, events, maxLevel, AlphaBetaSpeedMode.QUICK)
+            createTTControllerAlphaBetaAI(event.gameType, events, maxLevel, AlphaBetaSpeedMode.SLOW)
         })
 
         events.listen("register ServerAIs for Game of UR", GameTypeRegisterEvent::class, { it.gameType == "UR" }, {
@@ -106,14 +114,14 @@ class ServerAIs {
         })
     }
 
-    private fun createTTControllerAlphaBetaAI(gameType: String, events: EventSystem, level: Int) {
+    private fun createTTControllerAlphaBetaAI(gameType: String, events: EventSystem, level: Int, speedMode: AlphaBetaSpeedMode) {
         val alphaBeta = TTAlphaBeta(level)
-        ServerAI(gameType, "#AI_AlphaBeta_" + gameType + "_" + level) { game, index ->
+        ServerAI(gameType, "#AI_AlphaBeta_" + gameType + "_" + level + speedMode.nameSuffix) { game, index ->
             val model = game.obj as GameImpl<TTController>
             if (model.model.currentPlayer.playerIndex() != index) {
                 return@ServerAI emptyList()
             }
-            val move = alphaBeta.aiMove(model.model)
+            val move = alphaBeta.aiMove(model.model, speedMode.depthRemainingBonus)
             return@ServerAI listOf(PlayerGameMoveRequest(game, index, "play", Point(move.x, move.y)))
         }.register(events)
     }

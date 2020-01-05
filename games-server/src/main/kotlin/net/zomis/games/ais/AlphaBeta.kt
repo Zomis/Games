@@ -7,14 +7,15 @@ class AlphaBeta<S, A>(
     private val actions: (S) -> List<A>,
     val branching: (S, A) -> S,
     val terminalState: (S) -> Boolean,
-    val heuristic: (S) -> Double
+    val heuristic: (S) -> Double,
+    val depthRemainingBonus: Double = 0.0
 ) {
 
     private suspend fun alphaBeta(state: S, depth: Int, alpha: Double, beta: Double, maximizingPlayer: Boolean): Pair<A?, Double> {
         var newAlpha = alpha
         var newBeta = beta
         if (depth == 0 || terminalState(state)) {
-            return null to heuristic(state)
+            return null to heuristic(state) + depth * depthRemainingBonus
         }
 
         val availableActions = actions(state).toList()

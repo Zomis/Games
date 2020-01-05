@@ -68,7 +68,7 @@ class TTAlphaBeta(val level: Int) {
             .firstOrNull()
     }
 
-    fun aiMove(model: TTController): Point {
+    fun aiMove(model: TTController, depthRemainingBonus: Double): Point {
         val oppIndex = model.currentPlayer.playerIndex()
         val myPlayerIndex = model.currentPlayer.next().playerIndex()
         val heuristic: (TTController) -> Double = {state ->
@@ -98,7 +98,7 @@ class TTAlphaBeta(val level: Int) {
             }
             -result // TODO: Remove double-negations (wrong "myPlayer" and maybe also "opp")
         }
-        val ai = AlphaBeta(actions, branching, terminalState, heuristic)
+        val ai = AlphaBeta(actions, branching, terminalState, heuristic, depthRemainingBonus)
 
         val options = runBlocking {
             actions(model).pmap { action ->
