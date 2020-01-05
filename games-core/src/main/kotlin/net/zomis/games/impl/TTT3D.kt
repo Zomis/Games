@@ -11,10 +11,6 @@ enum class TTT3DPiece(val playerIndex: Int) {
     fun opponent(): TTT3DPiece = if (this == X) O else X
 }
 
-fun randomTTT3DPiece(): TTT3DPiece {
-    return listOf(TTT3DPiece.X, TTT3DPiece.O).random()
-}
-
 data class TTT3DPoint(val x: Int, val y: Int, val z: Int, var piece: TTT3DPiece?)
 
 data class TTT3DWinCondition(val pieces: List<TTT3DPoint>) {

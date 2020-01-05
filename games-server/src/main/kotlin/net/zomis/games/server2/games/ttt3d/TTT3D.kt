@@ -371,6 +371,10 @@ net.zomis.spring.games.impls.ur.MonteCarloAI@3590ccd
 
 }
 
+fun randomTTT3DPiece(): TTT3DPiece {
+    return listOf(TTT3DPiece.X, TTT3DPiece.O).random()
+}
+
 fun main(args: Array<String>) {
 //    val game = loadMap("XXO  |      | XO   | OX   /      | OXO  | OOOX |      / XX   | XXO  |      | OO   / OX   |      |      | XX   ")
     val io = TTT3DIO()
