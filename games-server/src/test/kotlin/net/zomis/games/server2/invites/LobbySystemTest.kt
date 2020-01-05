@@ -76,7 +76,7 @@ class LobbySystemTest {
 
     @Test
     fun testGameStartEnd() {
-        val game = ServerGame(GameType("A", events), "game-a-1")
+        val game = ServerGame(GameType("A", events), "game-a-1", ServerGameOptions(false))
         game.players.add(clientAB2)
         game.players.add(clientA1)
         events.execute(GameStartedEvent(game))
