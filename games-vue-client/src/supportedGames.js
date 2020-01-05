@@ -33,6 +33,16 @@ const supportedGames = {
         component: RoyalGameOfUR,
         routeProps: defaultRouteProps
     },
+    "DSL-Connect4": {
+        dsl: true,
+        component: DSLTTT,
+        routeProps: defaultRouteProps
+    },
+    "DSL-Reversi": {
+        dsl: true,
+        component: DSLTTT,
+        routeProps: defaultRouteProps
+    },
     "DSL-TTT3D": {
         dsl: true,
         component: TTT3D,
