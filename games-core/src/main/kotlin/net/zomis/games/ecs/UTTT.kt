@@ -2,6 +2,7 @@ package net.zomis.games.ecs
 
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
+import net.zomis.games.WinResult
 import net.zomis.games.core.*
 
 data class ActiveBoard(var active: Tile?): DataComponent()
@@ -81,7 +82,7 @@ class UTTT {
             checkWinner(it.actionable.component(Parent::class).parent)
             val winner = checkWinner(it.actionable.world.core)
             if (winner != null) {
-                core.component(Players::class).eliminate(winner.index, WinStatus.WIN).eliminateRemaining(WinStatus.LOSS)
+                core.component(Players::class).eliminate(winner.index, WinResult.WIN).eliminateRemaining(WinResult.LOSS)
             }
         })
     }
