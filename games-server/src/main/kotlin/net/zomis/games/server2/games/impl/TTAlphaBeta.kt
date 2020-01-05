@@ -9,6 +9,7 @@ import net.zomis.games.dsl.Point
 import net.zomis.tttultimate.TTFactories
 import net.zomis.tttultimate.TTPlayer
 import net.zomis.tttultimate.TTWinCondition
+import net.zomis.tttultimate.Winnable
 import net.zomis.tttultimate.games.*
 
 class TTAlphaBeta(val level: Int) {
@@ -51,6 +52,22 @@ class TTAlphaBeta(val level: Int) {
     private fun TTWinCondition.emptySpaces(): Int {
         return this.hasCurrently(TTPlayer.NONE)
     }
+
+    fun missingForWin(winCondition: TTWinCondition, player: TTPlayer, required: Int): Int? {
+        fun missingInWindow(winnables: List<Winnable>): Int? {
+            if (winnables.any { it.wonBy == player.next() || it.wonBy == TTPlayer.BLOCKED }) {
+                return null
+            }
+            return winnables.count { it.wonBy == TTPlayer.NONE }
+        }
+        return winCondition.toList().windowed(required, 1, false)
+            .map { it to missingInWindow(it) }
+            .filter { it.second != null }
+            .bestBy { -it.second!!.toDouble() }
+            .map { it.second }
+            .firstOrNull()
+    }
+
     fun aiMove(model: TTController): Point {
         val oppIndex = model.currentPlayer.playerIndex()
         val myPlayerIndex = model.currentPlayer.next().playerIndex()
@@ -67,8 +84,13 @@ class TTAlphaBeta(val level: Int) {
                         it.wonBy.toWinResult(myPlayerIndex).result - it.wonBy.toWinResult(oppIndex).result
                     } / 10.0 // Divide by 10 to work with lower numbers
                 } else {
-                    val myWins = state.game.winConds.filter { it.isWinnable(me) }.groupBy { it.emptySpaces() }.mapValues { it.value.size }
-                    val opWins = state.game.winConds.filter { it.isWinnable(opp) }.groupBy { it.emptySpaces() }.mapValues { it.value.size }
+                    fun groupBy(who: TTPlayer): (TTWinCondition) -> Int? = {
+                        if (model is TTClassicControllerWithGravity) {
+                            missingForWin(it, who, 4)
+                        } else { it.emptySpaces() }
+                    }
+                    val myWins = state.game.winConds.filter { it.isWinnable(me) }.groupBy(groupBy(me)).mapValues { it.value.size }
+                    val opWins = state.game.winConds.filter { it.isWinnable(opp) }.groupBy(groupBy(opp)).mapValues { it.value.size }
                     val positive = (myWins[1]?:0) * 4 + (myWins[2]?:0) * 2 + (myWins[3]?:0) * 0.1
                     val negative = (opWins[1]?:0) * 4 + (opWins[2]?:0) * 2 + (opWins[3]?:0) * 0.1
                     positive - negative
