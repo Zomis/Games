@@ -65,7 +65,7 @@ class ServerAIs {
                 createTTT3DAlphaBeta(event.gameType, events, level)
             }
         })
-        val ttGames = mapOf("DSL-TTT" to 9, "DSL-Connect4" to 5, "DSL-UTTT" to 3, "DSL-Reversi" to 5)
+        val ttGames = mapOf("DSL-TTT" to 6, "DSL-Connect4" to 5, "DSL-UTTT" to 3, "DSL-Reversi" to 5)
         events.listen("register AlphaBeta for TTController-games", GameTypeRegisterEvent::class, {
             ttGames.containsKey(it.gameType)
         }, {event ->
