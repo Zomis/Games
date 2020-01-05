@@ -33,9 +33,14 @@ class LobbySystem {
             // set interesting games
             // set max number of concurrent games (defaults to 1, -1 = Infinite)
             val message = newClientMessage(it.client, interestingGameTypes)
-            interestingGameTypes.flatMap { gt -> gameTypes[gt]!!.clients }.toSet().send(message)
+            interestingGameTypes.flatMap { gt ->
+                if (gameTypes[gt] == null) {
+                    logger.warn("Client requested gameType $gt which does not exist.")
+                }
+                gameTypes[gt]?.clients ?: emptyList<Client>()
+            }.toSet().send(message)
             interestingGameTypes.forEach { gt ->
-                gameTypes[gt]!!.clients.add(it.client)
+                gameTypes[gt]?.clients?.add(it.client)
             }
         })
 
