@@ -93,6 +93,7 @@ S1  - TimeLastAction: Number (timestamp)
         val gameType = "GameType"
         val finishedState = "GameState"
         val timeLastAction = "TimeLastAction"
+        val timeStarted = "TimeStarted"
         val options = "Options"
         val moves = "Moves"
         val table = MyTable(dynamoDB, tableName).strings(gameId, gameType).numbers(finishedState)
@@ -104,6 +105,7 @@ S1  - TimeLastAction: Number (timestamp)
                 .withAttributeUpdate(
                     AttributeUpdate(this.gameType).put(game.gameType.type),
                     AttributeUpdate(this.finishedState).put(GameState.HIDDEN.value),
+                    AttributeUpdate(this.timeStarted).put(Instant.now().epochSecond),
                     AttributeUpdate(this.options).put(options)
                 )
             table.table.updateItem(update)
