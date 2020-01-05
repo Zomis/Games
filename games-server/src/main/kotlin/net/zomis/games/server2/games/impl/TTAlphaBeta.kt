@@ -47,6 +47,7 @@ class TTAlphaBeta(val level: Int) {
         return this.hasCurrently(TTPlayer.NONE)
     }
     fun aiMove(model: TTController): Point {
+        val oppIndex = model.currentPlayer.playerIndex()
         val myPlayerIndex = model.currentPlayer.next().playerIndex()
         val heuristic: (TTController) -> Double = {state ->
             val opp = model.currentPlayer // 'I' just played so it's opponent's turn
@@ -56,11 +57,17 @@ class TTAlphaBeta(val level: Int) {
                 val winStatus = state.wonBy.toWinResult(myPlayerIndex)
                 result = winStatus.result * 100
             } else {
-                val myWins = state.game.winConds.filter { it.isWinnable(me) }.groupBy { it.emptySpaces() }.mapValues { it.value.size }
-                val opWins = state.game.winConds.filter { it.isWinnable(opp) }.groupBy { it.emptySpaces() }.mapValues { it.value.size }
-                val positive = (myWins[1]?:0) * 4 + (myWins[2]?:0) * 2 + (myWins[3]?:0) * 0.1
-                val negative = (opWins[1]?:0) * 4 + (opWins[2]?:0) * 2 + (opWins[3]?:0) * 0.1
-                result = positive - negative
+                result = if (model is TTOthello) {
+                    state.game.subs().sumByDouble {
+                        it.wonBy.toWinResult(myPlayerIndex).result - it.wonBy.toWinResult(oppIndex).result
+                    } / 10.0 // Divide by 10 to work with lower numbers
+                } else {
+                    val myWins = state.game.winConds.filter { it.isWinnable(me) }.groupBy { it.emptySpaces() }.mapValues { it.value.size }
+                    val opWins = state.game.winConds.filter { it.isWinnable(opp) }.groupBy { it.emptySpaces() }.mapValues { it.value.size }
+                    val positive = (myWins[1]?:0) * 4 + (myWins[2]?:0) * 2 + (myWins[3]?:0) * 0.1
+                    val negative = (opWins[1]?:0) * 4 + (opWins[2]?:0) * 2 + (opWins[3]?:0) * 0.1
+                    positive - negative
+                }
             }
             -result // TODO: Remove double-negations (wrong "myPlayer" and maybe also "opp")
         }
