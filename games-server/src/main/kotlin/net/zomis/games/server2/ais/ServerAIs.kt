@@ -10,18 +10,18 @@ import net.zomis.aiscores.ScoreParameters
 import net.zomis.aiscores.ScoreStrategy
 import net.zomis.aiscores.extra.ScoreUtils
 import net.zomis.core.events.EventSystem
-import net.zomis.games.dsl.PlayerIndex
 import net.zomis.games.dsl.Point
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.impl.TTT3D
 import net.zomis.games.server2.games.GameTypeRegisterEvent
 import net.zomis.games.server2.games.PlayerGameMoveRequest
 import net.zomis.games.server2.games.ServerGame
+import net.zomis.games.server2.games.impl.TTAlphaBeta
+import net.zomis.games.server2.games.impl.playerIndex
 import net.zomis.games.server2.games.ttt3d.TTT3DIO
 import net.zomis.games.ur.RoyalGameOfUr
 import net.zomis.games.ur.ais.MonteCarloAI
 import net.zomis.tttultimate.games.TTController
-import java.util.*
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 import java.util.function.ToIntFunction
@@ -65,6 +65,16 @@ class ServerAIs {
                 createTTT3DAlphaBeta(event.gameType, events, level)
             }
         })
+        val ttGames = mapOf("DSL-TTT" to 9, "DSL-Connect4" to 5, "DSL-UTTT" to 3, "DSL-Reversi" to 5)
+        events.listen("register AlphaBeta for TTController-games", GameTypeRegisterEvent::class, {
+            ttGames.containsKey(it.gameType)
+        }, {event ->
+            val maxLevel = ttGames[event.gameType]!!
+            (0..maxLevel).forEach {level ->
+                createTTControllerAlphaBetaAI(event.gameType, events, level)
+            }
+        })
+
         events.listen("register ServerAIs for Game of UR", GameTypeRegisterEvent::class, { it.gameType == "UR" }, {
             createURAI(events, "#AI_KFE521S3", RoyalGameOfUrAIs.scf()
                 .withScorer(knockout, 5.0)
@@ -94,6 +104,18 @@ class ServerAIs {
             XYScorer("Connect4", "#AI_C4_Random", ScoreConfigFactory(), XYScoreStrategy(7, 6, ttAllowed)).create(events)
             XYScorer("UTTT", "#AI_UTTT_Random", ScoreConfigFactory(), XYScoreStrategy(9, 9, ttAllowed)).create(events)
         })
+    }
+
+    private fun createTTControllerAlphaBetaAI(gameType: String, events: EventSystem, level: Int) {
+        val alphaBeta = TTAlphaBeta(level)
+        ServerAI(gameType, "#AI_AlphaBeta_" + gameType + "_" + level) { game, index ->
+            val model = game.obj as GameImpl<TTController>
+            if (model.model.currentPlayer.playerIndex() != index) {
+                return@ServerAI emptyList()
+            }
+            val move = alphaBeta.aiMove(model.model)
+            return@ServerAI listOf(PlayerGameMoveRequest(game, index, "play", Point(move.x, move.y)))
+        }.register(events)
     }
 
     private fun createTTT3DAlphaBeta(gameType: String, events: EventSystem, level: Int) {
@@ -127,7 +149,7 @@ class ServerAIs {
         val mapper = ObjectMapper()
 
         fun positionToMove(game: T): Pair<Int, Int>? {
-            val best = ScoreUtils.pickBest(producer, game, Random())
+            val best = ScoreUtils.pickBest(producer, game, java.util.Random())
                     ?: return null
             return best.field
         }

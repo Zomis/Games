@@ -66,10 +66,10 @@ class TTControllerSystem(val gameType: String, private val controller: () -> TTC
 
 }
 
-private fun TTPlayer.toWinResult(playerIndex: Int): WinResult {
+fun TTPlayer.toWinResult(playerIndex: Int): WinResult {
     return when {
-        this.ordinal == playerIndex -> WinResult.WIN
         this == TTPlayer.BLOCKED -> WinResult.DRAW
+        this.playerIndex() == playerIndex -> WinResult.WIN
         else -> WinResult.LOSS
     }
 }
