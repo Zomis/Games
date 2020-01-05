@@ -67,9 +67,12 @@ class ServerAIs {
             }.register(events)
         })
         events.listen("register AlphaBeta for TTT3D", GameTypeRegisterEvent::class, { it.gameType == "DSL-TTT3D" }, {event ->
-            (0..5).forEach {level ->
-                createTTT3DAlphaBeta(event.gameType, events, level)
+            val maxLevel = 5
+            (0 until maxLevel).forEach {level ->
+                createTTT3DAlphaBeta(event.gameType, events, level, AlphaBetaSpeedMode.NORMAL)
             }
+            createTTT3DAlphaBeta(event.gameType, events, maxLevel, AlphaBetaSpeedMode.QUICK)
+            createTTT3DAlphaBeta(event.gameType, events, maxLevel, AlphaBetaSpeedMode.SLOW)
         })
         val ttGames = mapOf("DSL-TTT" to 6, "DSL-Connect4" to 5, "DSL-UTTT" to 3, "DSL-Reversi" to 5)
         events.listen("register AlphaBeta for TTController-games", GameTypeRegisterEvent::class, {
@@ -126,13 +129,13 @@ class ServerAIs {
         }.register(events)
     }
 
-    private fun createTTT3DAlphaBeta(gameType: String, events: EventSystem, level: Int) {
-        ServerAI(gameType, "#AI_AlphaBeta_" + gameType + "_" + level) { game, index ->
+    private fun createTTT3DAlphaBeta(gameType: String, events: EventSystem, level: Int, speedMode: AlphaBetaSpeedMode) {
+        ServerAI(gameType, "#AI_AlphaBeta_" + gameType + "_" + level + speedMode.nameSuffix) { game, index ->
             val model = game.obj as GameImpl<TTT3D>
             if (model.model.currentPlayer.playerIndex != index) {
                 return@ServerAI emptyList()
             }
-            val move = TTT3DIO().alphaBeta(model.model, level)
+            val move = TTT3DIO().alphaBeta(model.model, level, speedMode.depthRemainingBonus)
             return@ServerAI listOf(PlayerGameMoveRequest(game, index, "play", Point(move.x, move.y)))
         }.register(events)
     }

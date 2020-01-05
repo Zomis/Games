@@ -206,7 +206,7 @@ class TTT3DIO {
         return state.winConditions.any { it.contains(field) && it.canWin(opponent) && it.emptySpaces() == 1 }
     }
 
-    fun alphaBeta(game: TTT3D, depth: Int): TTT3DPoint {
+    fun alphaBeta(game: TTT3D, depth: Int, depthRemainingBonus: Double = 0.0): TTT3DPoint {
         val actions: (TTT3D) -> List<TTT3DPoint> = lambda@{ state ->
             val allFields = scorerStrategy.fieldsToScoreInGame(state).toList()
             val canWin = allFields.filter { canWin(state, it) }
@@ -240,7 +240,8 @@ class TTT3DIO {
             }
             -result.toDouble()
         }
-        val ab = AlphaBeta<TTT3D, TTT3DPoint>(actions, branching, { it.findWinner() != null || it.isDraw()}, heuristic)
+        val ab = AlphaBeta(actions, branching, { it.findWinner() != null || it.isDraw()},
+            heuristic, depthRemainingBonus)
 
         val options = runBlocking {
             actions(game).pmap { action ->
@@ -249,9 +250,9 @@ class TTT3DIO {
             }.toList()
         }
 
-//        println("Scores for AlphaBeta $depth")
 //        printScores(game, scorers.config().withScorer(scorerAlphaBeta(options)))
         val move = options.bestBy { it.second }.random() //options.maxBy { it.second }!!
+        println("Scores for AlphaBeta $depth: $options. Best is $move")
 
         return move.first
     }
