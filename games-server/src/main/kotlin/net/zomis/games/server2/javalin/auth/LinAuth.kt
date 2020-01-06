@@ -16,7 +16,7 @@ import java.util.*
 
 data class GithubAuthRequest(val clientId: String, val redirectUri: String, val code: String, val state: String?)
 
-class LinAuth(val javalin: Javalin, val port: Int, val githubConfig: OAuthConfig) {
+class LinAuth(val javalin: Javalin, val githubConfig: OAuthConfig) {
 
     private val logger = LoggerFactory.getLogger(LinAuth::class.java)
 
@@ -31,9 +31,7 @@ class LinAuth(val javalin: Javalin, val port: Int, val githubConfig: OAuthConfig
 
         JavalinJackson.configure(mapper)
         val app = javalin
-            .enableCorsForOrigin("http://localhost:8080", "https://games.zomis.net")
             .apply {
-                port(port)
                 post("/auth/github") {
                     logger.info(it.toString())
                     val params = it.bodyAsClass(GithubAuthRequest::class.java)
@@ -53,7 +51,7 @@ class LinAuth(val javalin: Javalin, val port: Int, val githubConfig: OAuthConfig
 
                     it.result(mapper.writeValueAsString(resultJson))
                 }
-            }.start()
+            }
         logger.info("LinAuth started: $app")
     }
 

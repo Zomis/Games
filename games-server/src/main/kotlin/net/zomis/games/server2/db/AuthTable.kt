@@ -94,4 +94,9 @@ class AuthTable(private val dynamoDB: AmazonDynamoDB) {
         logger.info("Update ${event.client.name}. Adding as $uuid. Update result $updateResult")
     }
 
+    fun fetchPlayerView(playerId: String): GamesTables.PlayerView? {
+        val item = this.myTable.table.query(this.playerId, playerId).firstOrNull() ?: return null
+        return GamesTables.PlayerView(playerId, item.getString(this.playerName))
+    }
+
 }

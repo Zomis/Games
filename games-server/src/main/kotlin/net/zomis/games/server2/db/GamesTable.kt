@@ -5,14 +5,13 @@ import com.amazonaws.services.dynamodbv2.document.AttributeUpdate
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap
 import com.amazonaws.services.dynamodbv2.model.*
-import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.common.convertToDBFormat
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.server2.PlayerId
 import net.zomis.games.server2.games.*
+import java.math.BigDecimal
 import java.time.Instant
 
 enum class GameState(val value: Int) {
@@ -21,6 +20,8 @@ enum class GameState(val value: Int) {
     PUBLIC(1),
     ;
 }
+
+class BadReplayException(message: String): Exception(message)
 
 class GamesTables(private val dynamoDB: AmazonDynamoDB) {
     /*
@@ -179,4 +180,44 @@ S1  - TimeLastAction: Number (timestamp)
         return listOf(gamePlayers.table.createTableRequest(), games.table.createTableRequest())
     }
 
+    data class MoveHistory(val moveType: String, val playerIndex: Int, val move: Map<String, Any>?, val state: Map<String, Any>?)
+    data class PlayerView(val playerId: String, val name: String)
+    data class PlayerInGame(val player: PlayerView?, val playerIndex: Int, val result: Double,
+            val resultPosition: Int, val resultReason: String, val score: Map<String, Any?>)
+    fun fetchGame(gameId: String): DBGame? {
+        val playersInGameItems = this.gamePlayers.table.table.query(gamePlayers.gameId, gameId)
+        val playersInGame = playersInGameItems.map {
+            val playerId = it.getString(gamePlayers.playerId)
+            val playerView = AuthTable(dynamoDB).fetchPlayerView(playerId)
+            val score = it.getMap<Any?>(gamePlayers.score)
+            PlayerInGame(playerView, it.getInt(gamePlayers.playerIndex),
+                    it.getDouble(gamePlayers.result), it.getInt(gamePlayers.resultPosition),
+                    it.getString(gamePlayers.resultReason), score)
+        }
+        println("$gameId returned $playersInGame")
+
+        val gameItem = this.games.table.table.getItem(games.gameId, gameId) ?: return null
+        val moves = gameItem.getList("moves") ?: gameItem.getList<Map<String, Any>>("Moves")
+        val moveHistory = moves.map {
+            MoveHistory(
+                it["moveType"] as String,
+                (it["playerIndex"] as BigDecimal).toInt(),
+                it["move"] as Map<String, Any>?,
+                it["state"] as Map<String, Any>?
+            )
+        }
+        val gameType = gameItem.getString(games.gameType)
+        val gameState = gameItem.getInt(games.finishedState)
+        val timeStarted = gameItem.getLong(games.timeStarted)
+        val timeLastAction = gameItem.getLong(games.timeLastAction)
+
+        return DBGame(gameId, playersInGame, gameType, gameState, timeStarted, timeLastAction, moveHistory)
+//        AuthTable(dynamoDB).userLookup(playerIds)
+    }
+
+
+}
+
+fun main(args: Array<String>) {
+    GamesTables(DBIntegration().dynamoDB).fetchGame("6b7e286a-ebcd-45eb-8277-b0c94a5e05fc")
 }

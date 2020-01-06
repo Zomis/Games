@@ -40,6 +40,10 @@ class DBIntegration {
         }
     }
 
+    fun loadGame(gameId: String): DBGame? {
+        return GamesTables(dynamoDB).fetchGame(gameId)
+    }
+
 }
 
 data class MyIndex(

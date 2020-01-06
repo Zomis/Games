@@ -95,6 +95,7 @@ class Server2(val events: EventSystem) {
 
     fun start(config: ServerConfig): Server2 {
         val javalin = JavalinFactory.javalin(config)
+            .enableCorsForOrigin("http://localhost:8080", "https://games.zomis.net")
         logger.info("Configuring Javalin at port ${config.webSocketPort} (SSL ${config.webSocketPortSSL})")
 
         Runtime.getRuntime().addShutdownHook(Thread { events.execute(ShutdownEvent("runtime shutdown hook")) })
@@ -133,10 +134,12 @@ class Server2(val events: EventSystem) {
         events.with { e -> ServerAIs().register(e, executor) }
         features.add(InviteSystem()::setup)
         if (config.githubClient.isNotEmpty()) {
-            LinAuth(javalin, config.webSocketPort, config.githubConfig()).register()
+            LinAuth(javalin, config.githubConfig()).register()
         }
         if (config.database) {
-            events.with(DBIntegration()::register)
+            val dbIntegration = DBIntegration()
+            events.with(dbIntegration::register)
+            LinReplay(dbIntegration).setup(javalin)
         }
         features.add(AIGames()::setup)
         features.add(TVSystem()::register)
