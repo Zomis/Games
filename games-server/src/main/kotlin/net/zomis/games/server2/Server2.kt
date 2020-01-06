@@ -10,6 +10,7 @@ import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
 import net.zomis.games.dsl.DslTTT
 import net.zomis.games.dsl.DslTTT3D
+import net.zomis.games.dsl.DslUR
 import net.zomis.games.ecs.UTTT
 import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.ais.TTTQLearn
@@ -120,6 +121,7 @@ class Server2(val events: EventSystem) {
         events.with(DslGameSystem("UTTT", DslTTT().gameUTTT)::setup)
         events.with(DslGameSystem("Reversi", DslTTT().gameReversi)::setup)
         events.with(DslGameSystem("TTT3D", DslTTT3D().game)::setup)
+        events.with(DslGameSystem("UR", DslUR().gameUR)::setup)
 
         features.add(SimpleMatchMakingSystem()::setup)
         events.with(ServerConsole()::register)

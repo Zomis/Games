@@ -15,6 +15,7 @@ interface GameLogic<T : Any> {
 
 interface ReplayScope {
     fun state(key: String): Any
+    fun fullState(key: String): Any?
 }
 interface EffectScope {
     fun state(key: String, value: Any)
@@ -31,5 +32,6 @@ interface ActionScope<T : Any, P : Any> {
 
     fun allowed(condition: (Action<T, P>) -> Boolean)
     fun effect(effect: EffectScope.(Action<T, P>) -> Unit)
+    fun replayEffect(effect: ReplayScope.(Action<T, P>) -> Unit)
 
 }

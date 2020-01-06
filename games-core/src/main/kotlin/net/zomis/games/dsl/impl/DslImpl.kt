@@ -67,12 +67,16 @@ class GameLogicActionTypeUnit<T : Any>(override val actionType: String, private 
           private val replayState: ReplayState): ActionScope<T, Unit>, GameLogicActionType<T, Unit> {
     var allowedCheck: (Action<T, Unit>) -> Boolean = { true }
     lateinit var effect: EffectScope.(Action<T, Unit>) -> Unit
+    var replayEffect: (ReplayScope.(Action<T, Unit>) -> Unit)? = null
 
     override fun allowed(condition: (Action<T, Unit>) -> Boolean) {
         this.allowedCheck = condition
     }
     override fun effect(effect: EffectScope.(Action<T, Unit>) -> Unit) {
         this.effect = effect
+    }
+    override fun replayEffect(effect: ReplayScope.(Action<T, Unit>) -> Unit) {
+        this.replayEffect = effect
     }
     override fun actionAllowed(action: Actionable<T, Unit>): Boolean {
         return this.allowedCheck(createAction(action.playerIndex, action.parameter))
@@ -97,6 +101,7 @@ class GameLogicActionTypeSimple<T : Any, P : Any>(override val actionType: Strin
         private val options: Iterable<P>,
         private val replayState: ReplayState): ActionScope<T, P>, GameLogicActionType<T, P> {
     var allowedCheck: (Action<T, P>) -> Boolean = { true }
+    var replayEffect: (ReplayScope.(Action<T, P>) -> Unit)? = null
     lateinit var effect: EffectScope.(Action<T, P>) -> Unit
 
     override fun allowed(condition: (Action<T, P>) -> Boolean) {
@@ -104,6 +109,9 @@ class GameLogicActionTypeSimple<T : Any, P : Any>(override val actionType: Strin
     }
     override fun effect(effect: EffectScope.(Action<T, P>) -> Unit) {
         this.effect = effect
+    }
+    override fun replayEffect(effect: ReplayScope.(Action<T, P>) -> Unit) {
+        this.replayEffect = effect
     }
     override fun actionAllowed(action: Actionable<T, P>): Boolean {
         return this.allowedCheck(createAction(action.playerIndex, action.parameter))
@@ -218,6 +226,14 @@ class GameViewContext<T : Any>(val model: T, override val viewer: PlayerIndex, p
         return viewResult.toMap()
     }
 
+    override fun value(key: String, value: (T) -> Any?) {
+        this.viewResult[key] = value(model)
+    }
+
+    override fun state(key: String, function: ReplayScope.(T) -> Any?) {
+        this.viewResult[key] = function(replayState, model)
+    }
+
     override fun currentPlayer(function: (T) -> Int) {
         viewResult["currentPlayer"] = function(model)
     }
@@ -241,13 +257,17 @@ class GameViewContext<T : Any>(val model: T, override val viewer: PlayerIndex, p
 }
 
 class ReplayState: EffectScope, ReplayScope {
-    private val map = mutableMapOf<String, Any>()
+    private val currentAction = mutableMapOf<String, Any>()
+    private val mostRecent = mutableMapOf<String, Any>()
 
     override fun state(key: String, value: Any) {
-        map[key] = value
+        mostRecent[key] = value
+        currentAction[key] = value
     }
 
-    override fun state(key: String): Any = map[key] ?: throw IllegalStateException("State '$key' not found")
+    override fun fullState(key: String): Any? = mostRecent[key]
+
+    override fun state(key: String): Any = currentAction[key] ?: throw IllegalStateException("State '$key' not found")
 }
 
 class GameDslContext<T : Any> : GameDsl<T> {

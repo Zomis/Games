@@ -38,7 +38,7 @@ class RoyalGameOfUr {
         get() = roll > 0
 
     val piecesCopy: Array<IntArray>
-        get() = this.pieces.map({ arr -> arr.copyOf() }).toTypedArray()
+        get() = this.pieces.map { arr -> arr.copyOf() }.toTypedArray()
 
     val isFinished: Boolean
         get() = winner != NO_WINNER
@@ -193,10 +193,10 @@ class RoyalGameOfUr {
         val op = 1 - cp
 
         var result: Long = 0
-        val numberHome1 = pieces[cp].filter({ i -> i == 0 }).count()
-        val numberHome2 = pieces[op].filter({ i -> i == 0 }).count()
-        val numberGoal1 = pieces[cp].filter({ i -> i == EXIT }).count()
-        val numberGoal2 = pieces[op].filter({ i -> i == EXIT }).count()
+        val numberHome1 = pieces[cp].filter { i -> i == 0 }.count()
+        val numberHome2 = pieces[op].filter { i -> i == 0 }.count()
+        val numberGoal1 = pieces[cp].filter { i -> i == EXIT }.count()
+        val numberGoal2 = pieces[op].filter { i -> i == EXIT }.count()
         var dice = roll - 1 // 1..4 --> 0..3
         if (isFinished) {
             dice = 0

@@ -34,7 +34,7 @@ class DslRandomPlayTest {
     }
 
     @ParameterizedTest(name = "Random play {0}")
-    @ValueSource(strings = ["TTT", "UTTT", "Connect4", "TTT3D"])
+    @ValueSource(strings = ["TTT", "UTTT", "Connect4", "TTT3D", "Reversi", "UR"])
     fun dsl(gameName: String) {
         val dslGame = "DSL-$gameName"
         val p1 = WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket"))
@@ -70,8 +70,14 @@ class DslRandomPlayTest {
         val game = server!!.gameSystem.getGameType(dslGame)!!.runningGames["1"]!!
         val gameImpl = game.obj as GameImpl<*>
         val playerRange = 0 until game.players.size
+        var actionCounter = 0
 
         while (!gameImpl.isGameOver()) {
+            actionCounter++
+            if (actionCounter % 10 == 0) {
+                p1.sendAndExpectResponse("""{ "gameType": "$dslGame", "gameId": "1", "type": "ViewRequest" }""")
+                p1.expectJsonObject { it.getText("type") == "GameView" }
+            }
             val actions = playerRange.mapNotNull {playerIndex ->
                 ServerAIs().randomAction(game, playerIndex).firstOrNull()
             }
