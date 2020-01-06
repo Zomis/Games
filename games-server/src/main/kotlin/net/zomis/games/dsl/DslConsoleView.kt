@@ -23,12 +23,8 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
     }
 
     fun queryInput(game: GameImpl<T>, scanner: Scanner): Boolean {
-
-        println("Who is playing?")
-        val playerIndex = scanner.nextLine().toInt()
-
-        println("Available actions is: ${game.availableActionTypes()}. Choose your action:")
-        val actionType = scanner.nextLine()
+        println("Available actions is: ${game.availableActionTypes()}. Who is playing and what is your action?")
+        val (playerIndex, actionType) = scanner.nextLine().split(" ")
         val actionLogic = game.actionType<Any>(actionType)
         if (actionLogic == null) {
             println("Invalid action")
@@ -36,18 +32,23 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
         }
 
         val actionParameterClass = game.actionParameter(actionType)
-        val action: Actionable<T, Any>?
-        if (actionParameterClass == Point::class) {
-            println("Enter position where you want to play")
-            val x = scanner.nextLine().toInt()
-            val y = scanner.nextLine().toInt()
-            action = actionLogic.createAction(playerIndex, Point(x, y))
-        } else {
-            val options = actionLogic.availableActions(playerIndex).toList()
-            options.forEachIndexed { index, actionable -> println("$index. $actionable") }
-            println("Choose your action.")
-            val actionIndex = scanner.nextLine().toInt()
-            action = options.getOrNull(actionIndex)
+        val action: Actionable<T, Any>? = when (actionParameterClass) {
+            Point::class -> {
+                println("Enter position where you want to play")
+                val x = scanner.nextLine().toInt()
+                val y = scanner.nextLine().toInt()
+                actionLogic.createAction(playerIndex.toInt(), Point(x, y))
+            }
+            else -> {
+                val options = actionLogic.availableActions(playerIndex.toInt()).toList()
+                options.forEachIndexed { index, actionable -> println("$index. $actionable") }
+                if (options.size == 1) { options.getOrNull(0) }
+                else {
+                    println("Choose your action.")
+                    val actionIndex = scanner.nextLine().toIntOrNull()
+                    options.getOrNull(actionIndex ?: -1)
+                }
+            }
         }
         if (action == null) {
             println("Not a valid action.")
@@ -62,6 +63,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
     }
 
     fun showView(game: GameImpl<T>) {
+        println()
         println(game.view(0))
     }
 
