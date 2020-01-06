@@ -16,9 +16,10 @@ class GameModelContext<T, C> : GameModel<T, C> {
     }
 }
 
-class GameLogicActionType2D<T : Any, P : Any>(override val actionType: String, private val model: T, grid: GridDsl<T, P>): GameLogic2D<T, P>, GameLogicActionType<T, Point> {
+class GameLogicActionType2D<T : Any, P : Any>(override val actionType: String, private val model: T, grid: GridDsl<T, P>,
+          private val replayState: ReplayState): Action2DScope<T, P>, GameLogicActionType<T, Point> {
     var allowedCheck: (Action2D<T, P>) -> Boolean = { true }
-    lateinit var effect: (Action2D<T, P>) -> Unit
+    lateinit var effect: EffectScope.(Action2D<T, P>) -> Unit
     val gridSpec = GameGridBuilder<T, P>(model)
     init {
         grid(gridSpec)
@@ -30,7 +31,7 @@ class GameLogicActionType2D<T : Any, P : Any>(override val actionType: String, p
     override fun allowed(condition: (Action2D<T, P>) -> Boolean) {
         this.allowedCheck = condition
     }
-    override fun effect(effect: (Action2D<T, P>) -> Unit) {
+    override fun effect(effect: EffectScope.(Action2D<T, P>) -> Unit) {
         this.effect = effect
     }
 
@@ -43,7 +44,7 @@ class GameLogicActionType2D<T : Any, P : Any>(override val actionType: String, p
     }
 
     override fun performAction(action: Actionable<T, Point>) {
-        return this.effect(createAction(action.playerIndex, action.parameter))
+        return this.effect(replayState, createAction(action.playerIndex, action.parameter))
     }
 
     override fun createAction(playerIndex: Int, parameter: Point): Action2D<T, P> {
@@ -62,6 +63,69 @@ class GameLogicActionType2D<T : Any, P : Any>(override val actionType: String, p
     }
 }
 
+class GameLogicActionTypeUnit<T : Any>(override val actionType: String, private val model: T,
+          private val replayState: ReplayState): ActionScope<T, Unit>, GameLogicActionType<T, Unit> {
+    var allowedCheck: (Action<T, Unit>) -> Boolean = { true }
+    lateinit var effect: EffectScope.(Action<T, Unit>) -> Unit
+
+    override fun allowed(condition: (Action<T, Unit>) -> Boolean) {
+        this.allowedCheck = condition
+    }
+    override fun effect(effect: EffectScope.(Action<T, Unit>) -> Unit) {
+        this.effect = effect
+    }
+    override fun actionAllowed(action: Actionable<T, Unit>): Boolean {
+        return this.allowedCheck(createAction(action.playerIndex, action.parameter))
+    }
+
+    override fun performAction(action: Actionable<T, Unit>) {
+        return this.effect(replayState, createAction(action.playerIndex, action.parameter))
+    }
+
+    override fun createAction(playerIndex: Int, parameter: Unit): Action<T, Unit> {
+        return Action(model, playerIndex, actionType, parameter)
+    }
+
+    override fun availableActions(playerIndex: Int): Iterable<Actionable<T, Unit>> {
+        val action = Action(model, playerIndex, actionType, Unit)
+        val allowed = this.allowedCheck(action)
+        return if (allowed) listOf(action) else emptyList()
+    }
+}
+
+class GameLogicActionTypeSimple<T : Any, P : Any>(override val actionType: String, private val model: T,
+        private val options: Iterable<P>,
+        private val replayState: ReplayState): ActionScope<T, P>, GameLogicActionType<T, P> {
+    var allowedCheck: (Action<T, P>) -> Boolean = { true }
+    lateinit var effect: EffectScope.(Action<T, P>) -> Unit
+
+    override fun allowed(condition: (Action<T, P>) -> Boolean) {
+        this.allowedCheck = condition
+    }
+    override fun effect(effect: EffectScope.(Action<T, P>) -> Unit) {
+        this.effect = effect
+    }
+    override fun actionAllowed(action: Actionable<T, P>): Boolean {
+        return this.allowedCheck(createAction(action.playerIndex, action.parameter))
+    }
+
+    override fun performAction(action: Actionable<T, P>) {
+        return this.effect(replayState, createAction(action.playerIndex, action.parameter))
+    }
+
+    override fun createAction(playerIndex: Int, parameter: P): Action<T, P> {
+        return Action(model, playerIndex, actionType, parameter)
+    }
+
+    override fun availableActions(playerIndex: Int): Iterable<Actionable<T, P>> {
+        return options.mapNotNull {option ->
+            val action = Action(model, playerIndex, actionType, option)
+            val allowed = this.allowedCheck(action)
+            return@mapNotNull action.takeIf { allowed }
+        }
+    }
+}
+
 interface GameLogicActionType<T : Any, A : Any> {
     val actionType: String
     fun availableActions(playerIndex: Int): Iterable<Actionable<T, A>>
@@ -70,12 +134,24 @@ interface GameLogicActionType<T : Any, A : Any> {
     fun createAction(playerIndex: Int, parameter: A): Actionable<T, A>
 }
 
-class GameLogicContext<T : Any>(private val model: T) : GameLogic<T> {
+class GameLogicContext<T : Any>(private val model: T, private val replayState: ReplayState) : GameLogic<T> {
     val actions = mutableMapOf<ActionType<*>, GameLogicActionType<T, *>>()
     var winner: (T) -> PlayerIndex = { null }
 
     override fun <P : Any> action2D(actionType: ActionType<Point>, grid: GridDsl<T, P>, logic: ActionLogic2D<T, P>) {
-        val context = GameLogicActionType2D(actionType.name, model, grid)
+        val context = GameLogicActionType2D(actionType.name, model, grid, replayState)
+        logic(context)
+        actions[actionType] = context
+    }
+
+    override fun simpleAction(actionType: ActionType<Unit>, logic: ActionLogicSimple<T>) {
+        val context = GameLogicActionTypeUnit(actionType.name, model, replayState)
+        logic(context)
+        actions[actionType] = context
+    }
+
+    override fun intAction(actionType: ActionType<Int>, options: Iterable<Int>, logic: ActionLogicInt<T>) {
+        val context = GameLogicActionTypeSimple(actionType.name, model, options, replayState)
         logic(context)
         actions[actionType] = context
     }
@@ -135,7 +211,7 @@ class GameGridBuilder<T : Any, P>(override val model: T) : GameGrid<T, P>, GridS
 
 }
 
-class GameViewContext<T : Any>(val model: T, override val viewer: PlayerIndex) : GameView<T> {
+class GameViewContext<T : Any>(val model: T, override val viewer: PlayerIndex, private val replayState: ReplayState) : GameView<T> {
     private val viewResult: MutableMap<String, Any?> = mutableMapOf()
 
     override fun result(): Map<String, Any?> {
@@ -162,6 +238,16 @@ class GameViewContext<T : Any>(val model: T, override val viewer: PlayerIndex) :
     override fun winner(function: (T) -> Int?) {
         viewResult["winner"] = function(model)
     }
+}
+
+class ReplayState: EffectScope, ReplayScope {
+    private val map = mutableMapOf<String, Any>()
+
+    override fun state(key: String, value: Any) {
+        map[key] = value
+    }
+
+    override fun state(key: String): Any = map[key] ?: throw IllegalStateException("State '$key' not found")
 }
 
 class GameDslContext<T : Any> : GameDsl<T> {
