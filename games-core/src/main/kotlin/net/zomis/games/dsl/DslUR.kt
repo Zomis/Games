@@ -36,7 +36,7 @@ class DslUR {
             winner { game -> game.winner.takeIf { game.isFinished } }
             state("lastRoll") { this.fullState("roll") ?: 0 }
             value("roll") { it.roll }
-            value("pieces") { it.piecesCopy }
+            value("pieces") { game -> game.piecesCopy.map { it.toList() }.toList() }
         }
     }
 
