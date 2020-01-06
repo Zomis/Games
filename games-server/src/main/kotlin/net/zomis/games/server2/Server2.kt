@@ -93,7 +93,7 @@ class Server2(val events: EventSystem) {
         "ViewRequest" to ViewRequestHandler(gameSystem)
     ))
 
-    fun start(config: ServerConfig) {
+    fun start(config: ServerConfig): Server2 {
         val javalin = JavalinFactory.javalin(config)
         logger.info("Configuring Javalin at port ${config.webSocketPort} (SSL ${config.webSocketPortSSL})")
 
@@ -152,6 +152,7 @@ class Server2(val events: EventSystem) {
         events.listen("Start Javalin", StartupEvent::class, {true}, {javalin.start()})
 
         events.execute(StartupEvent(System.currentTimeMillis()))
+        return this
     }
 
     fun stop() {
