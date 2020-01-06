@@ -26,7 +26,7 @@ class DslTest {
     @Test
     fun wrongActionType() {
         val game = createGame()
-        val act = game.actionType<Int>("play") // should be <Point>
+        val act = game.actions.type("play") // should be <Point>
         Assertions.assertNotNull(act)
         Assertions.assertThrows(ClassCastException::class.java) {
             act!!.createAction(0, 42)
@@ -36,22 +36,21 @@ class DslTest {
     @Test
     fun wrongActionName() {
         val game = createGame()
-        val act = game.actionType<Point>("missing")
+        val act = game.actions.type("missing")
         Assertions.assertNull(act)
     }
 
     @Test
     fun allowedActions() {
         val game = createGame()
-        Assertions.assertEquals(9, game.actionType<Any>("play")!!.availableActions(0).count())
+        Assertions.assertEquals(9, game.actions.type("play")!!.availableActions(0).count())
     }
 
     @Test
     fun makeAMove() {
         val game = createGame()
-        val actions = game.actionType<Point>("play")!!
-        val action = actions.createAction(0, Point(1, 2))
-        actions.performAction(action)
+        val actions = game.actions.type("play")!!
+        actions.perform(0, Point(1, 2))
         Assertions.assertEquals(TTPlayer.X, game.model.game.getSub(1, 2)!!.wonBy)
     }
 
@@ -59,9 +58,9 @@ class DslTest {
     fun currentPlayerChanges() {
         val game = createGame()
         Assertions.assertEquals(0, game.view(0)["currentPlayer"])
-        val actionType = game.actionType<Any>("play")!!
+        val actionType = game.actions.type("play")!!
         val action = actionType.availableActions(0).toList().random()
-        actionType.performAction(action)
+        actionType.perform(action)
         Assertions.assertEquals(1, game.view(0)["currentPlayer"])
     }
 
@@ -72,11 +71,11 @@ class DslTest {
         val random = Random(23)
         while (game.view(0)["winner"] == null && counter < 20) {
             val playerIndex = counter % 2
-            val actionType = game.actionType<Any>("play")!!
+            val actionType = game.actions.type("play")!!
             val availableActions = actionType.availableActions(playerIndex)
             Assertions.assertFalse(availableActions.none(), "Game is not over but no available actions after $counter actions")
             val action = availableActions.toList().random(random)
-            actionType.performAction(action)
+            actionType.perform(action)
             counter++
         }
         Assertions.assertNotNull(game.view(0)["winner"])

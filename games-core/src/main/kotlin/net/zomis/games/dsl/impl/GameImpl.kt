@@ -28,6 +28,7 @@ class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, config: Any
     init {
         setupContext.logicDsl(logic)
     }
+    val actions = ActionsImpl(model, logic, replayState)
 
     fun view(playerIndex: PlayerIndex): Map<String, Any?> {
         val view = GameViewContext(model, playerIndex, replayState)
@@ -41,20 +42,6 @@ class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, config: Any
 
     fun getWinner(): PlayerIndex {
         return logic.winner(model)
-    }
-
-    fun availableActionTypes(): Set<String> = logic.actions.keys.map { it.name }.toSet()
-
-    fun <A : Any> action(actionType: ActionType<A>): GameLogicActionType<T, A> {
-        return logic.actions[actionType] as GameLogicActionType<T, A>
-    }
-
-    fun actionParameter(actionType: String): KClass<out Any>? {
-        return logic.actions.entries.find { it.key.name == actionType }?.key?.parameterType
-    }
-
-    fun <A : Any> actionType(actionType: String): GameLogicActionType<T, A>? {
-        return logic.actions.entries.find { it.key.name == actionType }?.value as GameLogicActionType<T, A>?
     }
 
 }

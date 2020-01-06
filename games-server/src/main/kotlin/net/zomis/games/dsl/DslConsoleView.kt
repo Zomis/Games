@@ -23,15 +23,15 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
     }
 
     fun queryInput(game: GameImpl<T>, scanner: Scanner): Boolean {
-        println("Available actions is: ${game.availableActionTypes()}. Who is playing and what is your action?")
+        println("Available actions is: ${game.actions.actionTypes}. Who is playing and what is your action?")
         val (playerIndex, actionType) = scanner.nextLine().split(" ")
-        val actionLogic = game.actionType<Any>(actionType)
+        val actionLogic = game.actions.type(actionType)
         if (actionLogic == null) {
             println("Invalid action")
             return false
         }
 
-        val actionParameterClass = game.actionParameter(actionType)
+        val actionParameterClass = actionLogic.parameterClass
         val action: Actionable<T, Any>? = when (actionParameterClass) {
             Point::class -> {
                 println("Enter position where you want to play")
@@ -54,10 +54,10 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
             println("Not a valid action.")
             return false
         }
-        val allowed = actionLogic.actionAllowed(action)
+        val allowed = actionLogic.isAllowed(action)
         println("Action $action allowed: $allowed")
         if (allowed) {
-            actionLogic.performAction(action)
+            actionLogic.perform(action)
         }
         return allowed
     }

@@ -38,9 +38,7 @@ class ServerAIs {
 
     fun randomAction(game: ServerGame, index: Int): List<PlayerGameMoveRequest> {
         val controller = game.obj as GameImpl<Any>
-        val actionTypes = controller.availableActionTypes().map {
-            controller.actionType<Any>(it)!!
-        }
+        val actionTypes = controller.actions.types()
         val actions = actionTypes.flatMap {actionType ->
             actionType.availableActions(index)
         }

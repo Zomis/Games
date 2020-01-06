@@ -28,7 +28,7 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
                 return@listen
             }
 
-            val actionType = controller.actionType<Any>(it.moveType)
+            val actionType = controller.actions.type(it.moveType)
             if (actionType == null) {
                 events.execute(it.illegalMove("No such actionType: ${it.moveType}"))
                 return@listen
@@ -36,22 +36,26 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
 
             val parameter: Any
             try {
-                val clazz = controller.actionParameter(it.moveType)!!
-                val moveJsonText = mapper.writeValueAsString(it.move)
-                parameter = mapper.readValue(moveJsonText, clazz.java)
+                val clazz = actionType.parameterClass
+                parameter = if (clazz == Unit::class) {
+                    Unit
+                } else {
+                    val moveJsonText = mapper.writeValueAsString(it.move)
+                    mapper.readValue(moveJsonText, clazz.java)
+                }
             } catch (e: Exception) {
                 logger.error(e, "Error reading move: $it")
                 return@listen
             }
 
             val action = actionType.createAction(it.player, parameter)
-            if (!actionType.actionAllowed(action)) {
+            if (!actionType.isAllowed(action)) {
                 events.execute(it.illegalMove("Action is not allowed"))
                 return@listen
             }
 
             events.execute(PreMoveEvent(it.game, it.player, it.moveType, parameter))
-            actionType.performAction(action)
+            actionType.perform(action)
             events.execute(MoveEvent(it.game, it.player, it.moveType, parameter))
 //            events.execute(GameStateEvent(it.game, listOf(Pair("roll", rollResult)))) // TODO: Needs support for random results for serialization
 
