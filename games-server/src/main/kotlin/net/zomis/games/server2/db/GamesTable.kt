@@ -8,6 +8,7 @@ import com.amazonaws.services.dynamodbv2.model.*
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
+import net.zomis.common.convertToDBFormat
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.server2.PlayerId
@@ -21,19 +22,6 @@ enum class GameState(val value: Int) {
     ;
 }
 
-private val mapper = jacksonObjectMapper()
-fun convertToDBFormat(obj: Any): Any? {
-    return when (obj) {
-        is Int -> return obj
-        is String -> return obj
-        is Boolean -> return obj
-        is Unit -> return null
-        else -> {
-            val value: Any = mapper.convertValue(obj, object: TypeReference<Map<String, Any>>() {})
-            value
-        }
-    }
-}
 class GamesTables(private val dynamoDB: AmazonDynamoDB) {
     /*
   - GamePlayers
