@@ -5,7 +5,7 @@ import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.WinResult
 import net.zomis.games.server2.StartupEvent
-import net.zomis.games.server2.clients.ur.getInt
+import net.zomis.games.server2.clients.getInt
 import net.zomis.games.server2.games.*
 import net.zomis.tttultimate.TTPlayer
 import net.zomis.tttultimate.games.TTController

@@ -1,9 +1,9 @@
 package net.zomis.games.server2
 
 import klog.KLoggers
-import net.zomis.games.server2.clients.ur.WSClient
-import net.zomis.games.server2.clients.ur.getInt
-import net.zomis.games.server2.clients.ur.getText
+import net.zomis.games.server2.clients.WSClient
+import net.zomis.games.server2.clients.getInt
+import net.zomis.games.server2.clients.getText
 import net.zomis.games.server2.doctools.DocEventSystem
 import net.zomis.games.server2.doctools.DocWriter
 import org.junit.jupiter.api.AfterEach

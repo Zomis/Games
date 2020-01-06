@@ -2,9 +2,9 @@ package net.zomis.games.server2.ecs
 
 import com.fasterxml.jackson.databind.node.ObjectNode
 import net.zomis.games.server2.Server2
-import net.zomis.games.server2.clients.ur.WSClient
-import net.zomis.games.server2.clients.ur.getInt
-import net.zomis.games.server2.clients.ur.getText
+import net.zomis.games.server2.clients.WSClient
+import net.zomis.games.server2.clients.getInt
+import net.zomis.games.server2.clients.getText
 import net.zomis.games.server2.doctools.DocEventSystem
 import net.zomis.games.server2.doctools.DocWriter
 import net.zomis.games.server2.testDocWriter

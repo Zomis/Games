@@ -1,4 +1,4 @@
-package net.zomis.games.server2.doctools
+package net.zomis.games.server2.clients
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -6,12 +6,16 @@ import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.server2.Client
 import net.zomis.games.server2.ClientJsonMessage
+import java.util.UUID
 
-class FakeClient : Client() {
+class FakeClient(uuid: UUID) : Client() {
 
     private val logger = KLoggers.logger(this)
     val mapper = ObjectMapper()
     val messages = mutableListOf<String>()
+    init {
+        this.playerId = uuid
+    }
 
     override fun sendData(data: String) {
         messages.add(data)

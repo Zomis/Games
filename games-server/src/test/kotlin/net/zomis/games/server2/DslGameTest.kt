@@ -4,9 +4,9 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.Point
-import net.zomis.games.server2.clients.ur.WSClient
-import net.zomis.games.server2.clients.ur.getInt
-import net.zomis.games.server2.clients.ur.getText
+import net.zomis.games.server2.clients.WSClient
+import net.zomis.games.server2.clients.getInt
+import net.zomis.games.server2.clients.getText
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach

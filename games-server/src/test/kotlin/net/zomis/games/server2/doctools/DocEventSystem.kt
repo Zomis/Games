@@ -3,6 +3,7 @@ package net.zomis.games.server2.doctools
 import com.fasterxml.jackson.databind.ObjectMapper
 import net.zomis.core.events.EventSystem
 import net.zomis.games.server2.ClientJsonMessage
+import net.zomis.games.server2.clients.FakeClient
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.extension.*
 import java.io.File

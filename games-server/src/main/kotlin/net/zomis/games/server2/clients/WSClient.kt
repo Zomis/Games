@@ -1,4 +1,4 @@
-package net.zomis.games.server2.clients.ur
+package net.zomis.games.server2.clients
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -11,12 +11,12 @@ import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 
 fun ObjectNode.getInt(fieldName: String): Int {
-    assert(this.hasNonNull(fieldName), { "ObjectNode does not have field '$fieldName': $this" })
+    assert(this.hasNonNull(fieldName)) { "ObjectNode does not have field '$fieldName': $this" }
     return this.get(fieldName).asInt()
 }
 
 fun ObjectNode.getText(fieldName: String): String {
-    assert(this.hasNonNull(fieldName), { "ObjectNode does not have field '$fieldName': $this" })
+    assert(this.hasNonNull(fieldName)) { "ObjectNode does not have field '$fieldName': $this" }
     return this.get(fieldName).asText()
 }
 
@@ -45,7 +45,7 @@ class WSClient(uri: URI): WebSocketClient(uri) {
 
     fun expectExact(expected: String) {
         val text = queue.poll(30, TimeUnit.SECONDS) ?: failClose("Timeout waiting for new message")
-        assert(text == expected, { "Expected '$expected' but was '$text'" })
+        assert(text == expected) { "Expected '$expected' but was '$text'" }
     }
 
     private fun failClose(message: String): String {

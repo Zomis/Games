@@ -3,7 +3,7 @@ package net.zomis.games.server2.invites
 import net.zomis.games.server2.*
 import net.zomis.games.server2.doctools.DocEventSystem
 import net.zomis.games.server2.doctools.DocWriter
-import net.zomis.games.server2.doctools.FakeClient
+import net.zomis.games.server2.clients.FakeClient
 import net.zomis.games.server2.games.GameTypeRegisterEvent
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension

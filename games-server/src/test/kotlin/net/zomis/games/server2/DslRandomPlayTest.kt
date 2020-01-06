@@ -5,12 +5,11 @@ import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.server2.ais.ServerAIs
-import net.zomis.games.server2.clients.ur.WSClient
-import net.zomis.games.server2.clients.ur.getInt
-import net.zomis.games.server2.clients.ur.getText
+import net.zomis.games.server2.clients.WSClient
+import net.zomis.games.server2.clients.getInt
+import net.zomis.games.server2.clients.getText
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import java.net.URI

@@ -6,7 +6,7 @@ import net.zomis.games.server2.ClientLoginEvent
 import net.zomis.games.server2.doctools.DocEventSystem
 import net.zomis.games.server2.doctools.DocWriter
 import net.zomis.games.server2.doctools.EventsExpect
-import net.zomis.games.server2.doctools.FakeClient
+import net.zomis.games.server2.clients.FakeClient
 import net.zomis.games.server2.games.GameStartedEvent
 import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.games.GameType

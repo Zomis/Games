@@ -5,7 +5,7 @@ import net.zomis.games.Features
 import net.zomis.games.server2.ClientDisconnected
 import net.zomis.games.server2.doctools.DocEventSystem
 import net.zomis.games.server2.doctools.DocWriter
-import net.zomis.games.server2.doctools.FakeClient
+import net.zomis.games.server2.clients.FakeClient
 import net.zomis.games.server2.games.*
 import net.zomis.games.server2.testDocWriter
 import org.junit.jupiter.api.Assertions
