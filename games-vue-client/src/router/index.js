@@ -11,6 +11,7 @@ import VueAuthenticate from "vue-authenticate";
 import axios from "axios";
 import Clipboard from "v-clipboard";
 import supportedGames from "../supportedGames";
+import ReplayScreen from "@/components/replays/GameReplay"
 
 Vue.use(VueAxios, axios);
 let authConfig = {
@@ -22,7 +23,7 @@ let authConfig = {
     }
   }
 }
-console.log(authConfig)
+
 Vue.use(VueAuthenticate, authConfig);
 
 Vue.use(Router);
@@ -47,6 +48,14 @@ export default new Router({
       path: "/test",
       name: "TestScreen",
       component: TestScreen
+    },
+    {
+      path: "/stats/games/:gameId/replay",
+      name: "ReplayScreen",
+      component: ReplayScreen,
+      props: route => ({
+        gameUUID: route.params.gameId
+      })
     },
     {
       path: "/tv",

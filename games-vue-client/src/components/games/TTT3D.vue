@@ -31,7 +31,7 @@ import { mapState } from "vuex";
 
 export default {
   name: "TTT3D",
-  props: ["gameInfo", "showRules"],
+  props: ["gameInfo", "showRules", "fixedView"],
   data() {
     return {
       scene: null,
@@ -88,6 +88,9 @@ export default {
   computed: {
     ...mapState("DslGameState", {
       view(state) {
+        if (this.fixedView) {
+          return this.fixedView
+        }
         return state.games[this.gameInfo.gameId].gameData.view;
       }
     }),
