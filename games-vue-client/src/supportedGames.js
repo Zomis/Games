@@ -26,11 +26,19 @@ const defaultRouteProps = route => ({
 
 const supportedGames = {
     "UR": {
+        enabled: false,
         displayName: "Royal Game of UR",
         routeName: "RoyalGameOfUR",
         dsl: false,
         store: URstate,
         component: RoyalGameOfUR,
+        routeProps: defaultRouteProps
+    },
+    "DSL-UR": {
+        enabled: false,
+        displayName: "Royal Game of UR",
+        dsl: true,
+//        component: DSLRoyalGameOfUR,
         routeProps: defaultRouteProps
     },
     "DSL-Connect4": {

@@ -18,7 +18,7 @@ const store = new Vuex.Store({
   },
   getters: {
     activeGames: state => {
-      let modules = supportedGames.stateModules(state);
+      let modules = supportedGames.stateModules(state); // TODO: What about DSL-games where multiple game types can have the same store? GameId Collision?
       return modules
         .flatMap(m => m.games)
         .map(i => Object.values(i))
