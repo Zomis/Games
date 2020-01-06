@@ -1,7 +1,12 @@
 package net.zomis.games.dsl
 
+import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.impl.*
+import net.zomis.games.server2.Server2
+import net.zomis.games.server2.ServerConfig
+import net.zomis.games.server2.clients.FakeClient
 import java.util.Scanner
+import java.util.UUID
 
 class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
 
@@ -65,6 +70,44 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
         println(game.view(0))
     }
 
+}
+
+fun dbTestUR() {
+    val events = EventSystem()
+    Server2(events).start(ServerConfig().also { it.database = true })
+    val fakeClient = FakeClient(UUID.fromString("deb00deb-8378-0000-0001-000000000000"))
+    Thread.sleep(1000)
+    fakeClient.sendToServer(events, """
+        {"type": "Auth", "provider": "guest", "token": false }
+    """)
+    Thread.sleep(1000)
+    fakeClient.sendToServer(events, """
+        {"type": "ClientGames", "gameTypes": ["DSL-UR"], "maxGames": 1 }
+    """)
+    Thread.sleep(1000)
+    fakeClient.sendToServer(events, """
+        {"type": "Invite", "gameType": "DSL-UR", "invite": ["#AI_Random_DSL-UR"] }
+    """)
+    Thread.sleep(1000)
+    fakeClient.sendToServer(events, """
+        {"type": "move", "gameType": "DSL-UR", "gameId": 1, "player": 0,
+         "moveType": "roll", "move": null }
+    """)
+    Thread.sleep(15000)
+    fakeClient.sendToServer(events, """
+        {"type": "ViewRequest", "gameType": "DSL-UR", "gameId": 1 }
+    """)
+    Thread.sleep(15000)
+
+    fakeClient.sendToServer(events, """
+        {"type": "move", "gameType": "DSL-UR", "gameId": 1, "player": 0,
+         "moveType": "move", "move": 0 }
+    """)
+    Thread.sleep(5000)
+    fakeClient.sendToServer(events, """
+        {"type": "ViewRequest", "gameType": "DSL-UR", "gameId": 1 }
+    """)
+    Thread.sleep(10000)
 }
 
 fun main(args: Array<String>) {
