@@ -204,4 +204,8 @@ class ActionsImpl<T : Any>(private val model: T,
         return null
     }
 
+    fun lastMoveState(): Map<String, Any?> {
+        return replayState.lastMoveState()
+    }
+
 }

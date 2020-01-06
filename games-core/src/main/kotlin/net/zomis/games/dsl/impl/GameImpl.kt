@@ -23,7 +23,7 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
 class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, config: Any?) {
 
     val model = setupContext.model.factory(config)
-    val replayState = ReplayState()
+    private val replayState = ReplayState()
     private val logic = GameLogicContext(model, replayState)
     init {
         setupContext.logicDsl(logic)

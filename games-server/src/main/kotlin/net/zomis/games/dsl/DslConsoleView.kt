@@ -1,7 +1,6 @@
 package net.zomis.games.dsl
 
 import net.zomis.games.dsl.impl.*
-import net.zomis.tttultimate.games.TTController
 import java.util.Scanner
 
 class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
@@ -15,11 +14,10 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
         val model = context.createGame(config)
         println(model)
 
-        while (true) {
+        while (!model.isGameOver()) {
             this.showView(model)
             this.queryInput(model, scanner)
         }
-
     }
 
     fun queryInput(game: GameImpl<T>, scanner: Scanner): Boolean {

@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.Point
+import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.server2.PlayerId
 import net.zomis.games.server2.games.*
 import java.time.Instant
@@ -117,13 +118,20 @@ S1  - TimeLastAction: Number (timestamp)
                     TypeReference<Map<String, Any>>() {})
         }
         fun addMove(move: MoveEvent) {
-            val game = move.game
+            val serverGame = move.game
             val moveData = mapOf(
                 "moveType" to move.moveType,
                 "playerIndex" to move.player,
                 "move" to convertToMap(move.move)
-            )
-            val itemUpdate = UpdateItemSpec().withPrimaryKey(this.gameId, game.uuid.toString())
+            ).let {
+                if (serverGame.obj is GameImpl<*>) {
+                    val game = serverGame.obj as GameImpl<*>
+                    val lastMoveState = game.actions.lastMoveState()
+                    return@let it.plus("state" to convertToMap(lastMoveState))
+                }
+                it
+            }
+            val itemUpdate = UpdateItemSpec().withPrimaryKey(this.gameId, serverGame.uuid.toString())
                 .withUpdateExpression("SET moves = list_append(if_not_exists(moves, :emptyList), :move)")
                 .withValueMap(ValueMap()
                     .withList(":move", listOf(moveData))

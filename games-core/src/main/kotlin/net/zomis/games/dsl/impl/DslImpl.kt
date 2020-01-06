@@ -111,6 +111,8 @@ class ReplayState: EffectScope, ReplayScope {
     override fun fullState(key: String): Any? = mostRecent[key]
 
     override fun state(key: String): Any = currentAction[key] ?: throw IllegalStateException("State '$key' not found")
+
+    fun lastMoveState(): Map<String, Any?> = mostRecent.toMap()
 }
 
 class GameDslContext<T : Any> : GameDsl<T> {
