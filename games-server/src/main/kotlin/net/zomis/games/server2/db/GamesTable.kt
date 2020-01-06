@@ -3,13 +3,12 @@ package net.zomis.games.server2.db
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import com.amazonaws.services.dynamodbv2.document.AttributeUpdate
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec
-import com.amazonaws.services.dynamodbv2.document.spec.UpdateTableSpec
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap
 import com.amazonaws.services.dynamodbv2.model.*
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import klog.KLoggers
 import net.zomis.core.events.EventSystem
-import net.zomis.games.dsl.Point
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.server2.PlayerId
 import net.zomis.games.server2.games.*
@@ -22,6 +21,19 @@ enum class GameState(val value: Int) {
     ;
 }
 
+private val mapper = jacksonObjectMapper()
+fun convertToDBFormat(obj: Any): Any? {
+    return when (obj) {
+        is Int -> return obj
+        is String -> return obj
+        is Boolean -> return obj
+        is Unit -> return null
+        else -> {
+            val value: Any = mapper.convertValue(obj, object: TypeReference<Map<String, Any>>() {})
+            value
+        }
+    }
+}
 class GamesTables(private val dynamoDB: AmazonDynamoDB) {
     /*
   - GamePlayers
@@ -70,7 +82,8 @@ S2  - Result: Number (1 / 0 / -1 for win/draw/loss)
         }
     }
 
-    private class GamesTable(val dynamoDB: AmazonDynamoDB) {
+    private class GamesTable(dynamoDB: AmazonDynamoDB) {
+        private val logger = KLoggers.logger(this)
 /*
   - Games
     -- update on game start, move-made and end
@@ -112,33 +125,34 @@ S1  - TimeLastAction: Number (timestamp)
             table.table.updateItem(update)
         }
 
-        private val mapper = jacksonObjectMapper()
-        private fun convertToMap(obj: Any): Map<String, Any> {
-            return mapper.convertValue(obj, object:
-                    TypeReference<Map<String, Any>>() {})
+        private fun <String, V> Map<String, V>.plusIf(key: String, value: V?): Map<String, V> {
+            return if (value != null) this.plus(key to value) else this
         }
         fun addMove(move: MoveEvent) {
             val serverGame = move.game
             val moveData = mapOf(
                 "moveType" to move.moveType,
-                "playerIndex" to move.player,
-                "move" to convertToMap(move.move)
+                "playerIndex" to move.player
             ).let {
+                val moveObject = convertToDBFormat(move.move)
+                it.plusIf("move", moveObject)
+            }.let {
                 if (serverGame.obj is GameImpl<*>) {
                     val game = serverGame.obj as GameImpl<*>
                     val lastMoveState = game.actions.lastMoveState()
-                    return@let it.plus("state" to convertToMap(lastMoveState))
+                    if (lastMoveState.isNotEmpty()) {
+                        return@let it.plusIf("state", convertToDBFormat(lastMoveState))
+                    }
                 }
                 it
             }
             val itemUpdate = UpdateItemSpec().withPrimaryKey(this.gameId, serverGame.uuid.toString())
-                .withUpdateExpression("SET moves = list_append(if_not_exists(moves, :emptyList), :move)")
+                .withUpdateExpression("SET $moves = list_append(if_not_exists($moves, :emptyList), :move)")
                 .withValueMap(ValueMap()
                     .withList(":move", listOf(moveData))
                     .withList(":emptyList", emptyList<Any>())
                 )
-            val updateResult = table.table.updateItem(itemUpdate)
-            println(updateResult)
+            table.table.updateItem(itemUpdate)
         }
 
         fun finishGame(game: ServerGame) {

@@ -161,11 +161,17 @@ class GameLogicContext<T : Any>(private val model: T, private val replayState: R
 }
 
 class ActionTypeImplEntry<T : Any, A : Any>(private val model: T,
+        private val replayState: ReplayState,
         private val actionType: ActionType<A>,
         private val impl: GameLogicActionType<T, A>) {
     fun availableActions(playerIndex: Int): Iterable<Actionable<T, A>> = impl.availableActions(playerIndex)
-    fun perform(playerIndex: Int, parameter: A) { impl.performAction(this.createAction(playerIndex, parameter)) }
-    fun perform(action: Actionable<T, A>) { impl.performAction(action) }
+    fun perform(playerIndex: Int, parameter: A) {
+        this.perform(this.createAction(playerIndex, parameter))
+    }
+    fun perform(action: Actionable<T, A>) {
+        replayState.resetLastMove()
+        impl.performAction(action)
+    }
     fun createAction(playerIndex: Int, parameter: A): Actionable<T, A> = impl.createAction(playerIndex, parameter)
     fun isAllowed(action: Actionable<T, A>): Boolean = impl.actionAllowed(action)
 
@@ -190,16 +196,16 @@ class ActionsImpl<T : Any>(private val model: T,
 
     fun type(actionType: String): ActionTypeImplEntry<T, Any>? {
         return logic.actions.entries.find { it.key.name == actionType }?.let {
-            ActionTypeImplEntry(model, it.key as ActionType<Any>, it.value as GameLogicActionType<T, Any>)
+            ActionTypeImplEntry(model, replayState, it.key as ActionType<Any>, it.value as GameLogicActionType<T, Any>)
         }
     }
-    fun <A : Any> type(actionType: String, clazz: KClass<T>): GameLogicActionType<T, A>? {
+    fun <A : Any> type(actionType: String, clazz: KClass<T>): ActionTypeImplEntry<T, A>? {
         val entry = logic.actions.entries.find { it.key.name == actionType }
         if (entry != null) {
             if (entry.key.parameterType != clazz) {
                 throw IllegalArgumentException("ActionType '$actionType' has parameter ${entry.key.parameterType} and not $clazz")
             }
-            return entry.value as GameLogicActionType<T, A>
+            return this.type(actionType) as ActionTypeImplEntry<T, A>
         }
         return null
     }
