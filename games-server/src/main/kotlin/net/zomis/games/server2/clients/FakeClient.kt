@@ -8,7 +8,7 @@ import net.zomis.games.server2.Client
 import net.zomis.games.server2.ClientJsonMessage
 import java.util.UUID
 
-class FakeClient(uuid: UUID) : Client() {
+class FakeClient(uuid: UUID = UUID.randomUUID()) : Client() {
 
     private val logger = KLoggers.logger(this)
     val mapper = ObjectMapper()
