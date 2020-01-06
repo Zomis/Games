@@ -12,7 +12,7 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
     }
 
     fun configClass(): KClass<*> = context.configClass
-    fun getDefaultConfig(): Any? = context.model.config()
+    fun getDefaultConfig(): Any? = if (configClass() == Unit::class) Unit else context.model.config()
 
     fun createGame(config: Any?): GameImpl<T> {
         return GameImpl(context, config)

@@ -24,7 +24,7 @@ class DslUR {
                     it.game.doRoll(state("roll") as Int)
                 }
             }
-            intAction(move, 0 until RoyalGameOfUr.EXIT) {
+            intAction(move, {0 until RoyalGameOfUr.EXIT}) {
                 allowed { it.game.currentPlayer == it.playerIndex &&
                     it.game.isMoveTime && it.game.canMove(it.game.currentPlayer, it.parameter, it.game.roll) }
                 effect {

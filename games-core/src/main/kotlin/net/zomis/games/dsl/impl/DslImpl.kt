@@ -135,6 +135,10 @@ class GameDslContext<T : Any> : GameDsl<T> {
         this.modelDsl = modelDsl as GameModelDsl<T, Any>
     }
 
+    override fun setup(modelDsl: GameModelDsl<T, Unit>) {
+        return this.setup(Unit::class, modelDsl)
+    }
+
     override fun logic(logicDsl: GameLogicDsl<T>) {
         this.logicDsl = logicDsl
     }
