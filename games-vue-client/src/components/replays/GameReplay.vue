@@ -25,12 +25,15 @@ export default {
         ...supportedGames.components()
     },
     created() {
-        axios.get(`http://localhost:42638/games/${this.gameUUID}/replay`).then(response => {
+        axios.get(`${this.baseURL}games/${this.gameUUID}/replay`).then(response => {
             console.log(response)
             this.replay = response.data
         })
     },
     computed: {
+        baseURL() {
+            return process.env.VUE_APP_URL
+        },
         maxReplayStep() {
             if (this.replay == null) { return 0 }
             return this.replay.views.length - 1
@@ -45,9 +48,7 @@ export default {
         },
         currentView() {
             if (this.replay == null) { return null }
-            let currentView2 = this.replay.views[this.replayStep]
-            console.log(this.maxReplayStep, this.replayStep, currentView2)
-            return currentView2
+            return this.replay.views[this.replayStep]
         },
         gameInfo() {
             if (this.replay == null) { return null }
