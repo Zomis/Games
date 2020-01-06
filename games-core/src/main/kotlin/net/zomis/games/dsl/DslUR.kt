@@ -15,7 +15,7 @@ class DslUR {
         logic {
             winner { game -> game.winner.takeIf { game.isFinished } }
             simpleAction(roll) {
-                allowed { it.game.isRollTime() }
+                allowed { it.game.currentPlayer == it.playerIndex && it.game.isRollTime() }
                 effect {
                     val rollResult = it.game.doRoll()
                     state("roll", rollResult)
@@ -25,7 +25,8 @@ class DslUR {
                 }
             }
             intAction(move, 0 until RoyalGameOfUr.EXIT) {
-                allowed { it.game.isMoveTime && it.game.canMove(it.game.currentPlayer, it.parameter, it.game.roll) }
+                allowed { it.game.currentPlayer == it.playerIndex &&
+                    it.game.isMoveTime && it.game.canMove(it.game.currentPlayer, it.parameter, it.game.roll) }
                 effect {
                     it.game.move(it.game.currentPlayer, it.parameter, it.game.roll)
                 }
