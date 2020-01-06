@@ -1,5 +1,6 @@
 package net.zomis.games.dsl
 
+import net.zomis.common.convertToDBFormat
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.impl.*
 import net.zomis.games.server2.Server2
@@ -27,8 +28,13 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
 
     fun queryInput(game: GameImpl<T>, scanner: Scanner): Boolean {
         println("Available actions is: ${game.actions.actionTypes}. Who is playing and what is your action?")
-        val (playerIndex, actionType) = scanner.nextLine().split(" ")
-        val actionLogic = game.actions.type(actionType)
+        val line = scanner.nextLine()
+        if (!line.contains(" ")) {
+            println("You forgot something.")
+            return false
+        }
+        val (playerIndex, actionType) = line.split(" ")
+        val actionLogic = game.actions.types().find { it.name.toLowerCase() == actionType.toLowerCase() }
         if (actionLogic == null) {
             println("Invalid action")
             return false
@@ -45,7 +51,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
             else -> {
                 val options = actionLogic.availableActions(playerIndex.toInt()).toList()
                 options.forEachIndexed { index, actionable -> println("$index. $actionable") }
-                if (options.size == 1) { options.getOrNull(0) }
+                if (options.size <= 1) { options.getOrNull(0) }
                 else {
                     println("Choose your action.")
                     val actionIndex = scanner.nextLine().toIntOrNull()
