@@ -14,7 +14,7 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
     private val mapper = jacksonObjectMapper()
     private val logger = KLoggers.logger(this)
     fun setup(events: EventSystem) {
-        val server2GameName = "DSL-$name"
+        val server2GameName = name
         val setup = GameSetupImpl(dsl)
         events.listen("DslGameSystem $name Setup", GameStartedEvent::class, {it.game.gameType.type == server2GameName}, {
             it.game.obj = setup.createGame(setup.getDefaultConfig())

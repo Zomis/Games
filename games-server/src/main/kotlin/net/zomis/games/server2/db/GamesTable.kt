@@ -8,6 +8,7 @@ import com.amazonaws.services.dynamodbv2.model.*
 import klog.KLoggers
 import net.zomis.common.convertToDBFormat
 import net.zomis.core.events.EventSystem
+import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.server2.PlayerId
 import net.zomis.games.server2.games.*
@@ -184,7 +185,7 @@ S1  - TimeLastAction: Number (timestamp)
     data class PlayerView(val playerId: String, val name: String)
     data class PlayerInGame(val player: PlayerView?, val playerIndex: Int, val result: Double,
             val resultPosition: Int, val resultReason: String, val score: Map<String, Any?>)
-    fun fetchGame(gameId: String): DBGame? {
+    fun fetchGame(gameId: String, gameSpecs: Map<String, Any>): DBGame? {
         val playersInGameItems = this.gamePlayers.table.table.query(gamePlayers.gameId, gameId)
         val playersInGame = playersInGameItems.map {
             val playerId = it.getString(gamePlayers.playerId)
@@ -210,14 +211,11 @@ S1  - TimeLastAction: Number (timestamp)
         val gameState = gameItem.getInt(games.finishedState)
         val timeStarted = gameItem.getLong(games.timeStarted)
         val timeLastAction = gameItem.getLong(games.timeLastAction)
+        val gameSpec = gameSpecs[gameType] ?: throw IllegalArgumentException("No gameSpec found for gameType $gameType")
 
-        return DBGame(gameId, playersInGame, gameType, gameState, timeStarted, timeLastAction, moveHistory)
+        return DBGame(gameSpec as GameSpec<Any>, gameId, playersInGame, gameType, gameState, timeStarted, timeLastAction, moveHistory)
 //        AuthTable(dynamoDB).userLookup(playerIds)
     }
 
 
-}
-
-fun main(args: Array<String>) {
-    GamesTables(DBIntegration().dynamoDB).fetchGame("6b7e286a-ebcd-45eb-8277-b0c94a5e05fc")
 }

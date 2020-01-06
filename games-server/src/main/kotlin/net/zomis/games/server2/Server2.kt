@@ -11,6 +11,7 @@ import net.zomis.games.Features
 import net.zomis.games.dsl.DslTTT
 import net.zomis.games.dsl.DslTTT3D
 import net.zomis.games.dsl.DslUR
+import net.zomis.games.dsl.GameSpec
 import net.zomis.games.ecs.UTTT
 import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.ais.TTTQLearn
@@ -88,6 +89,14 @@ class Server2(val events: EventSystem) {
     private val mapper = ObjectMapper()
     val features = Features(events)
 
+    val dslGames = mutableMapOf<String, Any>(
+        "DSL-TTT" to DslTTT().game,
+        "DSL-Connect4" to DslTTT().gameConnect4,
+        "DSL-UTTT" to DslTTT().gameUTTT,
+        "DSL-Reversi" to DslTTT().gameReversi,
+        "DSL-TTT3D" to DslTTT3D().game,
+        "DSL-UR" to DslUR().gameUR)
+
     val gameSystem = GameSystem()
     private val messageHandler = MessageHandler(events, mapOf(
         "ViewRequest" to ViewRequestHandler(gameSystem)
@@ -117,12 +126,7 @@ class Server2(val events: EventSystem) {
         TTControllerSystem("UTTT") {TTUltimateController(TTFactories().ultimate())}.register(events)
         RoyalGameOfUrSystem.init(events)
         features.add(ECSGameSystem("UTTT-ECS") { UTTT().setup() }::setup)
-        events.with(DslGameSystem("TTT", DslTTT().game)::setup)
-        events.with(DslGameSystem("Connect4", DslTTT().gameConnect4)::setup)
-        events.with(DslGameSystem("UTTT", DslTTT().gameUTTT)::setup)
-        events.with(DslGameSystem("Reversi", DslTTT().gameReversi)::setup)
-        events.with(DslGameSystem("TTT3D", DslTTT3D().game)::setup)
-        events.with(DslGameSystem("UR", DslUR().gameUR)::setup)
+        dslGames.forEach { name, spec -> events.with(DslGameSystem(name, spec as GameSpec<Any>)::setup) }
 
         features.add(SimpleMatchMakingSystem()::setup)
         events.with(ServerConsole()::register)
@@ -139,7 +143,7 @@ class Server2(val events: EventSystem) {
         if (config.database) {
             val dbIntegration = DBIntegration()
             events.with(dbIntegration::register)
-            LinReplay(dbIntegration).setup(javalin)
+            LinReplay(dbIntegration, dslGames).setup(javalin)
         }
         features.add(AIGames()::setup)
         features.add(TVSystem()::register)

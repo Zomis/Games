@@ -26,7 +26,7 @@ import { mapState } from "vuex";
 
 export default {
   name: "DSLTTT",
-  props: ["gameInfo", "showRules"],
+  props: ["gameInfo", "showRules", "fixedView"],
   created() {
     Socket.$on("type:IllegalMove", this.messageIllegal); // TODO: Is this used?
   },
@@ -81,6 +81,9 @@ export default {
     },
     ...mapState("DslGameState", {
       view(state) {
+        if (this.fixedView) {
+          return this.fixedView
+        }
         return state.games[this.gameInfo.gameId].gameData.view;
       }
     })

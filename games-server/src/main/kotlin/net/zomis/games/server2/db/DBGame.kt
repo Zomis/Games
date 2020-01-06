@@ -1,11 +1,12 @@
 package net.zomis.games.server2.db
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import net.zomis.games.dsl.DslTTT3D
+import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.GameSetupImpl
 
 private val mapper = jacksonObjectMapper()
 class DBGame(
+        gameSpec: GameSpec<Any>,
         val gameId: String,
         val playersInGame: List<GamesTables.PlayerInGame>,
         val gameType: String,
@@ -14,7 +15,7 @@ class DBGame(
         val timeLastAction: Long,
         val moveHistory: List<GamesTables.MoveHistory>) {
 
-    private val gameSetup = GameSetupImpl(DslTTT3D().game)
+    private val gameSetup = GameSetupImpl(gameSpec)
     private val game = gameSetup.createGame(gameSetup.getDefaultConfig())
     val views = mutableListOf(game.view(null))
 

@@ -40,8 +40,8 @@ class DBIntegration {
         }
     }
 
-    fun loadGame(gameId: String): DBGame? {
-        return GamesTables(dynamoDB).fetchGame(gameId)
+    fun loadGame(gameId: String, gameSpecs: Map<String, Any>): DBGame? {
+        return GamesTables(dynamoDB).fetchGame(gameId, gameSpecs)
     }
 
 }
