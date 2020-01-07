@@ -142,19 +142,19 @@ class GameLogicContext<T : Any>(private val model: T, private val replayState: R
     val actions = mutableMapOf<ActionType<*>, GameLogicActionType<T, *, *>>()
     var winner: (T) -> PlayerIndex = { null }
 
-    override fun <P : Any> action2D(actionType: ActionType<Point>, grid: GridDsl<T, P>, logic: ActionLogic2D<T, P>) {
+    override fun <P : Any> action2D(actionType: ActionType<Point>, grid: GridDsl<T, P>, logic: ActionLogic<T, Point, Action2D<T, P>>) {
         val context = GameLogicActionType2D(actionType.name, model, grid, replayState)
         logic(context)
         actions[actionType] = context
     }
 
-    override fun <A : Any> singleTarget(actionType: ActionType<A>, options: (T) -> Iterable<A>, logic: ActionLogicSingleTarget<T, A>) {
+    override fun <A : Any> singleTarget(actionType: ActionType<A>, options: (T) -> Iterable<A>, logic: ActionLogic<T, A, Action<T, A>>) {
         val context = GameLogicActionTypeSimple(actionType.name, model, options, replayState)
         logic(context)
         actions[actionType] = context
     }
 
-    override fun simpleAction(actionType: ActionType<Unit>, logic: ActionLogicSimple<T>) {
+    override fun simpleAction(actionType: ActionType<Unit>, logic: ActionLogic<T, Unit, Action<T, Unit>>) {
         val context = GameLogicActionTypeUnit(actionType.name, model, replayState)
         logic(context)
         actions[actionType] = context
@@ -166,7 +166,7 @@ class GameLogicContext<T : Any>(private val model: T, private val replayState: R
         actions[actionType] = context
     }
 
-    override fun intAction(actionType: ActionType<Int>, options: (T) -> Iterable<Int>, logic: ActionLogicInt<T>) {
+    override fun intAction(actionType: ActionType<Int>, options: (T) -> Iterable<Int>, logic: ActionLogic<T, Int, Action<T, Int>>) {
         val context = GameLogicActionTypeSimple(actionType.name, model, options, replayState)
         logic(context)
         actions[actionType] = context
