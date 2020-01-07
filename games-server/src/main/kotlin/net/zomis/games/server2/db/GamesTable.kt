@@ -58,7 +58,7 @@ S2  - Result: Number (1 / 0 / -1 for win/draw/loss)
             val updates = arrayOf(
                 AttributeUpdate(this.playerId).put(playerId.toString())
             )
-            table.table.updateItem(this.gameId, game.uuid.toString(), this.playerIndex, playerIndex, *updates)
+            table.table.updateItem(this.gameId, game.gameId, this.playerIndex, playerIndex, *updates)
         }
 
         fun eliminatePlayer(game: ServerGame, playerIndex: Int, result: Double, resultPosition: Int, resultReason: String, score: Map<String, Any>) {
@@ -68,7 +68,7 @@ S2  - Result: Number (1 / 0 / -1 for win/draw/loss)
                 AttributeUpdate(this.resultReason).put(resultReason),
                 AttributeUpdate(this.score).put(score)
             )
-            table.table.updateItem(gameId, game.uuid.toString(), this.playerIndex, playerIndex, *updates)
+            table.table.updateItem(gameId, game.gameId, this.playerIndex, playerIndex, *updates)
         }
     }
 
@@ -105,7 +105,7 @@ S1  - TimeLastAction: Number (timestamp)
         val unfinishedIndex = table.index(ProjectionType.ALL, listOf(finishedState), listOf(gameType))
 
         fun createGame(game: ServerGame, options: Map<String, Any>) {
-            val update = UpdateItemSpec().withPrimaryKey(this.gameId, game.uuid.toString())
+            val update = UpdateItemSpec().withPrimaryKey(this.gameId, game.gameId)
                 .withAttributeUpdate(
                     AttributeUpdate(this.gameType).put(game.gameType.type),
                     AttributeUpdate(this.finishedState).put(GameState.HIDDEN.value),
@@ -136,7 +136,7 @@ S1  - TimeLastAction: Number (timestamp)
                 }
                 it
             }
-            val itemUpdate = UpdateItemSpec().withPrimaryKey(this.gameId, serverGame.uuid.toString())
+            val itemUpdate = UpdateItemSpec().withPrimaryKey(this.gameId, serverGame.gameId)
                 .withUpdateExpression("SET $moves = list_append(if_not_exists($moves, :emptyList), :move)")
                 .withValueMap(ValueMap()
                     .withList(":move", listOf(moveData))
@@ -146,7 +146,7 @@ S1  - TimeLastAction: Number (timestamp)
         }
 
         fun finishGame(game: ServerGame) {
-            val update = UpdateItemSpec().withPrimaryKey(this.gameId, game.uuid.toString())
+            val update = UpdateItemSpec().withPrimaryKey(this.gameId, game.gameId)
                 .withAttributeUpdate(
                     AttributeUpdate(this.finishedState).put(GameState.PUBLIC.value),
                     AttributeUpdate(this.timeLastAction).put(Instant.now().epochSecond)

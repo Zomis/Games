@@ -22,6 +22,7 @@ class LobbySystemTest {
     private lateinit var clientB1: FakeClient
     private lateinit var asker: FakeClient
     private val lobby = LobbySystem()
+    private val idGenerator: GameIdGenerator = { "1" }
 
     @RegisterExtension
     @JvmField
@@ -31,7 +32,7 @@ class LobbySystemTest {
     fun setup() {
         events = DocEventSystem(docWriter)
         features = Features(events)
-        features.add(GameSystem()::setup)
+        features.add { f, e -> GameSystem().setup(f, e, idGenerator) }
         features.add(lobby::setup)
         clientAB2 = FakeClient().apply { name = "AB2" }
         clientA1 = FakeClient().apply { name = "A1" }
@@ -48,10 +49,10 @@ class LobbySystemTest {
 
     private fun setForClient(value: ClientInterestingGames, client: FakeClient) {
         client.features.addData(value)
-        value.interestingGames.forEach({
+        value.interestingGames.forEach {
             val gameType = features[GameSystem.GameTypes::class]!!.gameTypes[it]!!
             gameType.clients.add(client)
-        })
+        }
     }
 
     @Test
@@ -76,7 +77,7 @@ class LobbySystemTest {
 
     @Test
     fun testGameStartEnd() {
-        val game = ServerGame(GameType("A", events), "game-a-1", ServerGameOptions(false))
+        val game = ServerGame(GameType("A", events, idGenerator), idGenerator(), ServerGameOptions(false))
         game.players.add(clientAB2)
         game.players.add(clientA1)
         events.execute(GameStartedEvent(game))

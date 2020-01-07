@@ -21,14 +21,9 @@ fun ServerGame.toJson(type: String): ObjectNode {
         .put("gameId", this.gameId)
 }
 
-typealias GameId = UUID
 data class ServerGameOptions(val database: Boolean)
-class ServerGame(val gameType: GameType, val gameMeta: ServerGameOptions) {
+class ServerGame(val gameType: GameType, val gameId: String, val gameMeta: ServerGameOptions) {
     var gameOver: Boolean = false
-    val uuid = UUID.randomUUID()
-
-    val gameId: String
-        get() = uuid.toString()
 
     fun broadcast(message: (Client) -> Any) {
         players.forEach { it.send(message.invoke(it)) }
@@ -59,7 +54,8 @@ data class PlayerGameMoveRequest(val game: ServerGame, val player: Int, val move
 
 data class IllegalMoveEvent(val game: ServerGame, val player: Int, val moveType: String, val move: Any, val reason: String)
 
-class GameType(val type: String, events: EventSystem) {
+typealias GameIdGenerator = () -> String
+class GameType(val type: String, events: EventSystem, private val idGenerator: GameIdGenerator) {
 
     private val logger = KLoggers.logger(this)
     val runningGames: MutableMap<String, ServerGame> = mutableMapOf()
@@ -70,7 +66,7 @@ class GameType(val type: String, events: EventSystem) {
     }
 
     fun createGame(serverGameOptions: ServerGameOptions): ServerGame {
-        val game = ServerGame(this, serverGameOptions)
+        val game = ServerGame(this, idGenerator(), serverGameOptions)
         runningGames[game.gameId] = game
         logger.info { "Create game with id ${game.gameId} of type $type" }
         return game
@@ -83,7 +79,7 @@ class GameSystem {
     data class GameTypes(val gameTypes: MutableMap<String, GameType> = mutableMapOf())
     private lateinit var features: Features
 
-    fun setup(features: Features, events: EventSystem) {
+    fun setup(features: Features, events: EventSystem, idGenerator: GameIdGenerator) {
         this.features = features
         val gameTypes = features.addData(GameTypes())
         val objectMapper = ObjectMapper()
@@ -140,7 +136,7 @@ class GameSystem {
             )
         })
         events.listen("Register GameType", GameTypeRegisterEvent::class, {true}, {
-            gameTypes.gameTypes[it.gameType] = GameType(it.gameType, events)
+            gameTypes.gameTypes[it.gameType] = GameType(it.gameType, events, idGenerator)
         })
     }
 

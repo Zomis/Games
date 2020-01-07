@@ -32,6 +32,7 @@ import net.zomis.tttultimate.TTFactories
 import net.zomis.tttultimate.games.TTClassicControllerWithGravity
 import net.zomis.tttultimate.games.TTUltimateController
 import java.io.File
+import java.util.UUID
 import java.util.concurrent.Executors
 import javax.script.ScriptEngineManager
 
@@ -67,6 +68,8 @@ class ServerConfig {
 
     @Parameter(names = ["-githubSecret"], description = "Github Client Secret")
     var githubSecret: String = ""
+
+    var idGenerator: GameIdGenerator = { UUID.randomUUID().toString() }
 
     fun useSecureWebsockets(): Boolean {
         return certificatePath != null
@@ -120,7 +123,7 @@ class Server2(val events: EventSystem) {
             events.execute(ClientJsonMessage(it.client, mapper.readTree(it.message)))
         })
 
-        features.add(gameSystem::setup)
+        features.add { feat, ev -> gameSystem.setup(feat, ev, config.idGenerator) }
 
         TTControllerSystem("Connect4") {TTClassicControllerWithGravity(TTFactories().classicMNK(7, 6, 4))}.register(events)
         TTControllerSystem("UTTT") {TTUltimateController(TTFactories().ultimate())}.register(events)

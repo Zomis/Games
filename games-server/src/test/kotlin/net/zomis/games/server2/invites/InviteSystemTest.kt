@@ -7,10 +7,7 @@ import net.zomis.games.server2.doctools.DocEventSystem
 import net.zomis.games.server2.doctools.DocWriter
 import net.zomis.games.server2.doctools.EventsExpect
 import net.zomis.games.server2.clients.FakeClient
-import net.zomis.games.server2.games.GameStartedEvent
-import net.zomis.games.server2.games.GameSystem
-import net.zomis.games.server2.games.GameType
-import net.zomis.games.server2.games.GameTypeRegisterEvent
+import net.zomis.games.server2.games.*
 import net.zomis.games.server2.testDocWriter
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
@@ -32,6 +29,7 @@ class InviteSystemTest {
     @JvmField
     val docWriter: DocWriter = testDocWriter("INVITES")
 
+    private val idGenerator: GameIdGenerator = { "1" }
     private lateinit var system: InviteSystem
 
     @BeforeEach
@@ -40,7 +38,7 @@ class InviteSystemTest {
         features = Features(events)
 
         system = InviteSystem()
-        features.add(GameSystem()::setup)
+        features.add { f, e -> GameSystem().setup(f, e, idGenerator) }
         // Don't need the LobbySystem feature here
         features.add(system::setup)
 
@@ -75,7 +73,7 @@ class InviteSystemTest {
             receive(invitee, """{"type":"GameStarted","gameType":"TestGameType","gameId":"1","yourIndex":1,"players":["TestClientA","TestClientB"]}""")
         }
 
-        val invite = Invite(host, mutableListOf(), mutableListOf(), GameType("TestGameType", events), "TestGameType-TestClientA-0")
+        val invite = Invite(host, mutableListOf(), mutableListOf(), GameType("TestGameType", events, idGenerator), "TestGameType-TestClientA-0")
         system.invites[invite.id] = invite
         events.execute(InviteEvent(host, invite, listOf(invitee)))
         host.clearMessages()
@@ -91,7 +89,7 @@ class InviteSystemTest {
         events.execute(ClientLoginEvent(host, host.name!!, "tests", "token"))
         events.execute(ClientLoginEvent(invitee, invitee.name!!, "tests", "token2"))
 
-        val invite = Invite(host, mutableListOf(), mutableListOf(), GameType("MyGame", events), "inv-1")
+        val invite = Invite(host, mutableListOf(), mutableListOf(), GameType("MyGame", events, idGenerator), "inv-1")
         events.execute(InviteEvent(host, invite, listOf(invitee)))
         Assertions.assertEquals("""{"type":"Invite","host":"Host","game":"MyGame","inviteId":"inv-1"}""", invitee.nextMessage())
         Assertions.assertEquals("""{"type":"InviteWaiting","inviteId":"inv-1","waitingFor":["Invited"]}""", host.nextMessage())
@@ -106,7 +104,7 @@ class InviteSystemTest {
 
     @Test
     fun inviteDeclined() {
-        val invite = Invite(host, mutableListOf(), mutableListOf(), GameType("MyGame", events), "inv-1")
+        val invite = Invite(host, mutableListOf(), mutableListOf(), GameType("MyGame", events, idGenerator), "inv-1")
         events.execute(InviteEvent(host, invite, listOf(invitee)))
         Assertions.assertEquals("""{"type":"Invite","host":"Host","game":"MyGame","inviteId":"inv-1"}""", invitee.nextMessage())
         Assertions.assertEquals("""{"type":"InviteWaiting","inviteId":"inv-1","waitingFor":["Invited"]}""", host.nextMessage())
