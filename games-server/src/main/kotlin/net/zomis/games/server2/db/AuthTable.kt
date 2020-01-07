@@ -62,9 +62,6 @@ class AuthTable(private val dynamoDB: AmazonDynamoDB) {
     }
 
     private fun authenticationDone(event: ClientLoginEvent) {
-        if (event.provider == ServerAIProvider) {
-            // Should be done also for AIs, because they need to be recognized in database
-        }
         // Check if user exists (authType + authId)
         // If not then create
         // Otherwise update TimeLastConnected and session and respond with session key to client
@@ -73,6 +70,9 @@ class AuthTable(private val dynamoDB: AmazonDynamoDB) {
         if (existing != null) {
             val uuid = existing.getString(this.playerId)
             event.client.playerId = UUID.fromString(uuid)
+            if (event.provider == ServerAIProvider) {
+                return
+            }
             val updateResult = myTable.table.updateItem(
                 playerId, existing.getString(playerId), AttributeUpdate(timeLastConnected).put(timestamp))
             logger.info("Update ${event.client.name}. Found $uuid. Update result $updateResult")
