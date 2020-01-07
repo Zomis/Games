@@ -4,9 +4,6 @@
   </div>
 </template>
 <script>
-import RoyalGameOfUR from "@/components/RoyalGameOfUR";
-import Connect4 from "@/components/games/Connect4";
-import UTTT from "@/components/games/UTTT";
 import Socket from "../socket";
 
 export default {
@@ -21,11 +18,6 @@ export default {
         players: []
       }
     };
-  },
-  components: {
-    RoyalGameOfUR,
-    Connect4,
-    UTTT
   },
   created() {
     Socket.$on("type:TVGame", this.tvGame);

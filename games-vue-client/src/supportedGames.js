@@ -10,13 +10,11 @@ Edit just one file instead of editing all the following files:
 import PlayGame from "@/components/PlayGame";
 
 import RoyalGameOfUR from "@/components/RoyalGameOfUR";
-import Connect4 from "@/components/games/Connect4";
 import UTTT from "@/components/games/UTTT";
 import ECSGame from "@/components/ecs/ECSGame";
 import DSLTTT from "@/components/games/DSLTTT";
 import TTT3D from "@/components/games/TTT3D";
 
-import Connect4state from "./components/games/Connect4state";
 import URstate from "./components/RoyalGameOfURstate";
 import UTTTstate from "./components/games/UTTTstate";
 import DslGameState from "./components/games/DslGameState";
@@ -56,13 +54,6 @@ const supportedGames = {
     "DSL-TTT3D": {
         dsl: true,
         component: TTT3D,
-        routeProps: defaultRouteProps
-    },
-    "Connect4": {
-        enabled: false,
-        dsl: false,
-        store: Connect4state,
-        component: Connect4,
         routeProps: defaultRouteProps
     },
     "UTTT": {

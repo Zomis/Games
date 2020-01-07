@@ -29,7 +29,6 @@ import net.zomis.games.server2.javalin.auth.LinAuth
 import net.zomis.games.server2.ws.Server2WS
 import net.zomis.games.server2.ws.WebsocketMessageHandler
 import net.zomis.tttultimate.TTFactories
-import net.zomis.tttultimate.games.TTClassicControllerWithGravity
 import net.zomis.tttultimate.games.TTUltimateController
 import java.io.File
 import java.util.UUID
@@ -125,7 +124,6 @@ class Server2(val events: EventSystem) {
 
         features.add { feat, ev -> gameSystem.setup(feat, ev, config.idGenerator) }
 
-        TTControllerSystem("Connect4") {TTClassicControllerWithGravity(TTFactories().classicMNK(7, 6, 4))}.register(events)
         TTControllerSystem("UTTT") {TTUltimateController(TTFactories().ultimate())}.register(events)
         RoyalGameOfUrSystem.init(events)
         features.add(ECSGameSystem("UTTT-ECS") { UTTT().setup() }::setup)
