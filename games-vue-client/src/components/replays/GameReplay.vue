@@ -1,17 +1,42 @@
 <template>
-    <div class="game-replay">
-        <GameHead :gameInfo="gameInfo"></GameHead>
-        <div>
+  <v-container fluid>
+    <v-layout column fill-height>
+      <v-layout row wrap justify-center align-center>
+        <v-flex xs1 text-xs-center>{{ position }} / {{ maxReplayStep }}</v-flex>
+        <v-flex xs10>
+          <v-slider v-model="position" :max="maxReplayStep" :min="0"></v-slider>
+        </v-flex>
+      </v-layout>
+      <v-layout row justify-center align-center>
+        <v-btn @click="setPosition(0)">
+          <v-icon>mdi-skip-previous</v-icon>
+        </v-btn>
+        <v-btn @click="changePosition(-1)">
+          <v-icon>mdi-rewind</v-icon>
+        </v-btn>
+        <v-btn v-if="!running" @click="setRunning(true)">
+          <v-icon>mdi-play</v-icon>
+        </v-btn>
+        <v-btn v-else @click="setRunning(false)">
+          <v-icon>mdi-pause</v-icon>
+        </v-btn>
+        <v-btn @click="changePosition(1)">
+          <v-icon>mdi-fast-forward</v-icon>
+        </v-btn>
+        <v-btn @click="setPosition(maxReplayStep)">
+          <v-icon>mdi-skip-next</v-icon>
+        </v-btn>
+      </v-layout>
+      <v-flex grow>
+        <GameHead xs12 :gameInfo="gameInfo"></GameHead>
+        <div xs12>
             Started at {{ timeStarted }} - Ended at {{ timeLastAction }}
         </div>
-        <v-slider
-            v-model="replayStep"
-            :max="maxReplayStep"
-            :min="0"
-          />
-        <component :is="gameComponent" :gameInfo="gameInfo" :view="currentView" />
-        <GameResult :gameInfo="gameInfo"></GameResult>
-    </div>
+        <component xs12 :is="gameComponent" :gameInfo="gameInfo" :view="currentView" />
+        <GameResult xs12 :gameInfo="gameInfo"></GameResult>
+      </v-flex>
+    </v-layout>
+  </v-container>
 </template>
 <script>
 import supportedGames from "@/supportedGames"
@@ -28,7 +53,9 @@ export default {
     props: ["gameUUID"],
     data() {
         return {
-            replayStep: 0,
+            running: false,
+            timer: null,
+            position: 0,
             replay: null
         }
     },
@@ -41,7 +68,31 @@ export default {
         axios.get(`${this.baseURL}games/${this.gameUUID}/replay`).then(response => {
             console.log(response)
             this.replay = response.data
+            this.setRunning(true)
         })
+    },
+    methods: {
+        setPosition(position) {
+            this.setRunning(false);
+            this.position = position;
+        },
+        changePosition(offset) {
+            this.setRunning(false);
+            this.position = this.position + offset;
+        },
+        setRunning(running) {
+            this.running = running;
+            if (running) {
+                this.timer = setInterval(() => {
+                    this.position = this.position + 1;
+                    if (this.position === this.replayLength) {
+                        this.setRunning(false);
+                    }
+                }, 750);
+            } else {
+                clearInterval(this.timer);
+            }
+        }
     },
     computed: {
         baseURL() {
@@ -67,7 +118,7 @@ export default {
         },
         currentView() {
             if (this.replay == null) { return null }
-            return this.replay.views[this.replayStep]
+            return this.replay.views[this.position]
         },
         gameInfo() {
             if (this.replay == null) { return null }
