@@ -9,7 +9,7 @@ interface Actionable<T : Any, A : Any> {
     val actionType: String
     val parameter: A
 }
-data class Action2D<T : Any, P>(override val game: T, override val playerIndex: Int,
+data class Action2D<T : Any, P : Any>(override val game: T, override val playerIndex: Int,
         override val actionType: String,
         val x: Int, val y: Int, val target: P): Actionable<T, Point> {
     override val parameter = Point(x, y)

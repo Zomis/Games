@@ -1,10 +1,11 @@
 package net.zomis.games.dsl
 
-typealias ActionLogic2D<T, P> = Action2DScope<T, P>.() -> Unit
-typealias ActionLogicInt<T> = ActionScope<T, Int>.() -> Unit
-typealias ActionLogicSingleTarget<T, A> = ActionScope<T, A>.() -> Unit
+// TODO: This is getting a lot of classes, generalize.
+typealias ActionLogic2D<T, P> = ActionScope<T, Point, Action2D<T, P>>.() -> Unit
+typealias ActionLogicInt<T> = ActionScope<T, Int, Action<T, Int>>.() -> Unit
+typealias ActionLogicSingleTarget<T, A> = ActionScope<T, A, Action<T, A>>.() -> Unit
 typealias ActionLogicAdvanced<T, A> = ActionComplexScope<T, A>.() -> Unit
-typealias ActionLogicSimple<T> = ActionScope<T, Unit>.() -> Unit
+typealias ActionLogicSimple<T> = ActionScope<T, Unit, Action<T, Unit>>.() -> Unit
 
 interface GameLogic<T : Any> {
     fun <P : Any> action2D(actionType: ActionType<Point>, grid: GridDsl<T, P>, logic: ActionLogic2D<T, P>)
@@ -23,18 +24,11 @@ interface EffectScope {
     fun state(key: String, value: Any)
 }
 
-interface Action2DScope<T : Any, P : Any> {
+interface ActionScope<T : Any, P : Any, A : Actionable<T, P>> {
 
-    fun allowed(condition: (Action2D<T, P>) -> Boolean)
-    fun effect(effect: EffectScope.(Action2D<T, P>) -> Unit)
-
-}
-
-interface ActionScope<T : Any, P : Any> {
-
-    fun allowed(condition: (Action<T, P>) -> Boolean)
-    fun effect(effect: EffectScope.(Action<T, P>) -> Unit)
-    fun replayEffect(effect: ReplayScope.(Action<T, P>) -> Unit)
+    fun allowed(condition: (A) -> Boolean)
+    fun effect(effect: EffectScope.(A) -> Unit)
+    fun replayEffect(effect: ReplayScope.(A) -> Unit)
 
 }
 

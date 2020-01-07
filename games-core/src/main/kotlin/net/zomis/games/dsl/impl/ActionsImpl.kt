@@ -3,18 +3,47 @@ package net.zomis.games.dsl.impl
 import net.zomis.games.dsl.*
 import kotlin.reflect.KClass
 
-interface GameLogicActionType<T : Any, A : Any> {
+interface GameLogicActionType<T : Any, P : Any, A : Actionable<T, P>> {
     val actionType: String
-    fun availableActions(playerIndex: Int): Iterable<Actionable<T, A>>
-    fun actionAllowed(action: Actionable<T, A>): Boolean
-    fun performAction(action: Actionable<T, A>)
-    fun createAction(playerIndex: Int, parameter: A): Actionable<T, A>
+    fun availableActions(playerIndex: Int): Iterable<A>
+    fun actionAllowed(action: A): Boolean
+    fun performAction(action: A)
+    fun createAction(playerIndex: Int, parameter: P): A
 }
 
-class GameLogicActionType2D<T : Any, P : Any>(override val actionType: String, private val model: T, grid: GridDsl<T, P>,
-          private val replayState: ReplayState): Action2DScope<T, P>, GameLogicActionType<T, Point> {
-    var allowedCheck: (Action2D<T, P>) -> Boolean = { true }
-    lateinit var effect: EffectScope.(Action2D<T, P>) -> Unit
+abstract class GameLogicActionTypeBase<T : Any, P : Any, A : Actionable<T, P>>(
+        val model: T,
+        val replayState: ReplayState): ActionScope<T, P, A>, GameLogicActionType<T, P, A> {
+
+    var allowedCheck: (A) -> Boolean = { true }
+    lateinit var effect: EffectScope.(A) -> Unit
+    var replayEffect: (ReplayScope.(A) -> Unit)? = null
+
+    override fun replayEffect(effect: ReplayScope.(A) -> Unit) {
+        this.replayEffect = effect
+    }
+
+    override fun allowed(condition: (A) -> Boolean) {
+        this.allowedCheck = condition
+    }
+    override fun effect(effect: EffectScope.(A) -> Unit) {
+        this.effect = effect
+    }
+
+    override fun actionAllowed(action: A): Boolean {
+        return this.allowedCheck(action)
+    }
+
+    override fun performAction(action: A) {
+        return this.effect(replayState, action)
+    }
+
+}
+
+class GameLogicActionType2D<T : Any, P : Any>(override val actionType: String,
+          model: T, grid: GridDsl<T, P>,
+          replayState: ReplayState): GameLogicActionTypeBase<T, Point, Action2D<T, P>>(model, replayState) {
+
     val gridSpec = GameGridBuilder<T, P>(model)
     init {
         grid(gridSpec)
@@ -23,69 +52,34 @@ class GameLogicActionType2D<T : Any, P : Any>(override val actionType: String, p
     val size: Pair<Int, Int>
         get() = gridSpec.sizeX(model) to gridSpec.sizeY(model)
 
-    override fun allowed(condition: (Action2D<T, P>) -> Boolean) {
-        this.allowedCheck = condition
-    }
-    override fun effect(effect: EffectScope.(Action2D<T, P>) -> Unit) {
-        this.effect = effect
-    }
-
     fun getter(x: Int, y: Int): P {
         return gridSpec.get(model, x, y)
     }
 
-    override fun actionAllowed(action: Actionable<T, Point>): Boolean {
-        return this.allowedCheck(createAction(action.playerIndex, action.parameter))
-    }
-
-    override fun performAction(action: Actionable<T, Point>) {
-        return this.effect(replayState, createAction(action.playerIndex, action.parameter))
-    }
-
     override fun createAction(playerIndex: Int, parameter: Point): Action2D<T, P> {
-        return Action2D(model, playerIndex, actionType, parameter.x, parameter.y, this.getter(parameter.x, parameter.y))
+        return Action2D(model, playerIndex, actionType, parameter.x, parameter.y, getter(parameter.x, parameter.y))
     }
 
-    override fun availableActions(playerIndex: Int): Iterable<Actionable<T, Point>> {
+    override fun availableActions(playerIndex: Int): Iterable<Action2D<T, P>> {
         return (0 until this.size.second).flatMap {y ->
             (0 until this.size.first).mapNotNull { x ->
                 val target = this.getter(x, y)
                 val action = Action2D(model, playerIndex, actionType, x, y, target)
-                val allowed = this.allowedCheck(action)
+                val allowed = this.actionAllowed(action)
                 return@mapNotNull if (allowed) action else null
             }
         }
     }
 }
 
-class GameLogicActionTypeUnit<T : Any>(override val actionType: String, private val model: T,
-           private val replayState: ReplayState): ActionScope<T, Unit>, GameLogicActionType<T, Unit> {
-    var allowedCheck: (Action<T, Unit>) -> Boolean = { true }
-    lateinit var effect: EffectScope.(Action<T, Unit>) -> Unit
-    var replayEffect: (ReplayScope.(Action<T, Unit>) -> Unit)? = null
-
-    override fun allowed(condition: (Action<T, Unit>) -> Boolean) {
-        this.allowedCheck = condition
-    }
-    override fun effect(effect: EffectScope.(Action<T, Unit>) -> Unit) {
-        this.effect = effect
-    }
-    override fun replayEffect(effect: ReplayScope.(Action<T, Unit>) -> Unit) {
-        this.replayEffect = effect
-    }
-    override fun actionAllowed(action: Actionable<T, Unit>): Boolean {
-        return this.allowedCheck(createAction(action.playerIndex, action.parameter))
-    }
-
-    override fun performAction(action: Actionable<T, Unit>) {
-        return this.effect(replayState, createAction(action.playerIndex, action.parameter))
-    }
+class GameLogicActionTypeUnit<T : Any>(override val actionType: String,
+           model: T, replayState: ReplayState): GameLogicActionTypeBase<T, Unit, Action<T, Unit>>(model, replayState) {
 
     override fun createAction(playerIndex: Int, parameter: Unit): Action<T, Unit> {
         return Action(model, playerIndex, actionType, parameter)
     }
 
-    override fun availableActions(playerIndex: Int): Iterable<Actionable<T, Unit>> {
+    override fun availableActions(playerIndex: Int): Iterable<Action<T, Unit>> {
         val action = Action(model, playerIndex, actionType, Unit)
         val allowed = this.allowedCheck(action)
         return if (allowed) listOf(action) else emptyList()
@@ -106,31 +100,16 @@ class GameLogicActionTypeComplexNext<T : Any, A : Any>(val yielder: (A) -> Unit)
 
 }
 
-class GameLogicActionTypeComplex<T : Any, A : Any>(override val actionType: String, private val model: T,
-          private val replayState: ReplayState): ActionComplexScope<T, A>, GameLogicActionType<T, A> {
+class GameLogicActionTypeComplex<T : Any, A : Any>(override val actionType: String,
+        model: T, replayState: ReplayState): ActionComplexScope<T, A>, GameLogicActionTypeBase<T, A, Action<T, A>>(model, replayState) {
 
-    var allowedCheck: (Action<T, A>) -> Boolean = { true }
-    lateinit var effect: EffectScope.(Action<T, A>) -> Unit
-    var replayEffect: (ReplayScope.(Action<T, A>) -> Unit)? = null
     private lateinit var options: ActionComplexScopeResultStart<T, A>.() -> Unit
 
     override fun options(options: ActionComplexScopeResultStart<T, A>.() -> Unit) {
         this.options = options
     }
 
-    override fun allowed(condition: (Action<T, A>) -> Boolean) {
-        this.allowedCheck = condition
-    }
-
-    override fun effect(effect: EffectScope.(Action<T, A>) -> Unit) {
-        this.effect = effect
-    }
-
-    override fun replayEffect(effect: ReplayScope.(Action<T, A>) -> Unit) {
-        this.replayEffect = effect
-    }
-
-    override fun availableActions(playerIndex: Int): Iterable<Actionable<T, A>> {
+    override fun availableActions(playerIndex: Int): Iterable<Action<T, A>> {
         val result = mutableListOf<A>()
         val yielder: (A) -> Unit = { result.add(it) }
         val nextScope = GameLogicActionTypeComplexNext<T, A>(yielder)
@@ -138,47 +117,19 @@ class GameLogicActionTypeComplex<T : Any, A : Any>(override val actionType: Stri
         return result.map { createAction(playerIndex, it) }
     }
 
-    override fun actionAllowed(action: Actionable<T, A>): Boolean
-        = this.allowedCheck(createAction(action.playerIndex, action.parameter))
-
-    override fun performAction(action: Actionable<T, A>) {
-        this.effect(replayState, createAction(action.playerIndex, action.parameter))
-    }
-
     override fun createAction(playerIndex: Int, parameter: A): Action<T, A>
         = Action(model, playerIndex, actionType, parameter)
 
 }
 
-class GameLogicActionTypeSimple<T : Any, P : Any>(override val actionType: String, private val model: T,
-          private val options: (T) -> Iterable<P>,
-          private val replayState: ReplayState): ActionScope<T, P>, GameLogicActionType<T, P> {
-    var allowedCheck: (Action<T, P>) -> Boolean = { true }
-    var replayEffect: (ReplayScope.(Action<T, P>) -> Unit)? = null
-    lateinit var effect: EffectScope.(Action<T, P>) -> Unit
-
-    override fun allowed(condition: (Action<T, P>) -> Boolean) {
-        this.allowedCheck = condition
-    }
-    override fun effect(effect: EffectScope.(Action<T, P>) -> Unit) {
-        this.effect = effect
-    }
-    override fun replayEffect(effect: ReplayScope.(Action<T, P>) -> Unit) {
-        this.replayEffect = effect
-    }
-    override fun actionAllowed(action: Actionable<T, P>): Boolean {
-        return this.allowedCheck(createAction(action.playerIndex, action.parameter))
-    }
-
-    override fun performAction(action: Actionable<T, P>) {
-        return this.effect(replayState, createAction(action.playerIndex, action.parameter))
-    }
+class GameLogicActionTypeSimple<T : Any, P : Any>(override val actionType: String,
+          model: T, val options: (T) -> Iterable<P>, replayState: ReplayState): GameLogicActionTypeBase<T, P, Action<T, P>>(model, replayState) {
 
     override fun createAction(playerIndex: Int, parameter: P): Action<T, P> {
         return Action(model, playerIndex, actionType, parameter)
     }
 
-    override fun availableActions(playerIndex: Int): Iterable<Actionable<T, P>> {
+    override fun availableActions(playerIndex: Int): Iterable<Action<T, P>> {
         return options(model).mapNotNull {option ->
             val action = Action(model, playerIndex, actionType, option)
             val allowed = this.allowedCheck(action)
@@ -188,7 +139,7 @@ class GameLogicActionTypeSimple<T : Any, P : Any>(override val actionType: Strin
 }
 
 class GameLogicContext<T : Any>(private val model: T, private val replayState: ReplayState) : GameLogic<T> {
-    val actions = mutableMapOf<ActionType<*>, GameLogicActionType<T, *>>()
+    val actions = mutableMapOf<ActionType<*>, GameLogicActionType<T, *, *>>()
     var winner: (T) -> PlayerIndex = { null }
 
     override fun <P : Any> action2D(actionType: ActionType<Point>, grid: GridDsl<T, P>, logic: ActionLogic2D<T, P>) {
@@ -230,24 +181,24 @@ class GameLogicContext<T : Any>(private val model: T, private val replayState: R
 
 }
 
-class ActionTypeImplEntry<T : Any, A : Any>(private val model: T,
+class ActionTypeImplEntry<T : Any, P : Any, A : Actionable<T, P>>(private val model: T,
         private val replayState: ReplayState,
-        private val actionType: ActionType<A>,
-        private val impl: GameLogicActionType<T, A>) {
-    fun availableActions(playerIndex: Int): Iterable<Actionable<T, A>> = impl.availableActions(playerIndex)
-    fun perform(playerIndex: Int, parameter: A) {
+        private val actionType: ActionType<P>,
+        private val impl: GameLogicActionType<T, P, A>) {
+    fun availableActions(playerIndex: Int): Iterable<Actionable<T, P>> = impl.availableActions(playerIndex)
+    fun perform(playerIndex: Int, parameter: P) {
         this.perform(this.createAction(playerIndex, parameter))
     }
-    fun perform(action: Actionable<T, A>) {
+    fun perform(action: A) {
         replayState.resetLastMove()
         impl.performAction(action)
     }
-    fun createAction(playerIndex: Int, parameter: A): Actionable<T, A> = impl.createAction(playerIndex, parameter)
-    fun isAllowed(action: Actionable<T, A>): Boolean = impl.actionAllowed(action)
+    fun createAction(playerIndex: Int, parameter: P): A = impl.createAction(playerIndex, parameter)
+    fun isAllowed(action: A): Boolean = impl.actionAllowed(action)
 
     val name: String
         get() = actionType.name
-    val parameterClass: KClass<A>
+    val parameterClass: KClass<P>
         get() = actionType.parameterType
 }
 
@@ -258,26 +209,26 @@ class ActionsImpl<T : Any>(private val model: T,
     val actionTypes: Set<String>
         get() = logic.actions.keys.map { it.name }.toSet()
 
-    fun types(): Set<ActionTypeImplEntry<T, Any>> {
+    fun types(): Set<ActionTypeImplEntry<T, Any, Actionable<T, Any>>> {
         return actionTypes.map { type(it)!! }.toSet()
     }
 
-    operator fun get(actionType: String): ActionTypeImplEntry<T, Any>? {
+    operator fun get(actionType: String): ActionTypeImplEntry<T, Any, Actionable<T, Any>>? {
         return type(actionType)
     }
 
-    fun type(actionType: String): ActionTypeImplEntry<T, Any>? {
+    fun type(actionType: String): ActionTypeImplEntry<T, Any, Actionable<T, Any>>? {
         return logic.actions.entries.find { it.key.name == actionType }?.let {
-            ActionTypeImplEntry(model, replayState, it.key as ActionType<Any>, it.value as GameLogicActionType<T, Any>)
+            ActionTypeImplEntry(model, replayState, it.key as ActionType<Any>, it.value as GameLogicActionType<T, Any, Actionable<T, Any>>)
         }
     }
-    fun <A : Any> type(actionType: String, clazz: KClass<T>): ActionTypeImplEntry<T, A>? {
+    fun <P : Any> type(actionType: String, clazz: KClass<T>): ActionTypeImplEntry<T, P, out Actionable<T, P>>? {
         val entry = logic.actions.entries.find { it.key.name == actionType }
         if (entry != null) {
             if (entry.key.parameterType != clazz) {
                 throw IllegalArgumentException("ActionType '$actionType' has parameter ${entry.key.parameterType} and not $clazz")
             }
-            return this.type(actionType) as ActionTypeImplEntry<T, A>
+            return this.type(actionType) as ActionTypeImplEntry<T, P, Actionable<T, P>>
         }
         return null
     }
