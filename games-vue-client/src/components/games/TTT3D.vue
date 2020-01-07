@@ -1,7 +1,4 @@
 <template>
-  <div class="game-ttt3d">
-    <GameHead :gameInfo="gameInfo"></GameHead>
-    <GameResult :gameInfo="gameInfo"></GameResult>
   <Scene @complete="initialized" v-model="scene" v-if="view.board"> <!-- @pointer$="onPointer" -->
 <!--    <HemisphericLight emissive="#00FF00"></HemisphericLight>-->
     <HemisphericLight diffuse="#fff" />
@@ -21,17 +18,12 @@
       </template>
     </template>
   </Scene>
-  </div>
 </template>
 <script>
 //let SPACE = 1;
-import GameHead from "./common/GameHead";
-import GameResult from "./common/GameResult";
-import { mapState } from "vuex";
-
 export default {
   name: "TTT3D",
-  props: ["gameInfo", "showRules", "fixedView"],
+  props: ["view", "onAction"],
   data() {
     return {
       scene: null,
@@ -40,13 +32,6 @@ export default {
       indices: [0, 1, 2, 3],
       positions: [-3, -1, 1, 3]
     }
-  },
-  components: {
-    GameHead,
-    GameResult
-  },
-  mounted() {
-    this.$store.dispatch("viewRequest", this.gameInfo)
   },
   methods: {
 /*
@@ -66,7 +51,6 @@ export default {
       let scene = this.scene;
       let pickInfo = scene.pick(scene.pointerX, scene.pointerY, () => true);
       if (pickInfo.hit) {
-
         let hit = pickInfo.pickedMesh;
         let splitted = hit.name.split("_");
         if (splitted.length !== 4) {
@@ -81,21 +65,13 @@ export default {
         let r = hit.material.albedoColor.r;
         console.log("Current:", r, b);
 */
-        this.$store.dispatch("makeMove", { gameInfo: this.gameInfo, moveType: "play", move: { x: x, y: y } });
+        this.onAction("play", { x: x, y: y });
       }
     }
   },
   computed: {
-    ...mapState("DslGameState", {
-      view(state) {
-        if (this.fixedView) {
-          return this.fixedView
-        }
-        return state.games[this.gameInfo.gameId].gameData.view;
-      }
-    }),
     colors() {
-      // {"type":"GameView","gameType":"DSL-TTT3D","gameId":"1","viewer":1,"view":{"currentPlayer":1,"winner":0,"board":[[{"row":[0,0,0,null]},{"row":[1,null,null,null]},{"row":[0,1,null,null]},{"row":[1,0,null,null]}],[{"row":[null,null,null,null]},{"row":[1,1,0,1]},{"row":[null,null,null,null]},{"row":[0,0,1,null]}],[{"row":[0,0,0,null]},{"row":[null,null,null,null]},{"row":[null,null,null,null]},{"row":[1,0,1,1]}],[{"row":[null,null,null,null]},{"row":[null,null,null,null]},{"row":[1,1,null,null]},{"row":[1,0,0,null]}]]}}
+      // {"view":{"currentPlayer":1,"winner":0,"board":[[{"row":[0,0,0,null]},{"row":[1,null,null,null]},{"row":[0,1,null,null]},{"row":[1,0,null,null]}],[{"row":[null,null,null,null]},{"row":[1,1,0,1]},{"row":[null,null,null,null]},{"row":[0,0,1,null]}],[{"row":[0,0,0,null]},{"row":[null,null,null,null]},{"row":[null,null,null,null]},{"row":[1,0,1,1]}],[{"row":[null,null,null,null]},{"row":[null,null,null,null]},{"row":[1,1,null,null]},{"row":[1,0,0,null]}]]}}
       return this.view.board.map(yy => {
         return yy.map(xx => {
           let row = [];

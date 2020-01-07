@@ -1,13 +1,14 @@
 <template>
   <div class="game-over" v-if="gameOverMessage">
-    <span class="you" v-if="gameInfo.yourIndex >= 0">YOU</span>
-    <span class="you" v-else>{{ winnerName }}</span>
+    <span class="you" v-if="gameInfo.yourIndex >= 0">YOU </span>
+    <span class="you" v-else>{{ winnerName }} </span>
     <span v-if="gameOverMessage.winner" class="win">WIN</span>
     <span v-if="!gameOverMessage.winner" class="loss">LOSE</span>
     <div class="game-over-actions">
-      <router-link to="/">Back to Lobby</router-link>
+      <v-btn to="/">Back to Lobby</v-btn>
       <v-btn color="info" @click="playAgain()">Play again</v-btn>
     </div>
+    <router-link class="permalink" :to="permalink">Permalink</router-link>
     <Invites />
   </div>
 </template>
@@ -56,6 +57,11 @@ export default {
         this.winnerName = this.gameInfo.players[e.player];
       }
     }
+  },
+  computed: {
+    permalink() {
+      return `/stats/games/${this.gameInfo.gameId}/replay`
+    }
   }
 };
 </script>
@@ -64,6 +70,11 @@ export default {
   margin-top: 20px;
   font-size: 2em;
   font-weight: bolder;
+}
+
+.game-over .permalink {
+  margin-top: 0px;
+  font-size: 12px;
 }
 
 .game-over .win {

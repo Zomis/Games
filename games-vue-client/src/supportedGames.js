@@ -7,6 +7,8 @@ Edit just one file instead of editing all the following files:
 - etc...
 */
 
+import PlayGame from "@/components/PlayGame";
+
 import RoyalGameOfUR from "@/components/RoyalGameOfUR";
 import Connect4 from "@/components/games/Connect4";
 import UTTT from "@/components/games/UTTT";
@@ -107,8 +109,10 @@ export default {
             return {
                 path: `/games/${key}/:gameId`,
                 name: game.routeName || key,
-                component: game.component,
-                props: game.routeProps
+                component: PlayGame,
+                props: route => ({
+                    ...game.routeProps(route)
+                })
             }
         })
     },

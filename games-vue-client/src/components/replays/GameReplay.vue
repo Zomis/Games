@@ -1,16 +1,20 @@
 <template>
     <div class="game-replay">
+        <GameHead :gameInfo="gameInfo"></GameHead>
         <v-slider
             v-model="replayStep"
             :max="maxReplayStep"
             :min="0"
           />
-        <component :is="gameComponent" :gameInfo="gameInfo" :showRules="false" :fixedView="currentView" />
+        <component :is="gameComponent" :gameInfo="gameInfo" :view="currentView" />
+        <GameResult :gameInfo="gameInfo"></GameResult>
     </div>
 </template>
 <script>
 import supportedGames from "@/supportedGames"
 import axios from "axios";
+import GameHead from "@/components/games/common/GameHead";
+import GameResult from "@/components/games/common/GameResult";
 
 export default {
     name: "GameReplay",
@@ -22,7 +26,9 @@ export default {
         }
     },
     components: {
-        ...supportedGames.components()
+        GameHead,
+        GameResult,
+        ...supportedGames.components() // TODO: This might not be needed
     },
     created() {
         axios.get(`${this.baseURL}games/${this.gameUUID}/replay`).then(response => {

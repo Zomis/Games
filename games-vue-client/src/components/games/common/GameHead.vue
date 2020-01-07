@@ -1,5 +1,5 @@
 <template>
-  <h1>{{ gameInfo.gameType }} : {{ gameInfo.gameId }} - {{ playerVs }}</h1>
+  <h1>{{ gameInfo.gameType }} : {{ playerVs }}</h1>
 </template>
 <script>
 export default {
