@@ -23,9 +23,12 @@ fun ServerGame.toJson(type: String): ObjectNode {
 
 typealias GameId = UUID
 data class ServerGameOptions(val database: Boolean)
-class ServerGame(val gameType: GameType, val gameId: String, val gameMeta: ServerGameOptions) {
+class ServerGame(val gameType: GameType, val gameMeta: ServerGameOptions) {
     var gameOver: Boolean = false
     val uuid = UUID.randomUUID()
+
+    val gameId: String
+        get() = uuid.toString()
 
     fun broadcast(message: (Client) -> Any) {
         players.forEach { it.send(message.invoke(it)) }
@@ -60,7 +63,6 @@ class GameType(val type: String, events: EventSystem) {
 
     private val logger = KLoggers.logger(this)
     val runningGames: MutableMap<String, ServerGame> = mutableMapOf()
-    private val gameIdCounter = AtomicInteger()
     val features: Features = Features(events)
 
     init {
@@ -68,10 +70,9 @@ class GameType(val type: String, events: EventSystem) {
     }
 
     fun createGame(serverGameOptions: ServerGameOptions): ServerGame {
-        val gameId = gameIdCounter.incrementAndGet().toString()
-        val game = ServerGame(this, gameId, serverGameOptions)
-        runningGames[gameId] = game
-        logger.info { "Create game with id $gameId of type $type" }
+        val game = ServerGame(this, serverGameOptions)
+        runningGames[game.gameId] = game
+        logger.info { "Create game with id ${game.gameId} of type $type" }
         return game
     }
 
