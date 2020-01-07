@@ -1,6 +1,9 @@
 <template>
     <div class="game-replay">
         <GameHead :gameInfo="gameInfo"></GameHead>
+        <div>
+            Started at {{ timeStarted }} - Ended at {{ timeLastAction }}
+        </div>
         <v-slider
             v-model="replayStep"
             :max="maxReplayStep"
@@ -15,6 +18,10 @@ import supportedGames from "@/supportedGames"
 import axios from "axios";
 import GameHead from "@/components/games/common/GameHead";
 import GameResult from "@/components/games/common/GameResult";
+
+function unixtimeToString(date) {
+    return new Date(date * 1000).toISOString().replace("T"," ").replace(/\.\d+Z/g,"")
+}
 
 export default {
     name: "GameReplay",
@@ -39,6 +46,12 @@ export default {
     computed: {
         baseURL() {
             return process.env.VUE_APP_URL
+        },
+        timeStarted() {
+            return unixtimeToString(this.replay.timeStarted)
+        },
+        timeLastAction() {
+            return unixtimeToString(this.replay.timeLastAction)
         },
         maxReplayStep() {
             if (this.replay == null) { return 0 }
