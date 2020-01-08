@@ -78,7 +78,7 @@ class DslRandomPlayTest {
                 p1.expectJsonObject { it.getText("type") == "GameView" }
             }
             val actions = playerRange.mapNotNull {playerIndex ->
-                ServerAIs().randomAction(game, playerIndex).firstOrNull()
+                ServerAIs(emptySet()).randomAction(game, playerIndex).firstOrNull()
             }
             if (actions.isEmpty()) {
                 p1.sendAndExpectResponse("""{ "gameType": "$dslGame", "gameId": "1", "type": "ViewRequest" }""")

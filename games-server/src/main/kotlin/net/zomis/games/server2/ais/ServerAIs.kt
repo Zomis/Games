@@ -32,9 +32,9 @@ private enum class AlphaBetaSpeedMode(val nameSuffix: String, val depthRemaining
     QUICK("_Nice", 0.01),
 }
 
-class ServerAIs {
+class ServerAIs(private val dslGameTypes: Set<String>) {
 
-    fun isDSLGameType(gameType: String) = gameType.startsWith("DSL")
+    fun isDSLGameType(gameType: String) = dslGameTypes.contains(gameType)
 
     fun randomAction(game: ServerGame, index: Int): List<PlayerGameMoveRequest> {
         val controller = game.obj as GameImpl<Any>
@@ -84,7 +84,7 @@ class ServerAIs {
             createTTControllerAlphaBetaAI(event.gameType, events, maxLevel, AlphaBetaSpeedMode.SLOW)
         })
 
-        events.listen("register ServerAIs for Game of UR", GameTypeRegisterEvent::class, { it.gameType == "UR" }, {
+        events.listen("register ServerAIs for Game of UR", GameTypeRegisterEvent::class, { it.gameType == "DSL-UR" }, {
             createURAI(events, "#AI_KFE521S3", RoyalGameOfUrAIs.scf()
                 .withScorer(knockout, 5.0)
                 .withScorer(gotoFlower, 2.0)
@@ -180,8 +180,9 @@ class ServerAIs {
 
     private fun createURAI(events: EventSystem, name: String, ai: ToIntFunction<RoyalGameOfUr>):
         ToIntFunction<RoyalGameOfUr> {
-        ServerAI("UR", name) { game, index ->
-            val ur = game.obj as RoyalGameOfUr
+        ServerAI("DSL-UR", name) { game, index ->
+            val obj = game.obj as GameImpl<RoyalGameOfUr>
+            val ur = obj.model
             if (index != ur.currentPlayer) {
                 return@ServerAI listOf()
             }
@@ -190,7 +191,6 @@ class ServerAIs {
                 return@ServerAI listOf(PlayerGameMoveRequest(game, index, "roll", -1))
             }
 
-            // IntelliJ claims "Cannot access class net.zomis...RoyalGameOfUr" - I disagree, it works just fine.
             val move = ai.applyAsInt(ur)
             listOf(PlayerGameMoveRequest(game, index, "move", IntNode(move)))
         }.register(events)

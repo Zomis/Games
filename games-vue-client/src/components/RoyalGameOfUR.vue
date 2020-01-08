@@ -1,9 +1,7 @@
 <template>
   <div class="game-ur">
-    <GameHead :gameInfo="gameInfo"></GameHead>
     <div class="board-parent">
-      <UrPlayerView v-bind:game="ur" v-bind:playerIndex="0"
-        :gamePieces="gamePieces"
+      <UrPlayerView :view="view" :playerIndex="0"
         :onPlaceNewHighlight="onPlaceNewHighlight"
         :class="{ opponent: !canControlPlayer[0] }"
         :mouseleave="mouseleave"
@@ -36,23 +34,20 @@
             class="piece"
             :mouseover="mouseover" :mouseleave="mouseleave"
             :class="{['piece-' + piece.player]: true, 'moveable':
-              ur.isMoveTime && piece.player == ur.currentPlayer &&
-              ur.canMove_qt1dr2$(ur.currentPlayer, piece.position, ur.roll),
+              view.isMoveTime && piece.player === view.currentPlayer,
               opponent: !canControlCurrentPlayer}"
             :piece="piece"
             :onclick="onClick">
           </UrPiece>
         </div>
       </div>
-      <UrPlayerView v-bind:game="ur" v-bind:playerIndex="1"
-       :gamePieces="gamePieces"
+      <UrPlayerView :view="view" :playerIndex="1"
        :onPlaceNewHighlight="onPlaceNewHighlight"
        :class="{ opponent: !canControlPlayer[1] }"
        :mouseleave="mouseleave"
        :onPlaceNew="placeNew" />
-      <UrRoll :roll="lastRoll" :usable="ur.roll < 0 && canControlCurrentPlayer" :onDoRoll="onDoRoll" />
+      <UrRoll :roll="lastRoll" :usable="view.roll < 0 && canControlCurrentPlayer" :onDoRoll="onDoRoll" />
     </div>
-    <GameResult :gameInfo="gameInfo"></GameResult>
     <v-expansion-panel v-if="showRules" expand>
       <v-expansion-panel-content>
         <div slot="header">Objective</div>
@@ -85,16 +80,11 @@
 </template>
 
 <script>
-import Socket from "../socket";
 import UrPlayerView from "./ur/UrPlayerView";
 import UrPiece from "./ur/UrPiece";
 import UrRoll from "./ur/UrRoll";
 import UrFlower from "./ur/UrFlower";
-import GameHead from "./games/common/GameHead";
-import GameResult from "./games/common/GameResult";
-import { mapState } from "vuex";
 
-// TODO: Place mapping and piecesToObjects in a common JS file, shared with store
 function mapping(position, playerIndex) {
   let y = playerIndex == 0 ? 0 : 2;
   if (position > 4 && position < 13) {
@@ -119,31 +109,31 @@ function piecesToObjects(array, playerIndex) {
   return Array.from(playerPieces).map(e => mapping(e, playerIndex));
 }
 
+function determinePlayerPieces(view) {
+  let pieces = view.pieces;
+  let obj0 = piecesToObjects(pieces, 0);
+  let obj1 = piecesToObjects(pieces, 1);
+  let result = [];
+  var i;
+  for (i = 0; i < obj0.length; i++) {
+    result.push(obj0[i]);
+  }
+  for (i = 0; i < obj1.length; i++) {
+    result.push(obj1[i]);
+  }
+  return result;
+}
+
 export default {
   name: "RoyalGameOfUR",
-  props: ["gameInfo", "showRules"],
+  props: ["view", "onAction"],
   data() {
     return {
+      showRules: false,
       highlighted: null
     };
   },
-  created() {
-    if (this.gameInfo.yourIndex < 0) {
-      Socket.send(
-        `{ "type": "observer", "gameType": "${
-          this.gameInfo.gameType
-        }", "gameId": "${this.gameInfo.gameId}", "observer": "start" }`
-      );
-    }
-    Socket.$on("type:IllegalMove", this.messageIllegal);
-    this.$store.dispatch("UR/calcPlayerPieces", this.gameInfo.gameId);
-  },
-  beforeDestroy() {
-    Socket.$off("type:IllegalMove", this.messageIllegal);
-  },
   components: {
-    GameHead,
-    GameResult,
     UrPlayerView,
     UrRoll,
     UrFlower,
@@ -151,81 +141,37 @@ export default {
   },
   methods: {
     doNothing: function() {},
-    action: function(name, data) {
-      if (Socket.isConnected()) {
-        let json = `{ "gameType": "${this.gameInfo.gameType}", "gameId": "${
-          this.gameInfo.gameId
-        }", "type": "move", "moveType": "${name}", "move": ${data} }`;
-        Socket.send(json);
-      } else {
-        console.log(
-          "Before Action: " + name + ":" + data + " - " + this.ur.toString()
-        );
-        if (name === "roll") {
-          let rollResult = this.ur.doRoll();
-          this.rollUpdate(rollResult);
-        } else {
-          console.log(
-            "move: " + name + " = " + data + " curr " + this.ur.currentPlayer
-          );
-          var moveResult = this.ur.move_qt1dr2$(
-            this.ur.currentPlayer,
-            data,
-            this.ur.roll
-          );
-          console.log("result: " + moveResult);
-          this.$store.dispatch("UR/calcPlayerPieces", this.gameInfo.gameId);
-        }
-        console.log(this.ur.toString());
-      }
-    },
     placeNew: function() { // playerIndex parameter
       if (this.canPlaceNew) {
-        this.action("move", 0);
+        this.onAction("move", 0);
       }
     },
     onClick: function(piece) {
-      if (piece.player !== this.ur.currentPlayer) {
+      if (piece.player !== this.view.currentPlayer) {
         return;
       }
-      if (!this.ur.isMoveTime) {
+      if (!this.isMoveTime) {
         return;
       }
       console.log("OnClick in URView: " + piece.x + ", " + piece.y);
-      this.action("move", piece.position);
-    },
-    messageEliminated(e) {
-      if (
-        this.gameInfo.gameType != e.gameType ||
-        this.gameInfo.gameId != e.gameId
-      ) {
-        return;
-      }
-      console.log(`Recieved eliminated: ${JSON.stringify(e)}`);
-      if (this.gameInfo.yourIndex == e.player) {
-        this.gameOverMessage = e;
-      }
-    },
-    messageIllegal(e) {
-      if (
-        this.gameInfo.gameType != e.gameType ||
-        this.gameInfo.gameId != e.gameId
-      ) {
-        return;
-      }
-      console.log("IllegalMove: " + JSON.stringify(e));
+      this.onAction("move", piece.position);
     },
     onDoRoll() {
-      this.action("roll", -1);
+      this.onAction("roll", -1);
     },
     onPlaceNewHighlight(playerIndex) {
-      if (playerIndex !== this.ur.currentPlayer) {
+      if (playerIndex !== this.view.currentPlayer) {
         return;
       }
       this.highlighted = { player: playerIndex, position: 0 };
     },
+    canMove(from) {
+      console.log("Can move from", from)
+//            this.view.pieces[this.view.currentPlayer][ + this.view.roll
+      return true
+    },
     mouseover(piece) {
-      if (piece.player !== this.ur.currentPlayer) {
+      if (piece.player !== this.view.currentPlayer) {
         return;
       }
       this.highlighted = piece;
@@ -235,52 +181,36 @@ export default {
     }
   },
   computed: {
-    ...mapState("UR", {
-      ur(state) {
-        return state.games[this.gameInfo.gameId].gameData.ur;
-      },
-      lastRoll(state) {
-        return state.games[this.gameInfo.gameId].gameData.lastRoll;
-      },
-      playerPieces(state) {
-        return state.games[this.gameInfo.gameId].gameData.playerPieces;
-      },
-      gamePieces(state) {
-        return state.games[this.gameInfo.gameId].gameData.gamePieces;
-      }
-    }),
+    playerPieces() {
+      if (!this.view) return []
+      return determinePlayerPieces(this.view)
+    },
+    lastRoll() {
+      return this.view.roll;
+    },
+    isMoveTime() {
+      return this.view.roll > 0;
+    },
     canControlPlayer: function() {
-      return [
-        this.gameInfo.yourIndex == 0 || !Socket.isConnected(),
-        this.gameInfo.yourIndex == 1 || !Socket.isConnected()
-      ];
+      return [true, true]; // TODO: Add information about which players can be controlled
     },
     canControlCurrentPlayer: function() {
-      if (this.ur.isFinished) {
+      if (this.view.winner !== null) {
         return false;
       }
-      return (
-        this.ur.currentPlayer == this.gameInfo.yourIndex ||
-        !Socket.isConnected()
-      );
+      return true;
     },
-    destination: function() {
+    destination() {
       if (this.highlighted === null) {
         return null;
       }
-      if (!this.ur.isMoveTime) {
+      if (!this.isMoveTime) {
         return null;
       }
-      if (
-        !this.ur.canMove_qt1dr2$(
-          this.ur.currentPlayer,
-          this.highlighted.position,
-          this.ur.roll
-        )
-      ) {
+      if (!this.canMove(this.highlighted.position)) {
         return null;
       }
-      let resultPosition = this.highlighted.position + this.ur.roll;
+      let resultPosition = this.highlighted.position + this.view.roll;
       if (resultPosition >= 15) {
         return null;
       }
@@ -290,11 +220,8 @@ export default {
       );
       return result[0];
     },
-    canPlaceNew: function() {
-      return (
-        this.canControlCurrentPlayer &&
-        this.ur.canMove_qt1dr2$(this.ur.currentPlayer, 0, this.ur.roll)
-      );
+    canPlaceNew() {
+      return this.canControlCurrentPlayer && this.canMove(0);
     }
   }
 };

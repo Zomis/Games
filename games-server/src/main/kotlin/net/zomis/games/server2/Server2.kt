@@ -19,7 +19,6 @@ import net.zomis.games.server2.db.DBIntegration
 import net.zomis.games.server2.debug.AIGames
 import net.zomis.games.server2.games.*
 import net.zomis.games.server2.games.impl.ECSGameSystem
-import net.zomis.games.server2.games.impl.RoyalGameOfUrSystem
 import net.zomis.games.server2.games.impl.TTControllerSystem
 import net.zomis.games.server2.handlers.games.ViewRequestHandler
 import net.zomis.games.server2.invites.InviteSystem
@@ -125,7 +124,6 @@ class Server2(val events: EventSystem) {
         features.add { feat, ev -> gameSystem.setup(feat, ev, config.idGenerator) }
 
         TTControllerSystem("UTTT") {TTUltimateController(TTFactories().ultimate())}.register(events)
-        RoyalGameOfUrSystem.init(events)
         features.add(ECSGameSystem("UTTT-ECS") { UTTT().setup() }::setup)
         dslGames.forEach { name, spec -> events.with(DslGameSystem(name, spec as GameSpec<Any>)::setup) }
 
@@ -136,7 +134,7 @@ class Server2(val events: EventSystem) {
         events.with(AuthorizationSystem()::register)
         features.add(LobbySystem()::setup)
         val executor = Executors.newScheduledThreadPool(2)
-        events.with { e -> ServerAIs().register(e, executor) }
+        events.with { e -> ServerAIs(dslGames.keys.toSet()).register(e, executor) }
         features.add(InviteSystem()::setup)
         if (config.githubClient.isNotEmpty()) {
             LinAuth(javalin, config.githubConfig()).register()

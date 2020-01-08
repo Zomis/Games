@@ -4,14 +4,14 @@
       <div class="number">{{ remaining }}</div>
       <div class="pieces-container">
         <div v-for="n in remaining" :key="n" class="piece-small pointer"
-          :class="{ ['piece-' + playerIndex]: true, moveable: canPlaceNew && n == remaining }"
+          :class="{ ['piece-' + playerIndex]: true, moveable: canPlaceNew && n === remaining }"
           @mouseover="onPlaceNewHighlight(playerIndex)" @mouseleave="mouseleave()"
           :style="{ left: (n-1)*12 + 'px' }" v-on:click="placeNew()">
         </div>
       </div>
     </div>
     <transition name="fade">
-      <div class="player-active-indicator" v-if="game.currentPlayer == playerIndex"></div>
+      <div class="player-active-indicator" v-if="view.currentPlayer == playerIndex"></div>
     </transition>
     <div class="side side-out">
       <div class="number">{{ out }}</div>
@@ -28,33 +28,32 @@
 export default {
   name: "UrPlayerView",
   props: [
-    "game",
+    "view",
     "playerIndex",
     "onPlaceNew",
-    "gamePieces",
     "onPlaceNewHighlight",
     "mouseleave"
   ],
-  data() {
-    return {};
-  },
   methods: {
-    placeNew: function() {
+    placeNew() {
       this.onPlaceNew(this.playerIndex);
     }
   },
   computed: {
-    remaining: function() {
-      return this.gamePieces[this.playerIndex].filter(i => i === 0).length;
+    isMoveTime() {
+      return this.view.roll > 0
     },
-    out: function() {
-      return this.gamePieces[this.playerIndex].filter(i => i === 15).length;
+    remaining() {
+      return this.view.pieces[this.playerIndex].filter(i => i === 0).length;
     },
-    canPlaceNew: function() {
+    out() {
+      return this.view.pieces[this.playerIndex].filter(i => i === 15).length;
+    },
+    canPlaceNew() {
       return (
-        this.game.currentPlayer == this.playerIndex &&
-        this.game.isMoveTime &&
-        this.game.canMove_qt1dr2$(this.playerIndex, 0, this.game.roll)
+        this.view.currentPlayer == this.playerIndex &&
+        this.isMoveTime &&
+        this.view.pieces[this.playerIndex].every(i => i !== this.view.roll)
       );
     }
   }

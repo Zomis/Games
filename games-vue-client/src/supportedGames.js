@@ -1,4 +1,11 @@
 /*
+var games = require("../../../games-js/web/games-js");
+if (typeof games["games-js"] !== "undefined") {
+  // This is needed when doing a production build, but is not used for `npm run dev` locally.
+  games = games["games-js"];
+}
+*/
+/*
 Edit just one file instead of editing all the following files:
 - route/index.js
 - StartScreen.vue
@@ -15,7 +22,6 @@ import ECSGame from "@/components/ecs/ECSGame";
 import DSLTTT from "@/components/games/DSLTTT";
 import TTT3D from "@/components/games/TTT3D";
 
-import URstate from "./components/RoyalGameOfURstate";
 import DslGameState from "./components/games/DslGameState";
 
 const defaultRouteProps = route => ({
@@ -24,20 +30,11 @@ const defaultRouteProps = route => ({
 })
 
 const supportedGames = {
-    "UR": {
-        enabled: false,
+    "DSL-UR": {
         displayName: "Royal Game of UR",
         routeName: "RoyalGameOfUR",
-        dsl: false,
-        store: URstate,
-        component: RoyalGameOfUR,
-        routeProps: defaultRouteProps
-    },
-    "DSL-UR": {
-        enabled: false,
-        displayName: "Royal Game of UR",
         dsl: true,
-//        component: DSLRoyalGameOfUR,
+        component: RoyalGameOfUR,
         routeProps: defaultRouteProps
     },
     "DSL-Connect4": {
