@@ -26,7 +26,7 @@ repositories {
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-common:$kotlin_version"
     compile "com.github.lewik.klog:klog-metadata:1.3.31"
-    compile "net.zomis:uttt-common:0.4.0"
+    compile "net.zomis:uttt-common:0.4.2"
 
     testCompile "org.jetbrains.kotlin:kotlin-test-common:$kotlin_version"
 }

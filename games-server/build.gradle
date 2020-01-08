@@ -62,7 +62,7 @@ dependencies {
     compile "com.github.lewik.klog:klog-jvm:$kotlin_version"
     compile "io.javalin:javalin:2.6.0"
     compile "com.github.kittinunf.fuel:fuel:2.0.1"
-    compile "net.zomis:uttt-jvm:0.4.0"
+    compile "net.zomis:uttt-jvm:0.4.2"
     compile "net.zomis:fights:0.3.0-SNAPSHOT"
     compile 'net.zomis:scorers:0.3.0-SNAPSHOT'
     compile group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: '1.11.675'

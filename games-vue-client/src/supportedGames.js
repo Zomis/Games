@@ -16,7 +16,6 @@ import DSLTTT from "@/components/games/DSLTTT";
 import TTT3D from "@/components/games/TTT3D";
 
 import URstate from "./components/RoyalGameOfURstate";
-import UTTTstate from "./components/games/UTTTstate";
 import DslGameState from "./components/games/DslGameState";
 
 const defaultRouteProps = route => ({
@@ -56,10 +55,8 @@ const supportedGames = {
         component: TTT3D,
         routeProps: defaultRouteProps
     },
-    "UTTT": {
-        enabled: false,
-        dsl: false,
-        store: UTTTstate,
+    "DSL-UTTT": {
+        dsl: true,
         component: UTTT,
         routeProps: defaultRouteProps
     },

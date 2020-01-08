@@ -1,32 +1,24 @@
 <template>
-  <div class="game-uttt">
-    <GameHead :gameInfo="gameInfo"></GameHead>
-    <div class="board-parent">
-      <div class="board uttt-big-board">
-        <div class="smaller-board" v-for="boardIndex in 9" :key="boardIndex">
-          <div class="pieces pieces-bg">
-            <div v-for="tileIndex in 9" :key="tileIndex" class="piece piece-bg"
-              :class="{ 'moveable': board.isAllowedPlay_1xfwev$(board.game.getSmallestTile_vux9f0$(
-                boardTileToGlobal({ boardIndex: boardIndex - 1, tileIndex: tileIndex - 1 }).x,
-                boardTileToGlobal({ boardIndex: boardIndex - 1, tileIndex: tileIndex - 1 }).y
-              )) }"
-              @click="onClick({ boardIndex: boardIndex - 1, tileIndex: tileIndex - 1 })">
-            </div>
-          </div>
-          <div class="pieces player-pieces">
-            <UrPiece v-for="piece in activeGamePieces[boardIndex - 1]"
-              :key="piece.key"
+  <div class="board-parent">
+    <div class="board uttt-big-board">
+      <div class="smaller-board" v-for="(area, areaIndex) in areas" :key="areaIndex">
+        <Map2D :width="3" :height="3" :grid="area.subs">
+          <template v-slot:default="slotProps">
+            <UrPiece
+              :key="slotProps.key"
               :mouseover="doNothing" :mouseleave="doNothing"
-              :class="'piece-' + piece.player"
-              :piece="{ x: piece.tileIndex % 3, y: Math.floor(piece.tileIndex / 3) }">
+              class="piece"
+              :class="'piece-' + slotProps.tile.tile.owner"
+              :onclick="generateOnClickFor(areaIndex)"
+              :piece="slotProps.tile">
             </UrPiece>
-          </div>
-        </div>
+          </template>
+        </Map2D>
       </div>
     </div>
-    <GameResult :gameInfo="gameInfo"></GameResult>
+    <template v-if="showRules">
     <v-expansion-panels>
-      <v-expansion-panel v-if="showRules">
+      <v-expansion-panel>
         <v-expansion-panel-header>Rules</v-expansion-panel-header>
         <v-expansion-panel-content>
           <v-card>
@@ -47,88 +39,55 @@
         </v-expansion-panel-content>
       </v-expansion-panel>
     </v-expansion-panels>
+    </template>
   </div>
 </template>
 <script>
-import Socket from "../../socket";
 import UrPiece from "../ur/UrPiece";
-import GameHead from "./common/GameHead";
-import GameResult from "./common/GameResult";
-import { mapState } from "vuex";
+import Map2D from "@/components/common/Map2D";
 
 export default {
   name: "UTTT",
-  props: ["gameInfo", "showRules"],
-  created() {
-    if (this.gameInfo.yourIndex < 0) {
-      Socket.send(
-        `{ "type": "observer", "gameType": "${
-          this.gameInfo.gameType
-        }", "gameId": "${this.gameInfo.gameId}", "observer": "start" }`
-      );
-    }
-    Socket.$on("type:IllegalMove", this.messageIllegal);
-  },
-  beforeDestroy() {
-    Socket.$off("type:IllegalMove", this.messageIllegal);
-  },
+  props: ["view", "onAction"],
   components: {
-    GameHead,
-    GameResult,
+    Map2D,
     UrPiece
   },
+  data() {
+    return { showRules: false }
+  },
   computed: {
-    ...mapState("UTTT", {
-      board(state) {
-        return state.games[this.gameInfo.gameId].gameData.board;
-      },
-      movesMade(state) {
-        return state.games[this.gameInfo.gameId].gameData.movesMade;
-      },
-      gamePieces(state) {
-        return state.games[this.gameInfo.gameId].gameData.gamePieces;
-      }
-    }),
-    activeGamePieces() {
-      let result = [];
-      for (let piece of this.gamePieces) {
-        let i = piece.boardIndex
-        if (!result[i]) {
-          result[i] = []
-        }
-        result[i].push(piece)
-      }
-      return result
+    allowedPlay() {
+      // let activeBoard = this.view.activeBoard
+      let allowed = [true, true, true, true, true, true, true, true, true]
+      return allowed
+      // activeBoard == null || activeBoard == area || activeBoard!!.wonBy !== TTPlayer.NONE
+    },
+    areas() {
+      if (!this.view) return []
+      if (!this.view.boards) return []
+      return this.view.boards.flatMap(e => e)
     }
   },
   methods: {
     doNothing: function() {},
-    action: function(name, data) {
-      if (Socket.isConnected()) {
-        let json = `{ "gameType": "${this.gameInfo.gameType}", "gameId": "${
-          this.gameInfo.gameId
-        }", "type": "move", "moveType": "${name}", "move": ${JSON.stringify(
-          data
-        )} }`;
-        Socket.send(json);
-      }
+    generateOnClickFor(areaIndex) {
+      return (piece) => this.pieceClick(areaIndex, piece)
     },
-    onClick: function(piece) {
-      this.action("move", this.boardTileToGlobal(piece));
+    pieceClick(areaIndex, piece) {
+      let global = this.boardTileToGlobal({ boardIndex: areaIndex, x: piece.x, y: piece.y })
+      console.log("play on", global)
+      this.onAction("play", global);
     },
     boardTileToGlobal(piece) {
-      let x = (piece.boardIndex % 3) * 3 + piece.tileIndex % 3;
-      let y =
-        Math.floor(piece.boardIndex / 3) * 3 + Math.floor(piece.tileIndex / 3);
+      let x = (piece.boardIndex % 3) * 3 + piece.x;
+      let y = Math.floor(piece.boardIndex / 3) * 3 + piece.y;
       return { x: x, y: y };
-    },
-    messageIllegal(e) {
-      console.log("IllegalMove: " + JSON.stringify(e));
     }
   }
 };
 </script>
-<style>
+<style scoped>
 @import "../../assets/games-style.css";
 
 .uttt-big-board {

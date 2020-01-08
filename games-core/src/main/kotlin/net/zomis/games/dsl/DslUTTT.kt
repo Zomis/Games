@@ -67,7 +67,27 @@ class DslTTT {
             }
         }
         logic(ttLogic(grid))
-        view(ttView(grid)) // TODO: Needs view improvements. (Logic can still work, perhaps...
+        view {
+            currentPlayer { it.currentPlayer.index() }
+            winner(winner)
+            value("boards") {e ->
+                e.game.subs().chunked(3).map {areas ->
+                    areas.map {area ->
+                        val chunkedSubs = area.subs().chunked(3).map {tiles ->
+                            tiles.map { tile ->
+                                mapOf("owner" to tile.wonBy.index().takeIf { i -> i >= 0 })
+                            }
+                        }
+                        mapOf("owner" to area.wonBy.index().takeIf { i -> i >= 0 },
+                            "subs" to chunkedSubs)
+                    }
+                }
+            }
+            value("activeBoard") {
+                val active = (it as TTUltimateController).activeBoard ?: return@value null
+                mapOf("x" to active.x, "y" to active.y)
+            }
+        }
     }
 
     val gameReversi = createGame<TTController>("Reversi") {
