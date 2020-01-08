@@ -112,9 +112,6 @@ class Server2(val events: EventSystem) {
         logger.info("$this has features $features")
         Server2WS(javalin, messageHandler).setup()
 
-        events.listen("v1: JsonMessage", ClientMessage::class, {it.message.startsWith("v1:")}, {
-            events.execute(ClientJsonMessage(it.client, mapper.readTree(it.message.substring("v1:".length))))
-        })
         events.listen("JSON Message", ClientMessage::class, {
             it.message.trimStart().startsWith("{")
         }, {
