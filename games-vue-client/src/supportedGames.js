@@ -38,21 +38,25 @@ const supportedGames = {
         routeProps: defaultRouteProps
     },
     "DSL-Connect4": {
+        displayName: "Connect Four",
         dsl: true,
         component: DSLTTT,
         routeProps: defaultRouteProps
     },
     "DSL-Reversi": {
+        displayName: "Reversi",
         dsl: true,
         component: DSLTTT,
         routeProps: defaultRouteProps
     },
     "DSL-TTT3D": {
+        displayName: "3D Tic-Tac-Toe / Connect Four",
         dsl: true,
         component: TTT3D,
         routeProps: defaultRouteProps
     },
     "DSL-UTTT": {
+        displayName: "Tic-Tac-Toe Ultimate",
         dsl: true,
         component: UTTT,
         routeProps: defaultRouteProps
@@ -65,6 +69,7 @@ const supportedGames = {
         routeProps: defaultRouteProps
     },
     "DSL-TTT": {
+        displayName: "Tic-Tac-Toe",
         dsl: true,
         component: DSLTTT,
         routeProps: defaultRouteProps

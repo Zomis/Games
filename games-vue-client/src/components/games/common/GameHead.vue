@@ -1,11 +1,17 @@
 <template>
-  <h1>{{ gameInfo.gameType }} : {{ playerVs }}</h1>
+  <h1>{{ gameDisplayName }} : {{ playerVs }}</h1>
 </template>
 <script>
+import supportedGames from "@/supportedGames"
+
 export default {
   name: "GameHead",
   props: ["gameInfo"],
   computed: {
+    gameDisplayName() {
+      let game = supportedGames.games[this.gameInfo.gameType]
+      return game.displayName ? game.displayName : this.gameType.gameType
+    },
     playerVs: function() {
       if (typeof this.gameInfo.players !== "object") {
         return "local game";

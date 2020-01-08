@@ -9,7 +9,7 @@
     <v-col cols="12" md="6" lg="4" v-for="(users, gameType) in lobby" :key="gameType">
     <v-card class="games">
       <v-toolbar color="cyan" dark>
-        <v-toolbar-title>{{ gameType }}</v-toolbar-title>
+        <v-toolbar-title>{{ displayNames[gameType] }}</v-toolbar-title>
         <v-spacer></v-spacer>
 <!--        <v-btn rounded :disabled="waiting" @click="matchMake(gameType)">Play anyone</v-btn> -->
         <v-btn rounded :disabled="waiting" @click="inviteLink(gameType)">Invite with link</v-btn>
@@ -153,6 +153,13 @@ export default {
     Socket.send(`{ "type": "ListRequest" }`);
   },
   computed: {
+    displayNames() {
+      let games = {};
+      supportedGames.enabledGameKeys().forEach(gameType => {
+        games[gameType] = supportedGames.games[gameType].displayName ? supportedGames.games[gameType].displayName : gameType;
+      });
+      return games
+    },
     activeGames() {
       return this.$store.getters.activeGames;
     },
