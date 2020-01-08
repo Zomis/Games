@@ -37,7 +37,7 @@ class TTAlphaBeta(val level: Int) {
 
     private val actions: (TTController) -> List<Point> = {model ->
         var subs = model.game.subs()
-        if (subs.none(model::isAllowedPlay)) {
+        if (model is TTUltimateController) {
             subs = subs.flatMap { it.subs() }
         }
         subs.filter { model.isAllowedPlay(it) }.map { Point(it.globalX, it.globalY) }
