@@ -100,20 +100,21 @@ class TTAlphaBeta(val level: Int) {
         }
         val ai = AlphaBeta(actions, branching, terminalState, heuristic, depthRemainingBonus)
 
+        val availableActions = actions(model)
         val options = runBlocking {
-            actions(model).pmap { action ->
+            availableActions.pmap { action ->
                 try {
                     val newState = branching(model, action)
                     action to ai.score(newState, level)
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    logger.error(e, "Unable to determine value of action $action")
                     action to -1000.0
                 }
             }.toList()
         }
 
         val move = options.bestBy { it.second }.random()
-        println("Move results: $options. Best is $move")
+        logger.info { "Move results: $options. Best is $move" }
         return move.first
     }
 }
