@@ -1,8 +1,13 @@
 <template>
-  <div class="start-screen">
-    <h1 class="login-name">Welcome, {{ loginName }}</h1>
+  <v-container fluid>
+  <v-row>
+    <Invites />
+    <v-col cols="12">
+      <h1 class="login-name">Welcome, {{ loginName }}</h1>
+    </v-col>
 
-    <v-card v-for="(users, gameType) in lobby" :key="gameType" class="games">
+    <v-col cols="12" md="6" lg="4" v-for="(users, gameType) in lobby" :key="gameType">
+    <v-card class="games">
       <v-toolbar color="cyan" dark>
         <v-toolbar-title>{{ gameType }}</v-toolbar-title>
         <v-spacer></v-spacer>
@@ -45,10 +50,10 @@
         </div>
       </template>
     </v-card>
+    </v-col>
 
-    <Invites />
-
-    <button @click="requestGameList()">Request game list</button>
+    <v-col cols="12">
+    <v-btn @click="requestGameList()">Request game list</v-btn>
     <v-list class="gamelist">
       <template v-for="game in gameList">
         <v-list-item :key="game.gameType + game.gameId">
@@ -62,10 +67,9 @@
         </v-list-item>
       </template>
     </v-list>
-
-    <p>If you want to play Royal game of UR against an AI, click "UR" and then click "Create Bot"</p>
-    <p>You can observe existing games by clicking "Request game list" and then click on the game you want to observe.</p>
-  </div>
+    </v-col>
+  </v-row>
+  </v-container>
 </template>
 
 <script>
@@ -159,22 +163,3 @@ export default {
   }
 };
 </script>
-
-<style scoped>
-h1,
-h2 {
-  font-weight: normal;
-}
-
-.gametypes {
-  margin-top: 24px;
-  margin-bottom: 24px;
-}
-
-.games,
-.gamelist {
-  margin: 32px;
-  width: 42%;
-  margin: 32px auto 32px auto;
-}
-</style>
