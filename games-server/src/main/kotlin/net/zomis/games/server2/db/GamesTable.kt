@@ -156,10 +156,12 @@ S1  - TimeLastAction: Number (timestamp)
         }
 
         fun performUpdate(updateItemSpec: UpdateItemSpec) {
+            var consumedCapacity: ConsumedCapacity? = null
             val time = measureNanoTime {
-                table.table.updateItem(updateItemSpec)
+                val updateResult = table.table.updateItem(updateItemSpec)
+                consumedCapacity = updateResult.updateItemResult.consumedCapacity
             }
-            logger("Performing $updateItemSpec update took $time")
+            logger("Performing $updateItemSpec update took $time with consumed capacity $consumedCapacity")
         }
     }
 
