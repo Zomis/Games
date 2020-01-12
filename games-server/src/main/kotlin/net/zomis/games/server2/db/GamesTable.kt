@@ -14,6 +14,7 @@ import net.zomis.games.server2.PlayerId
 import net.zomis.games.server2.games.*
 import java.math.BigDecimal
 import java.time.Instant
+import kotlin.system.measureNanoTime
 
 enum class GameState(val value: Int) {
     HIDDEN(-1),
@@ -112,7 +113,7 @@ S1  - TimeLastAction: Number (timestamp)
                     AttributeUpdate(this.timeStarted).put(Instant.now().epochSecond),
                     AttributeUpdate(this.options).put(options)
                 )
-            table.table.updateItem(update)
+            performUpdate(update)
         }
 
         private fun <String, V> Map<String, V>.plusIf(key: String, value: V?): Map<String, V> {
@@ -142,7 +143,7 @@ S1  - TimeLastAction: Number (timestamp)
                     .withList(":move", listOf(moveData))
                     .withList(":emptyList", emptyList<Any>())
                 )
-            table.table.updateItem(itemUpdate)
+            performUpdate(itemUpdate)
         }
 
         fun finishGame(game: ServerGame) {
@@ -151,7 +152,14 @@ S1  - TimeLastAction: Number (timestamp)
                     AttributeUpdate(this.finishedState).put(GameState.PUBLIC.value),
                     AttributeUpdate(this.timeLastAction).put(Instant.now().epochSecond)
                 )
-            table.table.updateItem(update)
+            performUpdate(update)
+        }
+
+        fun performUpdate(updateItemSpec: UpdateItemSpec) {
+            val time = measureNanoTime {
+                table.table.updateItem(updateItemSpec)
+            }
+            logger("Performing $updateItemSpec update took $time")
         }
     }
 
