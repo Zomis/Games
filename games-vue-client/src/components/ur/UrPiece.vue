@@ -14,7 +14,6 @@ export default {
   props: ["piece", "onclick", "mouseover", "mouseleave"],
   methods: {
     click: function(piece) {
-      console.log(piece);
       this.onclick(piece);
     }
   }

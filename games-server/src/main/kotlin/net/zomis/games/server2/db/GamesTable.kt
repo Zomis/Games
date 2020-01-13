@@ -6,6 +6,7 @@ import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap
 import com.amazonaws.services.dynamodbv2.model.*
 import klog.KLoggers
+import net.zomis.common.convertFromDBFormat
 import net.zomis.common.convertToDBFormat
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.GameSpec
@@ -191,7 +192,7 @@ S1  - TimeLastAction: Number (timestamp)
         return listOf(gamePlayers.table.createTableRequest(), games.table.createTableRequest())
     }
 
-    data class MoveHistory(val moveType: String, val playerIndex: Int, val move: Map<String, Any>?, val state: Map<String, Any>?)
+    data class MoveHistory(val moveType: String, val playerIndex: Int, val move: Any?, val state: Map<String, Any>?)
     data class PlayerView(val playerId: String, val name: String)
     data class PlayerInGame(val player: PlayerView?, val playerIndex: Int, val result: Double,
             val resultPosition: Int, val resultReason: String, val score: Map<String, Any?>)
@@ -213,8 +214,8 @@ S1  - TimeLastAction: Number (timestamp)
             MoveHistory(
                 it["moveType"] as String,
                 (it["playerIndex"] as BigDecimal).toInt(),
-                it["move"] as Map<String, Any>?,
-                it["state"] as Map<String, Any>?
+                convertFromDBFormat(it["move"]),
+                convertFromDBFormat(it["state"]) as Map<String, Any>?
             )
         }
         val gameType = gameItem.getString(games.gameType)

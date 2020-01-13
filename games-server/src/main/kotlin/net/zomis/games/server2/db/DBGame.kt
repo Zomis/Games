@@ -20,7 +20,7 @@ class DBGame(
     val views = mutableListOf(game.view(null))
 
     init {
-        moveHistory.forEach {
+        moveHistory.forEachIndexed { index, it ->
             // TODO: Set replay mode in replayState
             val logic = game.actions[it.moveType]
                     ?: throw BadReplayException("Unable to perform $it: No such move type")
@@ -28,9 +28,10 @@ class DBGame(
             else mapper.readValue(mapper.writeValueAsString(it.move), logic.parameterClass.java)
             val actionable = logic.createAction(it.playerIndex, param)
             if (!logic.isAllowed(actionable)) {
-                throw BadReplayException("Unable to perform $it: Move is not allowed")
+                val view = game.view(null)
+                throw BadReplayException("Unable to perform $it: Move at index $index is not allowed. View is $view")
             }
-            logic.perform(actionable)
+            logic.replayAction(actionable, it.state)
             views.add(game.view(null))
         }
         if (!game.isGameOver()) {

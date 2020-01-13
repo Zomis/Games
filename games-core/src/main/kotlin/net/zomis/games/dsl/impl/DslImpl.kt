@@ -103,6 +103,13 @@ class ReplayState: EffectScope, ReplayScope {
     private val currentAction = mutableMapOf<String, Any>()
     private val mostRecent = mutableMapOf<String, Any>()
 
+    fun setReplayState(state: Map<String, Any>?) {
+        currentAction.clear()
+        if (state != null) {
+            currentAction.putAll(state)
+        }
+    }
+
     override fun state(key: String, value: Any) {
         mostRecent[key] = value
         currentAction[key] = value

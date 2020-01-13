@@ -7,6 +7,7 @@ interface GameLogicActionType<T : Any, P : Any, A : Actionable<T, P>> {
     val actionType: String
     fun availableActions(playerIndex: Int): Iterable<A>
     fun actionAllowed(action: A): Boolean
+    fun replayAction(action: A, state: Map<String, Any>?)
     fun performAction(action: A)
     fun createAction(playerIndex: Int, parameter: P): A
 }
@@ -32,6 +33,15 @@ abstract class GameLogicActionTypeBase<T : Any, P : Any, A : Actionable<T, P>>(
 
     override fun actionAllowed(action: A): Boolean {
         return this.allowedCheck(action)
+    }
+
+    override fun replayAction(action: A, state: Map<String, Any>?) {
+        if (this.replayEffect != null) {
+            replayState.setReplayState(state)
+            this.replayEffect!!(replayState, action)
+        } else {
+            this.performAction(action)
+        }
     }
 
     override fun performAction(action: A) {
@@ -188,6 +198,9 @@ class ActionTypeImplEntry<T : Any, P : Any, A : Actionable<T, P>>(private val mo
     fun availableActions(playerIndex: Int): Iterable<Actionable<T, P>> = impl.availableActions(playerIndex)
     fun perform(playerIndex: Int, parameter: P) {
         this.perform(this.createAction(playerIndex, parameter))
+    }
+    fun replayAction(action: A, state: Map<String, Any>?) {
+        impl.replayAction(action, state)
     }
     fun perform(action: A) {
         replayState.resetLastMove()
