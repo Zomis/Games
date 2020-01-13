@@ -2,7 +2,7 @@
   <div class="game-dsl">
     <Map2D :width="width" :height="height" :grid="view.board" :clickHandler="onClick">
       <template v-slot:default="slotProps">
-        <UrPiece
+        <UrPiece v-if="slotProps.tile.tile.owner !== null"
           :key="slotProps.key"
           :mouseover="doNothing" :mouseleave="doNothing"
           class="piece"

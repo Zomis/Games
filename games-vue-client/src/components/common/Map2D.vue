@@ -7,7 +7,7 @@
           @click="onClick({ x: (idx - 1) % width, y: Math.floor((idx - 1) / width) })">
         </div>
       </div>
-      <div class="pieces player-pieces">
+      <div class="pieces player-pieces" :style="{ 'grid-template-columns': `repeat(${width}, 1fr)`, 'grid-template-rows': `repeat(${height}, 1fr)` }">
         <template v-for="piece in gridTiles">
           <slot :tile="piece" />
         </template>
