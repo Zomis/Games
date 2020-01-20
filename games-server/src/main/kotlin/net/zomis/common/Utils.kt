@@ -29,8 +29,6 @@ fun convertFromDBFormat(obj: Any?): Any? {
     return when (obj) {
         null -> null
         is BigDecimal -> obj.toInt()
-        is String -> obj
-        is Boolean -> obj
         is Map<*, *> -> {
             val map = obj as Map<String, *>
             map.mapValues { convertFromDBFormat(it.value) }

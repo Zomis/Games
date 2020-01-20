@@ -3,6 +3,7 @@ package net.zomis.games.dsl.impl
 import net.zomis.games.dsl.*
 import kotlin.reflect.KClass
 
+// TODO: Can we reduce generics here? get rid of the `A : Actionable`? Only `GameLogicActionType2D` is special.
 interface GameLogicActionType<T : Any, P : Any, A : Actionable<T, P>> {
     val actionType: String
     fun availableActions(playerIndex: Int): Iterable<A>
@@ -107,7 +108,35 @@ class GameLogicActionTypeComplexNext<T : Any, A : Any>(val yielder: (A) -> Unit)
             next.invoke(nextScope, it)
         }
     }
+}
 
+class GameLogicActionTypeComplexNextOnly<T : Any, A : Any>(
+        private val chosen: List<Any>,
+        private val evaluateOptions: Boolean,
+       private val nextYielder: (List<Any>) -> Unit, private val actionYielder: (A) -> Unit): ActionComplexScopeResultNext<T, A> {
+    override fun actionParameter(action: A) {
+        actionYielder(action)
+    }
+
+    override fun <E : Any> option(options: Array<E>, next: ActionComplexScopeResultNext<T, A>.(E) -> Unit) {
+        if (chosen.isNotEmpty()) {
+            val nextChosenIndex = chosen[0]
+            val nextChosen = options[nextChosenIndex as Int] // TODO: Add string support or something
+            val nextChosenList = chosen.subList(1, chosen.size)
+
+            val nextScope = GameLogicActionTypeComplexNextOnly<T, A>(nextChosenList,true, nextYielder, actionYielder)
+            next.invoke(nextScope, nextChosen)
+        } else {
+            nextYielder(options.toList())
+            if (!evaluateOptions) {
+                return
+            }
+            options.forEach {
+                val nextScope = GameLogicActionTypeComplexNextOnly<T, A>(emptyList(), false, {}, actionYielder)
+                next.invoke(nextScope, it)
+            }
+        }
+    }
 }
 
 class GameLogicActionTypeComplex<T : Any, A : Any>(override val actionType: String,
@@ -117,6 +146,17 @@ class GameLogicActionTypeComplex<T : Any, A : Any>(override val actionType: Stri
 
     override fun options(options: ActionComplexScopeResultStart<T, A>.() -> Unit) {
         this.options = options
+    }
+
+    fun availableOptionsNext(playerIndex: Int, chosen: List<Any>): Pair<List<Any>, List<A>> {
+        val nexts = mutableListOf<Any>()
+        val actionParams = mutableListOf<A>()
+        val yielder: (List<Any>) -> Unit = { nexts.addAll(it) }
+        val actionYielder: (A) -> Unit = { actionParams.add(it) }
+
+        val nextScope = GameLogicActionTypeComplexNextOnly<T, A>(chosen, true, yielder, actionYielder)
+        this.options.invoke(nextScope)
+        return nexts to actionParams
     }
 
     override fun availableActions(playerIndex: Int): Iterable<Action<T, A>> {
@@ -191,6 +231,7 @@ class GameLogicContext<T : Any>(private val model: T, private val replayState: R
 
 }
 
+data class ActionInfo<P>(val nextOptions: List<Any>, val parameters: List<P>)
 class ActionTypeImplEntry<T : Any, P : Any, A : Actionable<T, P>>(private val model: T,
         private val replayState: ReplayState,
         private val actionType: ActionType<P>,
@@ -208,6 +249,17 @@ class ActionTypeImplEntry<T : Any, P : Any, A : Actionable<T, P>>(private val mo
     }
     fun createAction(playerIndex: Int, parameter: P): A = impl.createAction(playerIndex, parameter)
     fun isAllowed(action: A): Boolean = impl.actionAllowed(action)
+    fun availableParameters(playerIndex: Int, previouslySelected: List<Any>): ActionInfo<P> {
+        return if (impl is GameLogicActionTypeComplex) {
+            val actionInfo = impl.availableOptionsNext(playerIndex, previouslySelected)
+            ActionInfo(actionInfo.first, actionInfo.second)
+        } else {
+            if (previouslySelected.isNotEmpty()) {
+                throw IllegalArgumentException("Unable to select any options for action ${actionType.name}")
+            }
+            ActionInfo(emptyList(), availableActions(playerIndex).map { it.parameter })
+        }
+    }
 
     val name: String
         get() = actionType.name

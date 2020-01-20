@@ -20,6 +20,7 @@ import net.zomis.games.server2.debug.AIGames
 import net.zomis.games.server2.games.*
 import net.zomis.games.server2.games.impl.ECSGameSystem
 import net.zomis.games.server2.games.impl.TTControllerSystem
+import net.zomis.games.server2.handlers.games.ActionListRequestHandler
 import net.zomis.games.server2.handlers.games.ViewRequestHandler
 import net.zomis.games.server2.invites.InviteSystem
 import net.zomis.games.server2.invites.LobbySystem
@@ -100,6 +101,7 @@ class Server2(val events: EventSystem) {
 
     val gameSystem = GameSystem()
     private val messageHandler = MessageHandler(events, mapOf(
+        "ActionListRequest" to ActionListRequestHandler(gameSystem),
         "ViewRequest" to ViewRequestHandler(gameSystem)
     ))
 

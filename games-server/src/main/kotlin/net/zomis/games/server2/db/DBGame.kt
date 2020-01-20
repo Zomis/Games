@@ -21,7 +21,6 @@ class DBGame(
 
     init {
         moveHistory.forEachIndexed { index, it ->
-            // TODO: Set replay mode in replayState
             val logic = game.actions[it.moveType]
                     ?: throw BadReplayException("Unable to perform $it: No such move type")
             val param = if (it.move == null) Unit

@@ -6,6 +6,8 @@ import net.zomis.games.dsl.impl.*
 import net.zomis.games.server2.Server2
 import net.zomis.games.server2.ServerConfig
 import net.zomis.games.server2.clients.FakeClient
+import net.zomis.games.server2.games.GameSystem
+import net.zomis.games.server2.handlers.games.ActionListRequestHandler
 import java.util.Scanner
 import java.util.UUID
 
@@ -23,6 +25,17 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
         while (!model.isGameOver()) {
             this.showView(model)
             this.queryInput(model, scanner)
+        }
+    }
+
+    fun choiceActionable(actionLogic: ActionTypeImplEntry<T, Any, Actionable<T, Any>>, playerIndex: Int, scanner: Scanner): Actionable<T, Any>? {
+        val options = actionLogic.availableActions(playerIndex).toList()
+        options.forEachIndexed { index, actionable -> println("$index. $actionable") }
+        if (options.size <= 1) { return options.getOrNull(0) }
+        else {
+            println("Choose your action.")
+            val actionIndex = scanner.nextLine().toIntOrNull()
+            return options.getOrNull(actionIndex ?: -1)
         }
     }
 
@@ -49,14 +62,8 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
                 actionLogic.createAction(playerIndex.toInt(), Point(x, y))
             }
             else -> {
-                val options = actionLogic.availableActions(playerIndex.toInt()).toList()
-                options.forEachIndexed { index, actionable -> println("$index. $actionable") }
-                if (options.size <= 1) { options.getOrNull(0) }
-                else {
-                    println("Choose your action.")
-                    val actionIndex = scanner.nextLine().toIntOrNull()
-                    options.getOrNull(actionIndex ?: -1)
-                }
+                stepByStepActionable(game, playerIndex.toInt(), actionType, scanner)
+//                choiceActionable(actionLogic, playerIndex.toInt(), scanner)
             }
         }
         if (action == null) {
@@ -69,6 +76,34 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
             actionLogic.perform(action)
         }
         return allowed
+    }
+
+    private fun stepByStepActionable(game: GameImpl<T>, playerIndex: Int, moveType: String, scanner: Scanner): Actionable<T, Any>? {
+        val reqHandler = ActionListRequestHandler(GameSystem())
+
+        val chosen = mutableListOf<Any>()
+        while (true) {
+            val act = reqHandler.availableActionsMessage(game, playerIndex, moveType, chosen).singleOrNull()
+                ?: return null
+
+            println(act.first)
+            println(" Next " + act.second.nextOptions.size + ". Params " + act.second.parameters.size)
+            val next = act.second.nextOptions
+            next.forEachIndexed { index, value -> println("$index. Next $value") }
+
+            val params = act.second.parameters
+            params.forEachIndexed { index, value -> println("${index + next.size}. Choice $value") }
+
+            val choice = scanner.nextLine().toIntOrNull() ?: return null
+            if (choice >= next.size) {
+                val param = params.getOrNull(choice - next.size) ?: return null
+                return game.actions.type(moveType)?.createAction(playerIndex, param)
+            } else {
+//                val chosenNext = next.getOrNull(choice) ?: return null
+//                chosen.add(chosenNext)
+                chosen.add(choice)
+            }
+        }
     }
 
     fun display(indentation: Int, name: String, data: Any?) {

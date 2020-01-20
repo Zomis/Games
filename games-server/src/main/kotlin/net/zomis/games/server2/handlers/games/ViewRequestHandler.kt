@@ -7,7 +7,7 @@ import net.zomis.games.server2.IncomingMessageHandler
 import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.getTextOrDefault
 
-class ViewRequestHandler(val gameSystem: GameSystem): IncomingMessageHandler {
+class ViewRequestHandler(private val gameSystem: GameSystem): IncomingMessageHandler {
     private val logger = KLoggers.logger(this)
 
     override fun invoke(message: ClientJsonMessage) {

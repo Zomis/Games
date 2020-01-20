@@ -9,7 +9,6 @@ class DslUR {
     val gameUR = createGame<RoyalGameOfUr>("UR") {
         setup(Unit::class) {
 //            players(2)
-            defaultConfig { Unit }
             init { RoyalGameOfUr() }
         }
         logic {

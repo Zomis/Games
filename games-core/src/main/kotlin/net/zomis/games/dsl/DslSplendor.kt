@@ -30,7 +30,13 @@ fun <K, V> Map<K, V>.mergeWith(other: Map<K, V>, merger: (V?, V?) -> V): Map<K, 
     }
 }
 
-enum class MoneyType { BLACK, WHITE, RED, BLUE, GREEN }
+enum class MoneyType {
+    BLACK, WHITE, RED, BLUE, GREEN;
+
+    fun toMoney(count: Int): Money {
+        return Money(mutableMapOf(this to count))
+    }
+}
 data class Money(val moneys: MutableMap<MoneyType, Int> = mutableMapOf()) {
     // TODO: Add wildcards as a separate field
     constructor(vararg money: Pair<MoneyType, Int>) : this(mutableMapOf<MoneyType, Int>(*money))
@@ -56,6 +62,10 @@ data class MoneyChoice(val moneys: List<MoneyType>) {
     }
 }
 
+fun startingStockForPlayerCount(playerCount: Int): Int {
+    return 10
+}
+
 class SplendorGame(playerCount: Int = 2) {
 
     // TODO: Add nobles
@@ -71,7 +81,7 @@ class SplendorGame(playerCount: Int = 2) {
     val deck: MutableList<Card> = cardLevels.flatMap { level ->
         (0 until 30).map { randomCard(level) }
     }.toMutableList()
-    var stock: Money = Money()
+    var stock: Money = MoneyType.values().fold(Money()) {money, type -> money + type.toMoney(startingStockForPlayerCount(playerCount))}
     var currentPlayerIndex: Int = 0
 
     init {
@@ -165,12 +175,16 @@ class DslSplendor {
                     }
                 }
                 allowed {
-//                    if (it.parameter.isTwoOfSame()) {
-//                        check if there's at least 4 left of each kind
-//                    } else {
-//                        check if there's at least 1 left of each kind
-//                    }
-                    true
+                    val moneyChosen = it.parameter.toMoney()
+                    if (!it.game.stock.has(moneyChosen)) {
+                        return@allowed false
+                    }
+                    val chosen = it.parameter.moneys
+                    return@allowed when {
+                        chosen.size == 2 -> chosen.distinct().size == 1 && it.game.stock.has(moneyChosen.plus(moneyChosen))
+                        chosen.size == 3 -> chosen.distinct().size == chosen.size
+                        else -> false
+                    }
                 }
                 effect {
                     it.game.stock -= it.parameter.toMoney()

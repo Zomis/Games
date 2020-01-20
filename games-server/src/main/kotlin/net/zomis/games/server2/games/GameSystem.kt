@@ -33,6 +33,10 @@ class ServerGame(val gameType: GameType, val gameId: String, val gameMeta: Serve
         return players.indexOf(client).takeIf { it >= 0 }
     }
 
+    fun verifyPlayerIndex(client: Client, playerIndex: Int): Boolean {
+        return players.getOrNull(playerIndex) == client
+    }
+
     internal val players: MutableList<Client> = mutableListOf()
     var obj: Any? = null
 
