@@ -1,10 +1,8 @@
-/*
-var games = require("../../../games-js/web/games-js");
-if (typeof games["games-js"] !== "undefined") {
+let gamejs = require("../../games-js/web/games-js");
+if (typeof gamejs["games-js"] !== "undefined") {
   // This is needed when doing a production build, but is not used for `npm run dev` locally.
-  games = games["games-js"];
+  gamejs = gamejs["games-js"];
 }
-*/
 /*
 Edit just one file instead of editing all the following files:
 - route/index.js
@@ -23,7 +21,6 @@ import DSLTTT from "@/components/games/DSLTTT";
 import TTT3D from "@/components/games/TTT3D";
 
 import DslGameState from "./components/games/DslGameState";
-
 const defaultRouteProps = route => ({
     gameInfo: route.params.gameInfo,
     showRules: true
@@ -33,31 +30,31 @@ const supportedGames = {
     "DSL-UR": {
         displayName: "Royal Game of UR",
         routeName: "RoyalGameOfUR",
-        dsl: true,
+        dsl: new gamejs.net.zomis.games.dsl.DslUR().gameUR,
         component: RoyalGameOfUR,
         routeProps: defaultRouteProps
     },
     "DSL-Connect4": {
         displayName: "Connect Four",
-        dsl: true,
+        dsl: new gamejs.net.zomis.games.dsl.DslTTT().gameConnect4,
         component: DSLTTT,
         routeProps: defaultRouteProps
     },
     "DSL-Reversi": {
         displayName: "Reversi",
-        dsl: true,
+        dsl: new gamejs.net.zomis.games.dsl.DslTTT().gameReversi,
         component: DSLTTT,
         routeProps: defaultRouteProps
     },
     "DSL-TTT3D": {
         displayName: "3D Tic-Tac-Toe / Connect Four",
-        dsl: true,
+        dsl: new gamejs.net.zomis.games.dsl.DslTTT3D().game,
         component: TTT3D,
         routeProps: defaultRouteProps
     },
     "DSL-UTTT": {
         displayName: "Tic-Tac-Toe Ultimate",
-        dsl: true,
+        dsl: new gamejs.net.zomis.games.dsl.DslTTT().gameUTTT,
         component: UTTT,
         routeProps: defaultRouteProps
     },
@@ -70,7 +67,7 @@ const supportedGames = {
     },
     "DSL-TTT": {
         displayName: "Tic-Tac-Toe",
-        dsl: true,
+        dsl: new gamejs.net.zomis.games.dsl.DslTTT().game,
         component: DSLTTT,
         routeProps: defaultRouteProps
     }

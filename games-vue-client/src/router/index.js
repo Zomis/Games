@@ -2,6 +2,7 @@ import Vue from "vue";
 import Router from "vue-router";
 import StartScreen from "@/components/StartScreen";
 import TestScreen from "@/components/TestScreen";
+import PlayLocalGame from "@/components/PlayLocalGame";
 import TVScreen from "@/components/TVScreen";
 import ServerSelection from "@/components/ServerSelection";
 import InviteByURL from "@/components/InviteByURL";
@@ -55,6 +56,15 @@ export default new Router({
       component: ReplayScreen,
       props: route => ({
         gameUUID: route.params.gameId
+      })
+    },
+    {
+      path: "/local",
+      name: "LocalPlay",
+      component: PlayLocalGame,
+      props: route => ({
+        gameInfo: { gameType: route.query.gameType },
+        showRules: true
       })
     },
     {
