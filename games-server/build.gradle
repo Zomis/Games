@@ -51,6 +51,7 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-script-util:$kotlin_version"
     expectedBy project(":games-core")
 
+    compile group: 'commons-codec', name: 'commons-codec', version: '1.13'
     compile "com.fasterxml.jackson.core:jackson-core:2.9.4"
     compile "com.fasterxml.jackson.core:jackson-annotations:2.9.4"
     compile "com.fasterxml.jackson.core:jackson-databind:2.9.4"

@@ -7,7 +7,6 @@ import java.security.KeyFactory
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.NoSuchAlgorithmException
 import java.security.spec.InvalidKeySpecException
-import javax.xml.bind.DatatypeConverter
 import java.security.KeyStoreException
 import java.io.IOException
 import org.eclipse.jetty.util.ssl.SslContextFactory
@@ -17,12 +16,12 @@ import net.zomis.games.server2.ServerConfig
 import org.eclipse.jetty.server.Connector
 import org.eclipse.jetty.server.ServerConnector
 import io.javalin.Javalin
+import org.apache.commons.codec.binary.Base64
 import org.eclipse.jetty.server.Server
 import java.io.File
 import java.nio.file.Files
 import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
-
 
 object JavalinFactory {
 
@@ -81,7 +80,7 @@ object JavalinFactory {
         val data = String(pem)
         var tokens = data.split(beginDelimiter.toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
         tokens = tokens[1].split(endDelimiter.toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-        return DatatypeConverter.parseBase64Binary(tokens[0])
+        return Base64.decodeBase64(tokens[0])
     }
 
     @Throws(InvalidKeySpecException::class, NoSuchAlgorithmException::class)
