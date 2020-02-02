@@ -78,6 +78,7 @@ function enabledGames() {
 }
 
 export default {
+    gamejs: gamejs,
     storeModules() {
         let modules = {}
         for (let key of enabledGames()) {

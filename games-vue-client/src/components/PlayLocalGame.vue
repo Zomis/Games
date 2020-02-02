@@ -11,7 +11,7 @@ import GameHead from "@/components/games/common/GameHead";
 import GameResult from "@/components/games/common/GameResult";
 
 function valueToJS(value) {
-    console.log(`valueToJS: ${typeof value} ${value}`)
+//    console.log(`valueToJS: ${typeof value} ${value}`)
     if (typeof value === 'number') { return value }
     if (value === null) return null;
     if (value.constructor.name === "ArrayList") return value.toArray().map(e => valueToJS(e))
@@ -21,14 +21,7 @@ function valueToJS(value) {
     return results
 }
 
-let gamejs = require("../../../games-js/web/games-js");
-if (typeof gamejs["games-js"] !== "undefined") {
-  // This is needed when doing a production build, but is not used for `npm run dev` locally.
-  gamejs = gamejs["games-js"];
-}
-// UR:
-// $vm0.game.actions.type_61zpoe$("roll").perform_y5fo13$(0, null)
-// $vm0.game.actions.type_61zpoe$("move").perform_y5fo13$(0, 0)
+let gamejs = supportedGames.gamejs
 
 export default {
   name: "PlayLocalGame",
@@ -43,7 +36,7 @@ export default {
       supportedGame: supportedGames.games[this.gameInfo.gameType],
       views: [],
       game: null,
-      view: null,
+      view: {},
       viewer: 0
     }
   },
@@ -60,14 +53,11 @@ export default {
     },
     action(name, data) {
       console.log("ACTION", name, data)
+      this.game.actions.type_61zpoe$(name).perform_y5fo13$(this.viewer, data)
       this.updateView()
-/*      if (0 == 1) {
-        let json = `{ "gameType": "${this.gameInfo.gameType}", "gameId": "${
-          this.gameInfo.gameId
-        }", "type": "move", "moveType": "${name}", "move": ${JSON.stringify(
-          data
-        )} }`;
-      }*/
+      if (this.view.currentPlayer !== undefined) {
+        this.viewer = this.view.currentPlayer
+      }
     }
   },
   computed: {
