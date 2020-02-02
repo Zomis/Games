@@ -3,6 +3,7 @@ import Router from "vue-router";
 import StartScreen from "@/components/StartScreen";
 import TestScreen from "@/components/TestScreen";
 import PlayLocalGame from "@/components/PlayLocalGame";
+import PlayLocalGameMenu from "@/components/PlayLocalGameMenu";
 import TVScreen from "@/components/TVScreen";
 import ServerSelection from "@/components/ServerSelection";
 import InviteByURL from "@/components/InviteByURL";
@@ -60,10 +61,19 @@ export default new Router({
     },
     {
       path: "/local",
+      name: "LocalPlayMenu",
+      component: PlayLocalGameMenu,
+      props: route => ({
+        gameInfo: { gameType: route.query.gameType },
+        showRules: true
+      })
+    },
+    {
+      path: "/local/:gameType",
       name: "LocalPlay",
       component: PlayLocalGame,
       props: route => ({
-        gameInfo: { gameType: route.query.gameType },
+        gameInfo: { gameType: route.params.gameType },
         showRules: true
       })
     },

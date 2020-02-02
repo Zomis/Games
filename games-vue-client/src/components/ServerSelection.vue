@@ -8,7 +8,7 @@
 
     <p>The server "zomis" should be up and running always.<br />
       If you want to start a local server, <a href="https://github.com/Zomis/Server2">clone my project on GitHub</a>.<br />
-      You can also <router-link :to="'/games/UR/1/'">play Royal Game of UR without connecting to a server</router-link>
+      You can also <router-link to="/local">play games locally without connecting to the server (but this is boring, don't do this)</router-link>
     </p>
   </div>
 </template>
