@@ -28,7 +28,7 @@ dependencies {
     expectedBy project(':games-core')
 
     compile "com.github.lewik.klog:klog-js:$kotlin_version"
-    compile "net.zomis:uttt-js:0.4.2"
+    compile "net.zomis:uttt-js:0.4.3"
 }
 
 compileKotlin2Js {
