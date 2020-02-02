@@ -1,12 +1,14 @@
 <template>
-  <div class="authchoice">
+  <v-container>
     <h2>Choose authentication type</h2>
     <v-btn color="info" @click="authenticate('github')">Login with Github</v-btn>
     <v-btn color="info" @click="authenticateGuest()">Login as Guest</v-btn>
+    <!--
     {{ getToken() }}
     {{ lastUsedProvider }}
     {{ $auth.isAuthenticated() }}
-  </div>
+    -->
+  </v-container>
 </template>
 <script>
 import Socket from "../socket";
