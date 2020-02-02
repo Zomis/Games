@@ -59,6 +59,7 @@ task adjustDependencies {
         String searchString = "this\\['uttt-js']"
         def replaceWith = "window['uttt-js']"
         text = text.replaceAll(searchString, replaceWith)
+        text = text.replace("var ArrayList_init = Kotlin.kotlin.collections.ArrayList_init_287e2", "var ArrayList_init = Kotlin.kotlin.collections.ArrayList_init_ww73n8") // Fix Kotlin JS error
         file.write(text, "UTF-8")
     }
 }
