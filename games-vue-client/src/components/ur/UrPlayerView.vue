@@ -44,12 +44,15 @@ export default {
       return this.view.roll > 0
     },
     remaining() {
+      if (!this.view.pieces) { return 0 }
       return this.view.pieces[this.playerIndex].filter(i => i === 0).length;
     },
     out() {
+      if (!this.view.pieces) { return 0 }
       return this.view.pieces[this.playerIndex].filter(i => i === 15).length;
     },
     canPlaceNew() {
+      if (!this.view.pieces) { return false }
       return (
         this.view.currentPlayer == this.playerIndex &&
         this.isMoveTime &&

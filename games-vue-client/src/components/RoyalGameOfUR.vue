@@ -111,6 +111,9 @@ function piecesToObjects(array, playerIndex) {
 
 function determinePlayerPieces(view) {
   let pieces = view.pieces;
+  if (!pieces) {
+    return [];
+  }
   let obj0 = piecesToObjects(pieces, 0);
   let obj1 = piecesToObjects(pieces, 1);
   let result = [];
