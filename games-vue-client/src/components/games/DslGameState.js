@@ -11,7 +11,6 @@ const gameStore = {
   mutations: {
     createGame(state, data) {
       Vue.set(state.games, data.gameId, {
-        component: "DSLTTT", // TODO: Support other types
         gameInfo: {
           gameType: data.gameType,
           gameId: data.gameId,
@@ -37,7 +36,6 @@ const gameStore = {
         context.commit("updateView", data);
       }
       if (data.type === "GameMove") {
-        console.log(`Recieved move: ${data.moveType}: ${data.move}. DSL Game. Sending request for view update`);
         Socket.send(`{ "type": "ViewRequest", "gameType": "${data.gameType}", "gameId": "${data.gameId}" }`);
       }
     }

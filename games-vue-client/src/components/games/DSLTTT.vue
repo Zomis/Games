@@ -1,13 +1,13 @@
 <template>
   <div class="game-dsl">
-    <Map2D :width="width" :height="height" :grid="view.board" :clickHandler="onClick">
+    <Map2D :width="width" :height="height" :grid="view.board" :clickHandler="onClick" :actionable="actions.play">
       <template v-slot:default="slotProps">
         <UrPiece v-if="slotProps.tile.tile.owner !== null"
           :key="slotProps.key"
           :mouseover="doNothing" :mouseleave="doNothing"
-          class="piece"
           :class="'piece-' + slotProps.tile.tile.owner"
           :onclick="pieceClick"
+          :actionable="actions.play[`${slotProps.tile.x},${slotProps.tile.y}`]"
           :piece="slotProps.tile">
         </UrPiece>
       </template>
@@ -20,7 +20,7 @@ import UrPiece from "../ur/UrPiece";
 
 export default {
   name: "DSLTTT",
-  props: ["view", "onAction"],
+  props: ["view", "actions", "onAction"],
   components: {
     Map2D,
     UrPiece

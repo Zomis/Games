@@ -26,23 +26,34 @@ const defaultRouteProps = route => ({
     showRules: true
 })
 
+const tttActions = {
+    play(data) {
+        return data.x + ',' + data.y
+    }
+}
+
 const supportedGames = {
     "DSL-UR": {
         displayName: "Royal Game of UR",
-        routeName: "RoyalGameOfUR",
         dsl: new gamejs.net.zomis.games.dsl.DslUR().gameUR,
+        actions: {
+            roll: () => "roll",
+            move: (i) => `${i}`
+        },
         component: RoyalGameOfUR,
         routeProps: defaultRouteProps
     },
     "DSL-Connect4": {
         displayName: "Connect Four",
         dsl: new gamejs.net.zomis.games.dsl.DslTTT().gameConnect4,
+        actions: tttActions,
         component: DSLTTT,
         routeProps: defaultRouteProps
     },
     "DSL-Reversi": {
         displayName: "Reversi",
         dsl: new gamejs.net.zomis.games.dsl.DslTTT().gameReversi,
+        actions: tttActions,
         component: DSLTTT,
         routeProps: defaultRouteProps
     },
@@ -55,6 +66,7 @@ const supportedGames = {
     "DSL-UTTT": {
         displayName: "Tic-Tac-Toe Ultimate",
         dsl: new gamejs.net.zomis.games.dsl.DslTTT().gameUTTT,
+        actions: tttActions,
         component: UTTT,
         routeProps: defaultRouteProps
     },
@@ -68,6 +80,7 @@ const supportedGames = {
     "DSL-TTT": {
         displayName: "Tic-Tac-Toe",
         dsl: new gamejs.net.zomis.games.dsl.DslTTT().game,
+        actions: tttActions,
         component: DSLTTT,
         routeProps: defaultRouteProps
     }

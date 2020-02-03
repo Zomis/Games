@@ -3,9 +3,14 @@
     <div class="board" :style="{width: width*64 + 'px', height: height*64 + 'px'}">
       <div class="pieces pieces-bg" :style="{ 'grid-template-columns': `repeat(${width}, 1fr)`, 'grid-template-rows': `repeat(${height}, 1fr)` }">
 <!--        :class="{ 'moveable': moveableIndex[idx - 1] && movesMade % 2 == gameInfo.yourIndex }" -->
-        <div v-for="idx in width*height" :key="idx" class="piece piece-bg"
-          @click="onClick({ x: (idx - 1) % width, y: Math.floor((idx - 1) / width) })">
-        </div>
+        <template v-for="y in height">
+          <template v-for="x in width">
+            <div :key="`${x}_${y}`"
+              :class="['piece', 'piece-bg', {actionable: actionable && actionable[`${x-1},${y-1}`]}]"
+              @click="onClick({ x: x - 1, y: y - 1 })">
+            </div>
+          </template>
+        </template>
       </div>
       <div class="pieces player-pieces" :style="{ 'grid-template-columns': `repeat(${width}, 1fr)`, 'grid-template-rows': `repeat(${height}, 1fr)` }">
         <template v-for="piece in gridTiles">
@@ -18,7 +23,7 @@
 <script>
 export default {
   name: "Map2D",
-  props: ["width", "height", "grid", "clickHandler"],
+  props: ["width", "height", "grid", "clickHandler", "actionable"],
   methods: {
     doNothing() {},
     onClick(data) {

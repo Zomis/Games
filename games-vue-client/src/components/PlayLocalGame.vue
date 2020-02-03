@@ -1,7 +1,7 @@
 <template>
   <div class="game">
     <GameHead :gameInfo="gameInfo"></GameHead>
-    <component :is="viewComponent" :view="view" :onAction="action" />
+    <component :is="viewComponent" :view="view" :onAction="action" :actions="actions" />
     <GameResult :gameInfo="gameInfo"></GameResult>
   </div>
 </template>
@@ -9,6 +9,7 @@
 import supportedGames from "@/supportedGames"
 import GameHead from "@/components/games/common/GameHead";
 import GameResult from "@/components/games/common/GameResult";
+import kotlin from "kotlin"
 
 function valueToJS(value) {
 //    console.log(`valueToJS: ${typeof value} ${value}`)
@@ -36,6 +37,7 @@ export default {
       supportedGame: supportedGames.games[this.gameInfo.gameType],
       views: [],
       game: null,
+      actions: {},
       view: {},
       viewer: 0
     }
@@ -50,14 +52,28 @@ export default {
     updateView() {
       let v = this.game.view_s8ev37$(this.viewer)
       this.view = valueToJS(v)
-    },
-    action(name, data) {
-      console.log("ACTION", name, data)
-      this.game.actions.type_61zpoe$(name).perform_y5fo13$(this.viewer, data)
-      this.updateView()
       if (this.view.currentPlayer !== undefined) {
         this.viewer = this.view.currentPlayer
       }
+      this.updateActions()
+    },
+    updateActions() {
+      let actions = {}
+      this.game.actions.types().toArray().forEach(e => {
+        let ca = {}
+        actions[e.name] = ca
+        e.availableParameters_okoyba$(this.viewer, kotlin.kotlin.collections.emptyList_287e2$()).parameters.toArray().forEach(actionParam => {
+          let key = this.supportedGame.actions[e.name](actionParam)
+          ca[key] = true
+        })
+      })
+      this.actions = actions
+      console.log("ACTIONS FOR", this.viewer, actions)
+    },
+    action(name, data) {
+      console.log("PERFORM ACTION", name, data)
+      this.game.actions.type_61zpoe$(name).perform_y5fo13$(this.viewer, data)
+      this.updateView()
     }
   },
   computed: {
