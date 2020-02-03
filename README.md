@@ -2,7 +2,7 @@
 
 ## If you just want to play...
 
-[Play Zomis' Games](http://games.zomis.net)
+[Play Zomis' Games](https://games.zomis.net)
 
 ## Building and running locally
 
@@ -19,7 +19,7 @@ OR
 
     ./gradlew :games-js:assemble # this compiles Kotlin code to JavaScript
     cd games-vue-client
-    npm run dev
+    npm run serve
 
 ## What is this?
 
