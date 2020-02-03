@@ -50,6 +50,13 @@ const gameStore = {
     }
   },
   actions: {
+    requestView(context, data) {
+      Socket.send(`{ "type": "ViewRequest", "gameType": "${data.gameType}", "gameId": "${data.gameId}" }`);
+    },
+    requestActions(context, data) {
+      let game = context.state.games[data.gameId]
+      Socket.send(`{ "type": "ActionListRequest", "gameType": "${data.gameType}", "gameId": "${data.gameId}", "playerIndex": ${game.gameInfo.yourIndex} }`);
+    },
     onSocketMessage(context, data) {
       if (data.type === "GameStarted") {
         context.commit("createGame", data);
@@ -61,9 +68,8 @@ const gameStore = {
         context.commit("updateActions", data);
       }
       if (data.type === "GameMove") {
-        Socket.send(`{ "type": "ViewRequest", "gameType": "${data.gameType}", "gameId": "${data.gameId}" }`);
-        let game = context.state.games[data.gameId]
-        Socket.send(`{ "type": "ActionListRequest", "gameType": "${data.gameType}", "gameId": "${data.gameId}", "playerIndex": ${game.gameInfo.yourIndex} }`);
+        this.dispatch('DslGameState/requestView', data)
+        this.dispatch('DslGameState/requestActions', data)
       }
     }
   }

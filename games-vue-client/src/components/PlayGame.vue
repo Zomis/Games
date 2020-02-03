@@ -27,11 +27,8 @@ export default {
     }
   },
   mounted() {
-    Socket.send(
-      `{ "type": "ViewRequest", "gameType": "${
-        this.gameInfo.gameType
-      }", "gameId": "${this.gameInfo.gameId}" }`
-    );
+    this.$store.dispatch("DslGameState/requestView", this.gameInfo);
+    this.$store.dispatch("DslGameState/requestActions", this.gameInfo);
   },
   methods: {
     action: function(name, data) {
