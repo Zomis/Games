@@ -7,7 +7,7 @@
           :mouseover="doNothing" :mouseleave="doNothing"
           :class="'piece-' + slotProps.tile.tile.owner"
           :onclick="pieceClick"
-          :actionable="actions.play[`${slotProps.tile.x},${slotProps.tile.y}`]"
+          :actionable="actions.play && actions.play[`${slotProps.tile.x},${slotProps.tile.y}`]"
           :piece="slotProps.tile">
         </UrPiece>
       </template>
