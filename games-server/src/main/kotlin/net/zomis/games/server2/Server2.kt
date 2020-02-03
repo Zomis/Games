@@ -19,7 +19,6 @@ import net.zomis.games.server2.db.DBIntegration
 import net.zomis.games.server2.debug.AIGames
 import net.zomis.games.server2.games.*
 import net.zomis.games.server2.games.impl.ECSGameSystem
-import net.zomis.games.server2.games.impl.TTControllerSystem
 import net.zomis.games.server2.handlers.games.ActionListRequestHandler
 import net.zomis.games.server2.handlers.games.ViewRequestHandler
 import net.zomis.games.server2.invites.InviteSystem
@@ -28,8 +27,6 @@ import net.zomis.games.server2.javalin.auth.JavalinFactory
 import net.zomis.games.server2.javalin.auth.LinAuth
 import net.zomis.games.server2.ws.Server2WS
 import net.zomis.games.server2.ws.WebsocketMessageHandler
-import net.zomis.tttultimate.TTFactories
-import net.zomis.tttultimate.games.TTUltimateController
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.Executors
@@ -122,7 +119,6 @@ class Server2(val events: EventSystem) {
 
         features.add { feat, ev -> gameSystem.setup(feat, ev, config.idGenerator) }
 
-        TTControllerSystem("UTTT") {TTUltimateController(TTFactories().ultimate())}.register(events)
         features.add(ECSGameSystem("UTTT-ECS") { UTTT().setup() }::setup)
         dslGames.forEach { name, spec -> events.with(DslGameSystem(name, spec as GameSpec<Any>)::setup) }
 
