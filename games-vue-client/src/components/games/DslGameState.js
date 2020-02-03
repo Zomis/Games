@@ -1,6 +1,7 @@
 import Vue from "vue";
 
 import Socket from "../../socket";
+import supportedGames from "@/supportedGames"
 
 const gameStore = {
   namespaced: true,
@@ -18,13 +19,34 @@ const gameStore = {
           players: data.players
         },
         gameData: {
-          view: {}
+          view: {},
+          actions: {}
         }
       });
     },
     updateView(state, data) {
       let game = state.games[data.gameId].gameData;
       game.view = data.view
+    },
+    updateActions(state, data) {
+      let game = state.games[data.gameId].gameData;
+      let supportedGame = supportedGames.games[data.gameType]
+
+      let actions = {}
+      data.actions.forEach(e => {
+        let ca = {}
+        let actionName = e.first
+        actions[actionName] = ca
+        e.second.parameters.forEach(actionParam => {
+          let key = supportedGame.actions[actionName](actionParam)
+          ca[key] = true
+        })
+        e.second.nextOptions.forEach(actionParam => { // TODO: This might need to be handled differently.
+          let key = supportedGame.actions[actionName](actionParam)
+          ca[key] = true
+        })
+      })
+      game.actions = actions
     }
   },
   actions: {
@@ -35,8 +57,13 @@ const gameStore = {
       if (data.type === "GameView") {
         context.commit("updateView", data);
       }
+      if (data.type === "ActionList") {
+        context.commit("updateActions", data);
+      }
       if (data.type === "GameMove") {
         Socket.send(`{ "type": "ViewRequest", "gameType": "${data.gameType}", "gameId": "${data.gameId}" }`);
+        let game = context.state.games[data.gameId]
+        Socket.send(`{ "type": "ActionListRequest", "gameType": "${data.gameType}", "gameId": "${data.gameId}", "playerIndex": ${game.gameInfo.yourIndex} }`);
       }
     }
   }

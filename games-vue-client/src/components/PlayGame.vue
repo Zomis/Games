@@ -1,7 +1,7 @@
 <template>
   <div class="game">
     <GameHead :gameInfo="gameInfo"></GameHead>
-    <component :is="viewComponent" :view="view" :onAction="action" />
+    <component :is="viewComponent" :view="view" :onAction="action" :actions="actions" />
     <GameResult :gameInfo="gameInfo"></GameResult>
   </div>
 </template>
@@ -52,6 +52,9 @@ export default {
     ...mapState("DslGameState", {
       view(state) {
         return state.games[this.gameInfo.gameId].gameData.view;
+      },
+      actions(state) {
+        return state.games[this.gameInfo.gameId].gameData.actions;
       }
     })
   }
