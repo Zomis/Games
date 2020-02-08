@@ -1,9 +1,14 @@
 <template>
   <div class="game-over" v-if="gameOverMessage">
-    <span class="you" v-if="gameInfo.yourIndex >= 0">YOU </span>
-    <span class="you" v-else>{{ winnerName }} </span>
-    <span v-if="gameOverMessage.winner" class="win">WIN</span>
-    <span v-if="!gameOverMessage.winner" class="loss">LOSE</span>
+    <template v-if="gameOverMessage.winResult !== 'DRAW'">
+      <span class="you" v-if="gameInfo.yourIndex >= 0">YOU </span>
+      <span class="you" v-else>{{ winnerName }} </span>
+      <span v-if="gameOverMessage.winner" class="win">WIN</span>
+      <span v-if="!gameOverMessage.winner" class="loss">LOSE</span>
+    </template>
+    <template v-if="gameOverMessage.winResult === 'DRAW'">
+      <span class="draw">GAME DRAW</span>
+    </template>
     <div class="game-over-actions">
       <v-btn to="/">Back to Lobby</v-btn>
       <v-btn color="info" @click="playAgain()">Play again</v-btn>
