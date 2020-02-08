@@ -2,7 +2,6 @@
   <div class="board-parent">
     <div class="board" :style="{width: width*64 + 'px', height: height*64 + 'px'}">
       <div class="pieces pieces-bg" :style="{ 'grid-template-columns': `repeat(${width}, 1fr)`, 'grid-template-rows': `repeat(${height}, 1fr)` }">
-<!--        :class="{ 'moveable': moveableIndex[idx - 1] && movesMade % 2 == gameInfo.yourIndex }" -->
         <template v-for="y in height">
           <template v-for="x in width">
             <div :key="`${x}_${y}`"

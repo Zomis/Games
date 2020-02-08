@@ -1,5 +1,5 @@
 <template>
-  <div class="game">
+  <div :class="['game', 'player-' + currentPlayer]">
     <GameHead :gameInfo="gameInfo"></GameHead>
     <component :is="viewComponent" :view="view" :onAction="action" :actions="actions" />
     <GameResult :gameInfo="gameInfo"></GameResult>
@@ -77,6 +77,9 @@ export default {
     }
   },
   computed: {
+    currentPlayer() {
+      return this.view.currentPlayer;
+    },
     viewComponent() {
       return this.supportedGame.component
     }

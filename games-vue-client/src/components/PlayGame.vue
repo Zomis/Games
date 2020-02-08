@@ -1,5 +1,5 @@
 <template>
-  <div class="game">
+  <div :class="['game', 'player-' + gameInfo.yourIndex]">
     <GameHead :gameInfo="gameInfo"></GameHead>
     <component :is="viewComponent" :view="view" :onAction="action" :actions="actions" />
     <GameResult :gameInfo="gameInfo"></GameResult>
