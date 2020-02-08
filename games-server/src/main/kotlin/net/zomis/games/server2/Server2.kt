@@ -88,14 +88,7 @@ class Server2(val events: EventSystem) {
     private val mapper = ObjectMapper()
     val features = Features(events)
 
-    val dslGames = mutableMapOf<String, Any>(
-        "DSL-TTT" to DslTTT().game,
-        "DSL-Connect4" to DslTTT().gameConnect4,
-        "DSL-UTTT" to DslTTT().gameUTTT,
-        "DSL-Reversi" to DslTTT().gameReversi,
-        "DSL-TTT3D" to DslTTT3D().game,
-        "DSL-UR" to DslUR().gameUR)
-
+    private val dslGames = ServerGames.games
     val gameSystem = GameSystem()
     private val messageHandler = MessageHandler(events, mapOf(
         "ActionListRequest" to ActionListRequestHandler(gameSystem),
