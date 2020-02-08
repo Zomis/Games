@@ -210,6 +210,9 @@ class DslSplendor {
             value("board") {game ->
                 game.board.map { viewCard(it) }
             }
+            value("stock") {game ->
+                game.stock
+            }
             value("players") {game ->
                 game.players.map {
                     mapOf(
