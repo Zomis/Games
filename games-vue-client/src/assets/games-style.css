@@ -156,7 +156,7 @@
 }
 
 .fade-enter-active,
-.fade-leave-active {
+.fade-leave-active:not(.highlighted) {
   transition: opacity 0.5s;
 }
 .fade-enter,

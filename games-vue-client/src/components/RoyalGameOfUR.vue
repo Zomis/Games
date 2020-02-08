@@ -23,12 +23,10 @@
         </div>
 
         <div class="pieces player-pieces">
-          <transition name="fade">
-            <UrPiece v-if="destination !== null" :piece="destination" class="piece highlighted"
+          <UrPiece v-if="destination !== null" :piece="destination" class="highlighted"
             :mouseover="doNothing" :mouseleave="doNothing"
             :class="{['piece-' + destination.player]: true}">
-            </UrPiece>
-          </transition>
+          </UrPiece>
           <UrPiece v-for="piece in playerPieces"
             :key="piece.key"
             class="piece"
@@ -133,6 +131,7 @@ export default {
   data() {
     return {
       showRules: false,
+      playerPieces: [],
       highlighted: null
     };
   },
@@ -143,13 +142,13 @@ export default {
     UrPiece
   },
   methods: {
-    doNothing: function() {},
-    placeNew: function() { // playerIndex parameter
+    doNothing() {},
+    placeNew() { // playerIndex parameter
       if (this.canPlaceNew) {
         this.onAction("move", 0);
       }
     },
-    onClick: function(piece) {
+    onClick(piece) {
       if (piece.player !== this.view.currentPlayer) {
         return;
       }
@@ -183,11 +182,14 @@ export default {
       this.highlighted = null;
     }
   },
+  watch: {
+    view(newView) {
+      if (!newView) return []
+      this.playerPieces = determinePlayerPieces(newView)
+      console.log("view change", newView, "resulted in", this.playerPieces)
+    }
+  },
   computed: {
-    playerPieces() {
-      if (!this.view) return []
-      return determinePlayerPieces(this.view)
-    },
     lastRoll() {
       return this.view.roll;
     },
