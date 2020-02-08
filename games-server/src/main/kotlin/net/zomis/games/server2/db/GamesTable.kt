@@ -110,7 +110,7 @@ S1  - TimeLastAction: Number (timestamp)
             val update = UpdateItemSpec().withPrimaryKey(this.gameId, game.gameId)
                 .withAttributeUpdate(
                     AttributeUpdate(this.gameType).put(game.gameType.type),
-                    AttributeUpdate(this.finishedState).put(GameState.HIDDEN.value),
+                    AttributeUpdate(this.finishedState).put(GameState.UNFINISHED.value),
                     AttributeUpdate(this.timeStarted).put(Instant.now().epochSecond),
                     AttributeUpdate(this.options).put(options)
                 )
