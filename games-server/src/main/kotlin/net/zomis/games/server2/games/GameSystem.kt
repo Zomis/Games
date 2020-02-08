@@ -10,7 +10,6 @@ import net.zomis.games.Features
 import net.zomis.games.WinResult
 import net.zomis.games.dsl.PlayerIndex
 import net.zomis.games.server2.*
-import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
 val nodeFactory = JsonNodeFactory(false)
@@ -24,6 +23,7 @@ fun ServerGame.toJson(type: String): ObjectNode {
 data class ServerGameOptions(val database: Boolean)
 class ServerGame(val gameType: GameType, val gameId: String, val gameMeta: ServerGameOptions) {
     var gameOver: Boolean = false
+    private val nextMoveIndex = AtomicInteger(0)
 
     fun broadcast(message: (Client) -> Any) {
         players.forEach { it.send(message.invoke(it)) }
@@ -35,6 +35,10 @@ class ServerGame(val gameType: GameType, val gameId: String, val gameMeta: Serve
 
     fun verifyPlayerIndex(client: Client, playerIndex: Int): Boolean {
         return players.getOrNull(playerIndex) == client
+    }
+
+    fun nextMoveIndex(): Int {
+        return nextMoveIndex.getAndIncrement()
     }
 
     internal val players: MutableList<Client> = mutableListOf()

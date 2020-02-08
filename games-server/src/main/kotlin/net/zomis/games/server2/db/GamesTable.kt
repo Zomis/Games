@@ -2,6 +2,8 @@ package net.zomis.games.server2.db
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import com.amazonaws.services.dynamodbv2.document.AttributeUpdate
+import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition
+import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap
 import com.amazonaws.services.dynamodbv2.model.*
@@ -15,7 +17,6 @@ import net.zomis.games.server2.PlayerId
 import net.zomis.games.server2.games.*
 import java.math.BigDecimal
 import java.time.Instant
-import kotlin.system.measureNanoTime
 
 enum class GameState(val value: Int) {
     HIDDEN(-1),
@@ -26,6 +27,9 @@ enum class GameState(val value: Int) {
 
 class BadReplayException(message: String): Exception(message)
 
+private fun <String, V> Map<String, V>.plusIf(key: String, value: V?): Map<String, V> {
+    return if (value != null) this.plus(key to value) else this
+}
 class GamesTables(private val dynamoDB: AmazonDynamoDB) {
     /*
   - GamePlayers
@@ -41,6 +45,7 @@ S2  - Result: Number (1 / 0 / -1 for win/draw/loss)
 */
     private val gamePlayers = GamePlayersTable(dynamoDB)
     private val games = GamesTable(dynamoDB)
+    private val moves = MovesTable(dynamoDB)
 
     private class GamePlayersTable(dynamoDB: AmazonDynamoDB) {
         val tableName = "Server2-GamePlayers"
@@ -71,6 +76,61 @@ S2  - Result: Number (1 / 0 / -1 for win/draw/loss)
                 AttributeUpdate(this.score).put(score)
             )
             table.table.updateItem(gameId, game.gameId, this.playerIndex, playerIndex, *updates)
+        }
+    }
+
+    private class MovesTable(dynamoDB: AmazonDynamoDB) {
+        private val logger = KLoggers.logger(this)
+
+        val tableName = "Server2-GameMoves"
+        val gameId = "GameId"
+        val moveIndex = "MoveIndex"
+
+        val playerIndex = "PlayerIndex"
+        val moveType = "MoveType"
+        val move = "Move"
+        val state = "State"
+        val table = MyTable(dynamoDB, tableName).strings(gameId).numbers(moveIndex)
+        val primaryIndex = table.primaryIndex(gameId, moveIndex)
+
+        fun addMove(move: MoveEvent) {
+            val serverGame = move.game
+            val moveIndex = serverGame.nextMoveIndex()
+            val moveData = convertToDBFormat(move.move)
+            var state: Any? = null
+            if (serverGame.obj is GameImpl<*>) {
+                val game = serverGame.obj as GameImpl<*>
+                val lastMoveState = game.actions.lastMoveState()
+                if (lastMoveState.isNotEmpty()) {
+                    state = convertToDBFormat(lastMoveState)
+                }
+            }
+            val updates = mutableListOf(
+                AttributeUpdate(this.playerIndex).put(move.player),
+                AttributeUpdate(this.moveType).put(move.moveType)
+            )
+            if (moveData != null) {
+                updates += AttributeUpdate(this.move).put(moveData)
+            }
+            if (state != null) {
+                updates += AttributeUpdate(this.state).put(state)
+            }
+
+            val update = UpdateItemSpec().withPrimaryKey(this.gameId, serverGame.gameId, this.moveIndex, moveIndex)
+                .withAttributeUpdate(updates)
+            table.performUpdate(update)
+        }
+
+        fun fetchMoves(gameId: String): List<MoveHistory> {
+            val dbMoves = table.table.query(QuerySpec().withHashKey(this.gameId, gameId).withRangeKeyCondition(RangeKeyCondition(this.moveIndex).gt(-1)))
+            return dbMoves.map {
+                MoveHistory(
+                    it[this.moveType] as String,
+                    (it[this.playerIndex] as BigDecimal).toInt(),
+                    convertFromDBFormat(it[this.move]),
+                    convertFromDBFormat(it[this.state]) as Map<String, Any>?
+                )
+            }
         }
     }
 
@@ -114,12 +174,10 @@ S1  - TimeLastAction: Number (timestamp)
                     AttributeUpdate(this.timeStarted).put(Instant.now().epochSecond),
                     AttributeUpdate(this.options).put(options)
                 )
-            performUpdate(update)
+            table.performUpdate(update)
         }
 
-        private fun <String, V> Map<String, V>.plusIf(key: String, value: V?): Map<String, V> {
-            return if (value != null) this.plus(key to value) else this
-        }
+        @Deprecated("use separate MoveTable instead")
         fun addMove(move: MoveEvent) {
             val serverGame = move.game
             val moveData = mapOf(
@@ -144,7 +202,7 @@ S1  - TimeLastAction: Number (timestamp)
                     .withList(":move", listOf(moveData))
                     .withList(":emptyList", emptyList<Any>())
                 )
-            performUpdate(itemUpdate)
+            table.performUpdate(itemUpdate)
         }
 
         fun finishGame(game: ServerGame) {
@@ -153,17 +211,9 @@ S1  - TimeLastAction: Number (timestamp)
                     AttributeUpdate(this.finishedState).put(GameState.PUBLIC.value),
                     AttributeUpdate(this.timeLastAction).put(Instant.now().epochSecond)
                 )
-            performUpdate(update)
+            table.performUpdate(update)
         }
 
-        fun performUpdate(updateItemSpec: UpdateItemSpec) {
-            var consumedCapacity: ConsumedCapacity? = null
-            val time = measureNanoTime {
-                val updateResult = table.table.updateItem(updateItemSpec.withReturnConsumedCapacity(ReturnConsumedCapacity.INDEXES))
-                consumedCapacity = updateResult.updateItemResult.consumedCapacity
-            }
-            logger("Performing $updateItemSpec update took $time with consumed capacity $consumedCapacity")
-        }
     }
 
     private fun dbEnabled(game: ServerGame): Boolean {
@@ -180,7 +230,8 @@ S1  - TimeLastAction: Number (timestamp)
             }
         })
         events.listen("save game move in Database", MoveEvent::class, { dbEnabled(it.game) }, {event ->
-            games.addMove(event)
+//            games.addMove(event)
+            moves.addMove(event)
         })
         events.listen("finish game in Database", GameEndedEvent::class, { dbEnabled(it.game) }, {event ->
             games.finishGame(event.game)
@@ -189,7 +240,7 @@ S1  - TimeLastAction: Number (timestamp)
             val result = event.winner.result
             gamePlayers.eliminatePlayer(event.game, event.player, result, event.position, "eliminated", mapOf())
         })
-        return listOf(gamePlayers.table.createTableRequest(), games.table.createTableRequest())
+        return listOf(gamePlayers.table, games.table, moves.table).map { it.createTableRequest() }
     }
 
     data class MoveHistory(val moveType: String, val playerIndex: Int, val move: Any?, val state: Map<String, Any>?)
@@ -209,7 +260,7 @@ S1  - TimeLastAction: Number (timestamp)
         println("$gameId returned $playersInGame")
 
         val gameItem = this.games.table.table.getItem(games.gameId, gameId) ?: return null
-        val moves = gameItem.getList("moves") ?: gameItem.getList<Map<String, Any>>("Moves")
+        val moves = gameItem.getList("moves") ?: gameItem.getList<Map<String, Any>>("Moves") ?: mutableListOf()
         val moveHistory = moves.map {
             MoveHistory(
                 it["moveType"] as String,
@@ -217,7 +268,7 @@ S1  - TimeLastAction: Number (timestamp)
                 convertFromDBFormat(it["move"]),
                 convertFromDBFormat(it["state"]) as Map<String, Any>?
             )
-        }
+        }.plus(this.moves.fetchMoves(gameId))
         val gameType = gameItem.getString(games.gameType)
         val gameState = gameItem.getInt(games.finishedState)
         val timeStarted = gameItem.getLong(games.timeStarted)

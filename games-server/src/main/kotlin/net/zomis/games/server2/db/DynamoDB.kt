@@ -5,10 +5,12 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder
 import com.amazonaws.services.dynamodbv2.document.*
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec
+import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec
 import com.amazonaws.services.dynamodbv2.model.*
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import java.time.Instant
+import kotlin.system.measureNanoTime
 
 fun timeStamp(): AttributeValue {
     return AttributeValue().withN(Instant.now().epochSecond.toString())
@@ -90,6 +92,8 @@ data class MyPrimaryIndex(
 }
 
 class MyTable(dynamoDB: AmazonDynamoDB, val tableName: String) {
+    private val logger = KLoggers.logger(this)
+
     private val indices = mutableListOf<MyIndex>()
     private val attributeDefinitions = mutableListOf<AttributeDefinition>()
     private lateinit var primaryIndex: MyPrimaryIndex
@@ -130,6 +134,15 @@ class MyTable(dynamoDB: AmazonDynamoDB, val tableName: String) {
                     it.withGlobalSecondaryIndexes(indices.map {index -> index.toGSI() })
                 } else { it }
             }
+    }
+
+    fun performUpdate(updateItemSpec: UpdateItemSpec) {
+        var consumedCapacity: ConsumedCapacity? = null
+        val time = measureNanoTime {
+            val updateResult = table.updateItem(updateItemSpec.withReturnConsumedCapacity(ReturnConsumedCapacity.INDEXES))
+            consumedCapacity = updateResult.updateItemResult.consumedCapacity
+        }
+        logger("Performing $updateItemSpec update took $time with consumed capacity $consumedCapacity")
     }
 
 }
