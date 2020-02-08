@@ -29,6 +29,17 @@ One of the goals with this project is to easily create implementations of severa
 
 I am using Kotlin which allows me to also compile game-logic into JavaScript and use it in the games-vue-client project.
 
+## Adding a new game
+
+One of the main goals of this project is that it should be easy to implement a new game in it.
+
+To implement a new game you'll need to add:
+
+- Kotlin code written in the Game-DSL specifying the game model, the game actions, and the game view.
+- Mapping in [ServerGames.kt](https://github.com/Zomis/Server2/blob/master/games-server/src/main/kotlin/net/zomis/games/server2/ServerGames.kt)
+- Vue component to display the game state and fire actions
+- Mapping in [supportedGames.js](https://github.com/Zomis/Server2/blob/master/games-vue-client/src/supportedGames.js)
+
 ## Why the event-based approach?
 
 It allows me to dynamically inject new functionality (hopefully) without disturbing existing functionality.
