@@ -13,7 +13,12 @@
       </div>
       <div class="pieces player-pieces" :style="{ 'grid-template-columns': `repeat(${width}, 1fr)`, 'grid-template-rows': `repeat(${height}, 1fr)` }">
         <template v-for="piece in gridTiles">
-          <slot :tile="piece" />
+          <div class="grid-element-wrapper" :key="piece.key" v-bind:style="{
+              gridArea: (piece.y+1) + '/' + (piece.x+1),
+              actionable: actionable && actionable[`${piece.x-1},${piece.y-1}`]
+            }" @click="onClick(piece)">
+            <slot :tile="piece" />
+          </div>
         </template>
       </div>
     </div>
@@ -22,7 +27,7 @@
 <script>
 export default {
   name: "Map2D",
-  props: ["width", "height", "grid", "clickHandler", "actionable"],
+  props: ["width", "height", "grid", "clickHandler", "actionable", "pieceExists"],
   methods: {
     doNothing() {},
     onClick(data) {
@@ -39,7 +44,7 @@ export default {
       let gridTiles = []
       this.grid.forEach((row, y) => {
         row.forEach((tile, x) => {
-          if (this.grid[y][x]) {
+          if (this.pieceExists(tile)) {
             gridTiles.push({ key: `tile-${x}-${y}`, x: x, y: y, tile: tile })
           }
         })
@@ -53,3 +58,11 @@ export default {
 @import "../../assets/games-style.css";
 
 </style>-->
+<style scoped>
+.grid-element-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+</style>

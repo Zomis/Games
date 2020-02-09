@@ -1,7 +1,7 @@
 <template>
   <transition name="fade">
   <div class="piece"
-    v-on:click="click(piece)"
+    @click="click(piece)"
     :class="[piece.id, {actionable: actionable}]"
     @mouseover="mouseover(piece)" @mouseleave="mouseleave()"
      v-bind:style="{ gridArea: (piece.y+1) + '/' + (piece.x+1) }">

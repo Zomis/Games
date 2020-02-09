@@ -1,6 +1,7 @@
 <template>
-  <div class="game-dsl-ttt">
-    <Map2D :width="width" :height="height" :grid="view.board" :clickHandler="onClick" :actionable="actions.play">
+  <div class="game-dsl-ttt game-piece-color-change">
+    <Map2D :width="width" :height="height" :grid="view.board" :clickHandler="onClick" :actionable="actions.play"
+      :pieceExists="e => e.owner !== null">
       <template v-slot:default="slotProps">
         <UrPiece v-if="slotProps.tile.tile.owner !== null"
           :key="slotProps.key"
@@ -15,7 +16,7 @@
   </div>
 </template>
 <script>
-import Map2D from "../common/Map2D";
+import Map2D from "@/components/common/Map2D";
 import UrPiece from "../ur/UrPiece";
 
 export default {

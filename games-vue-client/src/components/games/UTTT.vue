@@ -2,7 +2,7 @@
   <div class="board-parent">
     <div class="board uttt-big-board">
       <div class="smaller-board" v-for="(area, areaIndex) in areas" :key="areaIndex">
-        <Map2D :width="3" :height="3" :grid="area.subs">
+        <Map2D :width="3" :height="3" :grid="area.subs" :pieceExists="e => true">
           <template v-slot:default="slotProps">
             <UrPiece
               :key="slotProps.key"
