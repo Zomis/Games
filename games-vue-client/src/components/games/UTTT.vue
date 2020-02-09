@@ -10,6 +10,7 @@
               class="piece"
               :class="'piece-' + slotProps.tile.tile.owner"
               :onclick="generateOnClickFor(areaIndex)"
+              :actionable="actions.play && actions.play[`${Math.floor(areaIndex % 3) * 3 + slotProps.tile.x},${Math.floor(areaIndex / 3) * 3 + slotProps.tile.y}`]"
               :piece="slotProps.tile">
             </UrPiece>
           </template>
@@ -48,7 +49,7 @@ import Map2D from "@/components/common/Map2D";
 
 export default {
   name: "UTTT",
-  props: ["view", "onAction"],
+  props: ["view", "actions", "onAction"],
   components: {
     Map2D,
     UrPiece
