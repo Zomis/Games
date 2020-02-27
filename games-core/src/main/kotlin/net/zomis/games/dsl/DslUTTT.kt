@@ -34,6 +34,9 @@ class TTArtax(game: TTBase): TTController(game) {
         if (source == null) {
             return tile.wonBy == this.currentPlayer
         }
+        if (tile.isWon) {
+            return false
+        }
 
         val tileDistance = distance(tile, source!!)
         return tileDistance in 1..2
