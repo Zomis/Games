@@ -46,9 +46,15 @@ class TTQuixoController(game: TTBase): TTController(game) {
         }
 
         val dir = direction(tile)
+        val parent = tile.parent!!
+        val otherSide = parent.getSub(tile.x - dir.deltaX, tile.y - dir.deltaY)
+        if (otherSide != null) {
+            return false
+        }
+
         var curr: TTBase? = tile
         while (curr != null) {
-            curr = curr.parent!!.getSub(curr.x + dir.deltaX, curr.y + dir.deltaY)
+            curr = parent.getSub(curr.x + dir.deltaX, curr.y + dir.deltaY)
             if (curr == emptyTile) {
                 return true
             }
