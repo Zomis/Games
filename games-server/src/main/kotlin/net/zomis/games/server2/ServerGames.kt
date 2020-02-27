@@ -12,6 +12,7 @@ object ServerGames {
         "DSL-UTTT" to DslTTT().gameUTTT,
         "DSL-Reversi" to DslTTT().gameReversi,
         "Quixo" to DslTTT().gameQuixo,
+        "Artax" to DslTTT().gameArtax,
         "DSL-TTT3D" to DslTTT3D().game,
         "DSL-UR" to DslUR().gameUR
     )

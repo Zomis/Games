@@ -5,6 +5,8 @@ import net.zomis.tttultimate.TTBase
 import net.zomis.tttultimate.TTFactories
 import net.zomis.tttultimate.TTPlayer
 import net.zomis.tttultimate.games.*
+import kotlin.math.abs
+import kotlin.math.max
 
 data class TTOptions(val m: Int, val n: Int, val k: Int)
 fun TTPlayer.index(): Int {
@@ -15,6 +17,62 @@ fun TTPlayer.index(): Int {
         TTPlayer.XO -> -1
         TTPlayer.BLOCKED -> -1
     }
+}
+
+class TTArtax(game: TTBase): TTController(game) {
+    private var source: TTBase? = null
+
+    init {
+        this.onReset()
+    }
+
+    private fun distance(a: TTBase, b: TTBase): Int {
+        return max(abs(a.x - b.x), abs(a.y - b.y))
+    }
+
+    override fun isAllowedPlay(tile: TTBase): Boolean {
+        if (source == null) {
+            return tile.wonBy == this.currentPlayer
+        }
+
+        val tileDistance = distance(tile, source!!)
+        return tileDistance in 1..2
+    }
+
+    override fun onReset() {
+        game.subs().forEach { it.setPlayedBy(TTPlayer.NONE) }
+        game.getSub(0, 0)!!.setPlayedBy(TTPlayer.X)
+        game.getSub(game.sizeX - 1, game.sizeY - 1)!!.setPlayedBy(TTPlayer.X)
+
+        game.getSub(0, game.sizeY - 1)!!.setPlayedBy(TTPlayer.O)
+        game.getSub(game.sizeX - 1, 0)!!.setPlayedBy(TTPlayer.O)
+    }
+
+    override fun performPlay(tile: TTBase): Boolean {
+        if (!isAllowedPlay(tile)) {
+            return false
+        }
+        if (source == null) {
+            source = tile
+            return true
+        }
+        val tileDistance = distance(tile, source!!)
+        tile.setPlayedBy(this.currentPlayer)
+        if (tileDistance == 2) {
+            this.source!!.setPlayedBy(TTPlayer.NONE)
+        }
+        val potentialWinner = this.currentPlayer
+        Direction8.values().map {dir ->
+            tile.parent!!.getSub(tile.x + dir.deltaX, tile.y + dir.deltaY)?.takeIf { it.isWon }?.setPlayedBy(potentialWinner)
+        }
+        this.nextPlayer()
+        if (this.game.subs().none { it.wonBy == this.currentPlayer}) {
+            this.game.setPlayedBy(potentialWinner)
+        }
+        this.source = null
+        return true
+    }
+
 }
 
 class TTQuixoController(game: TTBase): TTController(game) {
@@ -180,6 +238,19 @@ class DslTTT {
                 mapOf("x" to active.x, "y" to active.y)
             }
         }
+    }
+
+    val gameArtax = createGame<TTController>("Artax") {
+        val grid = gridSpec<TTBase> {
+            size(model.game.sizeX, model.game.sizeY)
+            getter { x, y -> model.game.getSmallestTile(x, y)!! }
+        }
+        setup(TTOptions::class) {
+            defaultConfig { TTOptions(6, 6, 7) }
+            init { conf -> TTArtax(TTFactories().classicMNK(conf!!.m, conf.n, conf.k)) }
+        }
+        logic(ttLogic(grid))
+        view(ttView(grid))
     }
 
     val gameReversi = createGame<TTController>("Reversi") {

@@ -57,6 +57,13 @@ const supportedGames = {
         component: DSLTTT,
         routeProps: defaultRouteProps
     },
+    "Artax": {
+        displayName: "Artax",
+        dsl: new gamejs.net.zomis.games.dsl.DslTTT().gameArtax,
+        actions: tttActions,
+        component: DSLTTT,
+        routeProps: defaultRouteProps
+    },
     "DSL-Reversi": {
         displayName: "Reversi",
         dsl: new gamejs.net.zomis.games.dsl.DslTTT().gameReversi,
