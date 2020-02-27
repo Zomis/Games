@@ -58,6 +58,7 @@ class TTQuixoController(game: TTBase): TTController(game) {
 
     override fun onReset() {
         this.game.subs().forEach { it.setPlayedBy(TTPlayer.NONE) }
+        this.emptyTile = null
     }
 
     override fun performPlay(tile: TTBase): Boolean {
@@ -83,6 +84,7 @@ class TTQuixoController(game: TTBase): TTController(game) {
         tile.setPlayedBy(this.currentPlayer)
         this.emptyTile = null
         this.nextPlayer()
+        this.game.determineWinner()
         return true
     }
 }
