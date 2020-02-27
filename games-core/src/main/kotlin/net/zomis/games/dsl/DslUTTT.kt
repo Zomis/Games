@@ -246,7 +246,7 @@ class DslTTT {
             getter { x, y -> model.game.getSmallestTile(x, y)!! }
         }
         setup(TTOptions::class) {
-            defaultConfig { TTOptions(6, 6, 7) }
+            defaultConfig { TTOptions(7, 7, 8) }
             init { conf -> TTArtax(TTFactories().classicMNK(conf!!.m, conf.n, conf.k)) }
         }
         logic(ttLogic(grid))
