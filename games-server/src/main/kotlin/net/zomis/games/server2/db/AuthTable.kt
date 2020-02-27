@@ -36,7 +36,7 @@ class AuthTable(private val dynamoDB: AmazonDynamoDB) {
         events.listen("Auth", ClientLoginEvent::class, {true}, {
             authenticationDone(it)
         })
-        events.listen("Github Authentication", ClientJsonMessage::class, {
+        events.listen("Session Cookie Authentication", ClientJsonMessage::class, {
             it.data.getTextOrDefault("type", "") == "Auth" &&
                     it.data.getTextOrDefault("provider", "") == "session"
         }, {
