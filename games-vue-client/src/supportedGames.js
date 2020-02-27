@@ -50,6 +50,13 @@ const supportedGames = {
         component: DSLTTT,
         routeProps: defaultRouteProps
     },
+    "Quixo": {
+        displayName: "Quixo",
+        dsl: new gamejs.net.zomis.games.dsl.DslTTT().gameQuixo,
+        actions: tttActions,
+        component: DSLTTT,
+        routeProps: defaultRouteProps
+    },
     "DSL-Reversi": {
         displayName: "Reversi",
         dsl: new gamejs.net.zomis.games.dsl.DslTTT().gameReversi,

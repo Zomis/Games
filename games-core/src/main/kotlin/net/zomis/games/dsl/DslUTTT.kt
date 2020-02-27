@@ -1,5 +1,6 @@
 package net.zomis.games.dsl
 
+import net.zomis.tttultimate.Direction8
 import net.zomis.tttultimate.TTBase
 import net.zomis.tttultimate.TTFactories
 import net.zomis.tttultimate.TTPlayer
@@ -13,6 +14,76 @@ fun TTPlayer.index(): Int {
         TTPlayer.NONE -> -1
         TTPlayer.XO -> -1
         TTPlayer.BLOCKED -> -1
+    }
+}
+
+class TTQuixoController(game: TTBase): TTController(game) {
+    private var emptyTile: TTBase? = null
+
+    private fun isBorder(tile: TTBase): Boolean {
+        val parent = tile.parent ?: return false
+        return tile.x == 0 || tile.y == 0 || tile.x == parent.sizeX - 1 || tile.y == parent.sizeY - 1
+    }
+
+    private fun direction(tile: TTBase): Direction8 {
+        val target = emptyTile!!
+        return when {
+            tile.x > target.x -> Direction8.W
+            tile.x < target.x -> Direction8.E
+            tile.y > target.y -> Direction8.N
+            tile.y < target.y -> Direction8.S
+            else -> throw IllegalStateException("Dir is null for $tile and target $target")
+        }
+    }
+
+    override fun isAllowedPlay(tile: TTBase): Boolean {
+        if (emptyTile == null) {
+            val allowedOwner = !tile.isWon || tile.wonBy == this.currentPlayer
+            return isBorder(tile) && allowedOwner
+        }
+        if (tile == emptyTile || !isBorder(tile)) {
+            return false
+        }
+
+        val dir = direction(tile)
+        var curr: TTBase? = tile
+        while (curr != null) {
+            curr = curr.parent!!.getSub(curr.x + dir.deltaX, curr.y + dir.deltaY)
+            if (curr == emptyTile) {
+                return true
+            }
+        }
+        return false
+    }
+
+    override fun onReset() {
+        this.game.subs().forEach { it.setPlayedBy(TTPlayer.NONE) }
+    }
+
+    override fun performPlay(tile: TTBase): Boolean {
+        if (!isAllowedPlay(tile)) {
+            return false
+        }
+        if (emptyTile == null) {
+            emptyTile = tile
+            tile.setPlayedBy(TTPlayer.NONE)
+            return true
+        }
+        val target = emptyTile!!
+        val dir = direction(tile)
+        var sub: TTBase? = target
+        while (sub != tile && sub != null) {
+            val parent = sub.parent!!
+            val next = parent.getSub(sub.x + dir.deltaX*-1, sub.y + dir.deltaY*-1)
+            if (next != null) {
+                sub.setPlayedBy(next.wonBy)
+            }
+            sub = next
+        }
+        tile.setPlayedBy(this.currentPlayer)
+        this.emptyTile = null
+        this.nextPlayer()
+        return true
     }
 }
 
@@ -30,6 +101,19 @@ class DslTTT {
             init {conf ->
                 TTClassicController(TTFactories().classicMNK(conf!!.m, conf.n, conf.k))
             }
+        }
+        logic(ttLogic(grid))
+        view(ttView(grid))
+    }
+
+    val gameQuixo = createGame<TTController>("Quixo") {
+        val grid = gridSpec<TTBase> {
+            size(model.game.sizeX, model.game.sizeY)
+            getter { x, y -> model.game.getSub(x, y)!! }
+        }
+        setup(TTOptions::class) {
+            defaultConfig { TTOptions(5, 5, 5) }
+            init { conf -> TTQuixoController(TTFactories().classicMNK(conf!!.m, conf.n, conf.k)) }
         }
         logic(ttLogic(grid))
         view(ttView(grid))
