@@ -68,8 +68,19 @@ class TTArtax(game: TTBase): TTControllerSourceDestination(game) {
             destination.parent!!.getSub(destination.x + dir.deltaX, destination.y + dir.deltaY)?.takeIf { it.isWon }?.setPlayedBy(potentialWinner)
         }
         this.currentPlayer = this.currentPlayer.next()
-        if (this.board.subs().none { it.wonBy == this.currentPlayer}) {
+
+        val currentPlayerTiles = this.board.subs().filter { it.wonBy == this.currentPlayer }
+        if (currentPlayerTiles.isEmpty()) {
             this.board.setPlayedBy(potentialWinner)
+        }
+        if (this.board.subs().none { tile -> !tile.isWon && currentPlayerTiles.any { distance(tile, it) <= 2 } }) {
+            val current = currentPlayerTiles.size
+            val opponent = this.currentPlayer.next().let { opp -> this.board.subs().filter { it.wonBy == opp } }.size
+            this.board.setPlayedBy(when {
+                current > opponent -> this.currentPlayer
+                opponent > current -> this.currentPlayer.next()
+                else -> TTPlayer.XO
+            })
         }
         return true
     }
