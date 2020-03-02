@@ -32,6 +32,7 @@ interface ActionComplexScopeResultNext<T : Any, A : Any> : ActionComplexScopeRes
     fun actionParameter(action: A)
 }
 interface ActionComplexScopeResultStart<T : Any, A : Any> {
+    fun <E : Any> optionFrom(options: (T) -> Array<E>, next: ActionComplexScopeResultNext<T, A>.(E) -> Unit)
     fun <E : Any> option(options: Array<E>, next: ActionComplexScopeResultNext<T, A>.(E) -> Unit)
 }
 

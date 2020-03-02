@@ -3,6 +3,7 @@ package net.zomis.games.dsl
 import kotlin.reflect.KClass
 
 data class Point(val x: Int, val y: Int)
+data class PointMove(val source: Point, val destination: Point)
 interface Actionable<T : Any, A : Any> {
     val playerIndex: Int
     val game: T

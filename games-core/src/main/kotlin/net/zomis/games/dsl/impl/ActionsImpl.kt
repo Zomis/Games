@@ -97,25 +97,34 @@ class GameLogicActionTypeUnit<T : Any>(override val actionType: String,
     }
 }
 
-class GameLogicActionTypeComplexNext<T : Any, A : Any>(val yielder: (A) -> Unit): ActionComplexScopeResultNext<T, A> {
+class GameLogicActionTypeComplexNext<T : Any, A : Any>(private val model: T, val yielder: (A) -> Unit): ActionComplexScopeResultNext<T, A> {
     override fun actionParameter(action: A) {
         yielder(action)
     }
 
     override fun <E : Any> option(options: Array<E>, next: ActionComplexScopeResultNext<T, A>.(E) -> Unit) {
         options.forEach {
-            val nextScope = GameLogicActionTypeComplexNext<T, A>(yielder)
+            val nextScope = GameLogicActionTypeComplexNext<T, A>(model, yielder)
             next.invoke(nextScope, it)
         }
+    }
+
+    override fun <E : Any> optionFrom(options: (T) -> Array<E>, next: ActionComplexScopeResultNext<T, A>.(E) -> Unit) {
+        this.option(options(model), next)
     }
 }
 
 class GameLogicActionTypeComplexNextOnly<T : Any, A : Any>(
+        private val model: T,
         private val chosen: List<Any>,
         private val evaluateOptions: Boolean,
        private val nextYielder: (List<Any>) -> Unit, private val actionYielder: (A) -> Unit): ActionComplexScopeResultNext<T, A> {
     override fun actionParameter(action: A) {
         actionYielder(action)
+    }
+
+    override fun <E : Any> optionFrom(options: (T) -> Array<E>, next: ActionComplexScopeResultNext<T, A>.(E) -> Unit) {
+        this.option(options(model), next)
     }
 
     override fun <E : Any> option(options: Array<E>, next: ActionComplexScopeResultNext<T, A>.(E) -> Unit) {
@@ -124,7 +133,7 @@ class GameLogicActionTypeComplexNextOnly<T : Any, A : Any>(
             val nextChosen = options[nextChosenIndex as Int] // TODO: Add string support or something
             val nextChosenList = chosen.subList(1, chosen.size)
 
-            val nextScope = GameLogicActionTypeComplexNextOnly<T, A>(nextChosenList,true, nextYielder, actionYielder)
+            val nextScope = GameLogicActionTypeComplexNextOnly<T, A>(model, nextChosenList,true, nextYielder, actionYielder)
             next.invoke(nextScope, nextChosen)
         } else {
             nextYielder(options.toList())
@@ -132,7 +141,7 @@ class GameLogicActionTypeComplexNextOnly<T : Any, A : Any>(
                 return
             }
             options.forEach {
-                val nextScope = GameLogicActionTypeComplexNextOnly<T, A>(emptyList(), false, {}, actionYielder)
+                val nextScope = GameLogicActionTypeComplexNextOnly<T, A>(model, emptyList(), false, {}, actionYielder)
                 next.invoke(nextScope, it)
             }
         }
@@ -154,7 +163,7 @@ class GameLogicActionTypeComplex<T : Any, A : Any>(override val actionType: Stri
         val yielder: (List<Any>) -> Unit = { nexts.addAll(it) }
         val actionYielder: (A) -> Unit = { actionParams.add(it) }
 
-        val nextScope = GameLogicActionTypeComplexNextOnly<T, A>(chosen, true, yielder, actionYielder)
+        val nextScope = GameLogicActionTypeComplexNextOnly<T, A>(model, chosen, true, yielder, actionYielder)
         this.options.invoke(nextScope)
         return nexts to actionParams
     }
@@ -162,7 +171,7 @@ class GameLogicActionTypeComplex<T : Any, A : Any>(override val actionType: Stri
     override fun availableActions(playerIndex: Int): Iterable<Action<T, A>> {
         val result = mutableListOf<A>()
         val yielder: (A) -> Unit = { result.add(it) }
-        val nextScope = GameLogicActionTypeComplexNext<T, A>(yielder)
+        val nextScope = GameLogicActionTypeComplexNext<T, A>(model, yielder)
         this.options.invoke(nextScope)
         return result.map { createAction(playerIndex, it) }
     }
