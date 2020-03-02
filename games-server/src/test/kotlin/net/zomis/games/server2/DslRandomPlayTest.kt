@@ -11,7 +11,8 @@ import net.zomis.games.server2.clients.getText
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.ValueSource
+import org.junit.jupiter.params.provider.Arguments
+import org.junit.jupiter.params.provider.MethodSource
 import java.net.URI
 
 class DslRandomPlayTest {
@@ -32,10 +33,16 @@ class DslRandomPlayTest {
         server!!.stop()
     }
 
+    companion object {
+        @JvmStatic
+        fun serverGames(): List<Arguments> {
+            return ServerGames.games.keys.sorted().map { Arguments.of(it) }
+        }
+    }
+
     @ParameterizedTest(name = "Random play {0}")
-    @ValueSource(strings = ["Connect4", "Reversi", "TTT", "TTT3D", "UR", "UTTT"])
-    fun dsl(gameName: String) {
-        val dslGame = "DSL-$gameName"
+    @MethodSource("serverGames")
+    fun dsl(dslGame: String) {
         val p1 = WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket"))
         p1.connectBlocking()
 
