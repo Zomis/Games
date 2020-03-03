@@ -201,13 +201,16 @@ class TTSourceDestinationGames {
     private fun TTControllerSourceDestination.point(point: Point): TTBase {
         return this.board.getSub(point.x, point.y)!!
     }
+    private fun TTControllerSourceDestination.grid(): List<Point> {
+        return this.board.subs().map { Point(it.x, it.y) }
+    }
 
     private fun ttLogic(): GameLogicDsl<TTControllerSourceDestination> = {
         winner { winner(it.board) }
         action(moveAction) {
             options {
-                optionFrom({ game -> game.board.subs().filter { game.allowedSource(it) }.toTypedArray() }) {source ->
-                    optionFrom({ game -> game.board.subs().filter { game.allowedDestination(source, it) }.toTypedArray() }) {destination ->
+                optionFrom({ game -> game.grid().filter { game.allowedSource(game.point(it)) }.toTypedArray() }) {source ->
+                    optionFrom({ game -> game.grid().filter { game.allowedDestination(game.point(source), game.point(it)) }.toTypedArray() }) {destination ->
                         actionParameter(PointMove(Point(source.x, source.y), Point(destination.x, destination.y)))
                     }
                 }
