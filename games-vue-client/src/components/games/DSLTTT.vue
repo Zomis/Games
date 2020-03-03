@@ -1,6 +1,6 @@
 <template>
   <div class="game-dsl-ttt game-piece-color-change">
-    <Map2D :width="width" :height="height" :grid="view.board" :clickHandler="onClick" :actionable="actions.play"
+    <Map2D :width="width" :height="height" :grid="view.board" :clickHandler="onClick" :actionable="{ ...actions.play, ...actions.move }"
       :pieceExists="e => e.owner !== null">
       <template v-slot:default="slotProps">
         <UrPiece v-if="slotProps.tile.tile.owner !== null"
@@ -8,7 +8,7 @@
           :mouseover="doNothing" :mouseleave="doNothing"
           :class="'piece-' + slotProps.tile.tile.owner"
           :onclick="pieceClick"
-          :actionable="actions.play && actions.play[`${slotProps.tile.x},${slotProps.tile.y}`]"
+          :actionable="actions.play && actions.play[`${slotProps.tile.x},${slotProps.tile.y}`] || actions.move && actions.move[`${slotProps.tile.x},${slotProps.tile.y}`]"
           :piece="slotProps.tile">
         </UrPiece>
       </template>
@@ -29,12 +29,18 @@ export default {
   methods: {
     doNothing: function() {},
     pieceClick(data) {
-      console.log(`onClick on DSLTTT pieceClick invoked: ${data.x}, ${data.y}`) // This is the one that is used
-      this.onAction("play", { x: data.x, y: data.y });
+//      console.log(`onClick on DSLTTT pieceClick invoked: ${data.x}, ${data.y}`) // This is the one that is used
+//      this.onClick(data.x, data.y)
+      console.log("IGNORED PIECECLICK", data)
     },
     onClick(x, y) {
       console.log(`onClick on DSLTTT invoked: ${x}, ${y}`)
-      this.onAction("play", { x: x, y: y });
+      if (this.actions.play) {
+        this.onAction("play", `${x},${y}`);
+      } else {
+        this.onAction("move", `${x},${y}`);
+      }
+      console.log("AFTER ONCLICK", x, y)
     }
   },
   computed: {

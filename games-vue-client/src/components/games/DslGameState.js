@@ -6,6 +6,7 @@ import supportedGames from "@/supportedGames"
 const gameStore = {
   namespaced: true,
   state: {
+    actionPrevious: [],
     games: {}
   },
   getters: {},
@@ -32,30 +33,64 @@ const gameStore = {
       let game = state.games[data.gameId].gameData;
       let supportedGame = supportedGames.games[data.gameType]
 
+      function resolveActionKey(actionName, type, value) {
+        let actionKeys = supportedGame.actions[actionName]
+        if (typeof actionKeys === 'object') {
+          actionKeys = actionKeys[type]
+        }
+        return actionKeys(value)
+      }
+
       let actions = {}
       data.actions.forEach(e => {
         let ca = {}
         let actionName = e.first
         actions[actionName] = ca
-        e.second.parameters.forEach(actionParam => {
-          let key = supportedGame.actions[actionName](actionParam)
-          ca[key] = true
+
+        console.log("ACTION INFO FOR", actionName, state.actionPrevious)
+        let actionInfo = e.second
+        console.log("ACTION INFO", actionInfo)
+        actionInfo.nextOptions.forEach(next => {
+          let key = resolveActionKey(actionName, "next", next)
+          console.log("POSSIBLE NEXT", next, key)
+          ca[key] = { next: next }
         })
-        e.second.nextOptions.forEach(actionParam => { // TODO: This might need to be handled differently.
-          let key = supportedGame.actions[actionName](actionParam)
-          ca[key] = true
+        actionInfo.parameters.forEach(actionParam => {
+          let key = resolveActionKey(actionName, "parameter", actionParam)
+          console.log("POSSIBLE PARAM", actionParam, key)
+          ca[key] = { parameter: actionParam }
         })
       })
       game.actions = actions
     }
   },
   actions: {
+    action(context, data) {
+      let json = `{ "gameType": "${data.gameInfo.gameType}", "gameId": "${
+        data.gameInfo.gameId
+      }", "type": "move", "moveType": "${data.name}", "move": ${JSON.stringify(
+        data.data
+      )} }`;
+      Socket.send(json);
+    },
     requestView(context, data) {
       Socket.send(`{ "type": "ViewRequest", "gameType": "${data.gameType}", "gameId": "${data.gameId}" }`);
     },
     requestActions(context, data) {
-      let game = context.state.games[data.gameId]
-      Socket.send(`{ "type": "ActionListRequest", "gameType": "${data.gameType}", "gameId": "${data.gameId}", "playerIndex": ${game.gameInfo.yourIndex} }`);
+      let game = context.state.games[data.gameInfo.gameId]
+      // TODO: Add chosen
+      let moveTypeOptional = data.actionType ? `"moveType": "${data.actionType}",` : ""
+      if (!data.chosen) {
+        data.chosen = [];
+      }
+      Socket.send(`{
+        "type": "ActionListRequest",
+        "gameType": "${data.gameInfo.gameType}",
+        "gameId": "${data.gameInfo.gameId}",
+        ${moveTypeOptional}
+        "playerIndex": ${game.gameInfo.yourIndex},
+        "chosen": ${JSON.stringify(data.chosen)}
+      }`);
     },
     onSocketMessage(context, data) {
       if (data.type === "GameStarted") {
@@ -69,7 +104,7 @@ const gameStore = {
       }
       if (data.type === "GameMove") {
         this.dispatch('DslGameState/requestView', data)
-        this.dispatch('DslGameState/requestActions', data)
+        this.dispatch('DslGameState/requestActions', { gameInfo: data })
       }
     }
   }

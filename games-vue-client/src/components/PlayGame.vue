@@ -7,7 +7,6 @@
 </template>
 <script>
 import supportedGames from "@/supportedGames"
-import Socket from "@/socket";
 import { mapState } from "vuex";
 import GameHead from "@/components/games/common/GameHead";
 import GameResult from "@/components/games/common/GameResult";
@@ -21,6 +20,8 @@ export default {
   },
   data() {
     return {
+      actionChoosing: null,
+      actionPrevious: [],
       supportedGames: supportedGames,
       supportedGame: supportedGames.games[this.gameInfo.gameType],
       views: []
@@ -28,18 +29,29 @@ export default {
   },
   mounted() {
     this.$store.dispatch("DslGameState/requestView", this.gameInfo);
-    this.$store.dispatch("DslGameState/requestActions", this.gameInfo);
+    this.$store.dispatch("DslGameState/requestActions", { gameInfo: this.gameInfo, chosen: [] });
   },
   methods: {
-    action: function(name, data) {
-      if (Socket.isConnected()) {
-        let json = `{ "gameType": "${this.gameInfo.gameType}", "gameId": "${
-          this.gameInfo.gameId
-        }", "type": "move", "moveType": "${name}", "move": ${JSON.stringify(
-          data
-        )} }`;
-        Socket.send(json);
+    action(name, data) {
+      console.log("ACTION CHOICE", name, data)
+      let action = this.actions[name][data]
+      if (action === undefined) {
+        console.log("NO ACTION FOR", data)
+        return
       }
+      if (action.next !== undefined) {
+        this.actionChoosing = name
+        this.actionPrevious.push(action.next)
+        this.$store.dispatch("DslGameState/requestActions", { gameInfo: this.gameInfo, actionType: name, chosen: this.actionPrevious });
+        return
+      }
+      if (action.parameter !== undefined) {
+        this.$store.dispatch("DslGameState/action", { gameInfo: this.gameInfo, name: name, data: action.parameter });
+        this.actionChoosing = null
+        this.actionPrevious = [];
+        return
+      }
+      console.log("UNKNOWN ACTION", action)
     }
   },
   computed: {

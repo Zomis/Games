@@ -35,6 +35,7 @@ export default {
     return {
       supportedGames: supportedGames,
       supportedGame: supportedGames.games[this.gameInfo.gameType],
+      actionPrevious: [],
       views: [],
       game: null,
       actions: {},
@@ -57,23 +58,55 @@ export default {
       }
       this.updateActions()
     },
+    resolveActionKey(game, actionName, type, value) {
+       let actionKeys = game.actions[actionName]
+       if (typeof actionKeys === 'object') {
+         actionKeys = actionKeys[type]
+       }
+       return actionKeys(value)
+    },
     updateActions() {
       let actions = {}
       this.game.actions.types().toArray().forEach(e => {
         let ca = {}
         actions[e.name] = ca
-        e.availableParameters_okoyba$(this.viewer, kotlin.kotlin.collections.emptyList_287e2$()).parameters.toArray().forEach(actionParam => {
-          let key = this.supportedGame.actions[e.name](actionParam)
-          ca[key] = true
+        console.log("ACTION INFO FOR", e.name, this.actionPrevious)
+        let actionInfo = e.availableParameters_okoyba$(this.viewer, kotlin.kotlin.collections.listOf_i5x0yv$(this.actionPrevious))
+        console.log("ACTION INFO", actionInfo)
+        actionInfo.nextOptions.toArray().forEach(next => {
+          let key = this.resolveActionKey(this.supportedGame, e.name, "next", next)
+          console.log("POSSIBLE NEXT", next, key)
+          ca[key] = { next: next }
+        })
+        actionInfo.parameters.toArray().forEach(actionParam => {
+          let key = this.resolveActionKey(this.supportedGame, e.name, "parameter", actionParam)
+          console.log("POSSIBLE PARAM", actionParam, key)
+          ca[key] = { parameter: actionParam }
         })
       })
       this.actions = actions
       console.log("ACTIONS FOR", this.viewer, actions)
     },
     action(name, data) {
-      console.log("PERFORM ACTION", name, data)
-      this.game.actions.type_61zpoe$(name).perform_y5fo13$(this.viewer, data)
-      this.updateView()
+      console.log("ACTION CHOICE", name, data)
+      let action = this.actions[name][data]
+      if (action === undefined) {
+        console.log("NO ACTION FOR", data)
+        return
+      }
+      if (action.next) {
+        this.actionPrevious.push(action.next)
+        this.updateActions()
+        return
+      }
+      if (action.parameter) {
+        let gameActionType = this.game.actions.type_61zpoe$(name)
+        gameActionType.perform_y5fo13$(this.viewer, action.parameter)
+        this.actionPrevious = [];
+        this.updateView()
+        return
+      }
+      console.log("UNKNOWN ACTION", action)
     }
   },
   computed: {

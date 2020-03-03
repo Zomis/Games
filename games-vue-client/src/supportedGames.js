@@ -26,9 +26,17 @@ const defaultRouteProps = route => ({
     showRules: true
 })
 
+const xyAction = (data) => data.x + ',' + data.y
 const tttActions = {
-    play(data) {
-        return data.x + ',' + data.y
+    play: xyAction
+}
+const tttMoveActions = {
+    move: {
+        next: xyAction,
+        parameter(params) {
+            console.log("TTTMOVEACTIONS - PARAMETER", params)
+            return xyAction(params.destination)
+        }
     }
 }
 
@@ -52,15 +60,15 @@ const supportedGames = {
     },
     "Quixo": {
         displayName: "Quixo",
-        dsl: new gamejs.net.zomis.games.dsl.DslTTT().gameQuixo,
-        actions: tttActions,
+        dsl: new gamejs.net.zomis.games.dsl.sourcedest.TTSourceDestinationGames().gameQuixo,
+        actions: tttMoveActions,
         component: DSLTTT,
         routeProps: defaultRouteProps
     },
     "Artax": {
         displayName: "Artax",
-        dsl: new gamejs.net.zomis.games.dsl.DslTTT().gameArtax,
-        actions: tttActions,
+        dsl: new gamejs.net.zomis.games.dsl.sourcedest.TTSourceDestinationGames().gameArtax,
+        actions: tttMoveActions,
         component: DSLTTT,
         routeProps: defaultRouteProps
     },
