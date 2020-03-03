@@ -216,7 +216,8 @@ class TTSourceDestinationGames {
                 }
             }
             allowed {
-                it.game.allowedSource(it.game.point(it.parameter.source)) &&
+                it.game.currentPlayer.index() == it.playerIndex &&
+                  it.game.allowedSource(it.game.point(it.parameter.source)) &&
                     it.game.allowedDestination(it.game.point(it.parameter.source), it.game.point(it.parameter.destination))
             }
             effect {
