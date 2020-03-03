@@ -5,7 +5,6 @@ import net.zomis.tttultimate.Direction8
 import net.zomis.tttultimate.TTBase
 import net.zomis.tttultimate.TTFactories
 import net.zomis.tttultimate.TTPlayer
-import net.zomis.tttultimate.games.TTController
 import kotlin.math.abs
 import kotlin.math.max
 
@@ -136,7 +135,7 @@ class TTQuixoController(game: TTBase): TTControllerSourceDestination(game) {
 
     override fun perform(source: TTBase, destination: TTBase): Boolean {
         source.setPlayedBy(TTPlayer.NONE)
-        val target = destination
+        val target = source
         val dir = direction(source, destination)
         var sub: TTBase? = target
         while (sub != destination && sub != null) {
