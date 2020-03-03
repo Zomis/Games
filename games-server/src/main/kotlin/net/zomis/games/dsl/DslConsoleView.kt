@@ -56,8 +56,9 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
         val actionParameterClass = actionLogic.parameterClass
         val action: Actionable<T, Any>? = when (actionParameterClass) {
             Point::class -> {
-                println("Enter position where you want to play")
+                println("Enter x position where you want to play")
                 val x = scanner.nextLine().toInt()
+                println("Enter y position where you want to play")
                 val y = scanner.nextLine().toInt()
                 actionLogic.createAction(playerIndex.toInt(), Point(x, y))
             }
@@ -99,9 +100,9 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
                 val param = params.getOrNull(choice - next.size) ?: return null
                 return game.actions.type(moveType)?.createAction(playerIndex, param)
             } else {
-//                val chosenNext = next.getOrNull(choice) ?: return null
-//                chosen.add(chosenNext)
-                chosen.add(choice)
+                val chosenNext = next.getOrNull(choice) ?: return null
+                chosen.add(chosenNext)
+//                chosen.add(choice)
             }
         }
     }

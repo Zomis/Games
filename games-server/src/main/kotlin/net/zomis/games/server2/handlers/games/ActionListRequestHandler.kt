@@ -1,5 +1,7 @@
 package net.zomis.games.server2.handlers.games
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.games.dsl.impl.ActionInfo
 import net.zomis.games.dsl.impl.GameImpl
@@ -10,6 +12,7 @@ import net.zomis.games.server2.getTextOrDefault
 
 class ActionListRequestHandler(private val gameSystem: GameSystem): IncomingMessageHandler {
     private val logger = KLoggers.logger(this)
+    private val mapper = jacksonObjectMapper()
 
     fun availableActionsMessage(obj: GameImpl<*>, playerIndex: Int, moveType: String?, chosen: List<Any>?): List<Pair<String, ActionInfo<Any>>> {
         if (moveType != null) {
@@ -53,7 +56,28 @@ class ActionListRequestHandler(private val gameSystem: GameSystem): IncomingMess
         }
 
         val moveType = message.data.get("moveType")?.asText()
-        val chosen = message.data.get("chosen")?.map { if (it.isInt) it.asInt() else it.asText() } ?: emptyList()
+        val chosenJson = message.data.get("chosen") ?: emptyList<JsonNode>()
+        val chosen = mutableListOf<Any>()
+
+        for (choiceJson in chosenJson) {
+            val actionParams = availableActionsMessage(obj, playerIndex, moveType, chosen)
+            val actionInfo = actionParams.single().second
+            val clazz = actionInfo.nextOptions.map { it::class }.toSet().single()
+
+            val parameter: Any
+            try {
+                parameter = if (clazz == Unit::class) {
+                    Unit
+                } else {
+                    val moveJsonText = mapper.writeValueAsString(choiceJson)
+                    mapper.readValue(moveJsonText, clazz.java)
+                }
+            } catch (e: Exception) {
+                logger.error(e, "Error reading choice: $choiceJson")
+                throw e
+            }
+            chosen.add(parameter)
+        }
 
         val actionParams = availableActionsMessage(obj, playerIndex, moveType, chosen)
 

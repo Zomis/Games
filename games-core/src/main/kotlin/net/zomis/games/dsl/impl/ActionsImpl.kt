@@ -129,8 +129,8 @@ class GameLogicActionTypeComplexNextOnly<T : Any, A : Any>(
 
     override fun <E : Any> option(options: Array<E>, next: ActionComplexScopeResultNext<T, A>.(E) -> Unit) {
         if (chosen.isNotEmpty()) {
-            val nextChosenIndex = chosen[0]
-            val nextChosen = options[nextChosenIndex as Int] // TODO: Add string support or something
+            val nextChosen = chosen[0] as E
+//            val nextChosen = options[nextChosenIndex as Int] // TODO: Add string support or something
             val nextChosenList = chosen.subList(1, chosen.size)
 
             val nextScope = GameLogicActionTypeComplexNextOnly<T, A>(model, nextChosenList,true, nextYielder, actionYielder)
