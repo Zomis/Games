@@ -173,7 +173,7 @@ class GameLogicActionTypeComplex<T : Any, A : Any>(override val actionType: Stri
         val yielder: (A) -> Unit = { result.add(it) }
         val nextScope = GameLogicActionTypeComplexNext<T, A>(model, yielder)
         this.options.invoke(nextScope)
-        return result.map { createAction(playerIndex, it) }
+        return result.map { createAction(playerIndex, it) }.filter { this.actionAllowed(it) }
     }
 
     override fun createAction(playerIndex: Int, parameter: A): Action<T, A>
