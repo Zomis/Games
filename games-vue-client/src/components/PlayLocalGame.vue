@@ -92,7 +92,12 @@ export default {
       console.log("ACTIONS FOR", this.viewer, actions)
     },
     action(name, data) {
-      console.log("ACTION CHOICE", name, data)
+      if (this.view.winner !== undefined && this.view.winner !== null) {
+        console.log("GAME OVER")
+        return
+      }
+
+      console.log("ACTION CHOICE", name, data, "PERHAPS THIS SHOULD BE TREATED AS A PERFORM DIRECTLY ?")
       let action = this.actions[name][data]
       if (action === undefined) {
         console.log("NO ACTION FOR", name, data, this.actions)
