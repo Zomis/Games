@@ -82,6 +82,7 @@ const supportedGames = {
     "DSL-TTT3D": {
         displayName: "3D Tic-Tac-Toe / Connect Four",
         dsl: new gamejs.net.zomis.games.dsl.DslTTT3D().game,
+        actions: tttActions,
         component: TTT3D,
         routeProps: defaultRouteProps
     },

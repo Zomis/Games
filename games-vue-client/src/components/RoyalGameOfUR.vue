@@ -156,10 +156,10 @@ export default {
         return;
       }
       console.log("OnClick in URView: " + piece.x + ", " + piece.y);
-      this.onAction("move", piece.position);
+      this.onAction("move", `${piece.position}`);
     },
     onDoRoll() {
-      this.onAction("roll", -1);
+      this.onAction("roll", "roll");
     },
     onPlaceNewHighlight(playerIndex) {
       if (playerIndex !== this.view.currentPlayer) {

@@ -78,7 +78,6 @@ const gameStore = {
     },
     requestActions(context, data) {
       let game = context.state.games[data.gameInfo.gameId]
-      // TODO: Add chosen
       let moveTypeOptional = data.actionType ? `"moveType": "${data.actionType}",` : ""
       if (!data.chosen) {
         data.chosen = [];

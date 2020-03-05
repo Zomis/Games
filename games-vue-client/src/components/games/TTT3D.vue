@@ -65,7 +65,7 @@ export default {
         let r = hit.material.albedoColor.r;
         console.log("Current:", r, b);
 */
-        this.onAction("play", { x: x, y: y });
+        this.onAction("play", `${x},${y}`);
       }
     }
   },

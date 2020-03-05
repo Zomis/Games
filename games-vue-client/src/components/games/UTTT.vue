@@ -58,12 +58,6 @@ export default {
     return { showRules: false }
   },
   computed: {
-    allowedPlay() {
-      // let activeBoard = this.view.activeBoard
-      let allowed = [true, true, true, true, true, true, true, true, true]
-      return allowed
-      // activeBoard == null || activeBoard == area || activeBoard!!.wonBy !== TTPlayer.NONE
-    },
     areas() {
       if (!this.view) return []
       if (!this.view.boards) return []
@@ -78,7 +72,7 @@ export default {
     pieceClick(areaIndex, piece) {
       let global = this.boardTileToGlobal({ boardIndex: areaIndex, x: piece.x, y: piece.y })
       console.log("play on", global)
-      this.onAction("play", global);
+      this.onAction("play", `${global.x},${global.y}`);
     },
     boardTileToGlobal(piece) {
       let x = (piece.boardIndex % 3) * 3 + piece.x;

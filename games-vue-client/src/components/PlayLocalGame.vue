@@ -73,16 +73,20 @@ export default {
         console.log("ACTION INFO FOR", e.name, this.actionPrevious)
         let actionInfo = e.availableParameters_okoyba$(this.viewer, kotlin.kotlin.collections.listOf_i5x0yv$(this.actionPrevious))
         console.log("ACTION INFO", actionInfo)
+        if (actionInfo.nextOptions.size > 0) {
         actionInfo.nextOptions.toArray().forEach(next => {
           let key = this.resolveActionKey(this.supportedGame, e.name, "next", next)
           console.log("POSSIBLE NEXT", next, key)
           ca[key] = { next: next }
         })
+        }
+        if (actionInfo.parameters.size > 0) {
         actionInfo.parameters.toArray().forEach(actionParam => {
           let key = this.resolveActionKey(this.supportedGame, e.name, "parameter", actionParam)
           console.log("POSSIBLE PARAM", actionParam, key)
           ca[key] = { parameter: actionParam }
         })
+        }
       })
       this.actions = actions
       console.log("ACTIONS FOR", this.viewer, actions)
@@ -91,15 +95,15 @@ export default {
       console.log("ACTION CHOICE", name, data)
       let action = this.actions[name][data]
       if (action === undefined) {
-        console.log("NO ACTION FOR", data)
+        console.log("NO ACTION FOR", name, data, this.actions)
         return
       }
-      if (action.next) {
+      if (action.next !== undefined) {
         this.actionPrevious.push(action.next)
         this.updateActions()
         return
       }
-      if (action.parameter) {
+      if (action.parameter !== undefined) {
         let gameActionType = this.game.actions.type_61zpoe$(name)
         gameActionType.perform_y5fo13$(this.viewer, action.parameter)
         this.actionPrevious = [];
