@@ -5,6 +5,7 @@ import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.impl.*
 import net.zomis.games.server2.Server2
 import net.zomis.games.server2.ServerConfig
+import net.zomis.games.server2.ServerGames
 import net.zomis.games.server2.clients.FakeClient
 import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.handlers.games.ActionListRequestHandler
@@ -186,9 +187,19 @@ fun dbTestUR() {
 
 fun main(args: Array<String>) {
     val scanner = Scanner(System.`in`)
-//    val game = DslUR().gameUR
-    val game = DslSplendor().splendorGame
-    val view = DslConsoleView(game)
+    val gameTypeList = ServerGames.games.map { it.key }.sorted()
+    gameTypeList.forEachIndexed { index, gameType ->
+       println("$index. $gameType")
+    }
+    println("Which game do you want to play?")
+    val chosenGame = scanner.nextLine()
+    val gameType = if (chosenGame.toIntOrNull() != null) gameTypeList[chosenGame.toInt()] else chosenGame
+    val gameSpec = ServerGames.games[gameType] as GameSpec<Any>?
+    if (gameSpec == null) {
+        println("No such game type: $chosenGame")
+        return
+    }
+    val view = DslConsoleView(gameSpec)
     view.play(scanner)
     scanner.close()
 }
