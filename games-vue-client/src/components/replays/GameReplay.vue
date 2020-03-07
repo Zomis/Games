@@ -28,11 +28,11 @@
         </v-btn>
       </v-layout>
       <v-flex grow>
-        <GameHead xs12 :gameInfo="gameInfo"></GameHead>
+        <GameHead xs12 :gameInfo="gameInfo" v-if="gameInfo"></GameHead>
         <div xs12>
             Started at {{ timeStarted }} - Ended at {{ timeLastAction }}
         </div>
-        <component xs12 :is="gameComponent" :gameInfo="gameInfo" :view="currentView" />
+        <component xs12 :is="gameComponent" :actions="{}" :gameInfo="gameInfo" :view="currentView" />
         <GameResult xs12 :gameInfo="gameInfo"></GameResult>
       </v-flex>
     </v-layout>
@@ -99,9 +99,11 @@ export default {
             return process.env.VUE_APP_URL
         },
         timeStarted() {
+            if (this.replay == null) return "";
             return unixtimeToString(this.replay.timeStarted)
         },
         timeLastAction() {
+            if (this.replay == null) return "";
             return unixtimeToString(this.replay.timeLastAction)
         },
         maxReplayStep() {

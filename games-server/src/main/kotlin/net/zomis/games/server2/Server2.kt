@@ -8,9 +8,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
-import net.zomis.games.dsl.DslTTT
-import net.zomis.games.dsl.DslTTT3D
-import net.zomis.games.dsl.DslUR
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.ecs.UTTT
 import net.zomis.games.server2.ais.ServerAIs
@@ -130,7 +127,7 @@ class Server2(val events: EventSystem) {
         if (config.database) {
             val dbIntegration = DBIntegration(gameSystem)
             features.add(dbIntegration::register)
-            LinReplay(dbIntegration, dslGames).setup(javalin)
+            LinReplay(dbIntegration).setup(javalin)
         }
         features.add(AIGames()::setup)
         features.add(TVSystem()::register)

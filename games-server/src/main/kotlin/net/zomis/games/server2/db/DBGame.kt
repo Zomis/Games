@@ -1,5 +1,7 @@
 package net.zomis.games.server2.db
 
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonUnwrapped
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.GameSetupImpl
@@ -16,6 +18,7 @@ data class PlayerInGame(val player: GamesTables.PlayerView?, val playerIndex: In
 
 private val mapper = jacksonObjectMapper()
 data class DBGameSummary(
+    @JsonIgnore
     val gameSpec: GameSpec<Any>,
     val gameId: String,
     val playersInGame: List<PlayerInGame>,
@@ -24,9 +27,10 @@ data class DBGameSummary(
     val timeStarted: Long,
     val timeLastAction: Long
 )
-class DBGame(val summary: DBGameSummary, moveHistory: List<GamesTables.MoveHistory>) {
+class DBGame(@JsonUnwrapped val summary: DBGameSummary, moveHistory: List<GamesTables.MoveHistory>) {
 
     private val gameSetup = GameSetupImpl(summary.gameSpec)
+    @JsonIgnore
     val game = gameSetup.createGame(gameSetup.getDefaultConfig())
     val views = mutableListOf(game.view(null))
 

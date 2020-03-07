@@ -217,46 +217,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
     fun listUnfinished(): Set<DBGameSummary> {
         return this.gsi.index.query(this.sk, SK_UNFINISHED, RangeKeyCondition(this.data).gt(0)).map {unfinishedRow ->
             val gameId = unfinishedRow[this.pk] as String
-            val sks = this.table.table.query(this.pk, gameId, RangeKeyCondition(this.sk).between("a", "y")).associateBy {
-                it[this.sk] as String
-            }
-
-            val gameDetails = sks.getValue(gameId)
-            val playersInGame = sks.filter { it.key.startsWith(Prefix.PLAYER.prefix) }.flatMap {playerEntry ->
-                val playerId = Prefix.PLAYER.extract(playerEntry.key)
-                // Look in it[Fields.GAME_PLAYERS] for which indexes a player belongs to. (Maybe also store name?)
-                val indexes = playerEntry.value[Fields.GAME_PLAYERS.fieldName] as List<Map<String, Any>>
-                return@flatMap indexes.map { it["Index"] as BigDecimal }.map { it.toInt() }.map {index ->
-                    val attributeName = Fields.PLAYER_PREFIX.fieldName + index
-                    val hasDetails = gameDetails.hasAttribute(attributeName)
-                    val playerResults = if (hasDetails) {
-                        val details = gameDetails[attributeName] as Map<String, Any>
-                        val result = (details["Result"] as BigDecimal).toDouble()
-                        val resultPosition = (details["ResultPosition"] as BigDecimal).toInt()
-                        PlayerInGameResults(result, resultPosition, details["ResultReason"] as String, mapOf())
-                    } else null
-                    PlayerInGame(GamesTables.PlayerView(playerId, "UNKNOWN"), index, playerResults)
-                }
-            }
-            val unfinished = sks.any { it.key == this.SK_UNFINISHED }
-            val hidden = gameDetails.hasAttribute(Fields.GAME_HIDDEN.fieldName)
-            val gameState = when {
-                unfinished -> GameState.UNFINISHED
-                hidden -> GameState.HIDDEN
-                else -> GameState.PUBLIC
-            }
-            val timeStarted = gameDetails[Fields.GAME_TIME_STARTED.fieldName] as BigDecimal
-            val timeLastAction = gameDetails[Fields.GAME_TIME_LAST.fieldName] as BigDecimal?
-
-            val gameType = gameDetails[Fields.GAME_TYPE.fieldName] as String
-            val gameSpec = ServerGames.games[gameType] as GameSpec<Any>?
-            if (gameSpec == null) {
-                logger.warn { "Ignoring unfinished game $gameId. Expected gameType $gameType not found." }
-                return@map null
-            }
-
-            DBGameSummary(gameSpec, Prefix.GAME.extract(gameId), playersInGame, gameType, gameState.value,
-                timeStarted.longValueExact(), timeLastAction?.longValueExact()?:0)
+            getGameSummary(gameId)
         }.filterNotNull().toSet()
     }
 
@@ -329,5 +290,48 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
     }
 
     fun authenticateSession(session: String) {}
+
+    fun getGameSummary(gameId: String): DBGameSummary? {
+        val sks = this.table.table.query(this.pk, gameId, RangeKeyCondition(this.sk).between("a", "y")).associateBy {
+            it[this.sk] as String
+        }
+
+        val gameDetails = sks.getValue(gameId)
+        val playersInGame = sks.filter { it.key.startsWith(Prefix.PLAYER.prefix) }.flatMap {playerEntry ->
+            val playerId = Prefix.PLAYER.extract(playerEntry.key)
+            // Look in it[Fields.GAME_PLAYERS] for which indexes a player belongs to. (Maybe also store name?)
+            val indexes = playerEntry.value[Fields.GAME_PLAYERS.fieldName] as List<Map<String, Any>>
+            return@flatMap indexes.map { it["Index"] as BigDecimal }.map { it.toInt() }.map {index ->
+                val attributeName = Fields.PLAYER_PREFIX.fieldName + index
+                val hasDetails = gameDetails.hasAttribute(attributeName)
+                val playerResults = if (hasDetails) {
+                    val details = gameDetails[attributeName] as Map<String, Any>
+                    val result = (details["Result"] as BigDecimal).toDouble()
+                    val resultPosition = (details["ResultPosition"] as BigDecimal).toInt()
+                    PlayerInGameResults(result, resultPosition, details["ResultReason"] as String, mapOf())
+                } else null
+                PlayerInGame(GamesTables.PlayerView(playerId, "UNKNOWN"), index, playerResults)
+            }
+        }
+        val unfinished = sks.any { it.key == this.SK_UNFINISHED }
+        val hidden = gameDetails.hasAttribute(Fields.GAME_HIDDEN.fieldName)
+        val gameState = when {
+            unfinished -> GameState.UNFINISHED
+            hidden -> GameState.HIDDEN
+            else -> GameState.PUBLIC
+        }
+        val timeStarted = gameDetails[Fields.GAME_TIME_STARTED.fieldName] as BigDecimal
+        val timeLastAction = gameDetails[Fields.GAME_TIME_LAST.fieldName] as BigDecimal?
+
+        val gameType = gameDetails[Fields.GAME_TYPE.fieldName] as String
+        val gameSpec = ServerGames.games[gameType] as GameSpec<Any>?
+        if (gameSpec == null) {
+            logger.warn { "Ignoring unfinished game $gameId. Expected gameType $gameType not found." }
+            return null
+        }
+
+        return DBGameSummary(gameSpec, Prefix.GAME.extract(gameId), playersInGame, gameType, gameState.value,
+                timeStarted.longValueExact(), timeLastAction?.longValueExact()?:0)
+    }
 
 }

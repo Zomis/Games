@@ -10,6 +10,7 @@ import com.amazonaws.services.dynamodbv2.model.*
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
+import net.zomis.games.server2.ServerGames
 import net.zomis.games.server2.games.GameSystem
 import java.time.Instant
 import kotlin.system.measureNanoTime
@@ -43,8 +44,9 @@ class DBIntegration(gameSystem: GameSystem) {
         }
     }
 
-    fun loadGame(gameId: String, gameSpecs: Map<String, Any>): DBGame? {
-        return GamesTables(dynamoDB).fetchGame(gameId, gameSpecs)
+    fun loadGame(gameId: String): DBGame? {
+        val summary = this.superTable.getGameSummary(SuperTable.Prefix.GAME.sk(gameId)) ?: return null
+        return superTable.getGame(summary)
     }
 
 }
