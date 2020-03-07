@@ -147,7 +147,7 @@ class MyTable(dynamoDB: AmazonDynamoDB, val tableName: String) {
             val updateResult = table.updateItem(updateItemSpec.withReturnConsumedCapacity(ReturnConsumedCapacity.INDEXES))
             consumedCapacity = updateResult.updateItemResult.consumedCapacity
         }
-        logger("Performing $updateItemSpec update took $time with consumed capacity $consumedCapacity")
+        logger.info { "Consumed Capacity on $updateItemSpec consumed $consumedCapacity and took $time" }
     }
 
 }

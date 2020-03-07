@@ -2,6 +2,7 @@ package net.zomis.games.server2.db
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import com.amazonaws.services.dynamodbv2.document.*
+import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec
 import com.amazonaws.services.dynamodbv2.model.*
@@ -14,7 +15,6 @@ import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.server2.*
 import net.zomis.games.server2.ais.ServerAIProvider
-import net.zomis.games.server2.clients.FakeClient
 import net.zomis.games.server2.games.*
 import java.math.BigDecimal
 import java.time.Instant
@@ -132,7 +132,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
                 AttributeUpdate(Fields.GAME_TIME_STARTED.fieldName).put(Instant.now().epochSecond),
                 AttributeUpdate(Fields.GAME_OPTIONS.fieldName).put(options)
             )
-        table.performUpdate(update)
+        this.update("Create game $pkValue", update)
         val epochMilli = Instant.now().toEpochMilli()
         this.simpleUpdate(pkValue, SK_UNFINISHED, epochMilli)
 //        this.simpleUpdate(pkValue, gameSortKey(game.gameId), epochSecond,
@@ -181,7 +181,13 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
 
         val update = UpdateItemSpec().withPrimaryKey(this.pk, Prefix.GAME.sk(serverGame.gameId),
             this.sk, Prefix.ZMOVE.sk(moveIndex.toString())).withAttributeUpdate(updates)
-        table.performUpdate(update)
+        this.update("Add Move $move", update)
+    }
+
+    private fun update(description: String, update: UpdateItemSpec) {
+        this.logCapacity(description, { it.updateItemResult.consumedCapacity }, {
+            table.table.updateItem(update.withReturnConsumedCapacity(ReturnConsumedCapacity.INDEXES))
+        })
     }
 
     fun playerEliminated(event: PlayerEliminatedEvent) {
@@ -195,7 +201,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
             "ResultPosition" to event.position,
             "ResultReason" to "eliminated"
         )
-        table.performUpdate(UpdateItemSpec().withPrimaryKey(this.pk, pkValue, this.sk, pkValue)
+        this.update("Eliminate player ${event.player} in game $pkValue", UpdateItemSpec().withPrimaryKey(this.pk, pkValue, this.sk, pkValue)
           .withAttributeUpdate(AttributeUpdate(Fields.PLAYER_PREFIX.fieldName + event.player).put(playerData)))
 //        table.performUpdate(UpdateItemSpec().withPrimaryKey(this.pk, pkValue, this.sk, gameSortKey(event.game.gameId))
 //            .withAttributeUpdate(AttributeUpdate(Fields.PLAYER_PREFIX.fieldName + event.player).put(
@@ -205,8 +211,20 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
 
     fun finishGame(game: ServerGame) {
         val pkValue = Prefix.GAME.sk(game.gameId)
-        table.table.deleteItem(this.pk, pkValue, this.sk, SK_UNFINISHED)
+        this.logCapacity("remove unfinished ${game.gameId}", { it.deleteItemResult.consumedCapacity }) {
+            table.table.deleteItem(DeleteItemSpec().withPrimaryKey(this.pk, pkValue, this.sk, SK_UNFINISHED)
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.INDEXES))
+        }
         this.simpleUpdate(pkValue, SK_PUSH_TO_STATS, Instant.now().toEpochMilli())
+    }
+
+    private fun <T : Any> logCapacity(description: String, capacity: (T) -> ConsumedCapacity?, function: () -> T): T {
+        val startTime = System.nanoTime()
+        val result = function()
+        val endTime = System.nanoTime()
+        val timeTaken = endTime - startTime
+        logger.info { "Consumed Capacity on $description consumed ${capacity(result)} and took $timeTaken" }
+        return result
     }
 
     fun getGame(game: DBGameSummary): DBGame {
@@ -215,15 +233,16 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
     }
 
     fun listUnfinished(): Set<DBGameSummary> {
-        return this.gsi.index.query(this.sk, SK_UNFINISHED, RangeKeyCondition(this.data).gt(0)).map {unfinishedRow ->
+        return this.gsiLookup(QuerySpec().withHashKey(this.sk, SK_UNFINISHED).withRangeKeyCondition(RangeKeyCondition(this.data).gt(0))).map { unfinishedRow ->
             val gameId = unfinishedRow[this.pk] as String
             getGameSummary(gameId)
         }.filterNotNull().toSet()
     }
 
     fun getGameMoves(gameId: String): List<GamesTables.MoveHistory> {
-        val dbMoves = this.table.table.query(this.pk, Prefix.GAME.sk(gameId),
-                Prefix.ZMOVE.rangeKeyCondition())
+        val dbMoves = this.queryTable(QuerySpec()
+                .withHashKey(this.pk, Prefix.GAME.sk(gameId))
+                .withRangeKeyCondition(Prefix.ZMOVE.rangeKeyCondition()))
         return dbMoves.map {
             GamesTables.MoveHistory(
                 it[Fields.MOVE_TYPE.fieldName] as String,
@@ -268,15 +287,15 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
             sk to AttributeValue(skValue),
             data to timeStamp(),
             Fields.PLAYER_NAME.fieldName to AttributeValue(event.client.name)
-        ))
-        val updateResult = dynamoDB.putItem(putItemRequest)
+        )).withReturnConsumedCapacity(ReturnConsumedCapacity.INDEXES)
+        val updateResult = this.logCapacity("authenticate $pkValue", { it.consumedCapacity }) { dynamoDB.putItem(putItemRequest) }
         logger.info("Update ${event.client.name}. Adding as $pkValue. Update result $updateResult")
     }
 
     private fun gsiLookup(query: QuerySpec): ItemCollection<QueryOutcome> {
-        val result = this.gsi.index.query(query.withReturnConsumedCapacity(ReturnConsumedCapacity.INDEXES))
-        logger.info { "Querying GSI on ${query.hashKey} / ${query.rangeKeyCondition} consumed ${result.accumulatedConsumedCapacity}" }
-        return result
+        return this.logCapacity("Querying GSI on ${query.hashKey} / ${query.rangeKeyCondition}", { it.accumulatedConsumedCapacity }) {
+            this.gsi.index.query(query.withReturnConsumedCapacity(ReturnConsumedCapacity.INDEXES))
+        }
     }
 
     private fun simpleUpdate(pkValue: String, skValue: String, data: Long, vararg pairs: Pair<Fields, Any>) {
@@ -286,13 +305,17 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
                     AttributeUpdate(it.first.fieldName).put(it.second)
                 }
             )
-        table.performUpdate(update)
+        this.update("Simple Update $pkValue, $skValue", update)
     }
 
     fun authenticateSession(session: String) {}
 
     fun getGameSummary(gameId: String): DBGameSummary? {
-        val sks = this.table.table.query(this.pk, gameId, RangeKeyCondition(this.sk).between("a", "y")).associateBy {
+        val query = QuerySpec()
+            .withHashKey(this.pk, gameId)
+            .withRangeKeyCondition(RangeKeyCondition(this.sk).between("a", "y"))
+
+        val sks = this.queryTable(query).associateBy {
             it[this.sk] as String
         }
 
@@ -332,6 +355,12 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
 
         return DBGameSummary(gameSpec, Prefix.GAME.extract(gameId), playersInGame, gameType, gameState.value,
                 timeStarted.longValueExact(), timeLastAction?.longValueExact()?:0)
+    }
+
+    private fun queryTable(query: QuerySpec): ItemCollection<QueryOutcome> {
+        return this.logCapacity("${query.hashKey} / ${query.rangeKeyCondition}", {it.accumulatedConsumedCapacity}) {
+            this.table.table.query(query.withReturnConsumedCapacity(ReturnConsumedCapacity.INDEXES))
+        }
     }
 
 }
