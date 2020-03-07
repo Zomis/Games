@@ -9,6 +9,8 @@ import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec
 import com.amazonaws.services.dynamodbv2.model.*
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
+import net.zomis.games.Features
+import net.zomis.games.server2.games.GameSystem
 import java.time.Instant
 import kotlin.system.measureNanoTime
 
@@ -16,18 +18,17 @@ fun timeStamp(): AttributeValue {
     return AttributeValue().withN(Instant.now().epochSecond.toString())
 }
 
-class DBIntegration {
+class DBIntegration(gameSystem: GameSystem) {
 
     private val logger = KLoggers.logger(this)
-
-    val dynamoDB = AmazonDynamoDBClientBuilder.standard()
+    private val dynamoDB = AmazonDynamoDBClientBuilder.standard()
         .withRegion(Regions.EU_CENTRAL_1)
         .build()
+    private val superTable = SuperTable(dynamoDB, gameSystem)
 
-    fun register(events: EventSystem) {
-        val tables = listOf<CreateTableRequest>()
-            .plus(AuthTable(dynamoDB).register(events))
-            .plus(GamesTables(dynamoDB).register(events))
+    fun register(features: Features, events: EventSystem) {
+        val tables = listOf<CreateTableRequest>() +
+            superTable.setup(features, events)
         createTables(dynamoDB, tables)
     }
 
@@ -64,6 +65,8 @@ data class MyIndex(
         }
         return dt.getIndex(indexName).query(query)
     }
+
+    val index: Index = this.table.table.getIndex(this.indexName)
 
     fun toGSI(): GlobalSecondaryIndex {
         return GlobalSecondaryIndex()

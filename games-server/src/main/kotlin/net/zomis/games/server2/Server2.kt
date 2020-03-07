@@ -113,7 +113,7 @@ class Server2(val events: EventSystem) {
         features.add { feat, ev -> gameSystem.setup(feat, ev, config.idGenerator) }
 
         features.add(ECSGameSystem("UTTT-ECS") { UTTT().setup() }::setup)
-        dslGames.forEach { name, spec -> events.with(DslGameSystem(name, spec as GameSpec<Any>)::setup) }
+        dslGames.forEach { (name, spec) -> events.with(DslGameSystem(name, spec as GameSpec<Any>)::setup) }
 
         features.add(SimpleMatchMakingSystem()::setup)
         events.with(ServerConsole()::register)
@@ -128,8 +128,8 @@ class Server2(val events: EventSystem) {
             LinAuth(javalin, config.githubConfig()).register()
         }
         if (config.database) {
-            val dbIntegration = DBIntegration()
-            events.with(dbIntegration::register)
+            val dbIntegration = DBIntegration(gameSystem)
+            features.add(dbIntegration::register)
             LinReplay(dbIntegration, dslGames).setup(javalin)
         }
         features.add(AIGames()::setup)

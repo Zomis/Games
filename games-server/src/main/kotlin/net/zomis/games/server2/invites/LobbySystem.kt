@@ -5,6 +5,7 @@ import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
 import net.zomis.games.server2.*
+import net.zomis.games.server2.db.UnfinishedGames
 import net.zomis.games.server2.games.*
 
 data class ClientInterestingGames(val interestingGames: Set<String>, val maxGames: Int, val currentGames: MutableSet<ServerGame>)
@@ -75,7 +76,6 @@ class LobbySystem {
             events.execute(ListRequest(it.client))
         })
 
-        data class InterestingClient(val client: Client, val gameType: String)
         events.listen("send available users", ListRequest::class, {true}, { event ->
             val interestingGames = event.client.lobbyOptions!!.interestingGames
 
@@ -91,6 +91,25 @@ class LobbySystem {
                 }
             }
             event.client.send(mapOf("type" to "Lobby", "users" to resultingMap))
+        })
+
+        events.listen("send unfinished games", ListRequest::class, {true}, { event ->
+            val interestingGames = event.client.lobbyOptions!!.interestingGames
+
+            // Return Map<GameType, List<GameSummary>>
+            val games = features[UnfinishedGames::class]!!.unfinishedGames
+                .filter { interestingGames.contains(it.gameType) }
+                .filter { it.playersInGame.any { pig ->
+                    val playerId = pig.player?.playerId ?: ""
+                    playerId == event.client.playerId.toString()
+                } }
+                .groupBy { it.gameType }
+                .mapValues { it.value.map { game -> mapOf(
+                    "GameId" to game.gameId,
+                    "TimeStarted" to game.timeStarted
+                ) } }
+
+            event.client.send(mapOf("type" to "LobbyUnfinished", "games" to games))
         })
     }
 

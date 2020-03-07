@@ -4,19 +4,30 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.GameSetupImpl
 
-private val mapper = jacksonObjectMapper()
-class DBGame(
-        gameSpec: GameSpec<Any>,
-        val gameId: String,
-        val playersInGame: List<GamesTables.PlayerInGame>,
-        val gameType: String,
-        val gameState: Int,
-        val timeStarted: Long,
-        val timeLastAction: Long,
-        val moveHistory: List<GamesTables.MoveHistory>) {
+enum class GameState(val value: Int) {
+    HIDDEN(-1),
+    UNFINISHED(0),
+    PUBLIC(1),
+    ;
+}
+data class PlayerInGameResults(val result: Double,
+   val resultPosition: Int, val resultReason: String, val score: Map<String, Any?>)
+data class PlayerInGame(val player: GamesTables.PlayerView?, val playerIndex: Int, val results: PlayerInGameResults?)
 
-    private val gameSetup = GameSetupImpl(gameSpec)
-    private val game = gameSetup.createGame(gameSetup.getDefaultConfig())
+private val mapper = jacksonObjectMapper()
+data class DBGameSummary(
+    val gameSpec: GameSpec<Any>,
+    val gameId: String,
+    val playersInGame: List<PlayerInGame>,
+    val gameType: String,
+    val gameState: Int,
+    val timeStarted: Long,
+    val timeLastAction: Long
+)
+class DBGame(val summary: DBGameSummary, moveHistory: List<GamesTables.MoveHistory>) {
+
+    private val gameSetup = GameSetupImpl(summary.gameSpec)
+    val game = gameSetup.createGame(gameSetup.getDefaultConfig())
     val views = mutableListOf(game.view(null))
 
     init {
@@ -32,9 +43,6 @@ class DBGame(
             }
             logic.replayAction(actionable, it.state)
             views.add(game.view(null))
-        }
-        if (!game.isGameOver()) {
-            throw BadReplayException("Game is not finished after all moves are made. Last view was ${views.last()}")
         }
     }
 

@@ -1,12 +1,12 @@
 package net.zomis.games.server2.db
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
-import com.amazonaws.services.dynamodbv2.document.AttributeUpdate
-import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition
+import com.amazonaws.services.dynamodbv2.document.*
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap
-import com.amazonaws.services.dynamodbv2.model.*
+import com.amazonaws.services.dynamodbv2.model.CreateTableRequest
+import com.amazonaws.services.dynamodbv2.model.ProjectionType
 import klog.KLoggers
 import net.zomis.common.convertFromDBFormat
 import net.zomis.common.convertToDBFormat
@@ -18,19 +18,13 @@ import net.zomis.games.server2.games.*
 import java.math.BigDecimal
 import java.time.Instant
 
-enum class GameState(val value: Int) {
-    HIDDEN(-1),
-    UNFINISHED(0),
-    PUBLIC(1),
-    ;
-}
-
 class BadReplayException(message: String): Exception(message)
 
 private fun <String, V> Map<String, V>.plusIf(key: String, value: V?): Map<String, V> {
     return if (value != null) this.plus(key to value) else this
 }
 class GamesTables(private val dynamoDB: AmazonDynamoDB) {
+    private val logger = KLoggers.logger(this)
     /*
   - GamePlayers
     -- update on game start or end
@@ -254,8 +248,9 @@ S1  - TimeLastAction: Number (timestamp)
             val playerView = AuthTable(dynamoDB).fetchPlayerView(playerId)
             val score = it.getMap<Any?>(gamePlayers.score)
             PlayerInGame(playerView, it.getInt(gamePlayers.playerIndex),
-                    it.getDouble(gamePlayers.result), it.getInt(gamePlayers.resultPosition),
+                PlayerInGameResults(it.getDouble(gamePlayers.result), it.getInt(gamePlayers.resultPosition),
                     it.getString(gamePlayers.resultReason), score)
+            )
         }
         println("$gameId returned $playersInGame")
 
@@ -274,10 +269,9 @@ S1  - TimeLastAction: Number (timestamp)
         val timeStarted = gameItem.getLong(games.timeStarted)
         val timeLastAction = gameItem.getLong(games.timeLastAction)
         val gameSpec = gameSpecs[gameType] ?: throw IllegalArgumentException("No gameSpec found for gameType $gameType")
-
-        return DBGame(gameSpec as GameSpec<Any>, gameId, playersInGame, gameType, gameState, timeStarted, timeLastAction, moveHistory)
+        val gameSummary = DBGameSummary(gameSpec as GameSpec<Any>, gameId, playersInGame, gameType, gameState, timeStarted, timeLastAction)
+        return DBGame(gameSummary, moveHistory)
 //        AuthTable(dynamoDB).userLookup(playerIds)
     }
-
 
 }

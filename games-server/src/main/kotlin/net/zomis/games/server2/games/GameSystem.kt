@@ -1,5 +1,6 @@
 package net.zomis.games.server2.games
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -9,7 +10,11 @@ import net.zomis.core.events.ListenerPriority
 import net.zomis.games.Features
 import net.zomis.games.WinResult
 import net.zomis.games.dsl.PlayerIndex
+import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.server2.*
+import net.zomis.games.server2.clients.FakeClient
+import net.zomis.games.server2.invites.clients
+import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 val nodeFactory = JsonNodeFactory(false)
@@ -80,17 +85,32 @@ class GameType(val type: String, events: EventSystem, private val idGenerator: G
         return game
     }
 
+    fun resumeGame(gameId: String, game: GameImpl<Any>): ServerGame {
+        val serverGame = ServerGame(this, gameId, ServerGameOptions(true))
+        serverGame.obj = game
+        runningGames[serverGame.gameId] = serverGame
+        return serverGame
+    }
+
+    fun findOrCreatePlayers(playerIds: List<String>): Collection<Client> {
+        return playerIds.map {playerId ->
+            this.clients.find { it.playerId.toString() == playerId } ?: FakeClient(UUID.fromString(playerId))
+        }
+    }
+
 }
 
 class GameSystem {
 
+    private val logger = KLoggers.logger(this)
+
     data class GameTypes(val gameTypes: MutableMap<String, GameType> = mutableMapOf())
+    private val objectMapper = ObjectMapper()
     private lateinit var features: Features
 
     fun setup(features: Features, events: EventSystem, idGenerator: GameIdGenerator) {
         this.features = features
         val gameTypes = features.addData(GameTypes())
-        val objectMapper = ObjectMapper()
         events.listen("Trigger PlayerGameMoveRequest", ClientJsonMessage::class, {
             it.data.has("gameType") && it.data.getTextOrDefault("type", "") == "move"
         }, {
@@ -107,14 +127,7 @@ class GameSystem {
         })
 
         events.listen("Send GameStarted", ListenerPriority.LATER, GameStartedEvent::class, {true}, {event ->
-            val playerNames = event.game.players
-                .asSequence()
-                .map { it.name ?: "(unknown)" }
-                .fold(objectMapper.createArrayNode()) { arr, name -> arr.add(name) }
-
-            event.game.players.forEachIndexed { index, client ->
-                client.send(event.game.toJson("GameStarted").put("yourIndex", index).set("players", playerNames))
-            }
+            sendGameStartedMessages(event.game)
         })
         events.listen("Send GameEnded", GameEndedEvent::class, {true}, {
             it.game.gameOver = true
@@ -146,6 +159,26 @@ class GameSystem {
         events.listen("Register GameType", GameTypeRegisterEvent::class, {true}, {
             gameTypes.gameTypes[it.gameType] = GameType(it.gameType, events, idGenerator)
         })
+    }
+
+    fun sendGameStartedMessages(game: ServerGame) {
+        val playerNames = game.players
+            .asSequence()
+            .map { it.name ?: "(unknown)" }
+            .fold(objectMapper.createArrayNode()) { arr, name -> arr.add(name) }
+
+        game.players.forEachIndexed { index, client ->
+            client.send(game.toJson("GameStarted").put("yourIndex", index).set("players", playerNames))
+        }
+    }
+
+    fun createGameStartedMessage(game: ServerGame, client: Client): JsonNode {
+        val playerNames = game.players
+            .asSequence()
+            .map { it.name ?: "(unknown)" }
+            .fold(objectMapper.createArrayNode()) { arr, name -> arr.add(name) }
+
+        return game.toJson("GameStarted").put("yourIndex", game.clientPlayerIndex(client)).set("players", playerNames)
     }
 
     fun getGameType(gameType: String): GameType? {

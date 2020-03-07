@@ -67,6 +67,21 @@
         </v-list-item>
       </template>
     </v-list>
+    <v-list class="unfinished">
+      <template v-for="(gameList, gameType) in unfinishedGames">
+      <template v-for="game in gameList">
+        <v-list-item :key="game.gameId">
+          <v-list-item-content>
+            <v-list-item-title v-html="gameType + ' Game ' + game.GameId"></v-list-item-title>
+<!--            <v-list-item-sub-title v-html="vsify(game.players)"></v-list-item-sub-title> -->
+          </v-list-item-content>
+          <v-list-item-action>
+            <v-btn color="info" @click="resumeGame(gameType, game.GameId)">Resume</v-btn>
+          </v-list-item-action>
+        </v-list-item>
+      </template>
+      </template>
+    </v-list>
     </v-col>
   </v-row>
   </v-container>
@@ -84,6 +99,7 @@ export default {
   data() {
     return {
       gameList: [],
+      unfinishedGames: [],
       waiting: false,
       waitingGame: null
     };
@@ -124,6 +140,12 @@ export default {
     gameListMessage: function(message) {
       this.gameList = message.list;
     },
+    unfinishedGameListMessage(message) {
+      this.unfinishedGames = message.games
+    },
+    resumeGame(gameType, gameId) {
+      Socket.send(`{ "type": "LoadGame", "gameType": "${gameType}", "gameId": "${gameId}" }`);
+    },
     matchMake: function(game) {
       this.waiting = true;
       this.waitingGame = game;
@@ -146,6 +168,7 @@ export default {
       return;
     }
     Socket.$on("type:GameList", this.gameListMessage);
+    Socket.$on("type:LobbyUnfinished", this.unfinishedGameListMessage);
     let gameTypes = JSON.stringify(supportedGames.enabledGameKeys());
     Socket.send(
       `{ "type": "ClientGames", "gameTypes": ${gameTypes}, "maxGames": 1 }`
@@ -167,6 +190,7 @@ export default {
   },
   beforeDestroy() {
     Socket.$off("type:GameList", this.gameListMessage);
+    Socket.$off("type:LobbyUnfinished", this.unfinishedGameListMessage);
   }
 };
 </script>
