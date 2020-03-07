@@ -95,9 +95,10 @@ class LobbySystem {
 
         events.listen("send unfinished games", ListRequest::class, {true}, { event ->
             val interestingGames = event.client.lobbyOptions!!.interestingGames
+            val unfinishedGames = features[UnfinishedGames::class] ?: return@listen
 
             // Return Map<GameType, List<GameSummary>>
-            val games = features[UnfinishedGames::class]!!.unfinishedGames
+            val games = unfinishedGames.unfinishedGames
                 .filter { interestingGames.contains(it.gameType) }
                 .filter { it.playersInGame.any { pig ->
                     val playerId = pig.player?.playerId ?: ""
