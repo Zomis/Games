@@ -14,13 +14,13 @@ typealias PlayerId = UUID
 
 open class Client {
 
+    @Deprecated("Features was a bad idea")
     val features = Features(null)
 
     companion object {
         val mapper = ObjectMapper()
     }
 
-    @Deprecated("Change the client name to a feature")
     var name: String? = null
 
     var playerId: PlayerId? = null

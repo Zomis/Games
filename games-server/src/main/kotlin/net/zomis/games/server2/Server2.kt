@@ -87,6 +87,8 @@ class Server2(val events: EventSystem) {
 
     private val dslGames = ServerGames.games
     val gameSystem = GameSystem()
+
+    private val messageRouter = MessageRouter(this)
     private val messageHandler = MessageHandler(events, mapOf(
         "ActionListRequest" to ActionListRequestHandler(gameSystem),
         "ViewRequest" to ViewRequestHandler(gameSystem)
@@ -116,7 +118,10 @@ class Server2(val events: EventSystem) {
         events.with(ServerConsole()::register)
         features.add(ObserverSystem()::setup)
         features.add(GameListSystem()::setup)
-        events.with(AuthorizationSystem()::register)
+        events.listen("Route", ClientJsonMessage::class, {it.data.has("route")}) {
+            this.messageRouter.handle(it.data["route"].asText(), it)
+        }
+        messageRouter.route("auth", AuthorizationSystem(events).router)
         features.add(LobbySystem()::setup)
         val executor = Executors.newScheduledThreadPool(2)
         events.with { e -> ServerAIs(dslGames.keys.toSet()).register(e, executor) }

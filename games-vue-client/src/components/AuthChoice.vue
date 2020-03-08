@@ -45,11 +45,7 @@ export default {
     connected: function() {
       console.log("WebSocket Connected!");
       let token = this.getToken();
-      Socket.send(
-        `{ "type": "Auth", "provider": "${
-          this.auth.provider
-        }", "token": "${token}" }`
-      );
+      Socket.route(`auth/${this.auth.provider}`, { token: token });
     },
     authenticated: function(e) {
       this.onAuthenticated(e);

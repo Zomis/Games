@@ -23,7 +23,6 @@ class LinAuth(val javalin: Javalin, val githubConfig: OAuthConfig) {
     fun register() {
         val secretProperties = Properties()
         val resource = this.javaClass.classLoader.getResourceAsStream("secrets.properties")
-        logger.info(resource.toString())
         secretProperties.load(resource)
         logger.info("LinAuth starting")
         val mapper = ObjectMapper()
