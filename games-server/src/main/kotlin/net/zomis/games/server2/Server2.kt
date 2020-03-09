@@ -89,7 +89,8 @@ class Server2(val events: EventSystem) {
     private val lobbySystem = LobbySystem(features)
     val gameSystem = GameSystem(lobbySystem::gameClients)
 
-    private val messageRouter = MessageRouter(this)
+    val messageRouter = MessageRouter(this)
+
     private val messageHandler = MessageHandler(events, mapOf(
         "ActionListRequest" to ActionListRequestHandler(gameSystem),
         "ViewRequest" to ViewRequestHandler(gameSystem)

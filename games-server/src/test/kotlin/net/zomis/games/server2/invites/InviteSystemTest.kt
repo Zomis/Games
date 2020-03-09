@@ -2,7 +2,9 @@ package net.zomis.games.server2.invites
 
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
+import net.zomis.games.server2.ClientJsonMessage
 import net.zomis.games.server2.ClientLoginEvent
+import net.zomis.games.server2.MessageRouter
 import net.zomis.games.server2.doctools.DocEventSystem
 import net.zomis.games.server2.doctools.DocWriter
 import net.zomis.games.server2.doctools.EventsExpect
@@ -37,8 +39,14 @@ class InviteSystemTest {
         events = DocEventSystem(docWriter)
         features = Features(events)
 
-        system = InviteSystem()
-        features.add { f, e -> GameSystem().setup(f, e, idGenerator) }
+        val lobbySystem = LobbySystem(features)
+        events.with(lobbySystem::setup)
+        val router = MessageRouter(this).route("lobby", lobbySystem.router)
+        events.listen("Route", ClientJsonMessage::class, {it.data.has("route")}) {
+            router.handle(it.data["route"].asText(), it)
+        }
+        system = InviteSystem(lobbySystem::gameClients)
+        features.add { f, e -> GameSystem(lobbySystem::gameClients).setup(f, e, idGenerator) }
         // Don't need the LobbySystem feature here
         features.add(system::setup)
 
@@ -48,15 +56,16 @@ class InviteSystemTest {
 
     @Test
     fun fullInvite() {
-        features.add(LobbySystem()::setup) // We need to lookup player by name
+        events.with(LobbySystem(features)::setup) // We need to lookup player by name
         events.execute(GameTypeRegisterEvent("TestGameType"))
         events.execute(GameTypeRegisterEvent("OtherGameType"))
         val host = FakeClient().apply { name = "TestClientA" }
         val invitee = FakeClient().apply { name = "TestClientB" }
-        events.execute(ClientLoginEvent(host, host.name!!, "tests", "token"))
-        events.execute(ClientLoginEvent(invitee, invitee.name!!, "tests", "token2"))
-        host.sendToServer(events, """{ "type": "ClientGames", "gameTypes": ["TestGameType", "OtherGameType"], "maxGames": 1 }""")
-        invitee.sendToServer(events, """{ "type": "ClientGames", "gameTypes": ["TestGameType", "OtherGameType"], "maxGames": 1 }""")
+
+//        events.execute(ClientLoginEvent(host, host.name!!, "tests", "token"))
+//        events.execute(ClientLoginEvent(invitee, invitee.name!!, "tests", "token2"))
+        host.sendToServer(events, """{ "route": "lobby/join", "gameTypes": ["TestGameType", "OtherGameType"], "maxGames": 1 }""")
+        invitee.sendToServer(events, """{ "route": "lobby/join", "gameTypes": ["TestGameType", "OtherGameType"], "maxGames": 1 }""")
         Assertions.assertEquals("""{"type":"LobbyChange","client":"TestClientB","action":"joined","gameTypes":["TestGameType","OtherGameType"]}""", host.nextMessage())
 
         docWriter.document(events, "Inviting someone to play a game") {

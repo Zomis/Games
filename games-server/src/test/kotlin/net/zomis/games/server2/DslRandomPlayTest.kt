@@ -49,9 +49,9 @@ class DslRandomPlayTest {
         val p2 = WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket"))
         p2.connectBlocking()
 
-        p1.send("""{ "type": "ClientGames", "gameTypes": ["$dslGame"], "maxGames": 1 }""")
+        p1.send("""{ "route": "lobby/join", "gameTypes": ["$dslGame"], "maxGames": 1 }""")
         Thread.sleep(100)
-        p2.send("""{ "type": "ClientGames", "gameTypes": ["$dslGame"], "maxGames": 1 }""")
+        p2.send("""{ "route": "lobby/join", "gameTypes": ["$dslGame"], "maxGames": 1 }""")
 
         p1.send("""{ "game": "$dslGame", "type": "matchMake" }""")
         Thread.sleep(100)

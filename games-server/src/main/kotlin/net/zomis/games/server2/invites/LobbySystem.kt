@@ -9,7 +9,6 @@ import net.zomis.games.server2.db.UnfinishedGames
 import net.zomis.games.server2.games.*
 
 data class ClientInterestingGames(val interestingGames: Set<String>, val maxGames: Int, val currentGames: MutableSet<ServerGame>)
-data class ListRequest(val client: Client)
 data class ClientList(val clients: MutableSet<Client> = mutableSetOf())
 
 val Client.lobbyOptions: ClientInterestingGames get() = this.interestingGames
@@ -81,7 +80,7 @@ class LobbySystem(private val features: Features) {
             gameEvent.game.players.map { it.lobbyOptions }.forEach { it.currentGames.remove(gameEvent.game) }
         })
     }
-    private fun sendAvailableUsers(client: Client) {
+    fun sendAvailableUsers(client: Client) {
         val interestingGames = client.lobbyOptions.interestingGames
 
         // Return Map<GameType, List<Client name>>

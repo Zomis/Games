@@ -1,30 +1,30 @@
 ### Authentication
 
-"Use `"provider": "guest"` and don't send a `name`. You will be randomly given a guest name.
+"Use `"route": "auth/guest"` and don't send a `name`. You will be randomly given a guest name.
 
 When you have not yet been given a name you can send
 
-    { "type": "Auth", "name": "Client A", "provider": "test" }
+    { "route": "auth/guest" }
 
-From now on you will be known as `Client A`
+From now on you will be known as `guest-12345`
 
-Client A will receive:
+guest-12345 will receive:
 
-    {"type":"Auth","name":"Client A"}
+    {"type":"Auth","name":"guest-12345"}
 
 ### Entering a lobby
 
-Client A sends:
+guest-12345 sends:
 
-    { "type": "ClientGames", "gameTypes": ["TestGameType", "OtherGameType"], "maxGames": 1 }
+    { "route": "lobby/join", "gameTypes": ["TestGameType", "OtherGameType"], "maxGames": 1 }
 
 ### Listing available players
 
-Client A sends:
+guest-12345 sends:
 
-    { "type": "ListRequest" }
+    { "route": "lobby/list" }
 
-Client A will receive:
+guest-12345 will receive:
 
     {"type":"Lobby","users":{"TestGameType":["Client B"],"OtherGameType":["Client B"]}}
 

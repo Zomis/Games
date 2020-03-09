@@ -20,6 +20,9 @@ class AuthorizationSystem(private val events: EventSystem) {
     private fun handleGuest(message: ClientJsonMessage) {
         val client = message.client
         val token: String = guestRandom.nextInt(100000).toString()
+        this.handleGuest(client, token)
+    }
+    fun handleGuest(client: Client, token: String) {
         val loginName = "guest-$token"
         logger.info("$client with token (empty) is guest/$loginName")
         client.name = loginName

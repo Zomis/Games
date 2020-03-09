@@ -21,7 +21,7 @@ class LobbySystemTest {
     private lateinit var clientA1: FakeClient
     private lateinit var clientB1: FakeClient
     private lateinit var asker: FakeClient
-    private val lobby = LobbySystem()
+    private lateinit var lobby: LobbySystem
     private val idGenerator: GameIdGenerator = { "1" }
 
     @RegisterExtension
@@ -32,8 +32,9 @@ class LobbySystemTest {
     fun setup() {
         events = DocEventSystem(docWriter)
         features = Features(events)
-        features.add { f, e -> GameSystem().setup(f, e, idGenerator) }
-        features.add(lobby::setup)
+        lobby = LobbySystem(features)
+        features.add { f, e -> GameSystem(lobby::gameClients).setup(f, e, idGenerator) }
+        events.with(lobby::setup)
         clientAB2 = FakeClient().apply { name = "AB2" }
         clientA1 = FakeClient().apply { name = "A1" }
         clientB1 = FakeClient().apply { name = "B1" }
@@ -48,10 +49,10 @@ class LobbySystemTest {
     }
 
     private fun setForClient(value: ClientInterestingGames, client: FakeClient) {
-        client.features.addData(value)
+        client.interestingGames = value
         value.interestingGames.forEach {
             val gameType = features[GameSystem.GameTypes::class]!!.gameTypes[it]!!
-            gameType.clients.add(client)
+            lobby.gameClients(gameType.type)!!.clients.add(client)
         }
     }
 
@@ -60,7 +61,7 @@ class LobbySystemTest {
         events.execute(ClientDisconnected(clientA1))
 
         events.apply {
-            execute(ListRequest(asker))
+            lobby.sendAvailableUsers(asker)
             Assertions.assertEquals("""{"type":"LobbyChange","client":"A1","action":"left"}""", asker.nextMessage())
             Assertions.assertEquals("""{"type":"Lobby","users":{"A":["AB2"],"B":["AB2","B1"]}}""", asker.nextMessage())
         }
@@ -69,7 +70,7 @@ class LobbySystemTest {
     @Test
     fun testAB() {
         events.apply {
-            execute(ListRequest(asker))
+            lobby.sendAvailableUsers(asker)
             val result = asker.nextMessage()
             Assertions.assertEquals("""{"type":"Lobby","users":{"A":["AB2","A1"],"B":["AB2","B1"]}}""", result)
         }
@@ -83,13 +84,13 @@ class LobbySystemTest {
         events.execute(GameStartedEvent(game))
 
         events.apply {
-            execute(ListRequest(asker))
+            lobby.sendAvailableUsers(asker)
             Assertions.assertEquals("""{"type":"Lobby","users":{"A":["AB2"],"B":["AB2","B1"]}}""", asker.nextMessage())
         }
 
         events.execute(GameEndedEvent(game))
         events.apply {
-            execute(ListRequest(asker))
+            lobby.sendAvailableUsers(asker)
             Assertions.assertEquals("""{"type":"Lobby","users":{"A":["AB2","A1"],"B":["AB2","B1"]}}""", asker.nextMessage())
         }
     }

@@ -2,6 +2,8 @@ package net.zomis.games.server2
 
 typealias MessageRouterDynamic = (String) -> MessageRouter<Any>
 typealias MessageRouterHandler<T> = (T) -> Unit
+
+private const val DELIMITER = '/'
 class MessageRouter<T>(owner: T) {
 
     private var dynamic: MessageRouterDynamic? = null
@@ -14,6 +16,12 @@ class MessageRouter<T>(owner: T) {
     }
 
     fun <U : Any> handler(key: String, handler: MessageRouterHandler<U>): MessageRouter<T> {
+        if (key.contains(DELIMITER)) {
+            val next = key.substringBefore(DELIMITER)
+            val nextRouter = this.routes[next] ?: this.dynamic?.invoke(next) ?: throw IllegalArgumentException("No router for $key. Routes: ${routes.keys}")
+            nextRouter.handler(key.substringAfter(DELIMITER), handler)
+            return this
+        }
         this.handlers[key] = handler as MessageRouterHandler<Any>
         return this
     }
@@ -24,7 +32,6 @@ class MessageRouter<T>(owner: T) {
     }
 
     fun <U : Any> handle(message: String, data: U) {
-        val DELIMITER = '/'
         if (message.contains(DELIMITER)) {
             val next = message.substringBefore(DELIMITER)
             val nextRouter = this.routes[next] ?: this.dynamic?.invoke(next) ?: throw IllegalArgumentException("Unable to route: $message. Routes: ${routes.keys}")
