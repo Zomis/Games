@@ -1,4 +1,4 @@
-package net.zomis.games.server2.handlers.games
+package net.zomis.games.server2.games
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -6,11 +6,9 @@ import klog.KLoggers
 import net.zomis.games.dsl.impl.ActionInfo
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.server2.ClientJsonMessage
-import net.zomis.games.server2.IncomingMessageHandler
-import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.getTextOrDefault
 
-class ActionListRequestHandler(private val gameSystem: GameSystem): IncomingMessageHandler {
+class ActionListRequestHandler(private val game: ServerGame?) {
     private val logger = KLoggers.logger(this)
     private val mapper = jacksonObjectMapper()
 
@@ -29,29 +27,16 @@ class ActionListRequestHandler(private val gameSystem: GameSystem): IncomingMess
         }
     }
 
-    override fun invoke(message: ClientJsonMessage) {
-        val gameType = message.data.getTextOrDefault("gameType", "")
-        val type = gameSystem.getGameType(gameType)
-        if (type == null) {
-            logger.error("No such gameType: $gameType")
-            return
-        }
-        val gameId = message.data.getTextOrDefault("gameId", "")
-        val game = type.runningGames[gameId]
-        if (game == null) {
-            logger.error("No such game: $gameId of type $gameType")
-            return
-        }
-
-        if (game.obj !is GameImpl<*>) {
-            logger.error("Game $gameId of type $gameType is not a valid DSL game")
+    fun actionListRequest(message: ClientJsonMessage) {
+        if (game!!.obj !is GameImpl<*>) {
+            logger.error("Game ${game.gameId} of type ${game.gameType.type} is not a valid DSL game")
             return
         }
 
         val obj = game.obj as GameImpl<*>
         val playerIndex = message.data.getTextOrDefault("playerIndex", "-1").toInt()
         if (!game.verifyPlayerIndex(message.client, playerIndex)) {
-            logger.error("Client ${message.client} does not have index $playerIndex in Game $gameId of type $gameType")
+            logger.error("Client ${message.client} does not have index $playerIndex in Game ${game.gameId} of type ${game.gameType.type}")
             return
         }
 
@@ -81,11 +66,11 @@ class ActionListRequestHandler(private val gameSystem: GameSystem): IncomingMess
 
         val actionParams = availableActionsMessage(obj, playerIndex, moveType, chosen)
 
-        logger.info { "Sending action list data for $gameId of type $gameType to $playerIndex" }
+        logger.info { "Sending action list data for ${game.gameId} of type ${game.gameType.type} to $playerIndex" }
         message.client.send(mapOf(
             "type" to "ActionList",
-            "gameType" to gameType,
-            "gameId" to gameId,
+            "gameType" to game.gameType.type,
+            "gameId" to game.gameId,
             "playerIndex" to playerIndex,
             "actions" to actionParams
         ))

@@ -57,7 +57,6 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
             events.execute(PreMoveEvent(it.game, it.player, it.moveType, parameter))
             actionType.perform(action)
             events.execute(MoveEvent(it.game, it.player, it.moveType, parameter))
-//            events.execute(GameStateEvent(it.game, listOf(Pair("roll", rollResult)))) // TODO: Needs support for random results for serialization
 
             if (controller.isGameOver()) {
                 val winner = controller.getWinner()!!

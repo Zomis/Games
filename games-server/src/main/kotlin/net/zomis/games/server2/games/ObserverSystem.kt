@@ -44,9 +44,6 @@ class ObserverSystem {
         events.listen("Store and send message to observers", MoveEvent::class, {true}, {
             addAndSend(it.game, it.moveMessage())
         })
-        events.listen("Store and send move to observers", GameStateEvent::class, {true}, {
-            addAndSend(it.game, it.stateMessage(null))
-        })
         events.listen("Store and send eliminated to observers", PlayerEliminatedEvent::class, {true}, {
             addAndSend(it.game, it.eliminatedMessage())
         })

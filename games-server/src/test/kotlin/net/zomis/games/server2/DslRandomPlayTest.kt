@@ -66,9 +66,9 @@ class DslRandomPlayTest {
                     it.getInt("yourIndex") == 1
         }
 
-        p1.sendAndExpectResponse("""{ "gameType": "$dslGame", "gameId": "1", "type": "ViewRequest" }""")
+        p1.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
         p1.expectJsonObject { it.getText("type") == "GameView" }
-        p2.sendAndExpectResponse("""{ "gameType": "$dslGame", "gameId": "1", "type": "ViewRequest" }""")
+        p2.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
         p2.expectJsonObject { it.getText("type") == "GameView" }
         val players = arrayOf(p1, p2)
 
@@ -81,21 +81,21 @@ class DslRandomPlayTest {
         while (!gameImpl.isGameOver()) {
             actionCounter++
             if (actionCounter % 10 == 0) {
-                p1.sendAndExpectResponse("""{ "gameType": "$dslGame", "gameId": "1", "type": "ViewRequest" }""")
+                p1.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
                 p1.expectJsonObject { it.getText("type") == "GameView" }
             }
             val actions = playerRange.mapNotNull {playerIndex ->
                 ServerAIs(emptySet()).randomAction(game, playerIndex).firstOrNull()
             }
             if (actions.isEmpty()) {
-                p1.sendAndExpectResponse("""{ "gameType": "$dslGame", "gameId": "1", "type": "ViewRequest" }""")
+                p1.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
                 p1.expectJsonObject { it.getText("type") == "GameView" }
                 throw IllegalStateException("Game is not over but no actions available. Is the game a draw?")
             }
             val request = actions.first()
             val playerSocket = players[request.player]
             val moveString = jacksonObjectMapper().writeValueAsString(request.move)
-            playerSocket.send("""{ "gameType": "$dslGame", "gameId": "1", "moveType": "${request.moveType}", "type": "move", "move": $moveString }""")
+            playerSocket.send("""{ "route": "games/$dslGame/1/move", "moveType": "${request.moveType}", "move": $moveString }""")
             p1.expectJsonObject { true }
             p2.expectJsonObject { true }
         }
@@ -122,9 +122,9 @@ class DslRandomPlayTest {
         p1.expectJsonObject { it.getText("type") == "GameEnded" }
         p2.expectJsonObject { it.getText("type") == "GameEnded" }
 
-        p1.sendAndExpectResponse("""{ "gameType": "$dslGame", "gameId": "1", "type": "ViewRequest" }""")
+        p1.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
         p1.expectJsonObject { it.getText("type") == "GameView" }
-        p2.sendAndExpectResponse("""{ "gameType": "$dslGame", "gameId": "1", "type": "ViewRequest" }""")
+        p2.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
         obj = p2.expectJsonObject { it.getText("type") == "GameView" }
         val winner = obj["view"]["winner"]
         println("Winner is $winner")

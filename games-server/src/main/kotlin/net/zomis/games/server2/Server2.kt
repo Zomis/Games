@@ -16,8 +16,6 @@ import net.zomis.games.server2.db.DBIntegration
 import net.zomis.games.server2.debug.AIGames
 import net.zomis.games.server2.games.*
 import net.zomis.games.server2.games.impl.ECSGameSystem
-import net.zomis.games.server2.handlers.games.ActionListRequestHandler
-import net.zomis.games.server2.handlers.games.ViewRequestHandler
 import net.zomis.games.server2.invites.InviteSystem
 import net.zomis.games.server2.invites.LobbySystem
 import net.zomis.games.server2.javalin.auth.JavalinFactory
@@ -90,11 +88,9 @@ class Server2(val events: EventSystem) {
     val gameSystem = GameSystem(lobbySystem::gameClients)
 
     val messageRouter = MessageRouter(this)
+        .route("games", gameSystem.router)
 
-    private val messageHandler = MessageHandler(events, mapOf(
-        "ActionListRequest" to ActionListRequestHandler(gameSystem),
-        "ViewRequest" to ViewRequestHandler(gameSystem)
-    ))
+    private val messageHandler = MessageHandler(events, this.messageRouter)
 
     fun start(config: ServerConfig): Server2 {
         val javalin = JavalinFactory.javalin(config)
@@ -165,7 +161,7 @@ class Server2(val events: EventSystem) {
 
 typealias IncomingMessageHandler = (ClientJsonMessage) -> Unit
 
-class MessageHandler(private val backup: EventSystem, private val handlers: Map<String, IncomingMessageHandler>): WebsocketMessageHandler {
+class MessageHandler<T>(private val backup: EventSystem, router: MessageRouter<T>): WebsocketMessageHandler {
     private val mapper = ObjectMapper()
 
     override fun connected(client: Client) {
@@ -178,8 +174,6 @@ class MessageHandler(private val backup: EventSystem, private val handlers: Map<
 
     override fun incomingMessage(client: Client, message: String) {
         val jsonMessage = mapper.readTree(message)
-        val handler = handlers[jsonMessage.getTextOrDefault("type", "")]
-        handler?.invoke(ClientJsonMessage(client, jsonMessage))
         backup.execute(ClientMessage(client, message))
     }
 

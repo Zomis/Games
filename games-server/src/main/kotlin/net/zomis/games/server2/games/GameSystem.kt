@@ -24,7 +24,14 @@ fun ServerGame.toJson(type: String): ObjectNode {
 }
 
 data class ServerGameOptions(val database: Boolean)
-class ServerGame(val gameType: GameType, val gameId: String, val gameMeta: ServerGameOptions) {
+class ServerGame(private val callback: GameCallback, val gameType: GameType, val gameId: String, val gameMeta: ServerGameOptions) {
+    private val logger = KLoggers.logger(this)
+
+    private val actionListHandler = ActionListRequestHandler(this)
+    val router = MessageRouter(this)
+        .handler("view", this::viewRequest)
+        .handler("actionList", actionListHandler::actionListRequest)
+        .handler("move", this::moveRequest)
     var gameOver: Boolean = false
     private val nextMoveIndex = AtomicInteger(0)
 
@@ -44,6 +51,37 @@ class ServerGame(val gameType: GameType, val gameId: String, val gameMeta: Serve
         return nextMoveIndex.getAndIncrement()
     }
 
+    private fun moveRequest(message: ClientJsonMessage) {
+        val moveType = message.data.get("moveType").asText()
+        val move = message.data.get("move")
+        val playerIndex = if (message.data.has("playerIndex"))
+                message.data.get("playerIndex").asInt()
+            else clientPlayerIndex(message.client)!!
+        if (!verifyPlayerIndex(message.client, playerIndex)) {
+            throw IllegalArgumentException("Client ${message.client.name} does not have playerIndex $playerIndex")
+        }
+        callback.moveHandler(PlayerGameMoveRequest(this, playerIndex, moveType, move))
+    }
+
+    private fun viewRequest(message: ClientJsonMessage) {
+        if (this.obj !is GameImpl<*>) {
+            logger.error("Game $gameId of type $gameType is not a valid DSL game")
+            return
+        }
+
+        val obj = this.obj as GameImpl<*>
+        val viewer = message.client to this.clientPlayerIndex(message.client)
+        logger.info { "Sending view data for $gameId of type $gameType to $viewer" }
+        val view = obj.view(viewer.second)
+        message.client.send(mapOf(
+            "type" to "GameView",
+            "gameType" to gameType.type,
+            "gameId" to gameId,
+            "viewer" to viewer.second,
+            "view" to view
+        ))
+    }
+
     internal val players: MutableList<Client> = mutableListOf()
     var obj: Any? = null
 
@@ -55,7 +93,6 @@ data class MoveEvent(val game: ServerGame, val player: Int, val moveType: String
 data class GameStartedEvent(val game: ServerGame)
 data class GameEndedEvent(val game: ServerGame)
 data class PlayerEliminatedEvent(val game: ServerGame, val player: Int, val winner: WinResult, val position: Int)
-data class GameStateEvent(val game: ServerGame, val data: List<Pair<String, Any>>)
 
 data class PlayerGameMoveRequest(val game: ServerGame, val player: Int, val moveType: String, val move: Any) {
     fun illegalMove(reason: String): IllegalMoveEvent {
@@ -67,25 +104,31 @@ data class IllegalMoveEvent(val game: ServerGame, val player: Int, val moveType:
 
 typealias GameIdGenerator = () -> String
 typealias GameTypeMap<T> = (String) -> T?
-class GameType(val type: String, events: EventSystem, private val idGenerator: GameIdGenerator) {
+class GameCallback(
+    val moveHandler: (PlayerGameMoveRequest) -> Unit
+)
+class GameType(val callback: GameCallback, val type: String, events: EventSystem, private val idGenerator: GameIdGenerator) {
 
     private val logger = KLoggers.logger(this)
     val runningGames: MutableMap<String, ServerGame> = mutableMapOf()
     val features: Features = Features(events)
+    private val dynamicRouter: MessageRouterDynamic<ServerGame> = { key -> this.runningGames[key]?.router
+            ?: throw IllegalArgumentException("No such gameType: $key") }
+    val router = MessageRouter(this).dynamic(dynamicRouter)
 
     init {
         logger.info("$this has features $features")
     }
 
     fun createGame(serverGameOptions: ServerGameOptions): ServerGame {
-        val game = ServerGame(this, idGenerator(), serverGameOptions)
+        val game = ServerGame(callback, this, idGenerator(), serverGameOptions)
         runningGames[game.gameId] = game
         logger.info { "Create game with id ${game.gameId} of type $type" }
         return game
     }
 
     fun resumeGame(gameId: String, game: GameImpl<Any>): ServerGame {
-        val serverGame = ServerGame(this, gameId, ServerGameOptions(true))
+        val serverGame = ServerGame(callback, this, gameId, ServerGameOptions(true))
         serverGame.obj = game
         runningGames[serverGame.gameId] = serverGame
         return serverGame
@@ -97,27 +140,19 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>) {
 
     private val logger = KLoggers.logger(this)
 
+    private val dynamicRouter: MessageRouterDynamic<GameType> = { key -> this.getGameType(key)?.router ?: throw IllegalArgumentException("No such invite: $key") }
+    val router = MessageRouter(this).dynamic(dynamicRouter)
+
     data class GameTypes(val gameTypes: MutableMap<String, GameType> = mutableMapOf())
     private val objectMapper = ObjectMapper()
     private lateinit var features: Features
 
     fun setup(features: Features, events: EventSystem, idGenerator: GameIdGenerator) {
+        val callback = GameCallback(
+            moveHandler = { events.execute(it) }
+        )
         this.features = features
         val gameTypes = features.addData(GameTypes())
-        events.listen("Trigger PlayerGameMoveRequest", ClientJsonMessage::class, {
-            it.data.has("gameType") && it.data.getTextOrDefault("type", "") == "move"
-        }, {
-                val gameType = it.data.get("gameType").asText()
-                val moveType = it.data.getTextOrDefault("moveType", "move")
-                val move = it.data.get("move")
-                val gameId = it.data.get("gameId").asText()
-
-                val game = gameTypes.gameTypes[gameType]?.runningGames?.get(gameId)
-                if (game != null) {
-                    val playerIndex = game.players.indexOf(it.client)
-                    events.execute(PlayerGameMoveRequest(game, playerIndex, moveType, move))
-                }
-        })
 
         events.listen("Send GameStarted", ListenerPriority.LATER, GameStartedEvent::class, {true}, {event ->
             sendGameStartedMessages(event.game)
@@ -126,11 +161,6 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>) {
             it.game.gameOver = true
             it.game.broadcast { _ ->
                 it.game.toJson("GameEnded")
-            }
-        })
-        events.listen("Send GameState", GameStateEvent::class, {true}, { event ->
-            event.game.broadcast {
-                event.stateMessage(it)
             }
         })
         events.listen("Send Move", MoveEvent::class, {true}, {event ->
@@ -150,7 +180,7 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>) {
             )
         })
         events.listen("Register GameType", GameTypeRegisterEvent::class, {true}, {
-            gameTypes.gameTypes[it.gameType] = GameType(it.gameType, events, idGenerator)
+            gameTypes.gameTypes[it.gameType] = GameType(callback, it.gameType, events, idGenerator)
         })
     }
 
@@ -193,19 +223,4 @@ fun PlayerEliminatedEvent.eliminatedMessage(): ObjectNode {
             .put("winner", this.winner.isWinner())
             .put("winResult", this.winner.name)
             .put("position", this.position)
-}
-
-fun GameStateEvent.stateMessage(client: Client?): ObjectNode {
-    val node = this.game.toJson("GameState")
-    this.data.forEach {
-        val value = it.second
-        when (value) {
-            is Int -> node.put(it.first, value)
-            is String -> node.put(it.first, value)
-            is Double -> node.put(it.first, value)
-            is Boolean -> node.put(it.first, value)
-            else -> throw IllegalArgumentException("No support for ${value.javaClass}")
-        }
-    }
-    return node
 }

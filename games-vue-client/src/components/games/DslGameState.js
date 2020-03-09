@@ -66,30 +66,26 @@ const gameStore = {
   },
   actions: {
     action(context, data) {
-      let json = `{ "gameType": "${data.gameInfo.gameType}", "gameId": "${
-        data.gameInfo.gameId
-      }", "type": "move", "moveType": "${data.name}", "move": ${JSON.stringify(
-        data.data
-      )} }`;
-      Socket.send(json);
+      Socket.route(`games/${data.gameInfo.gameType}/${data.gameInfo.gameId}/move`, {
+        moveType: data.name,
+        move: data.data
+      });
     },
     requestView(context, data) {
-      Socket.send(`{ "type": "ViewRequest", "gameType": "${data.gameType}", "gameId": "${data.gameId}" }`);
+      Socket.route(`games/${data.gameType}/${data.gameId}/view`, {});
     },
     requestActions(context, data) {
       let game = context.state.games[data.gameInfo.gameId]
-      let moveTypeOptional = data.actionType ? `"moveType": "${data.actionType}",` : ""
       if (!data.chosen) {
         data.chosen = [];
       }
-      Socket.send(`{
-        "type": "ActionListRequest",
-        "gameType": "${data.gameInfo.gameType}",
-        "gameId": "${data.gameInfo.gameId}",
-        ${moveTypeOptional}
-        "playerIndex": ${game.gameInfo.yourIndex},
-        "chosen": ${JSON.stringify(data.chosen)}
-      }`);
+      let obj = {
+        playerIndex: game.gameInfo.yourIndex,
+        chosen: data.chosen
+      };
+      if (data.actionType) { obj.moveType = data.actionType }
+
+      Socket.route(`games/${data.gameInfo.gameType}/${data.gameInfo.gameId}/actionList`, obj);
     },
     onSocketMessage(context, data) {
       if (data.type === "GameStarted") {

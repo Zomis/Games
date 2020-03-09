@@ -57,17 +57,17 @@ class DslGameTest {
                     it.getInt("yourIndex") == 1
         }
 
-        p1.sendAndExpectResponse("""{ "gameType": "$dslGame", "gameId": "1", "type": "ViewRequest" }""")
+        p1.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
         val viewResponse = p1.expectJsonObject { it.getText("type") == "GameView" }
         Assertions.assertEquals(3, viewResponse["view"]["board"].size())
         Assertions.assertEquals(3, viewResponse["view"]["board"][0].size())
         Assertions.assertEquals(3, viewResponse["view"]["board"][1].size())
         Assertions.assertEquals(3, viewResponse["view"]["board"][2].size())
-        p2.sendAndExpectResponse("""{ "gameType": "$dslGame", "gameId": "1", "type": "ViewRequest" }""")
+        p2.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
         p2.expectJsonObject { it.getText("type") == "GameView" }
 
         // Try to cheat - wrong player
-        p2.sendAndExpectResponse("""{ "gameType": "$dslGame", "gameId": "1", "moveType": "play", "type": "move", "move": { "x": 0, "y": 2 } }""")
+        p2.sendAndExpectResponse("""{ "route": "games/$dslGame/1/move", "moveType": "play", "move": { "x": 0, "y": 2 } }""")
         p2.takeUntilJson { it.getText("type") == "IllegalMove" }
 
         sendAndExpect("play", p1, p2, listOf(
@@ -80,7 +80,7 @@ class DslGameTest {
         ))
 
         // Win the game
-        p1.sendAndExpectResponse("""{ "gameType": "$dslGame", "gameId": "1", "moveType": "play", "type": "move", "move": { "x": 1, "y": 2 } }""")
+        p1.sendAndExpectResponse("""{ "route": "games/$dslGame/1/move", "moveType": "play", "move": { "x": 1, "y": 2 } }""")
         var obj = p1.takeUntilJson { it.getText("type") == "PlayerEliminated" }
         assert(obj.getText("gameType") == dslGame)
         assert(obj.getInt("player") == 0)
@@ -114,7 +114,7 @@ class DslGameTest {
         pairs.forEachIndexed { index, moveParameter ->
             val cl = if (index % 2 == 0) p1 else p2
             val move = mapper.writeValueAsString(moveParameter)
-            cl.send("""{ "gameType": "$dslGame", "gameId": "1", "moveType": "$moveType", "type": "move", "move": $move }""")
+            cl.send("""{ "route": "games/$dslGame/1/move", "moveType": "$moveType", "move": $move }""")
             p1.expectJsonObject { true }
             p2.expectJsonObject { true }
         }

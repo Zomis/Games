@@ -8,7 +8,8 @@ import net.zomis.games.server2.ServerConfig
 import net.zomis.games.server2.ServerGames
 import net.zomis.games.server2.clients.FakeClient
 import net.zomis.games.server2.games.GameSystem
-import net.zomis.games.server2.handlers.games.ActionListRequestHandler
+import net.zomis.games.server2.games.ActionListRequestHandler
+import net.zomis.games.server2.games.ServerGame
 import java.util.Scanner
 import java.util.UUID
 
@@ -81,7 +82,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
     }
 
     private fun stepByStepActionable(game: GameImpl<T>, playerIndex: Int, moveType: String, scanner: Scanner): Actionable<T, Any>? {
-        val reqHandler = ActionListRequestHandler(GameSystem { null })
+        val reqHandler = ActionListRequestHandler(null)
 
         val chosen = mutableListOf<Any>()
         while (true) {
