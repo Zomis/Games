@@ -45,10 +45,15 @@ class InviteSystemTest {
         events.listen("Route", ClientJsonMessage::class, {it.data.has("route")}) {
             router.handle(it.data["route"].asText(), it)
         }
-        system = InviteSystem(lobbySystem::gameClients)
-        features.add { f, e -> GameSystem(lobbySystem::gameClients).setup(f, e, idGenerator) }
+        val gameSystem = GameSystem(lobbySystem::gameClients)
+        features.add { f, e -> gameSystem.setup(f, e, idGenerator) }
+
+        fun createGameCallback(gameType: String, options: ServerGameOptions): ServerGame
+            = gameSystem.getGameType(gameType)!!.createGame(options)
+
+        system = InviteSystem(lobbySystem::gameClients, ::createGameCallback) { events.execute(it) }
+        router.route("invites", system.router)
         // Don't need the LobbySystem feature here
-        features.add(system::setup)
 
         host = FakeClient().apply { name = "Host" }
         invitee = FakeClient().apply { name = "Invited" }
@@ -59,8 +64,8 @@ class InviteSystemTest {
         events.with(LobbySystem(features)::setup) // We need to lookup player by name
         events.execute(GameTypeRegisterEvent("TestGameType"))
         events.execute(GameTypeRegisterEvent("OtherGameType"))
-        val host = FakeClient().apply { name = "TestClientA" }
-        val invitee = FakeClient().apply { name = "TestClientB" }
+        host = FakeClient().apply { name = "TestClientA" }
+        invitee = FakeClient().apply { name = "TestClientB" }
 
 //        events.execute(ClientLoginEvent(host, host.name!!, "tests", "token"))
 //        events.execute(ClientLoginEvent(invitee, invitee.name!!, "tests", "token2"))
@@ -69,42 +74,40 @@ class InviteSystemTest {
         Assertions.assertEquals("""{"type":"LobbyChange","client":"TestClientB","action":"joined","gameTypes":["TestGameType","OtherGameType"]}""", host.nextMessage())
 
         docWriter.document(events, "Inviting someone to play a game") {
-            send(host, """{ "type": "Invite", "gameType": "TestGameType", "invite": ["TestClientB"] }""")
+            send(host, """{ "route": "invites/invite", "gameType": "TestGameType", "invite": ["TestClientB"] }""")
             receive(host, """{"type":"InviteWaiting","inviteId":"TestGameType-TestClientA-0","waitingFor":["TestClientB"]}""")
             receive(invitee, """{"type":"Invite","host":"TestClientA","game":"TestGameType","inviteId":"TestGameType-TestClientA-0"}""")
         }
 
         docWriter.document(events, "Accepting an invite") {
-            send(invitee, """{ "type": "InviteResponse", "invite": "TestGameType-TestClientA-0", "accepted": true }""")
+            send(invitee, """{ "route": "invites/TestGameType-TestClientA-0/respond", "accepted": true }""")
             receive(host, """{"type":"InviteResponse","user":"TestClientB","accepted":true,"inviteId":"TestGameType-TestClientA-0"}""")
 
             text("When a user accepts an invite the game is started automatically and both players will receive a `GameStarted` message.")
             receive(invitee, """{"type":"GameStarted","gameType":"TestGameType","gameId":"1","yourIndex":1,"players":["TestClientA","TestClientB"]}""")
         }
 
-        val invite = Invite(host, mutableListOf(), mutableListOf(), GameType("TestGameType", events, idGenerator), "TestGameType-TestClientA-0")
-        system.invites[invite.id] = invite
-        events.execute(InviteEvent(host, invite, listOf(invitee)))
+        system.createInvite("TestGameType", "TestGameType-TestClientA-0", host, listOf(invitee))
         host.clearMessages()
 
         docWriter.document(events, "Declining an invite") {
-            send(invitee, """{ "type": "InviteResponse", "invite": "TestGameType-TestClientA-0", "accepted": false }""")
+            send(invitee, """{ "route": "invites/TestGameType-TestClientA-0/respond", "accepted": false }""")
             receive(host, """{"type":"InviteResponse","user":"TestClientB","accepted":false,"inviteId":"TestGameType-TestClientA-0"}""")
         }
     }
 
     @Test
     fun inviteAccepted() {
+        events.execute(GameTypeRegisterEvent("MyGame"))
         events.execute(ClientLoginEvent(host, host.name!!, "tests", "token"))
         events.execute(ClientLoginEvent(invitee, invitee.name!!, "tests", "token2"))
 
-        val invite = Invite(host, mutableListOf(), mutableListOf(), GameType("MyGame", events, idGenerator), "inv-1")
-        events.execute(InviteEvent(host, invite, listOf(invitee)))
+        val invite = system.createInvite("MyGame", "inv-1", host, listOf(invitee))
         Assertions.assertEquals("""{"type":"Invite","host":"Host","game":"MyGame","inviteId":"inv-1"}""", invitee.nextMessage())
         Assertions.assertEquals("""{"type":"InviteWaiting","inviteId":"inv-1","waitingFor":["Invited"]}""", host.nextMessage())
 
         expect.event(events to GameStartedEvent::class).condition { true }
-        events.execute(InviteResponseEvent(invitee, invite, true))
+        invite.respond(invitee, true)
 
         Assertions.assertEquals("""{"type":"InviteResponse","user":"Invited","accepted":true,"inviteId":"inv-1"}""", host.nextMessage())
         Assertions.assertEquals("""{"type":"GameStarted","gameType":"MyGame","gameId":"1","yourIndex":0,"players":["Host","Invited"]}""", host.nextMessage())
@@ -113,14 +116,13 @@ class InviteSystemTest {
 
     @Test
     fun inviteDeclined() {
-        val invite = Invite(host, mutableListOf(), mutableListOf(), GameType("MyGame", events, idGenerator), "inv-1")
-        events.execute(InviteEvent(host, invite, listOf(invitee)))
+        events.execute(GameTypeRegisterEvent("MyGame"))
+        val invite = system.createInvite("MyGame", "inv-1", host, listOf(invitee))
         Assertions.assertEquals("""{"type":"Invite","host":"Host","game":"MyGame","inviteId":"inv-1"}""", invitee.nextMessage())
         Assertions.assertEquals("""{"type":"InviteWaiting","inviteId":"inv-1","waitingFor":["Invited"]}""", host.nextMessage())
 
-        events.execute(InviteResponseEvent(invitee, invite, false))
+        invite.respond(invitee, false)
         Assertions.assertEquals("""{"type":"InviteResponse","user":"Invited","accepted":false,"inviteId":"inv-1"}""", host.nextMessage())
-
     }
 
 }

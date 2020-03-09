@@ -2,16 +2,11 @@ package net.zomis.games.server2.ais
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import net.zomis.core.events.EventSystem
-import net.zomis.games.server2.Client
-import net.zomis.games.server2.ClientConnected
-import net.zomis.games.server2.ClientJsonMessage
-import net.zomis.games.server2.ClientLoginEvent
+import net.zomis.games.server2.*
 import net.zomis.games.server2.games.GameStartedEvent
 import net.zomis.games.server2.games.ServerGame
 import net.zomis.games.server2.games.MoveEvent
 import net.zomis.games.server2.games.PlayerGameMoveRequest
-import net.zomis.games.server2.invites.InviteEvent
-import net.zomis.games.server2.invites.InviteResponseEvent
 import java.util.UUID
 import java.util.concurrent.Executors
 
@@ -22,6 +17,23 @@ val ServerAIProvider = "server-ai"
 
 class ServerAI(val gameType: String, val name: String, val perform: (game: ServerGame, playerIndex: Int) -> List<PlayerGameMoveRequest>) {
     private val executor = Executors.newSingleThreadExecutor()
+    private val mapper = ObjectMapper()
+
+    class AIClient(private val response: (ClientJsonMessage) -> Unit): Client() {
+        override fun sendData(data: String) {
+            val json = mapper.readTree(data)
+            if (json.getTextOrDefault("type", "") != "Invite") {
+                return
+            }
+            //  {"type":"Invite","host":"TestClientA","game":"TestGameType","inviteId":"TestGameType-TestClientA-0"}
+            val inviteId = json.get("inviteId").asText()
+            val outgoingData = mapper.readTree(mapper.writeValueAsString(
+                mapOf("route" to "invites/$inviteId/respond", "accepted" to true)))
+            response(ClientJsonMessage(this, outgoingData))
+        }
+    }
+
+    lateinit var client: AIClient
 
     fun register(events: EventSystem) {
         events.listen("ai move check $name", MoveEvent::class, {
@@ -46,23 +58,16 @@ class ServerAI(val gameType: String, val name: String, val perform: (game: Serve
                 }
             }
         })
-        events.listen("ServerAI $gameType accept invite $name", InviteEvent::class, {
-            it.targets.contains(client)
-        }, {
-            events.execute(InviteResponseEvent(client, it.invite, true))
-        })
 
+        this.client = AIClient { events.execute(it) }
         events.execute(ClientConnected(client))
         client.name = name
         client.playerId = UUID.randomUUID()
         events.execute(ClientLoginEvent(client, name, ServerAIProvider, name))
-        val mapper = ObjectMapper()
         val interestingGames = mapper.readTree(mapper.writeValueAsString(mapOf("route" to "lobby/join",
             "gameTypes" to listOf(gameType), "maxGames" to 100
         )))
         events.execute(ClientJsonMessage(client, interestingGames))
     }
-
-    val client = Client()
 
 }

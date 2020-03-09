@@ -1,12 +1,12 @@
 package net.zomis.games.server2
 
-typealias MessageRouterDynamic = (String) -> MessageRouter<Any>
+typealias MessageRouterDynamic<T> = (String) -> MessageRouter<T>
 typealias MessageRouterHandler<T> = (T) -> Unit
 
 private const val DELIMITER = '/'
 class MessageRouter<T>(owner: T) {
 
-    private var dynamic: MessageRouterDynamic? = null
+    private var dynamic: MessageRouterDynamic<Any>? = null
     private val routes: MutableMap<String, MessageRouter<Any>> = mutableMapOf()
     private val handlers: MutableMap<String, MessageRouterHandler<Any>> = mutableMapOf()
 
@@ -26,8 +26,8 @@ class MessageRouter<T>(owner: T) {
         return this
     }
 
-    fun dynamic(dynamicHandler: MessageRouterDynamic): MessageRouter<T> {
-        this.dynamic = dynamicHandler
+    fun <U : Any> dynamic(dynamicHandler: MessageRouterDynamic<U>): MessageRouter<T> {
+        this.dynamic = dynamicHandler as MessageRouterDynamic<Any>
         return this
     }
 

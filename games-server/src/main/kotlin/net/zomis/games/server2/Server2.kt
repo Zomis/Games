@@ -137,7 +137,10 @@ class Server2(val events: EventSystem) {
         messageRouter.route("lobby", lobbySystem.router)
         features.add(AIGames(lobbySystem::gameClients)::setup)
         features.add(TVSystem(lobbySystem::gameClients)::register)
-        features.add(InviteSystem(lobbySystem::gameClients)::setup)
+        fun createGameCallback(gameType: String, options: ServerGameOptions): ServerGame
+            = gameSystem.getGameType(gameType)!!.createGame(options)
+        messageRouter.route("invites", InviteSystem(lobbySystem::gameClients, ::createGameCallback) { events.execute(it) }.router)
+
         events.with { e -> ServerAIs(dslGames.keys.toSet()).register(e, executor) }
 
         val engine = ScriptEngineManager().getEngineByExtension("kts")!!

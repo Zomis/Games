@@ -44,7 +44,7 @@
         </v-card-text>
         <v-card-actions>
           <v-btn v-if="!inviteWaiting.cancelled"
-            color="error" @click="inviteResponse(inviteWaiting, false)">Cancel invite</v-btn>
+            color="error" @click="inviteCancel(inviteWaiting)">Cancel invite</v-btn>
           <v-btn v-if="inviteWaiting.cancelled"
             color="warning" @click="resetInviteWaiting()">Close</v-btn>
         </v-card-actions>
@@ -122,12 +122,11 @@ export default {
       let invite = this.findInvite(e.inviteId);
       invite.cancelled = true;
     },
+    inviteCancel(invite) {
+      Socket.route(`invites/${invite.inviteId}/cancel`);
+    },
     inviteResponse: function(invite, accepted) {
-      Socket.send(
-        `{ "type": "InviteResponse", "invite": "${
-          invite.inviteId
-        }", "accepted": ${accepted} }`
-      );
+      Socket.route(`invites/${invite.inviteId}/respond`, { accepted: accepted });
       this.$set(invite, "response", accepted);
     },
     inviteWaitingMessage: function(e) {

@@ -2,7 +2,7 @@
 
 TestClientA sends:
 
-    { "type": "Invite", "gameType": "TestGameType", "invite": ["TestClientB"] }
+    { "route": "invites/invite", "gameType": "TestGameType", "invite": ["TestClientB"] }
 
 TestClientA will receive:
 
@@ -16,7 +16,7 @@ TestClientB will receive:
 
 TestClientB sends:
 
-    { "type": "InviteResponse", "invite": "TestGameType-TestClientA-0", "accepted": true }
+    { "route": "invites/TestGameType-TestClientA-0/respond", "accepted": true }
 
 TestClientA will receive:
 
@@ -32,7 +32,7 @@ TestClientB will receive:
 
 TestClientB sends:
 
-    { "type": "InviteResponse", "invite": "TestGameType-TestClientA-0", "accepted": false }
+    { "route": "invites/TestGameType-TestClientA-0/respond", "accepted": false }
 
 TestClientA will receive:
 

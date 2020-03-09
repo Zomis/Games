@@ -152,14 +152,10 @@ export default {
       Socket.send(`{ "game": "${game}", "type": "matchMake" }`);
     },
     invite: function(gameType, username) {
-      Socket.send(
-        `{ "type": "Invite", "gameType": "${gameType}", "invite": ["${username}"] }`
-      );
+      Socket.route("invites/invite", { gameType: gameType, invite: [username] });
     },
     inviteLink(gameType) {
-      Socket.send(
-        `{ "type": "Invite", "gameType": "${gameType}", "invite": [] }`
-      );
+      Socket.route("invites/invite", { gameType: gameType, invite: [] });
     }
   },
   created() {

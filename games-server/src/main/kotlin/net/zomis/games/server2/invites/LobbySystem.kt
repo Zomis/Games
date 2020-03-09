@@ -47,6 +47,7 @@ class LobbySystem(private val features: Features) {
         interestingGameTypes.forEach { gt ->
             gameTypes[gt]?.clients?.clients?.add(message.client)
         }
+        logger.info { "${message.client.name} joined lobby for $interestingGameTypes" }
     }
 
     private fun listLobby(message: ClientJsonMessage) {
