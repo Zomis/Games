@@ -10,108 +10,112 @@ import net.zomis.games.server2.games.*
 
 data class ClientInterestingGames(val interestingGames: Set<String>, val maxGames: Int, val currentGames: MutableSet<ServerGame>)
 data class ListRequest(val client: Client)
-data class ClientList(val clients: MutableList<Client> = mutableListOf())
+data class ClientList(val clients: MutableSet<Client> = mutableSetOf())
 
-val Client.lobbyOptions: ClientInterestingGames? get() = this.features[ClientInterestingGames::class]
-val GameType.clients: MutableList<Client> get() = this.features[ClientList::class]!!.clients
+val Client.lobbyOptions: ClientInterestingGames get() = this.interestingGames
+
+class LobbyGameType {
+    val clients = ClientList()
+}
 
 /**
  * Responsible for informing who is waiting to play which game
  */
-class LobbySystem {
+class LobbySystem(private val features: Features) {
 
     private val logger = KLoggers.logger(this)
 
-    fun setup(features: Features, events: EventSystem) {
-        val gameTypes = features[GameSystem.GameTypes::class]!!.gameTypes
-//        clientData.register(events)
-        events.listen("set client interesting games games", ClientJsonMessage::class, {
-            it.data.getTextOrDefault("type", "") == "ClientGames"
-        }, {
-            val interestingGameTypes = (it.data.get("gameTypes") as ArrayNode).map { it.asText() }.toSet()
-            val maxGames = it.data.get("maxGames").asInt()
-            it.client.features.addData(ClientInterestingGames(interestingGameTypes, maxGames, mutableSetOf()))
-            // set interesting games
-            // set max number of concurrent games (defaults to 1, -1 = Infinite)
-            val message = newClientMessage(it.client, interestingGameTypes)
-            interestingGameTypes.flatMap { gt ->
-                if (gameTypes[gt] == null) {
-                    logger.warn("Client requested gameType $gt which does not exist.")
-                }
-                gameTypes[gt]?.clients ?: emptyList<Client>()
-            }.toSet().send(message)
-            interestingGameTypes.forEach { gt ->
-                gameTypes[gt]?.clients?.add(it.client)
+    val router = MessageRouter(this)
+        .handler("join", this::joinLobby)
+        .handler("list", this::listLobby)
+
+    private val gameTypes = mutableMapOf<String, LobbyGameType>()
+
+    private fun joinLobby(message: ClientJsonMessage) {
+        val interestingGameTypes = (message.data.get("gameTypes") as ArrayNode).map { it.asText() }.toSet()
+        val maxGames = message.data.get("maxGames").asInt()
+        message.client.interestingGames = ClientInterestingGames(interestingGameTypes, maxGames, mutableSetOf())
+        // set interesting games
+        // set max number of concurrent games (defaults to 1, -1 = Infinite)
+        val newClientMessage = newClientMessage(message.client, interestingGameTypes)
+        interestingGameTypes.flatMap { gt ->
+            if (gameTypes[gt] == null) {
+                logger.warn("Client requested gameType $gt which does not exist.")
+                return@flatMap emptyList<Client>()
             }
+            gameTypes[gt]!!.clients.clients
+        }.toSet().send(newClientMessage)
+        interestingGameTypes.forEach { gt ->
+            gameTypes[gt]?.clients?.clients?.add(message.client)
+        }
+    }
+
+    private fun listLobby(message: ClientJsonMessage) {
+        this.sendAvailableUsers(message.client)
+        this.sendUnfinishedGames(message.client)
+    }
+
+    fun gameClients(gameType: String): ClientList? {
+        return gameTypes[gameType]?.clients
+    }
+
+    fun setup(events: EventSystem) {
+        events.listen("add ClientList to GameType", GameTypeRegisterEvent::class, { true }, {
+            gameTypes[it.gameType] = LobbyGameType()
         })
 
-        events.listen("add ClientList to GameType", GameTypeRegisterEvent::class, {true}, {
-            gameTypes[it.gameType]!!.features.addData(ClientList())
+        events.listen("Lobby mark player as in game", GameStartedEvent::class, { true }, { gameEvent ->
+            gameEvent.game.players.map { it.lobbyOptions }.forEach { it.currentGames.add(gameEvent.game) }
         })
 
-        events.listen("Lobby mark player as in game", GameStartedEvent::class, {true}, { gameEvent ->
-            gameEvent.game.players.map {it.lobbyOptions!!}.forEach { it.currentGames.add(gameEvent.game) }
-        })
-
-        events.listen("Disconnect Client remove ClientInterestingGames", ClientDisconnected::class, {true}, {
-            val oldInteresting = it.client.lobbyOptions?.interestingGames
-            if (oldInteresting == null) {
-                logger.warn { "No old interesting for $it" }
-                return@listen
-            }
+        events.listen("Disconnect Client remove ClientInterestingGames", ClientDisconnected::class, { true }, {
+            val oldInteresting = it.client.lobbyOptions.interestingGames
             val message = this.disconnectedMessage(it.client)
-            oldInteresting.flatMap { gt -> gameTypes[gt]!!.clients }.toSet().send(message)
-            oldInteresting.map { gameType -> gameTypes[gameType]!! }.forEach {gameType ->
-                gameType.clients.remove(it.client)
+            oldInteresting.flatMap { gt -> gameTypes[gt]!!.clients.clients }.toSet().send(message)
+            oldInteresting.map { gameType -> gameTypes[gameType]!! }.forEach { gameType ->
+                gameType.clients.clients.remove(it.client)
             }
-//            it.client.features.remove(ClientInterestingGames::class)
         })
 
-        events.listen("Lobby remove player from game", GameEndedEvent::class, {true}, { gameEvent ->
-            gameEvent.game.players.map {it.lobbyOptions!!}.forEach { it.currentGames.remove(gameEvent.game) }
+        events.listen("Lobby remove player from game", GameEndedEvent::class, { true }, { gameEvent ->
+            gameEvent.game.players.map { it.lobbyOptions }.forEach { it.currentGames.remove(gameEvent.game) }
         })
+    }
+    private fun sendAvailableUsers(client: Client) {
+        val interestingGames = client.lobbyOptions.interestingGames
 
-        events.listen("fire ListRequest", ClientJsonMessage::class,
-                { it.data.getTextOrDefault("type", "") == "ListRequest" }, {
-            events.execute(ListRequest(it.client))
-        })
-
-        events.listen("send available users", ListRequest::class, {true}, { event ->
-            val interestingGames = event.client.lobbyOptions!!.interestingGames
-
-            // Return Map<GameType, List<Client name>>
-            val resultingMap = mutableMapOf<String, List<String>>()
-            gameTypes.entries.forEach {gameType ->
-                if (interestingGames.contains(gameType.key)) {
-                    resultingMap[gameType.key] = gameType.value.clients.filter {
-                        val cig = it.features[ClientInterestingGames::class]
-                        return@filter cig!!.maxGames > cig.currentGames.size
-                    }.filter { it != event.client }.filter { it.name != null }
-                    .map { it.name!! }
-                }
+        // Return Map<GameType, List<Client name>>
+        val resultingMap = mutableMapOf<String, List<String>>()
+        gameTypes.entries.forEach {gameType ->
+            if (interestingGames.contains(gameType.key)) {
+                resultingMap[gameType.key] = gameType.value.clients.clients.filter {
+                    val cig = it.interestingGames
+                    return@filter cig.maxGames > cig.currentGames.size
+                }.filter { it != client }.filter { it.name != null }
+                .map { it.name!! }
             }
-            event.client.send(mapOf("type" to "Lobby", "users" to resultingMap))
-        })
+        }
+        client.send(mapOf("type" to "Lobby", "users" to resultingMap))
+    }
 
-        events.listen("send unfinished games", ListRequest::class, {true}, { event ->
-            val interestingGames = event.client.lobbyOptions!!.interestingGames
-            val unfinishedGames = features[UnfinishedGames::class] ?: return@listen
+    private fun sendUnfinishedGames(client: Client) {
+        val interestingGames = client.lobbyOptions.interestingGames
+        val unfinishedGames = features[UnfinishedGames::class] ?: return
 
-            // Return Map<GameType, List<GameSummary>>
-            val games = unfinishedGames.unfinishedGames
-                .filter { interestingGames.contains(it.gameType) }
-                .filter { it.playersInGame.any { pig ->
-                    val playerId = pig.player?.playerId ?: ""
-                    playerId == event.client.playerId.toString()
-                } }
-                .groupBy { it.gameType }
-                .mapValues { it.value.map { game -> mapOf(
-                    "GameId" to game.gameId,
-                    "TimeStarted" to game.timeStarted
-                ) } }
+        // Return Map<GameType, List<GameSummary>>
+        val games = unfinishedGames.unfinishedGames
+            .filter { interestingGames.contains(it.gameType) }
+            .filter { it.playersInGame.any { pig ->
+                val playerId = pig.player?.playerId ?: ""
+                playerId == client.playerId.toString()
+            } }
+            .groupBy { it.gameType }
+            .mapValues { it.value.map { game -> mapOf(
+                "GameId" to game.gameId,
+                "TimeStarted" to game.timeStarted
+            ) } }
 
-            event.client.send(mapOf("type" to "LobbyUnfinished", "games" to games))
-        })
+        client.send(mapOf("type" to "LobbyUnfinished", "games" to games))
     }
 
     private fun disconnectedMessage(client: Client): Map<String, Any?> {

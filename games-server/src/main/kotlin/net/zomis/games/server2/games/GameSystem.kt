@@ -12,9 +12,7 @@ import net.zomis.games.WinResult
 import net.zomis.games.dsl.PlayerIndex
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.server2.*
-import net.zomis.games.server2.clients.FakeClient
-import net.zomis.games.server2.invites.clients
-import java.util.*
+import net.zomis.games.server2.invites.ClientList
 import java.util.concurrent.atomic.AtomicInteger
 
 val nodeFactory = JsonNodeFactory(false)
@@ -68,6 +66,7 @@ data class PlayerGameMoveRequest(val game: ServerGame, val player: Int, val move
 data class IllegalMoveEvent(val game: ServerGame, val player: Int, val moveType: String, val move: Any, val reason: String)
 
 typealias GameIdGenerator = () -> String
+typealias GameTypeMap<T> = (String) -> T?
 class GameType(val type: String, events: EventSystem, private val idGenerator: GameIdGenerator) {
 
     private val logger = KLoggers.logger(this)
@@ -92,15 +91,9 @@ class GameType(val type: String, events: EventSystem, private val idGenerator: G
         return serverGame
     }
 
-    fun findOrCreatePlayers(playerIds: List<String>): Collection<Client> {
-        return playerIds.map {playerId ->
-            this.clients.find { it.playerId.toString() == playerId } ?: FakeClient(UUID.fromString(playerId))
-        }
-    }
-
 }
 
-class GameSystem {
+class GameSystem(val gameClients: GameTypeMap<ClientList>) {
 
     private val logger = KLoggers.logger(this)
 

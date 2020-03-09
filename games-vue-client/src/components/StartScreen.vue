@@ -169,11 +169,8 @@ export default {
     }
     Socket.$on("type:GameList", this.gameListMessage);
     Socket.$on("type:LobbyUnfinished", this.unfinishedGameListMessage);
-    let gameTypes = JSON.stringify(supportedGames.enabledGameKeys());
-    Socket.send(
-      `{ "type": "ClientGames", "gameTypes": ${gameTypes}, "maxGames": 1 }`
-    );
-    Socket.send(`{ "type": "ListRequest" }`);
+    Socket.route(`lobby/join`, { gameTypes: supportedGames.enabledGameKeys(), maxGames: 1 })
+    Socket.route(`lobby/list`, {});
   },
   computed: {
     displayNames() {

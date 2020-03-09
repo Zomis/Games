@@ -15,6 +15,7 @@ import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.server2.*
 import net.zomis.games.server2.ais.ServerAIProvider
+import net.zomis.games.server2.clients.FakeClient
 import net.zomis.games.server2.games.*
 import java.math.BigDecimal
 import java.time.Instant
@@ -66,11 +67,17 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
             val dbGame = this.getGame(unfinishedGame)
 
             val game = gameType.resumeGame(dbGame.summary.gameId, dbGame.game)
-            game.players.addAll(gameType.findOrCreatePlayers(unfinishedGame.playersInGame.map { it.player!!.playerId }))
+            game.players.addAll(findOrCreatePlayers(gameType.type, unfinishedGame.playersInGame.map { it.player!!.playerId }))
             gameSystem.sendGameStartedMessages(game)
             // Do NOT call GameStartedEvent as that will trigger database save
         })
         return listOf(this.table).map { it.createTableRequest() }
+    }
+
+    fun findOrCreatePlayers(gameType: String, playerIds: List<String>): Collection<Client> {
+        return playerIds.map {playerId ->
+            gameSystem.gameClients(gameType)?.clients?.find { it.playerId.toString() == playerId } ?: FakeClient(UUID.fromString(playerId))
+        }
     }
 
     val tableName = "Server2"

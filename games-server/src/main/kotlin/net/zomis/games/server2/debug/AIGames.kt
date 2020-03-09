@@ -8,13 +8,13 @@ import net.zomis.games.server2.Client
 import net.zomis.games.server2.ClientJsonMessage
 import net.zomis.games.server2.ConsoleEvent
 import net.zomis.games.server2.games.GameSystem
-import net.zomis.games.server2.games.GameType
-import net.zomis.games.server2.invites.clients
+import net.zomis.games.server2.games.GameTypeMap
+import net.zomis.games.server2.invites.ClientList
 import java.util.*
 
 fun Client.isAI(): Boolean { return this.name?.startsWith("#AI_") ?: false }
 
-class AIGames {
+class AIGames(private val gameClients: GameTypeMap<ClientList>) {
 
     private val logger = KLoggers.logger(this)
     private val random = Random()
@@ -34,12 +34,11 @@ class AIGames {
             val gameTypeName = params[1]
             val player1 = params[2]
             val player2 = params[3]
-            val gameType = features[GameSystem.GameTypes::class]!!.gameTypes[gameTypeName]
-            if (gameType == null) {
-                logger.warn { "No such gameType: $gameType" }
+            val clients = gameClients(gameTypeName)?.clients
+            if (clients == null) {
+                logger.warn { "No such gameType: $gameTypeName" }
                 return@listen
             }
-            val clients = gameType.clients
             val client1 = clients.find { it.name == player1 }
             val client2 = clients.find { it.name == player2 }
             if (client1 == null) {
@@ -50,24 +49,24 @@ class AIGames {
                 logger.warn { "Client not found: $client2" }
                 return@listen
             }
-            startNewGame(events, gameType, client1, client2)
+            startNewGame(events, gameTypeName, client1, client2)
         })
     }
 
     private fun createURGame(features: Features, events: EventSystem) {
         val ur = features[GameSystem.GameTypes::class]!!.gameTypes["UR"]!!
-        startNewAIGame(events, ur)
+        startNewAIGame(events, ur.type)
     }
 
-    fun startNewAIGame(events: EventSystem, gameType: GameType) {
-        val ais = gameType.clients.filter { it.isAI() }
+    fun startNewAIGame(events: EventSystem, gameType: String) {
+        val ais = gameClients(gameType)!!.clients.filter { it.isAI() }
         val player1 = ais[random.nextInt(ais.size)]
         val player2 = ais[random.nextInt(ais.size)]
         startNewGame(events, gameType, player1, player2)
     }
 
-    private fun startNewGame(events: EventSystem, gameType: GameType, player1: Client, player2: Client) {
-        val gameTypeName = gameType.type
+    private fun startNewGame(events: EventSystem, gameType: String, player1: Client, player2: Client) {
+        val gameTypeName = gameType
         val data = ObjectMapper().readTree("""{ "type": "Invite", "gameType": "$gameTypeName", "invite": ["${player2.name}"] }""")
         events.execute(ClientJsonMessage(player1, data))
     }

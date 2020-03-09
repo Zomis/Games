@@ -9,7 +9,7 @@ import net.zomis.games.server2.StartupEvent
 import net.zomis.games.server2.debug.AIGames
 import net.zomis.games.server2.debug.isAI
 import net.zomis.games.server2.getTextOrDefault
-import net.zomis.games.server2.invites.clients
+import net.zomis.games.server2.invites.ClientList
 import net.zomis.games.server2.invites.lobbyOptions
 import java.util.Random
 
@@ -20,7 +20,7 @@ data class TVData(val viewers: MutableMap<Client, ServerGame>)
 
 val Features.tvData: TVData get() = this[TVData::class]!!
 
-class TVSystem {
+class TVSystem(private val gameClients: GameTypeMap<ClientList>) {
 
     private val logger = KLoggers.logger(this)
     private val random = Random()
@@ -77,10 +77,10 @@ class TVSystem {
         }
 
         // Start new AI Game
-        val choosableTypes = possibleTypes.filter { it.value.clients.any { it.isAI() } }.keys.toList()
+        val choosableTypes = possibleTypes.filter { gameClients(it.key)!!.clients.any { it.isAI() } }.keys.toList()
         val gameType = gameTypes[choosableTypes[random.nextInt(choosableTypes.size)]]!!
         logger.info { "Starting a new AI Game of ${gameType.type}" }
-        AIGames().startNewAIGame(events, gameType)
+        AIGames(gameClients).startNewAIGame(events, gameType.type)
         val nextGame = checkForRunningGames(gameTypes, interestingGames)
         makeClientWatch(events, tvData, client, nextGame!!)
         return nextGame
@@ -107,8 +107,6 @@ class TVSystem {
             "yourIndex" to -40
         )
         client.send(message)
-
-//        events.execute(ObserverStart(client, nextGame))
     }
 
 }

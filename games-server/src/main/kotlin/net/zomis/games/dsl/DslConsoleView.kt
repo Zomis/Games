@@ -81,7 +81,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
     }
 
     private fun stepByStepActionable(game: GameImpl<T>, playerIndex: Int, moveType: String, scanner: Scanner): Actionable<T, Any>? {
-        val reqHandler = ActionListRequestHandler(GameSystem())
+        val reqHandler = ActionListRequestHandler(GameSystem { null })
 
         val chosen = mutableListOf<Any>()
         while (true) {

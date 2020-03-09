@@ -3,10 +3,7 @@ package net.zomis.games.server2.invites
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
 import net.zomis.games.server2.*
-import net.zomis.games.server2.games.GameStartedEvent
-import net.zomis.games.server2.games.GameSystem
-import net.zomis.games.server2.games.GameType
-import net.zomis.games.server2.games.ServerGameOptions
+import net.zomis.games.server2.games.*
 
 data class Invite(val host: Client, val awaiting: MutableList<Client>,
   val accepted: MutableList<Client>, val gameType: GameType, val id: String)
@@ -16,7 +13,7 @@ data class InviteResponseEvent(val source: Client, val invite: Invite, val accep
 /**
  * Responsible for inviting specific players
  */
-class InviteSystem {
+class InviteSystem(private val gameClients: GameTypeMap<ClientList>) {
 
     val invites = mutableMapOf<String, Invite>()
 
@@ -33,7 +30,7 @@ class InviteSystem {
             val inviteTargets = it.data.get("invite")
             val inviteId = "${gameType.type}-${it.client.name}-${invites.size}"
             val targetClients = inviteTargets.map { it.asText() }.map {name ->
-                gameTypes[gameType.type]!!.clients.filter { it.name == name}.firstOrNull()
+                gameClients(gameType.type)!!.clients.filter { it.name == name}.firstOrNull()
             }.filterIsInstance<Client>().toMutableList()
             val invite = Invite(it.client, targetClients, mutableListOf(), gameType, inviteId)
             invites[inviteId] = invite

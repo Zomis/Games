@@ -86,7 +86,8 @@ class Server2(val events: EventSystem) {
     val features = Features(events)
 
     private val dslGames = ServerGames.games
-    val gameSystem = GameSystem()
+    private val lobbySystem = LobbySystem(features)
+    val gameSystem = GameSystem(lobbySystem::gameClients)
 
     private val messageRouter = MessageRouter(this)
     private val messageHandler = MessageHandler(events, mapOf(
@@ -122,10 +123,7 @@ class Server2(val events: EventSystem) {
             this.messageRouter.handle(it.data["route"].asText(), it)
         }
         messageRouter.route("auth", AuthorizationSystem(events).router)
-        features.add(LobbySystem()::setup)
         val executor = Executors.newScheduledThreadPool(2)
-        events.with { e -> ServerAIs(dslGames.keys.toSet()).register(e, executor) }
-        features.add(InviteSystem()::setup)
         if (config.githubClient.isNotEmpty()) {
             LinAuth(javalin, config.githubConfig()).register()
         }
@@ -134,8 +132,12 @@ class Server2(val events: EventSystem) {
             features.add(dbIntegration::register)
             LinReplay(dbIntegration).setup(javalin)
         }
-        features.add(AIGames()::setup)
-        features.add(TVSystem()::register)
+        events.with(lobbySystem::setup)
+        messageRouter.route("lobby", lobbySystem.router)
+        features.add(AIGames(lobbySystem::gameClients)::setup)
+        features.add(TVSystem(lobbySystem::gameClients)::register)
+        features.add(InviteSystem(lobbySystem::gameClients)::setup)
+        events.with { e -> ServerAIs(dslGames.keys.toSet()).register(e, executor) }
 
         val engine = ScriptEngineManager().getEngineByExtension("kts")!!
         events.listen("Kotlin script", ConsoleEvent::class, {it.input.startsWith("kt ")}, {

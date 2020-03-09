@@ -47,7 +47,7 @@ const emitter = new Vue({
       this.socket = null;
     },
     route(path, data) {
-      this.send(JSON.stringify({ ...data, route: path }))
+      this.send(JSON.stringify({ route: path, ...data }))
     },
     send(message) {
       if (this.socket === null) {
