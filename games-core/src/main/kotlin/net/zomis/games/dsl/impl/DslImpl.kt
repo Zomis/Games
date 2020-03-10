@@ -4,14 +4,19 @@ import net.zomis.games.dsl.*
 import kotlin.reflect.KClass
 
 class GameModelContext<T, C> : GameModel<T, C> {
-    lateinit var factory: (C?) -> T
+    var playerCount: IntRange = 2..2
+    lateinit var factory: GameFactoryScope<C>.(C?) -> T
     lateinit var config: () -> C
+
+    override fun players(playerCount: IntRange) {
+        this.playerCount = playerCount
+    }
 
     override fun defaultConfig(creator: () -> C) {
         this.config = creator
     }
 
-    override fun init(factory: (C?) -> T) {
+    override fun init(factory: GameFactoryScope<C>.(C?) -> T) {
         this.factory = factory
     }
 }

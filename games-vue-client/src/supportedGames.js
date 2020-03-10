@@ -67,7 +67,7 @@ const supportedGames = {
     },
     "Artax": {
         displayName: "Artax",
-        dsl: new gamejs.net.zomis.games.dsl.sourcedest.TTSourceDestinationGames().gameArtax,
+        dsl: gamejs.net.zomis.games.dsl.sourcedest.ArtaxGame.gameArtax,
         actions: tttMoveActions,
         component: DSLTTT,
         routeProps: defaultRouteProps

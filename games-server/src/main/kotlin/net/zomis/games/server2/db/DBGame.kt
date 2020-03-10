@@ -31,7 +31,7 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, moveHistory: List<GamesT
 
     private val gameSetup = GameSetupImpl(summary.gameSpec)
     @JsonIgnore
-    val game = gameSetup.createGame(gameSetup.getDefaultConfig())
+    val game = gameSetup.createGame(summary.playersInGame.size, gameSetup.getDefaultConfig())
     val views = mutableListOf(game.view(null))
 
     init {

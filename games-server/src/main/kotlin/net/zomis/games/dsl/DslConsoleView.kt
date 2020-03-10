@@ -21,12 +21,16 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
 
         val config = context.getDefaultConfig()
         println(config)
-        val model = context.createGame(config)
+        println("Enter number of players:")
+        val playerCount = scanner.nextLine().toInt()
+        val model = context.createGame(playerCount, config)
         println(model)
 
+        this.showView(model)
         while (!model.isGameOver()) {
-            this.showView(model)
             this.queryInput(model, scanner)
+            this.showView(model)
+            model.stateCheck()
         }
     }
 

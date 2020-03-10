@@ -28,6 +28,14 @@
   background-color: red;
 }
 
+.piece-2 {
+  background-color: green;
+}
+
+.piece-3 {
+  background-color: pink;
+}
+
 .player-pieces .piece {
   z-index: 70;
   margin: auto;

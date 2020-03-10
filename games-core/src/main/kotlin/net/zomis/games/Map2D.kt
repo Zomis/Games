@@ -1,6 +1,7 @@
 package net.zomis.games
 
 import net.zomis.Best
+import net.zomis.games.dsl.Point
 
 private fun flipX(start: Position): Position {
     return Position(start.sizeX - 1 - start.x, start.y, start.sizeX, start.sizeY)
@@ -142,6 +143,25 @@ class Map2D<T>(val sizeX: Int, val sizeY: Int, val getter: (x: Int, y: Int) -> T
 
 }
 
+interface Map2DPoint<T> {
+    val x: Int
+    val y: Int
+    var value: T
+    fun rangeCheck(map: Map2DX<T>): Map2DPoint<T>?
+}
+class Map2DPointImpl<T>(
+    override val x: Int, override val y: Int,
+    private val getter: (x: Int, y: Int) -> T,
+    private val setter: (x: Int, y: Int, value: T) -> Unit
+): Map2DPoint<T> {
+    override var value: T
+        get() = getter(x, y)
+        set(value) { setter(x, y, value) }
+
+    override fun rangeCheck(map: Map2DX<T>): Map2DPoint<T>? {
+        return this.takeUnless { x < 0 || x >= map.sizeX || y < 0 || y >= map.sizeY }
+    }
+}
 class Map2DX<T>(val sizeX: Int, val sizeY: Int, val factory: (x: Int, y: Int) -> T) {
 
     val grid: MutableList<MutableList<T>> = (0 until sizeY).map { y ->
@@ -153,6 +173,22 @@ class Map2DX<T>(val sizeX: Int, val sizeY: Int, val factory: (x: Int, y: Int) ->
     fun set(x: Int, y: Int, value: T) {
         grid[y][x] = value
     }
+
+    fun get(x: Int, y: Int): T = grid[y][x]
+
+    fun point(x: Int, y: Int): Map2DPoint<T> {
+        return Map2DPointImpl(x, y, this::get, this::set)
+    }
+
+    fun point(point: Point): Map2DPoint<T> {
+        return point(point.x, point.y)
+    }
+
+    fun points(): Iterable<Point> = grid.indices.flatMap { y ->
+        grid[y].indices.map { x -> Point(x, y) }
+    }
+
+    fun all(): Iterable<Map2DPoint<T>> = points().map { point(it.x, it.y) }
 
     fun asMap2D(): Map2D<T> {
         return Map2D(sizeX, sizeY, { x, y -> grid[y][x] }) {x, y, v ->

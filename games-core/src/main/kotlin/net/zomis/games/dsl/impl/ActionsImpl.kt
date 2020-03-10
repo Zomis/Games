@@ -102,14 +102,14 @@ class GameLogicActionTypeComplexNext<T : Any, A : Any>(private val model: T, val
         yielder(action)
     }
 
-    override fun <E : Any> option(options: Array<E>, next: ActionComplexScopeResultNext<T, A>.(E) -> Unit) {
+    override fun <E : Any> option(options: Iterable<E>, next: ActionComplexScopeResultNext<T, A>.(E) -> Unit) {
         options.forEach {
             val nextScope = GameLogicActionTypeComplexNext<T, A>(model, yielder)
             next.invoke(nextScope, it)
         }
     }
 
-    override fun <E : Any> optionFrom(options: (T) -> Array<E>, next: ActionComplexScopeResultNext<T, A>.(E) -> Unit) {
+    override fun <E : Any> optionFrom(options: (T) -> Iterable<E>, next: ActionComplexScopeResultNext<T, A>.(E) -> Unit) {
         this.option(options(model), next)
     }
 }
@@ -123,14 +123,13 @@ class GameLogicActionTypeComplexNextOnly<T : Any, A : Any>(
         actionYielder(action)
     }
 
-    override fun <E : Any> optionFrom(options: (T) -> Array<E>, next: ActionComplexScopeResultNext<T, A>.(E) -> Unit) {
+    override fun <E : Any> optionFrom(options: (T) -> Iterable<E>, next: ActionComplexScopeResultNext<T, A>.(E) -> Unit) {
         this.option(options(model), next)
     }
 
-    override fun <E : Any> option(options: Array<E>, next: ActionComplexScopeResultNext<T, A>.(E) -> Unit) {
+    override fun <E : Any> option(options: Iterable<E>, next: ActionComplexScopeResultNext<T, A>.(E) -> Unit) {
         if (chosen.isNotEmpty()) {
             val nextChosen = chosen[0] as E
-//            val nextChosen = options[nextChosenIndex as Int] // TODO: Add string support or something
             val nextChosenList = chosen.subList(1, chosen.size)
 
             val nextScope = GameLogicActionTypeComplexNextOnly<T, A>(model, nextChosenList,true, nextYielder, actionYielder)

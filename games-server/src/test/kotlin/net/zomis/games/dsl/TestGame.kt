@@ -10,7 +10,7 @@ object TestGame {
     fun <E : Any> create(name: String, config: Any? = null): GameTest<E> {
         val dsl = ServerGames.games[name] as GameSpec<E>
         val setup = GameSetupImpl(dsl)
-        val impl = setup.createGame(if (config == null) setup.getDefaultConfig() else config)
+        val impl = setup.createGame(2, config ?: setup.getDefaultConfig())
         return GameTest(impl)
     }
 

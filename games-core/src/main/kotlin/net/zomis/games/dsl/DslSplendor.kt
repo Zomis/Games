@@ -162,12 +162,12 @@ class DslSplendor {
 //            }
             action(takeMoney) {
                 options {
-                    option(MoneyType.values()) { first ->
-                        option(MoneyType.values()) {second ->
+                    option(MoneyType.values().asIterable()) { first ->
+                        option(MoneyType.values().asIterable()) {second ->
                             if (first == second) {
                                 actionParameter(MoneyChoice(listOf(first, second)))
                             } else {
-                                option(MoneyType.values()) {third ->
+                                option(MoneyType.values().asIterable()) {third ->
                                     actionParameter(MoneyChoice(listOf(first, second, third)))
                                 }
                             }

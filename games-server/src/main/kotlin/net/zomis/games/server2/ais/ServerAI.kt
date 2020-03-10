@@ -46,15 +46,18 @@ class ServerAI(val gameType: String, val name: String, val perform: (game: Serve
         }, {
             events.execute(AIMoveRequest(client, it.game))
         })
-        events.listen("ai move $name", AIMoveRequest::class, {it.client == client}, {
-            val playerIndex = it.game.players.indexOf(client)
-            if (playerIndex < 0) {
+        events.listen("ai move $name", AIMoveRequest::class, {it.client == client}, {event ->
+            val game = event.game
+            val playerIndex = event.game.players.indices.filter { game.verifyPlayerIndex(client, it) }
+            if (playerIndex.isEmpty()) {
                 return@listen
             }
             executor.submit {
-                val aiMoves = perform.invoke(it.game, playerIndex)
-                if (!aiMoves.isEmpty()) {
-                    events.execute(DelayedAIMoves(aiMoves))
+                val aiMoves = playerIndex.map {
+                    perform.invoke(game, it)
+                }
+                aiMoves.filter { it.isNotEmpty() }.forEach {singleAIMoves ->
+                    events.execute(DelayedAIMoves(singleAIMoves))
                 }
             }
         })

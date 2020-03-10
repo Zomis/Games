@@ -1,5 +1,7 @@
 package net.zomis.games.dsl.impl
 
+import net.zomis.games.PlayerEliminations
+import net.zomis.games.WinResult
 import net.zomis.games.dsl.*
 import kotlin.reflect.KClass
 
@@ -11,18 +13,22 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
         context.modelDsl(context.model)
     }
 
-    fun configClass(): KClass<*> = context.configClass
-    fun getDefaultConfig(): Any? = if (configClass() == Unit::class) Unit else context.model.config()
+    val playersCount: IntRange = context.model.playerCount
 
-    fun createGame(config: Any?): GameImpl<T> {
-        return GameImpl(context, config)
+    fun configClass(): KClass<*> = context.configClass
+    fun getDefaultConfig(): Any = if (configClass() == Unit::class) Unit else context.model.config()
+
+    fun createGame(playerCount: Int, config: Any): GameImpl<T> {
+        return GameImpl(context, playerCount, config)
     }
 
 }
 
-class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, config: Any?) {
+class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override val playerCount: Int,
+        override val config: Any): GameFactoryScope<Any> {
 
-    val model = setupContext.model.factory(config)
+    override val eliminationCallback = PlayerEliminations(playerCount)
+    val model = setupContext.model.factory(this, config)
     private val replayState = ReplayState()
     private val logic = GameLogicContext(model, replayState)
     init {
@@ -37,11 +43,19 @@ class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, config: Any
     }
 
     fun isGameOver(): Boolean {
-        return getWinner() != null
+        return eliminationCallback.isGameOver()
     }
 
-    fun getWinner(): PlayerIndex {
-        return logic.winner(model)
+    fun stateCheck() {
+        val winner = logic.winner(model)
+        if (winner != null) {
+            if (winner < 0) {
+                eliminationCallback.eliminateRemaining(WinResult.DRAW)
+                return
+            }
+            eliminationCallback.result(winner, WinResult.WIN)
+            eliminationCallback.eliminateRemaining(WinResult.LOSS)
+        }
     }
 
 }

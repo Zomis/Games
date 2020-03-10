@@ -22,70 +22,6 @@ abstract class TTControllerSourceDestination(val board: TTBase) {
     abstract fun perform(source: TTBase, destination: TTBase): Boolean
 }
 
-class TTArtax(game: TTBase): TTControllerSourceDestination(game) {
-    init {
-        this.onReset()
-    }
-
-    private fun distance(a: TTBase, b: TTBase): Int {
-        return max(abs(a.x - b.x), abs(a.y - b.y))
-    }
-
-    override fun allowedSource(tile: TTBase): Boolean {
-        return tile.wonBy == this.currentPlayer
-    }
-
-    override fun allowedDestination(source: TTBase, tile: TTBase): Boolean {
-        if (tile.isWon) {
-            return false
-        }
-
-        val tileDistance = distance(tile, source)
-        return tileDistance in 1..2
-    }
-
-    override fun onReset() {
-        board.subs().forEach { it.setPlayedBy(TTPlayer.NONE) }
-        board.getSub(0, 0)!!.setPlayedBy(TTPlayer.X)
-        board.getSub(board.sizeX - 1, board.sizeY - 1)!!.setPlayedBy(TTPlayer.X)
-
-        board.getSub(0, board.sizeY - 1)!!.setPlayedBy(TTPlayer.O)
-        board.getSub(board.sizeX - 1, 0)!!.setPlayedBy(TTPlayer.O)
-    }
-
-    override fun perform(source: TTBase, destination: TTBase): Boolean {
-        if (!allowedSource(source) || !allowedDestination(source, destination)) {
-            return false
-        }
-        val tileDistance = distance(destination, source)
-        destination.setPlayedBy(this.currentPlayer)
-        if (tileDistance == 2) {
-            source.setPlayedBy(TTPlayer.NONE)
-        }
-        val potentialWinner = this.currentPlayer
-        Direction8.values().map { dir ->
-            destination.parent!!.getSub(destination.x + dir.deltaX, destination.y + dir.deltaY)?.takeIf { it.isWon }?.setPlayedBy(potentialWinner)
-        }
-        this.currentPlayer = this.currentPlayer.next()
-
-        val currentPlayerTiles = this.board.subs().filter { it.wonBy == this.currentPlayer }
-        if (currentPlayerTiles.isEmpty()) {
-            this.board.setPlayedBy(potentialWinner)
-        }
-        if (this.board.subs().none { tile -> !tile.isWon && currentPlayerTiles.any { distance(tile, it) <= 2 } }) {
-            val current = currentPlayerTiles.size
-            val opponent = this.currentPlayer.next().let { opp -> this.board.subs().filter { it.wonBy == opp } }.size
-            this.board.setPlayedBy(when {
-                current > opponent -> this.currentPlayer
-                opponent > current -> this.currentPlayer.next()
-                else -> TTPlayer.XO
-            })
-        }
-        return true
-    }
-
-}
-
 class TTQuixoController(game: TTBase): TTControllerSourceDestination(game) {
     private fun isBorder(tile: TTBase): Boolean {
         val parent = tile.parent ?: return false
@@ -157,18 +93,6 @@ class TTQuixoController(game: TTBase): TTControllerSourceDestination(game) {
 class TTSourceDestinationGames {
 
     val moveAction = createActionType("move", PointMove::class)
-    val gameArtax = createGame<TTControllerSourceDestination>("Artax") {
-        val grid = gridSpec<TTBase> {
-            size(model.board.sizeX, model.board.sizeY)
-            getter { x, y -> model.board.getSmallestTile(x, y)!! }
-        }
-        setup(Point::class) {
-            defaultConfig { Point(7, 7) }
-            init { conf -> TTArtax(TTFactories().classicMNK(conf!!.x, conf.y, 0)) }
-        }
-        logic(ttLogic())
-        view(ttView(grid))
-    }
 
     val gameQuixo = createGame<TTControllerSourceDestination>("Quixo") {
         val grid = gridSpec<TTBase> {
@@ -209,8 +133,8 @@ class TTSourceDestinationGames {
         winner { winner(it.board) }
         action(moveAction) {
             options {
-                optionFrom({ game -> game.grid().filter { game.allowedSource(game.point(it)) }.toTypedArray() }) {source ->
-                    optionFrom({ game -> game.grid().filter { game.allowedDestination(game.point(source), game.point(it)) }.toTypedArray() }) {destination ->
+                optionFrom({ game -> game.grid().filter { game.allowedSource(game.point(it)) } }) {source ->
+                    optionFrom({ game -> game.grid().filter { game.allowedDestination(game.point(source), game.point(it)) } }) {destination ->
                         actionParameter(PointMove(Point(source.x, source.y), Point(destination.x, destination.y)))
                     }
                 }

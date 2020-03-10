@@ -16,7 +16,7 @@ fun <T> Iterable<T>.best(comparator: Comparator<in T>): List<T> {
     var maxElements = mutableListOf(max)
     while (iterator.hasNext()) {
         val e = iterator.next()
-        when (comparator.compare(e, max).sign) {
+        when (comparator.compare(e, max).sign) { // e, max here creates the descending order
             1 -> {
                 max = e
                 maxElements = mutableListOf(max)

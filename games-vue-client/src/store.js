@@ -78,7 +78,7 @@ const store = new Vuex.Store({
       Socket.send(json);
     },
     onSocketMessage(context, data) {
-      console.log(data);
+      console.log("STORE IN", data);
       if (data.type == "Auth") {
         context.commit("setPlayerName", data.name);
       }

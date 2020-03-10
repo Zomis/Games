@@ -18,7 +18,7 @@ class DslTest {
 
     private fun createGame(): GameImpl<TTController> {
         val setup = GameSetupImpl(DslTTT().game)
-        val game = setup.createGame(TTOptions(3, 3, 3))
+        val game = setup.createGame(2, TTOptions(3, 3, 3))
         Assertions.assertNotNull(game)
         return game
     }

@@ -17,7 +17,7 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
         val server2GameName = name
         val setup = GameSetupImpl(dsl)
         events.listen("DslGameSystem $name Setup", GameStartedEvent::class, {it.game.gameType.type == server2GameName}, {
-            it.game.obj = setup.createGame(setup.getDefaultConfig())
+            it.game.obj = setup.createGame(it.game.players.size, setup.getDefaultConfig())
         })
         events.listen("DslGameSystem $name Move", PlayerGameMoveRequest::class, {
             it.game.gameType.type == server2GameName
@@ -54,18 +54,19 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
                 return@listen
             }
 
+            val beforeMoveEliminated = controller.eliminationCallback.eliminations()
             events.execute(PreMoveEvent(it.game, it.player, it.moveType, parameter))
             actionType.perform(action)
             events.execute(MoveEvent(it.game, it.player, it.moveType, parameter))
+            controller.stateCheck()
+            val recentEliminations = controller.eliminationCallback.eliminations().minus(beforeMoveEliminated)
+
+            for (elimination in recentEliminations) {
+                events.execute(PlayerEliminatedEvent(it.game, elimination.playerIndex,
+                    elimination.winResult, elimination.position))
+            }
 
             if (controller.isGameOver()) {
-                val winner = controller.getWinner()!!
-                it.game.players.indices.forEach { playerIndex ->
-                    val winResult = if (winner < 0) WinResult.DRAW else WinResult.forWinner(winner, playerIndex)
-                    val won = winner == playerIndex
-                    val losePositionPenalty = if (won) 0 else 1
-                    events.execute(PlayerEliminatedEvent(it.game, playerIndex, winResult, 1 + losePositionPenalty))
-                }
                 events.execute(GameEndedEvent(it.game))
             }
         })

@@ -71,7 +71,7 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
 
         val obj = this.obj as GameImpl<*>
         val viewer = message.client to this.clientPlayerIndex(message.client)
-        logger.info { "Sending view data for $gameId of type $gameType to $viewer" }
+        logger.info { "Sending view data for $gameId of type ${gameType.type} to $viewer" }
         val view = obj.view(viewer.second)
         message.client.send(mapOf(
             "type" to "GameView",
