@@ -18,14 +18,14 @@ class TTArtax(private val eliminationCallback: PlayerEliminationCallback,
     init {
         board.all().forEach { it.value = null }
         board.point(0, 0).value = 0
-        board.point(0, board.sizeY - 1).value = 1
+        board.point(board.sizeX - 1, 0).value = 1
 
         if (playerCount == 2) {
-            board.point(board.sizeX - 1, 0).value = 1
+            board.point(0, board.sizeY - 1).value = 1
             board.point(board.sizeX - 1, board.sizeY - 1).value = 0
         }
         if (playerCount >= 3) {
-            board.point(board.sizeX - 1, 0).value = 2
+            board.point(0, board.sizeY - 1).value = 2
         }
         if (playerCount == 4) {
             board.point(board.sizeX - 1, board.sizeY - 1).value = 3

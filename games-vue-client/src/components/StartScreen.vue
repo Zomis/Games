@@ -11,7 +11,7 @@
       <v-toolbar color="cyan" dark>
         <v-toolbar-title>{{ displayNames[gameType] }}</v-toolbar-title>
         <v-spacer></v-spacer>
-<!--        <v-btn rounded :disabled="waiting" @click="matchMake(gameType)">Play anyone</v-btn> -->
+        <v-btn rounded :disabled="waiting" @click="createInvite(gameType)">New Game</v-btn>
         <v-btn rounded :disabled="waiting" @click="inviteLink(gameType)">Invite with link</v-btn>
       </v-toolbar>
       <v-card-title>
@@ -140,6 +140,9 @@ export default {
     gameListMessage: function(message) {
       this.gameList = message.list;
     },
+    createInvite(gameType) {
+      this.$store.dispatch("lobby/createInvite", gameType);
+    },
     unfinishedGameListMessage(message) {
       this.unfinishedGames = message.games
     },
@@ -179,7 +182,10 @@ export default {
     activeGames() {
       return this.$store.getters.activeGames;
     },
-    ...mapState(["loginName", "lobby"])
+    ...mapState(['loginName']),
+    ...mapState('lobby', {
+      lobby: state => state.lobby
+    })
   },
   beforeDestroy() {
     Socket.$off("type:GameList", this.gameListMessage);

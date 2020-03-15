@@ -2,6 +2,7 @@ import Vue from "vue";
 import Vuex from "vuex";
 import supportedGames from "@/supportedGames"
 import Socket from "@/socket";
+import lobbyStore from "./components/lobby/lobbyStore";
 
 // const debug = process.env.NODE_ENV !== "production";
 Vue.use(Vuex);
@@ -9,11 +10,10 @@ Vue.use(Vuex);
 const store = new Vuex.Store({
   state: {
     loginName: null,
-    lobby: {}, // key: gameType, value: array of players (names)
-    invites: [],
     games: [] // includes both playing and observing
   },
   modules: {
+    lobby: lobbyStore,
     ...supportedGames.storeModules()
   },
   getters: {
@@ -28,9 +28,6 @@ const store = new Vuex.Store({
   mutations: {
     setPlayerName(state, name) {
       state.loginName = name;
-    },
-    setLobbyUsers(state, data) {
-      state.lobby = data;
     },
     changeLobby(state, e) {
       // client, action, gameTypes
@@ -82,8 +79,11 @@ const store = new Vuex.Store({
       if (data.type == "Auth") {
         context.commit("setPlayerName", data.name);
       }
+      if (data.type.startsWith("Invite")) {
+        context.dispatch("lobby/onSocketMessage", data);
+      }
       if (data.type == "Lobby") {
-        context.commit("setLobbyUsers", data.users);
+        context.commit("lobby/setLobbyUsers", data.users);
       }
       if (data.type === "LobbyChange") {
         context.commit("changeLobby", data);

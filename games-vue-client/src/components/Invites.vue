@@ -17,6 +17,9 @@
         </div>
       </v-list>
     </v-card>
+    <v-dialog v-model="complexInviteDialog" max-width="42%" persistent>
+      <InviteComplex />
+    </v-dialog>
     <v-dialog v-model="inviteWaiting.dialogActive" max-width="42%" persistent>
       <v-card class="invites-sent">
         <v-card-title>
@@ -55,91 +58,37 @@
 <script>
 import Socket from "../socket";
 import supportedGames from "@/supportedGames";
-
-function emptyInvite() {
-  return {
-    dialogActive: false,
-    waitingFor: [],
-    inviteId: null,
-    cancelled: false,
-    accepted: [],
-    declined: []
-  };
-}
+import { mapState } from 'vuex';
+import InviteComplex from "@/components/InviteComplex";
 
 export default {
   name: "Invites",
+  props: ["complexDialogGameType"],
   data() {
     return {
-      invites: [],
-      inviteWaiting: emptyInvite()
-    };
+      complexInviteDialog: false
+    }
+  },
+  components: {
+    InviteComplex
   },
   methods: {
-    resetInviteWaiting() {
-      this.inviteWaiting = {
-        waitingFor: [],
-        inviteId: null,
-        cancelled: false,
-        accepted: [],
-        declined: []
-      };
-    },
-    matchMake: function(game) {
-      this.waiting = true;
-      this.waitingGame = game;
-      Socket.send(`{ "game": "${game}", "type": "matchMake" }`);
-    },
     inviteLink(gameType) {
       Socket.send(
         `{ "type": "Invite", "gameType": "${gameType}", "invite": [] }`
       );
     },
-    inviteMessage: function(e) {
-      this.$set(e, "cancelled", false);
-      this.$set(e, "response", null);
-      this.invites.push(e);
-    },
-    findInvite(inviteId) {
-      if (this.inviteWaiting.inviteId === inviteId) {
-        console.log(this.inviteWaiting);
-        return this.inviteWaiting;
-      } else {
-        let result = this.invites.find(i => i.inviteId === inviteId);
-        console.log(result);
-        return result;
-      }
-    },
-    inviteResponseMessage(e) {
-      // This should only happen to the inviteWaiting at the moment
-      let invite = this.findInvite(e.inviteId);
-      invite.waitingFor.splice(invite.waitingFor.indexOf(e.user), 1);
-      let responseArray = e.accepted ? invite.accepted : invite.declined;
-      responseArray.push(e.user);
-    },
-    inviteCancelledMessage(e) {
-      // This can be either an invite recieved or the inviteWaiting
-      let invite = this.findInvite(e.inviteId);
-      invite.cancelled = true;
-    },
     inviteCancel(invite) {
+//      this.$store.dispatch("invites/cancel", invite.inviteId);
       Socket.route(`invites/${invite.inviteId}/cancel`);
     },
     inviteResponse: function(invite, accepted) {
       Socket.route(`invites/${invite.inviteId}/respond`, { accepted: accepted });
       this.$set(invite, "response", accepted);
     },
-    inviteWaitingMessage: function(e) {
-      this.inviteWaiting = e;
-      this.inviteWaiting.dialogActive = true
-      this.$set(this.inviteWaiting, "cancelled", false);
-      this.$set(this.inviteWaiting, "accepted", []);
-      this.$set(this.inviteWaiting, "declined", []);
-    },
     gameStartedMessage: function(e) {
       let game = supportedGames.games[e.gameType]
       let routeName = game.routeName || e.gameType;
-      this.inviteWaiting = emptyInvite();
       this.$router.push({
         name: routeName,
         params: {
@@ -155,13 +104,21 @@ export default {
     }
   },
   created() {
-    Socket.$on("type:InviteWaiting", this.inviteWaitingMessage);
-    Socket.$on("type:InviteResponse", this.inviteResponseMessage);
-    Socket.$on("type:InviteCancelled", this.inviteCancelledMessage);
-    Socket.$on("type:Invite", this.inviteMessage);
     Socket.$on("type:GameStarted", this.gameStartedMessage);
   },
+  watch: {
+    complexInvite(newState) {
+      if (newState != null) {
+        this.complexInviteDialog = true;
+      }
+    }
+  },
   computed: {
+    ...mapState('lobby', {
+      invites: state => state.invites,
+      inviteWaiting: state => state.inviteWaiting,
+      complexInvite: state => state.complexInvite
+    }),
     inviteURL() {
       if (this.inviteWaiting.inviteId === null) {
         return null;
@@ -176,10 +133,6 @@ export default {
     }
   },
   beforeDestroy() {
-    Socket.$off("type:InviteWaiting", this.inviteWaitingMessage);
-    Socket.$off("type:InviteResponse", this.inviteResponseMessage);
-    Socket.$off("type:InviteCancelled", this.inviteCancelledMessage);
-    Socket.$off("type:Invite", this.inviteMessage);
     Socket.$off("type:GameStarted", this.gameStartedMessage);
   }
 };

@@ -1,13 +1,19 @@
 package net.zomis.games.server2.invites
 
 import klog.KLoggers
+import net.zomis.games.dsl.GameSpec
+import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.server2.*
 import net.zomis.games.server2.games.*
 
-const val autoStartLimit = 2
-data class Invite(
+class InviteTools(
     val removeCallback: (Invite) -> Unit,
     val createGameCallback: (Invite) -> Unit,
+    val gameClients: GameTypeMap<ClientList>
+)
+data class Invite(
+    val playerRange: IntRange,
+    val tools: InviteTools,
     val gameType: String,
     val id: String,
     val host: Client
@@ -19,13 +25,37 @@ data class Invite(
 
     val router = MessageRouter(this)
         .handler("respond", this::respond)
+        .handler("send", this::sendInvite)
+        .handler("start", this::startInvite)
         .handler("cancel", this::cancelInvite)
+
+    fun sendInvite(message: ClientJsonMessage) {
+        val inviteTargets = message.data.get("invite")
+        val targetClients = inviteTargets.map { it.asText() }.map {name ->
+            tools.gameClients(gameType)!!.clients.firstOrNull { it.name == name }
+        }.filterIsInstance<Client>().toMutableList()
+        this.sendInviteTo(targetClients)
+    }
 
     fun sendInviteTo(targetClients: List<Client>) { // It is possible to invite the same AI twice, therefore a list
         logger.info { "Sending invite $this to $targetClients" }
         this.awaiting.addAll(targetClients)
         targetClients.forEach {
             it.send(mapOf("type" to "Invite", "host" to this.host.name, "game" to this.gameType, "inviteId" to this.id))
+        }
+    }
+
+    fun startInvite(message: ClientJsonMessage) {
+        if (message.client != this.host) throw IllegalArgumentException("Only invite host can start game")
+
+        this.startCheck()
+    }
+
+    fun startCheck() {
+        if (playerCount() in playerRange) {
+            tools.createGameCallback(this)
+        } else {
+            throw IllegalStateException("Expecting $playerRange players but current is ${playerCount()}")
         }
     }
 
@@ -42,7 +72,7 @@ data class Invite(
         }
         this.host.send(inviteCancelledMessage)
 
-        removeCallback(this)
+        tools.removeCallback(this)
     }
 
     fun respond(message: ClientJsonMessage) {
@@ -57,10 +87,12 @@ data class Invite(
         if (accepted) {
             this.accepted.add(client)
         }
-        if (accepted && this.accepted.size >= autoStartLimit - 1) { // Ignore host in this check
-            createGameCallback(this)
+        if (accepted && playerCount() >= playerRange.last) { // Ignore host in this check
+            this.startCheck()
         }
     }
+
+    fun playerCount(): Int = 1 + this.accepted.size
 
 }
 
@@ -89,12 +121,20 @@ class InviteSystem(
 
     fun createInvite(gameType: String, inviteId: String, host: Client, invitees: List<Client>): Invite {
         logger.info { "Creating invite for $gameType id $inviteId host $host invitees $invitees" }
-        val invite = Invite(::removeInvite, ::startInvite, gameType, inviteId, host)
+        val playerRange = this.determinePlayerRange(gameType)
+        val tools = InviteTools(::removeInvite, ::startInvite, gameClients)
+        val invite = Invite(playerRange, tools, gameType, inviteId, host)
         invites[inviteId] = invite
 
         invite.host.send(mapOf("type" to "InviteWaiting", "inviteId" to invite.id, "waitingFor" to invitees.map { it.name }.toList()))
         invite.sendInviteTo(invitees)
         return invite
+    }
+
+    private fun determinePlayerRange(gameType: String): IntRange {
+        val gameSpec = ServerGames.games[gameType] ?: return 2..2
+        val setup = GameSetupImpl(gameSpec as GameSpec<Any>)
+        return setup.playersCount
     }
 
     private fun inviteStart(message: ClientJsonMessage) {
