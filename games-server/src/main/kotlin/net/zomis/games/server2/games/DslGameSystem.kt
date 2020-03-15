@@ -57,10 +57,10 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
             val beforeMoveEliminated = controller.eliminationCallback.eliminations()
             events.execute(PreMoveEvent(it.game, it.player, it.moveType, parameter))
             actionType.perform(action)
-            events.execute(MoveEvent(it.game, it.player, it.moveType, parameter))
             controller.stateCheck()
             val recentEliminations = controller.eliminationCallback.eliminations().minus(beforeMoveEliminated)
 
+            events.execute(MoveEvent(it.game, it.player, it.moveType, parameter))
             for (elimination in recentEliminations) {
                 events.execute(PlayerEliminatedEvent(it.game, elimination.playerIndex,
                     elimination.winResult, elimination.position))
