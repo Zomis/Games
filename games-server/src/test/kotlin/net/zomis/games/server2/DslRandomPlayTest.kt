@@ -128,7 +128,13 @@ class DslRandomPlayTest {
         obj = p2.expectJsonObject { it.getText("type") == "GameView" }
         val winner = obj["view"]["winner"]
         println("Winner is $winner")
-        assert(winner.isInt) { "Winner is not an int" }
+        if (winner != null) {
+            assert(winner.isInt) { "Winner is not an int" }
+        } else {
+            val eliminations = obj["view"]["eliminations"]
+            assert(eliminations.size() == 2)
+            assert(eliminations.all { it["eliminated"].asBoolean() })
+        }
 
         p1.close()
         p2.close()

@@ -10,6 +10,7 @@ interface GameView<T> {
     fun winner(function: (T) -> Int?)
     fun value(key: String, value: (T) -> Any?)
     fun state(key: String, function: ReplayScope.(T) -> Any?)
+    fun eliminations()
 }
 
 interface GameView2D<T, P> {

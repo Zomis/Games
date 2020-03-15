@@ -37,7 +37,7 @@ class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override va
     val actions = ActionsImpl(model, logic, replayState)
 
     fun view(playerIndex: PlayerIndex): Map<String, Any?> {
-        val view = GameViewContext(model, playerIndex, replayState)
+        val view = GameViewContext(model, eliminationCallback, playerIndex, replayState)
         setupContext.viewDsl(view)
         return view.result()
     }

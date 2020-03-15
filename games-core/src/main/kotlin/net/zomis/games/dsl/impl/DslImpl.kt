@@ -1,5 +1,6 @@
 package net.zomis.games.dsl.impl
 
+import net.zomis.games.PlayerEliminations
 import net.zomis.games.dsl.*
 import kotlin.reflect.KClass
 
@@ -67,7 +68,8 @@ class GameGridBuilder<T : Any, P>(override val model: T) : GameGrid<T, P>, GridS
 
 }
 
-class GameViewContext<T : Any>(val model: T, override val viewer: PlayerIndex, private val replayState: ReplayState) : GameView<T> {
+class GameViewContext<T : Any>(val model: T, val eliminations: PlayerEliminations,
+       override val viewer: PlayerIndex, private val replayState: ReplayState) : GameView<T> {
     private val viewResult: MutableMap<String, Any?> = mutableMapOf()
 
     override fun result(): Map<String, Any?> {
@@ -101,6 +103,18 @@ class GameViewContext<T : Any>(val model: T, override val viewer: PlayerIndex, p
 
     override fun winner(function: (T) -> Int?) {
         viewResult["winner"] = function(model)
+    }
+
+    override fun eliminations() {
+        val eliminationsDone = eliminations.eliminations()
+        viewResult["eliminations"] = (0 until eliminations.playerCount).map {playerIndex ->
+            val elimination = eliminationsDone.firstOrNull { it.playerIndex == playerIndex }
+            if (elimination == null) {
+                mapOf("eliminated" to false)
+            } else {
+                mapOf("eliminated" to true, "result" to elimination.winResult, "position" to elimination.position)
+            }
+        }
     }
 }
 

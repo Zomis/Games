@@ -91,7 +91,7 @@ class TTArtax(private val eliminationCallback: PlayerEliminationCallback,
             eliminationCallback.eliminateBy(counts, compareBy { it })
         }
         while (!playersThatCanMove.contains(this.currentPlayer)) {
-            this.currentPlayer = eliminationCallback.nextPlayer(this.currentPlayer)!!
+            this.currentPlayer = eliminationCallback.nextPlayer(this.currentPlayer) ?: return true
         }
 
         return true
@@ -141,6 +141,7 @@ object ArtaxGame {
             }
         }
         view {
+            eliminations()
             currentPlayer { it.currentPlayer }
             grid("board", grid) {
                 owner { it }
