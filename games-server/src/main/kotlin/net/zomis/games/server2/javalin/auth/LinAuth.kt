@@ -32,7 +32,6 @@ class LinAuth(val javalin: Javalin, val githubConfig: OAuthConfig) {
         val app = javalin
             .apply {
                 post("/auth/github") {
-                    logger.info(it.toString())
                     val params = it.bodyAsClass(GithubAuthRequest::class.java)
                     val result = Fuel.post("https://github.com/login/oauth/access_token", listOf(
                         Pair("client_id", githubConfig.clientId),
@@ -45,9 +44,6 @@ class LinAuth(val javalin: Javalin, val githubConfig: OAuthConfig) {
 
                     logger.info("Result: " + result.third.get())
                     val resultJson = queryStringToJsonNode(mapper, result.third.get())
-                    val token = resultJson.get("access_token")
-                    logger.info(token.asText())
-
                     it.result(mapper.writeValueAsString(resultJson))
                 }
             }
