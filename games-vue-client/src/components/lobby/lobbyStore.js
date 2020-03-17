@@ -1,5 +1,3 @@
-import Vue from "vue";
-
 import Socket from "@/socket";
 
 function findInvite(state, inviteId) {
@@ -19,34 +17,47 @@ function findInvite(state, inviteId) {
 
 function emptyInvite() {
   return {
-    dialogActive: false,
-    waitingFor: [],
+    dialogActive: false, // possibly unused
+    inviteStep: 0,
+    gameType: null,
     inviteId: null,
     cancelled: false,
-    accepted: [],
-    declined: []
+    playersMin: 2,
+    playersMax: 2,
+    invitesSent: [] // { playerId, accepted }
   };
 }
 
 const lobbyStore = {
   namespaced: true,
   state: {
-    complexInvite: null,
-    invites: [],
+    yourPlayer: { name: "(UNKNOWN)", playerId: "UNKNOWN" },
     inviteWaiting: emptyInvite(),
+    invites: [],
     lobby: {} // key: gameType, value: array of players (names)
   },
   getters: {},
   mutations: {
-    setInviteWaiting(state, e) {
-      if (state.complexInvite) {
-        state = state.complexInvite;
+    setPlayer(state, player) {
+      state.yourPlayer = {
+        name: player.name,
+        playerId: player.playerId
       }
-      state.inviteWaiting = e;
+    },
+    inviteStep(state, step) {
+      state.inviteWaiting.inviteStep = step
+    },
+    setInviteWaiting(state, e) {
+      console.log("SET INVITE WAITING", state.inviteWaiting, e)
+      state.inviteWaiting.inviteId = e.inviteId
       state.inviteWaiting.dialogActive = true
-      Vue.set(state.inviteWaiting, "cancelled", false);
-      Vue.set(state.inviteWaiting, "accepted", []);
-      Vue.set(state.inviteWaiting, "declined", []);
+      state.inviteWaiting.invitesSent = [{ ...state.yourPlayer, status: true }];
+      state.inviteWaiting.playersMin = e.playersMin;
+      state.inviteWaiting.playersMax = e.playersMax;
+      state.inviteWaiting.inviteStep = 2;
+    },
+    inviteStatus(state, data) {
+      state.inviteWaiting.invitesSent.push({ playerId: data.playerId, status: null });
     },
     setLobbyUsers(state, data) {
         state.lobby = data;
@@ -54,42 +65,71 @@ const lobbyStore = {
     inviteResponseReceived(state, e) {
       // This should only happen to the inviteWaiting at the moment
       let invite = findInvite(state, e.inviteId);
-      invite.waitingFor.splice(invite.waitingFor.indexOf(e.user), 1);
-      let responseArray = e.accepted ? invite.accepted : invite.declined;
-      responseArray.push(e.user);
+      invite.invitesSent.find(e => e.playerId === e.playerId && e.status === null).status = e.accepted ? true : false;
     },
     inviteReceived(state, e) {
-      this.$set(e, "cancelled", false);
-      this.$set(e, "response", null);
-      this.invites.push(e);
+      state.invites.push({ ...e, response: null });
     },
     cancelInvite(state, e) {
       // This can be either an invite recieved or the inviteWaiting
-      let invite = this.findInvite(e.inviteId);
+      let invite = findInvite(state, e.inviteId);
       invite.cancelled = true;
+      invite.inviteStep = 0;
     },
     resetInviteWaiting(state) {
+      state.inviteWaiting.inviteStep = 0;
       state.inviteWaiting = emptyInvite();
-      state.inviteWaiting = {
-        waitingFor: [],
-        inviteId: null,
-        cancelled: false,
-        accepted: [],
-        declined: []
-      };
     },
-    setComplexInvite(state, gameType) {
-      state.complexInvite = { gameType: gameType };
+    changeLobby(state, e) {
+      // client, action, gameTypes
+      let player = e.player; // { id, name }
+      if (e.action === "joined") {
+        let gameTypes = e.gameTypes;
+        gameTypes.forEach(gt => {
+          let list = state.lobby[gt];
+          if (list == null) throw "No list for gameType " + gt;
+        });
+        gameTypes.map(gt => state.lobby[gt]).forEach(list => list.push(player));
+      } else if (e.action === "left") {
+        let gameTypes = Object.keys(state.lobby);
+        gameTypes.map(gt => state.lobby[gt]).forEach(list => {
+          let index = list.findIndex(e => e.id === player.id);
+          if (index >= 0) {
+            list.splice(index, 1);
+          }
+        });
+      } else {
+        throw "Unknown action: " + e.action;
+      }
+    },
+    createInvite(state, gameType) {
+      state.inviteWaiting.gameType = gameType;
+      state.inviteWaiting.inviteStep = 1;
     }
   },
   actions: {
-    createInvite(context, gameType) {
-      context.commit("setComplexInvite", gameType);
-      Socket.route("invites/start", { gameType: gameType });
+    cancelInvite(context) {
+      let inviteId = context.state.inviteWaiting.inviteId
+      Socket.route(`invites/${inviteId}/cancel`, {});
+      context.commit("cancelInvite", { inviteId: inviteId });
+    },
+    createServerInvite(context) {
+      console.log(context);
+      Socket.route("invites/start", { gameType: context.state.inviteWaiting.gameType });
     },
     onSocketMessage(context, data) {
+      if (data.type == "Lobby") {
+        context.commit("setLobbyUsers", data.users);
+      }
+      if (data.type === "LobbyChange") {
+        context.commit("changeLobby", data);
+      }
+
       if (data.type == "InviteWaiting") {
         context.commit("setInviteWaiting", data);
+      }
+      if (data.type == "InviteStatus") {
+        context.commit("inviteStatus", data);
       }
       if (data.type == "InviteResponse") {
         context.commit("inviteResponseReceived", data);

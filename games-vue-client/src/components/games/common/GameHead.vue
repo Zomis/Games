@@ -16,7 +16,7 @@ export default {
       if (typeof this.gameInfo.players !== "object") {
         return "local game";
       }
-      return this.gameInfo.players[0] + " vs. " + this.gameInfo.players[1];
+      return this.gameInfo.players[0].name + " vs. " + this.gameInfo.players[1].name;
     }
   }
 };

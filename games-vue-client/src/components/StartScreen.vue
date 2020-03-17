@@ -11,22 +11,21 @@
       <v-toolbar color="cyan" dark>
         <v-toolbar-title>{{ displayNames[gameType] }}</v-toolbar-title>
         <v-spacer></v-spacer>
-        <v-btn rounded :disabled="waiting" @click="createInvite(gameType)">New Game</v-btn>
-        <v-btn rounded :disabled="waiting" @click="inviteLink(gameType)">Invite with link</v-btn>
+        <v-btn rounded @click="createInvite(gameType)">New Game</v-btn>
       </v-toolbar>
       <v-card-title>
         Users
       </v-card-title>
       <v-list light>
-        <template v-for="(name, index) in users">
-          <v-divider :key="`divider-${index}`" v-if="index > 0"></v-divider>
-          <v-list-item :key="index">
+        <template v-for="(player, index) in users">
+          <v-divider :key="`divider-${player.id}`" v-if="index > 0"></v-divider>
+          <v-list-item :key="`player-${player.id}`">
             <v-list-item-content>
-              <v-list-item-title v-html="name"></v-list-item-title>
+              <v-list-item-title v-html="player.name"></v-list-item-title>
             </v-list-item-content>
 
             <v-list-item-action>
-              <v-btn color="info" @click="invite(gameType, name)" v-if="name !== loginName">Invite</v-btn>
+              <v-btn color="info" @click="invite(gameType, player.id)" v-if="player.name !== loginName">Invite</v-btn>
             </v-list-item-action>
           </v-list-item>
         </template>
@@ -99,9 +98,7 @@ export default {
   data() {
     return {
       gameList: [],
-      unfinishedGames: [],
-      waiting: false,
-      waitingGame: null
+      unfinishedGames: []
     };
   },
   components: {
@@ -141,7 +138,7 @@ export default {
       this.gameList = message.list;
     },
     createInvite(gameType) {
-      this.$store.dispatch("lobby/createInvite", gameType);
+      this.$store.commit("lobby/createInvite", gameType);
     },
     unfinishedGameListMessage(message) {
       this.unfinishedGames = message.games
@@ -149,16 +146,9 @@ export default {
     resumeGame(gameType, gameId) {
       Socket.send(`{ "type": "LoadGame", "gameType": "${gameType}", "gameId": "${gameId}" }`);
     },
-    matchMake: function(game) {
-      this.waiting = true;
-      this.waitingGame = game;
-      Socket.send(`{ "game": "${game}", "type": "matchMake" }`);
-    },
-    invite: function(gameType, username) {
-      Socket.route("invites/invite", { gameType: gameType, invite: [username] });
-    },
-    inviteLink(gameType) {
-      Socket.route("invites/invite", { gameType: gameType, invite: [] });
+    invite(gameType, playerId) {
+      this.createInvite(gameType)
+      Socket.route("invites/invite", { gameType: gameType, invite: [playerId] });
     }
   },
   created() {
@@ -182,8 +172,8 @@ export default {
     activeGames() {
       return this.$store.getters.activeGames;
     },
-    ...mapState(['loginName']),
     ...mapState('lobby', {
+      loginName: state => state.yourPlayer.name,
       lobby: state => state.lobby
     })
   },

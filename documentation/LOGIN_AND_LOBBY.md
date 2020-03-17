@@ -6,11 +6,11 @@ When you have not yet been given a name you can send
 
     { "route": "auth/guest" }
 
-From now on you will be known as `guest-12345`
+You will receive your name and your playerId
 
 guest-12345 will receive:
 
-    {"type":"Auth","name":"guest-12345"}
+    {"type":"Auth","playerId":"00000000-0000-0000-0000-000000000000","name":"guest-12345"}
 
 ### Entering a lobby
 
@@ -26,17 +26,21 @@ guest-12345 sends:
 
 guest-12345 will receive:
 
-    {"type":"Lobby","users":{"TestGameType":["Client B"],"OtherGameType":["Client B"]}}
+    {"type":"Lobby","users":{"TestGameType":[{"id":"11111111-1111-1111-1111-111111111111","name":"Client B"}],"OtherGameType":[{"id":"11111111-1111-1111-1111-111111111111","name":"Client B"}]}}
 
 ### When someone disconnects
 
 Whenever you are in a lobby and another client in the same lobby disconnects, you will be notified instantly.
 
-TODO: This is not implemented yet.
+guest-12345 will receive:
+
+    {"type":"LobbyChange","player":{"id":"11111111-1111-1111-1111-111111111111","name":"Client B"},"action":"left"}
 
 ### When a new client joins
 
 Whenever you are in a lobby and another client joins the same lobby, you will be notified instantly.
 
-TODO: This is not implemented yet.
+guest-12345 will receive:
+
+    {"type":"LobbyChange","player":{"id":"22222222-2222-2222-2222-222222222222","name":"Client C"},"action":"joined","gameTypes":["TestGameType","OtherGameType"]}
 

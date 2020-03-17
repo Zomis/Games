@@ -27,8 +27,8 @@ const emitter = new Vue({
         this.$emit("connected", e);
       };
       this.socket.onmessage = msg => {
-        console.log(" IN: " + msg.data);
         let obj = JSON.parse(msg.data);
+        console.log(" IN:", obj, msg.data);
         store.dispatch("onSocketMessage", obj);
         this.$emit(`type:${obj.type}`, obj);
       };
@@ -54,7 +54,7 @@ const emitter = new Vue({
         throw "No socket.";
       }
       if (1 === this.socket.readyState) {
-        console.log("OUT: " + message);
+        console.log("OUT:", message);
         this.socket.send(message);
       }
     }

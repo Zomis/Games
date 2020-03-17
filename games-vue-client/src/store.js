@@ -8,10 +8,6 @@ import lobbyStore from "./components/lobby/lobbyStore";
 Vue.use(Vuex);
 
 const store = new Vuex.Store({
-  state: {
-    loginName: null,
-    games: [] // includes both playing and observing
-  },
   modules: {
     lobby: lobbyStore,
     ...supportedGames.storeModules()
@@ -23,36 +19,6 @@ const store = new Vuex.Store({
         .flatMap(m => m.games)
         .map(i => Object.values(i))
         .flat();
-    }
-  },
-  mutations: {
-    setPlayerName(state, name) {
-      state.loginName = name;
-    },
-    changeLobby(state, e) {
-      // client, action, gameTypes
-      let user = e.client;
-      if (e.action === "joined") {
-        let gameTypes = e.gameTypes;
-        gameTypes.forEach(gt => {
-          let list = state.lobby[gt];
-          if (list == null) throw "No list for " + gt;
-        });
-        gameTypes.map(gt => state.lobby[gt]).forEach(list => list.push(user));
-      } else if (e.action === "left") {
-        let gameTypes = Object.keys(state.lobby);
-        gameTypes.map(gt => state.lobby[gt]).forEach(list => {
-          let index = list.indexOf(user);
-          if (index >= 0) {
-            list.splice(index, 1);
-          }
-        });
-      } else {
-        throw "Unknown action: " + e.action;
-      }
-    },
-    addInvite(state) { // other parameter: invite
-      state.count++;
     }
   },
   actions: {
@@ -75,18 +41,11 @@ const store = new Vuex.Store({
       Socket.send(json);
     },
     onSocketMessage(context, data) {
-      console.log("STORE IN", data);
       if (data.type == "Auth") {
-        context.commit("setPlayerName", data.name);
+        context.commit("lobby/setPlayer", data);
       }
-      if (data.type.startsWith("Invite")) {
+      if (data.type.startsWith("Invite") || data.type.startsWith("Lobby")) {
         context.dispatch("lobby/onSocketMessage", data);
-      }
-      if (data.type == "Lobby") {
-        context.commit("lobby/setLobbyUsers", data.users);
-      }
-      if (data.type === "LobbyChange") {
-        context.commit("changeLobby", data);
       }
       if (data.gameType) {
         let game = supportedGames.games[data.gameType]

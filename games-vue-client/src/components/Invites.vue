@@ -2,7 +2,7 @@
   <div class="invites">
     <v-card class="invites-recieved" v-if="invites.length > 0">
       <v-list two-line>
-        <div v-for="(invite, index) in invites" :key="invite.host" >
+        <div v-for="(invite, index) in invites" :key="invite.inviteId" >
           {{ invite.host }} invites you to play {{ invite.game }}
           <div class="invite-accept-options" v-if="!invite.cancelled && invite.response === null">
             <v-btn color="success" @click="inviteResponse(invite, true)">Accept</v-btn>
@@ -19,39 +19,6 @@
     </v-card>
     <v-dialog v-model="complexInviteDialog" max-width="42%" persistent>
       <InviteComplex />
-    </v-dialog>
-    <v-dialog v-model="inviteWaiting.dialogActive" max-width="42%" persistent>
-      <v-card class="invites-sent">
-        <v-card-title>
-          Invite
-        </v-card-title>
-        <v-card-text v-if="inviteWaiting.waitingFor.length > 0">
-          Waiting for response from
-          <v-chip v-for="username in inviteWaiting.waitingFor" :key="username">{{ username }}</v-chip>
-        </v-card-text>
-        <v-card-text v-if="inviteWaiting.accepted.length > 0">
-          Accepted:
-          <span v-for="username in inviteWaiting.accepted" :key="username">
-            {{ username }}
-          </span>
-        </v-card-text>
-        <v-card-text v-if="inviteWaiting.declined.length > 0">
-          Declined:
-          <span v-for="username in inviteWaiting.declined" :key="username">
-            {{ username }}
-          </span>
-        </v-card-text>
-        <v-card-text v-if="inviteWaiting.waitingFor.length == 0 && inviteWaiting.declined.length == 0">
-          <v-text-field label="Share invite link" placeholder="Invite link" readonly :value="inviteURL"></v-text-field>
-          <v-btn color="info" v-clipboard="() => inviteURL">Copy link</v-btn>
-        </v-card-text>
-        <v-card-actions>
-          <v-btn v-if="!inviteWaiting.cancelled"
-            color="error" @click="inviteCancel(inviteWaiting)">Cancel invite</v-btn>
-          <v-btn v-if="inviteWaiting.cancelled"
-            color="warning" @click="resetInviteWaiting()">Close</v-btn>
-        </v-card-actions>
-      </v-card>
     </v-dialog>
   </div>
 </template>
@@ -107,17 +74,15 @@ export default {
     Socket.$on("type:GameStarted", this.gameStartedMessage);
   },
   watch: {
-    complexInvite(newState) {
-      if (newState != null) {
-        this.complexInviteDialog = true;
-      }
+    inviteStep(newState) {
+      this.complexInviteDialog = newState > 0
     }
   },
   computed: {
     ...mapState('lobby', {
       invites: state => state.invites,
-      inviteWaiting: state => state.inviteWaiting,
-      complexInvite: state => state.complexInvite
+      inviteStep: state => state.inviteWaiting.inviteStep,
+      inviteWaiting: state => state.inviteWaiting
     }),
     inviteURL() {
       if (this.inviteWaiting.inviteId === null) {

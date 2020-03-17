@@ -25,6 +25,13 @@ class DslGameTest {
     fun startServer() {
         server = Server2(EventSystem())
         server!!.start(config)
+
+        val tokens = mutableListOf("12345", "23456")
+        fun authTest(message : ClientJsonMessage) {
+            AuthorizationSystem(server!!.events).handleGuest(message.client, tokens.removeAt(0))
+        }
+        server!!.messageRouter.handler("auth/guest", ::authTest)
+
     }
 
     @AfterEach
@@ -39,6 +46,11 @@ class DslGameTest {
 
         val p2 = WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket"))
         p2.connectBlocking()
+
+        p1.send("""{ "route": "auth/guest" }""")
+        val playerId1 = p1.expectJsonObject { it.getText("type") == "Auth" }.get("playerId").asText()
+        p2.send("""{ "route": "auth/guest" }""")
+        val playerId2 = p2.expectJsonObject { it.getText("type") == "Auth" }.get("playerId").asText()
 
         p1.send("""{ "route": "lobby/join", "gameTypes": ["$dslGame"], "maxGames": 1 }""")
         Thread.sleep(100)

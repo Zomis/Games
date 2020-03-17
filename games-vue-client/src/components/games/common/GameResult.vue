@@ -40,7 +40,8 @@ export default {
   methods: {
     playAgain() {
       let opponent = this.gameInfo.players[1 - this.gameInfo.yourIndex];
-      Socket.route("invites/invite", { gameType: this.gameInfo.gameType, invite: [opponent] });
+      this.$store.commit("lobby/createInvite", this.gameInfo.gameType);
+      Socket.route("invites/invite", { gameType: this.gameInfo.gameType, invite: [opponent.id] });
     },
     messageEliminated(e) {
       if (

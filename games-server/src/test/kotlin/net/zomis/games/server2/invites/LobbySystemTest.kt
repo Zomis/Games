@@ -2,6 +2,7 @@ package net.zomis.games.server2.invites
 
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
+import net.zomis.games.server2.Client
 import net.zomis.games.server2.ClientDisconnected
 import net.zomis.games.server2.doctools.DocEventSystem
 import net.zomis.games.server2.doctools.DocWriter
@@ -12,6 +13,9 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
+import java.util.UUID
+
+val Client.idName get() = """{"id":"${this.playerId}","name":"${this.name}"}"""
 
 class LobbySystemTest {
 
@@ -35,10 +39,10 @@ class LobbySystemTest {
         lobby = LobbySystem(features)
         features.add { f, e -> GameSystem(lobby::gameClients).setup(f, e, idGenerator) }
         events.with(lobby::setup)
-        clientAB2 = FakeClient().apply { name = "AB2" }
-        clientA1 = FakeClient().apply { name = "A1" }
-        clientB1 = FakeClient().apply { name = "B1" }
-        asker = FakeClient().apply { name = "Asker" }
+        clientAB2 = FakeClient().apply { name = "AB2"; playerId = UUID.fromString("11111111-1111-1111-1111-111111111111") }
+        clientA1 = FakeClient().apply { name = "A1"; playerId = UUID.fromString("22222222-2222-2222-2222-222222222222") }
+        clientB1 = FakeClient().apply { name = "B1"; playerId = UUID.fromString("33333333-3333-3333-3333-333333333333") }
+        asker = FakeClient().apply { name = "Asker"; playerId = UUID.fromString("44444444-4444-4444-4444-444444444444") }
 
         events.execute(GameTypeRegisterEvent("A"))
         events.execute(GameTypeRegisterEvent("B"))
@@ -52,7 +56,7 @@ class LobbySystemTest {
         client.interestingGames = value
         value.interestingGames.forEach {
             val gameType = features[GameSystem.GameTypes::class]!!.gameTypes[it]!!
-            lobby.gameClients(gameType.type)!!.clients.add(client)
+            lobby.gameClients(gameType.type)!!.add(client)
         }
     }
 
@@ -62,8 +66,8 @@ class LobbySystemTest {
 
         events.apply {
             lobby.sendAvailableUsers(asker)
-            Assertions.assertEquals("""{"type":"LobbyChange","client":"A1","action":"left"}""", asker.nextMessage())
-            Assertions.assertEquals("""{"type":"Lobby","users":{"A":["AB2"],"B":["AB2","B1"]}}""", asker.nextMessage())
+            Assertions.assertEquals("""{"type":"LobbyChange","player":${clientA1.idName},"action":"left"}""", asker.nextMessage())
+            Assertions.assertEquals("""{"type":"Lobby","users":{"A":[${clientAB2.idName}],"B":[${clientAB2.idName},${clientB1.idName}]}}""", asker.nextMessage())
         }
     }
 
@@ -72,7 +76,7 @@ class LobbySystemTest {
         events.apply {
             lobby.sendAvailableUsers(asker)
             val result = asker.nextMessage()
-            Assertions.assertEquals("""{"type":"Lobby","users":{"A":["AB2","A1"],"B":["AB2","B1"]}}""", result)
+            Assertions.assertEquals("""{"type":"Lobby","users":{"A":[${clientAB2.idName},${clientA1.idName}],"B":[${clientAB2.idName},${clientB1.idName}]}}""", result)
         }
     }
 
@@ -88,13 +92,13 @@ class LobbySystemTest {
 
         events.apply {
             lobby.sendAvailableUsers(asker)
-            Assertions.assertEquals("""{"type":"Lobby","users":{"A":["AB2"],"B":["AB2","B1"]}}""", asker.nextMessage())
+            Assertions.assertEquals("""{"type":"Lobby","users":{"A":[${clientAB2.idName}],"B":[${clientAB2.idName},${clientB1.idName}]}}""", asker.nextMessage())
         }
 
         events.execute(GameEndedEvent(game))
         events.apply {
             lobby.sendAvailableUsers(asker)
-            Assertions.assertEquals("""{"type":"Lobby","users":{"A":["AB2","A1"],"B":["AB2","B1"]}}""", asker.nextMessage())
+            Assertions.assertEquals("""{"type":"Lobby","users":{"A":[${clientAB2.idName},${clientA1.idName}],"B":[${clientAB2.idName},${clientB1.idName}]}}""", asker.nextMessage())
         }
     }
 

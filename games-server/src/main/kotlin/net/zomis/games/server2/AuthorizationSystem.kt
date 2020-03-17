@@ -47,7 +47,7 @@ class AuthorizationSystem(private val events: EventSystem) {
     }
 
     private fun sendLoginToClient(client: Client, loginName: String) {
-        client.send(mapOf("type" to "Auth", "name" to loginName))
+        client.send(mapOf("type" to "Auth", "playerId" to client.playerId, "name" to loginName))
     }
 
 }

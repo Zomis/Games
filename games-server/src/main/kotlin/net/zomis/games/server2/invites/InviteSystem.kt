@@ -31,8 +31,8 @@ data class Invite(
 
     fun sendInvite(message: ClientJsonMessage) {
         val inviteTargets = message.data.get("invite")
-        val targetClients = inviteTargets.map { it.asText() }.map {name ->
-            tools.gameClients(gameType)!!.clients.firstOrNull { it.name == name }
+        val targetClients = inviteTargets.map { it.asText() }.map {playerId ->
+            tools.gameClients(gameType)!!.findPlayerId(playerId)
         }.filterIsInstance<Client>().toMutableList()
         this.sendInviteTo(targetClients)
     }
@@ -41,6 +41,7 @@ data class Invite(
         logger.info { "Sending invite $this to $targetClients" }
         this.awaiting.addAll(targetClients)
         targetClients.forEach {
+            this.host.send(mapOf("type" to "InviteStatus", "playerId" to it.playerId.toString(), "status" to "pending", "inviteId" to this.id))
             it.send(mapOf("type" to "Invite", "host" to this.host.name, "game" to this.gameType, "inviteId" to this.id))
         }
     }
@@ -82,7 +83,12 @@ data class Invite(
 
     fun respond(client: Client, accepted: Boolean) {
         logger.info { "Client $client responding to invite $this: $accepted" }
-        this.host.send(mapOf("type" to "InviteResponse", "user" to client.name, "accepted" to accepted, "inviteId" to this.id))
+        this.host.send(mapOf(
+            "type" to "InviteResponse",
+            "inviteId" to this.id,
+            "playerId" to client.playerId,
+            "accepted" to accepted
+        ))
         this.awaiting.remove(client)
         if (accepted) {
             this.accepted.add(client)
@@ -126,7 +132,8 @@ class InviteSystem(
         val invite = Invite(playerRange, tools, gameType, inviteId, host)
         invites[inviteId] = invite
 
-        invite.host.send(mapOf("type" to "InviteWaiting", "inviteId" to invite.id, "waitingFor" to invitees.map { it.name }.toList()))
+        invite.host.send(mapOf("type" to "InviteWaiting", "inviteId" to invite.id,
+            "playersMin" to playerRange.min(), "playersMax" to playerRange.max()))
         invite.sendInviteTo(invitees)
         return invite
     }
@@ -147,8 +154,8 @@ class InviteSystem(
         val gameType = message.data.get("gameType")?.asText() ?: throw IllegalArgumentException("Missing field: gameType")
         val inviteTargets = message.data.get("invite")
         val inviteId = "${gameType}-${message.client.name}-${invites.size}"
-        val targetClients = inviteTargets.map { it.asText() }.map {name ->
-            gameClients(gameType)!!.clients.firstOrNull { it.name == name }
+        val targetClients = inviteTargets.map { it.asText() }.map {playerId ->
+            gameClients(gameType)!!.findPlayerId(playerId)
         }.filterIsInstance<Client>().toMutableList()
 
         this.createInvite(gameType, inviteId, message.client, targetClients)

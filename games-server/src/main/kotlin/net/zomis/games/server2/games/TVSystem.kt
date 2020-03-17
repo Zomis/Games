@@ -77,7 +77,7 @@ class TVSystem(private val gameClients: GameTypeMap<ClientList>) {
         }
 
         // Start new AI Game
-        val choosableTypes = possibleTypes.filter { gameClients(it.key)!!.clients.any { it.isAI() } }.keys.toList()
+        val choosableTypes = possibleTypes.filter { gameClients(it.key)!!.list().any { it.isAI() } }.keys.toList()
         val gameType = gameTypes[choosableTypes[random.nextInt(choosableTypes.size)]]!!
         logger.info { "Starting a new AI Game of ${gameType.type}" }
         AIGames(gameClients).startNewAIGame(events, gameType.type)

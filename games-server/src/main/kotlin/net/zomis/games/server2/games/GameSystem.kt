@@ -13,6 +13,7 @@ import net.zomis.games.dsl.PlayerIndex
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.server2.*
 import net.zomis.games.server2.invites.ClientList
+import net.zomis.games.server2.invites.playerMessage
 import java.util.concurrent.atomic.AtomicInteger
 
 val nodeFactory = JsonNodeFactory(false)
@@ -21,6 +22,9 @@ fun ServerGame.toJson(type: String): ObjectNode {
         .put("type", type)
         .put("gameType", this.gameType.type)
         .put("gameId", this.gameId)
+}
+fun ServerGame.map(type: String): Map<String, Any> {
+    return mapOf("type" to type, "gameType" to this.gameType.type, "gameId" to this.gameId)
 }
 
 data class ServerGameOptions(val database: Boolean)
@@ -185,13 +189,12 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>) {
     }
 
     fun sendGameStartedMessages(game: ServerGame) {
-        val playerNames = game.players
+        val players = game.players
             .asSequence()
-            .map { it.name ?: "(unknown)" }
-            .fold(objectMapper.createArrayNode()) { arr, name -> arr.add(name) }
+            .map { playerMessage(it) }.toList()
 
         game.players.forEachIndexed { index, client ->
-            client.send(game.toJson("GameStarted").put("yourIndex", index).set("players", playerNames))
+            client.send(game.map("GameStarted").plus("yourIndex" to index).plus("players" to players))
         }
     }
 

@@ -9,12 +9,21 @@ import net.zomis.games.server2.db.UnfinishedGames
 import net.zomis.games.server2.games.*
 
 data class ClientInterestingGames(val interestingGames: Set<String>, val maxGames: Int, val currentGames: MutableSet<ServerGame>)
-data class ClientList(val clients: MutableSet<Client> = mutableSetOf())
+data class ClientList(private val clients: MutableSet<Client> = mutableSetOf()) {
+    fun findPlayerId(playerId: String) = clients.firstOrNull { it.playerId.toString() == playerId }
+    fun add(client: Client) = clients.add(client)
+    fun remove(client: Client) = clients.remove(client)
+    fun list(): List<Client> = clients.toList()
+}
 
 val Client.lobbyOptions: ClientInterestingGames get() = this.interestingGames
 
 class LobbyGameType {
     val clients = ClientList()
+}
+
+fun playerMessage(client: Client): Map<String, String> {
+    return mapOf("id" to client.playerId.toString(), "name" to client.name!!)
 }
 
 /**
@@ -42,10 +51,10 @@ class LobbySystem(private val features: Features) {
                 logger.warn("Client requested gameType $gt which does not exist.")
                 return@flatMap emptyList<Client>()
             }
-            gameTypes[gt]!!.clients.clients
+            gameTypes[gt]!!.clients.list()
         }.toSet().send(newClientMessage)
         interestingGameTypes.forEach { gt ->
-            gameTypes[gt]?.clients?.clients?.add(message.client)
+            gameTypes[gt]?.clients?.add(message.client)
         }
         logger.info { "${message.client.name} joined lobby for $interestingGameTypes" }
     }
@@ -71,9 +80,9 @@ class LobbySystem(private val features: Features) {
         events.listen("Disconnect Client remove ClientInterestingGames", ClientDisconnected::class, { true }, {
             val oldInteresting = it.client.lobbyOptions.interestingGames
             val message = this.disconnectedMessage(it.client)
-            oldInteresting.flatMap { gt -> gameTypes[gt]!!.clients.clients }.toSet().send(message)
+            oldInteresting.flatMap { gt -> gameTypes[gt]!!.clients.list() }.toSet().send(message)
             oldInteresting.map { gameType -> gameTypes[gameType]!! }.forEach { gameType ->
-                gameType.clients.clients.remove(it.client)
+                gameType.clients.remove(it.client)
             }
         })
 
@@ -85,14 +94,14 @@ class LobbySystem(private val features: Features) {
         val interestingGames = client.lobbyOptions.interestingGames
 
         // Return Map<GameType, List<Client name>>
-        val resultingMap = mutableMapOf<String, List<String>>()
+        val resultingMap = mutableMapOf<String, List<Map<String, String>>>()
         gameTypes.entries.forEach {gameType ->
             if (interestingGames.contains(gameType.key)) {
-                resultingMap[gameType.key] = gameType.value.clients.clients.filter {
+                resultingMap[gameType.key] = gameType.value.clients.list().filter {
                     val cig = it.interestingGames
                     return@filter cig.maxGames > cig.currentGames.size
                 }.filter { it != client }.filter { it.name != null }
-                .map { it.name!! }
+                .map { playerMessage(it) }
             }
         }
         client.send(mapOf("type" to "Lobby", "users" to resultingMap))
@@ -121,7 +130,7 @@ class LobbySystem(private val features: Features) {
     private fun disconnectedMessage(client: Client): Map<String, Any?> {
         return mapOf(
             "type" to "LobbyChange",
-            "client" to client.name,
+            "player" to playerMessage(client),
             "action" to "left"
         )
     }
@@ -129,7 +138,7 @@ class LobbySystem(private val features: Features) {
     private fun newClientMessage(client: Client, interestingGameTypes: Set<String>): Map<String, Any?> {
         return mapOf(
             "type" to "LobbyChange",
-            "client" to client.name,
+            "player" to playerMessage(client),
             "action" to "joined",
             "gameTypes" to interestingGameTypes
         )

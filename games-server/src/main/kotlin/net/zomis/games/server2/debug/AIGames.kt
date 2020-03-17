@@ -34,7 +34,7 @@ class AIGames(private val gameClients: GameTypeMap<ClientList>) {
             val gameTypeName = params[1]
             val player1 = params[2]
             val player2 = params[3]
-            val clients = gameClients(gameTypeName)?.clients
+            val clients = gameClients(gameTypeName)?.list()
             if (clients == null) {
                 logger.warn { "No such gameType: $gameTypeName" }
                 return@listen
@@ -59,7 +59,7 @@ class AIGames(private val gameClients: GameTypeMap<ClientList>) {
     }
 
     fun startNewAIGame(events: EventSystem, gameType: String) {
-        val ais = gameClients(gameType)!!.clients.filter { it.isAI() }
+        val ais = gameClients(gameType)!!.list().filter { it.isAI() }
         val player1 = ais[random.nextInt(ais.size)]
         val player2 = ais[random.nextInt(ais.size)]
         startNewGame(events, gameType, player1, player2)

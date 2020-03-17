@@ -76,7 +76,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
 
     fun findOrCreatePlayers(gameType: String, playerIds: List<String>): Collection<Client> {
         return playerIds.map {playerId ->
-            gameSystem.gameClients(gameType)?.clients?.find { it.playerId.toString() == playerId } ?: FakeClient(UUID.fromString(playerId))
+            gameSystem.gameClients(gameType)?.list()?.find { it.playerId.toString() == playerId } ?: FakeClient(UUID.fromString(playerId))
         }
     }
 
