@@ -1,6 +1,7 @@
 package net.zomis.games.ais
 
 import net.zomis.games.server2.games.impl.TTAlphaBeta
+import net.zomis.games.server2.games.impl.TTConnect4AlphaBeta
 import net.zomis.tttultimate.TTPlayer
 import net.zomis.tttultimate.TTWinCondition
 import net.zomis.tttultimate.Winnable
@@ -38,7 +39,7 @@ class Connect4MissingTest {
             w
         }.toList(), required)
         Assertions.assertEquals(row.length, winCondition.size())
-        val result = TTAlphaBeta(0).missingForWin(winCondition, ttPlayer, required)
+        val result = TTConnect4AlphaBeta.missingForWin(winCondition, ttPlayer, required)
         if (expected == "-") {
             Assertions.assertNull(result)
         } else {
