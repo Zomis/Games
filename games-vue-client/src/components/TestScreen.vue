@@ -15,7 +15,7 @@ export default {
     return { ready: false }
   },
   mounted() {
-    this.$store.commit("onSocketMessage", { type: "Auth", playerId: "self", name: "Myself" })
+    this.$store.dispatch("onSocketMessage", { type: "Auth", playerId: "self", name: "Myself" })
     this.$store.commit("lobby/createInvite", "Artax")
     this.$store.commit("lobby/inviteStep", 2)
     this.$store.dispatch("onSocketMessage", { type: "Lobby", users: { Artax: [

@@ -118,6 +118,8 @@ class TTT3D {
         return this.pieces[y][x].any { it.piece == null }
     }
 
+    fun get(y: Int, x: Int, z: Int): TTT3DPiece? = this.pieces[y][x][z].piece
+
     fun canPlayAt(field: TTT3DPoint): Boolean {
         return field.piece == null &&
             this.pieces[field.y][field.x].firstOrNull { it.piece == null } == field

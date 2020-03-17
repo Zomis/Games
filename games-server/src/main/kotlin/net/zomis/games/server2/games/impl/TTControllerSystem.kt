@@ -13,6 +13,7 @@ fun TTPlayer.toWinResult(playerIndex: Int): WinResult {
     return when {
         this == TTPlayer.NONE -> WinResult.DRAW
         this == TTPlayer.BLOCKED -> WinResult.DRAW
+        this == TTPlayer.XO -> WinResult.DRAW
         this.playerIndex() == playerIndex -> WinResult.WIN
         else -> WinResult.LOSS
     }

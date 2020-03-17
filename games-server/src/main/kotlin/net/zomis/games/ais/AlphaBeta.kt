@@ -8,7 +8,7 @@ class AlphaBeta<S, A>(
     val branching: (S, A) -> S,
     val terminalState: (S) -> Boolean,
     val heuristic: (S) -> Double,
-    val depthRemainingBonus: Double = 0.0
+    private val depthRemainingBonus: Double = 0.0
 ) {
 
     private suspend fun alphaBeta(state: S, depth: Int, alpha: Double, beta: Double, maximizingPlayer: Boolean): Pair<A?, Double> {

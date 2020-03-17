@@ -12,7 +12,30 @@ import net.zomis.tttultimate.TTWinCondition
 import net.zomis.tttultimate.Winnable
 import net.zomis.tttultimate.games.*
 
-class TTAlphaBeta(val level: Int) {
+object TTConnect4AlphaBeta {
+
+    fun emptySpaces(it: TTWinCondition): Int {
+        return it.hasCurrently(TTPlayer.NONE)
+    }
+
+    fun missingForWin(winCondition: TTWinCondition, player: TTPlayer, required: Int): Int? {
+        fun missingInWindow(winnables: List<Winnable>): Int? {
+            if (winnables.any { it.wonBy == player.next() || it.wonBy == TTPlayer.BLOCKED }) {
+                return null
+            }
+            return winnables.count { it.wonBy == TTPlayer.NONE }
+        }
+        return winCondition.toList().windowed(required, 1, false)
+                .map { it to missingInWindow(it) }
+                .filter { it.second != null }
+                .bestBy { -it.second!!.toDouble() }
+                .map { it.second }
+                .firstOrNull()
+    }
+
+}
+
+class TTAlphaBeta(val level: Int, val heuristic: (model: TTController, myPlayer: TTPlayer) -> Double) {
 
     private val logger = KLoggers.logger(this)
 
@@ -26,77 +49,36 @@ class TTAlphaBeta(val level: Int) {
             is TTClassicController -> TTClassicController(factories.classicMNK(3, 3, 3))
             else -> throw IllegalArgumentException("$this is not able to copy $game")
         }
-        try {
-            copied.makeMoves(history)
-        } catch (e: Exception) {
-            logger.error(e, "Unable to repeat moves: $history in $copied")
-            throw e
-        }
+        copied.makeMoves(history)
         return copied
     }
 
-    private val actions: (TTController) -> List<Point> = {model ->
+    val actions: (TTController) -> List<Point> = {model ->
         var subs = model.game.subs()
         if (model is TTUltimateController) {
             subs = subs.flatMap { it.subs() }
         }
         subs.filter { model.isAllowedPlay(it) }.map { Point(it.globalX, it.globalY) }
     }
-    private val branching: (TTController, Point) -> TTController = { game, move ->
+    val branching: (TTController, Point) -> TTController = { game, move ->
         val copy = this.copy(game)
         copy.play(copy.game.getSmallestTile(move.x, move.y))
         copy
     }
-    private val terminalState: (TTController) -> Boolean = { it.isGameOver }
-
-    private fun TTWinCondition.emptySpaces(): Int {
-        return this.hasCurrently(TTPlayer.NONE)
-    }
-
-    fun missingForWin(winCondition: TTWinCondition, player: TTPlayer, required: Int): Int? {
-        fun missingInWindow(winnables: List<Winnable>): Int? {
-            if (winnables.any { it.wonBy == player.next() || it.wonBy == TTPlayer.BLOCKED }) {
-                return null
-            }
-            return winnables.count { it.wonBy == TTPlayer.NONE }
-        }
-        return winCondition.toList().windowed(required, 1, false)
-            .map { it to missingInWindow(it) }
-            .filter { it.second != null }
-            .bestBy { -it.second!!.toDouble() }
-            .map { it.second }
-            .firstOrNull()
-    }
+    val terminalState: (TTController) -> Boolean = { it.isGameOver }
 
     fun aiMove(model: TTController, depthRemainingBonus: Double): Point {
         val oppIndex = model.currentPlayer.playerIndex()
-        val myPlayerIndex = model.currentPlayer.next().playerIndex()
+        val myPlayer = model.currentPlayer.next()
+        val myPlayerIndex = myPlayer.playerIndex()
         val heuristic: (TTController) -> Double = {state ->
-            val opp = model.currentPlayer // 'I' just played so it's opponent's turn
-            val me = opp.next()
-            var result = 0.0
-            if (state.isGameOver) {
+            var result = if (state.isGameOver) {
                 val winStatus = state.wonBy.toWinResult(myPlayerIndex)
-                result = winStatus.result * 100
+                winStatus.result * 100
             } else {
-                result = if (model is TTOthello) {
-                    state.game.subs().sumByDouble {
-                        it.wonBy.toWinResult(myPlayerIndex).result - it.wonBy.toWinResult(oppIndex).result
-                    } / 10.0 // Divide by 10 to work with lower numbers
-                } else {
-                    fun groupBy(who: TTPlayer): (TTWinCondition) -> Int? = {
-                        if (model is TTClassicControllerWithGravity) {
-                            missingForWin(it, who, 4)
-                        } else { it.emptySpaces() }
-                    }
-                    val myWins = state.game.winConds.filter { it.isWinnable(me) }.groupBy(groupBy(me)).mapValues { it.value.size }
-                    val opWins = state.game.winConds.filter { it.isWinnable(opp) }.groupBy(groupBy(opp)).mapValues { it.value.size }
-                    val positive = (myWins[1]?:0) * 4 + (myWins[2]?:0) * 2 + (myWins[3]?:0) * 0.1
-                    val negative = (opWins[1]?:0) * 4 + (opWins[2]?:0) * 2 + (opWins[3]?:0) * 0.1
-                    positive - negative
-                }
+                heuristic(model, myPlayer)
             }
-            -result // TODO: Remove double-negations (wrong "myPlayer" and maybe also "opp")
+            result
         }
         val ai = AlphaBeta(actions, branching, terminalState, heuristic, depthRemainingBonus)
 

@@ -36,6 +36,12 @@ class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override va
     }
     val actions = ActionsImpl(model, logic, replayState)
 
+    fun copy(copier: (source: T, destination: T) -> Unit): GameImpl<T> {
+        val copy = GameImpl(setupContext, playerCount, config)
+        copier(this.model, copy.model)
+        return copy
+    }
+
     fun view(playerIndex: PlayerIndex): Map<String, Any?> {
         val view = GameViewContext(model, eliminationCallback, playerIndex, replayState)
         setupContext.viewDsl(view)
