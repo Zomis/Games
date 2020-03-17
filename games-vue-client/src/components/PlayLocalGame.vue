@@ -46,7 +46,7 @@ export default {
   mounted() {
     let dsl = this.supportedGame.dsl
     let gameSetup = new gamejs.net.zomis.games.dsl.impl.GameSetupImpl(dsl)
-    this.game = gameSetup.createGame_s8jyv4$(gameSetup.getDefaultConfig())
+    this.game = gameSetup.createGame_vux3hl$(2, gameSetup.getDefaultConfig())
     this.updateView(0)
   },
   methods: {
