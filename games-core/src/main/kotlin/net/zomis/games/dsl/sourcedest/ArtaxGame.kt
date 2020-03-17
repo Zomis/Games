@@ -79,7 +79,7 @@ class TTArtax(private val eliminationCallback: PlayerEliminationCallback,
             return@filter this.board.all().any { tile -> tile.value == null &&
                 playerTiles.any { distance(tile, it) <= 2 } }
         }
-        if (playersThatCanMove.isEmpty()) {
+        if (playersThatCanMove.size <= 1) {
             // If no moves are possible
             val counts = this.board.all().filter { it.value != null }
                 .groupBy { it.value }
