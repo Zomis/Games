@@ -251,13 +251,13 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
                 .withHashKey(this.pk, Prefix.GAME.sk(gameId))
                 .withRangeKeyCondition(Prefix.ZMOVE.rangeKeyCondition()))
         return dbMoves.map {
-            GamesTables.MoveHistory(
+            Prefix.ZMOVE.extract(it.getString(this.sk)).toInt() to GamesTables.MoveHistory(
                 it[Fields.MOVE_TYPE.fieldName] as String,
                 (it[Fields.MOVE_PLAYER_INDEX.fieldName] as BigDecimal).toInt(),
                 convertFromDBFormat(it[Fields.MOVE.fieldName]),
                 convertFromDBFormat(it[Fields.MOVE_STATE.fieldName]) as Map<String, Any>?
             )
-        }
+        }.sortedBy { it.first }.map { it.second }
     }
 
     fun authenticate(event: ClientLoginEvent) {
