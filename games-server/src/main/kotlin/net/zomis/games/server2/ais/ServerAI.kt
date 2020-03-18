@@ -1,6 +1,7 @@
 package net.zomis.games.server2.ais
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.server2.*
 import net.zomis.games.server2.games.GameStartedEvent
@@ -16,6 +17,9 @@ data class DelayedAIMoves(val moves: List<PlayerGameMoveRequest>)
 val ServerAIProvider = "server-ai"
 
 class ServerAI(val gameType: String, val name: String, val perform: (game: ServerGame, playerIndex: Int) -> List<PlayerGameMoveRequest>) {
+
+    private val logger = KLoggers.logger(this)
+
     private val executor = Executors.newSingleThreadExecutor()
     private val mapper = ObjectMapper()
 
@@ -53,11 +57,15 @@ class ServerAI(val gameType: String, val name: String, val perform: (game: Serve
                 return@listen
             }
             executor.submit {
-                val aiMoves = playerIndex.map {
-                    perform.invoke(game, it)
-                }
-                aiMoves.filter { it.isNotEmpty() }.forEach {singleAIMoves ->
-                    events.execute(DelayedAIMoves(singleAIMoves))
+                try {
+                    val aiMoves = playerIndex.map {
+                        perform.invoke(game, it)
+                    }
+                    aiMoves.filter { it.isNotEmpty() }.forEach {singleAIMoves ->
+                        events.execute(DelayedAIMoves(singleAIMoves))
+                    }
+                } catch (e: Exception) {
+                    logger.error(e) { "Unable to make move for $this in $game" }
                 }
             }
         })
