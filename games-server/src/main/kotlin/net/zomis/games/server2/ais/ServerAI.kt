@@ -3,6 +3,7 @@ package net.zomis.games.server2.ais
 import com.fasterxml.jackson.databind.ObjectMapper
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
+import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.server2.*
 import net.zomis.games.server2.games.GameStartedEvent
 import net.zomis.games.server2.games.ServerGame
@@ -15,6 +16,10 @@ data class AIMoveRequest(val client: Client, val game: ServerGame)
 data class DelayedAIMoves(val moves: List<PlayerGameMoveRequest>)
 
 val ServerAIProvider = "server-ai"
+
+fun <T: Any> noAvailableActions(model: GameImpl<T>, index: Int): Boolean {
+    return model.actions.types().all { it.availableActions(index).none() }
+}
 
 class ServerAI(val gameType: String, val name: String, val perform: (game: ServerGame, playerIndex: Int) -> List<PlayerGameMoveRequest>) {
 

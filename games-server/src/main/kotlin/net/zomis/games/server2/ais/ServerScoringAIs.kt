@@ -94,6 +94,9 @@ class ServerScoringAIs {
         val config = ai.build()
         ServerAI(gameType, name) { game, index ->
             val obj = game.obj as GameImpl<T>
+            if (noAvailableActions(obj, index)) {
+                return@ServerAI listOf()
+            }
             val scorer = scorer(config, index)
 
             val scores = scorer.analyzeAndScore(obj)

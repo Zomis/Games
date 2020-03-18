@@ -81,10 +81,6 @@ class ServerAlphaBetaAIs {
         }.register(events)
     }
 
-    private fun <T: Any> noAvailableActions(model: GameImpl<T>, index: Int): Boolean {
-        return model.actions.types().all { it.availableActions(index).none() }
-    }
-
     fun heuristicTTT(state: TTController, myIndex: Int): Double {
         val me = if (myIndex == 0) TTPlayer.X else TTPlayer.O
         val opp = me.next()
