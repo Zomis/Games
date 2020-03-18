@@ -46,6 +46,7 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, moveHistory: List<GamesT
                 throw BadReplayException("Unable to perform $it: Move at index $index is not allowed. View is $view")
             }
             logic.replayAction(actionable, it.state)
+            game.stateCheck()
             views.add(game.view(null))
         }
     }
