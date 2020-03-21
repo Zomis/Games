@@ -28,21 +28,21 @@ private enum class AlphaBetaSpeedMode(val nameSuffix: String, val depthRemaining
     QUICK("_Nice", 0.01),
 }
 typealias AlphaBetaCopier<S> = (old: S, copy: S) -> Unit
-data class AlphaBetaAIFactory<S>(
+data class AlphaBetaAIFactory<S: Any>(
     val copier: AlphaBetaCopier<S>,
     val gameType: String,
     val namePrefix: String,
     val maxLevel: Int,
     val useSpeedModes: Boolean,
-    val heuristic: (S, Int) -> Double
+    val heuristic: (GameImpl<S>, Int) -> Double
 )
 
 class ServerAlphaBetaAIs {
     private val logger = KLoggers.logger(this)
 
-    private fun <S: Any> createAlphaBetaAI(gameType: String, copier: (S, S) -> Unit, events: EventSystem, namePrefix: String, depth: Int, speedMode: AlphaBetaSpeedMode, heuristic: (S, Int) -> Double) {
+    private fun <S: Any> createAlphaBetaAI(gameType: String, factory: AlphaBetaAIFactory<S>, events: EventSystem, depth: Int, speedMode: AlphaBetaSpeedMode) {
         val terminalState: (GameImpl<S>) -> Boolean = { it.isGameOver() }
-        ServerAI(gameType, "#AI_${namePrefix}_" + gameType + "_" + depth + speedMode.nameSuffix) { game, index ->
+        ServerAI(gameType, "#AI_${factory.namePrefix}_" + gameType + "_" + depth + speedMode.nameSuffix) { game, index ->
             val model = game.obj as GameImpl<S>
             if (noAvailableActions(model, index)) {
                 return@ServerAI emptyList()
@@ -57,7 +57,7 @@ class ServerAlphaBetaAIs {
                 }
             }
             val branching: (GameImpl<S>, Actionable<S, Any>) -> GameImpl<S> = { oldGame, action ->
-                val copy = oldGame.copy(copier)
+                val copy = oldGame.copy(factory.copier)
                 val actionType = copy.actions.type(action.actionType)!!
                 val actionCopy = actionType.createAction(action.playerIndex, action.parameter)
                 if (!actionType.isAllowed(actionCopy)) {
@@ -67,7 +67,7 @@ class ServerAlphaBetaAIs {
                 copy.stateCheck()
                 copy
             }
-            val heuristic2: (GameImpl<S>) -> Double = { heuristic(it.model, index) }
+            val heuristic2: (GameImpl<S>) -> Double = { factory.heuristic(it, index) }
             val alphaBeta = AlphaBeta(actions, branching, terminalState, heuristic2, speedMode.depthRemainingBonus)
             logger.info { "Evaluating AlphaBeta options for $gameType $depth" }
 
@@ -138,6 +138,9 @@ class ServerAlphaBetaAIs {
         } / 10.0 // Divide by 10 to work with lower numbers
     }
 
+    fun <T: Any> model(modelHeuristic: (game: T, myIndex: Int) -> Double): (GameImpl<T>, Int) -> Double =
+            { gameImpl, index -> modelHeuristic(gameImpl.model, index) }
+
     fun setup(events: EventSystem) {
         val ttAB: AlphaBetaCopier<TTController> = { old, copy ->
             val moves = old.saveHistory()
@@ -164,27 +167,27 @@ class ServerAlphaBetaAIs {
             copy.currentPlayer = old.currentPlayer
             copy.board.all().forEach { dest -> dest.value = old.board.get(dest.x, dest.y) }
         }
-        val aiFactories = listOf(
-            AlphaBetaAIFactory(ttAB,"DSL-TTT", "AlphaBeta",6, false, ::heuristicTTT),
-            AlphaBetaAIFactory(ttAB,"DSL-Connect4", "AlphaBeta", 5, true, ::heuristicTTT),
-            AlphaBetaAIFactory(ttAB,"DSL-UTTT", "AlphaBeta", 3, false, ::heuristicTTT),
-            AlphaBetaAIFactory(ttAB,"DSL-Reversi", "AlphaBeta", 5, false, ::heuristicTileCount),
-            AlphaBetaAIFactory(quixoAB,"Quixo", "AlphaBeta", 3, false, ::heuristicQuixo),
-            AlphaBetaAIFactory(tt3Dab, "DSL-TTT3D", "AlphaBeta", 5, true, ::heuristicTTT3D)
+        val aiFactories = listOf<AlphaBetaAIFactory<out Any>>(
+            AlphaBetaAIFactory(ttAB,"DSL-TTT", "AlphaBeta",6, false, model(::heuristicTTT)),
+            AlphaBetaAIFactory(ttAB,"DSL-Connect4", "AlphaBeta", 5, true, model(::heuristicTTT)),
+            AlphaBetaAIFactory(ttAB,"DSL-UTTT", "AlphaBeta", 3, false, model(::heuristicTTT)),
+            AlphaBetaAIFactory(ttAB,"DSL-Reversi", "AlphaBeta", 5, false, model(::heuristicTileCount)),
+            AlphaBetaAIFactory(quixoAB,"Quixo", "AlphaBeta", 3, false, model(::heuristicQuixo)),
+            AlphaBetaAIFactory(tt3Dab, "DSL-TTT3D", "AlphaBeta", 5, true, model(::heuristicTTT3D))
         )
 
         events.listen("register AlphaBeta for TTController-games", GameTypeRegisterEvent::class, { event ->
             aiFactories.any { it.gameType == event.gameType }
         }, {event ->
-            aiFactories.filter { it.gameType == event.gameType }.forEach {factory ->
+            aiFactories.filter { it.gameType == event.gameType }.forEach {factory: AlphaBetaAIFactory<out Any> ->
                 (0 until factory.maxLevel).forEach {level ->
-                    createAlphaBetaAI(event.gameType, factory.copier, events, factory.namePrefix, level, AlphaBetaSpeedMode.NORMAL, factory.heuristic)
+                    createAlphaBetaAI(event.gameType, factory, events, level, AlphaBetaSpeedMode.NORMAL)
                 }
                 if (factory.useSpeedModes) {
-                    createAlphaBetaAI(event.gameType, factory.copier, events, factory.namePrefix, factory.maxLevel, AlphaBetaSpeedMode.QUICK, factory.heuristic)
-                    createAlphaBetaAI(event.gameType, factory.copier, events, factory.namePrefix, factory.maxLevel, AlphaBetaSpeedMode.SLOW, factory.heuristic)
+                    createAlphaBetaAI(event.gameType, factory, events, factory.maxLevel, AlphaBetaSpeedMode.QUICK)
+                    createAlphaBetaAI(event.gameType, factory, events, factory.maxLevel, AlphaBetaSpeedMode.SLOW)
                 } else {
-                    createAlphaBetaAI(event.gameType, factory.copier, events, factory.namePrefix, factory.maxLevel, AlphaBetaSpeedMode.NORMAL, factory.heuristic)
+                    createAlphaBetaAI(event.gameType, factory, events, factory.maxLevel, AlphaBetaSpeedMode.NORMAL)
                 }
             }
         })
