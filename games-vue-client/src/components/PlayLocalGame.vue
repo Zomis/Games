@@ -14,6 +14,7 @@ import kotlin from "kotlin"
 function valueToJS(value) {
 //    console.log(`valueToJS: ${typeof value} ${value}`)
     if (typeof value === 'number') { return value }
+    if (typeof value === 'boolean') { return value }
     if (value === null) return null;
     if (value.constructor.name === "ArrayList") return value.toArray().map(e => valueToJS(e))
     let results = {}
