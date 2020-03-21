@@ -31,6 +31,7 @@ typealias AlphaBetaCopier<S> = (old: S, copy: S) -> Unit
 data class AlphaBetaAIFactory<S>(
     val copier: AlphaBetaCopier<S>,
     val gameType: String,
+    val namePrefix: String,
     val maxLevel: Int,
     val useSpeedModes: Boolean,
     val heuristic: (S, Int) -> Double
@@ -39,9 +40,9 @@ data class AlphaBetaAIFactory<S>(
 class ServerAlphaBetaAIs {
     private val logger = KLoggers.logger(this)
 
-    private fun <S: Any> createAlphaBetaAI(gameType: String, copier: (S, S) -> Unit, events: EventSystem, depth: Int, speedMode: AlphaBetaSpeedMode, heuristic: (S, Int) -> Double) {
+    private fun <S: Any> createAlphaBetaAI(gameType: String, copier: (S, S) -> Unit, events: EventSystem, namePrefix: String, depth: Int, speedMode: AlphaBetaSpeedMode, heuristic: (S, Int) -> Double) {
         val terminalState: (GameImpl<S>) -> Boolean = { it.isGameOver() }
-        ServerAI(gameType, "#AI_AlphaBeta_" + gameType + "_" + depth + speedMode.nameSuffix) { game, index ->
+        ServerAI(gameType, "#AI_${namePrefix}_" + gameType + "_" + depth + speedMode.nameSuffix) { game, index ->
             val model = game.obj as GameImpl<S>
             if (noAvailableActions(model, index)) {
                 return@ServerAI emptyList()
@@ -164,12 +165,12 @@ class ServerAlphaBetaAIs {
             copy.board.all().forEach { dest -> dest.value = old.board.get(dest.x, dest.y) }
         }
         val aiFactories = listOf(
-            AlphaBetaAIFactory(ttAB,"DSL-TTT", 6, false, ::heuristicTTT),
-            AlphaBetaAIFactory(ttAB,"DSL-Connect4", 5, true, ::heuristicTTT),
-            AlphaBetaAIFactory(ttAB,"DSL-UTTT", 3, false, ::heuristicTTT),
-            AlphaBetaAIFactory(ttAB,"DSL-Reversi", 5, false, ::heuristicTileCount),
-            AlphaBetaAIFactory(quixoAB,"Quixo", 3, false, ::heuristicQuixo),
-            AlphaBetaAIFactory(tt3Dab, "DSL-TTT3D", 5, true, ::heuristicTTT3D)
+            AlphaBetaAIFactory(ttAB,"DSL-TTT", "AlphaBeta",6, false, ::heuristicTTT),
+            AlphaBetaAIFactory(ttAB,"DSL-Connect4", "AlphaBeta", 5, true, ::heuristicTTT),
+            AlphaBetaAIFactory(ttAB,"DSL-UTTT", "AlphaBeta", 3, false, ::heuristicTTT),
+            AlphaBetaAIFactory(ttAB,"DSL-Reversi", "AlphaBeta", 5, false, ::heuristicTileCount),
+            AlphaBetaAIFactory(quixoAB,"Quixo", "AlphaBeta", 3, false, ::heuristicQuixo),
+            AlphaBetaAIFactory(tt3Dab, "DSL-TTT3D", "AlphaBeta", 5, true, ::heuristicTTT3D)
         )
 
         events.listen("register AlphaBeta for TTController-games", GameTypeRegisterEvent::class, { event ->
@@ -177,13 +178,13 @@ class ServerAlphaBetaAIs {
         }, {event ->
             aiFactories.filter { it.gameType == event.gameType }.forEach {factory ->
                 (0 until factory.maxLevel).forEach {level ->
-                    createAlphaBetaAI(event.gameType, factory.copier, events, level, AlphaBetaSpeedMode.NORMAL, factory.heuristic)
+                    createAlphaBetaAI(event.gameType, factory.copier, events, factory.namePrefix, level, AlphaBetaSpeedMode.NORMAL, factory.heuristic)
                 }
                 if (factory.useSpeedModes) {
-                    createAlphaBetaAI(event.gameType, factory.copier, events, factory.maxLevel, AlphaBetaSpeedMode.QUICK, factory.heuristic)
-                    createAlphaBetaAI(event.gameType, factory.copier, events, factory.maxLevel, AlphaBetaSpeedMode.SLOW, factory.heuristic)
+                    createAlphaBetaAI(event.gameType, factory.copier, events, factory.namePrefix, factory.maxLevel, AlphaBetaSpeedMode.QUICK, factory.heuristic)
+                    createAlphaBetaAI(event.gameType, factory.copier, events, factory.namePrefix, factory.maxLevel, AlphaBetaSpeedMode.SLOW, factory.heuristic)
                 } else {
-                    createAlphaBetaAI(event.gameType, factory.copier, events, factory.maxLevel, AlphaBetaSpeedMode.NORMAL, factory.heuristic)
+                    createAlphaBetaAI(event.gameType, factory.copier, events, factory.namePrefix, factory.maxLevel, AlphaBetaSpeedMode.NORMAL, factory.heuristic)
                 }
             }
         })
