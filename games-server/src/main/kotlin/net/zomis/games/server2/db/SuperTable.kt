@@ -220,7 +220,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
         this.simpleUpdate(pkValue, SK_PUSH_TO_STATS, Instant.now().toEpochMilli())
     }
 
-    private fun <T : Any> logCapacity(description: String, capacity: (T) -> ConsumedCapacity?, function: () -> T): T {
+    fun <T : Any> logCapacity(description: String, capacity: (T) -> ConsumedCapacity?, function: () -> T): T {
         val startTime = System.nanoTime()
         val result = function()
         val endTime = System.nanoTime()
