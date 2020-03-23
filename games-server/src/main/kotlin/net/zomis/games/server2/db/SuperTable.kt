@@ -22,6 +22,8 @@ import java.time.Instant
 import java.util.UUID
 
 data class UnfinishedGames(val unfinishedGames: MutableSet<DBGameSummary>)
+data class MoveHistory(val moveType: String, val playerIndex: Int, val move: Any?, val state: Map<String, Any>?)
+data class PlayerView(val playerId: String, val name: String)
 
 class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: GameSystem) {
 
@@ -191,7 +193,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
         this.update("Add Move $move", update)
     }
 
-    private fun update(description: String, update: UpdateItemSpec) {
+    fun update(description: String, update: UpdateItemSpec) {
         this.logCapacity(description, { it.updateItemResult.consumedCapacity }, {
             table.table.updateItem(update.withReturnConsumedCapacity(ReturnConsumedCapacity.INDEXES))
         })
@@ -199,21 +201,14 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
 
     fun playerEliminated(event: PlayerEliminatedEvent) {
         val pkValue = Prefix.GAME.sk(event.game.gameId)
-//        val player = event.game.players[event.player]
-//        val skValue = Prefix.PLAYER.sk(player.playerId.toString())
 
         val playerData = mapOf(
-//            "Index" to event.player,
             "Result" to event.winner.result,
             "ResultPosition" to event.position,
             "ResultReason" to "eliminated"
         )
         this.update("Eliminate player ${event.player} in game $pkValue", UpdateItemSpec().withPrimaryKey(this.pk, pkValue, this.sk, pkValue)
           .withAttributeUpdate(AttributeUpdate(Fields.PLAYER_PREFIX.fieldName + event.player).put(playerData)))
-//        table.performUpdate(UpdateItemSpec().withPrimaryKey(this.pk, pkValue, this.sk, gameSortKey(event.game.gameId))
-//            .withAttributeUpdate(AttributeUpdate(Fields.PLAYER_PREFIX.fieldName + event.player).put(
-//                playerData + ("PlayerId" to player.playerId.toString()) + ("PlayerName" to player.name))
-//            ))
     }
 
     fun finishGame(game: ServerGame) {
@@ -246,12 +241,12 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
         }.filterNotNull().toSet()
     }
 
-    fun getGameMoves(gameId: String): List<GamesTables.MoveHistory> {
+    fun getGameMoves(gameId: String): List<MoveHistory> {
         val dbMoves = this.queryTable(QuerySpec()
                 .withHashKey(this.pk, Prefix.GAME.sk(gameId))
                 .withRangeKeyCondition(Prefix.ZMOVE.rangeKeyCondition()))
         return dbMoves.map {
-            Prefix.ZMOVE.extract(it.getString(this.sk)).toInt() to GamesTables.MoveHistory(
+            Prefix.ZMOVE.extract(it.getString(this.sk)).toInt() to MoveHistory(
                 it[Fields.MOVE_TYPE.fieldName] as String,
                 (it[Fields.MOVE_PLAYER_INDEX.fieldName] as BigDecimal).toInt(),
                 convertFromDBFormat(it[Fields.MOVE.fieldName]),
@@ -305,11 +300,13 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
         }
     }
 
-    private fun simpleUpdate(pkValue: String, skValue: String, data: Long, vararg pairs: Pair<Fields, Any>) {
+    fun simpleUpdate(pkValue: String, skValue: String, data: Long?, vararg pairs: Pair<Fields, Any>) {
         val update = UpdateItemSpec().withPrimaryKey(this.pk, pkValue, this.sk, skValue)
             .withAttributeUpdate(
-                listOf(AttributeUpdate(this.data).put(data)) + pairs.map {
+                pairs.map {
                     AttributeUpdate(it.first.fieldName).put(it.second)
+                }.let {
+                    if (data != null) it.plus(AttributeUpdate(this.data).put(data)) else it
                 }
             )
         this.update("Simple Update $pkValue, $skValue", update)
@@ -318,8 +315,9 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
     fun authenticateSession(session: String) {}
 
     fun getGameSummary(gameId: String): DBGameSummary? {
+        val pureGameId = Prefix.GAME.extract(gameId)
         val query = QuerySpec()
-            .withHashKey(this.pk, gameId)
+            .withHashKey(this.pk, Prefix.GAME.sk(pureGameId))
             .withRangeKeyCondition(RangeKeyCondition(this.sk).between("a", "y"))
 
         val sks = this.queryTable(query).associateBy {
@@ -331,7 +329,9 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
             val playerId = Prefix.PLAYER.extract(playerEntry.key)
             // Look in it[Fields.GAME_PLAYERS] for which indexes a player belongs to. (Maybe also store name?)
             val indexes = playerEntry.value[Fields.GAME_PLAYERS.fieldName] as List<Map<String, Any>>
-            return@flatMap indexes.map { it["Index"] as BigDecimal }.map { it.toInt() }.map {index ->
+            return@flatMap indexes.map {playerInfo ->
+                val index = (playerInfo["Index"] as BigDecimal).toInt()
+                val playerName = playerInfo["Name"] as String? ?: "UNKNOWN"
                 val attributeName = Fields.PLAYER_PREFIX.fieldName + index
                 val hasDetails = gameDetails.hasAttribute(attributeName)
                 val playerResults = if (hasDetails) {
@@ -340,10 +340,10 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
                     val resultPosition = (details["ResultPosition"] as BigDecimal).toInt()
                     PlayerInGameResults(result, resultPosition, details["ResultReason"] as String, mapOf())
                 } else null
-                PlayerInGame(GamesTables.PlayerView(playerId, "UNKNOWN"), index, playerResults)
+                PlayerInGame(PlayerView(playerId, playerName), index, playerResults)
             }
         }
-        val unfinished = sks.any { it.key == this.SK_UNFINISHED }
+        val unfinished = sks.any { it.key == this.SK_UNFINISHED || it.key == "tag:$SK_UNFINISHED" }
         val hidden = gameDetails.hasAttribute(Fields.GAME_HIDDEN.fieldName)
         val gameState = when {
             unfinished -> GameState.UNFINISHED

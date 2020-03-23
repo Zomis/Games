@@ -14,7 +14,8 @@ enum class GameState(val value: Int) {
 }
 data class PlayerInGameResults(val result: Double,
    val resultPosition: Int, val resultReason: String, val score: Map<String, Any?>)
-data class PlayerInGame(val player: GamesTables.PlayerView?, val playerIndex: Int, val results: PlayerInGameResults?)
+data class PlayerInGame(val player: PlayerView?, val playerIndex: Int, val results: PlayerInGameResults?)
+class BadReplayException(message: String): Exception(message)
 
 private val mapper = jacksonObjectMapper()
 data class DBGameSummary(
@@ -27,7 +28,7 @@ data class DBGameSummary(
     val timeStarted: Long,
     val timeLastAction: Long
 )
-class DBGame(@JsonUnwrapped val summary: DBGameSummary, moveHistory: List<GamesTables.MoveHistory>) {
+class DBGame(@JsonUnwrapped val summary: DBGameSummary, moveHistory: List<MoveHistory>) {
 
     private val gameSetup = GameSetupImpl(summary.gameSpec)
     @JsonIgnore

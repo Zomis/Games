@@ -22,7 +22,7 @@ fun timeStamp(): AttributeValue {
 class DBIntegration(gameSystem: GameSystem) {
 
     private val logger = KLoggers.logger(this)
-    private val dynamoDB = AmazonDynamoDBClientBuilder.standard()
+    val dynamoDB = AmazonDynamoDBClientBuilder.standard()
         .withRegion(Regions.EU_CENTRAL_1)
         .build()
     private val superTable = SuperTable(dynamoDB, gameSystem)
@@ -40,7 +40,7 @@ class DBIntegration(gameSystem: GameSystem) {
 
         requests.filter { !existingTables.contains(it.tableName) }.forEach {
             val result = ddb.createTable(it)
-            println("Creating ${it.tableName}: " + result)
+            logger.info { "Creating ${it.tableName}: " + result }
         }
     }
 
