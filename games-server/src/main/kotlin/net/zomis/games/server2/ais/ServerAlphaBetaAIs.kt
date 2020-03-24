@@ -22,7 +22,7 @@ import net.zomis.tttultimate.TTWinCondition
 import net.zomis.tttultimate.games.TTClassicControllerWithGravity
 import net.zomis.tttultimate.games.TTController
 
-private enum class AlphaBetaSpeedMode(val nameSuffix: String, val depthRemainingBonus: Double) {
+enum class AlphaBetaSpeedMode(val nameSuffix: String, val depthRemainingBonus: Double) {
     NORMAL("", 0.0),
     SLOW("_Evil", -0.01),
     QUICK("_Nice", 0.01),
@@ -35,52 +35,13 @@ data class AlphaBetaAIFactory<S: Any>(
     val maxLevel: Int,
     val useSpeedModes: Boolean,
     val heuristic: (GameImpl<S>, Int) -> Double
-)
+) {
+    fun aiName(level: Int, speedMode: AlphaBetaSpeedMode)
+        = "#AI_${this.namePrefix}_" + this.gameType + "_" + level + speedMode.nameSuffix
+}
 
-class ServerAlphaBetaAIs {
+class ServerAlphaBetaAIs(private val aiRepository: AIRepository) {
     private val logger = KLoggers.logger(this)
-
-    private fun <S: Any> createAlphaBetaAI(gameType: String, factory: AlphaBetaAIFactory<S>, events: EventSystem, depth: Int, speedMode: AlphaBetaSpeedMode) {
-        val terminalState: (GameImpl<S>) -> Boolean = { it.isGameOver() }
-        ServerAI(gameType, "#AI_${factory.namePrefix}_" + gameType + "_" + depth + speedMode.nameSuffix) { game, index ->
-            val model = game.obj as GameImpl<S>
-            if (noAvailableActions(model, index)) {
-                return@ServerAI emptyList()
-            }
-
-            val actions: (GameImpl<S>) -> List<Actionable<S, Any>> = {
-                val players = 0 until it.playerCount
-                players.flatMap { actionPlayer ->
-                    it.actions.types().flatMap {
-                        at -> at.availableActions(actionPlayer)
-                    }
-                }
-            }
-            val branching: (GameImpl<S>, Actionable<S, Any>) -> GameImpl<S> = { oldGame, action ->
-                val copy = oldGame.copy(factory.copier)
-                val actionType = copy.actions.type(action.actionType)!!
-                val actionCopy = actionType.createAction(action.playerIndex, action.parameter)
-                if (!actionType.isAllowed(actionCopy)) {
-                    throw Exception("Not allowed to perform $action in ${copy.view(index)}")
-                }
-                actionType.perform(actionCopy)
-                copy.stateCheck()
-                copy
-            }
-            val heuristic2: (GameImpl<S>) -> Double = { factory.heuristic(it, index) }
-            val alphaBeta = AlphaBeta(actions, branching, terminalState, heuristic2, speedMode.depthRemainingBonus)
-            logger.info { "Evaluating AlphaBeta options for $gameType $depth" }
-
-            val options = runBlocking {
-                actions(model).pmap { action ->
-                    val newState = branching(model, action)
-                    action to alphaBeta.score(newState, depth)
-                }.toList()
-            }
-            val move = options.bestBy { it.second }.random()
-            return@ServerAI listOf(PlayerGameMoveRequest(game, index, move.first.actionType, move.first.parameter))
-        }.register(events)
-    }
 
     fun heuristicTTT(state: TTController, myIndex: Int): Double {
         val me = if (myIndex == 0) TTPlayer.X else TTPlayer.O
@@ -180,15 +141,7 @@ class ServerAlphaBetaAIs {
             aiFactories.any { it.gameType == event.gameType }
         }, {event ->
             aiFactories.filter { it.gameType == event.gameType }.forEach {factory: AlphaBetaAIFactory<out Any> ->
-                (0 until factory.maxLevel).forEach {level ->
-                    createAlphaBetaAI(event.gameType, factory, events, level, AlphaBetaSpeedMode.NORMAL)
-                }
-                if (factory.useSpeedModes) {
-                    createAlphaBetaAI(event.gameType, factory, events, factory.maxLevel, AlphaBetaSpeedMode.QUICK)
-                    createAlphaBetaAI(event.gameType, factory, events, factory.maxLevel, AlphaBetaSpeedMode.SLOW)
-                } else {
-                    createAlphaBetaAI(event.gameType, factory, events, factory.maxLevel, AlphaBetaSpeedMode.NORMAL)
-                }
+                aiRepository.createAlphaBetaAIs(events, factory)
             }
         })
     }

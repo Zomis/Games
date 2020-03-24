@@ -17,7 +17,10 @@ import net.zomis.tttultimate.Direction8
 import java.util.function.ToIntFunction
 
 typealias ActScorable<T> = Actionable<T, Any>
-class ServerScoringAIs {
+data class ScorerAIFactory<T: Any>(val gameType: String, val name: String, val config: ScoreConfigFactory<GameImpl<T>, ActScorable<T>>)
+fun <T: Any> scf(): ScoreConfigFactory<GameImpl<T>, ActScorable<T>> = ScoreConfigFactory()
+
+class ServerScoringAIs(private val aiRepository: AIRepository) {
     fun setup(events: EventSystem) {
         events.listen("register ServerAIs for Game of UR", GameTypeRegisterEvent::class, { it.gameType == "DSL-UR" }, {
             createURAI(events, "#AI_KFE521S3", RoyalGameOfUrAIs.scf()
@@ -44,9 +47,6 @@ class ServerScoringAIs {
             createURAI(events, "#AI_MonteCarlo", MonteCarloAI(1000, ai))
         })
 
-        data class ScorerAIFactory<T: Any>(val gameType: String, val name: String, val config: ScoreConfigFactory<GameImpl<T>, ActScorable<T>>)
-        fun <T: Any> scf(): ScoreConfigFactory<GameImpl<T>, ActScorable<T>> = ScoreConfigFactory()
-
         val artaxTake: FScorer<GameImpl<TTArtax>, ActScorable<TTArtax>> = SimpleScorer { action, params ->
             val pm = (action.parameter) as PointMove
             val board = params.parameters.model.board
@@ -69,41 +69,10 @@ class ServerScoringAIs {
         factories.groupBy { it.gameType }.forEach { entry ->
             events.listen("Register scoring AIs in ${entry.key}", GameTypeRegisterEvent::class, { it.gameType == entry.key }) {
                 entry.value.forEach {factory ->
-                    createAI(events, factory.gameType, factory.name, factory.config)
+                    aiRepository.createScoringAI(events, factory)
                 }
             }
         }
-
-    }
-
-    private fun <T: Any> scorer(config: ScoreConfig<GameImpl<T>, ActScorable<T>>, playerIndex: Int)
-            : FieldScoreProducer<GameImpl<T>, ActScorable<T>> {
-        val strategy = object: ScoreStrategy<GameImpl<T>, ActScorable<T>> {
-            override fun canScoreField(parameters: ScoreParameters<GameImpl<T>>?, field: ActScorable<T>?): Boolean {
-                return parameters!!.parameters.actions.type(field!!.actionType)!!.isAllowed(field)
-            }
-
-            override fun getFieldsToScore(params: GameImpl<T>?): MutableCollection<Actionable<T, Any>> {
-                return params!!.actions.types().flatMap { it.availableActions(playerIndex) }.toMutableList()
-            }
-        }
-        return FieldScoreProducer(config, strategy)
-    }
-
-    private fun <T: Any> createAI(events: EventSystem, gameType: String, name: String, ai: ScoreConfigFactory<GameImpl<T>, ActScorable<T>>) {
-        val config = ai.build()
-        ServerAI(gameType, name) { game, index ->
-            val obj = game.obj as GameImpl<T>
-            if (noAvailableActions(obj, index)) {
-                return@ServerAI listOf()
-            }
-            val scorer = scorer(config, index)
-
-            val scores = scorer.analyzeAndScore(obj)
-            val move = scores.getRank(1).random()
-            val action = move.field
-            listOf(PlayerGameMoveRequest(game, index, action.actionType, action.parameter))
-        }.register(events)
     }
 
     private fun createURAI(events: EventSystem, name: String,

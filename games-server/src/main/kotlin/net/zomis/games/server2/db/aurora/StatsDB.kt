@@ -1,7 +1,5 @@
 package net.zomis.games.server2.db.aurora
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
-import com.amazonaws.services.dynamodbv2.document.DynamoDB
 import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition
 import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity
@@ -17,7 +15,7 @@ import net.zomis.games.server2.invites.ClientList
 import java.util.UUID
 import kotlin.math.max
 
-class StatsDB(private val dynamoDB: AmazonDynamoDB, private val superTable: SuperTable) {
+class StatsDB(private val superTable: SuperTable) {
 
     private val logger = KLoggers.logger(this)
 
@@ -110,7 +108,7 @@ class StatsDB(private val dynamoDB: AmazonDynamoDB, private val superTable: Supe
 fun main() {
     val games = GameSystem { ClientList(mutableSetOf()) }
     val amazonDynamoDB = DBIntegration(games).dynamoDB
-    val db = StatsDB(amazonDynamoDB, SuperTable(amazonDynamoDB, games))
+    val db = StatsDB(SuperTable(amazonDynamoDB, games))
     db.saveNewlyFinishedInStats()
     db.hikariDataSource.close()
 }

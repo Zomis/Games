@@ -21,7 +21,7 @@ fun <T: Any> noAvailableActions(model: GameImpl<T>, index: Int): Boolean {
     return model.actions.types().all { it.availableActions(index).none() }
 }
 
-class ServerAI(val gameType: String, val name: String, val perform: (game: ServerGame, playerIndex: Int) -> List<PlayerGameMoveRequest>) {
+class ServerAI(val gameType: String, val name: String, val perform: ServerGameAI) {
 
     private val logger = KLoggers.logger(this)
 

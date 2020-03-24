@@ -9,7 +9,7 @@ import net.zomis.games.server2.games.ServerGame
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
-class ServerAIs(private val dslGameTypes: Set<String>) {
+class ServerAIs(private val aiRepository: AIRepository, private val dslGameTypes: Set<String>) {
     private val logger = KLoggers.logger(this)
 
     fun isDSLGameType(gameType: String) = dslGameTypes.contains(gameType)
@@ -46,8 +46,8 @@ class ServerAIs(private val dslGameTypes: Set<String>) {
                 return@ServerAI randomAction(game, index)
             }.register(events)
         })
-        ServerAlphaBetaAIs().setup(events)
-        ServerScoringAIs().setup(events)
+        ServerAlphaBetaAIs(aiRepository).setup(events)
+        ServerScoringAIs(aiRepository).setup(events)
     }
 
 }

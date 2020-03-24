@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.clients.WSClient
 import net.zomis.games.server2.clients.getInt
@@ -96,7 +97,7 @@ class DslRandomPlayTest {
                 p1.expectJsonObject { it.getText("type") == "GameView" }
             }
             val actions = playerRange.mapNotNull {playerIndex ->
-                ServerAIs(emptySet()).randomAction(game, playerIndex).firstOrNull()
+                ServerAIs(AIRepository(), emptySet()).randomAction(game, playerIndex).firstOrNull()
             }
             if (actions.isEmpty()) {
                 p1.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")

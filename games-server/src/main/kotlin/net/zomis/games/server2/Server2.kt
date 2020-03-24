@@ -10,6 +10,7 @@ import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.ecs.UTTT
+import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.ais.TTTQLearn
 import net.zomis.games.server2.db.DBIntegration
@@ -124,10 +125,11 @@ class Server2(val events: EventSystem) {
         if (config.githubClient.isNotEmpty()) {
             LinAuth(javalin, config.githubConfig()).register()
         }
+        val aiRepository = AIRepository()
         if (config.database) {
             val dbIntegration = DBIntegration(gameSystem)
             features.add(dbIntegration::register)
-            LinReplay(dbIntegration).setup(javalin)
+            LinReplay(aiRepository, dbIntegration).setup(javalin)
         }
         events.with(lobbySystem::setup)
         messageRouter.route("lobby", lobbySystem.router)
@@ -137,7 +139,7 @@ class Server2(val events: EventSystem) {
             = gameSystem.getGameType(gameType)!!.createGame(options)
         messageRouter.route("invites", InviteSystem(lobbySystem::gameClients, ::createGameCallback) { events.execute(it) }.router)
 
-        events.with { e -> ServerAIs(dslGames.keys.toSet()).register(e, executor) }
+        events.with { e -> ServerAIs(aiRepository, dslGames.keys.toSet()).register(e, executor) }
 
         val engine = ScriptEngineManager().getEngineByExtension("kts")!!
         events.listen("Kotlin script", ConsoleEvent::class, {it.input.startsWith("kt ")}, {
