@@ -36,6 +36,7 @@
         <GameResult xs12 :gameInfo="gameInfo"></GameResult>
       </v-flex>
     </v-layout>
+    <AiQuery :gameInfo="gameInfo" :gamePosition="position" />
   </v-container>
 </template>
 <script>
@@ -43,6 +44,7 @@ import supportedGames from "@/supportedGames"
 import axios from "axios";
 import GameHead from "@/components/games/common/GameHead";
 import GameResult from "@/components/games/common/GameResult";
+import AiQuery from "./AiQuery";
 
 function unixtimeToString(date) {
     return new Date(date * 1000).toISOString().replace("T"," ").replace(/\.\d+Z/g,"")
@@ -62,6 +64,7 @@ export default {
     components: {
         GameHead,
         GameResult,
+        AiQuery,
         ...supportedGames.components() // TODO: This might not be needed
     },
     created() {

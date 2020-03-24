@@ -46,6 +46,7 @@ class LinReplay(private val aiRepository: AIRepository, private val dbIntegratio
     }
 
     private fun fetchGame(gameId: String): DBGame {
+        logger.info { "Fetching and caching game $gameId" }
         val game = dbIntegration.loadGame(gameId)
         if (game != null && !game.game.isGameOver()) {
             throw BadReplayException("Game is not finished after all moves are made. Last view was ${game.views.last()}")
