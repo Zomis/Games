@@ -25,7 +25,7 @@ class DBIntegration(gameSystem: GameSystem) {
     val dynamoDB = AmazonDynamoDBClientBuilder.standard()
         .withRegion(Regions.EU_CENTRAL_1)
         .build()
-    private val superTable = SuperTable(dynamoDB, gameSystem)
+    val superTable = SuperTable(dynamoDB, gameSystem)
 
     fun register(features: Features, events: EventSystem) {
         val tables = listOf<CreateTableRequest>() +

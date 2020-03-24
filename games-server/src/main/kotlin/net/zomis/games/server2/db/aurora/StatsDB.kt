@@ -6,14 +6,15 @@ import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import klog.KLoggers
-import net.zomis.games.server2.db.DBGameSummary
-import net.zomis.games.server2.db.DBIntegration
-import net.zomis.games.server2.db.GameState
-import net.zomis.games.server2.db.SuperTable
+import net.zomis.games.server2.db.*
 import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.invites.ClientList
 import java.util.UUID
 import kotlin.math.max
+
+data class StatsPlayerInGame(val playerId: String, val result: Double, val resultPosition: Int)
+data class StatsTag(val tagId: String, val tagParameter: Long)
+data class StatsGameSummary(val gameId: String, val players: List<StatsPlayerInGame>, val tags: List<StatsTag>)
 
 class StatsDB(private val superTable: SuperTable) {
 
@@ -30,8 +31,56 @@ class StatsDB(private val superTable: SuperTable) {
         return scanResult.map { it.getString("PK") }
     }
 
+    fun query(players: List<String>, tags: List<String>): List<StatsGameSummary> {
+        return hikariDataSource.connection.use {conn ->
+            val tagJoins = tags.mapIndexed {index, tag ->
+                val tableAlias = "tags_cond$index"
+                "JOIN games_tags AS $tableAlias ON ($tableAlias.\"GameId\" = players_result.gameid AND $tableAlias.\"TagId\" = ?)"
+            }.joinToString("\n")
+            val playerJoins = players.mapIndexed {index, playerId ->
+                val tableAlias = "players_cond$index"
+                "JOIN games_players AS $tableAlias ON ($tableAlias.gameid = players_result.gameid AND $tableAlias.\"PlayerId\" = ?)"
+            }.joinToString("\n")
+
+            val sql = """
+SELECT players_result.gameid,
+players_result."PlayerIndex", players_result."PlayerId", players_result."ResultPosition", players_result."WinResult",
+tags_result."TagId", tags_result."Parameter"
+FROM games_players AS players_result
+JOIN games_tags AS tags_result ON (tags_result."GameId" = players_result.gameid)
+$playerJoins
+$tagJoins
+ORDER BY gameid ASC, "PlayerIndex" ASC
+            """.trimIndent()
+            val stmt = conn.prepareStatement(sql)
+            players.forEachIndexed { index, playerId -> stmt.setString(index + 1, playerId) }
+            tags.forEachIndexed { index, tagId -> stmt.setString(index + 1 + players.size, tagId) }
+
+            logger.info { "Executing $sql with parameters $players and $tags" }
+
+            val resultSet = stmt.executeQuery()
+            val summaries = mutableListOf<StatsGameSummary>()
+            while (resultSet.next()) {
+                val player = StatsPlayerInGame(
+                    playerId = resultSet.getString("PlayerId"),
+                    result = resultSet.getDouble("WinResult"),
+                    resultPosition = resultSet.getInt("ResultPosition")
+                )
+                val tag = StatsTag(resultSet.getString("TagId"), resultSet.getLong("Parameter"))
+                val game = StatsGameSummary(resultSet.getString("gameid"), listOf(player), listOf(tag))
+                summaries.add(game)
+            }
+            summaries.groupBy { it.gameId }.mapValues { game ->
+                val playersInGame = game.value.flatMap { it.players }.distinct()
+                val tagsInGame = game.value.flatMap { it.tags }.distinct()
+                StatsGameSummary(game.key, playersInGame, tagsInGame)
+            }.map { it.value }
+        }
+    }
+
     fun saveNewlyFinishedInStats() {
         val existingGameIds = this.fetchExistingStatsGames().toSet()
+        existingGameIds.forEach { println(it) }
         println("${existingGameIds.size} games in Postgres")
         val gameIds = this.fetchNewlyFinishedGameIds().also { println("${it.size} games in DynamoDB") }.map {
             SuperTable.Prefix.GAME.extract(it)

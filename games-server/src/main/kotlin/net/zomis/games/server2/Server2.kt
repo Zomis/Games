@@ -14,6 +14,8 @@ import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.ais.TTTQLearn
 import net.zomis.games.server2.db.DBIntegration
+import net.zomis.games.server2.db.aurora.LinStats
+import net.zomis.games.server2.db.aurora.StatsDB
 import net.zomis.games.server2.debug.AIGames
 import net.zomis.games.server2.games.*
 import net.zomis.games.server2.games.impl.ECSGameSystem
@@ -130,6 +132,7 @@ class Server2(val events: EventSystem) {
             val dbIntegration = DBIntegration(gameSystem)
             features.add(dbIntegration::register)
             LinReplay(aiRepository, dbIntegration).setup(javalin)
+            LinStats(StatsDB(dbIntegration.superTable)).setup(javalin)
         }
         events.with(lobbySystem::setup)
         messageRouter.route("lobby", lobbySystem.router)

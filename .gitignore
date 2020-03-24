@@ -90,3 +90,5 @@ gradle-app.setting
 # gradle/wrapper/gradle-wrapper.properties
 
 games-server/src/main/resources/secrets\.properties
+
+hikari.properties
