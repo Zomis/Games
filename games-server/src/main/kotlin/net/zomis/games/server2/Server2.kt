@@ -132,7 +132,7 @@ class Server2(val events: EventSystem) {
             val dbIntegration = DBIntegration(gameSystem)
             features.add(dbIntegration::register)
             LinReplay(aiRepository, dbIntegration).setup(javalin)
-            LinStats(StatsDB(dbIntegration.superTable)).setup(javalin)
+            LinStats(StatsDB(dbIntegration.superTable)).setup(events, javalin)
         }
         events.with(lobbySystem::setup)
         messageRouter.route("lobby", lobbySystem.router)
