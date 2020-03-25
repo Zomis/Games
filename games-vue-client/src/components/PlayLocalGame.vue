@@ -2,6 +2,7 @@
   <div :class="['game', 'player-' + currentPlayer]">
     <GameHead :gameInfo="gameInfo"></GameHead>
     <component :is="viewComponent" :view="view" :onAction="action" :actions="actions" />
+    <v-btn @click="cancelAction()" :disabled="actionPrevious.length == 0">Reset Action</v-btn>
     <GameResult :gameInfo="gameInfo"></GameResult>
   </div>
 </template>
@@ -51,6 +52,10 @@ export default {
     this.updateView(0)
   },
   methods: {
+    cancelAction() {
+      this.actionPrevious = [];
+      this.updateActions();
+    },
     updateView() {
       let v = this.game.view_s8ev37$(this.viewer)
       this.view = valueToJS(v)
