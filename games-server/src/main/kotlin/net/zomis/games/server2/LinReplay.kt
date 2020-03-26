@@ -28,6 +28,13 @@ class LinReplay(private val aiRepository: AIRepository, private val dbIntegratio
                 // For debugging: dbGame.views.map { it["board"] as List<List<Map<String, Any>>> }.map { it.joinToString("\n") { it.joinToString("") { it["owner"].toString()?.takeIf { it != "null" } ?: "_" } } }
                 ctx.json(dbGame)
             }
+            get("/games/:gameid/analyze/ais") {ctx ->
+                val gameId = ctx.pathParam("gameid")
+                log(ctx, "get queryable AIs for $gameId")
+                val dbGame = caffeine.get(gameId)!!
+                ctx.json(aiRepository.queryableAIs(dbGame.summary.gameType)!!)
+                // Get queryable AIs
+            }
             get("/games/:gameid/analyze/:ai/:position/:playerindex") {ctx ->
                 val gameId = ctx.pathParam("gameid")
                 val playerIndex = ctx.pathParam("playerindex").toInt()

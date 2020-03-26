@@ -72,4 +72,13 @@ class AIRepository {
         return null
     }
 
+    fun queryableAIs(gameType: String): List<String> {
+        val gameTypeRepo = repositoryForGameType<Any>(gameType)
+        val abNames = gameTypeRepo.alphaBetaAIs.flatMap {factory ->
+            val abConfig = alphaBetaConfigurations(factory.value)
+            abConfig.map { factory.value.aiName(it.first, it.second) }
+        }
+        return gameTypeRepo.scoringAIs.keys.sorted() + abNames
+    }
+
 }
