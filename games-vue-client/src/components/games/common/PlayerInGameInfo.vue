@@ -1,5 +1,5 @@
 <template>
-    <v-col class="player-in-game-info">
+    <v-col :cols="cols" class="player-in-game-info">
         <template v-if="displayStyle === 'avatars' || displayStyle === 'vs'">
             <v-tooltip bottom>
                 <template v-slot:activator="{ on }">
@@ -17,11 +17,22 @@
             <span v-if="elim">({{ elimResult }})</span>
         </template>
         <template v-if="displayStyle == 'table'">
-            <div>
-                <span>{{ player.name }}</span>
-                <span>{{ elimResult }}</span>
-                <span>{{ elimPosition }}</span>
-            </div>
+            <v-row no-gutters>
+                <v-col cols="6">
+                    <v-avatar :size="48" v-on="on" :class="[winResultClass, eliminatedOpacityClass]">
+                        <img
+                            :src="player.picture"
+                            :alt="player.name" />
+                    </v-avatar>
+                    <span>{{ player.name }}</span>
+                </v-col>
+                <v-col cols="3">
+                    {{ elimResult }}
+                </v-col>
+                <v-col cols="3">
+                    {{ elimPosition }}
+                </v-col>
+            </v-row>
         </template>
     </v-col>
 </template>
@@ -37,6 +48,15 @@ export default {
     name: "PlayerInGameInfo",
     props: ["player", "view", "eliminations", "displayStyle"],
     computed: {
+        cols() {
+            if (this.displayStyle === 'vs') {
+                return 3;
+            }
+            if (this.displayStyle === 'avatars') {
+                return 2;
+            }
+            return 12
+        },
         winResultClass() {
             if (!this.elim) return 'not-eliminated';
             let winValue = this.elim.winResult

@@ -4,16 +4,20 @@
       <h1>{{ gameDisplayName }}</h1>
     </v-card-title>
     <v-card-text>
+      <v-container>
+        <v-row align-content="center" justify="center" dense>
           <template v-for="(player, playerIndex) in players">
-            <span v-if="playerIndex > 0 && displayStyle === 'vs'" :key="'span' + playerIndex">
+            <v-col cols="1" v-if="playerIndex > 0 && displayStyle === 'vs'" :key="'col-' + playerIndex">
               vs.
-            </span>
-            <PlayerInGameInfo :key="'playerInfo-' + playerIndex"
+            </v-col>
+            <PlayerInGameInfo :key="'player-in-game-' + playerIndex"
              :player="player" :view="view"
              :eliminations="eliminations"
              :displayStyle="displayStyle"
             />
           </template>
+        </v-row>
+      </v-container>
     </v-card-text>
   </v-card>
 </template>
