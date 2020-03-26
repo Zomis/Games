@@ -1,9 +1,8 @@
 <template>
   <div :class="['game', 'player-' + currentPlayer]">
-    <GameHead :gameInfo="gameInfo"></GameHead>
+    <GameHead :gameInfo="gameInfo" :playerCount="playerCount" :view="view" :eliminations="eliminations" />
     <component :is="viewComponent" :view="view" :onAction="action" :actions="actions" />
     <v-btn @click="cancelAction()" :disabled="actionPrevious.length == 0">Reset Action</v-btn>
-    <GameResult :gameInfo="gameInfo"></GameResult>
   </div>
 </template>
 <script>
@@ -13,11 +12,13 @@ import GameResult from "@/components/games/common/GameResult";
 import kotlin from "kotlin"
 
 function valueToJS(value) {
-//    console.log(`valueToJS: ${typeof value} ${value}`)
+//    let constructorName = (typeof value === 'object' && value) ? value.constructor.name : 'not-an-object';
+//    console.log(`valueToJS: ${typeof value} ${value} ${constructorName}`)
     if (typeof value === 'number') { return value }
     if (typeof value === 'boolean') { return value }
     if (value === null) return null;
     if (value.constructor.name === "ArrayList") return value.toArray().map(e => valueToJS(e))
+    if (value.constructor.name === "WinResult") return value.toString()
     let results = {}
     let entries = value.entries.toArray()
     entries.forEach(e => results[e.key] = valueToJS(e.value))
@@ -38,6 +39,8 @@ export default {
       supportedGames: supportedGames,
       supportedGame: supportedGames.games[this.gameInfo.gameType],
       actionPrevious: [],
+      playerCount: 0,
+      eliminations: [],
       views: [],
       game: null,
       actions: {},
@@ -48,7 +51,12 @@ export default {
   mounted() {
     let dsl = this.supportedGame.dsl
     let gameSetup = new gamejs.net.zomis.games.dsl.impl.GameSetupImpl(dsl)
-    this.game = gameSetup.createGame_vux3hl$(2, gameSetup.getDefaultConfig())
+    let playerCount = 2;
+    if (this.gameInfo.gameType === 'Artax') {
+      playerCount = 2 + Math.floor(Math.random() * 3);
+    }
+    this.playerCount = playerCount
+    this.game = gameSetup.createGame_vux3hl$(playerCount, gameSetup.getDefaultConfig())
     this.updateView(0)
   },
   methods: {
@@ -62,6 +70,7 @@ export default {
       if (this.view.currentPlayer !== undefined) {
         this.viewer = this.view.currentPlayer
       }
+      this.eliminations = this.game.eliminationCallback.eliminations_0.toArray();
       this.updateActions()
     },
     resolveActionKey(game, actionName, type, value) {

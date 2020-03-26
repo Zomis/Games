@@ -20,10 +20,15 @@ const gameStore = {
           players: data.players
         },
         gameData: {
+          eliminations: [],
           view: {},
           actions: {}
         }
       });
+    },
+    elimination(state, data) {
+      let game = state.games[data.gameId].gameData;
+      game.eliminations.push(data);
     },
     updateView(state, data) {
       let game = state.games[data.gameId].gameData;
@@ -90,6 +95,9 @@ const gameStore = {
     onSocketMessage(context, data) {
       if (data.type === "GameStarted") {
         context.commit("createGame", data);
+      }
+      if (data.type == "PlayerEliminated") {
+        context.commit("elimination", data);
       }
       if (data.type === "GameView") {
         context.commit("updateView", data);

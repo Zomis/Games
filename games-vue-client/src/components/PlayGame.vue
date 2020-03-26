@@ -1,9 +1,8 @@
 <template>
   <div :class="['game', 'player-' + gameInfo.yourIndex]">
-    <GameHead :gameInfo="gameInfo"></GameHead>
+    <GameHead :gameInfo="gameInfo" :playerCount="gameInfo.players.length" :view="view" :eliminations="eliminations" />
     <component :is="viewComponent" :view="view" :onAction="action" :actions="actions" />
     <v-btn @click="resetActions()" :disabled="actionPrevious.length == 0">Reset Action</v-btn>
-    <GameResult :gameInfo="gameInfo"></GameResult>
   </div>
 </template>
 <script>
@@ -67,6 +66,9 @@ export default {
       return this.supportedGame.component
     },
     ...mapState("DslGameState", {
+      eliminations(state) {
+        return state.games[this.gameInfo.gameId].gameData.eliminations;
+      },
       view(state) {
         return state.games[this.gameInfo.gameId].gameData.view;
       },

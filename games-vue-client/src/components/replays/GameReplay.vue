@@ -28,7 +28,7 @@
         </v-btn>
       </v-layout>
       <v-flex grow>
-        <GameHead xs12 :gameInfo="gameInfo" v-if="gameInfo"></GameHead>
+        <GameHead xs12 :gameInfo="gameInfo" :view="currentView" :eliminations="currentEliminations" v-if="gameInfo"></GameHead>
         <div xs12>
             Started at {{ timeStarted }} - Ended at {{ timeLastAction }}
         </div>
@@ -116,6 +116,9 @@ export default {
         gameComponent() {
             if (this.replay == null) { return null }
             return supportedGames.games[this.replay.gameType].component
+        },
+        currentEliminations() {
+            return [] // TODO: Determine when eliminations were done and add dynamically here based on position.
         },
         playerNames() {
             if (this.replay == null) { return [] }
