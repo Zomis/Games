@@ -1,22 +1,17 @@
-package net.zomis.games.server2
+package net.zomis.games.server2.djl
 
 import ai.djl.Model
 import ai.djl.basicmodelzoo.basic.Mlp
-import ai.djl.engine.Engine
 import ai.djl.metric.Metrics
 import ai.djl.ndarray.NDList
 import ai.djl.ndarray.NDManager
 import ai.djl.ndarray.types.DataType
 import ai.djl.ndarray.types.Shape
-import ai.djl.nn.core.Linear
 import ai.djl.training.DefaultTrainingConfig
-import ai.djl.training.GradientCollector
 import ai.djl.training.Trainer
 import ai.djl.training.dataset.ArrayDataset
 import ai.djl.training.dataset.Dataset
-import ai.djl.training.dataset.SequenceSampler
 import ai.djl.training.evaluator.Accuracy
-import ai.djl.training.listener.EvaluatorTrainingListener
 import ai.djl.training.loss.Loss
 import ai.djl.translate.Translator
 import ai.djl.translate.TranslatorContext
@@ -40,9 +35,9 @@ class DJL {
         }
     }
 
-    class MyTranslator : Translator<FloatArray, Float> {
-        override fun processOutput(ctx: TranslatorContext, list: NDList): Float {
-            return list[0].toFloatArray()[0]
+    class MyTranslator : Translator<FloatArray, FloatArray> {
+        override fun processOutput(ctx: TranslatorContext, list: NDList): FloatArray {
+            return list[0].toFloatArray()
         }
 
         override fun processInput(ctx: TranslatorContext, input: FloatArray): NDList {
@@ -51,7 +46,7 @@ class DJL {
     }
 
     fun start() {
-        val block = Mlp(2, 1, intArrayOf(2))
+        val block = Mlp(2, 2, intArrayOf(2))
 
         Model.newInstance().use {model ->
             model.block = block
@@ -65,27 +60,28 @@ class DJL {
             )).toType(DataType.FLOAT32, false)
     //        val outputs = manager.create(floatArrayOf(0f, 0f, 0f, 1f)).toType(DataType.FLOAT32, false)
             val outputs = manager.create(arrayOf(
-                floatArrayOf(0f),
-                floatArrayOf(0f),
-                floatArrayOf(0f),
-                floatArrayOf(1f)
+                floatArrayOf(1f, 0f),
+                floatArrayOf(1f, 0f),
+                floatArrayOf(1f, 0f),
+                floatArrayOf(0f, 1f)
             )).toType(DataType.FLOAT32, false)
 
             val trainingSet = ArrayDataset.Builder().setData(inputs)
                     .setSampling(1, true)
                     .optLabels(outputs).build()
+//            model.newPredictor(MyTranslator()).predict(floatArrayOf(0.5f, 0f)).let { println(it) }
 
             val trainingConfig = DefaultTrainingConfig(
-//                    Loss.softmaxCrossEntropyLoss("SoftmaxCrossEntropyLoss", 1f, -1, true, true)
-                Loss.l2Loss()
+                    Loss.softmaxCrossEntropyLoss("SoftmaxCrossEntropyLoss", 1f, -1, false, false)
+//                Loss.l2Loss()
             ).addEvaluator(Accuracy()).setBatchSize(2)
 
             model.newTrainer(trainingConfig).use {trainer ->
                 trainer.metrics = Metrics()
 
-                val inputShape = Shape(1, 2)
+                val inputShape = Shape(2, 2)
                 trainer.initialize(inputShape)
-                fitModel(trainer, trainingSet, 5)
+                fitModel(trainer, trainingSet, 100)
 
                 val metrics = trainer.metrics
                 println(metrics)
@@ -97,7 +93,7 @@ class DJL {
                     val a = Math.random().toFloat()
                     val b = Math.random().toFloat()
                     val result = predictor.predict(floatArrayOf(a, b))
-                    println("$a, $b --> $result")
+                    println("$a, $b --> ${result!!.contentToString()}")
                 }
                 sc.nextLine()
             }
