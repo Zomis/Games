@@ -2,9 +2,7 @@ package net.zomis.games.server2.djl
 
 import ai.djl.Model
 import ai.djl.basicmodelzoo.basic.Mlp
-import ai.djl.ndarray.NDArray
 import ai.djl.ndarray.NDList
-import ai.djl.ndarray.NDManager
 import ai.djl.ndarray.types.Shape
 import ai.djl.training.DefaultTrainingConfig
 import ai.djl.training.dataset.ArrayDataset
@@ -16,6 +14,9 @@ import ai.djl.translate.TranslatorContext
 import java.util.Scanner
 import kotlin.random.Random
 
+fun debug(message: String) {
+    println(message)
+}
 class DJLReinforcementMCVE2 {
 
     class HelloWorldExperience(
@@ -58,7 +59,7 @@ class DJLReinforcementMCVE2 {
 
         override fun processOutput(ctx: TranslatorContext, list: NDList): Int {
             val values = list[0].toFloatArray()
-            println("Output ${values.joinToString()}")
+            debug("Output ${values.joinToString()}")
             if (random.nextDouble() < 0.1) {
                 val randomAction = random.nextInt(values.size)
                 println("Choosing random action: $randomAction")
@@ -73,8 +74,9 @@ class DJLReinforcementMCVE2 {
 
     class Agent {
         private val experiences = mutableListOf<HelloWorldExperience>()
+        val actions = 4
 
-        private val block = Mlp(4, 4, intArrayOf())
+        private val block = Mlp(actions, actions, intArrayOf())
         private val model = Model.newInstance().also {
             it.block = block
         }
@@ -83,7 +85,7 @@ class DJLReinforcementMCVE2 {
             .optOptimizer(Optimizer.adam().optLearningRateTracker(LearningRateTracker.fixedLearningRate(0.1f)).build())
         private val trainer = model.newTrainer(trainingConfig)
         init {
-            trainer.initialize(Shape(1, 4))
+            trainer.initialize(Shape(1, actions.toLong()))
         }
 
         fun decideMoveIndex(state: BooleanArray): Int = predictor.predict(state)
@@ -94,7 +96,7 @@ class DJLReinforcementMCVE2 {
         fun train() {
             val batchSize = 5
             val batch = experiences.withIndex().shuffled().take(batchSize).also {
-                list -> list.forEach { println(it) }
+                list -> list.forEach { debug(it.toString()) }
             }.map { it.value }
             experiences.clear()
             val trainTranslator = HelloWorldNoTranslation()
@@ -103,30 +105,28 @@ class DJLReinforcementMCVE2 {
 
             batch.withIndex().filter { it.value.gameOver }.forEach {
                 // Terminal states don't really have a qValue so ignore them from next state
-                model.ndManager.create(floatArrayOf(0f, 0f, 0f, 0f))
+                model.ndManager.create(it.value.state.map { 0f }.toFloatArray())
             }
 
             val data = model.ndManager.create(batch.map { it.state.toFloatArray() }.toTypedArray())
             val labels = model.ndManager.create(qTarget.withIndex().map {
                 // What about the action taken?
-                println("Label before modify ${it.index}: ${it.value.joinToString()}")
+                debug("Label before modify ${it.index}: ${it.value.joinToString()}")
                 val copy = it.value.copyOf()
                 val batchValue = batch[it.index]
-                copy[batchValue.action] = copy[batchValue.action] * 0.9f + batchValue.reward
+                copy[batchValue.action] = batchValue.reward + 0.9f * copy[batchValue.action]
                 copy
 //                it.value.map { f -> f * 0.9f + batch[it.index].reward }.toFloatArray()
             }.toTypedArray())
-            println("Data: $data")
-            println("Labels: $labels")
+            debug("Data: $data")
+            debug("Labels: $labels")
 
             val dataset = ArrayDataset.Builder()
                 .setData(data)
                 .optLabels(labels)
                 .setSampling(batchSize, false)
                 .build()
-            // optimizer learning rate?
 
-//            Batch(model.ndManager, data, labels)
             trainer.iterateDataset(dataset).forEach {
                 trainer.trainBatch(it)
                 trainer.step()
@@ -151,7 +151,7 @@ class DJLReinforcementMCVE2 {
             val actions = mutableListOf<Int>()
             while (!game.isDone()) {
                 val state = game.values.copyOf()
-                print(state.joinToString() + "\t")
+                debug("Current state: " + state.joinToString())
                 val moveIndex = agent.decideMoveIndex(state)
                 actions.add(moveIndex)
                 val reward = game.performActionObserveReward(moveIndex)
@@ -161,18 +161,16 @@ class DJLReinforcementMCVE2 {
                 if (++actionsMade % 10 == 0) {
                     println("$actionsMade actions made. Training time. Actions ${actions.joinToString("")}")
                     agent.train()
-                    scanner.nextLine()
                 }
             }
             println("Finished game $gameNumber with $totalReward. Actions $actions")
+            if (gameNumber % 5 == 4) {
+                scanner.nextLine()
+            }
         }
     }
-
 }
 
-private fun BooleanArray.toNDArray(manager: NDManager): NDArray {
-    return manager.create(this.toFloatArray())
-}
 private fun BooleanArray.toFloatArray(): FloatArray {
     return this.map { if (it) 1f else 0f }.toFloatArray()
 }
@@ -180,21 +178,3 @@ private fun BooleanArray.toFloatArray(): FloatArray {
 fun main() {
     DJLReinforcementMCVE2().run()
 }
-
-
-/**
-I'm trying to get a simple Reinforcement Learning working, but I ran into a problem: In order to do the first trainings, I need to play the game, but in order to play the game I need an initialized array - which seems to be initialized through training.
-
-Exception in thread "main" java.lang.IllegalStateException: The array has not been initialized
-at ai.djl.nn.Parameter.getArray(Parameter.java:125)
-at ai.djl.training.ParameterStore.getValue(ParameterStore.java:110)
-at ai.djl.nn.core.Linear.opInputs(Linear.java:175)
-at ai.djl.nn.core.Linear.forward(Linear.java:74)
-
-Example code to reproduce my problem: https://gist.github.com/Zomis/5dc8fa8a16e68d6ce5f10bd8ddb82751
-The example game I'm trying to make an agent learn: https://github.com/shakedzy/notebooks/tree/master/q_learning_and_dqn
-
-Can I initialize all weights to random somehow?
-
-I tried running this:
-*/
