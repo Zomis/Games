@@ -8,11 +8,12 @@ import ai.djl.ndarray.NDManager
 import ai.djl.ndarray.types.Shape
 import ai.djl.training.DefaultTrainingConfig
 import ai.djl.training.dataset.ArrayDataset
-import ai.djl.training.dataset.Batch
-import ai.djl.training.dataset.SequenceSampler
 import ai.djl.training.loss.Loss
+import ai.djl.training.optimizer.Optimizer
+import ai.djl.training.optimizer.learningrate.LearningRateTracker
 import ai.djl.translate.Translator
 import ai.djl.translate.TranslatorContext
+import java.util.Scanner
 import kotlin.random.Random
 
 class DJLReinforcementMCVE2 {
@@ -23,7 +24,9 @@ class DJLReinforcementMCVE2 {
         val reward: Float,
         val nextState: BooleanArray,
         val gameOver: Boolean
-    )
+    ) {
+        override fun toString(): String = "${state.joinToString()} action $action. Reward $reward. Next: ${nextState.joinToString()} GameOver $gameOver"
+    }
     class HelloWorldGame(val size: Int) {
         val values: BooleanArray = (0 until size).map { false }.toBooleanArray()
 
@@ -55,8 +58,11 @@ class DJLReinforcementMCVE2 {
 
         override fun processOutput(ctx: TranslatorContext, list: NDList): Int {
             val values = list[0].toFloatArray()
+            println("Output ${values.joinToString()}")
             if (random.nextDouble() < 0.1) {
-                return random.nextInt(values.size)
+                val randomAction = random.nextInt(values.size)
+                println("Choosing random action: $randomAction")
+                return randomAction
             }
             return values.withIndex().maxBy { it.value.toDouble() }!!.index
         }
@@ -68,12 +74,14 @@ class DJLReinforcementMCVE2 {
     class Agent {
         private val experiences = mutableListOf<HelloWorldExperience>()
 
-        private val block = Mlp(4, 4, intArrayOf(4))
+        private val block = Mlp(4, 4, intArrayOf())
         private val model = Model.newInstance().also {
             it.block = block
         }
         private val predictor = model.newPredictor(HelloWorldGameTranslator())
-        val trainer = model.newTrainer(DefaultTrainingConfig(Loss.l2Loss()).setBatchSize(2))
+        private val trainingConfig = DefaultTrainingConfig(Loss.l2Loss()).setBatchSize(2)
+            .optOptimizer(Optimizer.adam().optLearningRateTracker(LearningRateTracker.fixedLearningRate(0.1f)).build())
+        private val trainer = model.newTrainer(trainingConfig)
         init {
             trainer.initialize(Shape(1, 4))
         }
@@ -85,7 +93,10 @@ class DJLReinforcementMCVE2 {
         }
         fun train() {
             val batchSize = 5
-            val batch = experiences.shuffled().take(batchSize)
+            val batch = experiences.withIndex().shuffled().take(batchSize).also {
+                list -> list.forEach { println(it) }
+            }.map { it.value }
+            experiences.clear()
             val trainTranslator = HelloWorldNoTranslation()
             val trainPredictor = model.newPredictor(trainTranslator)
             val qTarget = trainPredictor.batchPredict(batch.map { it.nextState })
@@ -95,12 +106,22 @@ class DJLReinforcementMCVE2 {
                 model.ndManager.create(floatArrayOf(0f, 0f, 0f, 0f))
             }
 
+            val data = model.ndManager.create(batch.map { it.state.toFloatArray() }.toTypedArray())
+            val labels = model.ndManager.create(qTarget.withIndex().map {
+                // What about the action taken?
+                println("Label before modify ${it.index}: ${it.value.joinToString()}")
+                val copy = it.value.copyOf()
+                val batchValue = batch[it.index]
+                copy[batchValue.action] = copy[batchValue.action] * 0.9f + batchValue.reward
+                copy
+//                it.value.map { f -> f * 0.9f + batch[it.index].reward }.toFloatArray()
+            }.toTypedArray())
+            println("Data: $data")
+            println("Labels: $labels")
+
             val dataset = ArrayDataset.Builder()
-                .setData(*batch.map { it.state.toNDArray(model.ndManager) }.toTypedArray())
-                .optLabels(*qTarget.withIndex().map {
-                    // What about the action taken?
-                    model.ndManager.create(it.value).mul(0.9).add(batch[it.index].reward)
-                }.toTypedArray())
+                .setData(data)
+                .optLabels(labels)
                 .setSampling(batchSize, false)
                 .build()
             // optimizer learning rate?
@@ -121,31 +142,39 @@ class DJLReinforcementMCVE2 {
     }
 
     fun run() {
+        val scanner = Scanner(System.`in`)
         val agent = Agent()
         var actionsMade = 0
-        repeat(10) {gameNumber ->
+        repeat(500) {gameNumber ->
             val game = HelloWorldGame(4)
             var totalReward = 0f
+            val actions = mutableListOf<Int>()
             while (!game.isDone()) {
                 val state = game.values.copyOf()
+                print(state.joinToString() + "\t")
                 val moveIndex = agent.decideMoveIndex(state)
+                actions.add(moveIndex)
                 val reward = game.performActionObserveReward(moveIndex)
                 totalReward += reward
                 val nextState = game.values.copyOf()
                 agent.saveExperience(state, moveIndex, reward, nextState, game.isDone())
                 if (++actionsMade % 10 == 0) {
-                    println("$actionsMade actions made. Training time")
+                    println("$actionsMade actions made. Training time. Actions ${actions.joinToString("")}")
                     agent.train()
+                    scanner.nextLine()
                 }
             }
-            println("Finished game $gameNumber with $totalReward")
+            println("Finished game $gameNumber with $totalReward. Actions $actions")
         }
     }
 
 }
 
 private fun BooleanArray.toNDArray(manager: NDManager): NDArray {
-    return manager.create(this.map { if (it) 1f else 0f }.toFloatArray())
+    return manager.create(this.toFloatArray())
+}
+private fun BooleanArray.toFloatArray(): FloatArray {
+    return this.map { if (it) 1f else 0f }.toFloatArray()
 }
 
 fun main() {

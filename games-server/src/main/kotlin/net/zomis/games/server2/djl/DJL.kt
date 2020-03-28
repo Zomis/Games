@@ -72,8 +72,8 @@ class DJL {
 //            model.newPredictor(MyTranslator()).predict(floatArrayOf(0.5f, 0f)).let { println(it) }
 
             val trainingConfig = DefaultTrainingConfig(
-                    Loss.softmaxCrossEntropyLoss("SoftmaxCrossEntropyLoss", 1f, -1, false, false)
-//                Loss.l2Loss()
+//                    Loss.softmaxCrossEntropyLoss("SoftmaxCrossEntropyLoss", 1f, -1, false, false)
+                Loss.l2Loss()
             ).addEvaluator(Accuracy()).setBatchSize(2)
 
             model.newTrainer(trainingConfig).use {trainer ->
