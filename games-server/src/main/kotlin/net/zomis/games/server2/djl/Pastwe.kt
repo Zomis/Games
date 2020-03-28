@@ -6,6 +6,7 @@ import ai.djl.ndarray.NDList
 import ai.djl.ndarray.types.Shape
 import ai.djl.training.DefaultTrainingConfig
 import ai.djl.training.dataset.ArrayDataset
+import ai.djl.training.initializer.XavierInitializer
 import ai.djl.training.loss.Loss
 import ai.djl.training.optimizer.Optimizer
 import ai.djl.training.optimizer.learningrate.LearningRateTracker
@@ -15,7 +16,7 @@ import java.util.Scanner
 import kotlin.random.Random
 
 fun debug(message: String) {
-    println(message)
+//    println(message)
 }
 class DJLReinforcementMCVE2 {
 
@@ -62,7 +63,7 @@ class DJLReinforcementMCVE2 {
             debug("Output ${values.joinToString()}")
             if (random.nextDouble() < 0.1) {
                 val randomAction = random.nextInt(values.size)
-                println("Choosing random action: $randomAction")
+//                println("Choosing random action: $randomAction")
                 return randomAction
             }
             return values.withIndex().maxBy { it.value.toDouble() }!!.index
@@ -72,9 +73,8 @@ class DJLReinforcementMCVE2 {
             = inputTranslator.processInput(ctx, input)
     }
 
-    class Agent {
+    class Agent(val actions: Int) {
         private val experiences = mutableListOf<HelloWorldExperience>()
-        val actions = 4
 
         private val block = Mlp(actions, actions, intArrayOf())
         private val model = Model.newInstance().also {
@@ -82,7 +82,10 @@ class DJLReinforcementMCVE2 {
         }
         private val predictor = model.newPredictor(HelloWorldGameTranslator())
         private val trainingConfig = DefaultTrainingConfig(Loss.l2Loss()).setBatchSize(2)
-            .optOptimizer(Optimizer.adam().optLearningRateTracker(LearningRateTracker.fixedLearningRate(0.1f)).build())
+                .optInitializer(XavierInitializer())
+                .optOptimizer(Optimizer.adam().optLearningRateTracker(
+                    LearningRateTracker.fixedLearningRate(0.1f)
+                ).build())
         private val trainer = model.newTrainer(trainingConfig)
         init {
             trainer.initialize(Shape(1, actions.toLong()))
@@ -98,7 +101,7 @@ class DJLReinforcementMCVE2 {
             val batch = experiences.withIndex().shuffled().take(batchSize).also {
                 list -> list.forEach { debug(it.toString()) }
             }.map { it.value }
-            experiences.clear()
+            experiences.clear() // TODO: Use cyclic memory, don't remove all of it.
             val trainTranslator = HelloWorldNoTranslation()
             val trainPredictor = model.newPredictor(trainTranslator)
             val qTarget = trainPredictor.batchPredict(batch.map { it.nextState })
@@ -143,10 +146,11 @@ class DJLReinforcementMCVE2 {
 
     fun run() {
         val scanner = Scanner(System.`in`)
-        val agent = Agent()
+        val actionsCount = 5
+        val agent = Agent(actionsCount)
         var actionsMade = 0
-        repeat(500) {gameNumber ->
-            val game = HelloWorldGame(4)
+        repeat(300) {gameNumber ->
+            val game = HelloWorldGame(actionsCount)
             var totalReward = 0f
             val actions = mutableListOf<Int>()
             while (!game.isDone()) {
@@ -159,13 +163,14 @@ class DJLReinforcementMCVE2 {
                 val nextState = game.values.copyOf()
                 agent.saveExperience(state, moveIndex, reward, nextState, game.isDone())
                 if (++actionsMade % 10 == 0) {
-                    println("$actionsMade actions made. Training time. Actions ${actions.joinToString("")}")
+//                    println("$actionsMade actions made. Training time. Actions ${actions.joinToString("")}")
                     agent.train()
                 }
             }
-            println("Finished game $gameNumber with $totalReward. Actions $actions")
+//            println("Finished game $gameNumber with $totalReward. Actions $actions")
+            println("Game $gameNumber: $totalReward points")
             if (gameNumber % 5 == 4) {
-                scanner.nextLine()
+//                scanner.nextLine()
             }
         }
     }
