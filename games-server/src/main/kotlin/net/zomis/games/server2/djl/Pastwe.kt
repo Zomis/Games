@@ -114,7 +114,7 @@ class DJLReinforcementMCVE2 {
                 debug("Label before modify ${it.index}: ${it.value.joinToString()}")
                 val copy = it.value.copyOf()
                 val batchValue = batch[it.index]
-                copy[batchValue.action] = batchValue.reward + 0.9f * copy[batchValue.action]
+                copy[batchValue.action] = batchValue.reward + 0.5f * copy[batchValue.action]
                 copy
 //                it.value.map { f -> f * 0.9f + batch[it.index].reward }.toFloatArray()
             }.toTypedArray())
