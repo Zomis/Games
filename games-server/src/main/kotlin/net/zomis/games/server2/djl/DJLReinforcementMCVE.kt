@@ -18,7 +18,7 @@ import kotlin.random.Random
 fun debug(message: String) {
 //    println(message)
 }
-class DJLReinforcementMCVE2 {
+class DJLReinforcementMCVE {
 
     class HelloWorldExperience(
         val state: BooleanArray,
@@ -33,9 +33,10 @@ class DJLReinforcementMCVE2 {
         val values: BooleanArray = (0 until size).map { false }.toBooleanArray()
 
         fun performActionObserveReward(action: Int): Float {
-            if (values[action]) return -1f
+            val power = 100f
+            if (values[action]) return -1 * power
             values[action] = true
-            return 1f
+            return 1 * power
         }
 
         fun isDone(): Boolean {
@@ -49,19 +50,18 @@ class DJLReinforcementMCVE2 {
         }
 
         override fun processInput(ctx: TranslatorContext, input: BooleanArray): NDList {
-            return NDList(ctx.ndManager.create(input.map { if (it) 1f else 0f }.toFloatArray()))
+            return NDList(ctx.ndManager.create(input.toFloatArray()))
         }
-
     }
 
-    class HelloWorldGameTranslator : Translator<BooleanArray, Int> {
+    class HelloWorldGameTranslator(private val randomMoveProbability: Double) : Translator<BooleanArray, Int> {
         private val random = Random(42)
         private val inputTranslator = HelloWorldNoTranslation()
 
         override fun processOutput(ctx: TranslatorContext, list: NDList): Int {
             val values = list[0].toFloatArray()
             debug("Output ${values.joinToString()}")
-            if (random.nextDouble() < 0.1) {
+            if (random.nextDouble() < randomMoveProbability) {
                 val randomAction = random.nextInt(values.size)
 //                println("Choosing random action: $randomAction")
                 return randomAction
@@ -73,18 +73,19 @@ class DJLReinforcementMCVE2 {
             = inputTranslator.processInput(ctx, input)
     }
 
-    class Agent(val actions: Int) {
+    data class AgentParameters(val learningRate: Float, val discountFactor: Float, val randomMoveProbability: Double, val batchSize: Int)
+    class Agent(val actions: Int, private val agentParameters: AgentParameters) {
         private val experiences = mutableListOf<HelloWorldExperience>()
 
         private val block = Mlp(actions, actions, intArrayOf())
         private val model = Model.newInstance().also {
             it.block = block
         }
-        private val predictor = model.newPredictor(HelloWorldGameTranslator())
+        private val predictor = model.newPredictor(HelloWorldGameTranslator(agentParameters.randomMoveProbability))
         private val trainingConfig = DefaultTrainingConfig(Loss.l2Loss()).setBatchSize(2)
                 .optInitializer(XavierInitializer())
                 .optOptimizer(Optimizer.adam().optLearningRateTracker(
-                    LearningRateTracker.fixedLearningRate(0.1f)
+                    LearningRateTracker.fixedLearningRate(agentParameters.learningRate)
                 ).build())
         private val trainer = model.newTrainer(trainingConfig)
         init {
@@ -97,7 +98,7 @@ class DJLReinforcementMCVE2 {
             experiences.add(HelloWorldExperience(state, moveIndex, reward, nextState, gameOver))
         }
         fun train() {
-            val batchSize = 5
+            val batchSize = agentParameters.batchSize
             val batch = experiences.withIndex().shuffled().take(batchSize).also {
                 list -> list.forEach { debug(it.toString()) }
             }.map { it.value }
@@ -117,7 +118,7 @@ class DJLReinforcementMCVE2 {
                 debug("Label before modify ${it.index}: ${it.value.joinToString()}")
                 val copy = it.value.copyOf()
                 val batchValue = batch[it.index]
-                copy[batchValue.action] = batchValue.reward + 0.5f * copy[batchValue.action]
+                copy[batchValue.action] = batchValue.reward + agentParameters.discountFactor * copy[batchValue.action]
                 copy
 //                it.value.map { f -> f * 0.9f + batch[it.index].reward }.toFloatArray()
             }.toTypedArray())
@@ -134,20 +135,19 @@ class DJLReinforcementMCVE2 {
                 trainer.trainBatch(it)
                 trainer.step()
             }
-
-
-//            _, cost = sess.run([qnn.optimizer, qnn.cost],
-//            feed_dict={qnn.states: np.array(list(map(lambda x: x['state'], batch))),
-//                qnn.r: np.array(list(map(lambda x: x['reward'], batch))),
-//                qnn.enum_actions: np.array(list(enumerate(map(lambda x: x['action'], batch)))),
-//                qnn.q_target: q_target})
         }
     }
 
     fun run() {
         val scanner = Scanner(System.`in`)
         val actionsCount = 5
-        val agent = Agent(actionsCount)
+        val agentParameters = AgentParameters(
+            learningRate = 0.1f,
+            discountFactor = 0f,
+            randomMoveProbability = 0.1,
+            batchSize = 5
+        )
+        val agent = Agent(actionsCount, agentParameters)
         var actionsMade = 0
         repeat(300) {gameNumber ->
             val game = HelloWorldGame(actionsCount)
@@ -181,5 +181,5 @@ private fun BooleanArray.toFloatArray(): FloatArray {
 }
 
 fun main() {
-    DJLReinforcementMCVE2().run()
+    DJLReinforcementMCVE().run()
 }
