@@ -1,5 +1,7 @@
 package net.zomis.games.dsl
 
+import net.zomis.games.PlayerEliminations
+
 typealias ActionLogic<T, P, A> = ActionScope<T, P, A>.() -> Unit
 typealias ActionLogicAdvanced<T, A> = ActionComplexScope<T, A>.() -> Unit
 
@@ -17,6 +19,7 @@ interface ReplayScope {
     fun fullState(key: String): Any?
 }
 interface EffectScope {
+    val playerEliminations: PlayerEliminations
     fun state(key: String, value: Any)
 }
 

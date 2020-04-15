@@ -118,7 +118,7 @@ class GameViewContext<T : Any>(val model: T, private val eliminations: PlayerEli
     }
 }
 
-class ReplayState: EffectScope, ReplayScope {
+class ReplayState(override val playerEliminations: PlayerEliminations): EffectScope, ReplayScope {
     private val currentAction = mutableMapOf<String, Any>()
     private val mostRecent = mutableMapOf<String, Any>()
 

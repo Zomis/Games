@@ -29,7 +29,7 @@ class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override va
 
     override val eliminationCallback = PlayerEliminations(playerCount)
     val model = setupContext.model.factory(this, config)
-    private val replayState = ReplayState()
+    private val replayState = ReplayState(eliminationCallback)
     private val logic = GameLogicContext(model, replayState)
     init {
         setupContext.logicDsl(logic)
