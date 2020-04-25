@@ -14,6 +14,9 @@ interface GameLogic<T : Any> {
     fun <A : Any> action(actionType: ActionType<A>, logic: ActionLogicAdvanced<T, A>)
 }
 
+interface ReplayableScope {
+    fun <T> state(key: String, default: () -> T): T
+}
 interface ReplayScope {
     fun state(key: String): Any
     fun fullState(key: String): Any?

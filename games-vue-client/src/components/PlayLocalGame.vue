@@ -16,12 +16,22 @@ function valueToJS(value) {
 //    console.log(`valueToJS: ${typeof value} ${value} ${constructorName}`)
     if (typeof value === 'number') { return value }
     if (typeof value === 'boolean') { return value }
+    if (typeof value === 'string') { return value }
     if (value === null) return null;
     if (value.constructor.name === "ArrayList") return value.toArray().map(e => valueToJS(e))
     if (value.constructor.name === "WinResult") return value.toString()
     let results = {}
-    let entries = value.entries.toArray()
-    entries.forEach(e => results[e.key] = valueToJS(e.value))
+
+    if (value.size === 0) {
+      return []
+    }
+    if (value.entries) {
+      console.log("entries", value.entries)
+      let entries = value.entries.toArray()
+      entries.forEach(e => results[e.key] = valueToJS(e.value))
+    } else {
+      console.error("Unknown value for valueToJS: ", typeof value, ". Is it perhaps a Kotlin class? Those needs to be replaced with a pure map.", value)
+    }
     return results
 }
 
@@ -38,6 +48,7 @@ export default {
     return {
       supportedGames: supportedGames,
       supportedGame: supportedGames.games[this.gameInfo.gameType],
+      actionChoosing: null,
       actionPrevious: [],
       playerCount: 0,
       eliminations: [],
@@ -61,6 +72,7 @@ export default {
   },
   methods: {
     cancelAction() {
+      this.actionChoosing = null;
       this.actionPrevious = [];
       this.updateActions();
     },
@@ -83,6 +95,9 @@ export default {
     updateActions() {
       let actions = {}
       this.game.actions.types().toArray().forEach(e => {
+        if (this.actionChoosing && e.name != this.actionChoosing) {
+          return
+        }
         let ca = {}
         actions[e.name] = ca
         console.log("ACTION INFO FOR", e.name, this.actionPrevious)
@@ -119,6 +134,7 @@ export default {
         return
       }
       if (action.next !== undefined) {
+        this.actionChoosing = name
         this.actionPrevious.push(action.next)
         this.updateActions()
         return
@@ -126,6 +142,7 @@ export default {
       if (action.parameter !== undefined) {
         let gameActionType = this.game.actions.type_61zpoe$(name)
         gameActionType.perform_y5fo13$(this.viewer, action.parameter)
+        this.actionChoosing = null
         this.actionPrevious = [];
         this.updateView()
         return

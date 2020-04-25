@@ -11,4 +11,5 @@ interface GameModel<T, C> {
     fun players(playerCount: IntRange)
     fun defaultConfig(creator: () -> C)
     fun init(factory: GameFactoryScope<C>.(C?) -> T)
+    fun onStart(effect: ReplayableScope.(T) -> Unit)
 }

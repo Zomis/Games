@@ -8,6 +8,7 @@ class GameModelContext<T, C> : GameModel<T, C> {
     var playerCount: IntRange = 2..2
     lateinit var factory: GameFactoryScope<C>.(C?) -> T
     lateinit var config: () -> C
+    var onStart: ReplayableScope.(T) -> Unit = {}
 
     override fun players(playerCount: IntRange) {
         this.playerCount = playerCount
@@ -19,6 +20,10 @@ class GameModelContext<T, C> : GameModel<T, C> {
 
     override fun init(factory: GameFactoryScope<C>.(C?) -> T) {
         this.factory = factory
+    }
+
+    override fun onStart(effect: ReplayableScope.(T) -> Unit) {
+        this.onStart = effect
     }
 }
 
