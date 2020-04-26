@@ -14,6 +14,10 @@ class GameModelContext<T, C> : GameModel<T, C> {
         this.playerCount = playerCount
     }
 
+    override fun playersFixed(playerCount: Int) {
+        this.playerCount = playerCount..playerCount
+    }
+
     override fun defaultConfig(creator: () -> C) {
         this.config = creator
     }

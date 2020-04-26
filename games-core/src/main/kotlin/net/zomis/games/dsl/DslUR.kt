@@ -8,7 +8,7 @@ class DslUR {
     val move = createActionType("move", Int::class)
     val gameUR = createGame<RoyalGameOfUr>("UR") {
         setup(Unit::class) {
-//            players(2)
+            playersFixed(2)
             init { RoyalGameOfUr() }
         }
         logic {
