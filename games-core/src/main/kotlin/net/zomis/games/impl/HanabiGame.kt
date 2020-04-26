@@ -4,7 +4,7 @@ import net.zomis.games.WinResult
 import net.zomis.games.cards.CardZone
 import net.zomis.games.dsl.createActionType
 import net.zomis.games.dsl.createGame
-import kotlin.random.Random
+import kotlin.math.min
 
 // RAINBOW: Either used as a sixth color, or as a wildcard (where cards can be both blue and yellow for example)
 // name the card you are playing, or get a fail token
@@ -33,6 +33,7 @@ data class HanabiCard(val color: HanabiColor, val value: Int, var colorKnown: Bo
 
 data class HanabiPlayer(val cards: CardZone<HanabiCard> = CardZone())
 data class HanabiConfig(
+    val maxClueTokens: Int,
     val rainbowExtraColor: Boolean,
     val rainbowWildcard: Boolean,
     val rainbowOnlyOne: Boolean,
@@ -54,7 +55,7 @@ data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>, val
             }
             (1..count).map { HanabiCard(color, value, colorKnown = false, valueKnown = false) }
         }
-    }.shuffled(Random(42)).toMutableList())
+    }.shuffled().toMutableList())
 
     // Playing a five should give a clue token back
     fun reveal(clue: HanabiClue) {
@@ -75,6 +76,10 @@ data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>, val
         return board.minus(board.last()).all { it.size == 5 }
     }
 
+    fun increaseClueTokens() {
+        this.clueTokens = min(this.clueTokens + 1, this.config.maxClueTokens)
+    }
+
 }
 
 data class HanabiClue(val player: Int, val color: HanabiColor?, val value: Int?)
@@ -88,6 +93,7 @@ object HanabiGame {
         setup(HanabiConfig::class) {
             defaultConfig {
                 HanabiConfig(
+                    maxClueTokens = 8,
                     rainbowExtraColor = false,
                     rainbowOnlyOne = false,
                     rainbowWildcard = false,
@@ -119,6 +125,7 @@ object HanabiGame {
                     // TODO: Some Replayable interface would be handy here, use state if it exists, save state otherwise
                     val newCard = it.game.current.cards[it.parameter].moveAndReplace(it.game.discard, it.game.deck)
                     this.state("card", newCard.toStateString())
+                    it.game.increaseClueTokens()
                     it.game.nextTurn()
                 }
 //                replayEffect {
@@ -136,7 +143,7 @@ object HanabiGame {
                     val newCard = card.moveAndReplace(playArea ?: it.game.discard, it.game.deck)
                     this.state("card", newCard.toStateString())
                     if (card.card.value == 5) {
-                        it.game.clueTokens++
+                        it.game.increaseClueTokens()
                     }
                     if (playArea == null) {
                         it.game.failTokens--
@@ -170,8 +177,9 @@ object HanabiGame {
                         }
                     }
                 }
-                allowed { it.parameter.player != it.playerIndex && it.playerIndex == it.game.currentPlayer }
+                allowed { it.parameter.player != it.playerIndex && it.playerIndex == it.game.currentPlayer && it.game.clueTokens > 0 }
                 effect {
+                    it.game.clueTokens--
                     it.game.reveal(it.parameter)
                     it.game.nextTurn()
                 }

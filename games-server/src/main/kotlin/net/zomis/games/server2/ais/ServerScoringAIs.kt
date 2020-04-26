@@ -65,7 +65,8 @@ class ServerScoringAIs(private val aiRepository: AIRepository) {
         }
         val factories = listOf(
             ScorerAIFactory("Hanabi", "#AI_Cheating_PlayAndDiscard", scf<Hanabi>()
-                .withScorer(HanabiScorers.hanabiCheatPlay).withScorer(HanabiScorers.hanabiCheatDiscard)
+                .withScorer(HanabiScorers.hanabiCheatPlay, 20.0)
+                .withScorer(HanabiScorers.hanabiCheatDiscard, 10.0)
                 .withScorer(HanabiScorers.hanabiCluegiver)),
             ScorerAIFactory("Artax", "#AI_Aggressive_Simple", scf<TTArtax>().withScorer(artaxTake)),
             ScorerAIFactory("Artax", "#AI_Aggressive_Defensive", scf<TTArtax>().withScorer(copying).withScorer(artaxTake, 0.35)),
