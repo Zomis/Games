@@ -24,11 +24,6 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
 
 }
 
-class ReplayableScopeImpl: ReplayableScope {
-    override fun <T> state(key: String, default: () -> T): T {
-        return default()
-    }
-}
 class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override val playerCount: Int,
         override val config: Any): GameFactoryScope<Any> {
 
@@ -37,7 +32,7 @@ class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override va
     private val replayState = ReplayState(eliminationCallback)
     private val logic = GameLogicContext(model, replayState)
     init {
-        setupContext.model.onStart(ReplayableScopeImpl(), model)
+        setupContext.model.onStart(replayState, model)
         setupContext.logicDsl(logic)
     }
     val actions = ActionsImpl(model, logic, replayState)

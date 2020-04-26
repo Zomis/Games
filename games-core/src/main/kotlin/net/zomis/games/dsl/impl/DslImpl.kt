@@ -123,9 +123,13 @@ class GameViewContext<T : Any>(val model: T, private val eliminations: PlayerEli
     }
 }
 
-class ReplayState(override val playerEliminations: PlayerEliminations): EffectScope, ReplayScope {
+class ReplayState(override val playerEliminations: PlayerEliminations): EffectScope, ReplayScope, ReplayableScope {
     private val currentAction = mutableMapOf<String, Any>()
     private val mostRecent = mutableMapOf<String, Any>()
+
+    override fun replayable(): ReplayableScope {
+        return this
+    }
 
     fun setReplayState(state: Map<String, Any>?) {
         currentAction.clear()
@@ -133,6 +137,23 @@ class ReplayState(override val playerEliminations: PlayerEliminations): EffectSc
             currentAction.putAll(state)
         }
     }
+
+    private fun <T: Any> replayable(key: String, default: () -> T): T {
+        if (currentAction.containsKey(key)) {
+            return currentAction[key] as T!!
+        }
+        val value = default()
+        mostRecent[key] = value
+        currentAction[key] = value
+        return value
+    }
+
+    override fun map(key: String, default: () -> Map<String, Any>): Map<String, Any> = replayable(key, default)
+    override fun int(key: String, default: () -> Int): Int = replayable(key, default)
+    override fun ints(key: String, default: () -> List<Int>): List<Int> = replayable(key, default)
+    override fun string(key: String, default: () -> String): String = replayable(key, default)
+    override fun strings(key: String, default: () -> List<String>): List<String> = replayable(key, default)
+    override fun list(key: String, default: () -> List<Map<String, Any>>): List<Map<String, Any>> = replayable(key, default)
 
     override fun state(key: String, value: Any) {
         mostRecent[key] = value

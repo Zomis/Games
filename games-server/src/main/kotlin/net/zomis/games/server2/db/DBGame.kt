@@ -26,6 +26,7 @@ data class DBGameSummary(
     val playersInGame: List<PlayerInGame>,
     val gameType: String,
     val gameState: Int,
+    val startingState: Map<String, Any>?,
     val timeStarted: Long,
     val timeLastAction: Long
 )

@@ -10,6 +10,7 @@ import klog.KLoggers
 import net.zomis.common.convertFromDBFormat
 import net.zomis.common.convertToDBFormat
 import net.zomis.core.events.EventSystem
+import net.zomis.core.events.ListenerPriority
 import net.zomis.games.Features
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.GameImpl
@@ -40,8 +41,8 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
         events.listen("Load unfinished games", StartupEvent::class, {true}, {
             features.addData(UnfinishedGames(this.listUnfinished().toMutableSet()))
         })
-        events.listen("save game in Database", GameStartedEvent::class, { dbEnabled(it.game) }, { event ->
-            this.createGame(event.game, mapOf())
+        events.listen("save game in Database", ListenerPriority.LATER, GameStartedEvent::class, { dbEnabled(it.game) }, {
+            event -> this.createGame(event.game, mapOf())
         })
         events.listen("save game move in Database", MoveEvent::class, { dbEnabled(it.game) }, {event ->
             this.addMove(event)
@@ -135,12 +136,15 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
         val pkValue = Prefix.GAME.sk(game.gameId)
 
         // Don't use data here because PK and SK is the same, this doesn't need to be in GSI-1
+        val state: Any? = gameRandomnessState(game)
+        val updates = listOf(
+            AttributeUpdate(Fields.GAME_TYPE.fieldName).put(game.gameType.type),
+            AttributeUpdate(Fields.GAME_TIME_STARTED.fieldName).put(Instant.now().epochSecond),
+            AttributeUpdate(Fields.GAME_OPTIONS.fieldName).put(options)
+        ).let { if (state != null) it.plus(AttributeUpdate(Fields.MOVE_STATE.fieldName).put(state)) else it }
+
         val update = UpdateItemSpec().withPrimaryKey(this.pk, pkValue, this.sk, pkValue)
-            .withAttributeUpdate(
-                AttributeUpdate(Fields.GAME_TYPE.fieldName).put(game.gameType.type),
-                AttributeUpdate(Fields.GAME_TIME_STARTED.fieldName).put(Instant.now().epochSecond),
-                AttributeUpdate(Fields.GAME_OPTIONS.fieldName).put(options)
-            )
+            .withAttributeUpdate(updates)
         this.update("Create game $pkValue", update)
         val epochMilli = Instant.now().toEpochMilli()
         this.simpleUpdate(pkValue, SK_UNFINISHED, epochMilli)
@@ -168,14 +172,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
         val serverGame = move.game
         val moveIndex = serverGame.nextMoveIndex()
         val moveData = convertToDBFormat(move.move)
-        var state: Any? = null
-        if (serverGame.obj is GameImpl<*>) {
-            val game = serverGame.obj as GameImpl<*>
-            val lastMoveState = game.actions.lastMoveState()
-            if (lastMoveState.isNotEmpty()) {
-                state = convertToDBFormat(lastMoveState)
-            }
-        }
+        val state: Any? = gameRandomnessState(serverGame)
         val updates = mutableListOf(
             AttributeUpdate(Fields.MOVE_TIME.fieldName).put(epochMilli),
             AttributeUpdate(Fields.MOVE_PLAYER_INDEX.fieldName).put(move.player),
@@ -191,6 +188,17 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
         val update = UpdateItemSpec().withPrimaryKey(this.pk, Prefix.GAME.sk(serverGame.gameId),
             this.sk, Prefix.ZMOVE.sk(moveIndex.toString())).withAttributeUpdate(updates)
         this.update("Add Move $move", update)
+    }
+
+    private fun gameRandomnessState(serverGame: ServerGame): Any? {
+        if (serverGame.obj is GameImpl<*>) {
+            val game = serverGame.obj as GameImpl<*>
+            val lastMoveState = game.actions.lastMoveState()
+            if (lastMoveState.isNotEmpty()) {
+                return convertToDBFormat(lastMoveState)
+            }
+        }
+        return null
     }
 
     fun update(description: String, update: UpdateItemSpec) {
@@ -350,6 +358,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
             hidden -> GameState.HIDDEN
             else -> GameState.PUBLIC
         }
+        val startingState = convertFromDBFormat(gameDetails[Fields.MOVE_STATE.fieldName]) as Map<String, Any>?
         val timeStarted = gameDetails[Fields.GAME_TIME_STARTED.fieldName] as BigDecimal
         val timeLastAction = gameDetails[Fields.GAME_TIME_LAST.fieldName] as BigDecimal?
 
@@ -361,7 +370,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
         }
 
         return DBGameSummary(gameSpec, Prefix.GAME.extract(gameId), playersInGame, gameType, gameState.value,
-                timeStarted.longValueExact(), timeLastAction?.longValueExact()?:0)
+                startingState, timeStarted.longValueExact(), timeLastAction?.longValueExact()?:0)
     }
 
     private fun queryTable(query: QuerySpec): ItemCollection<QueryOutcome> {

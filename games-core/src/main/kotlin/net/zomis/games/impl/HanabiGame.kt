@@ -1,7 +1,9 @@
 package net.zomis.games.impl
 
 import net.zomis.games.WinResult
+import net.zomis.games.cards.Card
 import net.zomis.games.cards.CardZone
+import net.zomis.games.dsl.ReplayableScope
 import net.zomis.games.dsl.createActionType
 import net.zomis.games.dsl.createGame
 import kotlin.math.min
@@ -43,6 +45,7 @@ data class HanabiConfig(
 )
 data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>, val board: List<CardZone<HanabiCard>>, var clueTokens: Int, var failTokens: Int) {
     var currentPlayer: Int = 0
+    var turnsLeft = -1
     val current: HanabiPlayer get() = players[currentPlayer]
     val discard = CardZone(mutableListOf<HanabiCard>())
     val deck = CardZone(HanabiColor.values().flatMap { color ->
@@ -64,6 +67,7 @@ data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>, val
     }
 
     fun nextTurn() {
+        if (turnsLeft > 0) turnsLeft--
         this.currentPlayer = (this.currentPlayer + 1) % players.size
     }
 
@@ -78,6 +82,12 @@ data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>, val
 
     fun increaseClueTokens() {
         this.clueTokens = min(this.clueTokens + 1, this.config.maxClueTokens)
+    }
+
+    fun emptyDeckCheck() {
+        if (deck.size == 0 && turnsLeft < 0) {
+            turnsLeft = this.players.size
+        }
     }
 
 }
@@ -109,40 +119,31 @@ object HanabiGame {
             onStart {
                 // 5 cards for 2 or 3 players, otherwise 4 cards.
                 val playerCount = it.players.size
-                val cards = if (playerCount in 2..3) 5 else 4
-//                val cardsToDeal = this.state("deal") { it.deck.cards.take(cards * playerCount) }
-                it.deck.deal(cards * playerCount, it.players.map { p -> p.cards })
+                val cardPerPlayer = if (playerCount in 2..3) 5 else 4
+                val cardStates = this.strings("cards") {
+                    it.deck.top(cardPerPlayer * playerCount).map { c -> c.toStateString() }
+                }
+                val cards = it.deck.findStates(cardStates) { c -> c.toStateString() }
+                it.deck.deal(cards, it.players.map { p -> p.cards })
             }
         }
         logic {
             intAction(discard, { it.current.cards.indices }) {
-                allowed { it.playerIndex == it.game.currentPlayer }
-//                replayableEffect {
-//                    val newCard = this.state("card") { it.game.deck.first() }
-//
-//                }
+                allowed { it.playerIndex == it.game.currentPlayer && it.game.turnsLeft != 0 }
                 effect {
-                    // TODO: Some Replayable interface would be handy here, use state if it exists, save state otherwise
-                    val newCard = it.game.current.cards[it.parameter].moveAndReplace(it.game.discard, it.game.deck)
-                    this.state("card", newCard.toStateString())
+                    moveCard(this.replayable(), it.game, it.game.current.cards[it.parameter], it.game.discard)
                     it.game.increaseClueTokens()
                     it.game.nextTurn()
                 }
-//                replayEffect {
-//                    val newCard = this.state("card") as String
-//                    it.game.deck.find(newCard)
-//                    val newCard = it.game.current.cards[it.parameter].moveAndReplace(it.game.discard, it.game.deck)
-//                    this.state("card", newCard)
-//                }
             }
             intAction(play, {it.current.cards.indices}) {
-                allowed { it.playerIndex == it.game.currentPlayer }
+                allowed { it.playerIndex == it.game.currentPlayer && it.game.turnsLeft != 0 }
                 effect {
-                    val card = it.game.current.cards[it.parameter]
-                    val playArea = it.game.playAreaFor(card.card)
-                    val newCard = card.moveAndReplace(playArea ?: it.game.discard, it.game.deck)
-                    this.state("card", newCard.toStateString())
-                    if (card.card.value == 5) {
+                    val playCard = it.game.current.cards[it.parameter]
+                    val playArea = it.game.playAreaFor(playCard.card)
+
+                    moveCard(this.replayable(), it.game, playCard, playArea ?: it.game.discard)
+                    if (playCard.card.value == 5 && playArea != null) {
                         it.game.increaseClueTokens()
                     }
                     if (playArea == null) {
@@ -156,9 +157,6 @@ object HanabiGame {
                     }
                     it.game.nextTurn()
                 }
-//                replayEffect {
-//                    val newCard = this.state("card")
-//                }
             }
             action(giveClue) {
                 options {
@@ -177,7 +175,11 @@ object HanabiGame {
                         }
                     }
                 }
-                allowed { it.parameter.player != it.playerIndex && it.playerIndex == it.game.currentPlayer && it.game.clueTokens > 0 }
+                allowed {
+                    it.parameter.player != it.playerIndex &&
+                    it.playerIndex == it.game.currentPlayer &&
+                    it.game.clueTokens > 0 && it.game.turnsLeft != 0
+                }
                 effect {
                     it.game.clueTokens--
                     it.game.reveal(it.parameter)
@@ -201,6 +203,17 @@ object HanabiGame {
             value("clues") { it.clueTokens }
             value("fails") { it.failTokens }
             value("board") { it.board.map { b -> b.cards.map { c -> c.known(true) } } }
+        }
+    }
+
+    private fun moveCard(replayable: ReplayableScope, game: Hanabi, card: Card<HanabiCard>, destination: CardZone<HanabiCard>) {
+        if (game.deck.size > 0) {
+            val cardState = replayable.string("card") { game.deck.cards[0].toStateString() }
+            val nextCard = game.deck.findState(cardState) { c -> c.toStateString() }
+            card.moveAndReplace(destination, game.deck.card(nextCard))
+            game.emptyDeckCheck()
+        } else {
+            card.moveTo(destination)
         }
     }
 
