@@ -1,8 +1,8 @@
 <template>
   <div :class="['game', 'player-' + currentPlayer]">
     <GameHead :gameInfo="gameInfo" :playerCount="playerCount" :view="view" :eliminations="eliminations" />
-    <component :is="viewComponent" :view="view" :onAction="action" :actions="actions" />
-    <v-btn @click="cancelAction()" :disabled="actionPrevious.length == 0">Reset Action</v-btn>
+    <component :is="viewComponent" :view="view" :onAction="action" :actions="actions" :actionChoice="actionChoice" />
+    <v-btn @click="cancelAction()" :disabled="actionChoice === null">Reset Action</v-btn>
   </div>
 </template>
 <script>
@@ -48,8 +48,7 @@ export default {
     return {
       supportedGames: supportedGames,
       supportedGame: supportedGames.games[this.gameInfo.gameType],
-      actionChoosing: null,
-      actionPrevious: [],
+      actionChoice: null,
       playerCount: 0,
       eliminations: [],
       views: [],
@@ -72,11 +71,11 @@ export default {
   },
   methods: {
     cancelAction() {
-      this.actionChoosing = null;
-      this.actionPrevious = [];
+      this.actionChoice = null;
       this.updateActions();
     },
     updateView() {
+      console.log("UPDATE VIEW", this.viewer)
       let v = this.game.view_s8ev37$(this.viewer)
       this.view = valueToJS(v)
       if (this.view.currentPlayer !== undefined) {
@@ -85,69 +84,75 @@ export default {
       this.eliminations = this.game.eliminationCallback.eliminations_0.toArray();
       this.updateActions()
     },
-    resolveActionKey(game, actionName, type, value) {
-       let actionKeys = game.actions[actionName]
-       if (typeof actionKeys === 'object') {
-         actionKeys = actionKeys[type]
-       }
-       return actionKeys(value)
-    },
     updateActions() {
+      console.log("CALLING UPDATE ACTIONS", this.actionChoice, this.viewer, this.view)
+      let supportedGame = this.supportedGame
       let actions = {}
+      let choices = this.actionChoice ? this.actionChoice.choices : []
+      let autoPerform = false
       this.game.actions.types().toArray().forEach(e => {
-        if (this.actionChoosing && e.name != this.actionChoosing) {
+        if (this.actionChoice && this.actionChoice.actionName !== e.name) {
+          return;
+        }
+        let actionInfo = e.availableParameters_okoyba$(this.viewer, kotlin.kotlin.collections.listOf_i5x0yv$(choices))
+        let mappedInfo = {
+          nextOptions: actionInfo.nextOptions.size > 0 ? actionInfo.nextOptions.toArray() : [],
+          parameters: actionInfo.parameters.size > 0 ? actionInfo.parameters.toArray() : []
+        }
+        if (this.actionChoice && mappedInfo.nextOptions.length === 0 && mappedInfo.parameters.length === 1) {
+          // If we're choosing something, there is only one action to choose, and it is a final step, then perform action
+          console.log("AUTO PERFORM", this.actionChoice, mappedInfo.parameters[0])
+          this.actionChoice = null
+          autoPerform = true
+
+          let gameActionType = this.game.actions.type_61zpoe$(e.name)
+          gameActionType.perform_y5fo13$(this.viewer, mappedInfo.parameters[0])
+          console.log("AUTO PERFORM WILL UPDATE VIEW")
+          this.updateView()
+          console.log("AUTO PERFORM DONE")
           return
         }
-        let ca = {}
-        actions[e.name] = ca
-        console.log("ACTION INFO FOR", e.name, this.actionPrevious)
-        let actionInfo = e.availableParameters_okoyba$(this.viewer, kotlin.kotlin.collections.listOf_i5x0yv$(this.actionPrevious))
-        console.log("ACTION INFO", actionInfo)
-        if (actionInfo.nextOptions.size > 0) {
-        actionInfo.nextOptions.toArray().forEach(next => {
-          let key = this.resolveActionKey(this.supportedGame, e.name, "next", next)
-          console.log("POSSIBLE NEXT", next, key)
-          ca[key] = { next: next }
-        })
-        }
-        if (actionInfo.parameters.size > 0) {
-        actionInfo.parameters.toArray().forEach(actionParam => {
-          let key = this.resolveActionKey(this.supportedGame, e.name, "parameter", actionParam)
-          console.log("POSSIBLE PARAM", actionParam, key)
-          ca[key] = { parameter: actionParam }
-        })
-        }
-      })
-      this.actions = actions
+        actions[e.name] = supportedGames.actionInfo(supportedGame, e.name, mappedInfo, this.actionChoice);
+      });
+      if (autoPerform) return
+      this.actions = actions;
       console.log("ACTIONS FOR", this.viewer, actions)
     },
     action(name, data) {
-      if (this.view.winner !== undefined && this.view.winner !== null) {
+      if (this.view.winner !== undefined && this.view.winner !== null) { // TODO: Replace with this.game.isGameOver
         console.log("GAME OVER")
         return
       }
 
-      console.log("ACTION CHOICE", name, data, "PERHAPS THIS SHOULD BE TREATED AS A PERFORM DIRECTLY ?")
+      console.log("ACTION CHOICE", name, data)
       let action = this.actions[name][data]
+      console.log("ACTION CHOICE", name, data, action)
       if (action === undefined) {
         console.log("NO ACTION FOR", name, data, this.actions)
         return
       }
-      if (action.next !== undefined) {
-        this.actionChoosing = name
-        this.actionPrevious.push(action.next)
-        this.updateActions()
-        return
-      }
-      if (action.parameter !== undefined) {
+      if (action.direct) {
+        console.log("DIRECT PERFORM")
         let gameActionType = this.game.actions.type_61zpoe$(name)
-        gameActionType.perform_y5fo13$(this.viewer, action.parameter)
-        this.actionChoosing = null
-        this.actionPrevious = [];
+        gameActionType.perform_y5fo13$(this.viewer, action.value)
         this.updateView()
         return
       }
-      console.log("UNKNOWN ACTION", action)
+      if (this.actionChoice !== null && this.actionChoice.actionName === name) {
+        this.actionChoice.choices.push(action.value);
+      } else {
+        this.actionChoice = { actionName: name, choices: [action.value] }
+      }
+      console.log("LAST UPDATE ACTIONS")
+      this.updateActions()
+    }
+  },
+  watch: {
+    viewer(newValue, oldValue) {
+      if (newValue != oldValue) {
+        console.log("VIEWER CHANGING TO", newValue)
+        this.updateView()
+      }
     }
   },
   computed: {

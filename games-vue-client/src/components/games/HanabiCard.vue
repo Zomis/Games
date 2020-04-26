@@ -2,7 +2,7 @@
     <v-col>
     <v-card class="hanabi-card" :class="{ 'actionable': action }" :style="{ 'background-color': 'black' }">
         <v-card-title :class="'color-' + cardColor">
-            {{ card.value }}
+            {{ cardValue }}
         </v-card-title>
         <v-card-actions v-if="action">
             <v-btn @click="action('Play', 'play-' + index)">Play</v-btn>
@@ -14,8 +14,14 @@
 <script>
 export default {
     name: "HanabiCard",
-    props: ["card", "action"],
+    props: ["card", "index", "action"],
     computed: {
+        cardValue() {
+            if (this.card.value) {
+                return this.card.value
+            }
+            return '???'
+        },
         cardColor() {
             if (this.card.color) {
                 return this.card.color.toLowerCase()

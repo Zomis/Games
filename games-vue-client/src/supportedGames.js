@@ -16,6 +16,7 @@ import PlayGame from "@/components/PlayGame";
 
 import RoyalGameOfUR from "@/components/RoyalGameOfUR";
 import UTTT from "@/components/games/UTTT";
+import Hanabi from "@/components/games/Hanabi";
 import ECSGame from "@/components/ecs/ECSGame";
 import DSLTTT from "@/components/games/DSLTTT";
 import TTT3D from "@/components/games/TTT3D";
@@ -31,13 +32,10 @@ const tttActions = {
     play: xyAction
 }
 const tttMoveActions = {
-    move: {
-        next: xyAction,
-        parameter(params) {
-            console.log("TTTMOVEACTIONS - PARAMETER", params)
-            return xyAction(params.destination)
-        }
-    }
+    move: (source) => ({
+        key: xyAction(source),
+        parameter: (target) => xyAction(target)
+    })
 }
 
 const supportedGames = {
@@ -49,6 +47,23 @@ const supportedGames = {
             move: (i) => `${i}`
         },
         component: RoyalGameOfUR,
+        routeProps: defaultRouteProps
+    },
+    "Hanabi": {
+        displayName: "Hanabi",
+        dsl: gamejs.net.zomis.games.impl.HanabiGame.game,
+        actions: {
+            Play: (index) => "play-" + index,
+            Discard: (index) => "discard-" + index,
+            GiveClue: (playerIndex) => ({
+                key: 'player-' + playerIndex,
+                next: (mode) => ({
+                    key: mode,
+                    next: (hintValue) => `${mode}-${hintValue}`
+                })
+            })
+        },
+        component: Hanabi,
         routeProps: defaultRouteProps
     },
     "DSL-Connect4": {
@@ -148,6 +163,51 @@ export default {
             components[componentName] = game.component
         }
         return components
+    },
+    actionInfo(supportedGame, actionName, actionInfo, actionChoice) {
+        console.log("actionInfo", supportedGame, actionName, actionInfo, actionChoice)
+        function resolveActionPath(actionName, actionChoice, value) {
+            let actionKeys = supportedGame.actions[actionName]
+            if (actionChoice === null) {
+                actionChoice = { choices: [] };
+            }
+            let choices = [...actionChoice.choices]
+            let a = actionKeys;
+            for (let i = 0; i < choices.length; i++) {
+                a = a(choices[i]); // Returns either string or { key: string, next: function }
+                if (typeof a === 'object' && a.next) {
+                    a = a.next
+                }
+            }
+            a = a(value)
+            if (typeof a === 'object') return { ...a, value: value, direct: false }
+            return { key: a, value: value, direct: choices.length === 0 }
+        }
+    
+        if (actionChoice && actionName != actionChoice.actionName) {
+            return null
+        }
+
+        let ca = {}
+        console.log("ACTION INFO FOR", actionName, actionChoice)
+        console.log("ACTION INFO", actionInfo)
+        actionInfo.nextOptions.forEach(value => {
+            let key = resolveActionPath(actionName, actionChoice, value)
+            ca[key.key] = key
+            console.log("POSSIBLE NEXT", key)
+        })
+        if (actionInfo.nextOptions.length > 0) {
+            console.log("RETURN OPTIONS", ca)
+            return ca;
+        }
+
+        actionInfo.parameters.forEach(value => {
+            let key = resolveActionPath(actionName, actionChoice, value)
+            ca[key.key] = { ...key, final: true }
+            console.log("POSSIBLE PARAM", key)
+        })
+        console.log("RETURN PARAM", ca)
+        return ca
     },
     stateModules(state) {
         let modules = this.storeModules()

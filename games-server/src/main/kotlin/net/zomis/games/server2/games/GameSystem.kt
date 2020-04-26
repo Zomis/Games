@@ -34,7 +34,8 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
     private val actionListHandler = ActionListRequestHandler(this)
     val router = MessageRouter(this)
         .handler("view", this::viewRequest)
-        .handler("actionList", actionListHandler::actionListRequest)
+        .handler("actionList", actionListHandler::sendActionList)
+        .handler("action", this::actionRequest)
         .handler("move", this::moveRequest)
     var gameOver: Boolean = false
     private val nextMoveIndex = AtomicInteger(0)
@@ -53,6 +54,11 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
 
     fun nextMoveIndex(): Int {
         return nextMoveIndex.getAndIncrement()
+    }
+
+    private fun actionRequest(message: ClientJsonMessage) {
+        // Should not matter if it's an incomplete action or not
+        this.actionListHandler.actionRequest(message, callback)
     }
 
     private fun moveRequest(message: ClientJsonMessage) {

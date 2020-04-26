@@ -14,7 +14,7 @@
     </v-row>
 
     <v-row>
-      <v-col v-for="(player, index) in view.others" :key="'player-' + index">
+      <v-col v-for="player in view.others" :key="'player-' + player.index">
         <v-card>
           <v-card-title>Player {{ player.index }}</v-card-title>
           <v-card-text>
@@ -23,7 +23,10 @@
             </v-row>
           </v-card-text>
           <v-card-actions>
-            <v-btn @click="clue(player.index)">Give clue</v-btn>
+            <v-btn v-if="actions.GiveClue && actions.GiveClue['player-' + player.index]" @click="clue(player.index)">Give clue</v-btn>
+            <template v-if="actionChoice && actionChoice.choices[0] === player.index">
+              <v-btn v-for="(act, actIndex) in actions.GiveClue" @click="onAction('GiveClue', actIndex)" :key="actIndex">{{ actIndex }}</v-btn>
+            </template>
           </v-card-actions>
         </v-card>
       </v-col>
@@ -47,7 +50,7 @@
       <h2>Hand</h2>
       <v-container>
         <v-row>
-          <HanabiCard v-for="(card, cardIndex) in view.hand" :key="cardIndex" :card="card" :action="btnActions" />
+          <HanabiCard v-for="(card, cardIndex) in view.hand" :key="cardIndex" :card="card" :action="btnActions" :index="cardIndex" />
         </v-row>
       </v-container>
     </v-row>
@@ -62,7 +65,7 @@ import HanabiCard from "./HanabiCard"
 
 export default {
   name: "Hanabi",
-  props: ["view", "actions", "onAction"],
+  props: ["view", "actions", "actionChoice", "onAction"],
   components: {
       HanabiCard
   },
