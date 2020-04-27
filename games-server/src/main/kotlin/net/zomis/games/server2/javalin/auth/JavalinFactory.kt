@@ -1,27 +1,27 @@
 package net.zomis.games.server2.javalin.auth
 
-import java.io.ByteArrayInputStream
-import java.security.cert.CertificateFactory
-import java.security.interfaces.RSAPrivateKey
-import java.security.KeyFactory
-import java.security.spec.PKCS8EncodedKeySpec
-import java.security.NoSuchAlgorithmException
-import java.security.spec.InvalidKeySpecException
-import java.security.KeyStoreException
-import java.io.IOException
-import org.eclipse.jetty.util.ssl.SslContextFactory
-import java.security.KeyStore
-import java.io.File.separator
-import net.zomis.games.server2.ServerConfig
-import org.eclipse.jetty.server.Connector
-import org.eclipse.jetty.server.ServerConnector
 import io.javalin.Javalin
+import net.zomis.games.server2.ServerConfig
 import org.apache.commons.codec.binary.Base64
+import org.eclipse.jetty.server.Connector
 import org.eclipse.jetty.server.Server
+import org.eclipse.jetty.server.ServerConnector
+import org.eclipse.jetty.util.ssl.SslContextFactory
+import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.File.separator
+import java.io.IOException
 import java.nio.file.Files
+import java.security.KeyFactory
+import java.security.KeyStore
+import java.security.KeyStoreException
+import java.security.NoSuchAlgorithmException
 import java.security.cert.CertificateException
+import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
+import java.security.interfaces.RSAPrivateKey
+import java.security.spec.InvalidKeySpecException
+import java.security.spec.PKCS8EncodedKeySpec
 
 object JavalinFactory {
 
