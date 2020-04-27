@@ -1,5 +1,6 @@
 package net.zomis.games.impl
 
+import net.zomis.games.PlayerEliminations
 import net.zomis.games.WinResult
 import net.zomis.games.cards.Card
 import net.zomis.games.cards.CardZone
@@ -133,7 +134,7 @@ object HanabiGame {
                 effect {
                     moveCard(this.replayable(), it.game, it.game.current.cards[it.parameter], it.game.discard)
                     it.game.increaseClueTokens()
-                    it.game.nextTurn()
+                    nextTurnEndCheck(it.game, playerEliminations)
                 }
             }
             intAction(play, {it.current.cards.indices}) {
@@ -155,7 +156,7 @@ object HanabiGame {
                     if (it.game.boardComplete()) {
                         playerEliminations.eliminateRemaining(WinResult.WIN)
                     }
-                    it.game.nextTurn()
+                    nextTurnEndCheck(it.game, playerEliminations)
                 }
             }
             action(giveClue) {
@@ -183,7 +184,7 @@ object HanabiGame {
                 effect {
                     it.game.clueTokens--
                     it.game.reveal(it.parameter)
-                    it.game.nextTurn()
+                    nextTurnEndCheck(it.game, playerEliminations)
                 }
             }
         }
@@ -204,6 +205,13 @@ object HanabiGame {
             value("clues") { it.clueTokens }
             value("fails") { it.failTokens }
             value("board") { it.board.map { b -> b.cards.map { c -> c.known(true) } } }
+        }
+    }
+
+    private fun nextTurnEndCheck(game: Hanabi, playerEliminations: PlayerEliminations) {
+        game.nextTurn()
+        if (game.turnsLeft == 0) {
+            playerEliminations.eliminateRemaining(WinResult.LOSS)
         }
     }
 
