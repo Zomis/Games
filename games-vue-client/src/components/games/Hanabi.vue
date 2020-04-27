@@ -16,7 +16,7 @@
     <v-row>
       <v-col v-for="player in view.others" :key="'player-' + player.index">
         <v-card>
-          <v-card-title>Player {{ player.index }}</v-card-title>
+          <v-card-title>{{ players[player.index].name }}</v-card-title>
           <v-card-text>
             <v-row>
               <HanabiCard v-for="(card, cardIndex) in player.cards" :key="cardIndex" :card="card" />
@@ -43,9 +43,9 @@
     </v-row>
     <v-row>
       <!-- Buttons on each card: Discard, Play -->
-      <p>Clues: {{ view.clues }}</p>
-      <p>Fails: {{ view.fails }}</p>
-      <p>Cards Left: {{ view.cardsLeft }}</p>
+      <v-col>Clues: {{ view.clues }}</v-col>
+      <v-col>Fails: {{ view.fails }}</v-col>
+      <v-col>Cards Left: {{ view.cardsLeft }}</v-col>
     </v-row>
     <v-row>
       <h2>Hand</h2>
@@ -66,7 +66,7 @@ import HanabiCard from "./HanabiCard"
 
 export default {
   name: "Hanabi",
-  props: ["view", "actions", "actionChoice", "onAction"],
+  props: ["view", "actions", "actionChoice", "onAction", "players"],
   components: {
       HanabiCard
   },

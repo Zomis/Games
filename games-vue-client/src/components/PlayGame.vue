@@ -1,7 +1,7 @@
 <template>
   <div :class="['game', 'player-' + gameInfo.yourIndex]">
     <GameHead :gameInfo="gameInfo" :playerCount="gameInfo.players.length" :view="view" :eliminations="eliminations" />
-    <component :is="viewComponent" :view="view" :onAction="action" :actions="actions" :actionChoice="actionChoice" />
+    <component :is="viewComponent" :view="view" :onAction="action" :actions="actions" :actionChoice="actionChoice" :players="gameInfo.players" />
     <v-btn @click="resetActions()" :disabled="actionChoice === null">Reset Action</v-btn>
   </div>
 </template>

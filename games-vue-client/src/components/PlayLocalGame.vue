@@ -1,7 +1,7 @@
 <template>
   <div :class="['game', 'player-' + currentPlayer]">
     <GameHead :gameInfo="gameInfo" :playerCount="playerCount" :view="view" :eliminations="eliminations" />
-    <component :is="viewComponent" :view="view" :onAction="action" :actions="actions" :actionChoice="actionChoice" />
+    <component :is="viewComponent" :view="view" :onAction="action" :actions="actions" :actionChoice="actionChoice" :players="gameInfo.players" />
     <v-btn @click="cancelAction()" :disabled="actionChoice === null">Reset Action</v-btn>
   </div>
 </template>
@@ -61,12 +61,7 @@ export default {
   mounted() {
     let dsl = this.supportedGame.dsl
     let gameSetup = new gamejs.net.zomis.games.dsl.impl.GameSetupImpl(dsl)
-    let playerCount = 2;
-    if (this.gameInfo.gameType === 'Artax') {
-      playerCount = 2 + Math.floor(Math.random() * 3);
-    }
-    this.playerCount = playerCount
-    this.game = gameSetup.createGame_vux3hl$(playerCount, gameSetup.getDefaultConfig())
+    this.game = gameSetup.createGame_vux3hl$(this.gameInfo.players.length, gameSetup.getDefaultConfig())
     this.updateView(0)
   },
   methods: {

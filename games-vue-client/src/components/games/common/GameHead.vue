@@ -37,9 +37,6 @@ export default {
       let game = supportedGames.games[this.gameInfo.gameType]
       return game.displayName ? game.displayName : this.gameType.gameType
     },
-    isLocalGame() {
-      return (typeof this.gameInfo.players !== "object");
-    },
     displayStyle() {
       if (this.playerCount <= 2) {
         return "vs";
@@ -51,20 +48,11 @@ export default {
       return "avatars";
     },
     players() {
-      if (this.isLocalGame) {
-        return new Array(this.playerCount).fill(0).map((_, index) => index).map(i => ({
-          index: i,
-          name: "Player " + (i + 1),
-          picture: `https://www.gravatar.com/avatar/${md5(i)}?s=128&d=identicon`
-        }));
-      } else {
-        return this.gameInfo.players.map((player, i) => ({
-          index: i,
-          data: player,
-          name: player.name,
-          picture: `https://www.gravatar.com/avatar/${md5(player.name)}?s=128&d=identicon`
-        }));
-      }
+      return this.gameInfo.players.map((player, i) => ({
+        index: i,
+        name: player.name,
+        picture: `https://www.gravatar.com/avatar/${md5(player.name)}?s=128&d=identicon`
+      }));
     }
   }
 };

@@ -82,10 +82,21 @@ export default new Router({
       path: "/local/:gameType",
       name: "LocalPlay",
       component: PlayLocalGame,
-      props: route => ({
-        gameInfo: { gameType: route.params.gameType },
-        showRules: true
-      })
+      props: route => {
+        let playerCount = 2;
+        if (route.params.gameType === 'Artax') {
+          playerCount = 2 + Math.floor(Math.random() * 3);
+        }
+        let players = new Array(playerCount).fill(0).map((_, index) => index).map(i => ({
+          index: i,
+          name: "Player " + (i + 1),
+          picture: null
+        }));
+        return {
+          gameInfo: { gameType: route.params.gameType, players: players },
+          showRules: true
+        }
+      }
     },
     {
       path: "/tv",
