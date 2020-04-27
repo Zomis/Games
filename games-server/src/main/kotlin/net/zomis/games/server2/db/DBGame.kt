@@ -41,16 +41,11 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
     val views = mutableListOf<Map<String, Any?>>()
 
     init {
-        val mapper = jacksonObjectMapper()
-        val view = game.view(null)
-        views.add(view)
-        println("START: " + mapper.writeValueAsString(view))
+        views.add(game.view(null))
 
         moveHistory.withIndex().forEach { move ->
             performMove(game, move)
-            val view = game.view(null)
-            views.add(view)
-            println(move.index.toString() + ": " + mapper.writeValueAsString(view))
+            views.add(game.view(null))
         }
     }
 
