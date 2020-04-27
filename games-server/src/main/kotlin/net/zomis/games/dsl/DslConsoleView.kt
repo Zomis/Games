@@ -3,6 +3,7 @@ package net.zomis.games.dsl
 import net.zomis.common.convertToDBFormat
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.impl.*
+import net.zomis.games.impl.HanabiGame
 import net.zomis.games.server2.Server2
 import net.zomis.games.server2.ServerConfig
 import net.zomis.games.server2.ServerGames
@@ -116,6 +117,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
     fun display(indentation: Int, name: String, data: Any?) {
         val prefix = (0 until indentation).joinToString("") { " " }
         when (data) {
+            null -> println("$prefix$name = null")
             is Int -> println("$prefix$name = $data")
             is String -> println("$prefix$name = $data")
             is List<*> -> {

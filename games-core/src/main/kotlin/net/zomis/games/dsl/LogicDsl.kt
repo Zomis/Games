@@ -1,5 +1,7 @@
 package net.zomis.games.dsl
 
+import net.zomis.games.PlayerEliminations
+
 typealias ActionLogic<T, P, A> = ActionScope<T, P, A>.() -> Unit
 typealias ActionLogicAdvanced<T, A> = ActionComplexScope<T, A>.() -> Unit
 
@@ -12,11 +14,21 @@ interface GameLogic<T : Any> {
     fun <A : Any> action(actionType: ActionType<A>, logic: ActionLogicAdvanced<T, A>)
 }
 
+interface ReplayableScope {
+    fun map(key: String, default: () -> Map<String, Any>): Map<String, Any>
+    fun int(key: String, default: () -> Int): Int
+    fun ints(key: String, default: () -> List<Int>): List<Int>
+    fun string(key: String, default: () -> String): String
+    fun strings(key: String, default: () -> List<String>): List<String>
+    fun list(key: String, default: () -> List<Map<String, Any>>): List<Map<String, Any>>
+}
 interface ReplayScope {
     fun state(key: String): Any
     fun fullState(key: String): Any?
 }
 interface EffectScope {
+    val playerEliminations: PlayerEliminations
+    fun replayable(): ReplayableScope
     fun state(key: String, value: Any)
 }
 

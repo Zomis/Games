@@ -58,6 +58,8 @@ fun convertFromDBFormat(obj: Any?): Any? {
             val map = obj as Map<String, *>
             map.mapValues { convertFromDBFormat(it.value) }
         }
+        is List<*> -> obj.map { convertFromDBFormat(it) }
+        is String -> obj
         else -> throw UnsupportedOperationException("Unable to handle " + obj.javaClass)
     }
 }

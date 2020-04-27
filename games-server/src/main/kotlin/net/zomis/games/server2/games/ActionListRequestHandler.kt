@@ -5,9 +5,11 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.games.dsl.impl.ActionInfo
 import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.server2.Client
 import net.zomis.games.server2.ClientJsonMessage
 import net.zomis.games.server2.getTextOrDefault
 
+class ActionList(val playerIndex: Int, val game: ServerGame, val actions: List<Pair<String, ActionInfo<Any>>>)
 class ActionListRequestHandler(private val game: ServerGame?) {
     private val logger = KLoggers.logger(this)
     private val mapper = jacksonObjectMapper()
@@ -27,17 +29,32 @@ class ActionListRequestHandler(private val game: ServerGame?) {
         }
     }
 
-    fun actionListRequest(message: ClientJsonMessage) {
+    fun sendActionList(message: ClientJsonMessage) {
+        val actionParams = actionParams(message)
+        this.sendActionParams(message.client, actionParams)
+    }
+
+    private fun sendActionParams(client: Client, actionParams: ActionList) {
+        val game = actionParams.game
+        logger.info { "Sending action list data for ${game.gameId} of type ${game.gameType.type} to ${actionParams.playerIndex}" }
+        client.send(mapOf(
+            "type" to "ActionList",
+            "gameType" to game.gameType.type,
+            "gameId" to game.gameId,
+            "playerIndex" to actionParams.playerIndex,
+            "actions" to actionParams.actions
+        ))
+    }
+
+    private fun actionParams(message: ClientJsonMessage): ActionList {
         if (game!!.obj !is GameImpl<*>) {
-            logger.error("Game ${game.gameId} of type ${game.gameType.type} is not a valid DSL game")
-            return
+            throw IllegalArgumentException("Game ${game.gameId} of type ${game.gameType.type} is not a valid DSL game")
         }
 
         val obj = game.obj as GameImpl<*>
         val playerIndex = message.data.getTextOrDefault("playerIndex", "-1").toInt()
         if (!game.verifyPlayerIndex(message.client, playerIndex)) {
-            logger.error("Client ${message.client} does not have index $playerIndex in Game ${game.gameId} of type ${game.gameType.type}")
-            return
+            throw IllegalArgumentException("Client ${message.client} does not have index $playerIndex in Game ${game.gameId} of type ${game.gameType.type}")
         }
 
         val moveType = message.data.get("moveType")?.asText()
@@ -63,17 +80,19 @@ class ActionListRequestHandler(private val game: ServerGame?) {
             }
             chosen.add(parameter)
         }
+        return ActionList(playerIndex, game, availableActionsMessage(obj, playerIndex, moveType, chosen))
+    }
 
-        val actionParams = availableActionsMessage(obj, playerIndex, moveType, chosen)
-
-        logger.info { "Sending action list data for ${game.gameId} of type ${game.gameType.type} to $playerIndex" }
-        message.client.send(mapOf(
-            "type" to "ActionList",
-            "gameType" to game.gameType.type,
-            "gameId" to game.gameId,
-            "playerIndex" to playerIndex,
-            "actions" to actionParams
-        ))
+    fun actionRequest(message: ClientJsonMessage, callback: GameCallback) {
+        val actionParams = actionParams(message)
+        val actionType = actionParams.actions.singleOrNull()
+        val action = actionType?.second!!.parameters.singleOrNull()
+        if (action != null) {
+            val actionRequest = PlayerGameMoveRequest(actionParams.game, actionParams.playerIndex, actionType.first, action)
+            callback.moveHandler(actionRequest)
+        } else {
+            this.sendActionParams(message.client, actionParams)
+        }
     }
 
 }

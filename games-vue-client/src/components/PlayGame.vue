@@ -1,8 +1,8 @@
 <template>
   <div :class="['game', 'player-' + gameInfo.yourIndex]">
     <GameHead :gameInfo="gameInfo" :playerCount="gameInfo.players.length" :view="view" :eliminations="eliminations" />
-    <component :is="viewComponent" :view="view" :onAction="action" :actions="actions" />
-    <v-btn @click="resetActions()" :disabled="actionPrevious.length == 0">Reset Action</v-btn>
+    <component :is="viewComponent" :view="view" :onAction="action" :actions="actions" :actionChoice="actionChoice" />
+    <v-btn @click="resetActions()" :disabled="actionChoice === null">Reset Action</v-btn>
   </div>
 </template>
 <script>
@@ -20,45 +20,36 @@ export default {
   },
   data() {
     return {
-      actionChoosing: null,
-      actionPrevious: [],
       supportedGames: supportedGames,
       supportedGame: supportedGames.games[this.gameInfo.gameType],
       views: []
     }
   },
   mounted() {
-    this.$store.dispatch("DslGameState/requestView", this.gameInfo);
-    this.$store.dispatch("DslGameState/requestActions", { gameInfo: this.gameInfo, chosen: [] });
+    this.resetActions();
   },
   methods: {
     resetActions() {
-      this.actionChoosing = null;
-      this.actionPrevious = [];
       this.$store.dispatch("DslGameState/requestView", this.gameInfo);
-      this.$store.dispatch("DslGameState/requestActions", { gameInfo: this.gameInfo, actionType: name, chosen: this.actionPrevious });
+      this.$store.dispatch("DslGameState/resetActions", { gameInfo: this.gameInfo });
     },
     action(name, data) {
       console.log("ACTION CHOICE", name, data)
       let action = this.actions[name][data]
+      console.log("ACTION CHOICE", name, data, action)
       if (action === undefined) {
         console.log("NO ACTION FOR", data)
         this.resetActions();
         return
       }
-      if (action.next !== undefined) {
-        this.actionChoosing = name
-        this.actionPrevious.push(action.next)
-        this.$store.dispatch("DslGameState/requestActions", { gameInfo: this.gameInfo, actionType: name, chosen: this.actionPrevious });
+      if (action.direct) {
+        // Perform direct
+        this.$store.dispatch("DslGameState/action", { gameInfo: this.gameInfo, name: name, data: action.value });
         return
       }
-      if (action.parameter !== undefined) {
-        this.$store.dispatch("DslGameState/action", { gameInfo: this.gameInfo, name: name, data: action.parameter });
-        this.actionChoosing = null
-        this.actionPrevious = [];
-        return
-      }
-      console.log("UNKNOWN ACTION", action)
+
+      this.$store.dispatch("DslGameState/nextAction", { gameInfo: this.gameInfo, name: name, action: action.value });
+      return;
     }
   },
   computed: {
@@ -66,6 +57,9 @@ export default {
       return this.supportedGame.component
     },
     ...mapState("DslGameState", {
+      actionChoice(state) {
+        return state.games[this.gameInfo.gameId].gameData.actionChoice;
+      },
       eliminations(state) {
         return state.games[this.gameInfo.gameId].gameData.eliminations;
       },

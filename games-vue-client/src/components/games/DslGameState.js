@@ -6,7 +6,6 @@ import supportedGames from "@/supportedGames"
 const gameStore = {
   namespaced: true,
   state: {
-    actionPrevious: [],
     games: {}
   },
   getters: {},
@@ -22,6 +21,7 @@ const gameStore = {
         gameData: {
           eliminations: [],
           view: {},
+          actionChoice: null, // actionName, choices
           actions: {}
         }
       });
@@ -34,39 +34,26 @@ const gameStore = {
       let game = state.games[data.gameId].gameData;
       game.view = data.view
     },
+    resetActions(state, data) {
+      let game = state.games[data.gameInfo.gameId].gameData;
+      game.actionChoice = null;
+    },
+    addChoice(state, data) {
+      let game = state.games[data.gameInfo.gameId].gameData;
+      game.actionChoice.choices.push(data.action);
+    },
+    setChoice(state, data) {
+      let game = state.games[data.gameInfo.gameId].gameData;
+      game.actionChoice = { actionName: data.name, choices: [data.action] }
+    },
     updateActions(state, data) {
       let game = state.games[data.gameId].gameData;
       let supportedGame = supportedGames.games[data.gameType]
-
-      function resolveActionKey(actionName, type, value) {
-        let actionKeys = supportedGame.actions[actionName]
-        if (typeof actionKeys === 'object') {
-          actionKeys = actionKeys[type]
-        }
-        return actionKeys(value)
-      }
-
       let actions = {}
       data.actions.forEach(e => {
-        let ca = {}
-        let actionName = e.first
-        actions[actionName] = ca
-
-        console.log("ACTION INFO FOR", actionName, state.actionPrevious)
-        let actionInfo = e.second
-        console.log("ACTION INFO", actionInfo)
-        actionInfo.nextOptions.forEach(next => {
-          let key = resolveActionKey(actionName, "next", next)
-          console.log("POSSIBLE NEXT", next, key)
-          ca[key] = { next: next }
-        })
-        actionInfo.parameters.forEach(actionParam => {
-          let key = resolveActionKey(actionName, "parameter", actionParam)
-          console.log("POSSIBLE PARAM", actionParam, key)
-          ca[key] = { parameter: actionParam }
-        })
-      })
-      game.actions = actions
+        actions[e.first] = supportedGames.actionInfo(supportedGame, e.first, e.second, game.actionChoice);
+      });
+      game.actions = actions;
     }
   },
   actions: {
@@ -76,19 +63,36 @@ const gameStore = {
         move: data.data
       });
     },
+    nextAction(context, data) {
+      let game = context.state.games[data.gameInfo.gameId];
+      let gameData = game.gameData
+      if (gameData.actionChoice !== null && gameData.actionChoice.actionName === data.name) {
+        context.commit("addChoice", data)
+      } else {
+        context.commit("setChoice", data)
+      }
+      let obj = {
+        moveType: data.name,
+        playerIndex: data.gameInfo.yourIndex,
+        chosen: gameData.actionChoice.choices
+      }
+      Socket.route(`games/${data.gameInfo.gameType}/${data.gameInfo.gameId}/action`, obj);
+    },
     requestView(context, data) {
       Socket.route(`games/${data.gameType}/${data.gameId}/view`, {});
     },
+    resetActions(context, data) {
+      context.commit("resetActions", { gameInfo: data.gameInfo });
+      this.dispatch("DslGameState/requestActions", { gameInfo: data.gameInfo });
+    },
     requestActions(context, data) {
-      let game = context.state.games[data.gameInfo.gameId]
-      if (!data.chosen) {
-        data.chosen = [];
-      }
+      let game = context.state.games[data.gameInfo.gameId];
+      let actionChoice = game.gameData.actionChoice
       let obj = {
         playerIndex: game.gameInfo.yourIndex,
-        chosen: data.chosen
+        chosen: actionChoice !== null ? actionChoice.choices : []
       };
-      if (data.actionType) { obj.moveType = data.actionType }
+      if (actionChoice && actionChoice.actionName) { obj.moveType = actionChoice.actionName }
 
       Socket.route(`games/${data.gameInfo.gameType}/${data.gameInfo.gameId}/actionList`, obj);
     },
@@ -106,6 +110,7 @@ const gameStore = {
         context.commit("updateActions", data);
       }
       if (data.type === "GameMove") {
+        context.commit("resetActions", { gameInfo: data })
         this.dispatch('DslGameState/requestView', data)
         this.dispatch('DslGameState/requestActions', { gameInfo: data })
       }

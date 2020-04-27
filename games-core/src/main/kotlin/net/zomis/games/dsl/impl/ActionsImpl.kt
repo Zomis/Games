@@ -37,8 +37,10 @@ abstract class GameLogicActionTypeBase<T : Any, P : Any, A : Actionable<T, P>>(
     }
 
     override fun replayAction(action: A, state: Map<String, Any>?) {
-        if (this.replayEffect != null) {
+        if (state != null) {
             replayState.setReplayState(state)
+        }
+        if (this.replayEffect != null) {
             this.replayEffect!!(replayState, action)
         } else {
             this.performAction(action)
@@ -252,7 +254,7 @@ class ActionTypeImplEntry<T : Any, P : Any, A : Actionable<T, P>>(private val mo
         impl.replayAction(action, state)
     }
     fun perform(action: A) {
-        replayState.resetLastMove()
+        replayState.stateKeeper.clear()
         impl.performAction(action)
     }
     fun createAction(playerIndex: Int, parameter: P): A = impl.createAction(playerIndex, parameter)
@@ -304,10 +306,6 @@ class ActionsImpl<T : Any>(private val model: T,
             return this.type(actionType) as ActionTypeImplEntry<T, P, Actionable<T, P>>
         }
         return null
-    }
-
-    fun lastMoveState(): Map<String, Any?> {
-        return replayState.lastMoveState()
     }
 
 }

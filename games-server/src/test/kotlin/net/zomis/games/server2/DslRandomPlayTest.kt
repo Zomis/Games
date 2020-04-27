@@ -143,9 +143,8 @@ class DslRandomPlayTest {
         if (winner != null) {
             assert(winner.isInt) { "Winner is not an int" }
         } else {
-            val eliminations = obj["view"]["eliminations"]
-            assert(eliminations.size() == 2)
-            assert(eliminations.all { it["eliminated"].asBoolean() })
+            val eliminations = gameImpl.eliminationCallback.eliminations()
+            assert(eliminations.size == 2)
         }
 
         p1.close()

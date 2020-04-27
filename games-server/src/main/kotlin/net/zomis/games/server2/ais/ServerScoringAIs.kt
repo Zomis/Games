@@ -8,6 +8,8 @@ import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.PointMove
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.dsl.sourcedest.TTArtax
+import net.zomis.games.impl.Hanabi
+import net.zomis.games.server2.ais.gamescorers.HanabiScorers
 import net.zomis.games.server2.games.GameTypeRegisterEvent
 import net.zomis.games.server2.games.PlayerGameMoveRequest
 import net.zomis.games.ur.RoyalGameOfUr
@@ -62,6 +64,10 @@ class ServerScoringAIs(private val aiRepository: AIRepository) {
             }
         }
         val factories = listOf(
+            ScorerAIFactory("Hanabi", "#AI_Cheating_PlayAndDiscard", scf<Hanabi>()
+                .withScorer(HanabiScorers.hanabiCheatPlay, 20.0)
+                .withScorer(HanabiScorers.hanabiCheatDiscard, 10.0)
+                .withScorer(HanabiScorers.hanabiCluegiver)),
             ScorerAIFactory("Artax", "#AI_Aggressive_Simple", scf<TTArtax>().withScorer(artaxTake)),
             ScorerAIFactory("Artax", "#AI_Aggressive_Defensive", scf<TTArtax>().withScorer(copying).withScorer(artaxTake, 0.35)),
             ScorerAIFactory("Artax", "#AI_Defensive", scf<TTArtax>().withScorer(copying, 2.0).withScorer(artaxTake, 0.35))

@@ -8,9 +8,14 @@ class GameModelContext<T, C> : GameModel<T, C> {
     var playerCount: IntRange = 2..2
     lateinit var factory: GameFactoryScope<C>.(C?) -> T
     lateinit var config: () -> C
+    var onStart: ReplayableScope.(T) -> Unit = {}
 
     override fun players(playerCount: IntRange) {
         this.playerCount = playerCount
+    }
+
+    override fun playersFixed(playerCount: Int) {
+        this.playerCount = playerCount..playerCount
     }
 
     override fun defaultConfig(creator: () -> C) {
@@ -19,6 +24,10 @@ class GameModelContext<T, C> : GameModel<T, C> {
 
     override fun init(factory: GameFactoryScope<C>.(C?) -> T) {
         this.factory = factory
+    }
+
+    override fun onStart(effect: ReplayableScope.(T) -> Unit) {
+        this.onStart = effect
     }
 }
 
@@ -118,30 +127,69 @@ class GameViewContext<T : Any>(val model: T, private val eliminations: PlayerEli
     }
 }
 
-class ReplayState: EffectScope, ReplayScope {
+class StateKeeper {
     private val currentAction = mutableMapOf<String, Any>()
+
+    fun lastMoveState(): Map<String, Any?> = currentAction.toMap()
+    fun clear() {
+        currentAction.clear()
+    }
+    fun setState(state: Map<String, Any>) {
+        currentAction.putAll(state)
+    }
+
+    fun save(key: String, value: Any) {
+        currentAction[key] = value
+    }
+
+    operator fun get(key: String): Any? {
+        return currentAction[key]
+    }
+
+    fun containsKey(key: String): Boolean {
+        return currentAction.containsKey(key)
+    }
+
+}
+class ReplayState(val stateKeeper: StateKeeper, override val playerEliminations: PlayerEliminations): EffectScope, ReplayScope, ReplayableScope {
     private val mostRecent = mutableMapOf<String, Any>()
 
+    override fun replayable(): ReplayableScope {
+        return this
+    }
+
     fun setReplayState(state: Map<String, Any>?) {
-        currentAction.clear()
+        stateKeeper.clear()
         if (state != null) {
-            currentAction.putAll(state)
+            stateKeeper.setState(state)
         }
     }
 
+    private fun <T: Any> replayable(key: String, default: () -> T): T {
+        if (stateKeeper.containsKey(key)) {
+            return stateKeeper[key] as T
+        }
+        val value = default()
+        mostRecent[key] = value
+        stateKeeper.save(key, value)
+        return value
+    }
+
+    override fun map(key: String, default: () -> Map<String, Any>): Map<String, Any> = replayable(key, default)
+    override fun int(key: String, default: () -> Int): Int = replayable(key, default)
+    override fun ints(key: String, default: () -> List<Int>): List<Int> = replayable(key, default)
+    override fun string(key: String, default: () -> String): String = replayable(key, default)
+    override fun strings(key: String, default: () -> List<String>): List<String> = replayable(key, default)
+    override fun list(key: String, default: () -> List<Map<String, Any>>): List<Map<String, Any>> = replayable(key, default)
+
     override fun state(key: String, value: Any) {
         mostRecent[key] = value
-        currentAction[key] = value
+        stateKeeper.save(key, value)
     }
 
     override fun fullState(key: String): Any? = mostRecent[key]
 
-    override fun state(key: String): Any = currentAction[key] ?: throw IllegalStateException("State '$key' not found")
-
-    fun lastMoveState(): Map<String, Any?> = currentAction.toMap()
-    fun resetLastMove() {
-        currentAction.clear()
-    }
+    override fun state(key: String): Any = stateKeeper[key] ?: throw IllegalStateException("State '$key' not found")
 }
 
 class GameDslContext<T : Any> : GameDsl<T> {

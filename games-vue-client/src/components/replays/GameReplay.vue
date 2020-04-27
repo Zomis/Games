@@ -130,9 +130,11 @@ export default {
         },
         gameInfo() {
             if (this.replay == null) { return null }
+            let sortedPlayersInGame = this.replay.playersInGame.slice()
+            sortedPlayersInGame.sort((a, b) => a.playerIndex - b.playerIndex)
             return {
                 gameType: this.replay.gameType,
-                players: this.playerNames,
+                players: sortedPlayersInGame.map(pig => pig.player),
                 gameId: this.gameUUID,
                 yourIndex: -1
             }
