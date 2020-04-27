@@ -193,7 +193,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
     private fun gameRandomnessState(serverGame: ServerGame): Any? {
         if (serverGame.obj is GameImpl<*>) {
             val game = serverGame.obj as GameImpl<*>
-            val lastMoveState = game.actions.lastMoveState()
+            val lastMoveState = game.stateKeeper.lastMoveState()
             if (lastMoveState.isNotEmpty()) {
                 return convertToDBFormat(lastMoveState)
             }

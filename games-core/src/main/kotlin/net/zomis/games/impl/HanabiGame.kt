@@ -198,7 +198,7 @@ object HanabiGame {
                     mapOf("index" to index, "cards" to cards)
                 }.filterNotNull()
             }
-            value("hand") { it.players[this.viewer!!].cards.map { card -> card.known(false) } }
+            value("hand") { it.players[this.viewer ?: 0].cards.map { card -> card.known(false) } }
             value("discard") { it.discard.cards.map { card -> card.known(true) } }
             value("cardsLeft") { it.deck.size }
             value("clues") { it.clueTokens }

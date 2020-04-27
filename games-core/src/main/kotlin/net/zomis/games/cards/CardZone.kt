@@ -49,7 +49,8 @@ class CardZone<T>(internal val cards: MutableList<T> = mutableListOf()) {
         this.cards.removeAll(cards)
     }
 
-    fun <S> findState(state: S, matcher: (T) -> S) = this.cards.find { matcher(it) == state }!!
+    fun <S> findState(state: S, matcher: (T) -> S) = this.cards.find { matcher(it) == state } ?:
+        throw IllegalStateException("Card not found for $state. Available cards are ${cards.map(matcher)}")
 
     fun <S> findStates(states: List<S>, matcher: (T) -> S): List<T> {
         val cards = this.cards.toMutableList()

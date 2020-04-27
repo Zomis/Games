@@ -6,6 +6,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.dsl.impl.GameSetupImpl
+import net.zomis.games.dsl.impl.StateKeeper
 
 enum class GameState(val value: Int) {
     HIDDEN(-1),
@@ -26,6 +27,7 @@ data class DBGameSummary(
     val playersInGame: List<PlayerInGame>,
     val gameType: String,
     val gameState: Int,
+    @JsonIgnore
     val startingState: Map<String, Any>?,
     val timeStarted: Long,
     val timeLastAction: Long
@@ -33,13 +35,22 @@ data class DBGameSummary(
 class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHistory: List<MoveHistory>) {
     private val gameSetup = GameSetupImpl(summary.gameSpec)
     @JsonIgnore
-    val game = gameSetup.createGame(summary.playersInGame.size, gameSetup.getDefaultConfig())
-    val views = mutableListOf(game.view(null))
+    val stateKeeper = StateKeeper().also { if (summary.startingState != null) it.setState(summary.startingState) }
+    @JsonIgnore
+    val game = gameSetup.createGameWithState(summary.playersInGame.size, gameSetup.getDefaultConfig(), stateKeeper)
+    val views = mutableListOf<Map<String, Any?>>()
 
     init {
+        val mapper = jacksonObjectMapper()
+        val view = game.view(null)
+        views.add(view)
+        println("START: " + mapper.writeValueAsString(view))
+
         moveHistory.withIndex().forEach { move ->
             performMove(game, move)
-            views.add(game.view(null))
+            val view = game.view(null)
+            views.add(view)
+            println(move.index.toString() + ": " + mapper.writeValueAsString(view))
         }
     }
 
@@ -54,8 +65,12 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
             val view = game.view(null)
             throw BadReplayException("Unable to perform $it: Move at index ${move.index} is not allowed. View is $view")
         }
-        logic.replayAction(actionable, it.state)
-        game.stateCheck()
+        try {
+            logic.replayAction(actionable, it.state)
+            game.stateCheck()
+        } catch (e: Exception) {
+            throw IllegalStateException("Unable to perform move: $move", e)
+        }
     }
 
     fun at(position: Int): GameImpl<Any> {

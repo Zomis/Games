@@ -127,8 +127,31 @@ class GameViewContext<T : Any>(val model: T, private val eliminations: PlayerEli
     }
 }
 
-class ReplayState(override val playerEliminations: PlayerEliminations): EffectScope, ReplayScope, ReplayableScope {
+class StateKeeper {
     private val currentAction = mutableMapOf<String, Any>()
+
+    fun lastMoveState(): Map<String, Any?> = currentAction.toMap()
+    fun clear() {
+        currentAction.clear()
+    }
+    fun setState(state: Map<String, Any>) {
+        currentAction.putAll(state)
+    }
+
+    fun save(key: String, value: Any) {
+        currentAction[key] = value
+    }
+
+    operator fun get(key: String): Any? {
+        return currentAction[key]
+    }
+
+    fun containsKey(key: String): Boolean {
+        return currentAction.containsKey(key)
+    }
+
+}
+class ReplayState(val stateKeeper: StateKeeper, override val playerEliminations: PlayerEliminations): EffectScope, ReplayScope, ReplayableScope {
     private val mostRecent = mutableMapOf<String, Any>()
 
     override fun replayable(): ReplayableScope {
@@ -136,19 +159,19 @@ class ReplayState(override val playerEliminations: PlayerEliminations): EffectSc
     }
 
     fun setReplayState(state: Map<String, Any>?) {
-        currentAction.clear()
+        stateKeeper.clear()
         if (state != null) {
-            currentAction.putAll(state)
+            stateKeeper.setState(state)
         }
     }
 
     private fun <T: Any> replayable(key: String, default: () -> T): T {
-        if (currentAction.containsKey(key)) {
-            return currentAction[key] as T!!
+        if (stateKeeper.containsKey(key)) {
+            return stateKeeper[key] as T
         }
         val value = default()
         mostRecent[key] = value
-        currentAction[key] = value
+        stateKeeper.save(key, value)
         return value
     }
 
@@ -161,17 +184,12 @@ class ReplayState(override val playerEliminations: PlayerEliminations): EffectSc
 
     override fun state(key: String, value: Any) {
         mostRecent[key] = value
-        currentAction[key] = value
+        stateKeeper.save(key, value)
     }
 
     override fun fullState(key: String): Any? = mostRecent[key]
 
-    override fun state(key: String): Any = currentAction[key] ?: throw IllegalStateException("State '$key' not found")
-
-    fun lastMoveState(): Map<String, Any?> = currentAction.toMap()
-    fun resetLastMove() {
-        currentAction.clear()
-    }
+    override fun state(key: String): Any = stateKeeper[key] ?: throw IllegalStateException("State '$key' not found")
 }
 
 class GameDslContext<T : Any> : GameDsl<T> {

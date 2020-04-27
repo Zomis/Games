@@ -19,17 +19,21 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
     fun getDefaultConfig(): Any = if (configClass() == Unit::class) Unit else context.model.config()
 
     fun createGame(playerCount: Int, config: Any): GameImpl<T> {
-        return GameImpl(context, playerCount, config)
+        return GameImpl(context, playerCount, config, StateKeeper())
+    }
+
+    fun createGameWithState(playerCount: Int, config: Any, stateKeeper: StateKeeper): GameImpl<T> {
+        return GameImpl(context, playerCount, config, stateKeeper)
     }
 
 }
 
 class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override val playerCount: Int,
-        override val config: Any): GameFactoryScope<Any> {
+        override val config: Any, val stateKeeper: StateKeeper): GameFactoryScope<Any> {
 
     override val eliminationCallback = PlayerEliminations(playerCount)
     val model = setupContext.model.factory(this, config)
-    private val replayState = ReplayState(eliminationCallback)
+    private val replayState = ReplayState(stateKeeper, eliminationCallback)
     private val logic = GameLogicContext(model, replayState)
     init {
         setupContext.model.onStart(replayState, model)
@@ -38,7 +42,7 @@ class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override va
     val actions = ActionsImpl(model, logic, replayState)
 
     fun copy(copier: (source: T, destination: T) -> Unit): GameImpl<T> {
-        val copy = GameImpl(setupContext, playerCount, config)
+        val copy = GameImpl(setupContext, playerCount, config, stateKeeper)
         copier(this.model, copy.model)
         return copy
     }
