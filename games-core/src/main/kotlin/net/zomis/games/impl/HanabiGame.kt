@@ -16,10 +16,20 @@ import kotlin.math.min
 // game normally ends one full turn after the last card drawn.
 // allow empty clues - true/false
 
+// 0-5 Fruktansvärt utbuad av publiken.
+// 6-10 Mediokert, spridda applåder som bäst.
+// 11-15 Anmärkningsvärt, men kommer inte bli ihågkommet så länge
+// 16-20 Utmärkt, publiken är väldigt nöjd
+// 21-24 Suveränt, kommer att komma ihåg väldigt länge
+// 25 Legendariskt, alla är förstummade och hänförda
+
 enum class HanabiColor { YELLOW, WHITE, RED, BLUE, GREEN }
 data class HanabiCard(val color: HanabiColor, val value: Int, var colorKnown: Boolean, var valueKnown: Boolean) {
-    fun known(known: Boolean): Map<String, String> {
-        return mapOf<String, String>()
+    fun known(known: Boolean): Map<String, Any> {
+        return mapOf<String, Any>(
+            "colorKnown" to colorKnown,
+            "valueKnown" to valueKnown
+        )
             .let { if (known || colorKnown) it.plus("color" to color.name) else it }
             .let { if (known || valueKnown) it.plus("value" to value.toString()) else it }
     }
@@ -199,7 +209,10 @@ object HanabiGame {
                     mapOf("index" to index, "cards" to cards)
                 }.filterNotNull()
             }
-            value("hand") { it.players[this.viewer ?: 0].cards.map { card -> card.known(false) } }
+            value("hand") {
+                val cards = it.players[this.viewer ?: 0].cards.map { card -> card.known(false) }
+                mapOf("index" to this.viewer, "cards" to cards)
+            }
             value("discard") { it.discard.cards.map { card -> card.known(true) } }
             value("cardsLeft") { it.deck.size }
             value("clues") { it.clueTokens }
@@ -217,9 +230,12 @@ object HanabiGame {
 
     private fun moveCard(replayable: ReplayableScope, game: Hanabi, card: Card<HanabiCard>, destination: CardZone<HanabiCard>) {
         if (game.deck.size > 0) {
+            val zone = card.zone
             val cardState = replayable.string("card") { game.deck.cards[0].toStateString() }
             val nextCard = game.deck.findState(cardState) { c -> c.toStateString() }
-            card.moveAndReplace(destination, game.deck.card(nextCard))
+            card.moveTo(destination)
+            game.deck.card(nextCard).moveTo(zone)
+            // OLD: card.moveAndReplace(destination, game.deck.card(nextCard))
             game.emptyDeckCheck()
         } else {
             card.moveTo(destination)

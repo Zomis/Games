@@ -19,12 +19,12 @@
           <v-card-title>{{ players[player.index].name }}</v-card-title>
           <v-card-text>
             <v-row>
-              <HanabiCard v-for="(card, cardIndex) in player.cards" :key="cardIndex" :card="card" />
+              <HanabiCard v-for="(card, cardIndex) in player.cards" :key="cardIndex" :card="card" doubleView="true" />
             </v-row>
           </v-card-text>
           <v-card-actions>
-            <v-btn v-if="actions.GiveClue && actions.GiveClue['player-' + player.index]" @click="clue(player.index)">Give clue</v-btn>
-            <template v-if="actionChoice && actionChoice.choices[0] === player.index">
+            <v-btn v-if="myTurn && actions.GiveClue && actions.GiveClue['player-' + player.index]" @click="clue(player.index)">Give clue</v-btn>
+            <template v-if="myTurn && actionChoice && actionChoice.choices[0] === player.index">
               <v-btn v-for="(act, actIndex) in actions.GiveClue" @click="onAction('GiveClue', actIndex)" :key="actIndex">{{ actIndex }}</v-btn>
             </template>
           </v-card-actions>
@@ -51,7 +51,7 @@
       <h2>Hand</h2>
       <v-container>
         <v-row>
-          <HanabiCard v-for="(card, cardIndex) in view.hand" :key="cardIndex" :card="card" :action="btnActions" :index="cardIndex" />
+          <HanabiCard v-for="(card, cardIndex) in view.hand.cards" :key="cardIndex" :card="card" :action="myTurn ? btnActions : false" :index="cardIndex" />
         </v-row>
       </v-container>
     </v-row>
@@ -76,6 +76,11 @@ export default {
     },
     btnActions(action, index) {
       this.onAction(action, index);
+    }
+  },
+  computed: {
+    myTurn() {
+      return this.view.currentPlayer == this.view.hand.index
     }
   }
 };
