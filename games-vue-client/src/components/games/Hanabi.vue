@@ -45,6 +45,7 @@
       <!-- Buttons on each card: Discard, Play -->
       <p>Clues: {{ view.clues }}</p>
       <p>Fails: {{ view.fails }}</p>
+      <p>Cards Left: {{ view.cardsLeft }}</p>
     </v-row>
     <v-row>
       <h2>Hand</h2>
