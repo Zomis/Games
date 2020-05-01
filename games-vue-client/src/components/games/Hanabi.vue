@@ -23,7 +23,9 @@
             </v-row>
           </v-card-text>
           <v-card-actions>
-            <v-btn v-if="myTurn && actions.GiveClue && actions.GiveClue['player-' + player.index]" @click="clue(player.index)">Give clue</v-btn>
+            <v-btn v-if="myTurn && actions.GiveClue && actions.GiveClue['player-' + player.index]" @click="clue(player.index)" :disabled="view.clues <= 0">
+              Give clue
+            </v-btn>
             <template v-if="myTurn && actionChoice && actionChoice.choices[0] === player.index">
               <v-btn v-for="(act, actIndex) in actions.GiveClue" @click="onAction('GiveClue', actIndex)" :key="actIndex">{{ actIndex }}</v-btn>
             </template>
