@@ -97,7 +97,7 @@ data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>, val
 
     fun emptyDeckCheck() {
         if (deck.size == 0 && turnsLeft < 0) {
-            turnsLeft = this.players.size
+            turnsLeft = this.players.size + 1
         }
     }
 
@@ -140,7 +140,7 @@ object HanabiGame {
         }
         logic {
             intAction(discard, { it.current.cards.indices }) {
-                allowed { it.playerIndex == it.game.currentPlayer && it.game.turnsLeft != 0 }
+                allowed { it.playerIndex == it.game.currentPlayer && it.game.turnsLeft != 0 && it.game.clueTokens < it.game.config.maxClueTokens }
                 effect {
                     moveCard(this.replayable(), it.game, it.game.current.cards[it.parameter], it.game.discard)
                     it.game.increaseClueTokens()
