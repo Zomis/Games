@@ -223,6 +223,7 @@ object HanabiGame {
             value("discard") { it.discard.cards.map { card -> card.known(true) } }
             value("cardsLeft") { it.deck.size }
             value("clues") { it.clueTokens }
+            value("score") { it.board.sumBy { zone -> zone.size } }
             value("fails") { it.failTokens }
             value("board") { it.board.map { b -> b.cards.map { c -> c.known(true) } } }
         }

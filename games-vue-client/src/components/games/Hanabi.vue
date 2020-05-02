@@ -48,6 +48,7 @@
       <v-col>Clues: {{ view.clues }}</v-col>
       <v-col>Fails: {{ view.fails }}</v-col>
       <v-col>Cards Left: {{ view.cardsLeft }}</v-col>
+      <v-col>Score: {{ view.score }}</v-col>
     </v-row>
     <v-row>
       <h2>{{ players[view.hand.index].name }} (You)</h2>
