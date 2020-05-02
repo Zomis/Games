@@ -47,6 +47,7 @@ data class HanabiCard(val color: HanabiColor, val value: Int, var colorKnown: Bo
 data class HanabiPlayer(val cards: CardZone<HanabiCard> = CardZone())
 data class HanabiConfig(
     val maxClueTokens: Int,
+    val failTokens: Int,
     val rainbowExtraColor: Boolean,
     val rainbowWildcard: Boolean,
     val rainbowOnlyOne: Boolean,
@@ -54,11 +55,15 @@ data class HanabiConfig(
     val playUntilFullEnd: Boolean,
     val allowEmptyClues: Boolean
 )
-data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>, val board: List<CardZone<HanabiCard>>, var clueTokens: Int, var failTokens: Int) {
+data class HanabiColorData(val color: HanabiColor, val board: CardZone<HanabiCard> = CardZone(mutableListOf()), val discard: CardZone<HanabiCard> = CardZone(mutableListOf()))
+data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
+    val colors: List<HanabiColorData> = HanabiColor.values().map { HanabiColorData(it) }
+    var clueTokens: Int = config.maxClueTokens
+    var failTokens: Int = config.failTokens
     var currentPlayer: Int = 0
     var turnsLeft = -1
+    val colorsUsed = if (config.rainbowExtraColor) 6 else 5
     val current: HanabiPlayer get() = players[currentPlayer]
-    val discard = CardZone(mutableListOf<HanabiCard>())
     val deck = CardZone(HanabiColor.values().flatMap { color ->
         (1..5).flatMap { value ->
             val count = when (value) {
@@ -82,13 +87,13 @@ data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>, val
         this.currentPlayer = (this.currentPlayer + 1) % players.size
     }
 
+    fun colorData(card: HanabiCard): HanabiColorData = colors.find { it.color == card.color }!!
     fun playAreaFor(card: HanabiCard): CardZone<HanabiCard>? {
-        val potentialArea = board[card.color.ordinal]
-        return potentialArea.takeIf { it.size + 1 == card.value }
+        return colorData(card).board.takeIf { it.size + 1 == card.value }
     }
 
     fun boardComplete(): Boolean {
-        return board.minus(board.last()).all { it.size == 5 }
+        return this.colors.size == this.colorsUsed && this.colors.all { it.board.size == 5 }
     }
 
     fun increaseClueTokens() {
@@ -119,6 +124,7 @@ object HanabiGame {
             defaultConfig {
                 HanabiConfig(
                     maxClueTokens = 8,
+                    failTokens = 3,
                     rainbowExtraColor = false,
                     rainbowOnlyOne = false,
                     rainbowWildcard = false,
@@ -129,7 +135,7 @@ object HanabiGame {
             }
             players(2..5)
             init {
-                Hanabi(config, (0 until playerCount).map { HanabiPlayer() }, HanabiColor.values().map { CardZone<HanabiCard>() }, 8, 3)
+                Hanabi(config, (0 until playerCount).map { HanabiPlayer() })
             }
             onStart {
                 // 5 cards for 2 or 3 players, otherwise 4 cards.
@@ -146,7 +152,8 @@ object HanabiGame {
             intAction(discard, { it.current.cards.indices }) {
                 allowed { it.playerIndex == it.game.currentPlayer && it.game.turnsLeft != 0 && it.game.clueTokens < it.game.config.maxClueTokens }
                 effect {
-                    moveCard(this.replayable(), it.game, it.game.current.cards[it.parameter], it.game.discard)
+                    val card = it.game.current.cards[it.parameter]
+                    moveCard(this.replayable(), it.game, card, it.game.colorData(card.card).discard)
                     it.game.increaseClueTokens()
                     nextTurnEndCheck(it.game, playerEliminations)
                 }
@@ -157,7 +164,7 @@ object HanabiGame {
                     val playCard = it.game.current.cards[it.parameter]
                     val playArea = it.game.playAreaFor(playCard.card)
 
-                    moveCard(this.replayable(), it.game, playCard, playArea ?: it.game.discard)
+                    moveCard(this.replayable(), it.game, playCard, playArea ?: it.game.colorData(playCard.card).discard)
                     if (playCard.card.value == 5 && playArea != null) {
                         it.game.increaseClueTokens()
                     }
@@ -220,12 +227,19 @@ object HanabiGame {
                 }
                 mapOf("index" to viewPerspective, "cards" to cards)
             }
-            value("discard") { it.discard.cards.map { card -> card.known(true) } }
+            value("colors") {
+                it.colors.map {colorData ->
+                    mapOf(
+                        "color" to colorData.color.name.toLowerCase(),
+                        "board" to colorData.board.map { card -> card.known(true) },
+                        "discard" to colorData.discard.toList().sortedBy { card -> card.value }.map { card -> card.known(true) }
+                    )
+                }
+            }
             value("cardsLeft") { it.deck.size }
             value("clues") { it.clueTokens }
-            value("score") { it.board.sumBy { zone -> zone.size } }
+            value("score") { it.colors.sumBy { zone -> zone.board.size } }
             value("fails") { it.failTokens }
-            value("board") { it.board.map { b -> b.cards.map { c -> c.known(true) } } }
         }
     }
 

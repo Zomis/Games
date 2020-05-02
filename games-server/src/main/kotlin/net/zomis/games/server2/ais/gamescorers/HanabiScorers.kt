@@ -22,7 +22,7 @@ object HanabiScorers {
     val hanabiCheatDiscard: FScorer<GameImpl<Hanabi>, Actionable<Hanabi, Any>> = SimpleScorer { action, params ->
         if (action.actionType != HanabiGame.discard.name) return@SimpleScorer 0.0
         val card = action.game.current.cards[action.parameter as Int].card.known(true)
-        if (action.game.board.any { it.toList().any { c -> c.known(true) == card } }) 1.0 else -1.0
+        if (action.game.colors.flatMap { it.board.toList() }.any { c -> c.known(true) == card }) 1.0 else -1.0
     }
 
 }

@@ -1,12 +1,16 @@
 <template>
   <v-container fluid>
     <v-row>
-      <v-col v-for="(board, index) in view.board" :key="'board-' + index">
+      <v-col v-for="colorData in view.colors" :key="'colors-' + colorData.color">
         <v-card>
-          <v-card-title>Board {{ index }}</v-card-title>
+          <v-card-title>{{ colorData.color }}</v-card-title>
           <v-card-text>
             <v-row>
-              <HanabiCard v-for="(card, cardIndex) in board" :key="cardIndex" :card="card" />
+              <HanabiCard v-for="(card, cardIndex) in colorData.board" :key="cardIndex" :card="card" />
+            </v-row>
+            <v-row>Discard</v-row>
+            <v-row>
+              <HanabiCard v-for="(card, cardIndex) in colorData.discard" :key="cardIndex" :card="card" />
             </v-row>
           </v-card-text>
         </v-card>
@@ -34,15 +38,6 @@
       </v-col>
     </v-row>
 
-    <v-row>
-      <h2>Discard</h2>
-      <!-- TODO: Filtered discards, with each color in its own pile -->
-      <v-container>
-        <v-row>
-          <HanabiCard v-for="(card, cardIndex) in view.discard" :key="cardIndex" :card="card" />
-        </v-row>
-      </v-container>
-    </v-row>
     <v-row>
       <!-- Buttons on each card: Discard, Play -->
       <v-col>Clues: {{ view.clues }}</v-col>
