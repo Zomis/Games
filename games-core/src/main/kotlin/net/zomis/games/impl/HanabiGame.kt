@@ -101,6 +101,10 @@ data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>, val
         }
     }
 
+    fun isGameOver(): Boolean {
+        return this.boardComplete() || this.turnsLeft == 0 || this.failTokens == 0
+    }
+
 }
 
 data class HanabiClue(val player: Int, val color: HanabiColor?, val value: Int?)
@@ -210,7 +214,9 @@ object HanabiGame {
                 }.filterNotNull()
             }
             value("hand") {
-                val cards = it.players[this.viewer ?: 0].cards.map { card -> card.known(false) }
+                val cards = it.players[this.viewer ?: 0].cards.map {
+                    card -> card.known(it.isGameOver())
+                }
                 mapOf("index" to this.viewer, "cards" to cards)
             }
             value("discard") { it.discard.cards.map { card -> card.known(true) } }
