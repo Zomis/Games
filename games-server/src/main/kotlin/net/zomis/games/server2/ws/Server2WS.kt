@@ -4,6 +4,7 @@ import io.javalin.Javalin
 import io.javalin.websocket.*
 import klog.KLoggers
 import net.zomis.games.server2.*
+import java.util.concurrent.TimeUnit
 
 interface WebsocketMessageHandler {
     fun connected(client: Client)
@@ -19,6 +20,7 @@ class Server2WS(private val javalin: Javalin, private val handler: WebsocketMess
     private fun onOpen(conn: WsSession) {
         val client = WebClient(conn)
         logger.info("Connection opened: " + conn.remoteAddress)
+        conn.idleTimeout = TimeUnit.MINUTES.toMillis(30)
         clients[conn] = client
         client.connected()
         handler.connected(client)
