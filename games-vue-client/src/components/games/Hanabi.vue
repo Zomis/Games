@@ -50,7 +50,7 @@
       <v-col>Cards Left: {{ view.cardsLeft }}</v-col>
     </v-row>
     <v-row>
-      <h2>Hand</h2>
+      <h2>{{ players[view.hand.index].name }} (You)</h2>
       <v-container>
         <v-row>
           <HanabiCard v-for="(card, cardIndex) in view.hand.cards" :key="cardIndex" :card="card" :action="myTurn ? btnActions : false" :index="cardIndex" />
