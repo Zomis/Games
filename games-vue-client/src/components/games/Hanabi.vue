@@ -16,7 +16,7 @@
     <v-row>
       <v-col v-for="player in view.others" :key="'player-' + player.index">
         <v-card>
-          <v-card-title>{{ players[player.index].name }}</v-card-title>
+          <v-card-title><span :class="{ 'active-player': view.currentPlayer == player.index }">{{ players[player.index].name }}</span></v-card-title>
           <v-card-text>
             <v-row>
               <HanabiCard v-for="(card, cardIndex) in player.cards" :key="cardIndex" :card="card" doubleView="true" />
@@ -89,4 +89,8 @@ export default {
 </script>
 <style>
 @import "../../assets/games-style.css";
+
+.active-player {
+  text-shadow: 3px 3px 5px #007F00;
+}
 </style>
