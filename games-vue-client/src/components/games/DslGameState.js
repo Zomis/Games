@@ -85,6 +85,9 @@ const gameStore = {
       context.commit("resetActions", { gameInfo: data.gameInfo });
       this.dispatch("DslGameState/requestActions", { gameInfo: data.gameInfo });
     },
+    joinGame(context, data) {
+      Socket.route(`games/${data.gameType}/${data.gameId}/join`, {})
+    },
     requestActions(context, data) {
       let game = context.state.games[data.gameInfo.gameId];
       let actionChoice = game.gameData.actionChoice
@@ -92,6 +95,10 @@ const gameStore = {
         playerIndex: game.gameInfo.yourIndex,
         chosen: actionChoice !== null ? actionChoice.choices : []
       };
+      if (obj.playerIndex < 0) {
+        return // Observers don't need actions
+      }
+
       if (actionChoice && actionChoice.actionName) { obj.moveType = actionChoice.actionName }
 
       Socket.route(`games/${data.gameInfo.gameType}/${data.gameInfo.gameId}/actionList`, obj);
@@ -103,16 +110,20 @@ const gameStore = {
       if (data.type == "PlayerEliminated") {
         context.commit("elimination", data);
       }
+      if (data.type === "GameInfo") {
+        // GameStarted also does other things (changes route for example), which is why this is separate.
+        context.commit("createGame", data);
+      }
       if (data.type === "GameView") {
         context.commit("updateView", data);
       }
       if (data.type === "ActionList") {
         context.commit("updateActions", data);
       }
-      if (data.type === "GameMove") {
+      if (data.type === "GameInfo" || data.type === "GameMove") {
         context.commit("resetActions", { gameInfo: data })
-        this.dispatch('DslGameState/requestView', data)
-        this.dispatch('DslGameState/requestActions', { gameInfo: data })
+        context.dispatch('requestView', data)
+        context.dispatch('requestActions', { gameInfo: data })
       }
     }
   }

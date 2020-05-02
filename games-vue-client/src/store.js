@@ -3,6 +3,7 @@ import Vuex from "vuex";
 import supportedGames from "@/supportedGames"
 import Socket from "@/socket";
 import lobbyStore from "./components/lobby/lobbyStore";
+import router from "@/router/index";
 
 // const debug = process.env.NODE_ENV !== "production";
 Vue.use(Vuex);
@@ -22,6 +23,20 @@ const store = new Vuex.Store({
     }
   },
   actions: {
+    wall() {
+      if (!Socket.isConnected()) {
+        return new Promise((resolve) => {
+          console.log("NOT CONNECTED, REDIRECTING TO LOGIN")
+          let currentRoute = router.currentRoute
+          console.log(currentRoute)
+          router.push({
+            name: "ServerSelection",
+            params: { logout: true, redirect: { route: currentRoute, resolve: resolve } }
+          });
+        })
+      }
+      return Promise.resolve()
+    },
     observe(context, gameInfo) {
       context.commit(`${gameInfo.gameType}/createGame`, gameInfo);
     },

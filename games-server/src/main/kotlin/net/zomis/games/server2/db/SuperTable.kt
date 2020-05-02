@@ -26,7 +26,7 @@ data class UnfinishedGames(val unfinishedGames: MutableSet<DBGameSummary>)
 data class MoveHistory(val moveType: String, val playerIndex: Int, val move: Any?, val state: Map<String, Any>?)
 data class PlayerView(val playerId: String, val name: String)
 
-class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: GameSystem) {
+class SuperTable(private val dynamoDB: AmazonDynamoDB) {
 
     private val logger = KLoggers.logger(this)
 
@@ -54,33 +54,12 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
             this.playerEliminated(event)
         })
         events.listen("load game", ClientJsonMessage::class, { it.data.getTextOrDefault("type", "") == "LoadGame" }, { event ->
-            val gameId = event.data.getTextOrDefault("gameId", "")
-            val gameType = gameSystem.getGameType(event.data.getTextOrDefault("gameType", ""))
-            if (gameType == null) {
-                logger.warn { "No such gameType: $gameType" }
-                return@listen
-            }
-            if (gameType.runningGames.contains(gameId)) {
-                val game = gameType.runningGames[gameId]!!
-                event.client.send(gameSystem.createGameStartedMessage(game, event.client))
-                return@listen
-            }
-
-            val unfinishedGame = features[UnfinishedGames::class]!!.unfinishedGames.filter { it.gameId == gameId }.single()
-            val dbGame = this.getGame(unfinishedGame)
-
-            val game = gameType.resumeGame(dbGame.summary.gameId, dbGame.game)
-            game.players.addAll(findOrCreatePlayers(gameType.type, unfinishedGame.playersInGame.map { it.player!!.playerId }))
-            gameSystem.sendGameStartedMessages(game)
-            // Do NOT call GameStartedEvent as that will trigger database save
+            TODO("Delete LoadGame call. Should no longer be used")
+            //val unfinishedGame = features[UnfinishedGames::class]!!.unfinishedGames.filter { it.gameId == gameId }.single()
+            //val dbGame = this.getGame(unfinishedGame)
+            // val game = gameType.resumeGame(dbGame.summary.gameId, dbGame.game)
         })
         return listOf(this.table).map { it.createTableRequest() }
-    }
-
-    fun findOrCreatePlayers(gameType: String, playerIds: List<String>): Collection<Client> {
-        return playerIds.map {playerId ->
-            gameSystem.gameClients(gameType)?.list()?.find { it.playerId.toString() == playerId } ?: FakeClient(UUID.fromString(playerId))
-        }
     }
 
     val tableName = "Server2"
@@ -339,7 +318,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
             val indexes = playerEntry.value[Fields.GAME_PLAYERS.fieldName] as List<Map<String, Any>>
             return@flatMap indexes.map {playerInfo ->
                 val index = (playerInfo["Index"] as BigDecimal).toInt()
-                val playerName = playerInfo["Name"] as String? ?: "UNKNOWN"
+                val playerName = playerInfo["Name"] as String? ?: findPlayerName(playerId) ?: "UNKNOWN"
                 val attributeName = Fields.PLAYER_PREFIX.fieldName + index
                 val hasDetails = gameDetails.hasAttribute(attributeName)
                 val playerResults = if (hasDetails) {
@@ -371,6 +350,14 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB, private val gameSystem: G
 
         return DBGameSummary(gameSpec, Prefix.GAME.extract(gameId), playersInGame, gameType, gameState.value,
                 startingState, timeStarted.longValueExact(), timeLastAction?.longValueExact()?:0)
+    }
+
+    private fun findPlayerName(playerId: String): String? {
+        val query = QuerySpec()
+                .withHashKey(this.pk, Prefix.PLAYER.sk(playerId))
+                .withRangeKeyCondition(RangeKeyCondition(this.sk).between("o", "s"))
+        val playerItem = this.queryTable(query).firstOrNull()
+        return playerItem?.get("PlayerName") as String?
     }
 
     private fun queryTable(query: QuerySpec): ItemCollection<QueryOutcome> {

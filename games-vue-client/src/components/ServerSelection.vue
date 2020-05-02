@@ -30,7 +30,7 @@ const serverOptions = [
 
 export default {
   name: "ServerSelection",
-  props: ["logout"],
+  props: ["logout", "redirect"],
   data() {
     return {
       serverOptions: serverOptions,
@@ -39,13 +39,21 @@ export default {
   },
   components: { AuthChoice },
   mounted() {
+    console.log("Mounted Redirect is:", this.redirect)
     if (Socket.isConnected()) {
       this.$router.push("/");
     }
   },
   methods: {
     onAuthenticated() {
-      this.$router.push("/");
+      console.log("Redirect is:", this.redirect)
+      if (this.redirect) {
+        console.log("Using redirect")
+        this.redirect.resolve()
+        this.$router.push(this.redirect.route)
+      } else {
+        this.$router.push("/");
+      }
     }
   }
 };

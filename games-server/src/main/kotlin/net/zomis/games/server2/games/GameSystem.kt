@@ -1,6 +1,5 @@
 package net.zomis.games.server2.games
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -12,8 +11,12 @@ import net.zomis.games.WinResult
 import net.zomis.games.dsl.PlayerIndex
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.server2.*
+import net.zomis.games.server2.clients.FakeClient
+import net.zomis.games.server2.db.DBGame
+import net.zomis.games.server2.db.PlayerInGame
 import net.zomis.games.server2.invites.ClientList
 import net.zomis.games.server2.invites.playerMessage
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
 val nodeFactory = JsonNodeFactory(false)
@@ -37,8 +40,11 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
         .handler("actionList", actionListHandler::sendActionList)
         .handler("action", this::actionRequest)
         .handler("move", this::moveRequest)
+        .handler("join", this::clientJoin)
     var gameOver: Boolean = false
     private val nextMoveIndex = AtomicInteger(0)
+    internal val players: MutableList<Client> = mutableListOf()
+    var obj: Any? = null
 
     fun broadcast(message: (Client) -> Any) {
         players.forEach { it.send(message.invoke(it)) }
@@ -54,6 +60,18 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
 
     fun nextMoveIndex(): Int {
         return nextMoveIndex.getAndIncrement()
+    }
+
+    private fun clientJoin(message: ClientJsonMessage) {
+        // If player should be playing, set as player.
+        // Otherwise, set player as observer.
+
+        val playerId = message.client.playerId!!
+        val index = players.indexOfFirst { it.playerId == playerId }
+        if (index >= 0) {
+            players[index] = message.client
+        }
+        message.client.send(createGameInfoMessage(message.client))
     }
 
     private fun actionRequest(message: ClientJsonMessage) {
@@ -92,8 +110,17 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
         ))
     }
 
-    internal val players: MutableList<Client> = mutableListOf()
-    var obj: Any? = null
+    fun sendGameStartedMessages() {
+        val players = this.players.asSequence().map { playerMessage(it) }.toList()
+        this.players.forEachIndexed { index, client ->
+            client.send(this.map("GameStarted").plus("yourIndex" to index).plus("players" to players))
+        }
+    }
+
+    private fun createGameInfoMessage(client: Client): Map<String, Any> {
+        val players = this.players.asSequence().map { playerMessage(it) }.toList()
+        return this.map("GameInfo").plus("yourIndex" to (this.clientPlayerIndex(client) ?: -1)).plus("players" to players)
+    }
 
 }
 
@@ -115,15 +142,41 @@ data class IllegalMoveEvent(val game: ServerGame, val player: Int, val moveType:
 typealias GameIdGenerator = () -> String
 typealias GameTypeMap<T> = (String) -> T?
 class GameCallback(
+    val gameLoader: (String) -> DBGame?,
     val moveHandler: (PlayerGameMoveRequest) -> Unit
 )
-class GameType(val callback: GameCallback, val type: String, events: EventSystem, private val idGenerator: GameIdGenerator) {
+class GameType(private val callback: GameCallback, val type: String, private val gameClients: () -> ClientList?,
+       events: EventSystem, private val idGenerator: GameIdGenerator) {
 
     private val logger = KLoggers.logger(this)
     val runningGames: MutableMap<String, ServerGame> = mutableMapOf()
     val features: Features = Features(events)
-    private val dynamicRouter: MessageRouterDynamic<ServerGame> = { key -> this.runningGames[key]?.router
-            ?: throw IllegalArgumentException("No such gameType: $key") }
+    private val dynamicRouter: MessageRouterDynamic<ServerGame> = { key ->
+        this.runningGames[key]?.router ?: loadGameFromDB(key)?.router ?: throw IllegalArgumentException("Unable to load game $key")
+    }
+
+    private fun loadGameFromDB(gameId: String): ServerGame? {
+        val dbGame = callback.gameLoader(gameId) ?: return null
+
+        val serverGame = ServerGame(callback, this, gameId, ServerGameOptions(true))
+        serverGame.obj = dbGame.game
+        runningGames[serverGame.gameId] = serverGame
+
+        fun findOrCreatePlayers(playersInGame: List<PlayerInGame>): Collection<Client> {
+            return playersInGame.map {player ->
+                val playerId = player.player!!.playerId
+                val name = player.player.name
+                gameClients()?.list()?.find { it.playerId.toString() == playerId }
+                    ?: FakeClient(UUID.fromString(playerId)).also { it.name = name }
+            }
+        }
+        serverGame.players.addAll(findOrCreatePlayers(dbGame.summary.playersInGame))
+        serverGame.sendGameStartedMessages()
+        // Do NOT call GameStartedEvent as that will trigger database save
+
+        return serverGame
+    }
+
     val router = MessageRouter(this).dynamic(dynamicRouter)
 
     init {
@@ -137,20 +190,13 @@ class GameType(val callback: GameCallback, val type: String, events: EventSystem
         return game
     }
 
-    fun resumeGame(gameId: String, game: GameImpl<Any>): ServerGame {
-        val serverGame = ServerGame(callback, this, gameId, ServerGameOptions(true))
-        serverGame.obj = game
-        runningGames[serverGame.gameId] = serverGame
-        return serverGame
-    }
-
 }
 
-class GameSystem(val gameClients: GameTypeMap<ClientList>) {
+class GameSystem(val gameClients: GameTypeMap<ClientList>, private val callback: GameCallback) {
 
     private val logger = KLoggers.logger(this)
 
-    private val dynamicRouter: MessageRouterDynamic<GameType> = { key -> this.getGameType(key)?.router ?: throw IllegalArgumentException("No such invite: $key") }
+    private val dynamicRouter: MessageRouterDynamic<GameType> = { key -> this.getGameType(key)?.router ?: throw IllegalArgumentException("No such gameType: $key") }
     val router = MessageRouter(this).dynamic(dynamicRouter)
 
     data class GameTypes(val gameTypes: MutableMap<String, GameType> = mutableMapOf())
@@ -158,14 +204,11 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>) {
     private lateinit var features: Features
 
     fun setup(features: Features, events: EventSystem, idGenerator: GameIdGenerator) {
-        val callback = GameCallback(
-            moveHandler = { events.execute(it) }
-        )
         this.features = features
         val gameTypes = features.addData(GameTypes())
 
         events.listen("Send GameStarted", ListenerPriority.LATER, GameStartedEvent::class, {true}, {event ->
-            sendGameStartedMessages(event.game)
+            event.game.sendGameStartedMessages()
         })
         events.listen("Send GameEnded", GameEndedEvent::class, {true}, {
             it.game.gameOver = true
@@ -190,27 +233,8 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>) {
             )
         })
         events.listen("Register GameType", GameTypeRegisterEvent::class, {true}, {
-            gameTypes.gameTypes[it.gameType] = GameType(callback, it.gameType, events, idGenerator)
+            gameTypes.gameTypes[it.gameType] = GameType(callback, it.gameType, { gameClients(it.gameType) }, events, idGenerator)
         })
-    }
-
-    fun sendGameStartedMessages(game: ServerGame) {
-        val players = game.players
-            .asSequence()
-            .map { playerMessage(it) }.toList()
-
-        game.players.forEachIndexed { index, client ->
-            client.send(game.map("GameStarted").plus("yourIndex" to index).plus("players" to players))
-        }
-    }
-
-    fun createGameStartedMessage(game: ServerGame, client: Client): JsonNode {
-        val playerNames = game.players
-            .asSequence()
-            .map { it.name ?: "(unknown)" }
-            .fold(objectMapper.createArrayNode()) { arr, name -> arr.add(name) }
-
-        return game.toJson("GameStarted").put("yourIndex", game.clientPlayerIndex(client)).set("players", playerNames)
     }
 
     fun getGameType(gameType: String): GameType? {

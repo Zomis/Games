@@ -19,13 +19,13 @@ fun timeStamp(): AttributeValue {
     return AttributeValue().withN(Instant.now().epochSecond.toString())
 }
 
-class DBIntegration(gameSystem: GameSystem) {
+class DBIntegration {
 
     private val logger = KLoggers.logger(this)
     val dynamoDB = AmazonDynamoDBClientBuilder.standard()
         .withRegion(Regions.EU_CENTRAL_1)
         .build()
-    val superTable = SuperTable(dynamoDB, gameSystem)
+    val superTable = SuperTable(dynamoDB)
 
     fun register(features: Features, events: EventSystem) {
         val tables = listOf<CreateTableRequest>() +

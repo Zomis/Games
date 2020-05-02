@@ -23,7 +23,7 @@ class LobbyGameType {
 }
 
 fun playerMessage(client: Client): Map<String, String> {
-    return mapOf("id" to client.playerId.toString(), "name" to client.name!!)
+    return mapOf("id" to client.playerId.toString(), "name" to (client.name ?: "(UNKNOWN)"))
 }
 
 /**

@@ -88,7 +88,12 @@ class Server2(val events: EventSystem) {
 
     private val dslGames = ServerGames.games
     private val lobbySystem = LobbySystem(features)
-    val gameSystem = GameSystem(lobbySystem::gameClients)
+    private val gameCallback = GameCallback(
+        gameLoader = { gameId -> dbIntegration?.loadGame(gameId) },
+        moveHandler = { events.execute(it) }
+    )
+    val gameSystem = GameSystem(lobbySystem::gameClients, gameCallback)
+    var dbIntegration: DBIntegration? = null
 
     val messageRouter = MessageRouter(this)
         .route("games", gameSystem.router)
@@ -129,7 +134,8 @@ class Server2(val events: EventSystem) {
         }
         val aiRepository = AIRepository()
         if (config.database) {
-            val dbIntegration = DBIntegration(gameSystem)
+            val dbIntegration = DBIntegration()
+            this.dbIntegration = dbIntegration
             features.add(dbIntegration::register)
             LinReplay(aiRepository, dbIntegration).setup(javalin)
             LinStats(StatsDB(dbIntegration.superTable)).setup(events, javalin)

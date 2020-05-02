@@ -38,7 +38,8 @@ export default new Router({
       path: "/login",
       name: "ServerSelection",
       props: route => ({
-        logout: route.params.logout
+        logout: route.params.logout,
+        redirect: route.params.redirect
       }),
       component: ServerSelection
     },

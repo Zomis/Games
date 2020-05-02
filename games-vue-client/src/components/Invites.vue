@@ -59,13 +59,7 @@ export default {
       this.$router.push({
         name: routeName,
         params: {
-          gameId: e.gameId, // needed for route URL
-          gameInfo: {
-            gameType: e.gameType,
-            players: e.players,
-            gameId: e.gameId,
-            yourIndex: e.yourIndex
-          }
+          gameId: e.gameId
         }
       });
     }

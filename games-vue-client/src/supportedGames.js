@@ -150,6 +150,8 @@ export default {
                 name: game.routeName || key,
                 component: PlayGame,
                 props: route => ({
+                    gameType: key,
+                    gameId: route.params.gameId,
                     ...game.routeProps(route)
                 })
             }

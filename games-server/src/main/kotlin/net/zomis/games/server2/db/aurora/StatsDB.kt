@@ -7,6 +7,7 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import klog.KLoggers
 import net.zomis.games.server2.db.*
+import net.zomis.games.server2.games.GameCallback
 import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.invites.ClientList
 import java.util.UUID
@@ -155,9 +156,8 @@ ORDER BY gameid ASC, "PlayerIndex" ASC
 }
 
 fun main() {
-    val games = GameSystem { ClientList(mutableSetOf()) }
-    val amazonDynamoDB = DBIntegration(games).dynamoDB
-    val db = StatsDB(SuperTable(amazonDynamoDB, games))
+    val amazonDynamoDB = DBIntegration().dynamoDB
+    val db = StatsDB(SuperTable(amazonDynamoDB))
     db.saveNewlyFinishedInStats()
     db.hikariDataSource.close()
 }

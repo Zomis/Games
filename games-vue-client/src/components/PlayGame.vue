@@ -1,8 +1,8 @@
 <template>
-  <div :class="['game', 'player-' + gameInfo.yourIndex]">
-    <GameHead :gameInfo="gameInfo" :playerCount="gameInfo.players.length" :view="view" :eliminations="eliminations" />
-    <component :is="viewComponent" :view="view" :onAction="action" :actions="actions" :actionChoice="actionChoice" :players="gameInfo.players" />
-    <v-btn @click="resetActions()" :disabled="actionChoice === null">Reset Action</v-btn>
+  <div class="game">
+    <GameHead v-if="gameInfo" :gameInfo="gameInfo" :playerCount="playerCount" :view="view" :eliminations="eliminations" />
+    <component v-if="view" :is="viewComponent" :view="view" :onAction="action" :actions="actions" :actionChoice="actionChoice" :players="players" />
+    <v-btn v-if="!isObserver" @click="resetActions()" :disabled="actionChoice === null">Reset Action</v-btn>
   </div>
 </template>
 <script>
@@ -13,7 +13,7 @@ import GameResult from "@/components/games/common/GameResult";
 
 export default {
   name: "PlayGame",
-  props: ["gameInfo", "showRules"],
+  props: ["gameType", "gameId", "showRules"],
   components: {
     GameHead,
     GameResult
@@ -21,12 +21,15 @@ export default {
   data() {
     return {
       supportedGames: supportedGames,
-      supportedGame: supportedGames.games[this.gameInfo.gameType],
+      supportedGame: supportedGames.games[this.gameType],
       views: []
     }
   },
   mounted() {
-    this.resetActions();
+    console.log("PlayGame mounted")
+    this.$store.dispatch('wall').then(() => {
+      this.$store.dispatch("DslGameState/joinGame", { gameType: this.gameType, gameId: this.gameId })
+    })
   },
   methods: {
     resetActions() {
@@ -56,17 +59,37 @@ export default {
     viewComponent() {
       return this.supportedGame.component
     },
+    isObserver() {
+      if (!this.gameInfo) { return true }
+      return this.gameInfo.yourIndex < 0;
+    },
     ...mapState("DslGameState", {
+      gameInfo(state) {
+        if (!state.games[this.gameId]) { return null }
+        return state.games[this.gameId].gameInfo;
+      },
       actionChoice(state) {
+        if (!state.games[this.gameId]) { return null }
         return state.games[this.gameInfo.gameId].gameData.actionChoice;
       },
       eliminations(state) {
+        if (!state.games[this.gameId]) { return null }
         return state.games[this.gameInfo.gameId].gameData.eliminations;
       },
       view(state) {
+        if (!state.games[this.gameId]) { return null }
         return state.games[this.gameInfo.gameId].gameData.view;
       },
+      playerCount(state) {
+        if (!state.games[this.gameId]) { return 0 }
+        return state.games[this.gameInfo.gameId].gameInfo.players.length;
+      },
+      players(state) {
+        if (!state.games[this.gameId]) { return null }
+        return state.games[this.gameInfo.gameId].gameInfo.players;
+      },
       actions(state) {
+        if (!state.games[this.gameId]) { return null }
         return state.games[this.gameInfo.gameId].gameData.actions;
       }
     })
