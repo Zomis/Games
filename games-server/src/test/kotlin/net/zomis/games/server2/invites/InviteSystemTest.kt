@@ -46,7 +46,7 @@ class InviteSystemTest {
         events.listen("Route", ClientJsonMessage::class, {it.data.has("route")}) {
             router.handle(it.data["route"].asText(), it)
         }
-        val gameSystem = GameSystem(lobbySystem::gameClients)
+        val gameSystem = GameSystem(lobbySystem::gameClients, GameCallback({null}) {})
         features.add { f, e -> gameSystem.setup(f, e, idGenerator) }
 
         fun createGameCallback(gameType: String, options: ServerGameOptions): ServerGame

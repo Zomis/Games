@@ -37,7 +37,8 @@ class LobbySystemTest {
         events = DocEventSystem(docWriter)
         features = Features(events)
         lobby = LobbySystem(features)
-        features.add { f, e -> GameSystem(lobby::gameClients).setup(f, e, idGenerator) }
+        val gameSystem = GameSystem(lobby::gameClients, GameCallback({null}) {})
+        features.add { f, e -> gameSystem.setup(f, e, idGenerator) }
         events.with(lobby::setup)
         clientAB2 = FakeClient().apply { name = "AB2"; playerId = UUID.fromString("11111111-1111-1111-1111-111111111111") }
         clientA1 = FakeClient().apply { name = "A1"; playerId = UUID.fromString("22222222-2222-2222-2222-222222222222") }
@@ -83,9 +84,10 @@ class LobbySystemTest {
     @Test
     fun testGameStartEnd() {
         val callback = GameCallback(
+            gameLoader = { null },
             moveHandler = {}
         )
-        val game = ServerGame(callback, GameType(callback, "A", events, idGenerator), idGenerator(), ServerGameOptions(false))
+        val game = ServerGame(callback, GameType(callback, "A", {null}, events, idGenerator), idGenerator(), ServerGameOptions(false))
         game.players.add(clientAB2)
         game.players.add(clientA1)
         events.execute(GameStartedEvent(game))
