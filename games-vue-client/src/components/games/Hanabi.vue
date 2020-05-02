@@ -50,13 +50,15 @@
       <v-col>Cards Left: {{ view.cardsLeft }}</v-col>
       <v-col>Score: {{ view.score }}</v-col>
     </v-row>
-    <v-row>
-      <h2>{{ players[view.hand.index].name }} (You)</h2>
-      <v-container>
-        <v-row>
-          <HanabiCard v-for="(card, cardIndex) in view.hand.cards" :key="cardIndex" :card="card" :action="myTurn ? btnActions : false" :index="cardIndex" />
-        </v-row>
-      </v-container>
+    <v-row justify="center">
+      <v-card>
+        <v-card-title><span :class="{ 'active-player': view.currentPlayer == view.hand.index }">{{ players[view.hand.index].name }} (You)</span></v-card-title>
+        <v-card-text>
+          <v-row>
+            <HanabiCard v-for="(card, cardIndex) in view.hand.cards" :key="cardIndex" :card="card" :action="myTurn ? btnActions : false" :index="cardIndex" />
+          </v-row>
+        </v-card-text>
+      </v-card>
     </v-row>
     <v-row>
       <h2>Actions</h2>
