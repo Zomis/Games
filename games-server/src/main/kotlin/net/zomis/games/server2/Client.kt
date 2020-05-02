@@ -34,4 +34,8 @@ open class Client {
 
     open fun sendData(data: String) {}
 
+    override fun toString(): String {
+        return "${this.javaClass.name}:($playerId/$name)"
+    }
+
 }
