@@ -32,7 +32,7 @@
         <div xs12>
             Started at {{ timeStarted }} - Ended at {{ timeLastAction }}
         </div>
-        <component xs12 :is="gameComponent" :actions="{}" :gameInfo="gameInfo" :view="currentView" />
+        <component xs12 :is="gameComponent" :actions="{}" :view="currentView" :players="players" />
         <GameResult xs12 :gameInfo="gameInfo"></GameResult>
       </v-flex>
     </v-layout>
@@ -100,6 +100,10 @@ export default {
     computed: {
         baseURL() {
             return process.env.VUE_APP_URL
+        },
+        players() {
+            if (this.gameInfo == null) return [];
+            return this.gameInfo.players;
         },
         timeStarted() {
             if (this.replay == null) return "";

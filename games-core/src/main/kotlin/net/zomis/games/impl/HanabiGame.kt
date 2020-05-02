@@ -214,10 +214,11 @@ object HanabiGame {
                 }.filterNotNull()
             }
             value("hand") {
-                val cards = it.players[this.viewer ?: 0].cards.map {
+                val viewPerspective = this.viewer ?: it.currentPlayer
+                val cards = it.players[viewPerspective].cards.map {
                     card -> card.known(it.isGameOver())
                 }
-                mapOf("index" to this.viewer, "cards" to cards)
+                mapOf("index" to viewPerspective, "cards" to cards)
             }
             value("discard") { it.discard.cards.map { card -> card.known(true) } }
             value("cardsLeft") { it.deck.size }
