@@ -44,9 +44,8 @@ class CardZone<T>(internal val cards: MutableList<T> = mutableListOf()) {
     fun deal(cards: List<T>, destinations: List<CardZone<T>>) {
         repeat(cards.size) {
             val destination = destinations[it % destinations.size]
-            destination.cards.add(cards[it])
+            card(cards[it]).moveTo(destination)
         }
-        this.cards.removeAll(cards)
     }
 
     fun <S> findState(state: S, matcher: (T) -> S) = this.cards.find { matcher(it) == state } ?:
