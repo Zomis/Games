@@ -44,10 +44,12 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
     var gameOver: Boolean = false
     private val nextMoveIndex = AtomicInteger(0)
     internal val players: MutableList<Client> = mutableListOf()
+    internal val observers: MutableSet<Client> = mutableSetOf()
     var obj: Any? = null
 
     fun broadcast(message: (Client) -> Any) {
         players.forEach { it.send(message.invoke(it)) }
+        observers.forEach { it.send(message.invoke(it)) }
     }
 
     fun clientPlayerIndex(client: Client): PlayerIndex {
@@ -70,6 +72,8 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
         val index = players.indexOfFirst { it.playerId == playerId }
         if (index >= 0) {
             players[index] = message.client
+        } else {
+            observers.add(message.client)
         }
         message.client.send(createGameInfoMessage(message.client))
     }
