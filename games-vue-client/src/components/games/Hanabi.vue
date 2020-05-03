@@ -17,8 +17,8 @@
       </v-col>
     </v-row>
 
-    <v-row>
-      <v-col v-for="player in view.others" :key="'player-' + player.index">
+    <v-row justify="center">
+      <v-col md="auto" v-for="player in view.others" :key="'player-' + player.index">
         <v-card>
           <v-card-title><span :class="{ 'active-player': view.currentPlayer == player.index }">{{ players[player.index].name }}</span></v-card-title>
           <v-card-text>

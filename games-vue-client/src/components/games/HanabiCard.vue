@@ -1,10 +1,10 @@
 <template>
-    <v-col>
-    <v-card class="hanabi-card" :class="{ 'double-view': doubleView, 'actionable': typeof action !== 'undefined' }" :style="{ 'background-color': 'black' }">
+    <v-col md="auto" xs="auto">
+    <v-card elevation="4" class="hanabi-card" :class="{ 'double-view': doubleView, 'actionable': typeof action !== 'undefined' }" :style="{ 'background-color': cardColor }">
         <v-card-title class="others-view" :class="'color-' + cardColor">
             {{ cardValue }}
         </v-card-title>
-        <v-card-text class="player-known" v-if="doubleView" :class="'color-' + cardKnownColor">
+        <v-card-text class="player-known" v-if="doubleView" :style="{'background-color': cardKnownColor}">
             {{ cardKnownValue }}
         </v-card-text>
         <v-card-actions v-if="action">
@@ -15,7 +15,15 @@
     </v-col>
 </template>
 <script>
-export default {
+    const colorToDisplayColor = {
+        "red": "#ef476f",
+        "blue": "#118AB2",
+        "green": "#06D6A0",
+        "yellow": "#FFD166",
+        "white": "whitesmoke",
+    }
+
+    export default {
     name: "HanabiCard",
     props: ["card", "index", "action", "doubleView"],
     computed: {
@@ -27,9 +35,9 @@ export default {
         },
         cardKnownColor() {
             if (this.card.colorKnown) {
-                return this.card.color.toLowerCase()
+                return colorToDisplayColor[this.card.color.toLowerCase()]
             }
-            return 'unknown'
+            return "grey"
         },
 
         cardValue() {
@@ -39,10 +47,11 @@ export default {
             return '???'
         },
         cardColor() {
+
             if (this.card.color) {
-                return this.card.color.toLowerCase()
+                return colorToDisplayColor[this.card.color.toLowerCase()]
             }
-            return 'unknown'
+            return "grey"
         }
     },
 
@@ -62,7 +71,7 @@ export default {
     color: cyan !important;
 }
 .hanabi-card .color-white {
-    color: white !important;
+    color: whitesmoke !important;
 }
 .hanabi-card .color-yellow {
     color: yellow !important;
@@ -78,12 +87,21 @@ export default {
 .hanabi-card.double-view .others-view {
     padding: 0 0 8px 16px;
     margin-bottom: 0;
+    font-weight: bold;
+    font-size: 26px;
+
 }
 .hanabi-card.double-view .player-known {
-    padding: 0
+    padding: 0;
+    font-weight: bold;
+    flex: 1;
+    border-top: 1px solid black;
 }
 .hanabi-card {
     width: 48px;
     height: 48px;
+    border: 1px solid black !important;
+    display: flex !important;
+    flex-direction: column !important;
 }
 </style>
