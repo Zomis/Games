@@ -20,7 +20,11 @@
     <v-row>
       <v-col v-for="player in view.others" :key="'player-' + player.index">
         <v-card>
-          <v-card-title><span :class="{ 'active-player': view.currentPlayer == player.index }">{{ players[player.index].name }}</span></v-card-title>
+          <v-card-title>
+            <span :class="{ 'active-player': view.currentPlayer == player.index }">
+              {{ player.index + 1 }}. {{ players[player.index].name }}
+            </span>
+          </v-card-title>
           <v-card-text>
             <v-row>
               <HanabiCard v-for="(card, cardIndex) in player.cards" :key="cardIndex" :card="card" doubleView="true" />
@@ -47,7 +51,11 @@
     </v-row>
     <v-row justify="center">
       <v-card>
-        <v-card-title><span :class="{ 'active-player': view.currentPlayer == view.hand.index }">{{ players[view.hand.index].name }} (You)</span></v-card-title>
+        <v-card-title>
+          <span :class="{ 'active-player': view.currentPlayer == view.hand.index }">
+            {{ view.hand.index + 1 }}. {{ players[view.hand.index].name }} (You)
+          </span>
+        </v-card-title>
         <v-card-text>
           <v-row>
             <HanabiCard v-for="(card, cardIndex) in view.hand.cards" :key="cardIndex" :card="card" :action="myTurn ? btnActions : false" :index="cardIndex" />
