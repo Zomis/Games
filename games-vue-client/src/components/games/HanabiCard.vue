@@ -15,15 +15,15 @@
     </v-col>
 </template>
 <script>
-    const colorToDisplayColor = {
-        "red": "#ef476f",
-        "blue": "#118AB2",
-        "green": "#06D6A0",
-        "yellow": "#FFD166",
-        "white": "whitesmoke",
-    }
+const colorToDisplayColor = {
+    "red": "#ef476f",
+    "blue": "#118AB2",
+    "green": "#06D6A0",
+    "yellow": "#FFD166",
+    "white": "#F5F5F5"
+}
 
-    export default {
+export default {
     name: "HanabiCard",
     props: ["card", "index", "action", "doubleView"],
     computed: {
@@ -58,24 +58,6 @@
 }
 </script>
 <style>
-.hanabi-card .color-unknown {
-    color: gray !important;
-}
-.hanabi-card .color-red {
-    color: red !important;
-}
-.hanabi-card .color-green {
-    color: lime !important;
-}
-.hanabi-card .color-blue {
-    color: cyan !important;
-}
-.hanabi-card .color-white {
-    color: whitesmoke !important;
-}
-.hanabi-card .color-yellow {
-    color: yellow !important;
-}
 .hanabi-card.actionable {
     width: 160px;
     height: 80px;
