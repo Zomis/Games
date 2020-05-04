@@ -1,5 +1,4 @@
 <template>
-    <v-col md="auto" xs="auto">
     <v-card elevation="4" class="hanabi-card" :class="{ 'double-view': doubleView, 'actionable': typeof action !== 'undefined' }" :style="{ 'background-color': cardColor }">
         <v-card-title class="others-view" :class="'color-' + cardColor">
             {{ cardValue }}
@@ -12,7 +11,6 @@
             <v-btn @click="action('Discard', 'discard-' + index)">Discard</v-btn>
         </v-card-actions>
     </v-card>
-    </v-col>
 </template>
 <script>
 const colorToDisplayColor = {
@@ -39,7 +37,6 @@ export default {
             }
             return "grey"
         },
-
         cardValue() {
             if (this.card.value) {
                 return this.card.value
@@ -47,7 +44,6 @@ export default {
             return '???'
         },
         cardColor() {
-
             if (this.card.color) {
                 return colorToDisplayColor[this.card.color.toLowerCase()]
             }
@@ -57,7 +53,7 @@ export default {
 
 }
 </script>
-<style>
+<style scoped>
 .hanabi-card.actionable {
     width: 160px;
     height: 80px;
@@ -83,7 +79,5 @@ export default {
     width: 48px;
     height: 48px;
     border: 1px solid black !important;
-    display: flex !important;
-    flex-direction: column !important;
 }
 </style>

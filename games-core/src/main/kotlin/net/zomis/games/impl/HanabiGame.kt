@@ -25,8 +25,11 @@ import kotlin.math.min
 
 enum class HanabiColor { YELLOW, WHITE, RED, BLUE, GREEN }
 data class HanabiCard(val color: HanabiColor, val value: Int, var colorKnown: Boolean, var valueKnown: Boolean) {
+    var id: Int = 0
+
     fun known(known: Boolean): Map<String, Any> {
         return mapOf<String, Any>(
+            "id" to id,
             "colorKnown" to colorKnown,
             "valueKnown" to valueKnown
         )
@@ -74,7 +77,7 @@ data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
             }
             (1..count).map { HanabiCard(color, value, colorKnown = false, valueKnown = false) }
         }
-    }.shuffled().toMutableList())
+    }.shuffled().toMutableList()).also { it.cards.forEachIndexed { index, hanabiCard -> hanabiCard.id = index } }
 
     // Playing a five should give a clue token back
     fun reveal(clue: HanabiClue) {

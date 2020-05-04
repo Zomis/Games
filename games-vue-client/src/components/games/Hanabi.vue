@@ -5,13 +5,13 @@
         <v-card>
           <v-card-title>{{ colorData.color }}</v-card-title>
           <v-card-text>
-            <v-row>
-              <HanabiCard v-for="(card, cardIndex) in colorData.board" :key="cardIndex" :card="card" />
-            </v-row>
+            <transition-group name="list-complete" tag="div">
+              <HanabiCard v-for="card in colorData.board" class="list-complete-item" :key="card.id" :card="card" />
+            </transition-group>
             <v-row>Discard</v-row>
-            <v-row>
-              <HanabiCard v-for="(card, cardIndex) in colorData.discard" :key="cardIndex" :card="card" />
-            </v-row>
+            <transition-group name="list-complete" tag="div">
+              <HanabiCard v-for="card in colorData.discard" class="list-complete-item" :key="card.id" :card="card" />
+            </transition-group>
           </v-card-text>
         </v-card>
       </v-col>
@@ -19,16 +19,16 @@
 
     <v-row justify="center">
       <v-col md="auto" v-for="player in view.others" :key="'player-' + player.index">
-        <v-card>
+        <v-card :class="{ 'active-player': view.currentPlayer == player.index }">
           <v-card-title>
-            <span :class="{ 'active-player': view.currentPlayer == player.index }">
+            <span class="player-name">
               {{ player.index + 1 }}. {{ players[player.index].name }}
             </span>
           </v-card-title>
           <v-card-text>
-            <v-row>
-              <HanabiCard v-for="(card, cardIndex) in player.cards" :key="cardIndex" :card="card" doubleView="true" />
-            </v-row>
+            <transition-group name="list-complete" tag="div">
+              <HanabiCard v-for="card in player.cards" class="list-complete-item" :key="card.id" :card="card" doubleView="true" />
+            </transition-group>
           </v-card-text>
           <v-card-actions>
             <v-btn v-if="myTurn && actions.GiveClue && actions.GiveClue['player-' + player.index]" @click="clue(player.index)" :disabled="view.clues <= 0">
@@ -50,16 +50,16 @@
       <v-col>Score: {{ view.score }}</v-col>
     </v-row>
     <v-row justify="center">
-      <v-card>
+      <v-card :key="view.hand.index" class="player-hand" :class="{ 'active-player': view.currentPlayer == view.hand.index }">
         <v-card-title>
-          <span :class="{ 'active-player': view.currentPlayer == view.hand.index }">
+          <span class="player-name">
             {{ view.hand.index + 1 }}. {{ players[view.hand.index].name }} (You)
           </span>
         </v-card-title>
         <v-card-text>
-          <v-row>
-            <HanabiCard v-for="(card, cardIndex) in view.hand.cards" :key="cardIndex" :card="card" :action="myTurn ? btnActions : false" :index="cardIndex" />
-          </v-row>
+          <transition-group name="list-complete" tag="div" class="">
+            <HanabiCard v-for="(card, cardIndex) in view.hand.cards" class="list-complete-item" :key="card.id" :card="card" :action="myTurn ? btnActions : false" :index="cardIndex" />
+          </transition-group>
         </v-card-text>
       </v-card>
     </v-row>
@@ -93,10 +93,23 @@ export default {
   }
 };
 </script>
-<style>
+<style scoped>
 @import "../../assets/games-style.css";
 
-.active-player {
+.active-player .player-name {
   text-shadow: 3px 3px 5px #007F00;
+}
+
+.list-complete-item {
+  transition: all 1s linear;
+  display: inline-block !important;
+  margin-right: 10px;
+}
+.list-complete-enter, .list-complete-leave-to {
+  opacity: 0;
+  transform: translateY(30px);
+}
+.list-complete-leave-active {
+  position: absolute;
 }
 </style>
