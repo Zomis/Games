@@ -49,7 +49,8 @@
       <v-col>Cards Left: {{ view.cardsLeft }}</v-col>
       <v-col>Score: {{ view.score }}</v-col>
     </v-row>
-    <v-row justify="center">
+    <v-row justify="center" class="translate-animation-wrapper">
+      <transition name="translate-animation">
       <v-card :key="view.hand.index" class="player-hand" :class="{ 'active-player': view.currentPlayer == view.hand.index }">
         <v-card-title>
           <span class="player-name">
@@ -62,6 +63,7 @@
           </transition-group>
         </v-card-text>
       </v-card>
+      </transition>
     </v-row>
     <v-row>
       <h2>Actions</h2>
@@ -95,6 +97,26 @@ export default {
 </script>
 <style scoped>
 @import "../../assets/games-style.css";
+
+.translate-animation-wrapper {
+  position: relative;
+  height: 180px;
+}
+.translate-animation-wrapper .player-hand {
+  position: absolute;
+}
+.translate-animation-enter-active, .translate-animation-leave-active {
+  transition: all 1s;
+}
+.translate-animation-enter, .translate-animation-leave-active {
+  opacity: 0;
+}
+.translate-animation-enter {
+  transform: translateX(400px);
+}
+.translate-animation-leave-active {
+  transform: translateX(-400px);
+}
 
 .active-player .player-name {
   text-shadow: 3px 3px 5px #007F00;
