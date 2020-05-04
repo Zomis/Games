@@ -69,7 +69,8 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
     }
 
     fun at(position: Int): GameImpl<Any> {
-        val game = gameSetup.createGame(summary.playersInGame.size, gameSetup.getDefaultConfig())
+        val stateKeeper = StateKeeper().also { if (summary.startingState != null) it.setState(summary.startingState) }
+        val game = gameSetup.createGameWithState(summary.playersInGame.size, gameSetup.getDefaultConfig(), stateKeeper)
         moveHistory.slice(0 until position).withIndex().forEach { performMove(game, it) }
         return game
     }
