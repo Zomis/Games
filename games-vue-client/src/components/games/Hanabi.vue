@@ -122,6 +122,9 @@ export default {
   transform: translateX(-400px);
 }
 
+.player-name {
+  transition: text-shadow 1.5s ease;
+}
 .active-player .player-name {
   text-shadow: 3px 3px 5px #007F00;
 }
