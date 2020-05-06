@@ -55,6 +55,7 @@ export default {
     props: ["gameUUID"],
     data() {
         return {
+            timerDelay: 1500,
             running: false,
             timer: null,
             position: 0,
@@ -91,7 +92,7 @@ export default {
                     if (this.position === this.replayLength) {
                         this.setRunning(false);
                     }
-                }, 750);
+                }, this.timerDelay);
             } else {
                 clearInterval(this.timer);
             }
