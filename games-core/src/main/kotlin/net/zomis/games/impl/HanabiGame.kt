@@ -24,7 +24,9 @@ import kotlin.math.min
 // 25 Legendariskt, alla är förstummade och hänförda
 
 enum class HanabiColor { YELLOW, WHITE, RED, BLUE, GREEN }
-data class HanabiCard(val color: HanabiColor, val value: Int, var colorKnown: Boolean, var valueKnown: Boolean) {
+class HanabiCard(val color: HanabiColor, val value: Int, var colorKnown: Boolean, var valueKnown: Boolean) {
+    val possibleValues: MutableMap<Int, Boolean> = mutableMapOf()
+    val possibleColors: MutableMap<HanabiColor, Boolean> = mutableMapOf()
     var id: Int = 0
 
     fun known(known: Boolean): Map<String, Any> {
@@ -38,12 +40,22 @@ data class HanabiCard(val color: HanabiColor, val value: Int, var colorKnown: Bo
     }
 
     fun reveal(clue: HanabiClue) {
+        if (clue.color != null) {
+            possibleColors[clue.color] = this.color == clue.color
+        }
+        if (clue.value != null) {
+            possibleValues[clue.value] = this.value == clue.value
+        }
         if (clue.value == this.value) this.valueKnown = true
         if (clue.color == this.color) this.colorKnown = true
     }
 
     fun toStateString(): String {
         return "$color-$value"
+    }
+
+    override fun toString(): String {
+        return "$color($colorKnown) $value($valueKnown)"
     }
 }
 
@@ -67,19 +79,20 @@ data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
     var turnsLeft = -1
     val colorsUsed = if (config.rainbowExtraColor) 6 else 5
     val current: HanabiPlayer get() = players[currentPlayer]
+
+    fun countInDeck(color: HanabiColor, value: Int): Int = when (value) {
+        1 -> 3
+        in 2..4 -> 2
+        5 -> 1
+        else -> throw IllegalArgumentException("Not an Hanabi value: $value")
+    }
+
     val deck = CardZone(HanabiColor.values().flatMap { color ->
         (1..5).flatMap { value ->
-            val count = when (value) {
-                1 -> 3
-                in 2..4 -> 2
-                5 -> 1
-                else -> throw IllegalArgumentException("Not an Hanabi value: $value")
-            }
-            (1..count).map { HanabiCard(color, value, colorKnown = false, valueKnown = false) }
+            (1..countInDeck(color, value)).map { HanabiCard(color, value, colorKnown = false, valueKnown = false) }
         }
     }.shuffled().toMutableList()).also { it.cards.forEachIndexed { index, hanabiCard -> hanabiCard.id = index } }
 
-    // Playing a five should give a clue token back
     fun reveal(clue: HanabiClue) {
         val player = players[clue.player]
         player.cards.forEach { it.reveal(clue) }

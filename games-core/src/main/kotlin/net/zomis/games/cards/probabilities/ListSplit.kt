@@ -3,7 +3,7 @@ package net.zomis.games.cards.probabilities
 class ListSplit<T> private constructor(val onlyA: List<T>, val both: List<T>, val onlyB: List<T>) {
 
     fun splitPerformed(): Boolean {
-        return !onlyA.isEmpty() || !onlyB.isEmpty()
+        return onlyA.isNotEmpty() || onlyB.isNotEmpty()
     }
 
     companion object {

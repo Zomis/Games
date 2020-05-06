@@ -123,7 +123,7 @@ class ZoneRule<Z : CardZone<*>, C> {
             }
         }
         if (checkForOnlyOneUnassignedGroup(unplacedCards)) return true
-        return if (checkForUnassignedGroupsSumMatchingRemainingSpace(unplacedCards)) true else false
+        return checkForUnassignedGroupsSumMatchingRemainingSpace(unplacedCards)
     }
 
     fun assign(group: CardGroup<C>, count: Int, unplacedCards: MutableMap<CardGroup<C>, Int?>) {
