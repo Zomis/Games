@@ -1,11 +1,15 @@
 <template>
     <v-card elevation="4" class="hanabi-card" :class="{ 'double-view': doubleView, 'actionable': typeof action !== 'undefined' }" :style="{ 'background-color': cardColor }">
-        <v-card-title class="others-view" :class="'color-' + cardColor">
-            {{ cardValue }}
-        </v-card-title>
-        <v-card-text class="player-known" v-if="doubleView" :style="{'background-color': cardKnownColor}">
-            {{ cardKnownValue }}
-        </v-card-text>
+        <transition name="slide-fade" mode="out-in">
+            <v-card-title class="slide-fade-item others-view" :key="cardValue">
+                {{ cardValue }}
+            </v-card-title>
+        </transition>
+        <transition name="slide-fade" mode="out-in">
+            <v-card-text class="slide-fade-item player-known" v-if="doubleView" :style="{'background-color': cardKnownColor}" :key="cardKnownValue + '-' + cardKnownColor">
+                {{ cardKnownValue }}
+            </v-card-text>
+        </transition>
         <v-card-actions v-if="action">
             <v-btn @click="action('Play', 'play-' + index)">Play</v-btn>
             <v-btn @click="action('Discard', 'discard-' + index)">Discard</v-btn>
@@ -79,5 +83,18 @@ export default {
     width: 48px;
     height: 48px;
     border: 1px solid black !important;
+    transition: background-color 2.5s ease;
 }
+
+.slide-fade-enter-active {
+  transition: all .5s ease;
+}
+.slide-fade-leave-active {
+  transition: all .5s ease;
+}
+.slide-fade-enter, .slide-fade-leave-to {
+  transform: translateX(10px);
+  opacity: 0;
+}
+
 </style>
