@@ -44,10 +44,22 @@
 
     <v-row>
       <!-- Buttons on each card: Discard, Play -->
-      <v-col>Clues: {{ view.clues }}</v-col>
-      <v-col>Fails: {{ view.fails }}</v-col>
-      <v-col>Cards Left: {{ view.cardsLeft }}</v-col>
-      <v-col>Score: {{ view.score }}</v-col>
+      <v-col>
+        <span>Clues</span>
+        <transition name="number-transition" mode="out-in"><p :key="view.clues">{{ view.clues }}</p></transition>
+      </v-col>
+      <v-col>
+        <span>Fails</span>
+        <transition name="number-transition" mode="out-in"><p :key="view.fails">{{ view.fails }}</p></transition>
+      </v-col>
+      <v-col>
+        <span>Cards Left</span>
+        <transition name="number-transition" mode="out-in"><p :key="view.cardsLeft">{{ view.cardsLeft }}</p></transition>
+      </v-col>
+      <v-col>
+        <span>Score</span>
+        <transition name="number-transition" mode="out-in"><p :key="view.score">{{ view.score }}</p></transition>
+      </v-col>
     </v-row>
     <v-row justify="center" class="translate-animation-wrapper">
       <transition name="translate-animation">
@@ -144,5 +156,24 @@ export default {
 }
 .list-complete-leave-active {
   position: absolute;
+}
+
+
+.number-transition-enter-active {
+  animation: bounce-in .75s;
+}
+.number-transition-leave-active {
+  animation: bounce-in .75s reverse;
+}
+@keyframes bounce-in {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(2.0);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 </style>
