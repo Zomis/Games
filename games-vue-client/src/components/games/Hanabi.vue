@@ -18,7 +18,7 @@
     </v-row>
 
     <v-row justify="center">
-      <v-col md="auto" v-for="player in view.others" :key="'player-' + player.index">
+      <v-col md="auto" v-for="player in view.others" :key="'player-' + player.index" class="player other-player">
         <v-card :class="{ 'active-player': view.currentPlayer == player.index }">
           <v-card-title>
             <span class="player-name">
@@ -51,14 +51,14 @@
     </v-row>
     <v-row justify="center" class="translate-animation-wrapper">
       <transition name="translate-animation">
-      <v-card :key="view.hand.index" class="player-hand" :class="{ 'active-player': view.currentPlayer == view.hand.index }">
+      <v-card :key="view.hand.index" class="player your-player player-hand" :class="{ 'active-player': view.currentPlayer == view.hand.index }">
         <v-card-title>
           <span class="player-name">
             {{ view.hand.index + 1 }}. {{ players[view.hand.index].name }} (You)
           </span>
         </v-card-title>
         <v-card-text>
-          <transition-group name="list-complete" tag="div" class="">
+          <transition-group name="list-complete" tag="div">
             <HanabiCard v-for="(card, cardIndex) in view.hand.cards" class="list-complete-item" :key="card.id" :card="card" :action="myTurn ? btnActions : false" :index="cardIndex" />
           </transition-group>
         </v-card-text>
@@ -98,6 +98,10 @@ export default {
 <style scoped>
 @import "../../assets/games-style.css";
 
+.player {
+  transition: all 1.5s ease;
+}
+
 .translate-animation-wrapper {
   position: relative;
   height: 180px;
@@ -127,9 +131,13 @@ export default {
   display: inline-block !important;
   margin-right: 10px;
 }
-.list-complete-enter, .list-complete-leave-to {
+.list-complete-enter {
   opacity: 0;
   transform: translateY(30px);
+}
+.list-complete-leave-to {
+  opacity: 0;
+  transform: translateY(-30px);
 }
 .list-complete-leave-active {
   position: absolute;
