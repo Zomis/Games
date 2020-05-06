@@ -120,6 +120,8 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
             null -> println("$prefix$name = null")
             is Int -> println("$prefix$name = $data")
             is String -> println("$prefix$name = $data")
+            is Boolean -> println("$prefix$name = $data")
+            is Double -> println("$prefix$name = $data")
             is List<*> -> {
                 println("$prefix$name")
                 data.forEachIndexed { index, value ->
@@ -139,9 +141,9 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
             }
             else -> {
                 try {
-                    display(indentation, name, convertToDBFormat(data!!))
+                    display(indentation, name, convertToDBFormat(data))
                 } catch (e: Exception) {
-                    println("${prefix}Unable to transform $name to Map: $e Class is ${data?.javaClass} and value $data")
+                    println("${prefix}Unable to transform $name to Map: $e Class is ${data.javaClass} and value $data")
                 }
             }
         }
