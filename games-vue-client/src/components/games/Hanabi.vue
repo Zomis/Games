@@ -18,8 +18,8 @@
     </v-row>
 
     <v-row justify="center">
-      <v-col md="auto" v-for="player in view.others" :key="'player-' + player.index" class="player other-player">
-        <v-card :class="{ 'active-player': view.currentPlayer == player.index }">
+      <v-col md="auto" v-for="player in view.others" :key="'player-' + player.index" class="animate-all">
+        <v-card :class="{ 'active-player': view.currentPlayer == player.index }" class="animate-all">
           <v-card-title>
             <span class="player-name">
               {{ player.index + 1 }}. {{ players[player.index].name }}
@@ -51,7 +51,7 @@
     </v-row>
     <v-row justify="center" class="translate-animation-wrapper">
       <transition name="translate-animation">
-      <v-card :key="view.hand.index" class="player your-player player-hand" :class="{ 'active-player': view.currentPlayer == view.hand.index }">
+      <v-card :key="view.hand.index" class="animate-all player-hand" :class="{ 'active-player': view.currentPlayer == view.hand.index }">
         <v-card-title>
           <span class="player-name">
             {{ view.hand.index + 1 }}. {{ players[view.hand.index].name }} (You)
@@ -98,7 +98,7 @@ export default {
 <style scoped>
 @import "../../assets/games-style.css";
 
-.player {
+.animate-all {
   transition: all 1.5s ease;
 }
 
