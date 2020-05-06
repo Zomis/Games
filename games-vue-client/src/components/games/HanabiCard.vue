@@ -64,7 +64,6 @@ export default {
 }
 .hanabi-card.double-view {
     width: 48px;
-    height: 72px;
 }
 .hanabi-card.double-view .others-view {
     padding: 0 0 8px 16px;
@@ -81,7 +80,6 @@ export default {
 }
 .hanabi-card {
     width: 48px;
-    height: 48px;
     border: 1px solid black !important;
     transition: background-color 2.5s ease;
 }
