@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import klog.KLoggers
 import net.zomis.games.Features
 import net.zomis.games.server2.invites.ClientInterestingGames
+import org.apache.commons.codec.digest.DigestUtils
 import java.util.UUID
 
 fun Collection<Client>.send(data: Map<String, Any?>) {
@@ -21,6 +22,7 @@ open class Client {
 
     var name: String? = null
     var playerId: PlayerId? = null
+    var picture: String? = null
     var interestingGames = ClientInterestingGames(emptySet(), 0, mutableSetOf())
 
     fun connected() {}
@@ -36,6 +38,12 @@ open class Client {
 
     override fun toString(): String {
         return "${this.javaClass.name}:($playerId/$name)"
+    }
+
+    fun updateInfo(name: String, playerId: PlayerId, picture: String? = null) {
+        this.name = name
+        this.playerId = playerId
+        this.picture = picture ?: "https://www.gravatar.com/avatar/${DigestUtils.md5Hex(playerId.toString())}?s=128&d=identicon"
     }
 
 }

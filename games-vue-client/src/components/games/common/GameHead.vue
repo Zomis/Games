@@ -50,8 +50,9 @@ export default {
     players() {
       return this.gameInfo.players.map((player, i) => ({
         index: i,
+        id: player.id,
         name: player.name,
-        picture: `https://www.gravatar.com/avatar/${md5(player.name)}?s=128&d=identicon`
+        picture: player.picture || `https://www.gravatar.com/avatar/${md5(player.id)}?s=128&d=identicon`
       }));
     }
   }

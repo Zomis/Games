@@ -25,8 +25,7 @@ class AuthorizationSystem(private val events: EventSystem) {
     fun handleGuest(client: Client, token: String) {
         val loginName = "guest-$token"
         logger.info("$client with token (empty) is guest/$loginName")
-        client.name = loginName
-        client.playerId = UUID.randomUUID()
+        client.updateInfo(loginName, UUID.randomUUID())
         events.execute(ClientLoginEvent(client, loginName, "guest", token))
         sendLoginToClient(client, loginName)
     }
@@ -39,9 +38,9 @@ class AuthorizationSystem(private val events: EventSystem) {
         val jsonResult = mapper.readTree(api.third.get())
 
         val loginName = jsonResult.get("login").asText()
+        val avatarUrl = jsonResult.getTextOrDefault("avatar_url", "").takeIf { it.isNotEmpty() }
         logger.info("$client with token $token is https://github.com/$loginName")
-        client.name = loginName
-        client.playerId = UUID.randomUUID()
+        client.updateInfo(loginName, UUID.randomUUID(), avatarUrl)
         events.execute(ClientLoginEvent(client, loginName, "github", token))
         sendLoginToClient(client, loginName)
     }

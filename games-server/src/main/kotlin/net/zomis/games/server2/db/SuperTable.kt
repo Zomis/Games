@@ -16,7 +16,6 @@ import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.server2.*
 import net.zomis.games.server2.ais.ServerAIProvider
-import net.zomis.games.server2.clients.FakeClient
 import net.zomis.games.server2.games.*
 import java.math.BigDecimal
 import java.time.Instant
@@ -255,7 +254,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         if (existing != null) {
             val uuid = existing.getString(this.pk).substringAfter(':')
             val pkValue = Prefix.PLAYER.sk(uuid)
-            event.client.playerId = UUID.fromString(uuid)
+            event.client.updateInfo(event.loginName, UUID.fromString(uuid))
             if (event.provider == ServerAIProvider) {
                 // Server AI times should be updated when the AI is used, not when starting the server
                 return

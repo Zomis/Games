@@ -170,8 +170,9 @@ class GameType(private val callback: GameCallback, val type: String, private val
             return playersInGame.map {player ->
                 val playerId = player.player!!.playerId
                 val name = player.player.name
+                val uuid = UUID.fromString(playerId)
                 gameClients()?.list()?.find { it.playerId.toString() == playerId }
-                    ?: FakeClient(UUID.fromString(playerId)).also { it.name = name }
+                    ?: FakeClient(uuid).also { it.updateInfo(name, uuid) }
             }
         }
         serverGame.players.addAll(findOrCreatePlayers(dbGame.summary.playersInGame))

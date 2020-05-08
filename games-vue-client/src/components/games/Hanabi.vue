@@ -22,7 +22,13 @@
         <v-card :class="{ 'active-player': view.currentPlayer == player.index }" class="animate-all">
           <v-card-title>
             <span class="player-name">
-              {{ player.index + 1 }}. {{ players[player.index].name }}
+              <span>{{ player.index + 1 }}.</span>
+              <v-avatar :size="32" v-on="on">
+                  <img
+                      :src="players[player.index].picture"
+                      :alt="players[player.index].name" />
+              </v-avatar>
+              <span>{{ players[player.index].name }}</span>
             </span>
           </v-card-title>
           <v-card-text>
@@ -66,7 +72,13 @@
       <v-card :key="view.hand.index" class="animate-all player-hand" :class="{ 'active-player': view.currentPlayer == view.hand.index }">
         <v-card-title>
           <span class="player-name">
-            {{ view.hand.index + 1 }}. {{ players[view.hand.index].name }} (You)
+            <span>{{ view.hand.index + 1 }}.</span>
+            <v-avatar :size="32" v-on="on">
+              <img
+                :src="players[view.hand.index].picture"
+                :alt="players[view.hand.index].name" />
+            </v-avatar>
+            <span>{{ players[view.hand.index].name }} (You)</span>
           </span>
         </v-card-title>
         <v-card-text>
