@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.util.UUID
 
-val Client.idName get() = """{"id":"${this.playerId}","name":"${this.name}"}"""
+val Client.idName get() = """{"id":"${this.playerId}","name":"${this.name}","picture":"${this.picture}"}"""
 
 class LobbySystemTest {
 
@@ -40,10 +40,10 @@ class LobbySystemTest {
         val gameSystem = GameSystem(lobby::gameClients, GameCallback({null}) {})
         features.add { f, e -> gameSystem.setup(f, e, idGenerator) }
         events.with(lobby::setup)
-        clientAB2 = FakeClient().apply { name = "AB2"; playerId = UUID.fromString("11111111-1111-1111-1111-111111111111") }
-        clientA1 = FakeClient().apply { name = "A1"; playerId = UUID.fromString("22222222-2222-2222-2222-222222222222") }
-        clientB1 = FakeClient().apply { name = "B1"; playerId = UUID.fromString("33333333-3333-3333-3333-333333333333") }
-        asker = FakeClient().apply { name = "Asker"; playerId = UUID.fromString("44444444-4444-4444-4444-444444444444") }
+        clientAB2 = FakeClient().apply { updateInfo("AB2", UUID.fromString("11111111-1111-1111-1111-111111111111")) }
+        clientA1 = FakeClient().apply { updateInfo("A1", UUID.fromString("22222222-2222-2222-2222-222222222222")) }
+        clientB1 = FakeClient().apply { updateInfo("B1", UUID.fromString("33333333-3333-3333-3333-333333333333")) }
+        asker = FakeClient().apply { updateInfo("Asker", UUID.fromString("44444444-4444-4444-4444-444444444444")) }
 
         events.execute(GameTypeRegisterEvent("A"))
         events.execute(GameTypeRegisterEvent("B"))

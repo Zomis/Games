@@ -56,8 +56,8 @@ class InviteSystemTest {
         router.route("invites", system.router)
         // Don't need the LobbySystem feature here
 
-        host = FakeClient().apply { name = "Host"; playerId = UUID.fromString("00000000-0000-0000-0000-000000000000") }
-        invitee = FakeClient().apply { name = "Invited"; playerId = UUID.fromString("11111111-1111-1111-1111-111111111111") }
+        host = FakeClient().apply { updateInfo("Host", UUID.fromString("00000000-0000-0000-0000-000000000000")) }
+        invitee = FakeClient().apply { updateInfo("Invited", UUID.fromString("11111111-1111-1111-1111-111111111111")) }
     }
 
     @Test
@@ -65,14 +65,14 @@ class InviteSystemTest {
         events.with(LobbySystem(features)::setup) // We need to lookup player by name
         events.execute(GameTypeRegisterEvent("TestGameType"))
         events.execute(GameTypeRegisterEvent("OtherGameType"))
-        host = FakeClient().apply { name = "TestClientA"; playerId = UUID.fromString("00000000-0000-0000-0000-000000000000") }
-        invitee = FakeClient().apply { name = "TestClientB"; playerId = UUID.fromString("11111111-1111-1111-1111-111111111111") }
+        host = FakeClient().apply { updateInfo("TestClientA", UUID.fromString("00000000-0000-0000-0000-000000000000")) }
+        invitee = FakeClient().apply { updateInfo("TestClientB", UUID.fromString("11111111-1111-1111-1111-111111111111")) }
 
 //        events.execute(ClientLoginEvent(host, host.name!!, "tests", "token"))
 //        events.execute(ClientLoginEvent(invitee, invitee.name!!, "tests", "token2"))
         host.sendToServer(events, """{ "route": "lobby/join", "gameTypes": ["TestGameType", "OtherGameType"], "maxGames": 1 }""")
         invitee.sendToServer(events, """{ "route": "lobby/join", "gameTypes": ["TestGameType", "OtherGameType"], "maxGames": 1 }""")
-        Assertions.assertEquals("""{"type":"LobbyChange","player":{"id":"11111111-1111-1111-1111-111111111111","name":"TestClientB"},"action":"joined","gameTypes":["TestGameType","OtherGameType"]}""", host.nextMessage())
+        Assertions.assertEquals("""{"type":"LobbyChange","player":${invitee.idName},"action":"joined","gameTypes":["TestGameType","OtherGameType"]}""", host.nextMessage())
 
         docWriter.document(events, "Inviting someone to play a game") {
             text("Inviting players is done by inviting their playerId, which will be unique")
@@ -88,7 +88,7 @@ class InviteSystemTest {
             receive(host, """{"type":"InviteResponse","inviteId":"TestGameType-TestClientA-0","playerId":"11111111-1111-1111-1111-111111111111","accepted":true}""")
 
             text("When a user accepts an invite the game is started automatically and both players will receive a `GameStarted` message.")
-            val playersString = """{"id":"00000000-0000-0000-0000-000000000000","name":"TestClientA"},{"id":"11111111-1111-1111-1111-111111111111","name":"TestClientB"}"""
+            val playersString = """${host.idName},${invitee.idName}"""
             receive(invitee, """{"type":"GameStarted","gameType":"TestGameType","gameId":"1","yourIndex":1,"players":[$playersString]}""")
         }
 
@@ -116,7 +116,7 @@ class InviteSystemTest {
 
         Assertions.assertEquals("""{"type":"InviteStatus","playerId":"11111111-1111-1111-1111-111111111111","status":"pending","inviteId":"inv-1"}""", host.nextMessage())
         Assertions.assertEquals("""{"type":"InviteResponse","inviteId":"inv-1","playerId":"11111111-1111-1111-1111-111111111111","accepted":true}""", host.nextMessage())
-        val playersString = """{"id":"00000000-0000-0000-0000-000000000000","name":"Host"},{"id":"11111111-1111-1111-1111-111111111111","name":"Invited"}"""
+        val playersString = """${host.idName},${invitee.idName}"""
         Assertions.assertEquals("""{"type":"GameStarted","gameType":"MyGame","gameId":"1","yourIndex":0,"players":[$playersString]}""", host.nextMessage())
         Assertions.assertEquals("""{"type":"GameStarted","gameType":"MyGame","gameId":"1","yourIndex":1,"players":[$playersString]}""", invitee.nextMessage())
     }

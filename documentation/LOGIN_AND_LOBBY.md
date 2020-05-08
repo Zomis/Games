@@ -26,7 +26,7 @@ guest-12345 sends:
 
 guest-12345 will receive:
 
-    {"type":"Lobby","users":{"TestGameType":[{"id":"11111111-1111-1111-1111-111111111111","name":"Client B"}],"OtherGameType":[{"id":"11111111-1111-1111-1111-111111111111","name":"Client B"}]}}
+    {"type":"Lobby","users":{"TestGameType":[{"id":"11111111-1111-1111-1111-111111111111","name":"Client B","picture":"https://www.gravatar.com/avatar/38c6cbd28bf165070d070980dd1fb595?s=128&d=identicon"}],"OtherGameType":[{"id":"11111111-1111-1111-1111-111111111111","name":"Client B","picture":"https://www.gravatar.com/avatar/38c6cbd28bf165070d070980dd1fb595?s=128&d=identicon"}]}}
 
 ### When someone disconnects
 
@@ -34,7 +34,7 @@ Whenever you are in a lobby and another client in the same lobby disconnects, yo
 
 guest-12345 will receive:
 
-    {"type":"LobbyChange","player":{"id":"11111111-1111-1111-1111-111111111111","name":"Client B"},"action":"left"}
+    {"type":"LobbyChange","player":{"id":"11111111-1111-1111-1111-111111111111","name":"Client B","picture":"https://www.gravatar.com/avatar/38c6cbd28bf165070d070980dd1fb595?s=128&d=identicon"},"action":"left"}
 
 ### When a new client joins
 
@@ -42,5 +42,5 @@ Whenever you are in a lobby and another client joins the same lobby, you will be
 
 guest-12345 will receive:
 
-    {"type":"LobbyChange","player":{"id":"22222222-2222-2222-2222-222222222222","name":"Client C"},"action":"joined","gameTypes":["TestGameType","OtherGameType"]}
+    {"type":"LobbyChange","player":{"id":"22222222-2222-2222-2222-222222222222","name":"Client C","picture":"https://www.gravatar.com/avatar/1c27ba90c11014f014be250818fd3443?s=128&d=identicon"},"action":"joined","gameTypes":["TestGameType","OtherGameType"]}
 

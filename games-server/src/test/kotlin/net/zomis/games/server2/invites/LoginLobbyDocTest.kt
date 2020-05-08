@@ -23,7 +23,7 @@ class LoginLobbyDocTest {
         events.execute(GameTypeRegisterEvent("TestGameType"))
         events.execute(GameTypeRegisterEvent("OtherGameType"))
         events.listen("fixed playerId", ClientLoginEvent::class, {true}) {
-            it.client.playerId = UUID.fromString("00000000-0000-0000-0000-000000000000")
+            it.client.updateInfo(it.client.name!!, UUID.fromString("00000000-0000-0000-0000-000000000000"))
         }
 
         fun authTest(message: ClientJsonMessage) {
@@ -32,7 +32,7 @@ class LoginLobbyDocTest {
         server2.messageRouter.handler("auth/guest", ::authTest)
 
         val clientA = FakeClient()
-        val clientB = FakeClient().apply { name = "Client B"; playerId = UUID.fromString("11111111-1111-1111-1111-111111111111") }
+        val clientB = FakeClient().apply { updateInfo("Client B", UUID.fromString("11111111-1111-1111-1111-111111111111")) }
         clientB.sendToServer(events, """{ "route": "lobby/join", "gameTypes": ["TestGameType", "OtherGameType"], "maxGames": 1 }""")
 
         docWriter.document(events, "Authentication") {
@@ -46,20 +46,20 @@ class LoginLobbyDocTest {
         }
         docWriter.document(events, "Listing available players") {
             send(clientA, """{ "route": "lobby/list" }""")
-            val textClientB = """{"id":"11111111-1111-1111-1111-111111111111","name":"Client B"}"""
+            val textClientB = clientB.idName
             receive(clientA, """{"type":"Lobby","users":{"TestGameType":[$textClientB],"OtherGameType":[$textClientB]}}""")
         }
         docWriter.document(events, "When someone disconnects") {
             text("Whenever you are in a lobby and another client in the same lobby disconnects, you will be notified instantly.")
             events.execute(ClientDisconnected(clientB))
-            receive(clientA, """{"type":"LobbyChange","player":{"id":"11111111-1111-1111-1111-111111111111","name":"Client B"},"action":"left"}""")
+            receive(clientA, """{"type":"LobbyChange","player":${clientB.idName},"action":"left"}""")
         }
         docWriter.document(events, "When a new client joins") {
-            val clientC = FakeClient().apply { name = "Client C"; playerId = UUID.fromString("22222222-2222-2222-2222-222222222222") }
+            val clientC = FakeClient().apply { updateInfo("Client C", UUID.fromString("22222222-2222-2222-2222-222222222222")) }
             clientC.sendToServer(events, """{ "route": "lobby/join", "gameTypes": ["TestGameType", "OtherGameType"], "maxGames": 1 }""")
 
             text("Whenever you are in a lobby and another client joins the same lobby, you will be notified instantly.")
-            receive(clientA, """{"type":"LobbyChange","player":{"id":"${clientC.playerId.toString()}","name":"Client C"},"action":"joined","gameTypes":["TestGameType","OtherGameType"]}""")
+            receive(clientA, """{"type":"LobbyChange","player":${clientC.idName},"action":"joined","gameTypes":["TestGameType","OtherGameType"]}""")
         }
     }
 
