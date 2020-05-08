@@ -246,7 +246,8 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         val provider = event.provider
         val providerId = event.loginName
         val skValue = Prefix.OAUTH.sk("$provider/$providerId")
-        val existing = this.gsiLookup(QuerySpec().withHashKey(this.sk, skValue)).singleOrNull()
+        val existing = this.gsiLookup(QuerySpec().withHashKey(this.sk, skValue)).firstOrNull()
+        // TODO: Cleanup database and change to singleOrNull()
 
         val timestamp = Instant.now().epochSecond
 
@@ -256,6 +257,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
             val pkValue = Prefix.PLAYER.sk(uuid)
             event.client.updateInfo(event.loginName, UUID.fromString(uuid))
             if (event.provider == ServerAIProvider) {
+                logger.info { "AI Logged in: ${event.loginName} using id from database $uuid. Skipping timestamp update" }
                 // Server AI times should be updated when the AI is used, not when starting the server
                 return
             }
