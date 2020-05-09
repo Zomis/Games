@@ -16,6 +16,8 @@ typealias PlayerId = UUID
 
 open class Client {
 
+    private val logger = KLoggers.logger(this)
+
     companion object {
         val mapper = ObjectMapper()
     }
@@ -43,7 +45,8 @@ open class Client {
     fun updateInfo(name: String, playerId: PlayerId, picture: String? = null) {
         this.name = name
         this.playerId = playerId
-        this.picture = picture ?: "https://www.gravatar.com/avatar/${DigestUtils.md5Hex(playerId.toString())}?s=128&d=identicon"
+        this.picture = picture ?: this.picture ?: "https://www.gravatar.com/avatar/${DigestUtils.md5Hex(playerId.toString())}?s=128&d=identicon"
+        logger.info { "Setting client $this to name:$name playerId:$playerId picture:${this.picture}" }
     }
 
 }
