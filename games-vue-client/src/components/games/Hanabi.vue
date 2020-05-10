@@ -56,7 +56,7 @@
       </v-col>
       <v-col>
         <span>Fails</span>
-        <transition name="number-transition" mode="out-in"><p :key="view.fails">{{ view.fails }}</p></transition>
+        <transition name="number-transition" mode="out-in"><p :key="view.fails">{{ view.fails }} / 3</p></transition>
       </v-col>
       <v-col>
         <span>Cards Left</span>

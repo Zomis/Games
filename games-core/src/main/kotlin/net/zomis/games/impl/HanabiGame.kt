@@ -61,19 +61,21 @@ class HanabiCard(val color: HanabiColor, val value: Int, var colorKnown: Boolean
 
 data class HanabiPlayer(val cards: CardZone<HanabiCard> = CardZone())
 data class HanabiConfig(
-    val maxClueTokens: Int,
-    val failTokens: Int,
-    val rainbowExtraColor: Boolean,
-    val rainbowWildcard: Boolean,
-    val rainbowOnlyOne: Boolean,
-    val namePlayingCard: Boolean,
-    val playUntilFullEnd: Boolean,
-    val allowEmptyClues: Boolean
+        val maxClueTokens: Int,
+        val failTokens: Int,
+        val rainbowExtraColor: Boolean,
+        val rainbowWildcard: Boolean,
+        val rainbowOnlyOne: Boolean,
+        val namePlayingCard: Boolean,
+        val playUntilFullEnd: Boolean,
+        val allowEmptyClues: Boolean,
+        val maxFailTokens: Int
 )
 data class HanabiColorData(val color: HanabiColor, val board: CardZone<HanabiCard> = CardZone(mutableListOf()), val discard: CardZone<HanabiCard> = CardZone(mutableListOf()))
 data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
     val colors: List<HanabiColorData> = HanabiColor.values().map { HanabiColorData(it) }
     var clueTokens: Int = config.maxClueTokens
+    var maxFailTokens : Int = config.maxFailTokens
     var failTokens: Int = config.failTokens
     var currentPlayer: Int = 0
     var turnsLeft = -1
@@ -123,7 +125,7 @@ data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
     }
 
     fun isGameOver(): Boolean {
-        return this.boardComplete() || this.turnsLeft == 0 || this.failTokens == 0
+        return this.boardComplete() || this.turnsLeft == 0 || this.failTokens == this.maxFailTokens
     }
 
 }
@@ -140,7 +142,8 @@ object HanabiGame {
             defaultConfig {
                 HanabiConfig(
                     maxClueTokens = 8,
-                    failTokens = 3,
+                    maxFailTokens = 3,
+                    failTokens = 0,
                     rainbowExtraColor = false,
                     rainbowOnlyOne = false,
                     rainbowWildcard = false,
@@ -185,9 +188,9 @@ object HanabiGame {
                         it.game.increaseClueTokens()
                     }
                     if (playArea == null) {
-                        it.game.failTokens--
+                        it.game.failTokens++
                     }
-                    if (it.game.failTokens == 0) {
+                    if (it.game.failTokens == it.game.maxFailTokens) {
                         playerEliminations.eliminateRemaining(WinResult.LOSS)
                     }
                     if (it.game.boardComplete()) {
