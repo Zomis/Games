@@ -17,6 +17,10 @@
             />
           </template>
         </v-row>
+        <v-row v-if="gameOver">
+          <v-col><router-link :to="`/games/${gameInfo.gameType}/${gameInfo.gameId}/replay`">Watch replay</router-link></v-col>
+          <!-- TODO: Play again option (re-send same invite to same players, then switch to specific-Invite screen) -->
+        </v-row>
       </v-container>
     </v-card-text>
   </v-card>
@@ -46,6 +50,9 @@ export default {
         return "table";
       }
       return "avatars";
+    },
+    gameOver() {
+      return this.eliminations.length == this.players.length
     },
     players() {
       return this.gameInfo.players.map((player, i) => ({

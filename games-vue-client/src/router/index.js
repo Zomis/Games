@@ -58,7 +58,15 @@ export default new Router({
       component: TestScreen
     },
     {
-      path: "/stats/games/:gameId/replay",
+      path: "/games/:gameTypeIgnored/:gameId/replay",
+      name: "ReplayScreen",
+      component: ReplayScreen,
+      props: route => ({
+        gameUUID: route.params.gameId
+      })
+    },
+    {
+      path: "/stats/games/:gameId/replay", // For backwards compatibility
       name: "ReplayScreen",
       component: ReplayScreen,
       props: route => ({
