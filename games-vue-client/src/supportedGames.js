@@ -33,8 +33,8 @@ const tttActions = {
 }
 const tttMoveActions = {
     move: (source) => ({
-        key: xyAction(source),
-        parameter: (target) => xyAction(target)
+        key: source.x + ',' + source.y,
+        next: (target) => xyAction(target)
     })
 }
 
