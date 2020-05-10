@@ -62,21 +62,20 @@ class HanabiCard(val color: HanabiColor, val value: Int, var colorKnown: Boolean
 data class HanabiPlayer(val cards: CardZone<HanabiCard> = CardZone())
 data class HanabiConfig(
         val maxClueTokens: Int,
-        val failTokens: Int,
+        val maxFailTokens: Int,
         val rainbowExtraColor: Boolean,
         val rainbowWildcard: Boolean,
         val rainbowOnlyOne: Boolean,
         val namePlayingCard: Boolean,
         val playUntilFullEnd: Boolean,
         val allowEmptyClues: Boolean,
-        val maxFailTokens: Int
 )
 data class HanabiColorData(val color: HanabiColor, val board: CardZone<HanabiCard> = CardZone(mutableListOf()), val discard: CardZone<HanabiCard> = CardZone(mutableListOf()))
 data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
     val colors: List<HanabiColorData> = HanabiColor.values().map { HanabiColorData(it) }
     var clueTokens: Int = config.maxClueTokens
     var maxFailTokens : Int = config.maxFailTokens
-    var failTokens: Int = config.failTokens
+    var failTokens: Int = 0
     var currentPlayer: Int = 0
     var turnsLeft = -1
     val colorsUsed = if (config.rainbowExtraColor) 6 else 5
@@ -143,7 +142,6 @@ object HanabiGame {
                 HanabiConfig(
                     maxClueTokens = 8,
                     maxFailTokens = 3,
-                    failTokens = 0,
                     rainbowExtraColor = false,
                     rainbowOnlyOne = false,
                     rainbowWildcard = false,
@@ -259,6 +257,7 @@ object HanabiGame {
             value("clues") { it.clueTokens }
             value("score") { it.colors.sumBy { zone -> zone.board.size } }
             value("fails") { it.failTokens }
+            value("maxFails") { it.maxFailTokens }
         }
     }
 
