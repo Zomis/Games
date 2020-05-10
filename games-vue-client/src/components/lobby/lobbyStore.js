@@ -81,15 +81,24 @@ const lobbyStore = {
       state.inviteWaiting = emptyInvite();
     },
     changeLobby(state, e) {
+      function updateOrAddPlayer(list, player) {
+        let index = list.findIndex(e => e.id === player.id);
+        if (index >= 0) {
+          list[index] = player;
+        } else {
+          list.push(player)
+        }
+      }
+
       // client, action, gameTypes
-      let player = e.player; // { id, name }
+      let player = e.player; // { id, name, picture }
       if (e.action === "joined") {
         let gameTypes = e.gameTypes;
         gameTypes.forEach(gt => {
           let list = state.lobby[gt];
           if (list == null) throw "No list for gameType " + gt;
         });
-        gameTypes.map(gt => state.lobby[gt]).forEach(list => list.push(player));
+        gameTypes.map(gt => state.lobby[gt]).forEach(list => updateOrAddPlayer(list, player));
       } else if (e.action === "left") {
         let gameTypes = Object.keys(state.lobby);
         gameTypes.map(gt => state.lobby[gt]).forEach(list => {
