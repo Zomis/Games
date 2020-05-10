@@ -2,6 +2,7 @@
   <v-container>
     <h2>Choose authentication type</h2>
     <v-btn color="info" @click="authenticate('github')">Login with Github</v-btn>
+    <v-btn color="info" @click="authenticate('google')">Login with Google</v-btn>
     <v-btn color="info" @click="authenticateGuest()">Login as Guest</v-btn>
     <!--
     {{ getToken() }}

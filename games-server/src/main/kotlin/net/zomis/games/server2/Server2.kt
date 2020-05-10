@@ -41,6 +41,9 @@ class ServerConfig {
     fun githubConfig(): OAuthConfig {
         return OAuthConfig(this.githubClient, this.githubSecret)
     }
+    fun googleConfig(): OAuthConfig {
+        return OAuthConfig(this.googleClientId, this.googleClientSecret)
+    }
 
     @Parameter(names = arrayOf("-wsPort"), description = "Port for websockets and API")
     var webSocketPort = 8081
@@ -62,6 +65,12 @@ class ServerConfig {
 
     @Parameter(names = ["-githubSecret"], description = "Github Client Secret")
     var githubSecret: String = ""
+
+    @Parameter(names = ["-googleClientId"], description = "Google OAuth Client Id")
+    var googleClientId: String = ""
+
+    @Parameter(names = ["-googleClientSecret"], description = "Google OAuth Client Secret")
+    var googleClientSecret: String = ""
 
     var idGenerator: GameIdGenerator = { UUID.randomUUID().toString() }
 
@@ -130,7 +139,7 @@ class Server2(val events: EventSystem) {
         messageRouter.route("auth", AuthorizationSystem(events).router)
         val executor = Executors.newScheduledThreadPool(2)
         if (config.githubClient.isNotEmpty()) {
-            LinAuth(javalin, config.githubConfig()).register()
+            LinAuth(javalin, config.githubConfig(), config.googleConfig()).register()
         }
         val aiRepository = AIRepository()
         if (config.database) {

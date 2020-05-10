@@ -2,31 +2,28 @@ package net.zomis.games.server2.javalin.auth
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
-import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.kittinunf.fuel.Fuel
-import com.github.kittinunf.fuel.core.extensions.cUrlString
-import com.github.kittinunf.fuel.core.extensions.jsonBody
+import io.javalin.Context
 import io.javalin.Javalin
 import io.javalin.json.JavalinJackson
-import net.zomis.core.events.EventSystem
 import net.zomis.games.server2.OAuthConfig
-import net.zomis.games.server2.StartupEvent
 import org.slf4j.LoggerFactory
-import java.util.*
+import java.io.IOException
+import java.util.Properties
 
 data class GithubAuthRequest(val clientId: String, val redirectUri: String, val code: String, val state: String?)
 
-class LinAuth(val javalin: Javalin, val githubConfig: OAuthConfig) {
+class LinAuth(val javalin: Javalin, val githubConfig: OAuthConfig, val googleConfig: OAuthConfig) {
 
     private val logger = LoggerFactory.getLogger(LinAuth::class.java)
+    private val mapper = jacksonObjectMapper()
 
     fun register() {
         val secretProperties = Properties()
         val resource = this.javaClass.classLoader.getResourceAsStream("secrets.properties")
         secretProperties.load(resource)
         logger.info("LinAuth starting")
-        val mapper = ObjectMapper()
-        mapper.registerModule(KotlinModule())
 
         JavalinJackson.configure(mapper)
         val app = javalin
@@ -46,8 +43,30 @@ class LinAuth(val javalin: Javalin, val githubConfig: OAuthConfig) {
                     val resultJson = queryStringToJsonNode(mapper, result.third.get())
                     it.result(mapper.writeValueAsString(resultJson))
                 }
+                post("/auth/google") {
+                    googleHandler(it, googleConfig)
+                }
             }
         logger.info("LinAuth started: $app")
+    }
+
+    private fun googleHandler(context: Context, clientAndSecret: OAuthConfig) {
+        val request: String = context.body()
+        try {
+            val tree = mapper.readTree(request)
+            val result = Fuel.post("https://accounts.google.com/o/oauth2/token", listOf(
+                "client_id" to clientAndSecret.clientId,
+                "client_secret" to clientAndSecret.clientSecret,
+                "code" to tree.get("code").asText(),
+                "redirect_uri" to tree.get("redirectUri").asText(),
+                "grant_type" to "authorization_code")
+            ).responseString()
+            logger.debug("Google Auth: {}", result.third)
+            context.contentType("application/json").result(result.third.get())
+        } catch (e: IOException) {
+            context.status(500)
+            logger.error("Authentication Failure for $request", e)
+        }
     }
 
     private fun queryStringToJsonNode(mapper: ObjectMapper, queryString: String): ObjectNode {

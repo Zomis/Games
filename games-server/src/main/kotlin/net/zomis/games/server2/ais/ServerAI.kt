@@ -78,7 +78,7 @@ class ServerAI(val gameType: String, val name: String, val perform: ServerGameAI
         this.client = AIClient { events.execute(it) }
         events.execute(ClientConnected(client))
         client.updateInfo(name, UUID.randomUUID())
-        events.execute(ClientLoginEvent(client, name, ServerAIProvider, name))
+        events.execute(ClientLoginEvent(client, name, name, ServerAIProvider, name))
         val interestingGames = mapper.readTree(mapper.writeValueAsString(mapOf("route" to "lobby/join",
             "gameTypes" to listOf(gameType), "maxGames" to 100
         )))

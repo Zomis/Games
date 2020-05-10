@@ -244,7 +244,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
     fun authenticate(event: ClientLoginEvent) {
         // 1. Lookup GSI-1:   oauth:<provider>/<providerId>, any sort key. Get back playerId
         val provider = event.provider
-        val providerId = event.loginName
+        val providerId = event.providerId
         val skValue = Prefix.OAUTH.sk("$provider/$providerId")
         val existing = this.gsiLookup(QuerySpec().withHashKey(this.sk, skValue)).firstOrNull()
         // TODO: Cleanup database and change to singleOrNull()

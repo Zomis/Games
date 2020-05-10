@@ -23,6 +23,10 @@ let authConfig = {
     github: {
       clientId: process.env.VUE_APP_AUTH_CLIENT_ID_GITHUB,
       redirectUri: process.env.VUE_APP_AUTH_REDIRECT_URL
+    },
+    google: {
+      clientId: process.env.VUE_APP_AUTH_CLIENT_ID_GOOGLE,
+      redirectUri: process.env.VUE_APP_AUTH_REDIRECT_URL
     }
   }
 }
