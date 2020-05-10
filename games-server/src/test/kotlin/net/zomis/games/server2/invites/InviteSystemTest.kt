@@ -104,8 +104,8 @@ class InviteSystemTest {
     @Test
     fun inviteAccepted() {
         events.execute(GameTypeRegisterEvent("MyGame"))
-        events.execute(ClientLoginEvent(host, host.name!!, "tests", "token"))
-        events.execute(ClientLoginEvent(invitee, invitee.name!!, "tests", "token2"))
+        events.execute(ClientLoginEvent(host, host.name!!, host.name!!, "tests", "token"))
+        events.execute(ClientLoginEvent(invitee, invitee.name!!, invitee.name!!, "tests", "token2"))
 
         val invite = system.createInvite("MyGame", "inv-1", host, listOf(invitee))
         Assertions.assertEquals("""{"type":"Invite","host":"Host","game":"MyGame","inviteId":"inv-1"}""", invitee.nextMessage())
