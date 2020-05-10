@@ -68,7 +68,7 @@ data class HanabiConfig(
         val rainbowOnlyOne: Boolean,
         val namePlayingCard: Boolean,
         val playUntilFullEnd: Boolean,
-        val allowEmptyClues: Boolean,
+        val allowEmptyClues: Boolean
 )
 data class HanabiColorData(val color: HanabiColor, val board: CardZone<HanabiCard> = CardZone(mutableListOf()), val discard: CardZone<HanabiCard> = CardZone(mutableListOf()))
 data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
