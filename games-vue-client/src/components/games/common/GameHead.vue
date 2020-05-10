@@ -55,12 +55,15 @@ export default {
       return this.eliminations.length == this.players.length
     },
     players() {
-      return this.gameInfo.players.map((player, i) => ({
-        index: i,
-        id: player.id,
-        name: player.name,
-        picture: player.picture || `https://www.gravatar.com/avatar/${md5(player.id)}?s=128&d=identicon`
-      }));
+      return this.gameInfo.players.map((player, i) => {
+        let playerId = player.id || player.playerId
+        return {
+          index: i,
+          id: playerId,
+          name: player.name,
+          picture: player.picture || `https://www.gravatar.com/avatar/${md5(playerId)}?s=128&d=identicon`
+        }
+      })
     }
   }
 };
