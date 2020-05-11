@@ -41,7 +41,7 @@
               Give clue
             </v-btn>
             <template v-if="myTurn && actionChoice && actionChoice.choices[0] === player.index">
-              <v-btn v-for="(act, actIndex) in actions.GiveClue" @click="onAction('GiveClue', actIndex)" :key="actIndex">{{ actIndex }}</v-btn>
+              <v-btn v-for="(act, actIndex) in actions.GiveClue" :class="[actIndex.includes('color-') ? actIndex : '']" @click="onAction('GiveClue', actIndex)" :key="actIndex">{{ actIndex }}</v-btn>
             </template>
           </v-card-actions>
         </v-card>
@@ -67,6 +67,7 @@
         <transition name="number-transition" mode="out-in"><p :key="view.score">{{ view.score }}</p></transition>
       </v-col>
     </v-row>
+
     <v-row justify="center" class="translate-animation-wrapper">
       <transition name="translate-animation">
       <v-card :key="view.hand.index" class="animate-all player-hand" :class="{ 'active-player': view.currentPlayer == view.hand.index }">
@@ -89,12 +90,13 @@
       </v-card>
       </transition>
     </v-row>
+
     <v-row>
       <h2>Actions</h2>
-
     </v-row>
   </v-container>
 </template>
+
 <script>
 import HanabiCard from "./HanabiCard"
 
@@ -121,6 +123,22 @@ export default {
 </script>
 <style scoped>
 @import "../../assets/games-style.css";
+
+.color-RED {
+ background-color: #ef476f !important;
+}
+.color-BLUE {
+  background-color: #118AB2 !important;
+}
+.color-GREEN {
+ background-color: #06D6A0 !important;
+}
+.color-YELLOW {
+  background-color: #FFD166 !important;
+}
+.color-WHITE {
+  background-color: #F5F5F5 !important;
+}
 
 .animate-all {
   transition: all 1.5s ease;
