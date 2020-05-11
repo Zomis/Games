@@ -93,6 +93,9 @@
       <h2>Actions</h2>
 
     </v-row>
+     <v-snackbar v-model="snackbar">
+        {{text}}
+     </v-snackbar>
   </v-container>
 </template>
 <script>
@@ -112,9 +115,22 @@ export default {
       this.onAction(action, index);
     }
   },
+  watch: {
+    deckEmpty: function (val) {
+      this.snackbar = val
+    }
+  },
+  data: () => ({
+    snackbar: false,
+    timeout: 5000,
+    text: 'Last round',
+  }),
   computed: {
     myTurn() {
       return this.view.currentPlayer == this.view.hand.index
+    },
+    deckEmpty() {
+      return this.view.cardsLeft == 0
     }
   }
 };
