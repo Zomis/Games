@@ -5,6 +5,7 @@ import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.server2.*
 import net.zomis.games.server2.games.*
+import java.util.UUID
 
 class InviteTools(
     val removeCallback: (Invite) -> Unit,
@@ -28,6 +29,7 @@ data class Invite(
         .handler("send", this::sendInvite)
         .handler("start", this::startInvite)
         .handler("cancel", this::cancelInvite)
+        .handler("view", this::sendInviteView)
 
     fun sendInvite(message: ClientJsonMessage) {
         val inviteTargets = message.data.get("invite")
@@ -35,6 +37,7 @@ data class Invite(
             tools.gameClients(gameType)!!.findPlayerId(playerId)
         }.filterIsInstance<Client>().toMutableList()
         this.sendInviteTo(targetClients)
+        broadcastInviteView()
     }
 
     fun sendInviteTo(targetClients: List<Client>) { // It is possible to invite the same AI twice, therefore a list
@@ -44,6 +47,27 @@ data class Invite(
             this.host.send(mapOf("type" to "InviteStatus", "playerId" to it.playerId.toString(), "status" to "pending", "inviteId" to this.id))
             it.send(mapOf("type" to "Invite", "host" to this.host.name, "game" to this.gameType, "inviteId" to this.id))
         }
+    }
+
+    fun sendInviteView(message: ClientJsonMessage) = message.client.send(inviteViewMessage())
+
+    fun inviteViewMessage(): Map<String, Any?> = mapOf(
+        "type" to "InviteView",
+        "inviteId" to this.id,
+        "gameType" to this.gameType,
+        "minPlayers" to this.playerRange.first,
+        "maxPlayers" to this.playerRange.last,
+        "options" to null,
+        "gameOptions" to null,
+        "host" to this.host.toMessage(),
+        "players" to (listOf(this.host) + this.accepted).map { it.toMessage().plus("playerOptions" to null) },
+        "invited" to this.awaiting.map { it.toMessage() }
+    )
+
+    fun broadcastInviteView() {
+        val clients = listOf(this.host) + this.accepted + this.awaiting
+        val message = inviteViewMessage()
+        clients.forEach { it.send(message) }
     }
 
     fun startInvite(message: ClientJsonMessage) {
@@ -93,6 +117,7 @@ data class Invite(
         if (accepted) {
             this.accepted.add(client)
         }
+        broadcastInviteView()
         if (accepted && playerCount() >= playerRange.last) { // Ignore host in this check
             this.startCheck()
         }
@@ -108,7 +133,8 @@ data class Invite(
 class InviteSystem(
     private val gameClients: GameTypeMap<ClientList>,
     private val createGameCallback: (gameType: String, options: ServerGameOptions) -> ServerGame,
-    private val startGameExecutor: (GameStartedEvent) -> Unit
+    private val startGameExecutor: (GameStartedEvent) -> Unit,
+    private val inviteIdGenerator: () -> String
 ) {
 
     private val logger = KLoggers.logger(this)
@@ -135,6 +161,7 @@ class InviteSystem(
         invite.host.send(mapOf("type" to "InviteWaiting", "inviteId" to invite.id,
             "playersMin" to playerRange.min(), "playersMax" to playerRange.max()))
         invite.sendInviteTo(invitees)
+        invite.broadcastInviteView()
         return invite
     }
 
@@ -146,14 +173,14 @@ class InviteSystem(
 
     private fun inviteStart(message: ClientJsonMessage) {
         val gameType = message.data.get("gameType")?.asText() ?: throw IllegalArgumentException("Missing field: gameType")
-        val inviteId = "${gameType}-${message.client.name}-${invites.size}"
+        val inviteId = inviteIdGenerator()
         this.createInvite(gameType, inviteId, message.client, emptyList())
     }
 
     private fun fullInvite(message: ClientJsonMessage) {
         val gameType = message.data.get("gameType")?.asText() ?: throw IllegalArgumentException("Missing field: gameType")
         val inviteTargets = message.data.get("invite")
-        val inviteId = "${gameType}-${message.client.name}-${invites.size}"
+        val inviteId = inviteIdGenerator()
         val targetClients = inviteTargets.map { it.asText() }.map {playerId ->
             gameClients(gameType)!!.findPlayerId(playerId)
         }.filterIsInstance<Client>().toMutableList()

@@ -6,11 +6,11 @@ When you have not yet been given a name you can send
 
     { "route": "auth/guest" }
 
-You will receive your name and your playerId
+You will receive your name, playerId and picture URL
 
 guest-12345 will receive:
 
-    {"type":"Auth","playerId":"00000000-0000-0000-0000-000000000000","name":"guest-12345"}
+    {"type":"Auth","playerId":"00000000-0000-0000-0000-000000000000","name":"guest-12345","picture":"https://www.gravatar.com/avatar/9f89c84a559f573636a47ff8daed0d33?s=128&d=identicon"}
 
 ### Entering a lobby
 

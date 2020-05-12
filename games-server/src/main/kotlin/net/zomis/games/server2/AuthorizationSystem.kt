@@ -21,12 +21,12 @@ class AuthorizationSystem(private val events: EventSystem) {
     private fun handleGuest(message: ClientJsonMessage) {
         val client = message.client
         val token: String = guestRandom.nextInt(100000).toString()
-        this.handleGuest(client, token)
+        this.handleGuest(client, token, UUID.randomUUID())
     }
-    fun handleGuest(client: Client, token: String) {
+    fun handleGuest(client: Client, token: String, uuid: UUID) {
         val loginName = "guest-$token"
         logger.info("$client with token (empty) is guest/$loginName")
-        client.updateInfo(loginName, UUID.randomUUID())
+        client.updateInfo(loginName, uuid)
         events.execute(ClientLoginEvent(client, loginName, loginName, "guest", token))
         sendLoginToClient(client)
     }

@@ -8,27 +8,39 @@ TestClientA sends:
 
 TestClientA will receive:
 
-    {"type":"InviteWaiting","inviteId":"TestGameType-TestClientA-0","playersMin":2,"playersMax":2}
+    {"type":"InviteWaiting","inviteId":"12345678-1234-1234-1234-123456789abc","playersMin":2,"playersMax":2}
 
 TestClientB will receive:
 
-    {"type":"Invite","host":"TestClientA","game":"TestGameType","inviteId":"TestGameType-TestClientA-0"}
+    {"type":"Invite","host":"TestClientA","game":"TestGameType","inviteId":"12345678-1234-1234-1234-123456789abc"}
 
 TestClientA will receive:
 
-    {"type":"InviteStatus","playerId":"11111111-1111-1111-1111-111111111111","status":"pending","inviteId":"TestGameType-TestClientA-0"}
+    {"type":"InviteStatus","playerId":"11111111-1111-1111-1111-111111111111","status":"pending","inviteId":"12345678-1234-1234-1234-123456789abc"}
 
 ### Accepting an invite
 
 TestClientB sends:
 
-    { "route": "invites/TestGameType-TestClientA-0/respond", "accepted": true }
+    { "route": "invites/12345678-1234-1234-1234-123456789abc/respond", "accepted": true }
 
 TestClientA will receive:
 
-    {"type":"InviteResponse","inviteId":"TestGameType-TestClientA-0","playerId":"11111111-1111-1111-1111-111111111111","accepted":true}
+    {"type":"InviteView","...":"..."}
+
+TestClientA will receive:
+
+    {"type":"InviteResponse","inviteId":"12345678-1234-1234-1234-123456789abc","playerId":"11111111-1111-1111-1111-111111111111","accepted":true}
 
 When a user accepts an invite the game is started automatically and both players will receive a `GameStarted` message.
+
+TestClientB will receive:
+
+    {"type":"InviteView","...":"..."}
+
+TestClientB will receive:
+
+    {"type":"InviteView","...":"..."}
 
 TestClientB will receive:
 
@@ -38,9 +50,9 @@ TestClientB will receive:
 
 TestClientB sends:
 
-    { "route": "invites/TestGameType-TestClientA-0/respond", "accepted": false }
+    { "route": "invites/12345678-1234-1234-1234-123456789abc/respond", "accepted": false }
 
 TestClientA will receive:
 
-    {"type":"InviteResponse","inviteId":"TestGameType-TestClientA-0","playerId":"11111111-1111-1111-1111-111111111111","accepted":false}
+    {"type":"InviteResponse","inviteId":"12345678-1234-1234-1234-123456789abc","playerId":"11111111-1111-1111-1111-111111111111","accepted":false}
 

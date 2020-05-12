@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.net.URI
+import java.util.UUID
 
 class DslGameTest {
 
@@ -28,10 +29,9 @@ class DslGameTest {
 
         val tokens = mutableListOf("12345", "23456")
         fun authTest(message : ClientJsonMessage) {
-            AuthorizationSystem(server!!.events).handleGuest(message.client, tokens.removeAt(0))
+            AuthorizationSystem(server!!.events).handleGuest(message.client, tokens.removeAt(0), UUID.randomUUID())
         }
         server!!.messageRouter.handler("auth/guest", ::authTest)
-
     }
 
     @AfterEach

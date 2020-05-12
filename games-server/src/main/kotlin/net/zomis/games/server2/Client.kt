@@ -49,4 +49,8 @@ open class Client {
         logger.info { "Setting client $this to name:$name playerId:$playerId picture:${this.picture}" }
     }
 
+    fun toMessage(): Map<String, Any> {
+        return mapOf("id" to this.playerId!!, "name" to name!!, "picture" to picture!!)
+    }
+
 }

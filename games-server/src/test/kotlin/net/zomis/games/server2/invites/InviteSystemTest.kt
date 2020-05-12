@@ -1,5 +1,7 @@
 package net.zomis.games.server2.invites
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
 import net.zomis.games.server2.ClientJsonMessage
@@ -16,6 +18,15 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 import java.util.UUID
+
+private val mapper = jacksonObjectMapper()
+fun stringMapExpect(actual: String, vararg expected: Pair<String, Any?>) {
+    val documentationExcpected = mapOf(*expected).plus("..." to "...")
+    val actualMap: Map<String, Any?> = mapper.readValue(actual)
+    val match = expected.all { actualMap[it.first] == it.second }
+
+    Assertions.assertTrue(match) { "Expected\n$documentationExcpected\nbut was\n$actualMap" }
+}
 
 class InviteSystemTest {
 
@@ -52,7 +63,11 @@ class InviteSystemTest {
         fun createGameCallback(gameType: String, options: ServerGameOptions): ServerGame
             = gameSystem.getGameType(gameType)!!.createGame(options)
 
-        system = InviteSystem(lobbySystem::gameClients, ::createGameCallback) { events.execute(it) }
+        system = InviteSystem(
+                gameClients = lobbySystem::gameClients,
+                createGameCallback = ::createGameCallback,
+                startGameExecutor = { events.execute(it) },
+                inviteIdGenerator = { "12345678-1234-1234-1234-123456789abc" })
         router.route("invites", system.router)
         // Don't need the LobbySystem feature here
 
@@ -77,27 +92,30 @@ class InviteSystemTest {
         docWriter.document(events, "Inviting someone to play a game") {
             text("Inviting players is done by inviting their playerId, which will be unique")
             send(host, """{ "route": "invites/invite", "gameType": "TestGameType", "invite": ["11111111-1111-1111-1111-111111111111"] }""")
-            receive(host, """{"type":"InviteWaiting","inviteId":"TestGameType-TestClientA-0","playersMin":2,"playersMax":2}""")
+            receive(host, """{"type":"InviteWaiting","inviteId":"12345678-1234-1234-1234-123456789abc","playersMin":2,"playersMax":2}""")
 
-            receive(invitee, """{"type":"Invite","host":"TestClientA","game":"TestGameType","inviteId":"TestGameType-TestClientA-0"}""")
-            receive(host, """{"type":"InviteStatus","playerId":"11111111-1111-1111-1111-111111111111","status":"pending","inviteId":"TestGameType-TestClientA-0"}""")
+            receive(invitee, """{"type":"Invite","host":"TestClientA","game":"TestGameType","inviteId":"12345678-1234-1234-1234-123456789abc"}""")
+            receive(host, """{"type":"InviteStatus","playerId":"11111111-1111-1111-1111-111111111111","status":"pending","inviteId":"12345678-1234-1234-1234-123456789abc"}""")
         }
 
         docWriter.document(events, "Accepting an invite") {
-            send(invitee, """{ "route": "invites/TestGameType-TestClientA-0/respond", "accepted": true }""")
-            receive(host, """{"type":"InviteResponse","inviteId":"TestGameType-TestClientA-0","playerId":"11111111-1111-1111-1111-111111111111","accepted":true}""")
+            send(invitee, """{ "route": "invites/12345678-1234-1234-1234-123456789abc/respond", "accepted": true }""")
+            receive(host, mapOf("type" to "InviteView"))
+            receive(host, """{"type":"InviteResponse","inviteId":"12345678-1234-1234-1234-123456789abc","playerId":"11111111-1111-1111-1111-111111111111","accepted":true}""")
 
             text("When a user accepts an invite the game is started automatically and both players will receive a `GameStarted` message.")
             val playersString = """${host.idName},${invitee.idName}"""
+            receive(invitee, mapOf("type" to "InviteView"))
+            receive(invitee, mapOf("type" to "InviteView"))
             receive(invitee, """{"type":"GameStarted","gameType":"TestGameType","gameId":"1","yourIndex":1,"players":[$playersString]}""")
         }
 
-        system.createInvite("TestGameType", "TestGameType-TestClientA-0", host, listOf(invitee))
+        system.createInvite("TestGameType", "12345678-1234-1234-1234-123456789abc", host, listOf(invitee))
         host.clearMessages()
 
         docWriter.document(events, "Declining an invite") {
-            send(invitee, """{ "route": "invites/TestGameType-TestClientA-0/respond", "accepted": false }""")
-            receive(host, """{"type":"InviteResponse","inviteId":"TestGameType-TestClientA-0","playerId":"11111111-1111-1111-1111-111111111111","accepted":false}""")
+            send(invitee, """{ "route": "invites/12345678-1234-1234-1234-123456789abc/respond", "accepted": false }""")
+            receive(host, """{"type":"InviteResponse","inviteId":"12345678-1234-1234-1234-123456789abc","playerId":"11111111-1111-1111-1111-111111111111","accepted":false}""")
         }
     }
 
@@ -106,18 +124,23 @@ class InviteSystemTest {
         events.execute(GameTypeRegisterEvent("MyGame"))
         events.execute(ClientLoginEvent(host, host.name!!, host.name!!, "tests", "token"))
         events.execute(ClientLoginEvent(invitee, invitee.name!!, invitee.name!!, "tests", "token2"))
+        expect.event(events to GameStartedEvent::class).condition { true }
 
         val invite = system.createInvite("MyGame", "inv-1", host, listOf(invitee))
         Assertions.assertEquals("""{"type":"Invite","host":"Host","game":"MyGame","inviteId":"inv-1"}""", invitee.nextMessage())
         Assertions.assertEquals("""{"type":"InviteWaiting","inviteId":"inv-1","playersMin":2,"playersMax":2}""", host.nextMessage())
 
-        expect.event(events to GameStartedEvent::class).condition { true }
-        invite.respond(invitee, true)
-
         Assertions.assertEquals("""{"type":"InviteStatus","playerId":"11111111-1111-1111-1111-111111111111","status":"pending","inviteId":"inv-1"}""", host.nextMessage())
+        stringMapExpect(host.nextMessage(), "type" to "InviteView")
+
+        invite.respond(invitee, true)
         Assertions.assertEquals("""{"type":"InviteResponse","inviteId":"inv-1","playerId":"11111111-1111-1111-1111-111111111111","accepted":true}""", host.nextMessage())
+
         val playersString = """${host.idName},${invitee.idName}"""
+        stringMapExpect(host.nextMessage(), "type" to "InviteView")
         Assertions.assertEquals("""{"type":"GameStarted","gameType":"MyGame","gameId":"1","yourIndex":0,"players":[$playersString]}""", host.nextMessage())
+        stringMapExpect(invitee.nextMessage(), "type" to "InviteView")
+        stringMapExpect(invitee.nextMessage(), "type" to "InviteView")
         Assertions.assertEquals("""{"type":"GameStarted","gameType":"MyGame","gameId":"1","yourIndex":1,"players":[$playersString]}""", invitee.nextMessage())
     }
 
@@ -128,9 +151,12 @@ class InviteSystemTest {
         Assertions.assertEquals("""{"type":"Invite","host":"Host","game":"MyGame","inviteId":"inv-1"}""", invitee.nextMessage())
         Assertions.assertEquals("""{"type":"InviteWaiting","inviteId":"inv-1","playersMin":2,"playersMax":2}""", host.nextMessage())
 
-        invite.respond(invitee, false)
         Assertions.assertEquals("""{"type":"InviteStatus","playerId":"11111111-1111-1111-1111-111111111111","status":"pending","inviteId":"inv-1"}""", host.nextMessage())
+        stringMapExpect(host.nextMessage(), "type" to "InviteView")
+
+        invite.respond(invitee, false)
         Assertions.assertEquals("""{"type":"InviteResponse","inviteId":"inv-1","playerId":"11111111-1111-1111-1111-111111111111","accepted":false}""", host.nextMessage())
+        stringMapExpect(host.nextMessage(), "type" to "InviteView")
     }
 
 }

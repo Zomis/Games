@@ -95,6 +95,7 @@ class Server2(val events: EventSystem) {
     private val mapper = ObjectMapper()
     val features = Features(events)
 
+    private val uuidGenerator: () -> String = { UUID.randomUUID().toString() }
     private val dslGames = ServerGames.games
     private val lobbySystem = LobbySystem(features)
     private val gameCallback = GameCallback(
@@ -155,7 +156,12 @@ class Server2(val events: EventSystem) {
         features.add(TVSystem(lobbySystem::gameClients)::register)
         fun createGameCallback(gameType: String, options: ServerGameOptions): ServerGame
             = gameSystem.getGameType(gameType)!!.createGame(options)
-        messageRouter.route("invites", InviteSystem(lobbySystem::gameClients, ::createGameCallback) { events.execute(it) }.router)
+        messageRouter.route("invites", InviteSystem(
+            gameClients = lobbySystem::gameClients,
+            createGameCallback = ::createGameCallback,
+            startGameExecutor = { events.execute(it) },
+            inviteIdGenerator = uuidGenerator
+        ).router)
 
         events.with { e -> ServerAIs(aiRepository, dslGames.keys.toSet()).register(e, executor) }
 

@@ -15,6 +15,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import java.net.URI
+import java.util.UUID
 
 class DslRandomPlayTest {
 
@@ -30,7 +31,7 @@ class DslRandomPlayTest {
 
         val tokens = mutableListOf("12345", "23456")
         fun authTest(message : ClientJsonMessage) {
-            AuthorizationSystem(server!!.events).handleGuest(message.client, tokens.removeAt(0))
+            AuthorizationSystem(server!!.events).handleGuest(message.client, tokens.removeAt(0), UUID.randomUUID())
         }
         server!!.messageRouter.handler("auth/guest", ::authTest)
     }
