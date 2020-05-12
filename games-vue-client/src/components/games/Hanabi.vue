@@ -23,7 +23,7 @@
           <v-card-title>
             <span class="player-name">
               <span>{{ player.index + 1 }}.</span>
-              <v-avatar :size="32" v-on="on">
+              <v-avatar :size="32">
                   <img
                       :src="players[player.index].picture"
                       :alt="players[player.index].name" />
@@ -74,7 +74,7 @@
         <v-card-title>
           <span class="player-name">
             <span>{{ view.hand.index + 1 }}.</span>
-            <v-avatar :size="32" v-on="on">
+            <v-avatar :size="32">
               <img
                 :src="players[view.hand.index].picture"
                 :alt="players[view.hand.index].name" />
