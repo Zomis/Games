@@ -94,7 +94,7 @@
 
     </v-row>
      <v-snackbar v-model="snackbar">
-        {{text}}
+        {{snackbarText}}
      </v-snackbar>
   </v-container>
 </template>
@@ -123,7 +123,7 @@ export default {
   data: () => ({
     snackbar: false,
     timeout: 5000,
-    text: 'Last round',
+    snackbarText: 'Last round',
   }),
   computed: {
     myTurn() {
