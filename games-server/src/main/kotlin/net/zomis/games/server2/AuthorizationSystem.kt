@@ -28,7 +28,7 @@ class AuthorizationSystem(private val events: EventSystem) {
         logger.info("$client with token (empty) is guest/$loginName")
         client.updateInfo(loginName, UUID.randomUUID())
         events.execute(ClientLoginEvent(client, loginName, loginName, "guest", token))
-        sendLoginToClient(client, loginName)
+        sendLoginToClient(client)
     }
 
     private fun handleGitHub(message: ClientJsonMessage) {
@@ -43,7 +43,7 @@ class AuthorizationSystem(private val events: EventSystem) {
         logger.info("$client with token $token is https://github.com/$loginName")
         client.updateInfo(loginName, UUID.randomUUID(), avatarUrl)
         events.execute(ClientLoginEvent(client, loginName, loginName, "github", token))
-        sendLoginToClient(client, loginName)
+        sendLoginToClient(client)
     }
 
     private fun handleGoogle(message: ClientJsonMessage) {
@@ -64,11 +64,15 @@ class AuthorizationSystem(private val events: EventSystem) {
         logger.info("$client with token $token is google/$id/$providerName")
         client.updateInfo(providerName, UUID.randomUUID(), avatarUrl)
         events.execute(ClientLoginEvent(client, id, providerName, "github", token))
-        sendLoginToClient(client, providerName)
+        sendLoginToClient(client)
     }
 
-    private fun sendLoginToClient(client: Client, loginName: String) {
-        client.send(mapOf("type" to "Auth", "playerId" to client.playerId, "name" to loginName))
+    private fun sendLoginToClient(client: Client) {
+        client.send(mapOf(
+            "type" to "Auth", "playerId" to client.playerId,
+            "name" to client.name,
+            "picture" to client.picture
+        ))
     }
 
 }
