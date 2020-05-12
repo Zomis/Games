@@ -1,4 +1,7 @@
 import Socket from "@/socket";
+import router from "@/router/index";
+import supportedGames from "@/supportedGames"
+import Vue from "vue";
 
 function findInvite(state, inviteId) {
   if (state.complexInvite && state.complexInvite.inviteWaiting && state.complexInvite.inviteWaiting.inviteId === inviteId) {
@@ -31,9 +34,10 @@ function emptyInvite() {
 const lobbyStore = {
   namespaced: true,
   state: {
-    yourPlayer: { name: "(UNKNOWN)", playerId: "UNKNOWN" },
+    yourPlayer: { name: "(UNKNOWN)", playerId: "UNKNOWN", picture: "UNKNOWN" },
     inviteWaiting: emptyInvite(),
     invites: [],
+    inviteViews: {},
     lobby: {} // key: gameType, value: array of players (names)
   },
   getters: {},
@@ -41,11 +45,15 @@ const lobbyStore = {
     setPlayer(state, player) {
       state.yourPlayer = {
         name: player.name,
-        playerId: player.playerId
+        playerId: player.playerId,
+        picture: player.picture
       }
     },
     inviteStep(state, step) {
       state.inviteWaiting.inviteStep = step
+    },
+    setInviteView(state, data) {
+      Vue.set(state.inviteViews, data.inviteId, data);
     },
     setInviteWaiting(state, e) {
       console.log("SET INVITE WAITING", state.inviteWaiting, e)
@@ -117,6 +125,14 @@ const lobbyStore = {
     }
   },
   actions: {
+    inviteView(context, data) {
+      Socket.route(`invites/${data.inviteId}/view`, {})
+    },
+    joinAndList() {
+      Socket.route(`lobby/join`, { gameTypes: supportedGames.enabledGameKeys(), maxGames: 1 })
+      Socket.route(`lobby/list`, {});
+    },
+
     cancelInvite(context) {
       let inviteId = context.state.inviteWaiting.inviteId
       Socket.route(`invites/${inviteId}/cancel`, {});
@@ -134,6 +150,26 @@ const lobbyStore = {
         context.commit("changeLobby", data);
       }
 
+      if (data.type === "GameStarted") {
+        let game = supportedGames.games[data.gameType]
+        let routeName = game.routeName || data.gameType;
+        router.push({
+          name: routeName,
+          params: {
+            gameId: data.gameId
+          }
+        });
+      }
+      if (data.type === "InviteView") {
+        let existingInvite = context.state.inviteViews[data.inviteId];
+        context.commit("setInviteView", data)
+        if (!existingInvite) {
+          router.push({
+            name: "InviteScreen",
+            params: { inviteId: data.inviteId }
+          });
+        }
+      }
       if (data.type == "InviteWaiting") {
         context.commit("setInviteWaiting", data);
       }

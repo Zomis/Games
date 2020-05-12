@@ -18,8 +18,8 @@
   </div>
 </template>
 <script>
-import Socket from "../../../socket";
-import Invites from "../../Invites";
+import Socket from "@/socket";
+import Invites from "@/components/invites/Invites";
 
 export default {
   name: "GameResult",

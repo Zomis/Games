@@ -49,7 +49,7 @@ export default {
       console.log("Redirect is:", this.redirect)
       if (this.redirect) {
         console.log("Using redirect")
-        this.redirect.resolve()
+        //this.redirect.resolve()
         this.$router.push(this.redirect.route)
       } else {
         this.$router.push("/");

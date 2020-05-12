@@ -4,11 +4,12 @@
       <v-list-item-title v-html="player.name"></v-list-item-title>
     </v-list-item-content>
     <v-list-item-action>
-      <v-btn v-if="inviteable" color="info" @click="sendInvite()">+</v-btn>
+      <v-btn v-if="inviteable && controllable" color="info" @click="sendInvite()">+</v-btn>
       <template v-for="(state, index) in playerState">
-          <v-btn :key="index" v-if="state.status === true" color="success">v</v-btn>
-          <v-btn :key="index" v-if="state.status === null" color="warning">?</v-btn>
-          <v-btn :key="index" v-if="state.status === false" color="error">x</v-btn>
+        <v-btn :key="index" v-if="state === 'accepted'" color="success">v</v-btn>
+        <v-btn :key="index" v-if="state === 'invited'" color="warning">?</v-btn>
+        <!-- TODO: Show declined invites but allow to invite again <v-btn :key="index" v-if="state === false" color="error">x</v-btn> -->
+        <!-- TODO: Allow kicking/removing people from an invite -->
       </template>
       <!--
           Declined: Red 'X' button
@@ -26,7 +27,7 @@ import { mapState } from 'vuex';
 
 export default {
     name: "InvitePlayer",
-    props: ["invite", "player"],
+    props: ["invite", "player", "controllable"],
     data() {
         return {}
     },
@@ -42,10 +43,12 @@ export default {
         isAI() {
             return this.player.name.startsWith("#AI_");
         },
+        totalPlayers() {
+            return this.invite.players.length + this.invite.invited.length
+        },
         inviteIsFull() {
             if (!this.invite) return false
-            let count = this.invite.invitesSent.length
-            return count === this.invite.playersMax
+            return this.totalPlayers === this.invite.maxPlayers
         },
         inviteable() {
             if (this.inviteIsFull) return false
@@ -54,7 +57,8 @@ export default {
         },
         playerState() {
             if (!this.invite) { return [] }
-            return this.invite.invitesSent.filter(e => e.playerId === this.player.id)
+            return [...this.invite.players.filter(e => e.id === this.player.id).map(() => "accepted"),
+                    ...this.invite.invited.filter(e => e.id === this.player.id).map(() => "invited")]
         }
     }
 }

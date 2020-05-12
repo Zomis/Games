@@ -7,8 +7,8 @@
 </template>
 
 <script>
-import Socket from "../socket";
-import AuthChoice from "./AuthChoice";
+import Socket from "@/socket";
+import AuthChoice from "@/components/AuthChoice";
 import Invites from "./Invites";
 
 export default {

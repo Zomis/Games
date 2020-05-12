@@ -87,8 +87,8 @@
 </template>
 
 <script>
-import Socket from "../socket";
-import Invites from "./Invites";
+import Socket from "@/socket";
+import Invites from "@/components/invites/Invites";
 
 import { mapState } from "vuex";
 import supportedGames from "@/supportedGames";
@@ -158,8 +158,7 @@ export default {
     }
     Socket.$on("type:GameList", this.gameListMessage);
     Socket.$on("type:LobbyUnfinished", this.unfinishedGameListMessage);
-    Socket.route(`lobby/join`, { gameTypes: supportedGames.enabledGameKeys(), maxGames: 1 })
-    Socket.route(`lobby/list`, {});
+    this.$store.dispatch("lobby/joinAndList");
   },
   computed: {
     displayNames() {

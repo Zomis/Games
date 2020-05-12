@@ -17,16 +17,16 @@
         </div>
       </v-list>
     </v-card>
-    <v-dialog v-model="complexInviteDialog" max-width="42%" persistent>
+<!--    <v-dialog v-model="complexInviteDialog" max-width="42%" persistent>
       <InviteComplex />
-    </v-dialog>
+    </v-dialog> -->
   </div>
 </template>
 <script>
-import Socket from "../socket";
+import Socket from "@/socket";
 import supportedGames from "@/supportedGames";
 import { mapState } from 'vuex';
-import InviteComplex from "@/components/InviteComplex";
+//import InviteComplex from "./InviteComplex";
 
 export default {
   name: "Invites",
@@ -37,7 +37,7 @@ export default {
     }
   },
   components: {
-    InviteComplex
+//    InviteComplex
   },
   methods: {
     inviteLink(gameType) {

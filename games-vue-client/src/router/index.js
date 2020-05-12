@@ -7,7 +7,8 @@ import PlayLocalGameMenu from "@/components/PlayLocalGameMenu";
 import StatsScreen from "@/components/stats/StatsScreen";
 import TVScreen from "@/components/TVScreen";
 import ServerSelection from "@/components/ServerSelection";
-import InviteByURL from "@/components/InviteByURL";
+import InviteByURL from "@/components/invites/InviteByURL";
+import InviteScreen from "@/components/invites/InviteScreen";
 
 import VueAxios from "vue-axios";
 import VueAuthenticate from "vue-authenticate";
@@ -124,6 +125,14 @@ export default new Router({
       props: route => ({
         inviteId: route.params.inviteId,
         server: route.query.server
+      })
+    },
+    {
+      path: "/invites/:inviteId/",
+      name: "InviteScreen",
+      component: InviteScreen,
+      props: route => ({
+        inviteId: route.params.inviteId
       })
     },
     ...supportedGames.routes()

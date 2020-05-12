@@ -59,7 +59,7 @@ const store = new Vuex.Store({
       if (data.type == "Auth") {
         context.commit("lobby/setPlayer", data);
       }
-      if (data.type.startsWith("Invite") || data.type.startsWith("Lobby")) {
+      if (data.type.startsWith("Invite") || data.type.startsWith("Lobby") || data.type === 'GameStarted') {
         context.dispatch("lobby/onSocketMessage", data);
       }
       if (data.gameType) {
