@@ -116,15 +116,16 @@ export default {
     }
   },
   watch: {
-    deckEmpty: function (val) {
+    deckEmpty(val) {
       this.snackbar = val
     }
   },
-  data: () => ({
-    snackbar: false,
-    timeout: 5000,
-    snackbarText: 'Last round',
-  }),
+  data() {
+    return {
+      snackbar: false,
+      snackbarText: 'Last round'
+    }
+  },
   computed: {
     myTurn() {
       return this.view.currentPlayer == this.view.hand.index
