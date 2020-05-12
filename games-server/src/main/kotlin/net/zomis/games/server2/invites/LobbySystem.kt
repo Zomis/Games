@@ -11,7 +11,10 @@ import net.zomis.games.server2.games.*
 data class ClientInterestingGames(val interestingGames: Set<String>, val maxGames: Int, val currentGames: MutableSet<ServerGame>)
 data class ClientList(private val clients: MutableSet<Client> = mutableSetOf()) {
     fun findPlayerId(playerId: String) = clients.firstOrNull { it.playerId.toString() == playerId }
-    fun add(client: Client) = clients.add(client)
+    fun add(client: Client) {
+        clients.removeAll(clients.filter { it.playerId == client.playerId })
+        clients.add(client)
+    }
     fun remove(client: Client) = clients.remove(client)
     fun list(): List<Client> = clients.toList()
 }
