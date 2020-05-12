@@ -94,6 +94,9 @@
     <v-row>
       <h2>Actions</h2>
     </v-row>
+     <v-snackbar v-model="snackbar">
+        {{snackbarText}}
+     </v-snackbar>
   </v-container>
 </template>
 
@@ -114,9 +117,23 @@ export default {
       this.onAction(action, index);
     }
   },
+  watch: {
+    deckEmpty(val) {
+      this.snackbar = val
+    }
+  },
+  data() {
+    return {
+      snackbar: false,
+      snackbarText: 'Last round'
+    }
+  },
   computed: {
     myTurn() {
       return this.view.currentPlayer == this.view.hand.index
+    },
+    deckEmpty() {
+      return this.view.cardsLeft == 0
     }
   }
 };
