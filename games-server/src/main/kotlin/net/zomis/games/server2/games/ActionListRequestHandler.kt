@@ -86,7 +86,7 @@ class ActionListRequestHandler(private val game: ServerGame?) {
     fun actionRequest(message: ClientJsonMessage, callback: GameCallback) {
         val actionParams = actionParams(message)
         val actionType = actionParams.actions.singleOrNull()
-        val action = actionType?.second!!.parameters.singleOrNull()
+        val action = actionType?.second!!.parameters.singleOrNull().takeIf { actionType.second.nextOptions.isEmpty() }
         if (action != null) {
             val actionRequest = PlayerGameMoveRequest(actionParams.game, actionParams.playerIndex, actionType.first, action)
             callback.moveHandler(actionRequest)
