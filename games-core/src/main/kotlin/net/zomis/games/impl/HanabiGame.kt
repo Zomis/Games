@@ -249,7 +249,7 @@ object HanabiGame {
                     mapOf(
                         "color" to colorData.color.name.toLowerCase(),
                         "board" to colorData.board.map { card -> card.known(true) },
-                        "discard" to colorData.discard.toList().sortedBy { card -> card.value }.map { card -> card.known(true) }
+                        "discard" to colorData.discard.toList().map { card -> card.known(true) }
                     )
                 }
             }
