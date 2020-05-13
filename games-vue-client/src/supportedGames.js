@@ -17,6 +17,7 @@ import PlayGame from "@/components/PlayGame";
 import RoyalGameOfUR from "@/components/RoyalGameOfUR";
 import UTTT from "@/components/games/UTTT";
 import Hanabi from "@/components/games/Hanabi";
+import Splendor from "@/components/games/splendor/Splendor";
 import ECSGame from "@/components/ecs/ECSGame";
 import DSLTTT from "@/components/games/DSLTTT";
 import TTT3D from "@/components/games/TTT3D";
@@ -36,6 +37,19 @@ const tttMoveActions = {
         key: source.x + ',' + source.y,
         next: (target) => xyAction(target)
     })
+}
+
+const splendorActions = {
+    buy: (card) => 'buy-' + card,
+    discard: (money) => 'discard-' + money,
+    takeMoney: (target1) => ({
+        key: 'take-' + target1,
+        next: (target2) => ({
+            key: 'take-' + target2,
+            next: (target3) => 'take-' + target3
+        })
+    }),
+    reserve: (card) => 'reserve-' + card
 }
 
 const supportedGames = {
@@ -64,6 +78,12 @@ const supportedGames = {
             })
         },
         component: Hanabi,
+        routeProps: defaultRouteProps
+    },
+    "Splendor": {
+        dsl: true,
+        actions: splendorActions,
+        component: Splendor,
         routeProps: defaultRouteProps
     },
     "DSL-Connect4": {

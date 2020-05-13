@@ -71,6 +71,14 @@ class CardZone<T>(internal val cards: MutableList<T> = mutableListOf()) {
         return Card(this, index, card)
     }
 
+    fun first(count: Int, filter: (T) -> Boolean): List<T> {
+        val filtered = this.cards.filter(filter)
+        if (filtered.size < count) {
+            throw IllegalStateException("CardZone contains less than requested cards: ${filtered.size} < $count")
+        }
+        return filtered.take(count)
+    }
+
     val size: Int get() = cards.size
     val indices: IntRange get() = cards.indices
 
