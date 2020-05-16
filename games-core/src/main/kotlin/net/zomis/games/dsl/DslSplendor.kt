@@ -367,7 +367,7 @@ object DslSplendor {
                         else "reserved" to player.reserved.size
                     mapOf(
                         "points" to player.points,
-                        "money" to viewMoney(player.chips),
+                        "money" to viewMoney(player.chips).filter { it.value > 0 },
                         "nobles" to player.nobles.cards.map { viewNoble(it) },
                         "discounts" to viewMoney(player.discounts()),
                         reservedPair
