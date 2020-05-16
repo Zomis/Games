@@ -267,7 +267,7 @@ object DslSplendor {
             eliminations()
             value("viewer") { viewer }
             value("cardLevels") {game ->
-                game.board.cards.groupBy { it.level }.mapValues {
+                game.board.cards.sortedBy { it.level }.groupBy { it.level }.mapValues {
                     mapOf(
                         "level" to it.key,
                         "remaining" to game.deck.cards.count { c -> c.level == it.key },
@@ -283,6 +283,7 @@ object DslSplendor {
                     val reservedPair = if (index == viewer) "reservedCards" to player.reserved.map { viewCard(it) }
                         else "reserved" to player.reserved.size
                     mapOf(
+                        "points" to player.owned.sumBy { it.points },
                         "money" to viewMoney(player.chips),
                         "discounts" to viewMoney(player.discounts()),
                         reservedPair
