@@ -7,20 +7,25 @@
                 <SplendorPlayer :player="player" />
             </v-col>
         </v-row>
-        <v-row v-for="level in view.cardLevels" :key="level.level" :class="'card-level-' + level.level">
-            <v-col><v-card><v-card-title>{{ level.remaining }}</v-card-title></v-card></v-col>
-            <v-col v-for="card in level.board" :key="card.id">
-                <SplendorCard :card="card" />
+        <v-row>
+            <v-col cols="10">
+                <v-row v-for="level in view.cardLevels" :key="level.level" :class="'card-level-' + level.level">
+                    <v-col><v-card><v-card-title>{{ level.remaining }}</v-card-title></v-card></v-col>
+                    <v-col v-for="card in level.board" :key="card.id">
+                        <SplendorCard :card="card" />
+                    </v-col>
+                </v-row>
+            </v-col>
+            <v-col class="nobles">
+                <p>Nobles</p>
+                <v-row v-for="noble in view.nobles" :key="noble.id">
+                    <SplendorCard :noble="noble" />
+                </v-row>
             </v-col>
         </v-row>
         <v-row class="stock">
             <v-col v-for="(money, index) in view.stock" :key="index">
                 {{ index }} {{ money }}
-            </v-col>
-        </v-row>
-        <v-row class="nobles">
-            <v-col v-for="noble in view.nobles" :key="noble.id">
-                <SplendorCard :noble="noble" />
             </v-col>
         </v-row>
         <v-row class="player">
