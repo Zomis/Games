@@ -43,7 +43,7 @@ const tttMoveActions = {
 const splendorActions = {
     buy: (card) => 'buy-' + card,
     buyReserved: (card) => 'buyReserved-' + card,
-    discard: (money) => 'discard-' + money,
+    discardMoney: (money) => 'discardMoney-' + money,
     takeMoney: (target1) => ({
         key: 'take-' + target1,
         next: (target2) => ({
@@ -220,6 +220,11 @@ export default {
                 if (typeof a === 'object' && a.next) {
                     a = a.next
                 }
+            }
+            if (typeof a !== 'function') {
+                console.error("'a' is not a function", a, actionName, actionInfo, actionChoice)
+                //return a;
+                throw a;
             }
             a = a(value)
             if (typeof a === 'object') return { ...a, value: value, direct: false }

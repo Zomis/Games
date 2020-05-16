@@ -44,6 +44,8 @@ data class SplendorCard(val level: Int, val discounts: Money, val costs: Money, 
     constructor(level: Int, discount: MoneyType, costs: Money, points: Int):
         this(level, Money(discount to 1), costs, points)
 
+    val id: String get() = toStateString()
+
     fun toStateString(): String {
         return "$level:$points:${discounts.toStateString()}.${costs.toStateString()}"
     }
@@ -97,7 +99,7 @@ data class Money(val moneys: MutableMap<MoneyType, Int> = mutableMapOf(), val wi
     }
 
     fun toStateString(): String {
-        return moneys.entries.sortedBy { it.key.char }.joinToString { it.key.char.toString().repeat(it.value) }
+        return moneys.entries.sortedBy { it.key.char }.joinToString("") { it.key.char.toString().repeat(it.value) }
     }
 }
 
@@ -207,10 +209,10 @@ G 4WWWUUUUUUGGG 4UUUUUUU 5UUUUUUUGGG 3WWWWWUUURRRBBB
 
 object DslSplendor {
 
-    val buy = createActionType("buy", Int::class)
-    val buyReserved = createActionType("buyReserved", Int::class)
+    val buy = createActionType("buy", String::class)
+    val buyReserved = createActionType("buyReserved", String::class)
     val takeMoney = createActionType("takeMoney", MoneyChoice::class)
-    val reserve = createActionType("reserve", Int::class)
+    val reserve = createActionType("reserve", String::class)
     val discardMoney = createActionType("discardMoney", MoneyType::class)
     val splendorGame = createGame<SplendorGame>("Splendor") {
         setup {
@@ -228,10 +230,10 @@ object DslSplendor {
             }
         }
         logic {
-            singleTarget(buy, {it.board.indices}) {
-                allowed { isCurrentPlayer(it) && it.game.currentPlayer.canBuy(it.game.board[it.parameter].card) }
+            singleTarget(buy, {it.board.map { c -> c.id }}) {
+                allowed { isCurrentPlayer(it) && it.game.currentPlayer.chips.count <= 10 && it.game.currentPlayer.canBuy(it.game.board.cards.first { c -> c.id == it.parameter }) }
                 effect {
-                    val card = it.game.board[it.parameter].card
+                    val card = it.game.board.cards.first { c -> c.id == it.parameter }
                     val actualCost = it.game.currentPlayer.pay(card.costs)
                     it.game.currentPlayer.owned.cards.add(card)
                     it.game.stock += actualCost
@@ -239,10 +241,11 @@ object DslSplendor {
                     it.game.endTurnCheck()
                 }
             }
-            singleTarget(buyReserved, {it.currentPlayer.reserved.indices}) {
-                allowed { isCurrentPlayer(it) && it.game.currentPlayer.canBuy(it.game.currentPlayer.reserved[it.parameter].card) }
+            singleTarget(buyReserved, {it.currentPlayer.reserved.map { c -> c.id }}) {
+                allowed { isCurrentPlayer(it) && it.game.currentPlayer.chips.count <= 10 && it.game.currentPlayer.canBuy(it.game.currentPlayer.reserved.cards.first { c -> c.id == it.parameter }) }
                 effect {
-                    val card = it.game.currentPlayer.reserved[it.parameter]
+                    val param = it.game.currentPlayer.reserved.cards.first { c -> c.id == it.parameter }
+                    val card = it.game.currentPlayer.reserved.card(param)
                     val actualCost = it.game.currentPlayer.pay(card.card.costs)
                     it.game.stock += actualCost
                     card.moveTo(it.game.currentPlayer.owned)
@@ -258,10 +261,10 @@ object DslSplendor {
                     it.game.endTurnCheck()
                 }
             }
-            singleTarget(reserve, {it.board.indices}) {
-                allowed { isCurrentPlayer(it) && it.game.currentPlayer.reserved.size < 3 }
+            singleTarget(reserve, {it.board.map { c -> c.id }}) {
+                allowed { isCurrentPlayer(it) && it.game.currentPlayer.chips.count <= 10 && it.game.currentPlayer.reserved.size < 3 }
                 effect {
-                    val card = it.game.board[it.parameter]
+                    val card = it.game.board.card(it.game.board.cards.first { c -> c.id == it.parameter })
                     it.game.currentPlayer.reserved.cards.add(card.card)
                     val wildcardIfAvailable = if (it.game.stock.wildcards > 0) Money(mutableMapOf(), 1) else Money()
                     it.game.stock -= wildcardIfAvailable
@@ -273,9 +276,9 @@ object DslSplendor {
             action(takeMoney) {
                 options {
                     option(MoneyType.values().asIterable()) { first ->
-//                        actionParameter(MoneyChoice(listOf(first))) // TODO: How to perform this action of only taking one or two?
+                        // actionParameter(MoneyChoice(listOf(first))) // TODO: How to perform this action of only taking one or two?
                         option(MoneyType.values().asIterable()) {second ->
-//                            actionParameter(MoneyChoice(listOf(first, second)))
+                            // actionParameter(MoneyChoice(listOf(first, second)))
                             if (first == second) {
                                 actionParameter(MoneyChoice(listOf(first, second)))
                             } else {
@@ -288,6 +291,7 @@ object DslSplendor {
                 }
                 allowed {
                     if (!isCurrentPlayer(it)) { return@allowed false }
+                    if (it.game.currentPlayer.chips.count > 10) return@allowed false
                     val moneyChosen = it.parameter.toMoney()
                     if (!it.game.stock.hasWithoutWildcards(moneyChosen)) {
                         return@allowed false
@@ -312,6 +316,7 @@ object DslSplendor {
         }
         fun viewCard(card: SplendorCard): Map<String, Any?> {
             return mapOf(
+                "id" to card.id,
                 "level" to card.level,
                 "discount" to viewMoney(card.discounts),
                 "costs" to viewMoney(card.costs),

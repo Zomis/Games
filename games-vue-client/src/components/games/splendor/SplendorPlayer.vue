@@ -13,7 +13,8 @@
                         <div class="ma-1" v-for="(value, index) in player.discounts" :key="'discount-' + index">
                             <span :class="'discount-' + index">{{ value }}</span>
                         </div>
-                        <div v-for="(value, index) in player.money" :key="'gem-' + index">
+                        <div v-for="(value, index) in player.money" :key="'gem-' + index" :class="{ discardable: actionable
+                 && actionable.discardMoney && actionable.discardMoney['discardMoney-' + index] }" @click="discard(index)">
                             <span :class="'gems-' + index">{{ value }}</span>
                         </div>
                     </v-row>
@@ -21,8 +22,8 @@
             </v-row>
             <p v-if="player.reserved">Reserved Cards: {{ player.reserved }}</p>
             <v-row justify="start">
-                <v-col cols="4" v-for="card in player.reservedCards"  :key="card.id">
-                    <SplendorCard :card="card" />
+                <v-col cols="4" v-for="card in player.reservedCards" :key="card.id">
+                    <SplendorCard :card="card" :actions="actionable" :onAction="onAction" />
                 </v-col>
             </v-row>
         </v-card-text>
@@ -33,8 +34,13 @@ import SplendorCard from "./SplendorCard"
 
 export default {
     name: "SplendorPlayer",
-    props: ["player"],
-    components: { SplendorCard }
+    props: ["player", "actionable", "onAction"],
+    components: { SplendorCard },
+    methods: {
+        discard(moneyType) {
+            this.onAction("discardMoney", "discardMoney-" + moneyType)
+        }
+    }
 }
 </script>
 <style>

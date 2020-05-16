@@ -12,7 +12,7 @@
                 <v-row v-for="level in view.cardLevels" :key="level.level" :class="'card-level-' + level.level">
                     <v-col><v-card><v-card-title>{{ level.remaining }}</v-card-title></v-card></v-col>
                     <v-col v-for="card in level.board" :key="card.id">
-                        <SplendorCard :card="card" />
+                        <SplendorCard :card="card" :actions="actions" :onAction="onAction" />
                     </v-col>
                 </v-row>
             </v-col>
@@ -24,7 +24,7 @@
                     <v-card-text>
                         <v-row v-for="(money, index) in view.stock" :key="index">
                             <v-col>
-                                <span :class="'bank-' + index">{{ money }}</span>
+                                <span :class="{ ['bank-' + index]: true, actionable: actions['takeMoney-' + index] }" @click="takeMoney(index)">{{ money }}</span>
                             </v-col>
                         </v-row>
                    </v-card-text>
@@ -39,7 +39,7 @@
         </v-row>
         <v-row class="player">
             <v-col>
-                <SplendorPlayer :player="player" controller />
+                <SplendorPlayer :player="player" controller :actionable="actions" :onAction="onAction" />
             </v-col>
         </v-row>
     </v-container>
@@ -53,6 +53,12 @@ export default {
     name: "Splendor",
     props: ["view", "actions", "actionChoice", "onAction", "players"],
     components: { GameTreeView, SplendorPlayer, SplendorCard },
+    methods: {
+        takeMoney(moneyType) {
+            console.log(moneyType)
+            this.onAction("takeMoney", 'take-' + moneyType)
+        }
+    },
     computed: {
         player() { return this.view.players[this.view.viewer] }
     }

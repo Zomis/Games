@@ -1,26 +1,65 @@
 <template>
-    <v-card :class="'discount-' + discountColor">
-        <v-card-text>
-            <v-row>
-                <v-col cols="2">
-                    <h1 class="ma-1" style="text-align:left;">{{ card.points }}</h1>
-                </v-col>
-                <v-col cols="10">
-                    <v-row justify="end">
-                        <div class="ma-1" v-for="(cost, index) in card.costs" :key="index">
-                            <span :class="'cost-' + index">{{ cost }}</span>
-                        </div>
-                    </v-row>
-                </v-col>
-            </v-row>
-        </v-card-text>
-    </v-card>
+    <v-menu
+      v-model="showMenu"
+      offset-y
+      bottom
+      z-index="100"
+    >
+      <template v-slot:activator="{ on }">
+        <v-card :class="{ ['discount-' + discountColor]: true, buyable: isBuyable, actionable: isActionable }" v-on="on">
+            <v-card-text>
+                <v-row>
+                    <v-col cols="2">
+                        <h1 class="ma-1" style="text-align:left;">{{ card.points }}</h1>
+                    </v-col>
+                    <v-col cols="10">
+                        <v-row justify="end">
+                            <div class="ma-1" v-for="(cost, index) in card.costs" :key="index">
+                                <span :class="'cost-' + index">{{ cost }}</span>
+                            </div>
+                        </v-row>
+                    </v-col>
+                </v-row>
+            </v-card-text>
+        </v-card>
+      </template>
+      <v-list>
+        <v-list-item v-for="(item, index) in cardActions" :key="index" @click="performAction(item)">
+          <v-list-item-title>{{ item }}</v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-menu>
 </template>
 <script>
 export default {
     name: "SplendorCard",
-    props: ["card", "noble"],
+    props: ["card", "noble", "actions", "onAction"],
+    data() {
+        return { showMenu: false }
+    },
+    methods: {
+        performAction(action) {
+            console.log(action, this.card, this.actions);
+            this.onAction(action, action + '-' + this.card.id)
+        }
+    },
     computed: {
+        cardActions() {
+            if (this.isReservedBuyable) return ['buyReserved'];
+            if (this.isBuyable) return ['buy', 'reserve'];
+            if (this.isActionable) return ['reserve'];
+            return [];
+        },
+        isReservedBuyable() {
+            return this.actions && this.actions.buyReserved && this.actions.buyReserved['buyReserved-' + this.card.id];
+        },
+        isBuyable() {
+            return this.actions && this.actions.buy && this.actions.buy['buy-' + this.card.id]
+        },
+        isActionable() {
+            let reservable = this.actions && this.actions.buy && this.actions.reserve['reserve-' + this.card.id];
+            return this.isBuyable || reservable || this.isReservedBuyable
+        },
         discountColor() {
             return Object.keys(this.card.discount)[0];
         }
