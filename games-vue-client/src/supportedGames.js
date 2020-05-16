@@ -42,6 +42,7 @@ const tttMoveActions = {
 
 const splendorActions = {
     buy: (card) => 'buy-' + card,
+    buyReserved: (card) => 'buyReserved-' + card,
     discard: (money) => 'discard-' + money,
     takeMoney: (target1) => ({
         key: 'take-' + target1,
