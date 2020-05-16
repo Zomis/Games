@@ -2,6 +2,9 @@
     <v-card>
         <v-card-text>
             <v-row justify="start">
+                <v-col cols="2">
+                    A name should be here
+                </v-col>
                 <v-col cols="1">
                     <h1>{{ player.points }}</h1>
                 </v-col>
@@ -118,5 +121,4 @@ export default {
 .gems-wildcards {
     color: var(--splendor-black) !important;
 }
-
 </style>
