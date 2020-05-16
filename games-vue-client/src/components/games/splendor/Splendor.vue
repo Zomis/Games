@@ -4,7 +4,7 @@
         <GameTreeView :actions="actions" :onAction="onAction" />
         <v-row class="players">
             <v-col v-for="(player, index) in view.players" :key="index">
-                <SplendorPlayer :player="player" />
+                <SplendorPlayer :player="player" :playerInfo="players[index]" :actionable="actions" :onAction="onAction" :class="{activePlayer: index == view.currentPlayer}" />
             </v-col>
         </v-row>
         <v-row>
@@ -39,7 +39,7 @@
         </v-row>
         <v-row class="player">
             <v-col>
-                <SplendorPlayer :player="player" controller :actionable="actions" :onAction="onAction" />
+                <SplendorPlayer :player="player" :playerInfo="players[view.viewer]" controller :actionable="actions" :onAction="onAction" />
             </v-col>
         </v-row>
     </v-container>
@@ -72,6 +72,12 @@ export default {
     --splendor-black: #011627;
     --splendor-white: #f0e6ef;
     --splendor-yellow: #ffd166;
+}
+
+.activePlayer {
+    border-style: solid !important;
+        border-width: thick !important;
+        border-color: var(--splendor-yellow) !important;
 }
 
 .bank-RED,

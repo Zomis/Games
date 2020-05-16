@@ -6,7 +6,7 @@
       z-index="100"
     >
       <template v-slot:activator="{ on }">
-        <v-card :class="{ ['discount-' + discountColor]: true, buyable: isBuyable, actionable: isActionable }" v-on="on">
+        <v-card :class="{ ['discount-' + discountColor]: true, buyable: isBuyable || isReservedBuyable, actionable: isActionable }" v-on="on">
             <v-card-text>
                 <v-row>
                     <v-col cols="2">
@@ -61,7 +61,7 @@ export default {
             return this.isBuyable || reservable || this.isReservedBuyable
         },
         discountColor() {
-            return Object.keys(this.card.discount)[0];
+            return this.card  ? Object.keys(this.card.discount)[0] : false;
         }
     }
 }
@@ -73,7 +73,15 @@ export default {
     --splendor-green: #06D6A0;
     --splendor-black: #011627;
     --splendor-white: #f0e6ef;
+    --splendor-yellow: #ffd166;
 }
+
+.buyable {
+    border-style: solid !important;
+    border-width: thick !important;
+    border-color: var(--splendor-yellow) !important;
+}
+
 
 .discount-RED {
     background-color: var(--splendor-red) !important;
