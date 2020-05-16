@@ -18,6 +18,7 @@ import RoyalGameOfUR from "@/components/RoyalGameOfUR";
 import UTTT from "@/components/games/UTTT";
 import Hanabi from "@/components/games/Hanabi";
 import Splendor from "@/components/games/splendor/Splendor";
+import TreeViewGame from "@/components/games/TreeViewGame";
 import ECSGame from "@/components/ecs/ECSGame";
 import DSLTTT from "@/components/games/DSLTTT";
 import TTT3D from "@/components/games/TTT3D";
@@ -52,6 +53,16 @@ const splendorActions = {
     reserve: (card) => 'reserve-' + card
 }
 
+const setActions = {
+    set: (target1) => ({
+        key: 'set-' + target1,
+        next: (target2) => ({
+            key: 'set-' + target2,
+            next: (target3) => 'set-' + target3
+        })
+    })
+}
+
 const supportedGames = {
     "DSL-UR": {
         displayName: "Royal Game of UR",
@@ -80,8 +91,16 @@ const supportedGames = {
         component: Hanabi,
         routeProps: defaultRouteProps
     },
+    "Set": {
+        dsl: true,
+        enabled: false,
+        actions: setActions,
+        component: TreeViewGame,
+        routeProps: defaultRouteProps
+    },
     "Splendor": {
         dsl: true,
+        enabled: false,
         actions: splendorActions,
         component: Splendor,
         routeProps: defaultRouteProps
