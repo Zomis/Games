@@ -69,4 +69,10 @@ class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override va
         }
     }
 
+    fun viewRequest(playerIndex: PlayerIndex, key: String, params: Map<String, Any>): Any? {
+        val view = GameViewContext(model, eliminationCallback, playerIndex, replayState)
+        setupContext.viewDsl(view)
+        return view.request(playerIndex, key, params)
+    }
+
 }

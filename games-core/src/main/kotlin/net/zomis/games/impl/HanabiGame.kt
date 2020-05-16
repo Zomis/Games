@@ -258,6 +258,14 @@ object HanabiGame {
             value("score") { it.colors.sumBy { zone -> zone.board.size } }
             value("fails") { it.failTokens }
             value("maxFails") { it.maxFailTokens }
+            onRequest("probabilities") {
+                HanabiProbabilities.calculateProbabilities(game, viewer ?: game.currentPlayer)
+            }
+            onRequest("canNotBe") {
+                game.players[viewer ?: game.currentPlayer].cards.cards.map {
+                    mapOf("colors" to it.possibleColors, "values" to it.possibleValues)
+                }
+            }
         }
     }
 

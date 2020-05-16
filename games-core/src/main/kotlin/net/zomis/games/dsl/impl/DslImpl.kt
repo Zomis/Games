@@ -79,6 +79,7 @@ class GameGridBuilder<T : Any, P>(override val model: T) : GameGrid<T, P>, GridS
 
 class GameViewContext<T : Any>(val model: T, private val eliminations: PlayerEliminations,
        override val viewer: PlayerIndex, private val replayState: ReplayState) : GameView<T> {
+    private val requestable = mutableMapOf<String, GameViewOnRequestFunction<T>>()
     private val viewResult: MutableMap<String, Any?> = mutableMapOf()
 
     override fun result(): Map<String, Any?> {
@@ -124,6 +125,20 @@ class GameViewContext<T : Any>(val model: T, private val eliminations: PlayerEli
                 mapOf("eliminated" to true, "result" to elimination.winResult, "position" to elimination.position)
             }
         }
+    }
+
+    override fun onRequest(requestName: String, function: GameViewOnRequestFunction<T>) {
+        this.requestable[requestName] = function
+    }
+
+    fun request(playerIndex: PlayerIndex, key: String, params: Map<String, Any>): Any? {
+        val gameViewOnRequestScope = object: GameViewOnRequestScope<T> {
+            override val game: T
+                get() = model
+            override val viewer: PlayerIndex
+                get() = playerIndex
+        }
+        return this.requestable[key]?.invoke(gameViewOnRequestScope, params)
     }
 }
 

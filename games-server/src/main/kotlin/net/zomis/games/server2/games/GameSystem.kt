@@ -36,11 +36,12 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
 
     private val actionListHandler = ActionListRequestHandler(this)
     val router = MessageRouter(this)
-        .handler("view", this::viewRequest)
+        .handler("view", this::view)
         .handler("actionList", actionListHandler::sendActionList)
         .handler("action", this::actionRequest)
         .handler("move", this::moveRequest)
         .handler("join", this::clientJoin)
+        .handler("viewRequest", this::viewRequest)
     var gameOver: Boolean = false
     private val nextMoveIndex = AtomicInteger(0)
     internal val players: MutableList<Client> = mutableListOf()
@@ -95,11 +96,16 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
         callback.moveHandler(PlayerGameMoveRequest(this, playerIndex, moveType, move))
     }
 
-    private fun viewRequest(message: ClientJsonMessage) {
+    private fun requireDslGame(): Boolean {
         if (this.obj !is GameImpl<*>) {
             logger.error("Game $gameId of type $gameType is not a valid DSL game")
-            return
+            return false
         }
+        return true
+    }
+
+    private fun view(message: ClientJsonMessage) {
+        if (!requireDslGame()) return
 
         val obj = this.obj as GameImpl<*>
         val viewer = message.client to this.clientPlayerIndex(message.client)
@@ -111,6 +117,24 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
             "gameId" to gameId,
             "viewer" to viewer.second,
             "view" to view
+        ))
+    }
+
+    private fun viewRequest(message: ClientJsonMessage) {
+        if (!requireDslGame()) return
+
+        val obj = this.obj as GameImpl<*>
+        val viewer = message.client to this.clientPlayerIndex(message.client)
+
+        val viewDetailsResult = obj.viewRequest(viewer.second,
+              message.data.getTextOrDefault("viewRequest", ""), emptyMap())
+
+        message.client.send(mapOf(
+            "type" to "GameViewDetails",
+            "gameType" to gameType.type,
+            "gameId" to gameId,
+            "viewer" to viewer.second,
+            "details" to viewDetailsResult
         ))
     }
 

@@ -2,6 +2,12 @@ package net.zomis.games.dsl
 
 typealias ViewDsl2D<T, P> = GameView2D<T, P>.() -> Unit
 
+typealias GameViewOnRequestFunction<T> = GameViewOnRequestScope<T>.(request: Map<String, Any>) -> Any
+interface GameViewOnRequestScope<T> {
+    val viewer: PlayerIndex
+    val game: T
+}
+
 interface GameView<T> {
     val viewer: PlayerIndex
     fun result(): Map<String, Any?>
@@ -11,6 +17,7 @@ interface GameView<T> {
     fun value(key: String, value: (T) -> Any?)
     fun state(key: String, function: ReplayScope.(T) -> Any?)
     fun eliminations()
+    fun onRequest(requestName: String, function: GameViewOnRequestFunction<T>)
 }
 
 interface GameView2D<T, P> {
