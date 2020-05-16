@@ -1,17 +1,22 @@
 <template>
     <v-card>
         <v-card-text>
-            <p>{{ player.points }}</p>
-            <p>Discounts</p>
-            <div>
-                <span v-for="(value, index) in player.discounts" :key="index" :class="'gems-' + index">{{ value }}</span>
-            </div>
-            <p>Money</p>
-            <div>
-                <span v-for="(value, index) in player.money" :key="index" :class="'gems-' + index">{{ value }}</span>
-            </div>
+            <v-row justify="start">
+                <v-col cols="1">
+                    <h1>{{ player.points }}</h1>
+                </v-col>
+                <v-col>
+                    <v-row justify="center" align="center">
+                        <div class="ma-1" v-for="(value, index) in player.discounts" :key="'discount-' + index">
+                            <span :class="'discount-' + index">{{ value }}</span>
+                        </div>
+                        <div v-for="(value, index) in player.money" :key="'gem-' + index">
+                            <span :class="'gems-' + index">{{ value }}</span>
+                        </div>
+                    </v-row>
+                </v-col>
+            </v-row>
             <p v-if="player.reserved">Reserved Cards: {{ player.reserved }}</p>
-            <p v-if="player.reservedCards">Reserved</p>
             <v-row justify="start">
                 <v-col cols="4" v-for="card in player.reservedCards"  :key="card.id">
                     <SplendorCard :card="card" />
@@ -39,6 +44,11 @@ export default {
     --splendor-yellow: #ffd166;
 }
 
+.discount-RED,
+.discount-BLUE,
+.discount-GREEN,
+.discount-BLACK,
+.discount-WHITE,
 .gems-RED,
 .gems-BLUE,
 .gems-GREEN,
@@ -50,32 +60,59 @@ export default {
     border-style: solid;
     border-width: thin;
     border-color: var(--splendor-black) !important;
+}
+.discount-RED,
+.discount-BLUE,
+.discount-GREEN,
+.discount-BLACK,
+.discount-WHITE {
+    border-radius: 20%;
+}
+.gems-RED,
+.gems-BLUE,
+.gems-GREEN,
+.gems-BLACK,
+.gems-WHITE,
+.gems-wildcards {
     border-radius: 100%;
 }
+.discount-RED,
 .gems-RED {
     background-color: var(--splendor-red) !important;
 }
+
+.discount-BLUE,
 .gems-BLUE {
     background-color: var(--splendor-blue) !important;
 }
+
+.discount-GREEN,
 .gems-GREEN {
     background-color: var(--splendor-green) !important;
 }
+
+.discount-BLACK,
 .gems-BLACK {
     background-color: var(--splendor-black) !important;
 }
+
+.gems-WHITE,
 .gems-WHITE {
     background-color: var(--splendor-white) !important;
 }
 .gems-wildcards {
     background-color: var(--splendor-yellow) !important;
 }
-
+.discount-RED,
+.discount-BLUE,
+.discount-BLACK,
 .gems-RED,
 .gems-BLUE,
 .gems-BLACK {
     color: var(--splendor-white) !important;
 }
+.discount-GREEN,
+.discount-WHITE,
 .gems-GREEN,
 .gems-WHITE,
 .gems-wildcards {
