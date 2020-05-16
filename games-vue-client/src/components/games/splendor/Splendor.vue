@@ -24,7 +24,7 @@
                     <v-card-text>
                         <v-row v-for="(money, index) in view.stock" :key="index">
                             <v-col>
-                                <span :class="'gems-' + index">{{ money }}</span>
+                                <span :class="'bank-' + index">{{ money }}</span>
                             </v-col>
                         </v-row>
                    </v-card-text>
@@ -68,46 +68,46 @@ export default {
     --splendor-yellow: #ffd166;
 }
 
-.gems-RED,
-.gems-BLUE,
-.gems-GREEN,
-.gems-BLACK,
-.gems-WHITE,
-.gems-wildcards {
+.bank-RED,
+.bank-BLUE,
+.bank-GREEN,
+.bank-BLACK,
+.bank-WHITE,
+.bank-wildcards {
     padding: 9px 14px;
     border-style: solid;
     border-width: thin;
     border-color: var(--splendor-black) !important;
     border-radius: 100%;
 }
-.gems-RED {
+.bank-RED {
     background-color: var(--splendor-red) !important;
 }
-.gems-BLUE {
+.bank-BLUE {
     background-color: var(--splendor-blue) !important;
 }
-.gems-GREEN {
+.bank-GREEN {
     background-color: var(--splendor-green) !important;
 }
-.gems-BLACK {
+.bank-BLACK {
     background-color: var(--splendor-black) !important;
 }
 
-.gems-WHITE,
-.gems-WHITE {
+.bank-WHITE,
+.bank-WHITE {
     background-color: var(--splendor-white) !important;
 }
-.gems-wildcards {
+.bank-wildcards {
     background-color: var(--splendor-yellow) !important;
 }
-.gems-RED,
-.gems-BLUE,
-.gems-BLACK {
+.bank-RED,
+.bank-BLUE,
+.bank-BLACK {
     color: var(--splendor-white) !important;
 }
-.gems-GREEN,
-.gems-WHITE,
-.gems-wildcards {
+.bank-GREEN,
+.bank-WHITE,
+.bank-wildcards {
     color: var(--splendor-black) !important;
 }
 </style>
