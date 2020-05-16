@@ -6,16 +6,16 @@ import net.zomis.games.dsl.sourcedest.next
 import kotlin.math.absoluteValue
 import kotlin.math.max
 
-data class SplendorPlayer(var chips: Money = Money(), val owned: MutableSet<SplendorCard> = mutableSetOf(),
-                  val reserved: MutableSet<SplendorCard> = mutableSetOf()) {
-    val points: Int = owned.sumBy { it.points }
+data class SplendorPlayer(var chips: Money = Money(), val owned: CardZone<SplendorCard> = CardZone(),
+                          val reserved: CardZone<SplendorCard> = CardZone()) {
+    val points: Int get() = owned.cards.sumBy { it.points }
 
     fun total(): Money = this.discounts() + this.chips
 
     fun canBuy(card: SplendorCard): Boolean = this.total().hasWithWildcards(card.costs)
 
-    fun buy(card: SplendorCard): Money {
-        val chipCosts = (card.costs - this.discounts()).map({ it.first to max(it.second, 0) }) { it }
+    fun pay(costs: Money): Money {
+        val chipCosts = (costs - this.discounts()).map({ it.first to max(it.second, 0) }) { it }
         val remaining = (this.chips - chipCosts)
         val wildcardsNeeded = remaining.negativeAmount()
         val actualCosts = this.chips - remaining.map({ it.first to max(it.second, 0) }) { it - wildcardsNeeded }
@@ -30,16 +30,11 @@ data class SplendorPlayer(var chips: Money = Money(), val owned: MutableSet<Sple
         if (oldMoney.count - this.chips.count != tokensExpected) {
             throw IllegalStateException("Wrong amount of tokens were taken: $oldMoney --> ${this.chips}. Cost was $chipCosts")
         }
-        this.owned.add(card)
         return actualCosts
     }
 
     fun discounts(): Money {
         return this.owned.map { it.discounts }.fold(Money()) { acc, money -> acc + money }
-    }
-
-    fun reserve(card: SplendorCard) {
-        this.reserved.add(card)
     }
 
 }
@@ -208,6 +203,7 @@ G 4WWWUUUUUUGGG 4UUUUUUU 5UUUUUUUGGG 3WWWWWUUURRRBBB
 object DslSplendor {
 
     val buy = createActionType("buy", Int::class)
+    val buyReserved = createActionType("buyReserved", Int::class)
     val takeMoney = createActionType("takeMoney", MoneyChoice::class)
     val reserve = createActionType("reserve", Int::class)
     val discardMoney = createActionType("discardMoney", MoneyType::class)
@@ -231,10 +227,20 @@ object DslSplendor {
                 allowed { isCurrentPlayer(it) && it.game.currentPlayer.canBuy(it.game.board[it.parameter].card) }
                 effect {
                     val card = it.game.board[it.parameter].card
-                    val previousMoney = it.game.currentPlayer.chips to it.game.currentPlayer.discounts()
-                    val actualCost = it.game.currentPlayer.buy(card)
+                    val actualCost = it.game.currentPlayer.pay(card.costs)
+                    it.game.currentPlayer.owned.cards.add(card)
                     it.game.stock += actualCost
                     replaceCard(this, it.game, card)
+                    it.game.endTurnCheck()
+                }
+            }
+            singleTarget(buyReserved, {it.currentPlayer.reserved.indices}) {
+                allowed { isCurrentPlayer(it) && it.game.currentPlayer.canBuy(it.game.currentPlayer.reserved[it.parameter].card) }
+                effect {
+                    val card = it.game.currentPlayer.reserved[it.parameter]
+                    val actualCost = it.game.currentPlayer.pay(card.card.costs)
+                    it.game.stock += actualCost
+                    card.moveTo(it.game.currentPlayer.owned)
                     it.game.endTurnCheck()
                 }
             }
@@ -248,10 +254,10 @@ object DslSplendor {
             singleTarget(reserve, {it.board.indices}) {
                 allowed { isCurrentPlayer(it) && it.game.currentPlayer.reserved.size < 3 }
                 effect {
-                    val card = it.game.board[it.parameter].card
-                    it.game.currentPlayer.reserve(card)
+                    val card = it.game.board[it.parameter]
+                    it.game.currentPlayer.reserved.cards.add(card.card)
                     it.game.currentPlayer.chips += Money(mutableMapOf(), 1)
-                    replaceCard(this, it.game, card)
+                    replaceCard(this, it.game, card.card)
                     it.game.endTurnCheck()
                 }
             }
@@ -324,7 +330,7 @@ object DslSplendor {
                     val reservedPair = if (index == viewer) "reservedCards" to player.reserved.map { viewCard(it) }
                         else "reserved" to player.reserved.size
                     mapOf(
-                        "points" to player.owned.sumBy { it.points },
+                        "points" to player.points,
                         "money" to viewMoney(player.chips),
                         "discounts" to viewMoney(player.discounts()),
                         reservedPair
