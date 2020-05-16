@@ -8,7 +8,8 @@ import kotlin.math.max
 
 data class SplendorPlayer(var chips: Money = Money(), val owned: CardZone<SplendorCard> = CardZone(),
                           val reserved: CardZone<SplendorCard> = CardZone()) {
-    val points: Int get() = owned.cards.sumBy { it.points }
+    val nobles = CardZone<SplendorNoble>()
+    val points: Int get() = owned.cards.sumBy { it.points } + nobles.cards.sumBy { it.points }
 
     fun total(): Money = this.discounts() + this.chips
 
@@ -48,6 +49,12 @@ data class SplendorCard(val level: Int, val discounts: Money, val costs: Money, 
 
     fun toStateString(): String {
         return "$level:$points:${discounts.toStateString()}.${costs.toStateString()}"
+    }
+}
+
+data class SplendorNoble(val points: Int, val requirements: Money) {
+    fun requirementsFulfilled(player: SplendorPlayer): Boolean {
+        return player.discounts().hasWithoutWildcards(requirements)
     }
 }
 
@@ -135,7 +142,12 @@ object SplendorCardFactory {
 
 class SplendorGame(val eliminations: PlayerEliminationCallback, playerCount: Int = 2) {
 
-    val nobles = listOf("BR", "UW", "UG", "RG", "BW", "BRG", "BUW", "BRW", "GUW", "GUR")
+    val nobles = CardZone(listOf("BR", "UW", "UG", "RG", "BW", "BRG", "BUW", "BRW", "GUW", "GUR").map {string ->
+        val moneyTypes = string.map { ch -> MoneyType.values().first { it.char == ch } }
+        val requiredPerType = if (moneyTypes.size == 2) 4 else 3
+        val money = moneyTypes.map { it.toMoney(requiredPerType) }.reduce { acc, money -> acc + money }
+        SplendorNoble(3, money)
+    }.shuffled().take(playerCount + 1).toMutableList())
     val deck = CardZone(listOf("""
 W UGRB UGGRB WWWUB UUGGB UUBB RRB 1GGGG UUU
 U WGRB WGRRB UGGGR WGGRR GGBB WBB 1RRRR BBB
@@ -181,6 +193,12 @@ G 4WWWUUUUUUGGG 4UUUUUUU 5UUUUUUUGGG 3WWWWWUUURRRBBB
 
         // Check money count > 10
         if (this.currentPlayer.chips.count > 10) return // Need to discard some money
+
+        // Check noble conditions
+        val noble = this.nobles.cards.find { it.requirementsFulfilled(currentPlayer) }
+        if (noble != null) {
+            this.nobles.card(noble).moveTo(this.currentPlayer.nobles)
+        }
 
         // Check game winning conditions
         if (turnsLeft > 0) {
@@ -314,6 +332,7 @@ object DslSplendor {
             return money.moneys.entries.sortedBy { it.key.name }.map { it.key.name to it.value }
                 .let { if (money.wildcards > 0) it.plus("wildcards" to money.wildcards) else it }.toMap()
         }
+        fun viewNoble(noble: SplendorNoble): Map<String, Any> = mapOf("points" to 3, "requirements" to viewMoney(noble.requirements))
         fun viewCard(card: SplendorCard): Map<String, Any?> {
             return mapOf(
                 "id" to card.id,
@@ -339,6 +358,9 @@ object DslSplendor {
             value("stock") {game ->
                 MoneyType.values().associate { it to game.stock.moneys[it] }.plus("wildcards" to game.stock.wildcards)
             }
+            value("nobles") {
+                it.nobles.map {noble -> viewNoble(noble) }
+            }
             value("players") {game ->
                 game.players.mapIndexed { index, player ->
                     val reservedPair = if (index == viewer) "reservedCards" to player.reserved.map { viewCard(it) }
@@ -346,6 +368,7 @@ object DslSplendor {
                     mapOf(
                         "points" to player.points,
                         "money" to viewMoney(player.chips),
+                        "nobles" to player.nobles.cards.map { viewNoble(it) },
                         "discounts" to viewMoney(player.discounts()),
                         reservedPair
                     )
