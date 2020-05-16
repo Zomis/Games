@@ -3,6 +3,8 @@ package net.zomis.games.dsl
 import net.zomis.games.PlayerEliminationCallback
 import net.zomis.games.cards.CardZone
 import net.zomis.games.dsl.sourcedest.next
+import kotlin.math.absoluteValue
+import kotlin.math.max
 
 data class SplendorPlayer(var chips: Money = Money(), val owned: MutableSet<SplendorCard> = mutableSetOf(),
                   val reserved: MutableSet<SplendorCard> = mutableSetOf()) {
@@ -10,13 +12,26 @@ data class SplendorPlayer(var chips: Money = Money(), val owned: MutableSet<Sple
 
     fun total(): Money = this.discounts() + this.chips
 
-    fun canBuy(card: SplendorCard): Boolean = this.total().has(card.costs)
+    fun canBuy(card: SplendorCard): Boolean = this.total().hasWithWildcards(card.costs)
 
     fun buy(card: SplendorCard): Money {
-        val actualCost = card.costs.minus(this.discounts())
-        this.chips -= actualCost
+        val chipCosts = (card.costs - this.discounts()).map({ it.first to max(it.second, 0) }) { it }
+        val remaining = (this.chips - chipCosts)
+        val wildcardsNeeded = remaining.negativeAmount()
+        val actualCosts = this.chips - remaining.map({ it.first to max(it.second, 0) }) { it - wildcardsNeeded }
+
+        val tokensExpected = chipCosts.count
+        val oldMoney = this.chips
+
+        this.chips -= actualCosts
+        if (actualCosts.negativeAmount() > 0) {
+            throw IllegalStateException("Actual costs has negative: $oldMoney --> ${this.chips}. Cost was $chipCosts. Actual $actualCosts")
+        }
+        if (oldMoney.count - this.chips.count != tokensExpected) {
+            throw IllegalStateException("Wrong amount of tokens were taken: $oldMoney --> ${this.chips}. Cost was $chipCosts")
+        }
         this.owned.add(card)
-        return actualCost
+        return actualCosts
     }
 
     fun discounts(): Money {
@@ -62,12 +77,27 @@ data class Money(val moneys: MutableMap<MoneyType, Int> = mutableMapOf(), val wi
         return Money(result.toMutableMap(), wildcards + other.wildcards)
     }
 
-    fun has(costs: Money): Boolean = costs.moneys.entries.all { it.value <= this.moneys[it.key] ?: 0 }
+    fun hasWithWildcards(costs: Money): Boolean {
+        val diff = this - costs
+        val wildcardsNeeded = diff.negativeAmount()
+        return this.wildcards >= wildcardsNeeded
+    }
+
+    fun hasWithoutWildcards(costs: Money): Boolean {
+        val diff = this - costs
+        return diff.wildcards >= 0 && diff.moneys.all { it.value >= 0 }
+    }
+
+    fun map(mapping: (Pair<MoneyType, Int>) -> Pair<MoneyType, Int>, wildcardsMapping: (Int) -> Int): Money {
+        var result = Money()
+        moneys.forEach { pair -> result += Money(mutableMapOf(mapping(pair.key to pair.value))) }
+        return Money(result.moneys.toMutableMap(), wildcardsMapping(wildcards))
+    }
+
+    fun negativeAmount(): Int = moneys.values.filter { it < 0 }.sum().absoluteValue
 
     operator fun minus(other: Money): Money {
-        val result = moneys.mergeWith(other.moneys) {a, b -> (a ?: 0) - (b ?: 0)}.mapValues {
-            if (it.value < 0) 0 else it.value
-        }
+        val result = moneys.mergeWith(other.moneys) {a, b -> (a ?: 0) - (b ?: 0)}
         return Money(result.toMutableMap(), wildcards - other.wildcards)
     }
 
@@ -192,13 +222,15 @@ object DslSplendor {
                 allowed { isCurrentPlayer(it) && it.game.currentPlayer.canBuy(it.game.board[it.parameter].card) }
                 effect {
                     val card = it.game.board[it.parameter].card
-                    it.game.stock += it.game.currentPlayer.buy(card)
+                    val previousMoney = it.game.currentPlayer.chips to it.game.currentPlayer.discounts()
+                    val actualCost = it.game.currentPlayer.buy(card)
+                    it.game.stock += actualCost
                     replaceCard(this, it.game, card)
                     it.game.endTurnCheck()
                 }
             }
             singleTarget(discardMoney, {MoneyType.values().toList()}) {
-                allowed { isCurrentPlayer(it) && it.game.currentPlayer.chips.count > 10 }
+                allowed { isCurrentPlayer(it) && it.game.currentPlayer.chips.count > 10 && it.game.currentPlayer.chips.hasWithoutWildcards(it.parameter.toMoney(1)) }
                 effect {
                     it.game.currentPlayer.chips -= it.parameter.toMoney(1)
                     it.game.endTurnCheck()
@@ -233,12 +265,12 @@ object DslSplendor {
                 allowed {
                     if (!isCurrentPlayer(it)) { return@allowed false }
                     val moneyChosen = it.parameter.toMoney()
-                    if (!it.game.stock.has(moneyChosen)) {
+                    if (!it.game.stock.hasWithoutWildcards(moneyChosen)) {
                         return@allowed false
                     }
                     val chosen = it.parameter.moneys
                     return@allowed when {
-                        chosen.size == 2 -> chosen.distinct().size == 1 && it.game.stock.has(moneyChosen.plus(moneyChosen))
+                        chosen.size == 2 -> chosen.distinct().size == 1 && it.game.stock.hasWithoutWildcards(moneyChosen.plus(moneyChosen))
                         chosen.size == 3 -> chosen.distinct().size == chosen.size
                         else -> false
                     }
