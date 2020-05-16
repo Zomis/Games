@@ -168,6 +168,15 @@ G 4WWWUUUUUUGGG 4UUUUUUU 5UUUUUUUGGG 3WWWWWUUURRRBBB
     }
 
     fun endTurnCheck() {
+        if (this.stock.negativeAmount() > 0) {
+            throw IllegalStateException("Stock is negative")
+        }
+        if (this.currentPlayer.chips.negativeAmount() > 0) {
+            throw IllegalStateException("Player has negative amount of chips")
+        }
+        if (this.currentPlayer.discounts().negativeAmount() > 0) throw IllegalStateException("Player has negative amount of discounts")
+        if (this.currentPlayer.chips.wildcards < 0) throw IllegalStateException("Player has negative amount of wildcards")
+
         // Check money count > 10
         if (this.currentPlayer.chips.count > 10) return // Need to discard some money
 
