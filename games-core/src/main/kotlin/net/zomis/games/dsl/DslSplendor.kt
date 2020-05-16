@@ -323,7 +323,7 @@ object DslSplendor {
             eliminations()
             value("viewer") { viewer }
             value("cardLevels") {game ->
-                game.board.cards.sortedBy { it.level }.groupBy { it.level }.mapValues {
+                game.board.cards.sortedBy { -it.level }.groupBy { it.level }.mapValues {
                     mapOf(
                         "level" to it.key,
                         "remaining" to game.deck.cards.count { c -> c.level == it.key },
