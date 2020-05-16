@@ -33,7 +33,9 @@
             <v-col class="nobles">
                 <p>Nobles</p>
                 <v-row v-for="noble in view.nobles" :key="noble.id">
-                    <SplendorCard :noble="noble" />
+                    <v-col>
+                        <SplendorNoble :noble="noble" />
+                    </v-col>
                 </v-row>
             </v-col>
         </v-row>
@@ -47,12 +49,13 @@
 <script>
 import SplendorCard from "./SplendorCard"
 import SplendorPlayer from "./SplendorPlayer"
+import SplendorNoble from "./SplendorNoble"
 import GameTreeView from "@/components/games/debug/GameTreeView"
 
 export default {
     name: "Splendor",
     props: ["view", "actions", "actionChoice", "onAction", "players"],
-    components: { GameTreeView, SplendorPlayer, SplendorCard },
+    components: { GameTreeView, SplendorPlayer, SplendorCard, SplendorNoble },
     methods: {
         takeMoney(moneyType) {
             console.log(moneyType)
