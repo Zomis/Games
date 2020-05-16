@@ -4,7 +4,7 @@
             <p>{{ player.points }}</p>
             <p>Discounts</p>
             <div>
-                <p v-for="(value, index) in player.discounts" :key="index" :class="'gems-' + index">{{ value }}</p>
+                <span v-for="(value, index) in player.discounts" :key="index" :class="'gems-' + index">{{ value }}</span>
             </div>
             <p>Money</p>
             <div>
@@ -12,14 +12,21 @@
             </div>
             <p v-if="player.reserved">Reserved Cards: {{ player.reserved }}</p>
             <p v-if="player.reservedCards">Reserved</p>
-            <SplendorCard v-for="card in player.reservedCards" :card="card" :key="card" />
+            <v-row justify="start">
+                <v-col cols="4" v-for="card in player.reservedCards"  :key="card.id">
+                    <SplendorCard :card="card" />
+                </v-col>
+            </v-row>
         </v-card-text>
     </v-card>
 </template>
 <script>
+import SplendorCard from "./SplendorCard"
+
 export default {
     name: "SplendorPlayer",
-    props: ["player"]
+    props: ["player"],
+    components: { SplendorCard }
 }
 </script>
 <style>
@@ -43,6 +50,7 @@ export default {
     border-style: solid;
     border-width: thin;
     border-color: var(--splendor-black) !important;
+    border-radius: 100%;
 }
 .gems-RED {
     background-color: var(--splendor-red) !important;

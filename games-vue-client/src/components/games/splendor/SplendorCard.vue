@@ -2,13 +2,15 @@
     <v-card :class="'discount-' + discountColor">
         <v-card-text>
             <v-row>
-                <v-col>
-                    <h1>{{ card.points }}</h1>
+                <v-col cols="2">
+                    <h1 class="ma-1" style="text-align:left;">{{ card.points }}</h1>
                 </v-col>
-            </v-row>
-            <v-row>
-                <v-col>
-                    <span v-for="(cost, index) in card.costs" :key="index" :class="'cost-' + index">{{ cost }}</span>
+                <v-col cols="10">
+                    <v-row justify="end">
+                        <div class="ma-1" v-for="(cost, index) in card.costs" :key="index">
+                            <span :class="'cost-' + index">{{ cost }}</span>
+                        </div>
+                    </v-row>
                 </v-col>
             </v-row>
         </v-card-text>
@@ -61,9 +63,9 @@ export default {
 .cost-BLACK,
 .cost-WHITE {
     padding: 5px 10px;
-    margin: 0px 5px;
     border-style: solid;
     border-width: thin;
+    border-radius: 100%;
 }
 .cost-RED {
     background-color: var(--splendor-red) !important;
