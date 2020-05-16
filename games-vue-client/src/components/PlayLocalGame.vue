@@ -11,14 +11,14 @@ import GameHead from "@/components/games/common/GameHead";
 import GameResult from "@/components/games/common/GameResult";
 import kotlin from "kotlin"
 
-function valueToJS(value) {
+function valueToJS(value, path) {
 //    let constructorName = (typeof value === 'object' && value) ? value.constructor.name : 'not-an-object';
 //    console.log(`valueToJS: ${typeof value} ${value} ${constructorName}`)
     if (typeof value === 'number') { return value }
     if (typeof value === 'boolean') { return value }
     if (typeof value === 'string') { return value }
     if (value === null) return null;
-    if (value.constructor.name === "ArrayList") return value.toArray().map(e => valueToJS(e))
+    if (value.constructor.name === "ArrayList") return value.toArray().map((e, index) => valueToJS(e, path + '/' + index))
     if (value.constructor.name === "WinResult") return value.toString()
     let results = {}
 
@@ -28,9 +28,9 @@ function valueToJS(value) {
     if (value.entries) {
       console.log("entries", value.entries)
       let entries = value.entries.toArray()
-      entries.forEach(e => results[e.key] = valueToJS(e.value))
+      entries.forEach(e => results[e.key] = valueToJS(e.value, path + '/' + e.key))
     } else {
-      console.error("Unknown value for valueToJS: ", typeof value, ". Is it perhaps a Kotlin class? Those needs to be replaced with a pure map.", value)
+      console.error("Unknown value for valueToJS: ", typeof value, ". Is it perhaps a Kotlin class? Those needs to be replaced with a pure map.", value, path)
     }
     return results
 }
@@ -72,7 +72,7 @@ export default {
     updateView() {
       console.log("UPDATE VIEW", this.viewer)
       let v = this.game.view_s8ev37$(this.viewer)
-      this.view = valueToJS(v)
+      this.view = valueToJS(v, '/')
       if (this.view.currentPlayer !== undefined) {
         this.viewer = this.view.currentPlayer
       }
