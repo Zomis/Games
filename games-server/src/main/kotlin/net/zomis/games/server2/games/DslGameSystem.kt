@@ -55,9 +55,14 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
             }
 
             val beforeMoveEliminated = controller.eliminationCallback.eliminations()
-            events.execute(PreMoveEvent(it.game, it.player, it.moveType, parameter))
-            actionType.perform(action)
-            controller.stateCheck()
+            try {
+                events.execute(PreMoveEvent(it.game, it.player, it.moveType, parameter))
+                actionType.perform(action)
+                controller.stateCheck()
+            } catch (e: Exception) {
+                logger.error(e) { "Error processing move $it" }
+                events.execute(it.illegalMove("Error occurred while processing move: $e"))
+            }
             val recentEliminations = controller.eliminationCallback.eliminations().minus(beforeMoveEliminated)
 
             events.execute(MoveEvent(it.game, it.player, it.moveType, parameter))

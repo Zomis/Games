@@ -61,7 +61,7 @@ class WSClient(uri: URI): WebSocketClient(uri) {
     fun expectJsonObject(predicate: (ObjectNode) -> Boolean): ObjectNode {
         val text = queue.poll(30, TimeUnit.SECONDS) ?: failClose("Timeout waiting for new message")
         val node = mapper.readTree(text) as ObjectNode
-        assert(predicate.invoke(node), { "Unexpected data for $node" })
+        assert(predicate.invoke(node)) { "Unexpected data for $node" }
         return node
     }
 

@@ -3,12 +3,17 @@ package net.zomis.games.server2
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
+import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.impl.SetAction
+import net.zomis.games.impl.SetGame
+import net.zomis.games.impl.SetGameModel
 import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.clients.WSClient
 import net.zomis.games.server2.clients.getInt
 import net.zomis.games.server2.clients.getText
+import net.zomis.games.server2.games.PlayerGameMoveRequest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.params.ParameterizedTest
@@ -16,6 +21,8 @@ import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import java.net.URI
 import java.util.UUID
+import kotlin.random.Random
+import kotlin.reflect.KClass
 
 class DslRandomPlayTest {
 
@@ -23,6 +30,8 @@ class DslRandomPlayTest {
 
     var server: Server2? = null
     val config = testServerConfig()
+    val serverAIs = ServerAIs(AIRepository(), emptySet())
+    val random = Random.Default
 
     @BeforeEach
     fun startServer() {
@@ -47,6 +56,20 @@ class DslRandomPlayTest {
             return ServerGames.games.keys.sorted().map { Arguments.of(it) }
         }
     }
+
+    fun randomSetMove(game: GameImpl<SetGameModel>, playerIndex: Int): Actionable<*, Any>? {
+        return if (random.nextBoolean()) {
+            game.model.findSets(game.model.board.cards).firstOrNull()?.let {
+                game.actions[SetGame.callSet.name]!!.createAction(playerIndex, SetAction(it.map { c -> c.toStateString() }))
+            }
+        } else {
+            serverAIs.randomActionable(game, playerIndex)
+        }
+    }
+
+    val playingMap = mapOf<KClass<*>, (Any, Int) -> Actionable<*, Any>?>(
+        SetGameModel::class to { game: Any, playerIndex: Int -> randomSetMove(game as GameImpl<SetGameModel>, playerIndex) }
+    )
 
     @ParameterizedTest(name = "Random play {0}")
     @MethodSource("serverGames")
@@ -97,8 +120,15 @@ class DslRandomPlayTest {
                 p1.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
                 p1.expectJsonObject { it.getText("type") == "GameView" }
             }
-            val actions = playerRange.mapNotNull {playerIndex ->
-                ServerAIs(AIRepository(), emptySet()).randomAction(game, playerIndex).firstOrNull()
+            val actions: List<PlayerGameMoveRequest> = playerRange.mapNotNull {playerIndex ->
+                val moveHandler = playingMap[gameImpl.model::class]
+                if (moveHandler != null) {
+                    moveHandler.invoke(gameImpl, playerIndex)?.let {
+                        PlayerGameMoveRequest(game, playerIndex, it.actionType, it.parameter)
+                    }
+                } else {
+                    serverAIs.randomAction(game, playerIndex).firstOrNull()
+                }
             }
             if (actions.isEmpty()) {
                 p1.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
@@ -109,8 +139,8 @@ class DslRandomPlayTest {
             val playerSocket = players[request.player]
             val moveString = jacksonObjectMapper().writeValueAsString(request.move)
             playerSocket.send("""{ "route": "games/$dslGame/1/move", "moveType": "${request.moveType}", "move": $moveString }""")
-            p1.expectJsonObject { true }
-            p2.expectJsonObject { true }
+            p1.expectJsonObject { it.getTextOrDefault("type", "") == "GameMove" }
+            p2.expectJsonObject { it.getTextOrDefault("type", "") == "GameMove" }
         }
 
         // Game is finished

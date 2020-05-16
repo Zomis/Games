@@ -2,6 +2,7 @@ package net.zomis.games.server2.ais
 
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
+import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.server2.games.GameTypeRegisterEvent
 import net.zomis.games.server2.games.PlayerGameMoveRequest
@@ -14,19 +15,23 @@ class ServerAIs(private val aiRepository: AIRepository, private val dslGameTypes
 
     fun isDSLGameType(gameType: String) = dslGameTypes.contains(gameType)
 
-    fun randomAction(game: ServerGame, index: Int): List<PlayerGameMoveRequest> {
-        val controller = game.obj as GameImpl<Any>
-        val actionTypes = controller.actions.types()
+    fun randomActionable(game: GameImpl<*>, playerIndex: Int): Actionable<*, Any>? {
+        val actionTypes = game.actions.types()
         val actions = actionTypes.flatMap {actionType ->
-            actionType.availableActions(index)
+            actionType.availableActions(playerIndex)
         }
         if (actions.isEmpty()) {
-            return listOf()
+            return null
         }
-        val chosenAction = actions.random().let {
-            return@let PlayerGameMoveRequest(game, it.playerIndex, it.actionType, it.parameter)
-        }
-        return listOf(chosenAction)
+        return actions.random()
+    }
+
+    fun randomAction(game: ServerGame, index: Int): List<PlayerGameMoveRequest> {
+        val controller = game.obj as GameImpl<Any>
+        val actionable = randomActionable(controller, index)
+        return listOfNotNull(actionable?.let {
+            PlayerGameMoveRequest(game, it.playerIndex, it.actionType, it.parameter)
+        })
     }
 
     fun register(events: EventSystem, executor: ScheduledExecutorService) {
