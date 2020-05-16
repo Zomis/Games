@@ -171,6 +171,11 @@ G 4WWWUUUUUUGGG 4UUUUUUU 5UUUUUUUGGG 3WWWWWUUURRRBBB
         }
         if (this.currentPlayer.discounts().negativeAmount() > 0) throw IllegalStateException("Player has negative amount of discounts")
         if (this.currentPlayer.chips.wildcards < 0) throw IllegalStateException("Player has negative amount of wildcards")
+        val totalChipsInGame = this.stock + this.players.fold(Money()) { a, b -> a.plus(b.chips) }
+        if (totalChipsInGame.wildcards != 5) throw IllegalStateException("Wrong amount of total wildcards: $totalChipsInGame")
+        if (totalChipsInGame.moneys.any { it.value != startingStockForPlayerCount(players.size) }) {
+            throw IllegalStateException("Wrong amount of total chips: $totalChipsInGame")
+        }
 
         // Check money count > 10
         if (this.currentPlayer.chips.count > 10) return // Need to discard some money
@@ -192,7 +197,7 @@ G 4WWWUUUUUUGGG 4UUUUUUU 5UUUUUUUGGG 3WWWWWUUURRRBBB
 
     val players: List<SplendorPlayer> = (1..playerCount).map { SplendorPlayer() }
     val board: CardZone<SplendorCard> = CardZone(mutableListOf())
-    var stock: Money = MoneyType.values().fold(Money()) {money, type -> money + type.toMoney(startingStockForPlayerCount(playerCount))}
+    var stock: Money = MoneyType.values().fold(Money()) {money, type -> money + type.toMoney(startingStockForPlayerCount(playerCount))}.plus(Money(mutableMapOf(), 5))
     var currentPlayerIndex: Int = 0
 
     val currentPlayer: SplendorPlayer
@@ -247,7 +252,9 @@ object DslSplendor {
             singleTarget(discardMoney, {MoneyType.values().toList()}) {
                 allowed { isCurrentPlayer(it) && it.game.currentPlayer.chips.count > 10 && it.game.currentPlayer.chips.hasWithoutWildcards(it.parameter.toMoney(1)) }
                 effect {
-                    it.game.currentPlayer.chips -= it.parameter.toMoney(1)
+                    val money = it.parameter.toMoney(1)
+                    it.game.currentPlayer.chips -= money
+                    it.game.stock += money
                     it.game.endTurnCheck()
                 }
             }
@@ -256,7 +263,9 @@ object DslSplendor {
                 effect {
                     val card = it.game.board[it.parameter]
                     it.game.currentPlayer.reserved.cards.add(card.card)
-                    it.game.currentPlayer.chips += Money(mutableMapOf(), 1)
+                    val wildcardIfAvailable = if (it.game.stock.wildcards > 0) Money(mutableMapOf(), 1) else Money()
+                    it.game.stock -= wildcardIfAvailable
+                    it.game.currentPlayer.chips += wildcardIfAvailable
                     replaceCard(this, it.game, card.card)
                     it.game.endTurnCheck()
                 }
