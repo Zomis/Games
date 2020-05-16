@@ -100,7 +100,7 @@ const supportedGames = {
         routeProps: defaultRouteProps
     },
     "Splendor": {
-        dsl: true,
+        dsl: gamejs.net.zomis.games.dsl.DslSplendor.splendorGame,
         enabled: false,
         actions: splendorActions,
         component: Splendor,

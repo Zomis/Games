@@ -353,7 +353,7 @@ object DslSplendor {
                         "remaining" to game.deck.cards.count { c -> c.level == it.key },
                         "board" to it.value.map { c -> viewCard(c) }
                     )
-                }.values
+                }.values.toList()
             }
             value("stock") {game ->
                 MoneyType.values().associate { it to game.stock.moneys[it] }.plus("wildcards" to game.stock.wildcards)
