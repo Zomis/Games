@@ -197,8 +197,8 @@ G 4WWWUUUUUUGGG 4UUUUUUU 5UUUUUUUGGG 3WWWWWUUURRRBBB
             throw IllegalStateException("Wrong amount of total chips: $totalChipsInGame")
         }
 
-        // Check money count > 10
-        if (this.currentPlayer.chips.count > 10) return // Need to discard some money
+        // Check money count > maxMoney
+        if (this.currentPlayer.chips.count > config.maxMoney) return // Need to discard some money
 
         // Check noble conditions
         val noble = this.nobles.cards.find { it.requirementsFulfilled(currentPlayer) }
@@ -209,7 +209,7 @@ G 4WWWUUUUUUGGG 4UUUUUUU 5UUUUUUUGGG 3WWWWWUUURRRBBB
         // Check game winning conditions
         if (turnsLeft > 0) {
             turnsLeft--
-        } else if (this.currentPlayer.points >= 15) {
+        } else if (this.currentPlayer.points >= config.targetPoints) {
             turnsLeft = this.players.size - 1 - this.currentPlayerIndex
         }
 
@@ -231,7 +231,12 @@ G 4WWWUUUUUUGGG 4UUUUUUU 5UUUUUUUGGG 3WWWWWUUURRRBBB
 
 }
 
-data class SplendorConfig(val showReservedCards: Boolean)
+data class SplendorConfig(
+    val useNobles: Boolean,
+    val maxMoney: Int,
+    val targetPoints: Int,
+    val showReservedCards: Boolean
+)
 
 object DslSplendor {
 
@@ -245,6 +250,9 @@ object DslSplendor {
         setup(SplendorConfig::class) {
             players(2..4)
             defaultConfig { SplendorConfig(
+                useNobles = true,
+                maxMoney = 10,
+                targetPoints = 15,
                 showReservedCards = false
             )}
             init {
@@ -259,14 +267,16 @@ object DslSplendor {
                 it.deck.deal(cards, listOf(it.board))
                 
                 // Nobles
-                val nobles = it.allNobles.top(it.players.size + 1)
-                val nobleStates = this.strings("nobles") { nobles.map { c -> c.toStateString() } }
-                it.allNobles.deal(it.allNobles.findStates(nobleStates) { c -> c.toStateString() }, listOf(it.nobles))
+                if (it.config.useNobles) {
+                    val nobles = it.allNobles.top(it.players.size + 1)
+                    val nobleStates = this.strings("nobles") { nobles.map { c -> c.toStateString() } }
+                    it.allNobles.deal(it.allNobles.findStates(nobleStates) { c -> c.toStateString() }, listOf(it.nobles))
+                }
             }
         }
         logic {
             singleTarget(buy, {it.board.map { c -> c.id }}) {
-                allowed { isCurrentPlayer(it) && it.game.currentPlayer.chips.count <= 10 && it.game.currentPlayer.canBuy(it.game.board.cards.first { c -> c.id == it.parameter }) }
+                allowed { isCurrentPlayer(it) && it.game.currentPlayer.chips.count <= it.game.config.maxMoney && it.game.currentPlayer.canBuy(it.game.board.cards.first { c -> c.id == it.parameter }) }
                 effect {
                     val card = it.game.board.cards.first { c -> c.id == it.parameter }
                     val actualCost = it.game.currentPlayer.pay(card.costs)
@@ -277,7 +287,7 @@ object DslSplendor {
                 }
             }
             singleTarget(buyReserved, {it.currentPlayer.reserved.map { c -> c.id }}) {
-                allowed { isCurrentPlayer(it) && it.game.currentPlayer.chips.count <= 10 && it.game.currentPlayer.canBuy(it.game.currentPlayer.reserved.cards.first { c -> c.id == it.parameter }) }
+                allowed { isCurrentPlayer(it) && it.game.currentPlayer.chips.count <= it.game.config.maxMoney && it.game.currentPlayer.canBuy(it.game.currentPlayer.reserved.cards.first { c -> c.id == it.parameter }) }
                 effect {
                     val param = it.game.currentPlayer.reserved.cards.first { c -> c.id == it.parameter }
                     val card = it.game.currentPlayer.reserved.card(param)
@@ -288,7 +298,8 @@ object DslSplendor {
                 }
             }
             singleTarget(discardMoney, {MoneyType.values().toList()}) {
-                allowed { isCurrentPlayer(it) && it.game.currentPlayer.chips.count > 10 && it.game.currentPlayer.chips.hasWithoutWildcards(it.parameter.toMoney(1)) }
+                allowed { isCurrentPlayer(it) && it.game.currentPlayer.chips.count > it.game.config.maxMoney
+                        && it.game.currentPlayer.chips.hasWithoutWildcards(it.parameter.toMoney(1)) }
                 effect {
                     val money = it.parameter.toMoney(1)
                     it.game.currentPlayer.chips -= money
@@ -297,7 +308,7 @@ object DslSplendor {
                 }
             }
             singleTarget(reserve, {it.board.map { c -> c.id }}) {
-                allowed { isCurrentPlayer(it) && it.game.currentPlayer.chips.count <= 10 && it.game.currentPlayer.reserved.size < 3 }
+                allowed { isCurrentPlayer(it) && it.game.currentPlayer.chips.count <= it.game.config.maxMoney && it.game.currentPlayer.reserved.size < 3 }
                 effect {
                     val card = it.game.board.card(it.game.board.cards.first { c -> c.id == it.parameter })
                     it.game.currentPlayer.reserved.cards.add(card.card)
@@ -311,7 +322,7 @@ object DslSplendor {
             singleTarget(takeSingle, { MoneyType.values().toList() }) {
                 allowed {
                     if (!isCurrentPlayer(it)) { return@allowed false }
-                    if (it.game.currentPlayer.chips.count > 10) return@allowed false
+                    if (it.game.currentPlayer.chips.count > it.game.config.maxMoney) return@allowed false
                     val moneyChosen = it.parameter.toMoney(1)
                     if (!it.game.stock.hasWithoutWildcards(moneyChosen)) {
                         return@allowed false
@@ -347,7 +358,7 @@ object DslSplendor {
                 }
                 allowed {
                     if (!isCurrentPlayer(it)) { return@allowed false }
-                    if (it.game.currentPlayer.chips.count > 10) return@allowed false
+                    if (it.game.currentPlayer.chips.count > it.game.config.maxMoney) return@allowed false
                     val moneyChosen = it.parameter.toMoney()
                     if (!it.game.stock.hasWithoutWildcards(moneyChosen)) {
                         return@allowed false
