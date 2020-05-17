@@ -8,6 +8,7 @@
             <transition-group name="list-complete" tag="div">
               <HanabiCard v-for="card in colorData.board" class="list-complete-item" :key="card.id" :card="card" />
             </transition-group>
+            <v-divider />
             <v-row>Discard</v-row>
             <transition-group name="list-complete" tag="div">
               <HanabiCard v-for="card in colorData.discard" class="list-complete-item" :key="card.id" :card="card" />
