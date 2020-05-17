@@ -140,7 +140,7 @@ object SplendorCardFactory {
     }
 }
 
-class SplendorGame(val eliminations: PlayerEliminationCallback, playerCount: Int = 2) {
+class SplendorGame(val eliminations: PlayerEliminationCallback, playerCount: Int) {
 
     val nobles = CardZone(listOf("BR", "UW", "UG", "RG", "BW", "BRG", "BUW", "BRW", "GUW", "GUR").map {string ->
         val moneyTypes = string.map { ch -> MoneyType.values().first { it.char == ch } }
@@ -236,7 +236,7 @@ object DslSplendor {
         setup {
             players(2..4)
             init {
-                SplendorGame(eliminationCallback)
+                SplendorGame(eliminationCallback, playerCount)
             }
             onStart {
                 val dealCards = (1..3).map { level -> it.deck.first(4) { card -> card.level == level } }.flatten()
