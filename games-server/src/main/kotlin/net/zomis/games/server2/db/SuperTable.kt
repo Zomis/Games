@@ -117,14 +117,16 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
 
         // Don't use data here because PK and SK is the same, this doesn't need to be in GSI-1
         val state: Any? = gameRandomnessState(game)
-        val updates = listOf(
+        var updates = listOf(
             AttributeUpdate(Fields.GAME_TYPE.fieldName).put(game.gameType.type),
             AttributeUpdate(Fields.GAME_TIME_STARTED.fieldName).put(Instant.now().epochSecond)
-        ).let {
-            if (game.gameMeta.gameOptions != game.gameSetup().getDefaultConfig())
-                it + AttributeUpdate(Fields.GAME_OPTIONS.fieldName).put(convertToDBFormat(game.gameMeta.gameOptions))
-            else it
-        }.let { if (state != null) it.plus(AttributeUpdate(Fields.MOVE_STATE.fieldName).put(state)) else it }
+        )
+        if (game.gameMeta.gameOptions != game.gameSetup().getDefaultConfig()) {
+            updates = updates.plus(AttributeUpdate(Fields.GAME_OPTIONS.fieldName).put(convertToDBFormat(game.gameMeta.gameOptions)))
+        }
+        if (state != null) {
+            updates = updates.plus(AttributeUpdate(Fields.MOVE_STATE.fieldName).put(state))
+        }
 
         val update = UpdateItemSpec().withPrimaryKey(this.pk, pkValue, this.sk, pkValue)
             .withAttributeUpdate(updates)
