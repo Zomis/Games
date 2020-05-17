@@ -204,7 +204,7 @@ G 4WWWUUUUUUGGG 4UUUUUUU 5UUUUUUUGGG 3WWWWWUUURRRBBB
         if (turnsLeft > 0) {
             turnsLeft--
         } else if (this.currentPlayer.points >= 15) {
-            turnsLeft = this.players.size - 1
+            turnsLeft = this.players.size - 1 - this.currentPlayerIndex
         }
 
         this.currentPlayerIndex = this.currentPlayerIndex.next(players.size)
