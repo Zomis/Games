@@ -43,6 +43,7 @@ fun convertToDBFormat(obj: Any): Any? {
         is String -> obj
         is Boolean -> obj
         is Unit -> null
+        is Enum<*> -> obj.name
         else -> {
             val value: Any = JacksonTools.convertValueToMap(obj)
             value
