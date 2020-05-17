@@ -236,6 +236,7 @@ object DslSplendor {
     val buy = createActionType("buy", String::class)
     val buyReserved = createActionType("buyReserved", String::class)
     val takeMoney = createActionType("takeMoney", MoneyChoice::class)
+    val takeSingle = createActionType("takeMoneySingle", MoneyType::class)
     val reserve = createActionType("reserve", String::class)
     val discardMoney = createActionType("discardMoney", MoneyType::class)
     val splendorGame = createGame<SplendorGame>("Splendor") {
@@ -299,6 +300,27 @@ object DslSplendor {
                     it.game.stock -= wildcardIfAvailable
                     it.game.currentPlayer.chips += wildcardIfAvailable
                     replaceCard(this, it.game, card.card)
+                    it.game.endTurnCheck()
+                }
+            }
+            singleTarget(takeSingle, { MoneyType.values().toList() }) {
+                allowed {
+                    if (!isCurrentPlayer(it)) { return@allowed false }
+                    if (it.game.currentPlayer.chips.count > 10) return@allowed false
+                    val moneyChosen = it.parameter.toMoney(1)
+                    if (!it.game.stock.hasWithoutWildcards(moneyChosen)) {
+                        return@allowed false
+                    }
+                    val chosen = listOf(it.parameter)
+                    return@allowed when {
+                        chosen.size == 2 -> chosen.distinct().size == 1 && it.game.stock.hasWithoutWildcards(moneyChosen.plus(moneyChosen))
+                        chosen.size == 3 -> chosen.distinct().size == chosen.size
+                        else -> false
+                    }
+                }
+                effect {
+                    it.game.stock -= it.parameter.toMoney(1)
+                    it.game.currentPlayer.chips += it.parameter.toMoney(1)
                     it.game.endTurnCheck()
                 }
             }
