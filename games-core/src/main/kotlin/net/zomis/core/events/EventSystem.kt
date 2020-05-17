@@ -37,7 +37,7 @@ class ListenerList<E> {
         list.forEach {
             try {
                 it.run(event)
-            } catch (e: RuntimeException) {
+            } catch (e: Exception) {
                 logger.error(e, "Problem when handling event $event in $it")
                 throw e
             }
