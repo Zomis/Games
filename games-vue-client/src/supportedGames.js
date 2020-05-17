@@ -17,6 +17,7 @@ import PlayGame from "@/components/PlayGame";
 import RoyalGameOfUR from "@/components/RoyalGameOfUR";
 import UTTT from "@/components/games/UTTT";
 import Hanabi from "@/components/games/Hanabi";
+import HanabiConfig from "@/components/games/hanabi/HanabiConfig";
 import Splendor from "@/components/games/splendor/Splendor";
 import TreeViewGame from "@/components/games/TreeViewGame";
 import ECSGame from "@/components/ecs/ECSGame";
@@ -78,6 +79,7 @@ const supportedGames = {
     "Hanabi": {
         displayName: "Hanabi",
         dsl: gamejs.net.zomis.games.impl.HanabiGame.game,
+        configComponent: HanabiConfig,
         actions: {
             Play: (index) => "play-" + index,
             Discard: (index) => "discard-" + index,

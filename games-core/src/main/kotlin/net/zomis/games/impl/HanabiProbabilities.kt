@@ -38,7 +38,7 @@ object HanabiProbabilities {
         val previousRange = 1 until card.value
         val colorData = hanabi.colorData(card)
         previousRange.any { previous ->
-            val exists = hanabi.countInDeck(card.color, previous)
+            val exists = hanabi.config.countInDeck(card.color, previous)
             val discarded = colorData.discard.cards.count { it.value == previous && it.color == card.color }
             exists == discarded
         }
@@ -51,7 +51,7 @@ object HanabiProbabilities {
     fun indispensible2(hanabi: Hanabi): (HanabiCard) -> Boolean = { !beenPlayed(hanabi)(it) && isOnlyOneRemaining(hanabi)(it) }
     fun isOnlyOneRemaining(hanabi: Hanabi): (HanabiCard) -> Boolean = {
         val colorData = hanabi.colorData(it)
-        val count = hanabi.countInDeck(it.color, it.value)
+        val count = hanabi.config.countInDeck(it.color, it.value)
         val exists = colorData.board.cards.count { c -> c.value == it.value } + colorData.discard.cards.count { c -> c.value == it.value }
         count - exists == 1
     }

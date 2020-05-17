@@ -22,7 +22,8 @@ const colorToDisplayColor = {
     "blue": "#118AB2",
     "green": "#06D6A0",
     "yellow": "#FFD166",
-    "white": "#F5F5F5"
+    "white": "#F5F5F5",
+    "rainbow": "#FF7F00"
 }
 
 export default {

@@ -156,6 +156,9 @@ export default {
 .color-WHITE {
   background-color: #F5F5F5 !important;
 }
+.color-RAINBOW {
+  background-color: #ff7f00 !important;
+}
 
 .animate-all {
   transition: all 1.5s ease;

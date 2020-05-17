@@ -23,7 +23,7 @@ import kotlin.math.min
 // 21-24 Suveränt, kommer att komma ihåg väldigt länge
 // 25 Legendariskt, alla är förstummade och hänförda
 
-enum class HanabiColor { YELLOW, WHITE, RED, BLUE, GREEN }
+enum class HanabiColor { YELLOW, WHITE, RED, BLUE, GREEN, RAINBOW }
 class HanabiCard(val color: HanabiColor, val value: Int, var colorKnown: Boolean, var valueKnown: Boolean) {
     val possibleValues: MutableMap<Int, Boolean> = mutableMapOf()
     val possibleColors: MutableMap<HanabiColor, Boolean> = mutableMapOf()
@@ -38,6 +38,8 @@ class HanabiCard(val color: HanabiColor, val value: Int, var colorKnown: Boolean
             .let { if (known || colorKnown) it.plus("color" to color.name) else it }
             .let { if (known || valueKnown) it.plus("value" to value.toString()) else it }
     }
+
+    fun matches(clue: HanabiClue): Boolean = this.color == clue.color || this.value == clue.value
 
     fun reveal(clue: HanabiClue) {
         if (clue.color != null) {
@@ -61,38 +63,53 @@ class HanabiCard(val color: HanabiColor, val value: Int, var colorKnown: Boolean
 
 data class HanabiPlayer(val cards: CardZone<HanabiCard> = CardZone())
 data class HanabiConfig(
+        val viewAllowCardIsNot: Boolean, // TODO
+        val viewAllowCardProbability: Boolean, // TODO
         val maxClueTokens: Int,
         val maxFailTokens: Int,
         val rainbowExtraColor: Boolean,
-        val rainbowWildcard: Boolean,
+        val rainbowWildcard: Boolean, // TODO: This will screw up probabilities and knowledge and lots of stuff a lot
         val rainbowOnlyOne: Boolean,
-        val namePlayingCard: Boolean,
+        val namePlayingCard: Boolean, // TODO
         val playUntilFullEnd: Boolean,
         val allowEmptyClues: Boolean
-)
+) {
+    private val useRainbowColor get() = rainbowExtraColor || rainbowWildcard
+    private val allowRainbowClue get() = rainbowExtraColor && !rainbowWildcard
+
+    internal val colors get() = HanabiColor.values().toList().minus(if (useRainbowColor) listOf() else listOf(HanabiColor.RAINBOW))
+    internal val clueableColors get() = HanabiColor.values().toList().minus(if (allowRainbowClue) listOf() else listOf(HanabiColor.RAINBOW))
+
+    fun countInDeck(color: HanabiColor, value: Int): Int {
+        if (rainbowOnlyOne && color == HanabiColor.RAINBOW) return 1
+        if (!useRainbowColor && color == HanabiColor.RAINBOW) return 0
+        return when (value) {
+            1 -> 3
+            in 2..4 -> 2
+            5 -> 1
+            else -> throw IllegalArgumentException("Not an Hanabi value: $value")
+        }
+    }
+
+    fun createCards(): List<HanabiCard> {
+        return HanabiColor.values().flatMap { color ->
+            (1..5).flatMap { value ->
+                List(countInDeck(color, value)) { HanabiCard(color, value, colorKnown = false, valueKnown = false) }
+            }
+        }
+    }
+
+}
 data class HanabiColorData(val color: HanabiColor, val board: CardZone<HanabiCard> = CardZone(mutableListOf()), val discard: CardZone<HanabiCard> = CardZone(mutableListOf()))
 data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
-    val colors: List<HanabiColorData> = HanabiColor.values().map { HanabiColorData(it) }
+    val colors: List<HanabiColorData> = config.colors.map { HanabiColorData(it) }
     var clueTokens: Int = config.maxClueTokens
-    var maxFailTokens : Int = config.maxFailTokens
     var failTokens: Int = 0
     var currentPlayer: Int = 0
     var turnsLeft = -1
-    val colorsUsed = if (config.rainbowExtraColor) 6 else 5
     val current: HanabiPlayer get() = players[currentPlayer]
 
-    fun countInDeck(color: HanabiColor, value: Int): Int = when (value) {
-        1 -> 3
-        in 2..4 -> 2
-        5 -> 1
-        else -> throw IllegalArgumentException("Not an Hanabi value: $value")
-    }
-
-    val deck = CardZone(HanabiColor.values().flatMap { color ->
-        (1..5).flatMap { value ->
-            (1..countInDeck(color, value)).map { HanabiCard(color, value, colorKnown = false, valueKnown = false) }
-        }
-    }.shuffled().toMutableList()).also { it.cards.forEachIndexed { index, hanabiCard -> hanabiCard.id = index } }
+    val deck = CardZone(config.createCards().shuffled().toMutableList()).also { it.cards.forEachIndexed { index, hanabiCard -> hanabiCard.id = index } }
 
     fun reveal(clue: HanabiClue) {
         val player = players[clue.player]
@@ -110,7 +127,7 @@ data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
     }
 
     fun boardComplete(): Boolean {
-        return this.colors.size == this.colorsUsed && this.colors.all { it.board.size == 5 }
+        return this.colors.size == this.config.colors.size && this.colors.all { it.board.size == 5 }
     }
 
     fun increaseClueTokens() {
@@ -118,13 +135,17 @@ data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
     }
 
     fun emptyDeckCheck() {
-        if (deck.size == 0 && turnsLeft < 0) {
+        if (deck.size == 0 && turnsLeft < 0 && !config.playUntilFullEnd) {
             turnsLeft = this.players.size + 1
         }
     }
 
     fun isGameOver(): Boolean {
-        return this.boardComplete() || this.turnsLeft == 0 || this.failTokens == this.maxFailTokens
+        return this.boardComplete() || this.turnsLeft == 0 || this.failTokens == this.config.maxFailTokens
+    }
+
+    fun allowClue(clue: HanabiClue): Boolean {
+        return config.allowEmptyClues || players[clue.player].cards.cards.any { it.matches(clue) }
     }
 
 }
@@ -140,6 +161,8 @@ object HanabiGame {
         setup(HanabiConfig::class) {
             defaultConfig {
                 HanabiConfig(
+                    viewAllowCardIsNot = false,
+                    viewAllowCardProbability = false,
                     maxClueTokens = 8,
                     maxFailTokens = 3,
                     rainbowExtraColor = false,
@@ -188,7 +211,7 @@ object HanabiGame {
                     if (playArea == null) {
                         it.game.failTokens++
                     }
-                    if (it.game.failTokens == it.game.maxFailTokens) {
+                    if (it.game.failTokens == it.game.config.maxFailTokens) {
                         playerEliminations.eliminateRemaining(WinResult.LOSS)
                     }
                     if (it.game.boardComplete()) {
@@ -203,7 +226,7 @@ object HanabiGame {
                         val TEXT_COLOR = "color"
                         option(listOf(TEXT_COLOR, "value")) {clueMode ->
                             if (clueMode == TEXT_COLOR) {
-                                option(HanabiColor.values().toList()) {color ->
+                                optionFrom({ game -> game.config.clueableColors }) {color ->
                                     actionParameter(HanabiClue(player, color, null))
                                 }
                             } else {
@@ -218,6 +241,7 @@ object HanabiGame {
                     it.parameter.player != it.playerIndex &&
                     it.playerIndex == it.game.currentPlayer &&
                     it.game.clueTokens > 0 && it.game.turnsLeft != 0
+                        && it.game.allowClue(it.parameter)
                 }
                 effect {
                     it.game.clueTokens--
@@ -257,7 +281,7 @@ object HanabiGame {
             value("clues") { it.clueTokens }
             value("score") { it.colors.sumBy { zone -> zone.board.size } }
             value("fails") { it.failTokens }
-            value("maxFails") { it.maxFailTokens }
+            value("maxFails") { it.config.maxFailTokens }
             onRequest("probabilities") {
                 HanabiProbabilities.calculateProbabilities(game, viewer ?: game.currentPlayer)
             }
