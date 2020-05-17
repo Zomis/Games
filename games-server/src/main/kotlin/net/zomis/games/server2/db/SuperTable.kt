@@ -321,6 +321,9 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
 
         val gameDetails = sks.getValue(gameId)
         logger.info { "Game Details for game $gameId: $gameDetails" }
+        if (!gameDetails.hasAttribute(Fields.GAME_TYPE.fieldName)) {
+            throw IllegalStateException("Missing gameType field for game $gameId")
+        }
         val playersInGame = sks.filter { it.key.startsWith(Prefix.PLAYER.prefix) }.flatMap {playerEntry ->
             val playerId = Prefix.PLAYER.extract(playerEntry.key)
             // Look in it[Fields.GAME_PLAYERS] for which indexes a player belongs to. (Maybe also store name?)

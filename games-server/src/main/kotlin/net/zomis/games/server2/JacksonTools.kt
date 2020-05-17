@@ -3,11 +3,9 @@ package net.zomis.games.server2
 import com.fasterxml.jackson.annotation.JsonAutoDetect
 import com.fasterxml.jackson.annotation.PropertyAccessor
 import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.ser.PropertyFilter
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import net.zomis.games.impl.HanabiConfig
 import kotlin.reflect.KVisibility
 import kotlin.reflect.full.declaredMemberProperties
 
