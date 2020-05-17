@@ -320,6 +320,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         }
 
         val gameDetails = sks.getValue(gameId)
+        logger.info { "Game Details for game $gameId: $gameDetails" }
         val playersInGame = sks.filter { it.key.startsWith(Prefix.PLAYER.prefix) }.flatMap {playerEntry ->
             val playerId = Prefix.PLAYER.extract(playerEntry.key)
             // Look in it[Fields.GAME_PLAYERS] for which indexes a player belongs to. (Maybe also store name?)
@@ -356,9 +357,12 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
             return null
         }
 
-        val gameConfigJSON = gameDetails.getJSON(Fields.GAME_OPTIONS.fieldName)
         val setup = GameSetupImpl(gameSpec)
-        val config = JacksonTools.readValue(gameConfigJSON, setup.configClass().java)
+        val config = if (gameDetails.hasAttribute(Fields.GAME_OPTIONS.fieldName)) {
+            val gameConfigJSON =
+                    gameDetails.getJSON(Fields.GAME_OPTIONS.fieldName)
+            JacksonTools.readValue(gameConfigJSON, setup.configClass().java)
+        } else setup.getDefaultConfig()
 
         return DBGameSummary(gameSpec, config, Prefix.GAME.extract(gameId), playersInGame, gameType, gameState.value,
                 startingState, timeStarted.longValueExact(), timeLastAction?.longValueExact()?:0)
