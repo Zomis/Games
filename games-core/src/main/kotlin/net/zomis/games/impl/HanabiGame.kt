@@ -168,7 +168,7 @@ object HanabiGame {
                     rainbowExtraColor = false,
                     rainbowOnlyOne = false,
                     rainbowWildcard = false,
-                    allowEmptyClues = true,
+                    allowEmptyClues = false,
                     namePlayingCard = false,
                     playUntilFullEnd = false
                 )
