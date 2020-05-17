@@ -144,7 +144,7 @@ object SplendorCardFactory {
     }
 }
 
-class SplendorGame(val eliminations: PlayerEliminationCallback, playerCount: Int) {
+class SplendorGame(val config: SplendorConfig, val eliminations: PlayerEliminationCallback, playerCount: Int) {
 
     val allNobles = CardZone(listOf("BR", "UW", "UG", "RG", "BW", "BRG", "BUW", "BRW", "GUW", "GUR").map {string ->
         val moneyTypes = string.map { ch -> MoneyType.values().first { it.char == ch } }
@@ -231,6 +231,8 @@ G 4WWWUUUUUUGGG 4UUUUUUU 5UUUUUUUGGG 3WWWWWUUURRRBBB
 
 }
 
+data class SplendorConfig(val showReservedCards: Boolean)
+
 object DslSplendor {
 
     val buy = createActionType("buy", String::class)
@@ -240,10 +242,13 @@ object DslSplendor {
     val reserve = createActionType("reserve", String::class)
     val discardMoney = createActionType("discardMoney", MoneyType::class)
     val splendorGame = createGame<SplendorGame>("Splendor") {
-        setup {
+        setup(SplendorConfig::class) {
             players(2..4)
+            defaultConfig { SplendorConfig(
+                showReservedCards = false
+            )}
             init {
-                SplendorGame(eliminationCallback, playerCount)
+                SplendorGame(config, eliminationCallback, playerCount)
             }
             onStart {
                 val dealCards = (1..3).map { level -> it.deck.first(4) { card -> card.level == level } }.flatten()
@@ -396,8 +401,9 @@ object DslSplendor {
             }
             value("players") {game ->
                 game.players.mapIndexed { index, player ->
-                    val reservedPair = if (index == viewer) "reservedCards" to player.reserved.map { viewCard(it) }
-                        else "reserved" to player.reserved.size
+                    val reservedPair = if (index == viewer || game.config.showReservedCards)
+                        "reservedCards" to player.reserved.map { viewCard(it) }
+                            else "reserved" to player.reserved.size
                     mapOf(
                         "points" to player.points,
                         "money" to viewMoney(player.chips).filter { it.value > 0 },
