@@ -170,6 +170,16 @@ const lobbyStore = {
           });
         }
       }
+      if (data.type == "InvitePrepare") {
+        console.log("LobbyStory InvitePrepare Push", data);
+        router.push({
+          name: "InvitePrepare",
+          params: {
+            gameType: data.gameType,
+            defaultConfig: data.config
+          }
+        });
+      }
       if (data.type == "InviteWaiting") {
         context.commit("setInviteWaiting", data);
       }

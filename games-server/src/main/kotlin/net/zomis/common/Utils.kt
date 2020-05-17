@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
+import net.zomis.games.server2.JacksonTools
 import java.math.BigDecimal
 
 object Utils
@@ -36,7 +37,6 @@ suspend fun <A, B> List<A>.bmap(f: suspend (A) -> B): List<B> = coroutineScope {
     }
 }
 
-private val mapper = jacksonObjectMapper()
 fun convertToDBFormat(obj: Any): Any? {
     return when (obj) {
         is Int -> obj
@@ -44,7 +44,7 @@ fun convertToDBFormat(obj: Any): Any? {
         is Boolean -> obj
         is Unit -> null
         else -> {
-            val value: Any = mapper.convertValue(obj, object: TypeReference<Map<String, Any>>() {})
+            val value: Any = JacksonTools.convertValueToMap(obj)
             value
         }
     }

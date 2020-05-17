@@ -116,7 +116,7 @@ export default {
       }
       return result;
     },
-    observe: function(game) {
+    observe(game) {
       let matchingGame = this.activeGames.find(
         e =>
           e.gameInfo.game == game.gameType && e.gameInfo.gameId == game.gameId
@@ -131,14 +131,14 @@ export default {
         yourIndex: -42
       });
     },
-    requestGameList: function() {
+    requestGameList() {
       Socket.send(`{ "type": "GameList" }`);
     },
-    gameListMessage: function(message) {
+    gameListMessage(message) {
       this.gameList = message.list;
     },
     createInvite(gameType) {
-      this.$store.commit("lobby/createInvite", gameType);
+      Socket.route("invites/prepare", { gameType: gameType })
     },
     unfinishedGameListMessage(message) {
       this.unfinishedGames = message.games
@@ -147,7 +147,7 @@ export default {
       Socket.send(`{ "type": "LoadGame", "gameType": "${gameType}", "gameId": "${gameId}" }`);
     },
     invite(gameType, playerId) {
-      this.createInvite(gameType)
+      this.$store.commit("lobby/createInvite", gameType);
       Socket.route("invites/invite", { gameType: gameType, invite: [playerId] });
     }
   },

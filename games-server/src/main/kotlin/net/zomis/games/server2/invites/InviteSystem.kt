@@ -69,7 +69,7 @@ data class Invite(
         "minPlayers" to this.playerRange.first,
         "maxPlayers" to this.playerRange.last,
         "options" to null,
-        "gameOptions" to null,
+        "gameOptions" to this.inviteOptions.gameOptions,
         "host" to this.host.toMessage(),
         "players" to (listOf(this.host) + this.accepted).map { it.toMessage().plus("playerOptions" to null) },
         "invited" to this.awaiting.map { it.toMessage() }
@@ -155,6 +155,7 @@ class InviteSystem(
     val router = MessageRouter(this)
         .dynamic(dynamicRouter)
         .handler("start", this::inviteStart)
+        .handler("prepare", this::invitePrepare)
         .handler("invite", this::fullInvite)
 
     private fun removeInvite(invite: Invite) {
@@ -180,6 +181,18 @@ class InviteSystem(
         val gameSpec = ServerGames.games[gameType] ?: return 2..2
         val setup = GameSetupImpl(gameSpec as GameSpec<Any>)
         return setup.playersCount
+    }
+
+    private fun invitePrepare(message: ClientJsonMessage) {
+        val gameType = message.data.get("gameType")?.asText() ?: throw IllegalArgumentException("Missing field: gameType")
+        val setup = ServerGames.setup(gameType)
+        val gameOptions = setup?.getDefaultConfig()
+        message.client.send(mapOf(
+            "type" to "InvitePrepare",
+            "gameType" to gameType,
+            "playersMin" to setup?.playersCount?.min(), "playersMax" to setup?.playersCount?.max(),
+            "config" to gameOptions
+        ))
     }
 
     private fun inviteStart(message: ClientJsonMessage) {

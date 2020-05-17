@@ -9,6 +9,7 @@ import TVScreen from "@/components/TVScreen";
 import ServerSelection from "@/components/ServerSelection";
 import InviteByURL from "@/components/invites/InviteByURL";
 import InviteScreen from "@/components/invites/InviteScreen";
+import InviteCreateNew from "@/components/invites/InviteCreateNew";
 
 import VueAxios from "vue-axios";
 import VueAuthenticate from "vue-authenticate";
@@ -126,6 +127,18 @@ export default new Router({
         inviteId: route.params.inviteId,
         server: route.query.server
       })
+    },
+    {
+      path: "/games/:gameType/new",
+      name: "InvitePrepare",
+      component: InviteCreateNew,
+      props: route => {
+        console.log(route)
+        return {
+          gameType: route.params.gameType,
+          defaultConfig: route.params.defaultConfig
+        }
+      }
     },
     {
       path: "/invites/:inviteId/",
