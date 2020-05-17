@@ -10,11 +10,14 @@ import net.zomis.games.Features
 import net.zomis.games.WinResult
 import net.zomis.games.dsl.PlayerIndex
 import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.server2.*
 import net.zomis.games.server2.clients.FakeClient
 import net.zomis.games.server2.db.DBGame
 import net.zomis.games.server2.db.PlayerInGame
 import net.zomis.games.server2.invites.ClientList
+import net.zomis.games.server2.invites.InviteOptions
+import net.zomis.games.server2.invites.InviteTurnOrder
 import net.zomis.games.server2.invites.playerMessage
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
@@ -30,8 +33,7 @@ fun ServerGame.map(type: String): Map<String, Any> {
     return mapOf("type" to type, "gameType" to this.gameType.type, "gameId" to this.gameId)
 }
 
-data class ServerGameOptions(val database: Boolean)
-class ServerGame(private val callback: GameCallback, val gameType: GameType, val gameId: String, val gameMeta: ServerGameOptions) {
+class ServerGame(private val callback: GameCallback, val gameType: GameType, val gameId: String, val gameMeta: InviteOptions) {
     private val logger = KLoggers.logger(this)
 
     private val actionListHandler = ActionListRequestHandler(this)
@@ -150,6 +152,10 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
         return this.map("GameInfo").plus("yourIndex" to (this.clientPlayerIndex(client) ?: -1)).plus("players" to players)
     }
 
+    fun gameSetup(): GameSetupImpl<Any> {
+        return ServerGames.setup(this.gameType.type)!!
+    }
+
 }
 
 data class GameTypeRegisterEvent(val gameType: String)
@@ -185,8 +191,9 @@ class GameType(private val callback: GameCallback, val type: String, private val
 
     private fun loadGameFromDB(gameId: String): ServerGame? {
         val dbGame = callback.gameLoader(gameId) ?: return null
-
-        val serverGame = ServerGame(callback, this, gameId, ServerGameOptions(true))
+        val gameOptions = dbGame.summary.gameConfig
+        val loadGameOptions = InviteOptions(false, InviteTurnOrder.ORDERED, -1, gameOptions, true)
+        val serverGame = ServerGame(callback, this, gameId, loadGameOptions)
         serverGame.obj = dbGame.game
         runningGames[serverGame.gameId] = serverGame
 
@@ -212,7 +219,7 @@ class GameType(private val callback: GameCallback, val type: String, private val
         logger.info("$this has features $features")
     }
 
-    fun createGame(serverGameOptions: ServerGameOptions): ServerGame {
+    fun createGame(serverGameOptions: InviteOptions): ServerGame {
         val game = ServerGame(callback, this, idGenerator(), serverGameOptions)
         runningGames[game.gameId] = game
         logger.info { "Create game with id ${game.gameId} of type $type" }

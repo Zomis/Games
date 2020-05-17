@@ -19,6 +19,7 @@ import net.zomis.games.server2.db.aurora.StatsDB
 import net.zomis.games.server2.debug.AIGames
 import net.zomis.games.server2.games.*
 import net.zomis.games.server2.games.impl.ECSGameSystem
+import net.zomis.games.server2.invites.InviteOptions
 import net.zomis.games.server2.invites.InviteSystem
 import net.zomis.games.server2.invites.LobbySystem
 import net.zomis.games.server2.javalin.auth.JavalinFactory
@@ -154,7 +155,7 @@ class Server2(val events: EventSystem) {
         messageRouter.route("lobby", lobbySystem.router)
         features.add(AIGames(lobbySystem::gameClients)::setup)
         features.add(TVSystem(lobbySystem::gameClients)::register)
-        fun createGameCallback(gameType: String, options: ServerGameOptions): ServerGame
+        fun createGameCallback(gameType: String, options: InviteOptions): ServerGame
             = gameSystem.getGameType(gameType)!!.createGame(options)
         messageRouter.route("invites", InviteSystem(
             gameClients = lobbySystem::gameClients,

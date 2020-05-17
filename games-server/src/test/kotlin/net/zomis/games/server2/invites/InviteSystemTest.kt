@@ -45,6 +45,7 @@ class InviteSystemTest {
 
     private val idGenerator: GameIdGenerator = { "1" }
     private lateinit var system: InviteSystem
+    private val inviteOptions = InviteOptions(false, InviteTurnOrder.ORDERED, -1, Unit, false)
 
     @BeforeEach
     fun before() {
@@ -60,7 +61,7 @@ class InviteSystemTest {
         val gameSystem = GameSystem(lobbySystem::gameClients, GameCallback({null}) {})
         features.add { f, e -> gameSystem.setup(f, e, idGenerator) }
 
-        fun createGameCallback(gameType: String, options: ServerGameOptions): ServerGame
+        fun createGameCallback(gameType: String, options: InviteOptions): ServerGame
             = gameSystem.getGameType(gameType)!!.createGame(options)
 
         system = InviteSystem(
@@ -110,7 +111,7 @@ class InviteSystemTest {
             receive(invitee, """{"type":"GameStarted","gameType":"TestGameType","gameId":"1","yourIndex":1,"players":[$playersString]}""")
         }
 
-        system.createInvite("TestGameType", "12345678-1234-1234-1234-123456789abc", host, listOf(invitee))
+        system.createInvite("TestGameType", "12345678-1234-1234-1234-123456789abc", inviteOptions, host, listOf(invitee))
         host.clearMessages()
 
         docWriter.document(events, "Declining an invite") {
@@ -126,7 +127,7 @@ class InviteSystemTest {
         events.execute(ClientLoginEvent(invitee, invitee.name!!, invitee.name!!, "tests", "token2"))
         expect.event(events to GameStartedEvent::class).condition { true }
 
-        val invite = system.createInvite("MyGame", "inv-1", host, listOf(invitee))
+        val invite = system.createInvite("MyGame", "inv-1", inviteOptions, host, listOf(invitee))
         Assertions.assertEquals("""{"type":"Invite","host":"Host","game":"MyGame","inviteId":"inv-1"}""", invitee.nextMessage())
         Assertions.assertEquals("""{"type":"InviteWaiting","inviteId":"inv-1","playersMin":2,"playersMax":2}""", host.nextMessage())
 
@@ -147,7 +148,7 @@ class InviteSystemTest {
     @Test
     fun inviteDeclined() {
         events.execute(GameTypeRegisterEvent("MyGame"))
-        val invite = system.createInvite("MyGame", "inv-1", host, listOf(invitee))
+        val invite = system.createInvite("MyGame", "inv-1", inviteOptions, host, listOf(invitee))
         Assertions.assertEquals("""{"type":"Invite","host":"Host","game":"MyGame","inviteId":"inv-1"}""", invitee.nextMessage())
         Assertions.assertEquals("""{"type":"InviteWaiting","inviteId":"inv-1","playersMin":2,"playersMax":2}""", host.nextMessage())
 

@@ -6,6 +6,7 @@ import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec
 import com.amazonaws.services.dynamodbv2.model.*
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.common.convertFromDBFormat
 import net.zomis.common.convertToDBFormat
@@ -14,6 +15,7 @@ import net.zomis.core.events.ListenerPriority
 import net.zomis.games.Features
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.server2.*
 import net.zomis.games.server2.ais.ServerAIProvider
 import net.zomis.games.server2.games.*
@@ -41,7 +43,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
             features.addData(UnfinishedGames(this.listUnfinished().toMutableSet()))
         })
         events.listen("save game in Database", ListenerPriority.LATER, GameStartedEvent::class, { dbEnabled(it.game) }, {
-            event -> this.createGame(event.game, mapOf())
+            event -> this.createGame(event.game)
         })
         events.listen("save game move in Database", MoveEvent::class, { dbEnabled(it.game) }, {event ->
             this.addMove(event)
@@ -110,16 +112,19 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         ;
     }
 
-    fun createGame(game: ServerGame, options: Map<String, Any>) {
+    fun createGame(game: ServerGame) {
         val pkValue = Prefix.GAME.sk(game.gameId)
 
         // Don't use data here because PK and SK is the same, this doesn't need to be in GSI-1
         val state: Any? = gameRandomnessState(game)
         val updates = listOf(
             AttributeUpdate(Fields.GAME_TYPE.fieldName).put(game.gameType.type),
-            AttributeUpdate(Fields.GAME_TIME_STARTED.fieldName).put(Instant.now().epochSecond),
-            AttributeUpdate(Fields.GAME_OPTIONS.fieldName).put(options)
-        ).let { if (state != null) it.plus(AttributeUpdate(Fields.MOVE_STATE.fieldName).put(state)) else it }
+            AttributeUpdate(Fields.GAME_TIME_STARTED.fieldName).put(Instant.now().epochSecond)
+        ).let {
+            if (game.gameMeta.gameOptions != game.gameSetup().getDefaultConfig())
+                it + AttributeUpdate(Fields.GAME_OPTIONS.fieldName).put(convertToDBFormat(game.gameMeta.gameOptions))
+            else it
+        }.let { if (state != null) it.plus(AttributeUpdate(Fields.MOVE_STATE.fieldName).put(state)) else it }
 
         val update = UpdateItemSpec().withPrimaryKey(this.pk, pkValue, this.sk, pkValue)
             .withAttributeUpdate(updates)
@@ -345,11 +350,15 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         val gameType = gameDetails[Fields.GAME_TYPE.fieldName] as String
         val gameSpec = ServerGames.games[gameType] as GameSpec<Any>?
         if (gameSpec == null) {
-            logger.warn { "Ignoring unfinished game $gameId. Expected gameType $gameType not found." }
+            logger.warn { "Ignoring loading game $gameId. Expected gameType $gameType not found." }
             return null
         }
 
-        return DBGameSummary(gameSpec, Prefix.GAME.extract(gameId), playersInGame, gameType, gameState.value,
+        val gameConfigJSON = gameDetails.getJSON(Fields.GAME_OPTIONS.fieldName)
+        val setup = GameSetupImpl(gameSpec)
+        val config = JacksonTools.readValue(gameConfigJSON, setup.configClass().java)
+
+        return DBGameSummary(gameSpec, config, Prefix.GAME.extract(gameId), playersInGame, gameType, gameState.value,
                 startingState, timeStarted.longValueExact(), timeLastAction?.longValueExact()?:0)
     }
 

@@ -4,6 +4,8 @@ import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
 import net.zomis.games.server2.*
+import net.zomis.games.server2.invites.InviteOptions
+import net.zomis.games.server2.invites.InviteTurnOrder
 
 class SimpleMatchMakingSystem {
 
@@ -26,7 +28,9 @@ class SimpleMatchMakingSystem {
                     val opponent = waiting[gameType]!!
                     logger.info { "Pair up $gameType: Waiting $opponent now joining ${it.client}" }
 
-                    val game = gameTypes[gameType]!!.createGame(ServerGameOptions(true))
+                    val gameOptions = ServerGames.setup(gameType)!!.getDefaultConfig()
+                    val inviteOptions = InviteOptions(false, InviteTurnOrder.ORDERED, -1, gameOptions, true)
+                    val game = gameTypes[gameType]!!.createGame(inviteOptions)
                     game.players.addAll(listOf(opponent, it.client))
                     events.execute(GameStartedEvent(game))
                     waiting.remove(gameType)

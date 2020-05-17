@@ -17,7 +17,7 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
         val server2GameName = name
         val setup = GameSetupImpl(dsl)
         events.listen("DslGameSystem $name Setup", GameStartedEvent::class, {it.game.gameType.type == server2GameName}, {
-            it.game.obj = setup.createGame(it.game.players.size, setup.getDefaultConfig())
+            it.game.obj = setup.createGame(it.game.players.size, it.game.gameMeta.gameOptions)
         })
         events.listen("DslGameSystem $name Move", PlayerGameMoveRequest::class, {
             it.game.gameType.type == server2GameName

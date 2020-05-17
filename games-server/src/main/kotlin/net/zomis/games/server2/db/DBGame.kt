@@ -23,6 +23,7 @@ private val mapper = jacksonObjectMapper()
 data class DBGameSummary(
     @JsonIgnore
     val gameSpec: GameSpec<Any>,
+    val gameConfig: Any,
     val gameId: String,
     val playersInGame: List<PlayerInGame>,
     val gameType: String,
@@ -37,7 +38,7 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
     @JsonIgnore
     val stateKeeper = StateKeeper().also { if (summary.startingState != null) it.setState(summary.startingState) }
     @JsonIgnore
-    val game = gameSetup.createGameWithState(summary.playersInGame.size, gameSetup.getDefaultConfig(), stateKeeper)
+    val game = gameSetup.createGameWithState(summary.playersInGame.size, summary.gameConfig, stateKeeper)
     val views = mutableListOf<Map<String, Any?>>()
 
     init {

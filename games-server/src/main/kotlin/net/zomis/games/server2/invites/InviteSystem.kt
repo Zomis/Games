@@ -1,20 +1,31 @@
 package net.zomis.games.server2.invites
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.server2.*
 import net.zomis.games.server2.games.*
-import java.util.UUID
 
 class InviteTools(
     val removeCallback: (Invite) -> Unit,
     val createGameCallback: (Invite) -> Unit,
     val gameClients: GameTypeMap<ClientList>
 )
+enum class InviteTurnOrder { ORDERED, SHUFFLED }
+data class InviteOptions(
+    val publicInvite: Boolean,
+    val turnOrder: InviteTurnOrder,
+    val timeLimit: Int,
+    val gameOptions: Any,
+    val database: Boolean
+)
+
 data class Invite(
     val playerRange: IntRange,
     val tools: InviteTools,
+    val inviteOptions: InviteOptions,
     val gameType: String,
     val id: String,
     val host: Client
@@ -132,7 +143,7 @@ data class Invite(
  */
 class InviteSystem(
     private val gameClients: GameTypeMap<ClientList>,
-    private val createGameCallback: (gameType: String, options: ServerGameOptions) -> ServerGame,
+    private val createGameCallback: (gameType: String, options: InviteOptions) -> ServerGame,
     private val startGameExecutor: (GameStartedEvent) -> Unit,
     private val inviteIdGenerator: () -> String
 ) {
@@ -151,11 +162,11 @@ class InviteSystem(
         invites.remove(invite.id)
     }
 
-    fun createInvite(gameType: String, inviteId: String, host: Client, invitees: List<Client>): Invite {
+    fun createInvite(gameType: String, inviteId: String, options: InviteOptions, host: Client, invitees: List<Client>): Invite {
         logger.info { "Creating invite for $gameType id $inviteId host $host invitees $invitees" }
         val playerRange = this.determinePlayerRange(gameType)
         val tools = InviteTools(::removeInvite, ::startInvite, gameClients)
-        val invite = Invite(playerRange, tools, gameType, inviteId, host)
+        val invite = Invite(playerRange, tools, options, gameType, inviteId, host)
         invites[inviteId] = invite
 
         invite.host.send(mapOf("type" to "InviteWaiting", "inviteId" to invite.id,
@@ -173,8 +184,21 @@ class InviteSystem(
 
     private fun inviteStart(message: ClientJsonMessage) {
         val gameType = message.data.get("gameType")?.asText() ?: throw IllegalArgumentException("Missing field: gameType")
+        val options = createInviteOptions(gameType, message.data.get("options"), message.data.get("gameOptions"))
         val inviteId = inviteIdGenerator()
-        this.createInvite(gameType, inviteId, message.client, emptyList())
+        this.createInvite(gameType, inviteId, options, message.client, emptyList())
+    }
+
+    private fun createInviteOptions(gameType: String, invite: JsonNode, gameOptionsNode: JsonNode): InviteOptions {
+        val setup = ServerGames.setup(gameType)!!
+        val gameOptions = jacksonObjectMapper().convertValue(gameOptionsNode, setup.configClass().java)
+        return InviteOptions(
+            publicInvite = false,//invite["publicInvite"].asBoolean(),
+            turnOrder = InviteTurnOrder.ORDERED,// InviteTurnOrder.values().first { it.name == invite["turnOrder"].asText() },
+            timeLimit = -1,
+            gameOptions = gameOptions,
+            database = true//invite["database"].asBoolean()
+        )
     }
 
     private fun fullInvite(message: ClientJsonMessage) {
@@ -185,12 +209,15 @@ class InviteSystem(
             gameClients(gameType)!!.findPlayerId(playerId)
         }.filterIsInstance<Client>().toMutableList()
 
-        this.createInvite(gameType, inviteId, message.client, targetClients)
+        val defaultConfig = ServerGames.setup(gameType)!!.getDefaultConfig()
+        val options = InviteOptions(false, InviteTurnOrder.ORDERED, -1, defaultConfig, true)
+
+        this.createInvite(gameType, inviteId, options, message.client, targetClients)
     }
 
     private fun startInvite(invite: Invite) {
         logger.info { "Starting game for invite $invite" }
-        val game = createGameCallback(invite.gameType, ServerGameOptions(true))
+        val game = createGameCallback(invite.gameType, invite.inviteOptions)
         game.players.add(invite.host)
         game.players.addAll(invite.accepted)
         removeInvite(invite)

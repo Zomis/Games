@@ -87,7 +87,8 @@ class LobbySystemTest {
             gameLoader = { null },
             moveHandler = {}
         )
-        val game = ServerGame(callback, GameType(callback, "A", {null}, events, idGenerator), idGenerator(), ServerGameOptions(false))
+        val inviteOptions = InviteOptions(false, InviteTurnOrder.ORDERED, -1, Unit, false)
+        val game = ServerGame(callback, GameType(callback, "A", {null}, events, idGenerator), idGenerator(), inviteOptions)
         game.players.add(clientAB2)
         game.players.add(clientA1)
         events.execute(GameStartedEvent(game))
