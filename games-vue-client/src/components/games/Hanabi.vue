@@ -38,12 +38,17 @@
             </transition-group>
           </v-card-text>
           <v-card-actions>
-            <v-btn v-if="myTurn && actions.GiveClue && actions.GiveClue['player-' + player.index]" @click="clue(player.index)" :disabled="view.clues <= 0">
-              Give clue
-            </v-btn>
-            <template v-if="myTurn && actionChoice && actionChoice.choices[0] === player.index">
-              <v-btn v-for="(act, actIndex) in actions.GiveClue" :class="[actIndex.includes('color-') ? actIndex : '']" @click="onAction('GiveClue', actIndex)" :key="actIndex">{{ actIndex }}</v-btn>
-            </template>
+            <v-menu v-model="showMenu" offset-y bottom z-index="100" :close-on-content-click="false">
+              <template v-slot:activator="{ on }">
+                <v-btn v-if="myTurn && actions.GiveClue" @click="clue(player.index)" :disabled="view.clues <= 0" v-on="on">
+                  Give clue
+                </v-btn>
+              </template>
+              <v-btn v-for="(act, actIndex) in clueOptions" :key="actIndex"
+                   :class="[actIndex.includes('color-') ? actIndex : '']" @click="onAction('GiveClue', actIndex)">
+                 {{ actIndex }}
+              </v-btn>
+            </v-menu>
           </v-card-actions>
         </v-card>
       </v-col>
@@ -106,30 +111,43 @@ import HanabiCard from "./HanabiCard"
 
 export default {
   name: "Hanabi",
-  props: ["view", "actions", "actionChoice", "onAction", "players"],
+  props: ["view", "actions", "actions2", "actionChoice", "onAction", "players"],
   components: {
       HanabiCard
   },
   methods: {
     clue(index) {
-      this.onAction("GiveClue", 'player-' + index);
+      if (this.actions2.chosen) {
+        this.actions2.reset();
+      } else {
+        this.onAction("GiveClue", 'player-' + index);
+      }
     },
     btnActions(action, index) {
       this.onAction(action, index);
     }
   },
   watch: {
+    actionChoice(val) {
+      if (!val) this.showMenu = false;
+    },
     deckEmpty(val) {
       this.snackbar = val
     }
   },
   data() {
     return {
+      showMenu: false,
       snackbar: false,
       snackbarText: 'Last round'
     }
   },
   computed: {
+    clueOptions() {
+      if (!this.actions.GiveClue) return [];
+      return Object.keys(this.actions.GiveClue).filter(key => !key.includes('player'))
+        .reduce((obj, key) => ({ ...obj, [key]: this.actions.GiveClue[key] }), {});
+    },
     myTurn() {
       return this.view.currentPlayer == this.view.hand.index
     },

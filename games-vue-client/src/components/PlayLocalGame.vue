@@ -1,7 +1,7 @@
 <template>
   <div :class="['game', 'player-' + currentPlayer]">
     <GameHead :gameInfo="gameInfo" :playerCount="playerCount" :view="view" :eliminations="eliminations" />
-    <component :is="viewComponent" :view="view" :onAction="action" :actions="actions" :actionChoice="actionChoice" :players="gameInfo.players" />
+    <component :is="viewComponent" :view="view" :onAction="action" :actions2="actions2" :actions="actions" :actionChoice="actionChoice" :players="gameInfo.players" />
     <v-btn @click="cancelAction()" :disabled="actionChoice === null">Reset Action</v-btn>
   </div>
 </template>
@@ -151,6 +151,14 @@ export default {
     }
   },
   computed: {
+    actions2() {
+      return {
+        chosen: this.actionChoice,
+        perform: this.action,
+        available: this.actions,
+        reset: this.cancelAction
+      }
+    },
     currentPlayer() {
       return this.view.currentPlayer;
     },

@@ -1,7 +1,7 @@
 <template>
   <div class="game">
     <GameHead v-if="gameInfo" :gameInfo="gameInfo" :playerCount="playerCount" :view="view" :eliminations="eliminations" />
-    <component v-if="view" :is="viewComponent" :view="view" :onAction="action" :actions="actions" :actionChoice="actionChoice" :players="players" />
+    <component v-if="view" :is="viewComponent" :view="view" :actions2="actions2" :onAction="action" :actions="actions" :actionChoice="actionChoice" :players="players" />
     <v-btn v-if="!isObserver" @click="resetActions()" :disabled="actionChoice === null">Reset Action</v-btn>
   </div>
 </template>
@@ -62,6 +62,14 @@ export default {
     isObserver() {
       if (!this.gameInfo) { return true }
       return this.gameInfo.yourIndex < 0;
+    },
+    actions2() {
+      return {
+        chosen: this.actionChoice,
+        perform: this.action,
+        available: this.actions,
+        reset: this.resetActions
+      }
     },
     ...mapState("DslGameState", {
       gameInfo(state) {
