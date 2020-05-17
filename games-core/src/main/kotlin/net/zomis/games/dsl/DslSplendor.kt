@@ -56,6 +56,10 @@ data class SplendorNoble(val points: Int, val requirements: Money) {
     fun requirementsFulfilled(player: SplendorPlayer): Boolean {
         return player.discounts().hasWithoutWildcards(requirements)
     }
+
+    fun toStateString(): String {
+        return "$points:${requirements.toStateString()}"
+    }
 }
 
 fun <K, V> Map<K, V>.mergeWith(other: Map<K, V>, merger: (V?, V?) -> V): Map<K, V> {
@@ -142,12 +146,14 @@ object SplendorCardFactory {
 
 class SplendorGame(val eliminations: PlayerEliminationCallback, playerCount: Int) {
 
-    val nobles = CardZone(listOf("BR", "UW", "UG", "RG", "BW", "BRG", "BUW", "BRW", "GUW", "GUR").map {string ->
+    val allNobles = CardZone(listOf("BR", "UW", "UG", "RG", "BW", "BRG", "BUW", "BRW", "GUW", "GUR").map {string ->
         val moneyTypes = string.map { ch -> MoneyType.values().first { it.char == ch } }
         val requiredPerType = if (moneyTypes.size == 2) 4 else 3
         val money = moneyTypes.map { it.toMoney(requiredPerType) }.reduce { acc, money -> acc + money }
         SplendorNoble(3, money)
-    }.shuffled().take(playerCount + 1).toMutableList())
+    }.shuffled().toMutableList())
+
+    val nobles = CardZone<SplendorNoble>()
     val deck = CardZone(listOf("""
 W UGRB UGGRB WWWUB UUGGB UUBB RRB 1GGGG UUU
 U WGRB WGRRB UGGGR WGGRR GGBB WBB 1RRRR BBB
@@ -245,6 +251,11 @@ object DslSplendor {
                 }
                 val cards = it.deck.findStates(cardStates) { c -> c.toStateString() }
                 it.deck.deal(cards, listOf(it.board))
+                
+                // Nobles
+                val nobles = it.allNobles.top(it.players.size + 1)
+                val nobleStates = this.strings("nobles") { nobles.map { c -> c.toStateString() } }
+                it.allNobles.deal(it.allNobles.findStates(nobleStates) { c -> c.toStateString() }, listOf(it.nobles))
             }
         }
         logic {
