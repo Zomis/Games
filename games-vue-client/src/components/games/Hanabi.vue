@@ -40,7 +40,7 @@
           <v-card-actions>
             <v-menu v-model="showMenu" offset-y bottom z-index="100" :close-on-content-click="false">
               <template v-slot:activator="{ on }">
-                <v-btn v-if="myTurn && actions.GiveClue" @click="clue(player.index)" :disabled="view.clues <= 0" v-on="on">
+                <v-btn @click="clue(player.index)" :disabled="!myTurn || view.clues <= 0" v-on="on">
                   Give clue
                 </v-btn>
               </template>
