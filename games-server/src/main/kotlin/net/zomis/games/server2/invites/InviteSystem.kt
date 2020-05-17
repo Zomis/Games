@@ -222,7 +222,7 @@ class InviteSystem(
             gameClients(gameType)!!.findPlayerId(playerId)
         }.filterIsInstance<Client>().toMutableList()
 
-        val defaultConfig = ServerGames.setup(gameType)!!.getDefaultConfig()
+        val defaultConfig = ServerGames.setup(gameType)?.getDefaultConfig() ?: Unit
         val options = InviteOptions(false, InviteTurnOrder.ORDERED, -1, defaultConfig, true)
 
         this.createInvite(gameType, inviteId, options, message.client, targetClients)
