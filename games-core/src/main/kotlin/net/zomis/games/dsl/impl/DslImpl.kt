@@ -79,6 +79,7 @@ class GameGridBuilder<T : Any, P>(override val model: T) : GameGrid<T, P>, GridS
 
 class GameViewContext<T : Any>(val model: T, private val eliminations: PlayerEliminations,
        override val viewer: PlayerIndex, private val replayState: ReplayState) : GameView<T> {
+    override val game: T = model
     private val requestable = mutableMapOf<String, GameViewOnRequestFunction<T>>()
     private val viewResult: MutableMap<String, Any?> = mutableMapOf()
 

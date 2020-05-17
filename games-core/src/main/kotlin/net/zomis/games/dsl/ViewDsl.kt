@@ -9,6 +9,7 @@ interface GameViewOnRequestScope<T> {
 }
 
 interface GameView<T> {
+    val game: T
     val viewer: PlayerIndex
     fun result(): Map<String, Any?>
     fun currentPlayer(function: (T) -> Int)
