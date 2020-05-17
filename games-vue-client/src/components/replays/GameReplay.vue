@@ -29,6 +29,7 @@
       </v-layout>
       <v-flex grow>
         <GameHead xs12 :gameInfo="gameInfo" :view="currentView" :eliminations="currentEliminations" v-if="gameInfo"></GameHead>
+        <v-alert type="warning" v-for="error in replay.errors" :key="error">{{ error }}</v-alert>
         <div xs12>
             Started at {{ timeStarted }} - Ended at {{ timeLastAction }}
         </div>

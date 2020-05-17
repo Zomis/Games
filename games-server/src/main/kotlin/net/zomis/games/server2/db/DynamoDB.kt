@@ -46,6 +46,16 @@ class DBIntegration {
 
     fun loadGame(gameId: String): DBGame? {
         val summary = this.superTable.getGameSummary(SuperTable.Prefix.GAME.sk(gameId)) ?: return null
+        val game = superTable.getGame(summary)
+        if (game.hasErrors()) {
+            logger.error { "Unable to load game $gameId because game has errors." }
+            return null
+        }
+        return game
+    }
+
+    fun loadGameIgnoreErrors(gameId: String): DBGame? {
+        val summary = this.superTable.getGameSummary(SuperTable.Prefix.GAME.sk(gameId)) ?: return null
         return superTable.getGame(summary)
     }
 
