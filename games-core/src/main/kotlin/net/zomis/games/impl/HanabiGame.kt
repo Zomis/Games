@@ -74,15 +74,15 @@ data class HanabiConfig(
         val playUntilFullEnd: Boolean,
         val allowEmptyClues: Boolean
 ) {
-    private val useRainbowColor get() = rainbowExtraColor || rainbowWildcard
-    private val allowRainbowClue get() = rainbowExtraColor && !rainbowWildcard
+    private fun useRainbowColor() = rainbowExtraColor || rainbowWildcard
+    private fun allowRainbowClue() = rainbowExtraColor && !rainbowWildcard
 
-    internal val colors get() = HanabiColor.values().toList().minus(if (useRainbowColor) listOf() else listOf(HanabiColor.RAINBOW))
-    internal val clueableColors get() = HanabiColor.values().toList().minus(if (allowRainbowClue) listOf() else listOf(HanabiColor.RAINBOW))
+    fun colors() = HanabiColor.values().toList().minus(if (useRainbowColor()) listOf() else listOf(HanabiColor.RAINBOW))
+    fun clueableColors() = HanabiColor.values().toList().minus(if (allowRainbowClue()) listOf() else listOf(HanabiColor.RAINBOW))
 
     fun countInDeck(color: HanabiColor, value: Int): Int {
         if (rainbowOnlyOne && color == HanabiColor.RAINBOW) return 1
-        if (!useRainbowColor && color == HanabiColor.RAINBOW) return 0
+        if (!useRainbowColor() && color == HanabiColor.RAINBOW) return 0
         return when (value) {
             1 -> 3
             in 2..4 -> 2
@@ -102,7 +102,7 @@ data class HanabiConfig(
 }
 data class HanabiColorData(val color: HanabiColor, val board: CardZone<HanabiCard> = CardZone(mutableListOf()), val discard: CardZone<HanabiCard> = CardZone(mutableListOf()))
 data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
-    val colors: List<HanabiColorData> = config.colors.map { HanabiColorData(it) }
+    val colors: List<HanabiColorData> = config.colors().map { HanabiColorData(it) }
     var clueTokens: Int = config.maxClueTokens
     var failTokens: Int = 0
     var currentPlayer: Int = 0
@@ -127,7 +127,7 @@ data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
     }
 
     fun boardComplete(): Boolean {
-        return this.colors.size == this.config.colors.size && this.colors.all { it.board.size == 5 }
+        return this.colors.size == this.config.colors().size && this.colors.all { it.board.size == 5 }
     }
 
     fun increaseClueTokens() {
@@ -226,7 +226,7 @@ object HanabiGame {
                         val TEXT_COLOR = "color"
                         option(listOf(TEXT_COLOR, "value")) {clueMode ->
                             if (clueMode == TEXT_COLOR) {
-                                optionFrom({ game -> game.config.clueableColors }) {color ->
+                                optionFrom({ game -> game.config.clueableColors() }) {color ->
                                     actionParameter(HanabiClue(player, color, null))
                                 }
                             } else {
