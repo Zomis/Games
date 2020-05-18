@@ -12,7 +12,7 @@ class HanabiProbabilities {
 
         val hanabi = game.model as Hanabi
         val playerIndex = 1
-        val results = net.zomis.games.impl.HanabiProbabilities.calculateProbabilities(hanabi, playerIndex)
+        val results = net.zomis.games.impl.HanabiProbabilities.showProbabilities(hanabi, playerIndex)
         results.forEachIndexed {index, cardResults ->
             println("Card $index")
             cardResults.forEach { (key, probability) ->

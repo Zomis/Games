@@ -7,10 +7,13 @@ data class ActionAnalyze(val moveType: String, val parameter: Any, val score: Do
 
 class AIAnalyze {
     fun scoring(game: GameImpl<Any>, scoring: ScorerAIFactory<Any>, playerIndex: Int): AIAnalyzeResult? {
+        TODO("Fix for scorers")
+        /*
         val scorer = AIFactoryScoring().scorer(scoring.config.build(), playerIndex)
         val scores = scorer.analyzeAndScore(game)
         val scoreResults = scores.scores.toList().map { ActionAnalyze(it.first.actionType, it.first.parameter, it.second.score) }
         return AIAnalyzeResult(scoreResults, null)
+        */
     }
 
     fun alphaBeta(game: GameImpl<Any>, alphaBetaConfig: AIAlphaBetaConfig<Any>, playerIndex: Int): AIAnalyzeResult? {

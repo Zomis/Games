@@ -5,6 +5,18 @@ import net.zomis.games.WinResult
 import net.zomis.games.dsl.*
 import kotlin.reflect.KClass
 
+class GameControllerContext<T : Any>(
+    override val game: GameImpl<T>, override val playerIndex: Int
+): GameControllerScope<T> {
+    override val model: T get() = game.model
+}
+interface GameControllerScope<T : Any> {
+    val game: GameImpl<T>
+    val model: T
+    val playerIndex: Int
+}
+typealias GameController<T> = (GameControllerScope<T>) -> Actionable<T, Any>?
+
 class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
 
     private val context = GameDslContext<T>()

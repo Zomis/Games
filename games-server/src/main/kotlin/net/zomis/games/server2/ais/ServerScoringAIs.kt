@@ -1,15 +1,18 @@
 package net.zomis.games.server2.ais
 
 import com.fasterxml.jackson.databind.node.IntNode
-import net.zomis.aiscores.*
+import net.zomis.aiscores.FScorer
+import net.zomis.aiscores.ScoreConfigFactory
 import net.zomis.aiscores.scorers.SimpleScorer
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.PointMove
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.dsl.sourcedest.TTArtax
-import net.zomis.games.impl.Hanabi
 import net.zomis.games.server2.ais.gamescorers.HanabiScorers
+import net.zomis.games.server2.ais.gamescorers.SplendorScorers
+import net.zomis.games.server2.ais.scorers.Scorer
+import net.zomis.games.server2.ais.scorers.ScorerFactory
 import net.zomis.games.server2.games.GameTypeRegisterEvent
 import net.zomis.games.server2.games.PlayerGameMoveRequest
 import net.zomis.games.ur.RoyalGameOfUr
@@ -18,9 +21,7 @@ import net.zomis.games.ur.ais.RoyalGameOfUrAIs
 import net.zomis.tttultimate.Direction8
 import java.util.function.ToIntFunction
 
-typealias ActScorable<T> = Actionable<T, Any>
-data class ScorerAIFactory<T: Any>(val gameType: String, val name: String, val config: ScoreConfigFactory<GameImpl<T>, ActScorable<T>>)
-fun <T: Any> scf(): ScoreConfigFactory<GameImpl<T>, ActScorable<T>> = ScoreConfigFactory()
+class ScorerAIFactory<T: Any>(val gameType: String, val name: String, vararg val config: Scorer<T, Any>)
 
 class ServerScoringAIs(private val aiRepository: AIRepository) {
     fun setup(events: EventSystem) {
@@ -49,29 +50,26 @@ class ServerScoringAIs(private val aiRepository: AIRepository) {
             createURAI(events, "#AI_MonteCarlo", MonteCarloAI(1000, ai))
         })
 
-        val artaxTake: FScorer<GameImpl<TTArtax>, ActScorable<TTArtax>> = SimpleScorer { action, params ->
+        val artaxScorers = ScorerFactory<TTArtax>()
+        val artaxTake = artaxScorers.simple {
             val pm = (action.parameter) as PointMove
-            val board = params.parameters.model.board
+            val board = model.board
             val neighbors = Direction8.values()
                 .map { board.point(pm.destination.x + it.deltaX, pm.destination.y + it.deltaY) }
                 .mapNotNull { it.rangeCheck(board) }
                 .count { it.value != action.playerIndex && it.value != null }
             neighbors.toDouble()
         }
-        val copying = SimpleScorer<GameImpl<TTArtax>, ActScorable<TTArtax>> { action, params ->
+        val copying = artaxScorers.simple {
             action.parameter.let { it as PointMove }.let {
                 -it.destination.minus(it.source).abs().distance()
             }
         }
         val factories = listOf(
-            ScorerAIFactory("Hanabi", "#AI_Cheating_PlayAndDiscard", scf<Hanabi>()
-                .withScorer(HanabiScorers.hanabiCheatPlay, 20.0)
-                .withScorer(HanabiScorers.hanabiCheatDiscard, 10.0)
-                .withScorer(HanabiScorers.hanabiCluegiver)),
-            ScorerAIFactory("Artax", "#AI_Aggressive_Simple", scf<TTArtax>().withScorer(artaxTake)),
-            ScorerAIFactory("Artax", "#AI_Aggressive_Defensive", scf<TTArtax>().withScorer(copying).withScorer(artaxTake, 0.35)),
-            ScorerAIFactory("Artax", "#AI_Defensive", scf<TTArtax>().withScorer(copying, 2.0).withScorer(artaxTake, 0.35))
-        )
+            ScorerAIFactory("Artax", "#AI_Aggressive_Simple", artaxTake),
+            ScorerAIFactory("Artax", "#AI_Aggressive_Defensive", copying, artaxTake.weight(0.35)),
+            ScorerAIFactory("Artax", "#AI_Defensive", copying.weight(2), artaxTake.weight(0.35))
+        ).plus(SplendorScorers.ais()).plus(HanabiScorers.ais())
         factories.groupBy { it.gameType }.forEach { entry ->
             events.listen("Register scoring AIs in ${entry.key}", GameTypeRegisterEvent::class, { it.gameType == entry.key }) {
                 entry.value.forEach {factory ->

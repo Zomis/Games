@@ -4,6 +4,9 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.Actionable
+import net.zomis.games.dsl.impl.GameController
+import net.zomis.games.dsl.impl.GameControllerContext
+import net.zomis.games.dsl.impl.GameControllerScope
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.impl.SetAction
 import net.zomis.games.impl.SetGame
@@ -57,18 +60,18 @@ class DslRandomPlayTest {
         }
     }
 
-    fun randomSetMove(game: GameImpl<SetGameModel>, playerIndex: Int): Actionable<*, Any>? {
+    fun randomSetMove(context: GameControllerScope<SetGameModel>): Actionable<SetGameModel, Any>? {
         return if (random.nextBoolean()) {
-            game.model.findSets(game.model.board.cards).firstOrNull()?.let {
-                game.actions[SetGame.callSet.name]!!.createAction(playerIndex, SetAction(it.map { c -> c.toStateString() }))
-            }
+            context.model.findSets(context.model.board.cards).firstOrNull()?.let {
+                context.game.actions[SetGame.callSet.name]!!.createAction(context.playerIndex, SetAction(it.map { c -> c.toStateString() }))
+            }!!
         } else {
-            serverAIs.randomActionable(game, playerIndex)
+            serverAIs.randomActionable(context.game, context.playerIndex)
         }
     }
 
-    val playingMap = mapOf<KClass<*>, (Any, Int) -> Actionable<*, Any>?>(
-        SetGameModel::class to { game: Any, playerIndex: Int -> randomSetMove(game as GameImpl<SetGameModel>, playerIndex) }
+    val playingMap = mapOf<KClass<*>, GameController<*>>(
+        SetGameModel::class to { context: GameControllerScope<*> -> randomSetMove(context as GameControllerScope<SetGameModel>) }
     )
 
     @ParameterizedTest(name = "Random play {0}")
@@ -123,7 +126,8 @@ class DslRandomPlayTest {
             val actions: List<PlayerGameMoveRequest> = playerRange.mapNotNull {playerIndex ->
                 val moveHandler = playingMap[gameImpl.model::class]
                 if (moveHandler != null) {
-                    moveHandler.invoke(gameImpl, playerIndex)?.let {
+                    val controllerContext = GameControllerContext(gameImpl, playerIndex)
+                    moveHandler.invoke(controllerContext)?.let {
                         PlayerGameMoveRequest(game, playerIndex, it.actionType, it.parameter)
                     }
                 } else {
