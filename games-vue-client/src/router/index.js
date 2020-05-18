@@ -102,6 +102,12 @@ export default new Router({
         if (route.params.gameType === 'Artax') {
           playerCount = 2 + Math.floor(Math.random() * 3);
         }
+        if (route.params.gameType === 'Hanabi') {
+          playerCount = 2 + Math.floor(Math.random() * 4);
+        }
+        if (route.params.gameType === 'Splendor') {
+          playerCount = 2 + Math.floor(Math.random() * 3);
+        }
         let players = new Array(playerCount).fill(0).map((_, index) => index).map(i => ({
           index: i,
           name: "Player " + (i + 1),
