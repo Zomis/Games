@@ -42,6 +42,15 @@ class PlayerEliminationsTest {
     }
 
     @Test
+    fun draw() {
+        val elims = PlayerEliminations(2)
+        val scores = listOf(0 to 20, 1 to 20)
+        val comparator = compareBy<Int> { it }
+        elims.eliminateBy(scores, comparator)
+        Assertions.assertTrue(elims.scoreList().all { it.first == WinResult.DRAW }) { elims.scoreList().toString() }
+    }
+
+    @Test
     fun scoreElimination() {
         val elims = PlayerEliminations(2)
         val scores = listOf(0 to 42, 1 to 23)

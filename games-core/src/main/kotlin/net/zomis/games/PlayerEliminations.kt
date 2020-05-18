@@ -91,6 +91,7 @@ class PlayerEliminations(override val playerCount: Int): PlayerEliminationCallba
             val nextBatch = playersAndScoresRemaining.best(pairComparator)
             nextBatch.forEach {
                 val winResult = when {
+                    nextBatch.size == playersAndScores.size -> WinResult.DRAW
                     playersAndScoresRemaining.size == playersAndScores.size -> WinResult.WIN
                     playersAndScoresRemaining.size == nextBatch.size -> WinResult.LOSS
                     else -> WinResult.DRAW
