@@ -257,6 +257,7 @@ class ProgressAnalyze<T>(
             simplificationDone = autoAssignments.assignments.isNotEmpty()
         } while (simplificationDone)
 
+        /*
         println("# Zones")
         zones.forEach { println(it) }
         println("# Groups")
@@ -268,6 +269,7 @@ class ProgressAnalyze<T>(
         autoAssignments.groups.forEach { println(it) }
         println("# Simplified Rules")
         simplifiedRules.forEach { println(it) }
+        */
 
         if (simplifiedRules.isEmpty()) {
             return sequenceOf(CardAnalyzeSolution(fullAssignments))

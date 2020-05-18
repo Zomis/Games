@@ -43,10 +43,7 @@ class CardCounter<T> {
     }
 
     fun solve2(): Sequence<CardAnalyzeSolution<T>> {
-        return analyze2.solve().map {
-            sanityCheck(it)
-            it
-        }
+        return analyze2.solve()
     }
 
     fun exactRule(zone: CardZone<T>, value: Int, predicate: (T) -> Boolean): CardCounter<T> {

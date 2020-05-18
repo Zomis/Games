@@ -148,6 +148,8 @@ data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
         return config.allowEmptyClues || players[clue.player].cards.cards.any { it.matches(clue) }
     }
 
+    fun score(): Int = colors.sumBy { zone -> zone.board.size }
+
 }
 
 data class HanabiClue(val player: Int, val color: HanabiColor?, val value: Int?)
@@ -279,7 +281,7 @@ object HanabiGame {
             }
             value("cardsLeft") { it.deck.size }
             value("clues") { it.clueTokens }
-            value("score") { it.colors.sumBy { zone -> zone.board.size } }
+            value("score") { it.score() }
             value("fails") { it.failTokens }
             value("maxFails") { it.config.maxFailTokens }
             onRequest("probabilities") {

@@ -236,9 +236,6 @@ class GameLogicContext<T : Any>(private val model: T, private val replayState: R
         this.winner = function
     }
 
-//    fun actionSimple(name: String, logic: ActionLogicSimple<T>) {}
-//    fun action(name: String, options: ActionOptions<A>, logic: ActionLogic<A>) {}
-
 }
 
 data class ActionInfo<P>(val nextOptions: List<Any>, val parameters: List<P>)

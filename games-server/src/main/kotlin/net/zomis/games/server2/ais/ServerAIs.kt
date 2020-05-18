@@ -15,7 +15,7 @@ class ServerAIs(private val aiRepository: AIRepository, private val dslGameTypes
 
     fun isDSLGameType(gameType: String) = dslGameTypes.contains(gameType)
 
-    fun randomActionable(game: GameImpl<*>, playerIndex: Int): Actionable<*, Any>? {
+    fun <T: Any> randomActionable(game: GameImpl<T>, playerIndex: Int): Actionable<T, Any>? {
         val actionTypes = game.actions.types()
         val actions = actionTypes.flatMap {actionType ->
             actionType.availableActions(playerIndex)
