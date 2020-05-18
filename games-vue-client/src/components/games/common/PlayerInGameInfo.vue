@@ -19,7 +19,7 @@
         <template v-if="displayStyle == 'table'">
             <v-row no-gutters>
                 <v-col cols="6">
-                    <v-avatar :size="48" v-on="on" :class="[winResultClass, eliminatedOpacityClass]">
+                    <v-avatar :size="48" :class="[winResultClass, eliminatedOpacityClass]">
                         <img
                             :src="player.picture"
                             :alt="player.name" />
