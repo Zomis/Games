@@ -174,6 +174,7 @@ R 4GGGGGGG 3WWWUUUUUGGGBBB 5GGGGGGGRRR 4UUUGGGGGGRRR
 G 4WWWUUUUUUGGG 4UUUUUUU 5UUUUUUUGGG 3WWWWWUUURRRBBB
 """).mapIndexed { index, data -> SplendorCardFactory.createCardLevel(index + 1, data) }.flatten().shuffled().toMutableList())
     var turnsLeft = -1
+    var roundNumber: Int = 1
 
     private fun randomType(): MoneyType {
         return MoneyType.values().toList().shuffled().first()
@@ -214,6 +215,10 @@ G 4WWWUUUUUUGGG 4UUUUUUU 5UUUUUUUGGG 3WWWWWUUURRRBBB
         }
 
         this.currentPlayerIndex = this.currentPlayerIndex.next(players.size)
+
+        if (this.currentPlayerIndex == 0) {
+            this.roundNumber++
+        }
 
         // End game
         if (turnsLeft == 0) {
@@ -395,6 +400,7 @@ object DslSplendor {
             currentPlayer { it.currentPlayerIndex }
             eliminations()
             value("viewer") { viewer }
+            value("round") { it.roundNumber }
             value("cardLevels") {game ->
                 game.board.cards.sortedBy { -it.level }.groupBy { it.level }.mapValues {
                     mapOf(
