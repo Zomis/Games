@@ -1,7 +1,5 @@
 <template>
     <v-container fluid>
-        <GameTreeView :view="view" />
-        <GameTreeView :actions="actions" :onAction="onAction" />
         <v-row class="players">
             <v-col v-for="(player, index) in view.players" :key="index">
                 <SplendorPlayer :player="player" :playerInfo="players[index]" :actionable="actions" :onAction="onAction" :class="{activePlayer: index == view.currentPlayer}" />
@@ -50,12 +48,11 @@
 import SplendorCard from "./SplendorCard"
 import SplendorPlayer from "./SplendorPlayer"
 import SplendorNoble from "./SplendorNoble"
-import GameTreeView from "@/components/games/debug/GameTreeView"
 
 export default {
     name: "Splendor",
     props: ["view", "actions", "actionChoice", "onAction", "players"],
-    components: { GameTreeView, SplendorPlayer, SplendorCard, SplendorNoble },
+    components: { SplendorPlayer, SplendorCard, SplendorNoble },
     methods: {
         takeMoney(moneyType) {
             console.log(moneyType)
