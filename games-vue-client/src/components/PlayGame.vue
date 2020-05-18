@@ -2,7 +2,7 @@
   <div class="game">
     <GameHead v-if="gameInfo" :gameInfo="gameInfo" :playerCount="playerCount" :view="view" :eliminations="eliminations" />
     <component v-if="view" :is="viewComponent" :view="view" :actions2="actions2" :onAction="action" :actions="actions" :actionChoice="actionChoice" :players="players" />
-    <v-btn v-if="!isObserver" @click="resetActions()" :disabled="actionChoice === null">Reset Action</v-btn>
+    <v-btn v-if="!isObserver" @click="clearActions()" :disabled="actionChoice === null">Reset Action</v-btn>
   </div>
 </template>
 <script>
@@ -32,7 +32,7 @@ export default {
     })
   },
   methods: {
-    resetActions() {
+    clearActions() {
       this.$store.dispatch("DslGameState/requestView", this.gameInfo);
       this.$store.dispatch("DslGameState/resetActions", { gameInfo: this.gameInfo });
     },
@@ -42,7 +42,7 @@ export default {
       console.log("ACTION CHOICE", name, data, action)
       if (action === undefined) {
         console.log("NO ACTION FOR", data)
-        this.resetActions();
+        this.clearActions();
         return
       }
       if (action.direct) {
@@ -53,7 +53,10 @@ export default {
 
       this.$store.dispatch("DslGameState/nextAction", { gameInfo: this.gameInfo, name: name, action: action.value });
       return;
-    }
+    },
+    resetActionsTo(actionName, actionValue) {
+      this.$store.dispatch("DslGameState/resetActionsTo", { gameInfo: this.gameInfo, name: actionName, action: actionValue });
+    },
   },
   computed: {
     viewComponent() {
@@ -68,7 +71,8 @@ export default {
         chosen: this.actionChoice,
         perform: this.action,
         available: this.actions,
-        reset: this.resetActions
+        clear: this.clearActions,
+        resetTo: this.resetActionsTo
       }
     },
     ...mapState("DslGameState", {

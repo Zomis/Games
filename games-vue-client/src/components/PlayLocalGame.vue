@@ -69,6 +69,10 @@ export default {
       this.actionChoice = null;
       this.updateActions();
     },
+    resetActionTo(actionName, actionValue) {
+      this.actionChoice = { actionName: actionName, choices: [actionValue] }
+      this.updateActions();
+    },
     updateView() {
       console.log("UPDATE VIEW", this.viewer)
       let v = this.game.view_s8ev37$(this.viewer)
@@ -156,7 +160,8 @@ export default {
         chosen: this.actionChoice,
         perform: this.action,
         available: this.actions,
-        reset: this.cancelAction
+        clear: this.cancelAction,
+        resetTo: this.resetActionTo
       }
     },
     currentPlayer() {

@@ -38,7 +38,7 @@
             </transition-group>
           </v-card-text>
           <v-card-actions>
-            <v-menu v-model="showMenu" offset-y bottom z-index="100" :close-on-content-click="false">
+            <v-menu v-model="showMenu[player.index]" offset-y bottom z-index="100" :close-on-content-click="false">
               <template v-slot:activator="{ on }">
                 <v-btn @click="clue(player.index)" :disabled="!myTurn || view.clues <= 0" v-on="on">
                   Give clue
@@ -117,11 +117,7 @@ export default {
   },
   methods: {
     clue(index) {
-      if (this.actions2.chosen) {
-        this.actions2.reset();
-      } else {
-        this.onAction("GiveClue", 'player-' + index);
-      }
+      this.actions2.resetTo("GiveClue", index);
     },
     btnActions(action, index) {
       this.onAction(action, index);
@@ -129,15 +125,19 @@ export default {
   },
   watch: {
     actionChoice(val) {
-      if (!val) this.showMenu = false;
+      if (!val) {
+        console.log("actionChoice cleared, resetting showMenu.");
+        this.showMenu = [false, false, false, false, false];
+      }
     },
     deckEmpty(val) {
       this.snackbar = val
     }
   },
   data() {
+    console.log("players is", this.players);
     return {
-      showMenu: false,
+      showMenu: [false, false, false, false, false], // One for each player
       snackbar: false,
       snackbarText: 'Last round'
     }

@@ -81,9 +81,13 @@ const gameStore = {
     requestView(context, data) {
       Socket.route(`games/${data.gameType}/${data.gameId}/view`, {});
     },
-    resetActions(context, data) {
+    resetActionsTo(context, data) {
       context.commit("resetActions", { gameInfo: data.gameInfo });
-      this.dispatch("DslGameState/requestActions", { gameInfo: data.gameInfo });
+      context.dispatch("nextAction", data);
+    },
+    resetActions(context, data) { // TODO: Rename to clearActions
+      context.commit("resetActions", { gameInfo: data.gameInfo });
+      context.dispatch("requestActions", { gameInfo: data.gameInfo });
     },
     joinGame(context, data) {
       Socket.route(`games/${data.gameType}/${data.gameId}/join`, {})
