@@ -9,7 +9,7 @@ import net.zomis.games.server2.ais.gamescorers.HanabiScorers
 class AIPlayTest {
 
     fun hanabi() {
-        val ai = HanabiScorers.aiFirst()
+        val ai = HanabiScorers.aiSecond()
         val config = ai.config.toList()
         val controller = AIFactoryScoring().createController(config)
         val setup = GameSetupImpl(HanabiGame.game)
@@ -18,6 +18,7 @@ class AIPlayTest {
         while (!game.isGameOver()) {
             val controllerContext = GameControllerContext(game, game.model.currentPlayer)
             val move = controller(controllerContext)!!
+            println("Move $moveCount: $move")
             game.actions.type(move.actionType)!!.perform(move)
             moveCount++
         }

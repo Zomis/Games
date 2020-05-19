@@ -91,16 +91,20 @@ data class HanabiConfig(
         }
     }
 
+    fun values(): IntRange = 1..5
+
     fun createCards(): List<HanabiCard> {
         return HanabiColor.values().flatMap { color ->
-            (1..5).flatMap { value ->
+            values().flatMap { value ->
                 List(countInDeck(color, value)) { HanabiCard(color, value, colorKnown = false, valueKnown = false) }
             }
         }
     }
 
 }
-data class HanabiColorData(val color: HanabiColor, val board: CardZone<HanabiCard> = CardZone(mutableListOf()), val discard: CardZone<HanabiCard> = CardZone(mutableListOf()))
+data class HanabiColorData(val color: HanabiColor, val board: CardZone<HanabiCard> = CardZone(mutableListOf()), val discard: CardZone<HanabiCard> = CardZone(mutableListOf())) {
+    fun values(): List<Pair<HanabiColor, Int>> = (1..5).map { color to it }
+}
 data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
     val colors: List<HanabiColorData> = config.colors().map { HanabiColorData(it) }
     var clueTokens: Int = config.maxClueTokens
@@ -149,6 +153,12 @@ data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
     }
 
     fun score(): Int = colors.sumBy { zone -> zone.board.size }
+    fun possibleClues(currentPlayer: Int): List<HanabiClue> {
+        return this.players.indices.toList().minus(currentPlayer).flatMap {cluePlayer ->
+            colors.map { HanabiClue(cluePlayer, it.color, null) } +
+                config.values().map { HanabiClue(cluePlayer, null, it) }
+        }
+    }
 
 }
 
@@ -284,12 +294,16 @@ object HanabiGame {
             value("score") { it.score() }
             value("fails") { it.failTokens }
             value("maxFails") { it.config.maxFailTokens }
-            onRequest("probabilities") {
-                HanabiProbabilities.calculateProbabilities(game, viewer ?: game.currentPlayer)
+            if (game.config.viewAllowCardIsNot) {
+                onRequest("canNotBe") {
+                    game.players[viewer ?: game.currentPlayer].cards.cards.map {
+                        mapOf("colors" to it.possibleColors, "values" to it.possibleValues)
+                    }
+                }
             }
-            onRequest("canNotBe") {
-                game.players[viewer ?: game.currentPlayer].cards.cards.map {
-                    mapOf("colors" to it.possibleColors, "values" to it.possibleValues)
+            if (game.config.viewAllowCardProbability) {
+                onRequest("probabilities") {
+                    HanabiProbabilities.calculateProbabilities(game, viewer ?: game.currentPlayer)
                 }
             }
         }
