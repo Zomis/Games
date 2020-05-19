@@ -13,6 +13,9 @@ import net.zomis.games.server2.games.PlayerGameMoveRequest
 class AIFactoryScoring {
 
     fun <T: Any> createController(config: List<Scorer<T, Any>>): GameController<T> = {scope ->
+        if (config.isEmpty()) {
+            throw IllegalArgumentException("All controllers must have at least one scorer (even if it just returns zero for everything)")
+        }
         if (!noAvailableActions(scope.game, scope.playerIndex)) {
             val providers = mutableMapOf<ScorerAnalyzeProvider<T, Any>, Any?>()
             val availableActions = scope.game.actions.types().flatMap {
