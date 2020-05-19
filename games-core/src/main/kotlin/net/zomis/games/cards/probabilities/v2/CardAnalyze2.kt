@@ -25,7 +25,7 @@ data class ZoneRule2<T>(val zone: CardZone<T>, val size: Int, val groups: Set<Ca
     }
 }
 
-class ZoneGroupAssignment<T>(val zone: CardZone<T>, val group: CardGroup2<T>, val count: Int) {
+data class ZoneGroupAssignment<T>(val zone: CardZone<T>, val group: CardGroup2<T>, val count: Int) {
     override fun toString(): String {
         return "$zone $count of $group"
     }
@@ -162,17 +162,13 @@ class CardsAnalyze2<T> {
         TODO("countStyle not supported yet")
     }
 
-    fun solve(): Sequence<CardAnalyzeSolution<T>> {
-        /*
-        * A B C D E
-        * A B
-        * A C
-        */
-        val cardGroups = cards.groupBy {
+    fun createCardGroups(): Map<Set<ZoneRuleDef<T>>, CardGroup2<T>> {
+        return cards.groupBy {
             card -> rules.filter { it.predicate(card) }.toSet()
         }.mapValues { CardGroup2(it.value.toSet(), it.value.size) }
-        val groups = cardGroups.values.toSet()
+    }
 
+    fun createRules(cardGroups: Map<Set<ZoneRuleDef<T>>, CardGroup2<T>>, groups: Set<CardGroup2<T>>): List<ZoneRule2<T>> {
         // Create rules for the known rules with card groups
         val ruleRules = rules.map { rule ->
             val cardGroupsInRule = cardGroups.entries.filter { entry -> entry.key.contains(rule) }.map { it.value }.toSet()
@@ -183,11 +179,29 @@ class CardsAnalyze2<T> {
         val zoneRules = zones.map {
             ZoneRule2(it, it.size, groups)
         }
+        return ruleRules.plus(zoneRules).sortedBy { it.order() }
+    }
+
+    fun rules(): List<ZoneRule2<T>> {
+        val cardGroups = createCardGroups()
+        val groups = cardGroups.values.toSet()
+        return createRules(cardGroups, groups)
+    }
+
+    fun solve(): Sequence<CardAnalyzeSolution<T>> {
+        /*
+        * A B C D E
+        * A B
+        * A C
+        */
+        val cardGroups = createCardGroups()
+        val groups = cardGroups.values.toSet()
+        val rules = createRules(cardGroups, groups)
         val assignments = CardAssignments(groups)
         // Order rules by combinations possible, ascending
 
         return sequence {
-            yieldAll(ProgressAnalyze(zones.toSet(), groups, listOf(ruleRules, zoneRules).flatten().sortedBy { it.order() }, assignments).solve())
+            yieldAll(ProgressAnalyze(zones.toSet(), groups, rules, assignments).solve())
         }
     }
 
@@ -227,11 +241,12 @@ class ProgressAnalyze<T>(
         if (assignments.assignments.isEmpty()) {
             return rules
         }
-        val groupAssignments = assignments.assignments.groupBy { it.group }
+        val uniqueAssignments = assignments.assignments.distinct()
+        val groupAssignments = uniqueAssignments.groupBy { it.group }
             .mapValues { entry -> entry.value.sumBy { it.count } }
 
         return rules.mapNotNull { rule ->
-            val zoneAssignments = assignments.assignments.filter { it.zone == rule.zone }
+            val zoneAssignments = uniqueAssignments.filter { it.zone == rule.zone }
             val zoneAssignmentSum = zoneAssignments.filter { rule.groups.contains(it.group) }.sumBy { it.count }
             val zoneGroupsAssigned = zoneAssignments.map { it.group }
 
@@ -272,7 +287,7 @@ class ProgressAnalyze<T>(
         */
 
         if (simplifiedRules.isEmpty()) {
-            return sequenceOf(CardAnalyzeSolution(fullAssignments))
+            return sequenceOf(CardAnalyzeSolution(fullAssignments.distinct()))
         }
         if (simplifiedRules.size == 1) {
             val singleRule = simplifiedRules.single()
@@ -287,7 +302,8 @@ class ProgressAnalyze<T>(
 //            val combinedGroup = CardGroup2(singleRule.groups.flatMap { it.cards }.toSet(), singleRule.groups.sumBy { it.placementsLeft })
 //            val remainingAssignment = ZoneGroupAssignment(singleRule.zone, combinedGroup, singleRule.size)
 //            val solution = CardAnalyzeSolution(fullAssignments + remainingAssignment)
-            val solution = CardAnalyzeSolution(fullAssignments + remainingAssignments)
+            val finalAssignments = fullAssignments + remainingAssignments
+            val solution = CardAnalyzeSolution(finalAssignments.distinct())
             return sequenceOf(solution)
         }
 
