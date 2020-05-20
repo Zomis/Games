@@ -4,6 +4,7 @@ import net.zomis.games.PlayerEliminations
 import net.zomis.games.WinResult
 import net.zomis.games.cards.Card
 import net.zomis.games.cards.CardZone
+import net.zomis.games.dsl.EffectScope
 import net.zomis.games.dsl.ReplayableScope
 import net.zomis.games.dsl.createActionType
 import net.zomis.games.dsl.createGame
@@ -70,7 +71,7 @@ data class HanabiConfig(
         val rainbowExtraColor: Boolean,
         val rainbowWildcard: Boolean, // TODO: This will screw up probabilities and knowledge and lots of stuff a lot
         val rainbowOnlyOne: Boolean,
-        val namePlayingCard: Boolean, // TODO
+        val namePlayingCard: Boolean,
         val playUntilFullEnd: Boolean,
         val allowEmptyClues: Boolean
 ) {
@@ -104,6 +105,7 @@ data class HanabiConfig(
 }
 data class HanabiColorData(val color: HanabiColor, val board: CardZone<HanabiCard> = CardZone(mutableListOf()), val discard: CardZone<HanabiCard> = CardZone(mutableListOf())) {
     fun values(): List<Pair<HanabiColor, Int>> = (1..5).map { color to it }
+    fun nextPlayable(): Int? = board.map { it.value }.max().let { (it ?: 0) + 1 }.takeIf { it <= 5 }
 }
 data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
     val colors: List<HanabiColorData> = config.colors().map { HanabiColorData(it) }
@@ -163,12 +165,14 @@ data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
 }
 
 data class HanabiClue(val player: Int, val color: HanabiColor?, val value: Int?)
+data class PlayNamedAction(val cardIndex: Int, val color: HanabiColor)
 
 object HanabiGame {
 
     val giveClue = createActionType("GiveClue", HanabiClue::class)
     val discard = createActionType("Discard", Int::class)
     val play = createActionType("Play", Int::class)
+    val playNamed = createActionType("PlayNamed", PlayNamedAction::class)
     val game = createGame<Hanabi>("Hanabi") {
         setup(HanabiConfig::class) {
             defaultConfig {
@@ -210,26 +214,27 @@ object HanabiGame {
                     nextTurnEndCheck(it.game, playerEliminations)
                 }
             }
+            action(playNamed) {
+                options {
+                    optionFrom({ if (it.config.namePlayingCard) it.current.cards.indices.toList() else emptyList() }) {cardIndex ->
+                        optionFrom({ it.colors.filter { c -> c.nextPlayable() != null }.map { c -> c.color } }) {color ->
+                            actionParameter(PlayNamedAction(cardIndex, color))
+                        }
+                    }
+                }
+                allowed { it.game.config.namePlayingCard && it.playerIndex == it.game.currentPlayer && it.game.turnsLeft != 0 }
+                effect {
+                    val playCard = it.game.current.cards[it.parameter.cardIndex]
+                    val playArea = it.game.playAreaFor(playCard.card).takeIf { _ -> playCard.card.color == it.parameter.color }
+                    playCardTo(playCard, playArea, it.game, this)
+                }
+            }
             intAction(play, {it.current.cards.indices}) {
-                allowed { it.playerIndex == it.game.currentPlayer && it.game.turnsLeft != 0 }
+                allowed { !it.game.config.namePlayingCard && it.playerIndex == it.game.currentPlayer && it.game.turnsLeft != 0 }
                 effect {
                     val playCard = it.game.current.cards[it.parameter]
                     val playArea = it.game.playAreaFor(playCard.card)
-
-                    moveCard(this.replayable(), it.game, playCard, playArea ?: it.game.colorData(playCard.card).discard)
-                    if (playCard.card.value == 5 && playArea != null) {
-                        it.game.increaseClueTokens()
-                    }
-                    if (playArea == null) {
-                        it.game.failTokens++
-                    }
-                    if (it.game.failTokens == it.game.config.maxFailTokens) {
-                        playerEliminations.eliminateRemaining(WinResult.LOSS)
-                    }
-                    if (it.game.boardComplete()) {
-                        playerEliminations.eliminateRemaining(WinResult.WIN)
-                    }
-                    nextTurnEndCheck(it.game, playerEliminations)
+                    playCardTo(playCard, playArea, it.game, this)
                 }
             }
             action(giveClue) {
@@ -307,6 +312,23 @@ object HanabiGame {
                 }
             }
         }
+    }
+
+    private fun playCardTo(playCard: Card<HanabiCard>, playArea: CardZone<HanabiCard>?, game: Hanabi, effectScope: EffectScope) {
+        moveCard(effectScope.replayable(), game, playCard, playArea ?: game.colorData(playCard.card).discard)
+        if (playCard.card.value == 5 && playArea != null) {
+            game.increaseClueTokens()
+        }
+        if (playArea == null) {
+            game.failTokens++
+        }
+        if (game.failTokens == game.config.maxFailTokens) {
+            effectScope.playerEliminations.eliminateRemaining(WinResult.LOSS)
+        }
+        if (game.boardComplete()) {
+            effectScope.playerEliminations.eliminateRemaining(WinResult.WIN)
+        }
+        nextTurnEndCheck(game, effectScope.playerEliminations)
     }
 
     private fun nextTurnEndCheck(game: Hanabi, playerEliminations: PlayerEliminations) {
