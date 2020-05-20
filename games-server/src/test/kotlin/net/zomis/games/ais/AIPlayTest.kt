@@ -3,9 +3,6 @@ package net.zomis.games.ais
 import net.zomis.games.dsl.DslSplendor
 import net.zomis.games.dsl.impl.GameControllerContext
 import net.zomis.games.dsl.impl.GameSetupImpl
-import net.zomis.games.impl.HanabiGame
-import net.zomis.games.server2.ais.AIFactoryScoring
-import net.zomis.games.server2.ais.gamescorers.HanabiScorers
 import net.zomis.games.server2.ais.gamescorers.SplendorScorers
 
 class AIPlayTest {
@@ -14,8 +11,7 @@ class AIPlayTest {
 //        val gameAndAI = HanabiGame.game to HanabiScorers.aiSecond()
         val gameAndAI = DslSplendor.splendorGame to SplendorScorers.aiBuyFirst
 
-        val config = gameAndAI.second.config.toList()
-        val controller = AIFactoryScoring().createController(config)
+        val controller = gameAndAI.second.createController()
         val setup = GameSetupImpl(gameAndAI.first)
         val game = setup.createGame(2, setup.getDefaultConfig())
         var moveCount = 0

@@ -4,14 +4,18 @@ import com.fasterxml.jackson.databind.node.IntNode
 import net.zomis.aiscores.FScorer
 import net.zomis.aiscores.ScoreConfigFactory
 import net.zomis.aiscores.scorers.SimpleScorer
+import net.zomis.bestBy
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.PointMove
+import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.dsl.sourcedest.TTArtax
 import net.zomis.games.server2.ais.gamescorers.HanabiScorers
 import net.zomis.games.server2.ais.gamescorers.SplendorScorers
 import net.zomis.games.server2.ais.scorers.Scorer
+import net.zomis.games.server2.ais.scorers.ScorerAnalyzeProvider
+import net.zomis.games.server2.ais.scorers.ScorerContext
 import net.zomis.games.server2.ais.scorers.ScorerFactory
 import net.zomis.games.server2.games.GameTypeRegisterEvent
 import net.zomis.games.server2.games.PlayerGameMoveRequest
@@ -21,7 +25,35 @@ import net.zomis.games.ur.ais.RoyalGameOfUrAIs
 import net.zomis.tttultimate.Direction8
 import java.util.function.ToIntFunction
 
-class ScorerAIFactory<T: Any>(val gameType: String, val name: String, vararg val config: Scorer<T, Any>)
+class ScorerAIFactory<T: Any>(val gameType: String, val name: String, vararg configArr: Scorer<T, Any>) {
+    val config = configArr.toList()
+    fun createController(): GameController<T> = {scope ->
+        if (config.isEmpty()) {
+            throw IllegalArgumentException("All controllers must have at least one scorer (even if it just returns zero for everything)")
+        }
+        if (!noAvailableActions(scope.game, scope.playerIndex)) {
+            val providers = mutableMapOf<ScorerAnalyzeProvider<T, Any>, Any?>()
+            val availableActions = scope.game.actions.types().flatMap {
+                it.availableActions(scope.playerIndex)
+            }.filter {
+                scope.game.actions.type(it.actionType)!!.isAllowed(it)
+            }
+            val scoreContext = availableActions.map {action ->
+                ScorerContext(scope.game.model, scope.playerIndex, action, providers)
+            }
+            val scores = scoreContext.map {scorerContext ->
+                val scored = config.mapNotNull { it.score(scorerContext) }
+                val sum = if (scored.isEmpty()) null else scored.sum()
+                scorerContext to sum
+            }.filter { it.second != null }
+
+            val bestScores = scores.bestBy { it.second!! }
+            val move = bestScores.random()
+            move.first.action
+        } else null
+    }
+
+}
 
 class ServerScoringAIs(private val aiRepository: AIRepository) {
     fun setup(events: EventSystem) {

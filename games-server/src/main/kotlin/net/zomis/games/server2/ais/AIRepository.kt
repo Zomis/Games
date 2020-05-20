@@ -25,7 +25,7 @@ class AIRepository {
         val repo = repositoryForGameType<T>(factory.gameType)
         repo.scoringAIs[factory.name] = factory
         val scoringFactory = AIFactoryScoring()
-        scoringFactory.createAI(events, factory.gameType, factory.name, factory.config.toList())
+        scoringFactory.createAI(events, factory.gameType, factory.name, factory.createController())
     }
 
     private fun <T: Any> alphaBetaConfigurations(factory: AlphaBetaAIFactory<T>): List<Pair<Int, AlphaBetaSpeedMode>> {

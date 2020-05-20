@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.Actionable
+import net.zomis.games.dsl.SplendorGame
 import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.dsl.impl.GameControllerContext
 import net.zomis.games.dsl.impl.GameControllerScope
@@ -13,6 +14,7 @@ import net.zomis.games.impl.SetGame
 import net.zomis.games.impl.SetGameModel
 import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.ais.ServerAIs
+import net.zomis.games.server2.ais.gamescorers.SplendorScorers
 import net.zomis.games.server2.clients.WSClient
 import net.zomis.games.server2.clients.getInt
 import net.zomis.games.server2.clients.getText
@@ -71,7 +73,8 @@ class DslRandomPlayTest {
     }
 
     val playingMap = mapOf<KClass<*>, GameController<*>>(
-        SetGameModel::class to { context: GameControllerScope<*> -> randomSetMove(context as GameControllerScope<SetGameModel>) }
+        SetGameModel::class to { context: GameControllerScope<*> -> randomSetMove(context as GameControllerScope<SetGameModel>) },
+        SplendorGame::class to { ctx -> SplendorScorers.aiBuyFirst.createController().invoke(ctx as GameControllerScope<SplendorGame>) }
     )
 
     @ParameterizedTest(name = "Random play {0}")
