@@ -278,12 +278,14 @@ object HanabiGame {
                     mapOf("index" to index, "cards" to cards)
                 }.filterNotNull()
             }
-            value("hand") {
-                val viewPerspective = this.viewer ?: it.currentPlayer
-                val cards = it.players[viewPerspective].cards.map {
-                    card -> card.known(it.isGameOver())
+            if (this.viewer != null) {
+                value("hand") {
+                    val viewPerspective = this.viewer ?: it.currentPlayer
+                    val cards = it.players[viewPerspective].cards.map {
+                        card -> card.known(it.isGameOver())
+                    }
+                    mapOf("index" to viewPerspective, "cards" to cards)
                 }
-                mapOf("index" to viewPerspective, "cards" to cards)
             }
             value("colors") {
                 it.colors.map {colorData ->

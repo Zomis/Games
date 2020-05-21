@@ -74,7 +74,7 @@
       </v-col>
     </v-row>
 
-    <v-row justify="center" class="translate-animation-wrapper">
+    <v-row justify="center" class="translate-animation-wrapper" v-if="view.hand">
       <transition name="translate-animation">
       <v-card :key="view.hand.index" class="animate-all player-hand" :class="{ 'active-player': view.currentPlayer == view.hand.index }">
         <v-card-title>
@@ -97,12 +97,9 @@
       </transition>
     </v-row>
 
-    <v-row>
-      <h2>Actions</h2>
-    </v-row>
-     <v-snackbar v-model="snackbar">
-        {{snackbarText}}
-     </v-snackbar>
+    <v-snackbar v-model="snackbar">
+      {{snackbarText}}
+    </v-snackbar>
   </v-container>
 </template>
 
@@ -144,6 +141,7 @@ export default {
   },
   computed: {
     otherPlayers() {
+      if (!this.view.hand) return this.view.others;
       let myIndex = this.view.hand.index;
       return [...this.view.others.slice(myIndex), ...this.view.others.slice(0, myIndex)]
     },
