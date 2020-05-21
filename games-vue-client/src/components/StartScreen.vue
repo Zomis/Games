@@ -1,10 +1,6 @@
 <template>
   <v-container fluid>
   <v-row>
-    <v-col cols="12">
-      <h1 class="login-name">Welcome, {{ loginName }}</h1>
-    </v-col>
-
     <v-col cols="12" md="6" lg="4" v-for="(users, gameType) in lobby" :key="gameType">
     <v-card class="games">
       <v-toolbar color="cyan" dark>
