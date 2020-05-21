@@ -19,7 +19,7 @@
     </v-row>
 
     <v-row justify="center">
-      <v-col md="auto" v-for="player in view.others" :key="'player-' + player.index" class="animate-all">
+      <v-col md="auto" v-for="player in otherPlayers" :key="'player-' + player.index" class="animate-all">
         <v-card :class="{ 'active-player': view.currentPlayer == player.index }" class="animate-all">
           <v-card-title>
             <span class="player-name">
@@ -143,6 +143,10 @@ export default {
     }
   },
   computed: {
+    otherPlayers() {
+      let myIndex = this.view.hand.index;
+      return [...this.view.others.slice(myIndex), ...this.view.others.slice(0, myIndex)]
+    },
     clueOptions() {
       if (!this.actions.GiveClue) return [];
       return Object.keys(this.actions.GiveClue).filter(key => !key.includes('player'))
