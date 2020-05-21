@@ -1,7 +1,6 @@
 <template>
   <v-container fluid>
   <v-row>
-    <Invites />
     <v-col cols="12">
       <h1 class="login-name">Welcome, {{ loginName }}</h1>
     </v-col>
