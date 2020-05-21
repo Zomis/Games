@@ -137,7 +137,7 @@ export default {
       this.unfinishedGames = message.games
     },
     resumeGame(gameType, gameId) {
-      Socket.send(`{ "type": "LoadGame", "gameType": "${gameType}", "gameId": "${gameId}" }`);
+      this.$router.push(`/games/${gameType}/${gameId}`)
     },
     invite(gameType, playerId) {
       this.$store.commit("lobby/createInvite", gameType);

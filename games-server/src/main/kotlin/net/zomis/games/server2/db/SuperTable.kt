@@ -54,12 +54,6 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         events.listen("eliminate player in Database", PlayerEliminatedEvent::class, { dbEnabled(it.game) }, {event ->
             this.playerEliminated(event)
         })
-        events.listen("load game", ClientJsonMessage::class, { it.data.getTextOrDefault("type", "") == "LoadGame" }, { event ->
-            TODO("Delete LoadGame call. Should no longer be used")
-            //val unfinishedGame = features[UnfinishedGames::class]!!.unfinishedGames.filter { it.gameId == gameId }.single()
-            //val dbGame = this.getGame(unfinishedGame)
-            // val game = gameType.resumeGame(dbGame.summary.gameId, dbGame.game)
-        })
         return listOf(this.table).map { it.createTableRequest() }
     }
 
@@ -341,7 +335,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
                 } else null
                 PlayerInGame(PlayerView(playerId, playerName), index, playerResults)
             }
-        }
+        }.sortedBy { it.playerIndex }
         val unfinished = sks.any { it.key == this.SK_UNFINISHED || it.key == "tag:$SK_UNFINISHED" }
         val hidden = gameDetails.hasAttribute(Fields.GAME_HIDDEN.fieldName)
         val gameState = when {
@@ -364,7 +358,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         val config = if (gameDetails.hasAttribute(Fields.GAME_OPTIONS.fieldName)) {
             val gameConfigJSON =
                     gameDetails.getJSON(Fields.GAME_OPTIONS.fieldName)
-            JacksonTools.readValue(gameConfigJSON, setup.configClass().java)
+            if (gameConfigJSON.length >= 10) JacksonTools.readValue(gameConfigJSON, setup.configClass().java) else setup.getDefaultConfig()
         } else setup.getDefaultConfig()
 
         return DBGameSummary(gameSpec, config, Prefix.GAME.extract(gameId), playersInGame, gameType, gameState.value,
