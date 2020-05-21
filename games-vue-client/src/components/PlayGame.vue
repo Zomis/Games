@@ -9,14 +9,12 @@
 import supportedGames from "@/supportedGames"
 import { mapState } from "vuex";
 import GameHead from "@/components/games/common/GameHead";
-import GameResult from "@/components/games/common/GameResult";
 
 export default {
   name: "PlayGame",
   props: ["gameType", "gameId", "showRules"],
   components: {
-    GameHead,
-    GameResult
+    GameHead
   },
   data() {
     return {

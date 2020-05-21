@@ -8,7 +8,6 @@
 <script>
 import supportedGames from "@/supportedGames"
 import GameHead from "@/components/games/common/GameHead";
-import GameResult from "@/components/games/common/GameResult";
 import kotlin from "kotlin"
 
 function valueToJS(value, path) {
@@ -41,8 +40,7 @@ export default {
   name: "PlayLocalGame",
   props: ["gameInfo", "showRules"],
   components: {
-    GameHead,
-    GameResult
+    GameHead
   },
   data() {
     return {

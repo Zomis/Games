@@ -3,7 +3,6 @@
     <GameHead :gameInfo="gameInfo"></GameHead>
     <Entity v-if="core" :entity="core" class="core" v-bind="{ game, click }">
     </Entity>
-    <GameResult :gameInfo="gameInfo"></GameResult>
   </div>
 </template>
 
@@ -11,7 +10,6 @@
 import Socket from "../../socket";
 import Entity from "./Entity";
 import GameHead from "../games/common/GameHead";
-import GameResult from "../games/common/GameResult";
 
 var games = require("../../../../games-js/web/games-js");
 if (typeof games["games-js"] !== "undefined") {
@@ -54,7 +52,6 @@ export default {
   },
   components: {
     GameHead,
-    GameResult,
     Entity
   },
   methods: {

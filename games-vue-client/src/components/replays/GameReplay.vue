@@ -44,7 +44,6 @@
 import supportedGames from "@/supportedGames"
 import axios from "axios";
 import GameHead from "@/components/games/common/GameHead";
-import GameResult from "@/components/games/common/GameResult";
 import AiQuery from "./AiQuery";
 
 function unixtimeToString(date) {
@@ -65,7 +64,6 @@ export default {
     },
     components: {
         GameHead,
-        GameResult,
         AiQuery,
         ...supportedGames.components() // TODO: This might not be needed
     },

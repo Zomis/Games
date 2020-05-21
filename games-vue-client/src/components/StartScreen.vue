@@ -88,7 +88,6 @@
 
 <script>
 import Socket from "@/socket";
-import Invites from "@/components/invites/Invites";
 
 import { mapState } from "vuex";
 import supportedGames from "@/supportedGames";
@@ -102,8 +101,7 @@ export default {
     };
   },
   components: {
-    ...supportedGames.components(),
-    Invites
+    ...supportedGames.components()
   },
   methods: {
     vsify(players) {
