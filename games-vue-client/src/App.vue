@@ -4,7 +4,16 @@
       <router-link to="/">
         <v-toolbar-title v-text="title"></v-toolbar-title>
       </router-link>
-      <v-spacer></v-spacer>
+      <template v-if="yourPlayer.loggedIn">
+        <v-spacer />
+        <span>Welcome, {{ yourPlayer.name }}</span>
+        <v-avatar :size="48" :style="{ 'margin-left': '4px' }">
+          <img
+            :src="yourPlayer.picture"
+            :alt="yourPlayer.name" />
+        </v-avatar>
+      </template>
+      <v-spacer />
       <v-toolbar-items>
         <v-btn text to="/">Home</v-btn>
         <v-btn text @click="logout()">Logout</v-btn>
@@ -22,6 +31,7 @@
 <script>
 import Socket from "./socket";
 import store from "./store";
+import { mapState } from "vuex";
 
 export default {
   name: "App",
@@ -34,11 +44,17 @@ export default {
   methods: {
     logout() {
       Socket.disconnect();
+      this.$store.commit("lobby/logout");
       this.$router.push({
         name: "ServerSelection",
         params: { logout: true }
       });
     }
+  },
+  computed: {
+    ...mapState("lobby", {
+      yourPlayer(state) { return state.yourPlayer }
+    })
   }
 };
 </script>

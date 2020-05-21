@@ -34,7 +34,7 @@ function emptyInvite() {
 const lobbyStore = {
   namespaced: true,
   state: {
-    yourPlayer: { name: "(UNKNOWN)", playerId: "UNKNOWN", picture: "UNKNOWN" },
+    yourPlayer: { name: "(UNKNOWN)", playerId: "UNKNOWN", picture: "UNKNOWN", loggedIn: false },
     inviteWaiting: emptyInvite(),
     invites: [],
     inviteViews: {},
@@ -46,8 +46,12 @@ const lobbyStore = {
       state.yourPlayer = {
         name: player.name,
         playerId: player.playerId,
-        picture: player.picture
+        picture: player.picture,
+        loggedIn: true
       }
+    },
+    logout(state) {
+      state.yourPlayer.loggedIn = false;
     },
     inviteStep(state, step) {
       state.inviteWaiting.inviteStep = step
