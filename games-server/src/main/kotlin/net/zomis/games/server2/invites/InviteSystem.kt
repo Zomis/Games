@@ -30,6 +30,7 @@ data class Invite(
     val id: String,
     val host: Client
 ) {
+    var cancelled: Boolean = false
     private val logger = KLoggers.logger(this)
 
     private val awaiting: MutableList<Client> = mutableListOf()
@@ -43,6 +44,7 @@ data class Invite(
         .handler("view", this::sendInviteView)
 
     fun sendInvite(message: ClientJsonMessage) {
+        if (cancelled) throw IllegalStateException("Invite is cancelled")
         val inviteTargets = message.data.get("invite")
         val targetClients = inviteTargets.map { it.asText() }.map {playerId ->
             tools.gameClients(gameType)!!.findPlayerId(playerId)
@@ -52,6 +54,7 @@ data class Invite(
     }
 
     fun sendInviteTo(targetClients: List<Client>) { // It is possible to invite the same AI twice, therefore a list
+        if (cancelled) throw IllegalStateException("Invite is cancelled")
         logger.info { "Sending invite $this to $targetClients" }
         this.awaiting.addAll(targetClients)
         targetClients.forEach {
@@ -66,6 +69,7 @@ data class Invite(
         "type" to "InviteView",
         "inviteId" to this.id,
         "gameType" to this.gameType,
+        "cancelled" to this.cancelled,
         "minPlayers" to this.playerRange.first,
         "maxPlayers" to this.playerRange.last,
         "options" to null,
@@ -88,6 +92,7 @@ data class Invite(
     }
 
     fun startCheck() {
+        if (cancelled) throw IllegalStateException("Invite is cancelled")
         if (playerCount() in playerRange) {
             tools.createGameCallback(this)
         } else {
@@ -99,6 +104,7 @@ data class Invite(
         if (message.client != this.host) throw IllegalArgumentException("Only invite host can cancel invite")
 
         logger.info { "Cancelling invite $this" }
+        this.cancelled = true
         val inviteCancelledMessage = mapOf("type" to "InviteCancelled", "inviteId" to this.id)
         this.awaiting.forEach {cl ->
             cl.send(inviteCancelledMessage)
@@ -107,16 +113,19 @@ data class Invite(
             cl.send(inviteCancelledMessage)
         }
         this.host.send(inviteCancelledMessage)
+        this.broadcastInviteView()
 
         tools.removeCallback(this)
     }
 
     fun respond(message: ClientJsonMessage) {
+        if (cancelled) throw IllegalStateException("Invite is cancelled")
         val response = message.data.get("accepted").asBoolean()
         this.respond(message.client, response)
     }
 
     fun respond(client: Client, accepted: Boolean) {
+        if (cancelled) throw IllegalStateException("Invite is cancelled")
         logger.info { "Client $client responding to invite $this: $accepted" }
         this.host.send(mapOf(
             "type" to "InviteResponse",

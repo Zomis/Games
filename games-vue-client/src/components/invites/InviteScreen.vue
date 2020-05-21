@@ -1,6 +1,7 @@
 <template>
     <v-container fluid>
         <h3 v-if="invite">{{ invite.host.name }} is preparing a game of {{ invite.gameType }}</h3>
+        <v-alert type="error" v-if="invite.cancelled">Invite Cancelled</v-alert>
         <v-card
           class="invite-step mb-12"
           color="grey lighten-1"
