@@ -110,19 +110,7 @@ export default {
       return result;
     },
     observe(game) {
-      let matchingGame = this.activeGames.find(
-        e =>
-          e.gameInfo.game == game.gameType && e.gameInfo.gameId == game.gameId
-      );
-      if (matchingGame) {
-        return;
-      }
-      this.$store.dispatch("observe", {
-        gameType: game.gameType,
-        gameId: game.gameId,
-        players: game.players,
-        yourIndex: -42
-      });
+      this.$router.push(`/games/${game.gameType}/${game.gameId}`)
     },
     requestGameList() {
       Socket.send(`{ "type": "GameList" }`);

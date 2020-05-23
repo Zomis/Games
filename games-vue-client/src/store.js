@@ -37,9 +37,6 @@ const store = new Vuex.Store({
       }
       return Promise.resolve()
     },
-    observe(context, gameInfo) {
-      context.commit(`${gameInfo.gameType}/createGame`, gameInfo);
-    },
     viewRequest(context, gameInfo) {
       Socket.send(
         `{ "type": "ViewRequest", "gameType": "${
