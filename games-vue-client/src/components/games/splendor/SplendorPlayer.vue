@@ -20,8 +20,8 @@
                         <div class="ma-1" v-for="(value, index) in player.discounts" :key="'resource-' + index">
                             <span :class="'resource-' + index">{{ value }}</span>
                         </div>
-                        <div v-for="(value, index) in player.money" :key="'gem-' + index" :class="{ discardable: actionable
-                 && actionable.discardMoney && actionable.discardMoney['discardMoney-' + index] }" @click="discard(index)">
+                        <div v-for="(value, index) in player.money" :key="'gem-' + index" @click="discard(index)"
+                            :class="{ discardable: controllable && actions.available.discardMoney && actions.available.discardMoney['discardMoney-' + index] }">
                             <span :class="'gems-' + index">{{ value }}</span>
                         </div>
                     </v-row>
@@ -30,7 +30,7 @@
             <p v-if="player.reserved">Reserved Cards: {{ player.reserved }}</p>
             <v-row justify="start">
                 <v-col cols="4" v-for="card in player.reservedCards" :key="card.id">
-                    <SplendorCard :card="card" :actions="actionable" :onAction="onAction" />
+                    <SplendorCard :card="card" :actions="actions" />
                 </v-col>
             </v-row>
         </v-card-text>
@@ -41,11 +41,13 @@ import SplendorCard from "./SplendorCard"
 
 export default {
     name: "SplendorPlayer",
-    props: ["player", "actionable", "onAction", "playerInfo"],
+    props: ["player", "controllable", "actions", "playerInfo"],
     components: { SplendorCard },
     methods: {
         discard(moneyType) {
-            this.onAction("discardMoney", "discardMoney-" + moneyType)
+            if (this.controllable) {
+                this.actions.perform("discardMoney", "discardMoney-" + moneyType)
+            }
         }
     }
 }

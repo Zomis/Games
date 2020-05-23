@@ -33,14 +33,14 @@
 <script>
 export default {
     name: "SplendorCard",
-    props: ["card", "noble", "actions", "onAction"],
+    props: ["card", "noble", "actions"],
     data() {
         return { showMenu: false }
     },
     methods: {
         performAction(action) {
             console.log(action, this.card, this.actions);
-            this.onAction(action, action + '-' + this.card.id)
+            this.actions.perform(action, action + '-' + this.card.id)
         }
     },
     computed: {
@@ -51,13 +51,13 @@ export default {
             return [];
         },
         isReservedBuyable() {
-            return this.actions && this.actions.buyReserved && this.actions.buyReserved['buyReserved-' + this.card.id];
+            return this.actions.available.buyReserved && this.actions.available.buyReserved['buyReserved-' + this.card.id];
         },
         isBuyable() {
-            return this.actions && this.actions.buy && this.actions.buy['buy-' + this.card.id]
+            return this.actions.available.buy && this.actions.available.buy['buy-' + this.card.id]
         },
         isActionable() {
-            let reservable = this.actions && this.actions.buy && this.actions.reserve['reserve-' + this.card.id];
+            let reservable = this.actions.available.buy && this.actions.available.reserve['reserve-' + this.card.id];
             return this.isBuyable || reservable || this.isReservedBuyable
         },
         discountColor() {

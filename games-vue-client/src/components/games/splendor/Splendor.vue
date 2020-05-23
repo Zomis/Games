@@ -2,7 +2,9 @@
     <v-container fluid>
         <v-row class="players">
             <v-col v-for="(player, index) in view.players" :key="index">
-                <SplendorPlayer :player="player" :playerInfo="players[index]" :actionable="actions" :onAction="onAction" :class="{activePlayer: index == view.currentPlayer}" />
+                <SplendorPlayer :player="player" :playerInfo="players[index]"
+                 :controllable="index == view.viewer"
+                 :actions="actions2" :class="{activePlayer: index == view.currentPlayer}" />
             </v-col>
         </v-row>
         <v-row>
@@ -10,7 +12,7 @@
                 <v-row v-for="level in view.cardLevels" :key="level.level" :class="'card-level-' + level.level">
                     <v-col><v-card><v-card-title>{{ level.remaining }}</v-card-title></v-card></v-col>
                     <v-col v-for="card in level.board" :key="card.id">
-                        <SplendorCard :card="card" :actions="actions" :onAction="onAction" />
+                        <SplendorCard :card="card" :actions="actions2" />
                     </v-col>
                 </v-row>
             </v-col>
@@ -22,7 +24,7 @@
                     <v-card-text>
                         <v-row v-for="(money, index) in view.stock" :key="index">
                             <v-col>
-                                <span :class="{ ['bank-' + index]: true, actionable: actions['takeMoney-' + index] }" @click="takeMoney(index)">{{ money }}</span>
+                                <span :class="{ ['bank-' + index]: true, actionable: actions2.available['takeMoney-' + index] }" @click="takeMoney(index)">{{ money }}</span>
                             </v-col>
                         </v-row>
                    </v-card-text>
@@ -37,11 +39,6 @@
                 </v-row>
             </v-col>
         </v-row>
-        <v-row class="player">
-            <v-col>
-                <SplendorPlayer :player="player" :playerInfo="players[view.viewer]" controller :actionable="actions" :onAction="onAction" />
-            </v-col>
-        </v-row>
     </v-container>
 </template>
 <script>
@@ -51,12 +48,12 @@ import SplendorNoble from "./SplendorNoble"
 
 export default {
     name: "Splendor",
-    props: ["view", "actions", "actionChoice", "onAction", "players"],
+    props: ["view", "actions2", "players"],
     components: { SplendorPlayer, SplendorCard, SplendorNoble },
     methods: {
         takeMoney(moneyType) {
             console.log(moneyType)
-            this.onAction("takeMoney", 'take-' + moneyType)
+            this.actions2.perform("takeMoney", 'take-' + moneyType)
         }
     },
     computed: {
