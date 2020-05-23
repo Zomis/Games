@@ -11,7 +11,9 @@
             <v-divider />
             <v-row>Discard</v-row>
             <transition-group name="list-complete" tag="div">
-              <HanabiCard v-for="card in colorData.discard" class="list-complete-item" :key="card.id" :card="card" />
+              <div v-for="card in colorData.discard" class="list-complete-item discarded-card ma-1" :key="card.id" :class="'color-' + card.color">
+                <span>{{ card.value }}</span>
+              </div>
             </transition-group>
           </v-card-text>
         </v-card>
@@ -180,6 +182,16 @@ export default {
 .color-RAINBOW {
   background-color: #ff7f00 !important;
 }
+
+.discarded-card {
+  padding: 5px 10px;
+  margin: 0px 5px;
+  border-style: solid;
+  border-width: thin;
+  border-color: black !important;
+  border-radius: 20%;
+}
+
 
 .animate-all {
   transition: all 1.5s ease;
