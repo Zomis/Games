@@ -10,15 +10,21 @@ import net.zomis.games.server2.ais.scorers.ScorerScope
 object HanabiScorers {
     fun ais(): List<ScorerAIFactory<Hanabi>> {
         return listOf(
-            aiFirst()
+            aiFirst(),
+            aiFirstImproved()
+            // AI Second is so far too slow to play
         )
     }
     fun aiFirst() = ScorerAIFactory("Hanabi", "#AI_Probabilistic_Player",
         playProbability.weight(1.01), discardProbability.weight(0.5), playableClues.weight(2.0),
         indispensibleClues.weight(0.7))
 
+    fun aiFirstImproved() = ScorerAIFactory("Hanabi", "#AI_Probabilistic_Player_2",
+        playProbability.weight(1.01), discardProbability.weight(0.5), playableClues.weight(2.0),
+        indispensibleClues.weight(0.7), playFromRight, discardFromLeft)
+
     fun aiSecond() = ScorerAIFactory("Hanabi", "#AI_Probabilistic_Player_ClueGiver",
-        playProbability.weight(1.5), discardProbability.weight(0.5), playableCardPlayableClue.weight(2.0),
+        playProbability.weight(1.01), discardProbability.weight(0.2), playableCardPlayableClue.weight(2.0),
         indispensibleCardIndispensibleClue.weight(1.5), playFromRight, discardFromLeft)
 
     fun random() = ScorerAIFactory("Hanabi", "#AI_Random", scorers.simple { 1.0 })
@@ -28,15 +34,13 @@ object HanabiScorers {
     val clue = scorers.conditional { action.actionType == HanabiGame.giveClue.name }
 
     val playableClues = scorers.conditionalType(HanabiClue::class) {
-        action.game.players[action.parameter.player].cards.cards.filter {
-            it.matches(action.parameter) && HanabiProbabilities.playable(model).invoke(it)
-        }.isNotEmpty().let { if (it) 1.0 else null }
+        action.game.players[action.parameter.player].cards.cards.filter { it.matches(action.parameter) }
+            .sumByDouble { if (HanabiProbabilities.playable(model).invoke(it)) 1.0 else -0.1 }
     } as Scorer<Hanabi, Any>
 
     val indispensibleClues = scorers.conditionalType(HanabiClue::class) {
-        action.game.players[action.parameter.player].cards.cards.filter {
-            it.matches(action.parameter) && HanabiProbabilities.indispensible(model).invoke(it)
-        }.isNotEmpty().let { if (it) 1.0 else null }
+        action.game.players[action.parameter.player].cards.cards.filter { it.matches(action.parameter) }
+                .sumByDouble { if (HanabiProbabilities.indispensible(model).invoke(it)) 1.0 else -0.1 }
     } as Scorer<Hanabi, Any>
 
     val probabilityProvider: ScorerAnalyzeProvider<Hanabi, HanabiHandProbabilities> = {ctx ->
