@@ -1,5 +1,8 @@
 <template>
     <v-container fluid>
+        <v-row>
+            <v-col>Round {{ view.round }}</v-col>
+        </v-row>
         <v-row class="players">
             <v-col v-for="(player, index) in view.players" :key="index">
                 <SplendorPlayer :player="player" :playerInfo="players[index]"
