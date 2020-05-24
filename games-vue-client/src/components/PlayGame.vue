@@ -3,6 +3,9 @@
     <GameHead v-if="gameInfo" :gameInfo="gameInfo" :playerCount="playerCount" :view="view" :eliminations="eliminations" />
     <component v-if="view" :is="viewComponent" :view="view" :actions2="actions2" :onAction="action" :actions="actions" :actionChoice="actionChoice" :players="players" />
     <v-btn v-if="!isObserver" @click="clearActions()" :disabled="actionChoice === null">Reset Action</v-btn>
+    <v-snackbar v-model="snackbar">
+      {{snackbarText}}
+    </v-snackbar>
   </div>
 </template>
 <script>
@@ -20,7 +23,9 @@ export default {
     return {
       supportedGames: supportedGames,
       supportedGame: supportedGames.games[this.gameType],
-      views: []
+      views: [],
+      snackbar: false,
+      snackbarText: 'Welcome'
     }
   },
   mounted() {
@@ -56,6 +61,14 @@ export default {
       this.$store.dispatch("DslGameState/resetActionsTo", { gameInfo: this.gameInfo, name: actionName, action: actionValue });
     },
   },
+  watch: {
+    gameOver(val) {
+      if(val){
+        this.snackbarText = 'The game is over';
+        this.snackbar = true;
+      }
+    }
+  },
   computed: {
     viewComponent() {
       return this.supportedGame.component
@@ -72,6 +85,9 @@ export default {
         clear: this.clearActions,
         resetTo: this.resetActionsTo
       }
+    },
+    gameOver() {
+      return this.eliminations.length == this.players.length
     },
     ...mapState("DslGameState", {
       gameInfo(state) {
