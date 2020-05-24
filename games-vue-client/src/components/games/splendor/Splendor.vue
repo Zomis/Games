@@ -27,7 +27,12 @@
                     <v-card-text>
                         <v-row v-for="(money, index) in view.stock" :key="index">
                             <v-col>
-                                <span :class="{ ['bank-' + index]: true, actionable: actions2.available['takeMoney-' + index] }" @click="takeMoney(index)">{{ money }}</span>
+                                <span :class="{
+                                    ['bank-' + index]: true,
+                                    actionable: actions2.available.takeMoney['take-' + index],
+                                    'chosen-once': (actions2.chosen) ? actions2.chosen.choices.includes(index) : false,
+                                    'chose-again': (actions2.chosen) ? actions2.chosen.choices.includes(index) && actions2.available.takeMoney['take-' + index] : false}"
+                                    @click="takeMoney(index)">{{ money }}</span>
                             </v-col>
                         </v-row>
                    </v-card-text>
@@ -121,5 +126,15 @@ export default {
 .bank-WHITE,
 .bank-wildcards {
     color: var(--splendor-black) !important;
+}
+
+.chosen-once,
+.actionable:hover {
+    border-width: thick !important;
+    border-color: var(--splendor-yellow) !important;
+}
+.chose-again:hover {
+    border-width: thick !important;
+    border-color: var(--splendor-red) !important;
 }
 </style>
