@@ -259,4 +259,8 @@ export default {
     transform: scale(1);
   }
 }
+
+.discarded-card {
+    color: black !important;
+}
 </style>
