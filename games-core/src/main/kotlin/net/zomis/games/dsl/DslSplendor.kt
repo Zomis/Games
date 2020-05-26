@@ -354,7 +354,7 @@ object DslSplendor {
                             if (first == second) {
                                 actionParameter(MoneyChoice(listOf(first, second)))
                             } else {
-                                option(MoneyType.values().asIterable()) {third ->
+                                option(MoneyType.values().asIterable().minus(first).minus(second)) {third ->
                                     actionParameter(MoneyChoice(listOf(first, second, third)))
                                 }
                             }
