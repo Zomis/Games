@@ -145,7 +145,8 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
 
     fun showView(game: GameImpl<T>) {
         println()
-        display(0, "Game:", game.view(0))
+        val currentPlayer = game.view(0)["currentPlayer"] as Int?
+        display(0, "Game:", game.view(currentPlayer ?: 0))
     }
 
 }
