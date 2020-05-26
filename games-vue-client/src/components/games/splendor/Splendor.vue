@@ -29,9 +29,10 @@
                             <v-col>
                                 <span :class="{
                                     ['bank-' + index]: true,
-                                    actionable: actions2.available.takeMoney['take-' + index],
+                                    actionable: actions2.available.takeMoney && actions2.available.takeMoney['take-' + index],
                                     'chosen-once': (actions2.chosen) ? actions2.chosen.choices.includes(index) : false,
-                                    'chose-again': (actions2.chosen) ? actions2.chosen.choices.includes(index) && actions2.available.takeMoney['take-' + index] : false}"
+                                    'chose-again': (actions2.chosen) ? actions2.chosen.choices.includes(index) && actions2.available.takeMoney
+                                        && actions2.available.takeMoney['take-' + index] : false}"
                                     @click="takeMoney(index)">{{ money }}</span>
                             </v-col>
                         </v-row>

@@ -27,14 +27,13 @@
           <v-icon>mdi-skip-next</v-icon>
         </v-btn>
       </v-layout>
-      <v-flex grow>
+      <v-flex grow v-if="replay">
         <GameHead xs12 :gameInfo="gameInfo" :view="currentView" :eliminations="currentEliminations" v-if="gameInfo"></GameHead>
         <v-alert type="warning" v-for="error in replay.errors" :key="error">{{ error }}</v-alert>
         <div xs12>
             Started at {{ timeStarted }} - Ended at {{ timeLastAction }}
         </div>
-        <component xs12 :is="gameComponent" :actions="{}" :view="currentView" :players="players" />
-        <GameResult xs12 :gameInfo="gameInfo"></GameResult>
+        <component xs12 :is="gameComponent" :actions="{}" :actions2="actions2" :view="currentView" :players="players" />
       </v-flex>
     </v-layout>
     <AiQuery :gameInfo="gameInfo" :gamePosition="position" />
@@ -59,6 +58,13 @@ export default {
             running: false,
             timer: null,
             position: 0,
+            actions2: {
+                chosen: null,
+                perform: () => {},
+                available: {},
+                clear: () => {},
+                resetTo: () => {}
+            },
             replay: null
         }
     },

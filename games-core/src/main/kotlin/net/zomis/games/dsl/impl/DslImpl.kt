@@ -145,12 +145,15 @@ class GameViewContext<T : Any>(val model: T, private val eliminations: PlayerEli
 
 class StateKeeper {
     private val currentAction = mutableMapOf<String, Any>()
+    var replayMode = false
 
     fun lastMoveState(): Map<String, Any?> = currentAction.toMap()
     fun clear() {
         currentAction.clear()
+        replayMode = false
     }
     fun setState(state: Map<String, Any>) {
+        replayMode = true
         currentAction.putAll(state)
     }
 
@@ -169,7 +172,6 @@ class StateKeeper {
 }
 class ReplayState(val stateKeeper: StateKeeper, override val playerEliminations: PlayerEliminations): EffectScope, ReplayScope, ReplayableScope {
     private val mostRecent = mutableMapOf<String, Any>()
-    private var replayMode = false
 
     override fun replayable(): ReplayableScope {
         return this
@@ -179,12 +181,11 @@ class ReplayState(val stateKeeper: StateKeeper, override val playerEliminations:
         stateKeeper.clear()
         if (state != null) {
             stateKeeper.setState(state)
-            replayMode = true
         }
     }
 
     private fun <T: Any> replayable(key: String, default: () -> T): T {
-        if (stateKeeper.containsKey(key) && !replayMode) {
+        if (stateKeeper.containsKey(key) && !stateKeeper.replayMode) {
             throw IllegalStateException("State was already saved once for key $key. Use a different key")
         }
         if (stateKeeper.containsKey(key)) {
