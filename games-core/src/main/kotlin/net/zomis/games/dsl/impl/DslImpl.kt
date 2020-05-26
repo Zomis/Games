@@ -169,6 +169,7 @@ class StateKeeper {
 }
 class ReplayState(val stateKeeper: StateKeeper, override val playerEliminations: PlayerEliminations): EffectScope, ReplayScope, ReplayableScope {
     private val mostRecent = mutableMapOf<String, Any>()
+    private var replayMode = false
 
     override fun replayable(): ReplayableScope {
         return this
@@ -178,10 +179,14 @@ class ReplayState(val stateKeeper: StateKeeper, override val playerEliminations:
         stateKeeper.clear()
         if (state != null) {
             stateKeeper.setState(state)
+            replayMode = true
         }
     }
 
     private fun <T: Any> replayable(key: String, default: () -> T): T {
+        if (stateKeeper.containsKey(key) && !replayMode) {
+            throw IllegalStateException("State was already saved once for key $key. Use a different key")
+        }
         if (stateKeeper.containsKey(key)) {
             return stateKeeper[key] as T
         }
