@@ -55,7 +55,7 @@ object SkullGame {
     val play = createActionType("play", SkullCard::class)
     val game = createGame<SkullGameModel>("Skull") {
         setup(SkullGameConfig::class) {
-            players(2..16)
+            players(3..16)
             defaultConfig { SkullGameConfig() }
             init {
                 SkullGameModel(config, playerCount)
