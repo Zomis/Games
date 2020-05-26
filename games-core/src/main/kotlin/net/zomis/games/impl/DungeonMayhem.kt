@@ -273,7 +273,6 @@ object DungeonMayhemDsl {
                 val decks = listOf(DungeonMayhemDecks.blue(), DungeonMayhemDecks.purple(),
                         DungeonMayhemDecks.red(), DungeonMayhemDecks.yellow()).shuffled()
                 val deckStrings = replayable.strings("characters") { decks.map { it.first } }
-                    .let { listOf("purple", "yellow", "red", "blue") }
 
                 game.players.forEachIndexed { index, player ->
                     player.color = deckStrings[index]
@@ -281,9 +280,6 @@ object DungeonMayhemDsl {
                     player.drawCard(replayable, "gameStart", 3)
                 }
                 newTurnDrawCard(Unit)
-
-                val pl = game.players.find { it.color == "purple" }!!
-                pl.deck.let { it.card(it.cards.find { it.name == "Clever Disguise" }!!).moveTo(pl.hand) }
             }
             fun CardZone<DungeonMayhemCard>.view(): List<Map<String, Any>> {
                 return this.cards.map {
