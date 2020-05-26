@@ -99,7 +99,7 @@ export default {
         return state.games[this.gameInfo.gameId].gameData.actionChoice;
       },
       eliminations(state) {
-        if (!state.games[this.gameId]) { return null }
+        if (!state.games[this.gameId]) { return [] }
         return state.games[this.gameInfo.gameId].gameData.eliminations;
       },
       view(state) {
