@@ -4,6 +4,7 @@ import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.dsl.sourcedest.ArtaxGame
 import net.zomis.games.dsl.sourcedest.TTSourceDestinationGames
+import net.zomis.games.impl.DungeonMayhemDsl
 import net.zomis.games.impl.HanabiGame
 import net.zomis.games.impl.SetGame
 import net.zomis.games.impl.SkullGame
@@ -20,6 +21,7 @@ object ServerGames {
         "Hanabi" to HanabiGame.game,
         "Set" to SetGame.game,
         "Skull" to SkullGame.game,
+        "Dungeon Mayhem" to DungeonMayhemDsl.game,
         "Splendor" to DslSplendor.splendorGame,
         "DSL-TTT3D" to DslTTT3D().game,
         "DSL-UR" to DslUR().gameUR

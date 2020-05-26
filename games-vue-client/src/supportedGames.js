@@ -133,6 +133,15 @@ const supportedGames = {
         },
         component: TreeViewGame
     },
+    "Dungeon Mayhem": {
+        dsl: true,
+        enabled: false,
+        actions: {
+            play: (index) => "play-" + index,
+            target: (index) => "target-" + index
+        },
+        component: TreeViewGame
+    },
     "Artax": {
         displayName: "Artax",
         dsl: gamejs.net.zomis.games.dsl.sourcedest.ArtaxGame.gameArtax,
