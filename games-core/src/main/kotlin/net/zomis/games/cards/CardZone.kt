@@ -88,7 +88,7 @@ class CardZone<T>(internal val cards: MutableList<T> = mutableListOf()) {
         return name ?: super.toString()
     }
 
-    fun asSequence(): Sequence<Card<T>> = this.cards.asSequence().map { card(it) }
+    fun asSequence(): Sequence<Card<T>> = this.cards.toList().asSequence().map { card(it) }
 
     fun moveAllTo(destination: CardZone<T>) {
         while (this.cards.isNotEmpty()) {
