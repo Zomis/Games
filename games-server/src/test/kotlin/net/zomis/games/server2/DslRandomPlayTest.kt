@@ -15,6 +15,7 @@ import net.zomis.games.impl.SetGameModel
 import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.ais.gamescorers.SplendorScorers
+import net.zomis.games.server2.ais.serialize
 import net.zomis.games.server2.clients.WSClient
 import net.zomis.games.server2.clients.getInt
 import net.zomis.games.server2.clients.getText
@@ -136,7 +137,7 @@ class DslRandomPlayTest {
                 } else {
                     serverAIs.randomAction(game, playerIndex).firstOrNull()
                 }
-            }
+            }.map { it.serialize(gameImpl) }
             if (actions.isEmpty()) {
                 p1.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
                 p1.expectJsonObject { it.getText("type") == "GameView" }
