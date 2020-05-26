@@ -2,6 +2,7 @@ package net.zomis.games.dsl.impl
 
 import net.zomis.games.PlayerEliminations
 import net.zomis.games.dsl.*
+import kotlin.reflect.KClass
 
 class GameRulesContext<T : Any>(
     val model: T,
@@ -47,6 +48,10 @@ class GameRulesContext<T : Any>(
         return this.ruleList[actionType].let {
             if (it != null) { ActionTypeImplEntry(model, replayable, it.actionDefinition, it) } else null
         }
+    }
+
+    override fun <E : Any> trigger(triggerClass: KClass<E>): GameRuleTrigger<T, E> {
+        return GameRuleTriggerImpl(model, replayable, eliminations)
     }
 }
 
@@ -140,5 +145,56 @@ class GameActionRuleContext<T : Any, A : Any>(
 
     override fun createAction(playerIndex: Int, parameter: A): Action<T, A>
         = Action(model, playerIndex, actionType, parameter)
+
+}
+
+data class GameRuleTriggerContext<T : Any, E : Any>(
+    override val game: T,
+    override val trigger: E,
+    override val replayable: ReplayableScope,
+    override val eliminations: PlayerEliminations
+): GameRuleTriggerScope<T, E>
+
+class GameRuleTriggerImpl<T : Any, E : Any>(
+    val model: T,
+    val replayable: ReplayState,
+    val eliminations: PlayerEliminations
+) : GameRuleTrigger<T, E> {
+    private val effects = mutableListOf<GameRuleTriggerScope<T, E>.() -> Unit>()
+    private val mappings = mutableListOf<GameRuleTriggerScope<T, E>.() -> E>()
+    private val ignoreConditions = mutableListOf<GameRuleTriggerScope<T, E>.() -> Boolean>()
+    private val after = mutableListOf<GameRuleTriggerScope<T, E>.() -> Unit>()
+
+    override fun effect(effect: GameRuleTriggerScope<T, E>.() -> Unit): GameRuleTrigger<T, E> {
+        this.effects.add(effect)
+        return this
+    }
+
+    override fun map(mapping: GameRuleTriggerScope<T, E>.() -> E): GameRuleTrigger<T, E> {
+        this.mappings.add(mapping)
+        return this
+    }
+
+    override fun after(effect: GameRuleTriggerScope<T, E>.() -> Unit): GameRuleTrigger<T, E> {
+        this.after.add(effect)
+        return this
+    }
+
+    override fun ignoreEffectIf(condition: GameRuleTriggerScope<T, E>.() -> Boolean): GameRuleTrigger<T, E> {
+        this.ignoreConditions.add(condition)
+        return this
+    }
+
+    override fun invoke(trigger: E): E? {
+        val result = mappings.fold(GameRuleTriggerContext(model, trigger, replayable, eliminations)) {
+            acc, next -> acc.copy(trigger = next.invoke(acc))
+        }
+        val process = ignoreConditions.none { it.invoke(result) }
+        if (process) {
+            effects.forEach { it.invoke(result) }
+        }
+        after.forEach { it.invoke(result) }
+        return if (process) result.trigger else null
+    }
 
 }

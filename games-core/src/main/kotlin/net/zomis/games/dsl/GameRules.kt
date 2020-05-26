@@ -1,12 +1,14 @@
 package net.zomis.games.dsl
 
 import net.zomis.games.PlayerEliminations
+import kotlin.reflect.KClass
 
 interface GameRules<T : Any> {
     val allActions: GameAllActionsRule<T>
     fun <A : Any> action(actionType: ActionType<A>): GameActionRule<T, A>
     fun view(key: String, value: ViewScope<T>.() -> Any?)
     fun gameStart(onStart: GameStartScope<T>.() -> Unit)
+    fun <E : Any> trigger(triggerClass: KClass<E>): GameRuleTrigger<T, E>
 }
 
 interface GameStartScope<T : Any> {
@@ -37,3 +39,18 @@ interface GameActionRule<T : Any, A : Any> {
     fun forceUntil(rule: ActionRuleScope<T, A>.() -> Boolean)
 }
 
+interface GameRuleTriggerScope<T, E> {
+    val game: T
+    val trigger: E
+    val replayable: ReplayableScope
+    val eliminations: PlayerEliminations
+}
+interface GameRuleTrigger<T : Any, E : Any> {
+
+    fun effect(effect: GameRuleTriggerScope<T, E>.() -> Unit): GameRuleTrigger<T, E>
+    fun map(mapping: GameRuleTriggerScope<T, E>.() -> E): GameRuleTrigger<T, E>
+    fun after(effect: GameRuleTriggerScope<T, E>.() -> Unit): GameRuleTrigger<T, E>
+    fun ignoreEffectIf(condition: GameRuleTriggerScope<T, E>.() -> Boolean): GameRuleTrigger<T, E>
+    operator fun invoke(trigger: E): E?
+
+}
