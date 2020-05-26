@@ -21,7 +21,7 @@ object NimGame {
     data class NimConfig(val piles: List<Int>, val lastWins: Boolean, val maxPerTurn: Int)
     data class NimMove(val pileIndex: Int, val amount: Int)
 
-    val action = createActionType("Take", NimMove::class)
+    val nimAction = createActionType("Take", NimMove::class)
     val game = createGame<Nim>("Nim") {
         setup(NimConfig::class) {
             players(2..2)
@@ -33,7 +33,7 @@ object NimGame {
             }
         }
         logic {
-            action(action) {
+            action(nimAction) {
                 options {
                     optionFrom({ it.piles.indices }) {pileIndex ->
                         optionFrom({ 0..min(it.maxPerTurn, it.piles[pileIndex]) }) {amount ->
