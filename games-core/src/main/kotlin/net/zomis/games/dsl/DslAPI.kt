@@ -36,6 +36,7 @@ typealias GameSpec<T> = GameDsl<T>.() -> Unit
 typealias GameModelDsl<T, C> = GameModel<T, C>.() -> Unit
 typealias GameLogicDsl<T> = GameLogic<T>.() -> Unit
 typealias GameViewDsl<T> = GameView<T>.() -> Unit
+typealias GameRulesDsl<T> = GameRules<T>.() -> Unit
 typealias GridDsl<T, P> = GameGrid<T, P>.() -> Unit
 
 interface GameGrid<T, P> {
@@ -56,13 +57,18 @@ interface GameDsl<T : Any> {
     fun setup(modelDsl: GameModelDsl<T, Unit>)
     fun logic(logicDsl: GameLogicDsl<T>)
     fun view(viewDsl: GameViewDsl<T>)
+    fun rules(rulesDsl: GameRulesDsl<T>)
 }
 
 fun <T : Any> createGame(name: String, dsl: GameDsl<T>.() -> Unit): GameSpec<T> {
     return dsl
 }
 
-data class ActionType<A : Any>(val name: String, val parameterType: KClass<A>)
+data class ActionSerialization<A : Any, T : Any>(val serialize: (A) -> Any, val deserialize: ActionOptionsScope<T>.(Any) -> A)
+data class ActionType<A : Any>(val name: String, val parameterType: KClass<A>, val serialize: ActionSerialization<A, Any>)
 fun <A : Any> createActionType(name: String, parameterType: KClass<A>): ActionType<A> {
-    return ActionType(name, parameterType)
+    return ActionType(name, parameterType, ActionSerialization({it}, {it as A}))
+}
+fun <A : Any, T : Any> createActionType(name: String, parameterType: KClass<A>, serialize: ActionSerialization<A, T>): ActionType<A> {
+    return ActionType(name, parameterType, serialize as ActionSerialization<A, Any>)
 }

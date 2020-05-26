@@ -238,10 +238,10 @@ class GameLogicContext<T : Any>(private val model: T, private val replayState: R
 
 }
 
-data class ActionInfo<P>(val nextOptions: List<Any>, val parameters: List<P>)
+data class ActionInfo(val nextOptions: List<Any>, val parameters: List<Any>)
 class ActionTypeImplEntry<T : Any, P : Any, A : Actionable<T, P>>(private val model: T,
         private val replayState: ReplayState,
-        private val actionType: ActionType<P>,
+        val actionType: ActionType<P>,
         private val impl: GameLogicActionType<T, P, A>) {
     fun availableActions(playerIndex: Int): Iterable<Actionable<T, P>> = impl.availableActions(playerIndex)
     fun perform(playerIndex: Int, parameter: P) {
@@ -256,15 +256,18 @@ class ActionTypeImplEntry<T : Any, P : Any, A : Actionable<T, P>>(private val mo
     }
     fun createAction(playerIndex: Int, parameter: P): A = impl.createAction(playerIndex, parameter)
     fun isAllowed(action: A): Boolean = impl.actionAllowed(action)
-    fun availableParameters(playerIndex: Int, previouslySelected: List<Any>): ActionInfo<P> {
-        return if (impl is GameLogicActionTypeComplex) {
+    fun availableParameters(playerIndex: Int, previouslySelected: List<Any>): ActionInfo {
+        val serializer: (P) -> Any = { actionType.serialize.serialize(it) }
+        return if (impl is GameActionRuleContext) {
+            ActionInfo(emptyList(), availableActions(playerIndex).map { it.parameter }.map(serializer))
+        } else if (impl is GameLogicActionTypeComplex) {
             val actionInfo = impl.availableOptionsNext(playerIndex, previouslySelected)
-            ActionInfo(actionInfo.first, actionInfo.second)
+            ActionInfo(actionInfo.first, actionInfo.second.map(serializer))
         } else {
             if (previouslySelected.isNotEmpty()) {
                 throw IllegalArgumentException("Unable to select any options for action ${actionType.name}")
             }
-            ActionInfo(emptyList(), availableActions(playerIndex).map { it.parameter })
+            ActionInfo(emptyList(), availableActions(playerIndex).map { it.parameter }.map(serializer))
         }
     }
 
@@ -276,10 +279,11 @@ class ActionTypeImplEntry<T : Any, P : Any, A : Actionable<T, P>>(private val mo
 
 class ActionsImpl<T : Any>(private val model: T,
                            private val logic: GameLogicContext<T>,
+                           private val rules: GameRulesContext<T>,
                            private val replayState: ReplayState) {
 
     val actionTypes: Set<String>
-        get() = logic.actions.keys.map { it.name }.toSet()
+        get() = logic.actions.keys.map { it.name }.toSet() + rules.actionTypes()
 
     fun types(): Set<ActionTypeImplEntry<T, Any, Actionable<T, Any>>> {
         return actionTypes.map { type(it)!! }.toSet()
@@ -290,9 +294,10 @@ class ActionsImpl<T : Any>(private val model: T,
     }
 
     fun type(actionType: String): ActionTypeImplEntry<T, Any, Actionable<T, Any>>? {
-        return logic.actions.entries.find { it.key.name == actionType }?.let {
+        val result = logic.actions.entries.find { it.key.name == actionType }?.let {
             ActionTypeImplEntry(model, replayState, it.key as ActionType<Any>, it.value as GameLogicActionType<T, Any, Actionable<T, Any>>)
         }
+        return result ?: rules.actionType(actionType)
     }
     fun <P : Any> type(actionType: String, clazz: KClass<T>): ActionTypeImplEntry<T, P, out Actionable<T, P>>? {
         val entry = logic.actions.entries.find { it.key.name == actionType }

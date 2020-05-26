@@ -47,11 +47,13 @@ class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override va
     val model = setupContext.model.factory(this, config)
     private val replayState = ReplayState(stateKeeper, eliminationCallback)
     private val logic = GameLogicContext(model, replayState)
+    private val rules = GameRulesContext(model, replayState, eliminationCallback)
     init {
         setupContext.model.onStart(replayState, model)
-        setupContext.logicDsl(logic)
+        setupContext.logicDsl?.invoke(logic)
+        setupContext.rulesDsl?.invoke(rules)
     }
-    val actions = ActionsImpl(model, logic, replayState)
+    val actions = ActionsImpl(model, logic, rules, replayState)
 
     fun copy(copier: (source: T, destination: T) -> Unit): GameImpl<T> {
         val copy = GameImpl(setupContext, playerCount, config, stateKeeper)
@@ -61,7 +63,8 @@ class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override va
 
     fun view(playerIndex: PlayerIndex): Map<String, Any?> {
         val view = GameViewContext(model, eliminationCallback, playerIndex, replayState)
-        setupContext.viewDsl(view)
+        setupContext.viewDsl?.invoke(view)
+        rules.view(view)
         return view.result()
     }
 
@@ -83,7 +86,7 @@ class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override va
 
     fun viewRequest(playerIndex: PlayerIndex, key: String, params: Map<String, Any>): Any? {
         val view = GameViewContext(model, eliminationCallback, playerIndex, replayState)
-        setupContext.viewDsl(view)
+        setupContext.viewDsl?.invoke(view)
         return view.request(playerIndex, key, params)
     }
 

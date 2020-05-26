@@ -1,18 +1,10 @@
 package net.zomis.games.dsl
 
 import net.zomis.common.convertToDBFormat
-import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.impl.*
-import net.zomis.games.impl.HanabiGame
-import net.zomis.games.server2.Server2
-import net.zomis.games.server2.ServerConfig
 import net.zomis.games.server2.ServerGames
-import net.zomis.games.server2.clients.FakeClient
-import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.games.ActionListRequestHandler
-import net.zomis.games.server2.games.ServerGame
 import java.util.Scanner
-import java.util.UUID
 
 class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
 

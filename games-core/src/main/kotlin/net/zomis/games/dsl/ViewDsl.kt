@@ -8,9 +8,12 @@ interface GameViewOnRequestScope<T> {
     val game: T
 }
 
-interface GameView<T> {
+interface ViewScope<T> {
     val game: T
     val viewer: PlayerIndex
+}
+
+interface GameView<T> : ViewScope<T> {
     fun result(): Map<String, Any?>
     fun currentPlayer(function: (T) -> Int)
     fun <P> grid(name: String, grid: GridDsl<T, P>, view: ViewDsl2D<T, P>)

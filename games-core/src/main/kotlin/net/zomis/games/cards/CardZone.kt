@@ -1,5 +1,7 @@
 package net.zomis.games.cards
 
+import net.zomis.games.dsl.ReplayableScope
+
 data class Card<T>(val zone: CardZone<T>, val index: Int, val card: T) {
     fun moveAndReplace(moveTo: CardZone<T>, replaceWith: Card<T>): T {
         moveTo.cards.add(this.zone.cards[index])
@@ -84,6 +86,20 @@ class CardZone<T>(internal val cards: MutableList<T> = mutableListOf()) {
 
     override fun toString(): String {
         return name ?: super.toString()
+    }
+
+    fun moveAllTo(destination: CardZone<T>) {
+        while (this.cards.isNotEmpty()) {
+            this.card(this.cards.first()).moveTo(destination)
+        }
+    }
+
+    fun random(replayable: ReplayableScope, count: Int, stateKey: String, matcher: (T) -> String): Sequence<Card<T>> {
+        val state = replayable.strings(stateKey) {
+            this.cards.shuffled().take(count).map(matcher)
+        }
+        val cards = findStates(state, matcher)
+        return cards.asSequence().map { card(it) }
     }
 
 }

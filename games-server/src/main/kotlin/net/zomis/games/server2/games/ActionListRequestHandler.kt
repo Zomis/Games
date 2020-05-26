@@ -9,12 +9,12 @@ import net.zomis.games.server2.Client
 import net.zomis.games.server2.ClientJsonMessage
 import net.zomis.games.server2.getTextOrDefault
 
-class ActionList(val playerIndex: Int, val game: ServerGame, val actions: List<Pair<String, ActionInfo<Any>>>)
+class ActionList(val playerIndex: Int, val game: ServerGame, val actions: List<Pair<String, ActionInfo>>)
 class ActionListRequestHandler(private val game: ServerGame?) {
     private val logger = KLoggers.logger(this)
     private val mapper = jacksonObjectMapper()
 
-    fun availableActionsMessage(obj: GameImpl<*>, playerIndex: Int, moveType: String?, chosen: List<Any>?): List<Pair<String, ActionInfo<Any>>> {
+    fun availableActionsMessage(obj: GameImpl<*>, playerIndex: Int, moveType: String?, chosen: List<Any>?): List<Pair<String, ActionInfo>> {
         if (moveType != null) {
             val actionType = obj.actions.type(moveType)
             return if (actionType != null) {
