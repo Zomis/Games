@@ -25,11 +25,20 @@ class GameTest<T : Any>(val game: GameImpl<T>) {
 
     fun expectPossibleActions(playerIndex: Int, actionType: String, expected: Int) {
         val availableActions = game.actions.type(actionType)!!.availableActions(playerIndex)
-        Assertions.assertEquals(expected, availableActions.count())
+        Assertions.assertEquals(expected, availableActions.count()) { "Available actions are: $availableActions" }
+    }
+
+    fun expectPossibleActions(playerIndex: Int, expected: Int): List<Actionable<T, Any>> {
+        val availableActions = game.actions.types().flatMap { it.availableActions(playerIndex) }
+        Assertions.assertEquals(expected, availableActions.count()) { "Available actions are: $availableActions" }
+        return availableActions
     }
 
     fun performAction(playerIndex: Int, actionType: String, parameter: Any) {
-        game.actions.type(actionType)!!.perform(playerIndex, parameter)
+        val actionEntry = game.actions.type(actionType)!!
+        val action = actionEntry.createAction(playerIndex, parameter)
+        require(actionEntry.isAllowed(action)) { "Action is not allowed: $action" }
+        actionEntry.perform(action)
     }
 
 }

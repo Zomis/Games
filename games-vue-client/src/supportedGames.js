@@ -122,6 +122,17 @@ const supportedGames = {
         component: DSLTTT,
         routeProps: defaultRouteProps
     },
+    "Skull": {
+        dsl: gamejs.net.zomis.games.impl.SkullGame.game,
+        enabled: false,
+        actions: {
+            play: (index) => "play-" + index,
+            bet: (index) => "bet-" + index,
+            pass: () => "pass",
+            choose: (index) => "choose-" + index
+        },
+        component: TreeViewGame
+    },
     "Artax": {
         displayName: "Artax",
         dsl: gamejs.net.zomis.games.dsl.sourcedest.ArtaxGame.gameArtax,
@@ -187,6 +198,7 @@ export default {
     routes() {
         return enabledGames().map(key => {
             let game = supportedGames[key]
+            let routeProps = game.routeProps || defaultRouteProps
             return {
                 path: `/games/${key}/:gameId`,
                 name: game.routeName || key,
@@ -194,7 +206,7 @@ export default {
                 props: route => ({
                     gameType: key,
                     gameId: route.params.gameId,
-                    ...game.routeProps(route)
+                    ...routeProps(route)
                 })
             }
         })
