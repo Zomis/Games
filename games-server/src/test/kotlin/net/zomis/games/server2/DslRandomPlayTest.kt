@@ -140,8 +140,8 @@ class DslRandomPlayTest {
             }.map { it.serialize(gameImpl) }
             if (actions.isEmpty()) {
                 p1.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
-                p1.expectJsonObject { it.getText("type") == "GameView" }
-                throw IllegalStateException("Game is not over but no actions available. Is the game a draw?")
+                val view = p1.expectJsonObject { it.getText("type") == "GameView" }
+                throw IllegalStateException("Game is not over but no actions available. Is the game a draw? View is $view")
             }
             val request = actions.first()
             val playerSocket = players[request.player]
