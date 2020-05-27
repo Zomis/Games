@@ -26,12 +26,7 @@
           <v-card-title>
             <span class="player-name">
               <span>{{ player.index + 1 }}.</span>
-              <v-avatar :size="32">
-                  <img
-                      :src="players[player.index].picture"
-                      :alt="players[player.index].name" />
-              </v-avatar>
-              <span>{{ players[player.index].name }}</span>
+              <PlayerProfile :player="players[player.index]" :size="32" show-name />
             </span>
           </v-card-title>
           <v-card-text>
@@ -82,12 +77,7 @@
         <v-card-title>
           <span class="player-name">
             <span>{{ view.hand.index + 1 }}.</span>
-            <v-avatar :size="32">
-              <img
-                :src="players[view.hand.index].picture"
-                :alt="players[view.hand.index].name" />
-            </v-avatar>
-            <span>{{ players[view.hand.index].name }} (You)</span>
+            <PlayerProfile :player="players[view.hand.index]" :size="32" show-name post-fix="(You)" />
           </span>
         </v-card-title>
         <v-card-text>
@@ -106,12 +96,14 @@
 </template>
 
 <script>
+import PlayerProfile from "@/components/games/common/PlayerProfile"
 import HanabiCard from "./HanabiCard"
 
 export default {
   name: "Hanabi",
   props: ["view", "actions", "actions2", "actionChoice", "onAction", "players"],
   components: {
+      PlayerProfile,
       HanabiCard
   },
   methods: {
@@ -125,7 +117,6 @@ export default {
   watch: {
     actionChoice(val) {
       if (!val) {
-        console.log("actionChoice cleared, resetting showMenu.");
         this.showMenu = [false, false, false, false, false];
       }
     },
@@ -134,7 +125,6 @@ export default {
     }
   },
   data() {
-    console.log("players is", this.players);
     return {
       showMenu: [false, false, false, false, false], // One for each player
       snackbar: false,

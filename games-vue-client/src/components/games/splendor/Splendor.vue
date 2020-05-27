@@ -61,7 +61,6 @@ export default {
     components: { SplendorPlayer, SplendorCard, SplendorNoble },
     methods: {
         takeMoney(moneyType) {
-            console.log(moneyType)
             this.actions2.perform("takeMoney", 'take-' + moneyType)
         }
     },

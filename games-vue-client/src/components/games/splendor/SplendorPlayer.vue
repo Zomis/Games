@@ -3,14 +3,7 @@
         <v-card-text>
             <v-row justify="start">
                 <v-col cols="3">
-                    <v-avatar :size="32">
-                      <img
-                        :src="playerInfo.picture"
-                        :alt="playerInfo.name" />
-                    </v-avatar>
-                    <span>
-                        {{ playerInfo.name }}
-                    </span>
+                    <PlayerProfile :size="32" show-name :player="playerInfo" />
                 </v-col>
                 <v-col cols="1">
                     <h1>{{ player.points }}</h1>
@@ -39,12 +32,13 @@
     </v-card>
 </template>
 <script>
+import PlayerProfile from "@/components/games/common/PlayerProfile"
 import SplendorCard from "./SplendorCard"
 
 export default {
     name: "SplendorPlayer",
     props: ["player", "controllable", "actions", "playerInfo"],
-    components: { SplendorCard },
+    components: { SplendorCard, PlayerProfile },
     methods: {
         discard(moneyType) {
             if (this.controllable) {

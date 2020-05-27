@@ -16,6 +16,7 @@ import axios from "axios";
 import Clipboard from "v-clipboard";
 import supportedGames from "../supportedGames";
 import ReplayScreen from "@/components/replays/GameReplay"
+import md5 from "md5"
 
 Vue.use(VueAxios, axios);
 let authConfig = {
@@ -109,8 +110,9 @@ export default new Router({
         }
         let players = new Array(playerCount).fill(0).map((_, index) => index).map(i => ({
           index: i,
+          id: `local:00000000-0000-0000-0000-00000000000` + i.toString(16),
           name: "Player " + (i + 1),
-          picture: null
+          picture: `https://www.gravatar.com/avatar/${md5(i)}?s=128&d=identicon`
         }));
         return {
           gameInfo: { gameType: route.params.gameType, players: players },

@@ -47,7 +47,6 @@ export default {
       supportedGames: supportedGames,
       supportedGame: supportedGames.games[this.gameInfo.gameType],
       actionChoice: null,
-      playerCount: 0,
       eliminations: [],
       views: [],
       game: null,
@@ -153,6 +152,9 @@ export default {
     }
   },
   computed: {
+    playerCount() {
+      return this.gameInfo.players.length;
+    },
     actions2() {
       return {
         chosen: this.actionChoice,
