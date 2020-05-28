@@ -259,7 +259,7 @@ class ActionTypeImplEntry<T : Any, P : Any, A : Actionable<T, P>>(private val mo
     fun availableParameters(playerIndex: Int, previouslySelected: List<Any>): ActionInfo {
         val serializer: (P) -> Any = { actionType.serialize.serialize(it) }
         return if (impl is GameActionRuleContext) {
-            ActionInfo(emptyList(), availableActions(playerIndex).map { it.parameter }.map(serializer))
+            impl.actionInfo(playerIndex, previouslySelected, serializer)
         } else if (impl is GameLogicActionTypeComplex) {
             val actionInfo = impl.availableOptionsNext(playerIndex, previouslySelected)
             ActionInfo(actionInfo.first, actionInfo.second.map(serializer))

@@ -15,28 +15,40 @@ interface GameStartScope<T : Any> {
     val game: T
     val replayable: ReplayableScope
 }
-interface ActionRuleScope<T : Any, A : Any> {
-    val game: T
+interface ActionRuleScope<T : Any, A : Any> : GameUtils, ActionOptionsScope<T> {
+    override val game: T
     val action: Actionable<T, A>
     val eliminations: PlayerEliminations
-    val replayable: ReplayableScope
+    override val replayable: ReplayableScope
+    override val playerEliminations: PlayerEliminations
+        get() = eliminations
 }
 interface ActionOptionsScope<T : Any> {
     val game: T
+    val actionType: String
     val playerIndex: Int
 }
 
 interface GameAllActionsRule<T : Any> {
     fun after(rule: ActionRuleScope<T, Any>.() -> Unit)
-    fun requires(rule: ActionRuleScope<T, Any>.() -> Boolean)
+    fun precondition(rule: ActionOptionsScope<T>.() -> Boolean)
 }
 
 interface GameActionRule<T : Any, A : Any> {
     fun after(rule: ActionRuleScope<T, A>.() -> Unit)
     fun effect(rule: ActionRuleScope<T, A>.() -> Unit)
+    fun precondition(rule: ActionOptionsScope<T>.() -> Boolean)
     fun requires(rule: ActionRuleScope<T, A>.() -> Boolean)
     fun options(rule: ActionOptionsScope<T>.() -> Iterable<A>)
     fun forceUntil(rule: ActionRuleScope<T, A>.() -> Boolean)
+    fun choose(options: ActionChoicesStartScope<T, A>.() -> Unit)
+}
+
+interface ActionChoicesNextScope<T : Any, A : Any> : ActionChoicesStartScope<T, A> {
+    fun parameter(action: A)
+}
+interface ActionChoicesStartScope<T : Any, A : Any> {
+    fun <E : Any> options(options: ActionOptionsScope<T>.() -> Iterable<E>, next: ActionChoicesNextScope<T, A>.(E) -> Unit)
 }
 
 interface GameRuleTriggerScope<T, E> {

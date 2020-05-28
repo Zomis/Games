@@ -100,7 +100,9 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
             if (choice >= next.size) {
                 val param = params.getOrNull(choice - next.size) ?: return null
                 val actionType = game.actions.type(moveType)
-                val deserializedParam = actionType?.actionType?.serialize?.deserialize?.invoke(ActionOptionsContext(game.model, playerIndex), param)
+                val deserializedParam = actionType?.actionType?.serialize?.deserialize?.invoke(
+                    ActionOptionsContext(game.model, actionType.name, playerIndex), param
+                )
                 return actionType?.createAction(playerIndex, deserializedParam!!)
             } else {
                 val chosenNext = next.getOrNull(choice) ?: return null

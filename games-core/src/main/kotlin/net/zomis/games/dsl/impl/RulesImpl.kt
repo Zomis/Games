@@ -56,12 +56,6 @@ class GameRulesContext<T : Any>(
 }
 
 class GameStartContext<T : Any>(override val game: T, override val replayable: ReplayableScope) : GameStartScope<T>
-class GameActionContext<T : Any, A : Any>(
-    override val action: Actionable<T, A>,
-    override val replayable: ReplayableScope,
-    override val eliminations: PlayerEliminations,
-    override val game: T
-): ActionRuleScope<T, A>
 
 class GameRuleList<T : Any>(
     val model: T,
@@ -69,19 +63,26 @@ class GameRuleList<T : Any>(
     val eliminations: PlayerEliminations
 ): GameAllActionsRule<T> {
     val after = mutableListOf<ActionRuleScope<T, Any>.() -> Unit>()
-    val allowed = mutableListOf<ActionRuleScope<T, Any>.() -> Boolean>()
+    val preconditions = mutableListOf<ActionOptionsScope<T>.() -> Boolean>()
 
     override fun after(rule: ActionRuleScope<T, Any>.() -> Unit) { this.after.add(rule) }
-    override fun requires(rule: ActionRuleScope<T, Any>.() -> Boolean) { this.allowed.add(rule) }
+    override fun precondition(rule: ActionOptionsScope<T>.() -> Boolean) { this.preconditions.add(rule) }
 }
 
-class ActionOptionsContext<T : Any>(override val game: T, override val playerIndex: Int) : ActionOptionsScope<T>
+class ActionOptionsContext<T : Any>(
+    override val game: T,
+    override val actionType: String,
+    override val playerIndex: Int
+) : ActionOptionsScope<T>
 class ActionRuleContext<T : Any, A : Any>(
     override val game: T,
     override val action: Actionable<T, A>,
     override val eliminations: PlayerEliminations,
     override val replayable: ReplayableScope
-): ActionRuleScope<T, A>
+): ActionRuleScope<T, A> {
+    override val playerIndex: Int get() = action.playerIndex
+    override val actionType: String get() = action.actionType
+}
 
 class GameActionRuleContext<T : Any, A : Any>(
     val model: T,
@@ -94,27 +95,40 @@ class GameActionRuleContext<T : Any, A : Any>(
 
     val effects = mutableListOf<ActionRuleScope<T, A>.() -> Unit>()
     val after = mutableListOf<ActionRuleScope<T, A>.() -> Unit>()
+    val preconditions = mutableListOf<ActionOptionsScope<T>.() -> Boolean>()
     val allowed = mutableListOf<ActionRuleScope<T, A>.() -> Boolean>()
+    private var choices: (ActionChoicesStartScope<T, A>.() -> Unit)? = null
     private var availableActionsEvaluator: (ActionOptionsScope<T>.() -> Iterable<A>)? = null
 
     override fun after(rule: ActionRuleScope<T, A>.() -> Unit) { this.after.add(rule) }
     override fun effect(rule: ActionRuleScope<T, A>.() -> Unit) { this.effects.add(rule) }
     override fun requires(rule: ActionRuleScope<T, A>.() -> Boolean) { this.allowed.add(rule) }
+    override fun precondition(rule: ActionOptionsScope<T>.() -> Boolean) { this.preconditions.add(rule) }
 
     override fun options(rule: ActionOptionsScope<T>.() -> Iterable<A>) {
         this.availableActionsEvaluator = rule
     }
 
+    override fun choose(options: ActionChoicesStartScope<T, A>.() -> Unit) {
+        require(choices == null) { "Choices can only be set once" }
+        this.choices = options
+    }
+
     override fun forceUntil(rule: ActionRuleScope<T, A>.() -> Boolean) {
-        globalRules.allowed.add {
-            action.actionType == actionType || rule(this as ActionRuleScope<T, A>)
+        val myActionType = actionType
+        globalRules.preconditions.add {
+            actionType == myActionType || rule(this as ActionRuleScope<T, A>)
         }
     }
 
     // GameLogicActionType implementation below
 
     override fun availableActions(playerIndex: Int): Iterable<Actionable<T, A>> {
-        val context = ActionOptionsContext(model, playerIndex)
+        val context = ActionOptionsContext(model, actionType, playerIndex)
+        if (!checkPreconditions(context)) {
+            return emptyList()
+        }
+
         val evaluator = this.availableActionsEvaluator
         return if (evaluator == null) {
             require(this.actionDefinition.parameterType == Unit::class) {
@@ -126,7 +140,7 @@ class GameActionRuleContext<T : Any, A : Any>(
 
     override fun actionAllowed(action: Actionable<T, A>): Boolean {
         val context = ActionRuleContext(model, action, eliminations, replayable)
-        return globalRules.allowed.all { it.invoke(context as ActionRuleScope<T, Any>) } && allowed.all { it(context) }
+        return checkPreconditions(context) && allowed.all { it(context) }
     }
 
     override fun replayAction(action: Actionable<T, A>, state: Map<String, Any>?) {
@@ -137,7 +151,7 @@ class GameActionRuleContext<T : Any, A : Any>(
     }
 
     override fun performAction(action: Actionable<T, A>) {
-        val context = GameActionContext(action, replayable, eliminations, model)
+        val context = ActionRuleContext(model, action, eliminations, replayable)
         this.effects.forEach { it.invoke(context) }
         this.after.forEach { it.invoke(context) }
         this.globalRules.after.forEach { it.invoke(context as ActionRuleScope<T, Any>) }
@@ -145,6 +159,25 @@ class GameActionRuleContext<T : Any, A : Any>(
 
     override fun createAction(playerIndex: Int, parameter: A): Action<T, A>
         = Action(model, playerIndex, actionType, parameter)
+
+    fun actionInfo(playerIndex: Int, previouslySelected: List<Any>, serializer: (A) -> Any): ActionInfo {
+        val context = ActionOptionsContext(model, actionType, playerIndex)
+        if (!checkPreconditions(context)) {
+            return ActionInfo(emptyList(), emptyList())
+        }
+        return if (this.choices == null) {
+            ActionInfo(emptyList(), availableActions(playerIndex).map { it.parameter }.map(serializer))
+        } else {
+            require(this.availableActionsEvaluator == null) { "An action must have only one rule for either choices or options" }
+            val complex = RulesActionTypeComplex<T, A>(context, this.choices!!)
+            val actionInfo = complex.availableOptionsNext(previouslySelected)
+            ActionInfo(actionInfo.first, actionInfo.second.filter { actionAllowed(createAction(playerIndex, it)) })
+        }
+    }
+
+    private fun checkPreconditions(context: ActionOptionsScope<T>): Boolean {
+        return globalRules.preconditions.all { it.invoke(context) } && preconditions.all { it.invoke(context) }
+    }
 
 }
 

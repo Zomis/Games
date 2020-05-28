@@ -22,13 +22,15 @@ interface ReplayableScope {
     fun strings(key: String, default: () -> List<String>): List<String>
     fun list(key: String, default: () -> List<Map<String, Any>>): List<Map<String, Any>>
 }
+@Deprecated("Use ReplayableScope instead")
 interface ReplayScope {
     fun state(key: String): Any
     fun fullState(key: String): Any?
 }
-interface EffectScope {
-    val playerEliminations: PlayerEliminations
-    fun replayable(): ReplayableScope
+interface EffectScope : GameUtils {
+    override val playerEliminations: PlayerEliminations
+    override val replayable: ReplayableScope
+    fun replayable(): ReplayableScope = replayable
     fun state(key: String, value: Any)
 }
 

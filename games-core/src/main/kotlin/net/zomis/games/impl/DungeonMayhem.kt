@@ -246,7 +246,7 @@ object DungeonMayhemDsl {
         }
 
         rules {
-            allActions.requires { action.playerIndex == game.currentPlayerIndex }
+            allActions.precondition { playerIndex == game.currentPlayerIndex }
             view("currentPlayer") { game.currentPlayerIndex }
             val newTurnDrawCard = trigger(Unit::class).effect {
                 game.currentPlayer.drawCard(replayable, "turnStart", 1)

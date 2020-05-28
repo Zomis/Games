@@ -62,7 +62,7 @@ object SkullGame {
             }
         }
         rules {
-            allActions.requires { action.playerIndex == game.currentPlayerIndex }
+            allActions.precondition { playerIndex == game.currentPlayerIndex }
             fun nextTurn(game: SkullGameModel) { game.currentPlayerIndex = game.currentPlayerIndex.next(game.players.size) }
 
             view("currentPlayer") { game.currentPlayerIndex }

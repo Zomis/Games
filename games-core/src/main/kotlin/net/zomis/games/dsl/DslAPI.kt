@@ -1,5 +1,6 @@
 package net.zomis.games.dsl
 
+import net.zomis.games.PlayerEliminations
 import kotlin.math.absoluteValue
 import kotlin.math.sqrt
 import kotlin.reflect.KClass
@@ -19,6 +20,10 @@ interface Actionable<T : Any, A : Any> {
     val game: T
     val actionType: String
     val parameter: A
+}
+interface GameUtils {
+    val playerEliminations: PlayerEliminations
+    val replayable: ReplayableScope
 }
 data class Action2D<T : Any, P : Any>(override val game: T, override val playerIndex: Int,
         override val actionType: String,
