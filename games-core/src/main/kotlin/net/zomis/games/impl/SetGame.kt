@@ -144,7 +144,7 @@ object SetGame {
                 allowed { it.parameter.set.distinct().size == it.parameter.set.size && it.parameter.set.size == 3 }
                 effect {
                     it.game.playerChooseSet(it.playerIndex, it.parameter)
-                    if (!setCheck(it.game, this.replayable())) {
+                    if (!setCheck(it.game, this.replayable)) {
                         playerEliminations.eliminateBy(it.game.scores.mapIndexed { index, i -> index to i }, Comparator { a, b -> a - b })
                     }
                 }

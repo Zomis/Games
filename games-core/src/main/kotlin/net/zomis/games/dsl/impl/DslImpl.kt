@@ -173,9 +173,7 @@ class StateKeeper {
 class ReplayState(val stateKeeper: StateKeeper, override val playerEliminations: PlayerEliminations): EffectScope, ReplayScope, ReplayableScope {
     private val mostRecent = mutableMapOf<String, Any>()
 
-    override fun replayable(): ReplayableScope {
-        return this
-    }
+    override val replayable: ReplayableScope get() = this
 
     fun setReplayState(state: Map<String, Any>?) {
         stateKeeper.clear()

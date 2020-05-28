@@ -60,6 +60,7 @@ interface GameDsl<T : Any> {
     fun <P> gridSpec(spec: GridDsl<T, P>): GridDsl<T, P>
     fun <C : Any> setup(configClass: KClass<C>, modelDsl: GameModelDsl<T, C>)
     fun setup(modelDsl: GameModelDsl<T, Unit>)
+    @Deprecated("prefer rules instead")
     fun logic(logicDsl: GameLogicDsl<T>)
     fun view(viewDsl: GameViewDsl<T>)
     fun rules(rulesDsl: GameRulesDsl<T>)

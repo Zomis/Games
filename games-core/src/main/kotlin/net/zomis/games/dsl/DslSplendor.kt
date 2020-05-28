@@ -436,7 +436,7 @@ object DslSplendor {
     private fun replaceCard(scope: EffectScope, game: SplendorGame, card: SplendorCard) {
         game.board.card(card).remove()
         if (game.deck.cards.none { it.level == card.level }) return
-        val state = scope.replayable().string("card") {
+        val state = scope.replayable.string("card") {
             game.deck.cards.first { it.level == card.level }.toStateString()
         }
         val replacementCard = game.deck.findState(state) { it.toStateString() }
