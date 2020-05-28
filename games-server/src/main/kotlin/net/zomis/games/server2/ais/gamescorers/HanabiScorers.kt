@@ -12,6 +12,8 @@ object HanabiScorers {
         return listOf(
             aiFirst(),
             aiFirstImproved()
+            , aiDebugAnimations()
+            , aiDebugHand()
             // AI Second is so far too slow to play
         )
     }
@@ -27,11 +29,16 @@ object HanabiScorers {
         playProbability.weight(1.01), discardProbability.weight(0.2), playableCardPlayableClue.weight(2.0),
         indispensibleCardIndispensibleClue.weight(1.5), playFromRight, discardFromLeft)
 
+    fun aiDebugAnimations() = ScorerAIFactory("Hanabi", "#AI_Debug_Animations", discardFromLeft)
+    fun aiDebugHand() = ScorerAIFactory("Hanabi", "#AI_Debug_Hand", clue, clueLowPlayer, clueColor)
+
     fun random() = ScorerAIFactory("Hanabi", "#AI_Random", scorers.simple { 1.0 })
 
     val scorers = ScorerFactory<Hanabi>()
 
     val clue = scorers.conditional { action.actionType == HanabiGame.giveClue.name }
+    val clueLowPlayer = scorers.conditionalType(HanabiClue::class) { -action.parameter.player.toDouble() } as Scorer<Hanabi, Any>
+    val clueColor = scorers.conditionalType(HanabiClue::class) { if (action.parameter.color != null) 1.0 else 0.0 } as Scorer<Hanabi, Any>
 
     val playableClues = scorers.conditionalType(HanabiClue::class) {
         action.game.players[action.parameter.player].cards.cards.filter { it.matches(action.parameter) }

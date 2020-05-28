@@ -11,7 +11,9 @@ import net.zomis.games.dsl.PointMove
 import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.dsl.sourcedest.TTArtax
+import net.zomis.games.server2.ais.gamescorers.DungeonMayhemScorers
 import net.zomis.games.server2.ais.gamescorers.HanabiScorers
+import net.zomis.games.server2.ais.gamescorers.SkullScorers
 import net.zomis.games.server2.ais.gamescorers.SplendorScorers
 import net.zomis.games.server2.ais.scorers.Scorer
 import net.zomis.games.server2.ais.scorers.ScorerAnalyzeProvider
@@ -101,7 +103,11 @@ class ServerScoringAIs(private val aiRepository: AIRepository) {
             ScorerAIFactory("Artax", "#AI_Aggressive_Simple", artaxTake),
             ScorerAIFactory("Artax", "#AI_Aggressive_Defensive", copying, artaxTake.weight(0.35)),
             ScorerAIFactory("Artax", "#AI_Defensive", copying.weight(2), artaxTake.weight(0.35))
-        ).plus(SplendorScorers.ais()).plus(HanabiScorers.ais())
+        )
+            .plus(SplendorScorers.ais())
+            .plus(HanabiScorers.ais())
+            .plus(DungeonMayhemScorers.ais())
+            .plus(SkullScorers.ais())
         factories.groupBy { it.gameType }.forEach { entry ->
             events.listen("Register scoring AIs in ${entry.key}", GameTypeRegisterEvent::class, { it.gameType == entry.key }) {
                 entry.value.forEach {factory ->

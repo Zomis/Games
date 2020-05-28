@@ -282,8 +282,8 @@ object DungeonMayhemDsl {
                 newTurnDrawCard(Unit)
             }
             fun CardZone<DungeonMayhemCard>.view(): List<Map<String, Any>> {
-                return this.cards.map {
-                    mapOf("name" to it.name, "symbols" to it.symbols)
+                return this.cards.map { card ->
+                    mapOf("name" to card.name, "symbols" to card.symbols.map { it.name })
                 }
             }
             fun CardZone<DungeonMayhemShield>.view(): List<Map<String, Any>> {
