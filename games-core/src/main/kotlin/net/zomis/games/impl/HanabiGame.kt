@@ -206,6 +206,7 @@ object HanabiGame {
             action(discard).effect { val card = game.current.cards[action.parameter]; moveCard(replayable, game, card, game.colorData(card.card).discard) }
             action(discard).effect { game.increaseClueTokens() }
 
+            action(play).options { game.current.cards.indices }
             action(play).requires { !game.config.namePlayingCard }
             action(play).effect {
                 val card = game.current.cards[action.parameter]

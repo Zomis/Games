@@ -114,10 +114,10 @@ class GameActionRuleContext<T : Any, A : Any>(
         this.choices = options
     }
 
-    override fun forceUntil(rule: ActionRuleScope<T, A>.() -> Boolean) {
+    override fun forceUntil(rule: ActionOptionsScope<T>.() -> Boolean) {
         val myActionType = actionType
         globalRules.preconditions.add {
-            actionType == myActionType || rule(this as ActionRuleScope<T, A>)
+            actionType == myActionType || rule(this)
         }
     }
 
@@ -130,12 +130,19 @@ class GameActionRuleContext<T : Any, A : Any>(
         }
 
         val evaluator = this.availableActionsEvaluator
-        return if (evaluator == null) {
-            require(this.actionDefinition.parameterType == Unit::class) {
-                "Actions of type ${actionDefinition.parameterType} needs to specify a list of allowed parameters"
-            }
-            listOf(createAction(playerIndex, Unit as A)).filter { actionAllowed(it) }
-        } else evaluator(context).map { createAction(playerIndex, it) }.filter { this.actionAllowed(it) }
+        return if (this.choices == null) {
+            if (evaluator == null) {
+                require(this.actionDefinition.parameterType == Unit::class) {
+                    "Action type ${this.actionDefinition.name} with parameter ${actionDefinition.parameterType} needs to specify a list of allowed parameters"
+                }
+                listOf(createAction(playerIndex, Unit as A)).filter { actionAllowed(it) }
+            } else evaluator(context).map { createAction(playerIndex, it) }.filter { this.actionAllowed(it) }
+        } else {
+            require(this.availableActionsEvaluator == null) { "An action must have only one rule for either choices or options" }
+            val complex = RulesActionTypeComplex<T, A>(context, this.choices!!)
+            val actions = complex.availableActions()
+            actions.toList().filter { actionAllowed(it) }
+        }
     }
 
     override fun actionAllowed(action: Actionable<T, A>): Boolean {
