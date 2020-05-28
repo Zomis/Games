@@ -34,7 +34,7 @@ function convertToItems(recursiveFunction, parentId, key, data) {
 
 export default {
     name: "GameTreeView",
-    props: ["view", "actions", "onAction"],
+    props: ["view", "actions"],
     data() {
         return {
             open: [],
@@ -57,7 +57,7 @@ export default {
             let actionName = keyParts[2];
             let sub = keyParts[3];
             console.log("TreeView selected", actionName, sub);
-            this.onAction(actionName, sub);
+            this.actions.perform(actionName, sub);
 
             // /root/takeMoney/take-GREEN/direct
         }
@@ -68,7 +68,7 @@ export default {
         },
         items() {
             if (this.isActions) {
-                return [convertToItems(convertToItems, "", "Actions", this.actions)];
+                return [convertToItems(convertToItems, "", "Actions", this.actions.available)];
             } else {
                 return [convertToItems(convertToItems, "", "View", this.view)];
             }
