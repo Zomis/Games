@@ -4,10 +4,7 @@ import net.zomis.games.PlayerEliminations
 import net.zomis.games.WinResult
 import net.zomis.games.cards.Card
 import net.zomis.games.cards.CardZone
-import net.zomis.games.dsl.EffectScope
-import net.zomis.games.dsl.ReplayableScope
-import net.zomis.games.dsl.createActionType
-import net.zomis.games.dsl.createGame
+import net.zomis.games.dsl.*
 import kotlin.math.min
 
 // RAINBOW: Either used as a sixth color, or as a wildcard (where cards can be both blue and yellow for example)
@@ -193,79 +190,65 @@ object HanabiGame {
             init {
                 Hanabi(config, (0 until playerCount).map { HanabiPlayer() })
             }
-            onStart {
-                // 5 cards for 2 or 3 players, otherwise 4 cards.
-                val playerCount = it.players.size
-                val cardPerPlayer = if (playerCount in 2..3) 5 else 4
-                val cardStates = this.strings("cards") {
-                    it.deck.top(cardPerPlayer * playerCount).map { c -> c.toStateString() }
-                }
-                val cards = it.deck.findStates(cardStates) { c -> c.toStateString() }
-                it.deck.deal(cards, it.players.map { p -> p.cards })
-            }
         }
-        logic {
-            intAction(discard, { it.current.cards.indices }) {
-                allowed { it.playerIndex == it.game.currentPlayer && it.game.turnsLeft != 0 && it.game.clueTokens < it.game.config.maxClueTokens }
-                effect {
-                    val card = it.game.current.cards[it.parameter]
-                    moveCard(this.replayable(), it.game, card, it.game.colorData(card.card).discard)
-                    it.game.increaseClueTokens()
-                    nextTurnEndCheck(it.game, playerEliminations)
-                }
+        rules {
+            gameStart {
+                // 5 cards for 2 or 3 players, otherwise 4 cards.
+                val playerCount = game.players.size
+                val cardPerPlayer = if (playerCount in 2..3) 5 else 4
+                val cards = game.deck.random(replayable, cardPerPlayer * playerCount, "cards") { c -> c.toStateString() }.map { it.card }.toList()
+                game.deck.deal(cards, game.players.map { p -> p.cards })
             }
-            action(playNamed) {
-                options {
-                    optionFrom({ if (it.config.namePlayingCard) it.current.cards.indices.toList() else emptyList() }) {cardIndex ->
-                        optionFrom({ it.colors.filter { c -> c.nextPlayable() != null }.map { c -> c.color } }) {color ->
-                            actionParameter(PlayNamedAction(cardIndex, color))
-                        }
+            allActions.precondition { playerIndex == game.currentPlayer }
+            allActions.precondition { game.turnsLeft != 0 }
+            action(discard).options { game.current.cards.indices }
+            action(discard).requires { game.clueTokens < game.config.maxClueTokens }
+            action(discard).effect { val card = game.current.cards[action.parameter]; moveCard(replayable, game, card, game.colorData(card.card).discard) }
+            action(discard).effect { game.increaseClueTokens() }
+
+            action(play).requires { !game.config.namePlayingCard }
+            action(play).effect {
+                val card = game.current.cards[action.parameter]
+                val playArea = game.playAreaFor(card.card)
+                playCardTo(card, playArea, game, this)
+            }
+
+            action(playNamed).precondition { game.config.namePlayingCard }
+            action(playNamed).effect {
+                val playCard = game.current.cards[action.parameter.cardIndex]
+                val playArea = game.playAreaFor(playCard.card).takeIf { playCard.card.color == action.parameter.color }
+                playCardTo(playCard, playArea, game, this)
+            }
+            action(playNamed).choose {
+                options({ game.current.cards.indices.toList() }) {cardIndex ->
+                    options({ game.colors.filter { c -> c.nextPlayable() != null }.map { c -> c.color } }) {color ->
+                        parameter(PlayNamedAction(cardIndex, color))
                     }
                 }
-                allowed { it.game.config.namePlayingCard && it.playerIndex == it.game.currentPlayer && it.game.turnsLeft != 0 }
-                effect {
-                    val playCard = it.game.current.cards[it.parameter.cardIndex]
-                    val playArea = it.game.playAreaFor(playCard.card).takeIf { _ -> playCard.card.color == it.parameter.color }
-                    playCardTo(playCard, playArea, it.game, this)
-                }
             }
-            intAction(play, {it.current.cards.indices}) {
-                allowed { !it.game.config.namePlayingCard && it.playerIndex == it.game.currentPlayer && it.game.turnsLeft != 0 }
-                effect {
-                    val playCard = it.game.current.cards[it.parameter]
-                    val playArea = it.game.playAreaFor(playCard.card)
-                    playCardTo(playCard, playArea, it.game, this)
-                }
-            }
-            action(giveClue) {
-                options {
-                    optionFrom({ it.players.indices.toList().minus(it.currentPlayer) }) {player ->
-                        val TEXT_COLOR = "color"
-                        option(listOf(TEXT_COLOR, "value")) {clueMode ->
-                            if (clueMode == TEXT_COLOR) {
-                                optionFrom({ game -> game.config.clueableColors() }) {color ->
-                                    actionParameter(HanabiClue(player, color, null))
-                                }
-                            } else {
-                                option(1..5) {value ->
-                                    actionParameter(HanabiClue(player, null, value))
-                                }
+
+            action(giveClue).requires { action.parameter.player != action.playerIndex }
+            action(giveClue).requires { game.clueTokens > 0 }
+            action(giveClue).requires { game.allowClue(action.parameter) }
+            action(giveClue).effect { game.clueTokens-- }
+            action(giveClue).effect { game.reveal(action.parameter) }
+            action(giveClue).choose {
+                options({ game.players.indices.toList().minus(game.currentPlayer) }) {player ->
+                    val TEXT_COLOR = "color"
+                    options({ listOf(TEXT_COLOR, "value") }) {clueMode ->
+                        if (clueMode == TEXT_COLOR) {
+                            options({ game.config.clueableColors() }) {color ->
+                                parameter(HanabiClue(player, color, null))
+                            }
+                        } else {
+                            options({ 1..5 }) {value ->
+                                parameter(HanabiClue(player, null, value))
                             }
                         }
                     }
                 }
-                allowed {
-                    it.parameter.player != it.playerIndex &&
-                    it.playerIndex == it.game.currentPlayer &&
-                    it.game.clueTokens > 0 && it.game.turnsLeft != 0
-                        && it.game.allowClue(it.parameter)
-                }
-                effect {
-                    it.game.clueTokens--
-                    it.game.reveal(it.parameter)
-                    nextTurnEndCheck(it.game, playerEliminations)
-                }
             }
+            allActions.after { nextTurnEndCheck(game, eliminations) }
         }
         view {
             currentPlayer { it.currentPlayer }
@@ -316,8 +299,8 @@ object HanabiGame {
         }
     }
 
-    private fun playCardTo(playCard: Card<HanabiCard>, playArea: CardZone<HanabiCard>?, game: Hanabi, effectScope: EffectScope) {
-        moveCard(effectScope.replayable(), game, playCard, playArea ?: game.colorData(playCard.card).discard)
+    private fun playCardTo(playCard: Card<HanabiCard>, playArea: CardZone<HanabiCard>?, game: Hanabi, effectScope: GameUtils) {
+        moveCard(effectScope.replayable, game, playCard, playArea ?: game.colorData(playCard.card).discard)
         if (playCard.card.value == 5 && playArea != null) {
             game.increaseClueTokens()
         }
