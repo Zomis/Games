@@ -57,7 +57,7 @@ export default {
             let actionName = keyParts[2];
             let sub = keyParts[3];
             console.log("TreeView selected", actionName, sub);
-            this.actions.perform(actionName, sub);
+            this.actions.perform('ignored', sub);
 
             // /root/takeMoney/take-GREEN/direct
         }

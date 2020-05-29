@@ -1,7 +1,7 @@
 <template>
   <div class="game">
     <GameHead v-if="gameInfo" :gameInfo="gameInfo" :playerCount="playerCount" :view="view" :eliminations="eliminations" />
-    <component v-if="view" :is="viewComponent" :view="view" :actions2="actions2" :onAction="action" :actions="actions" :actionChoice="actionChoice" :players="players" />
+    <component v-if="view" :is="viewComponent" :view="view" :actions2="actions2" :players="players" />
     <v-btn v-if="!isObserver" @click="clearActions()" :disabled="actionChoice === null">Reset Action</v-btn>
     <v-snackbar v-model="snackbar">
       {{snackbarText}}
@@ -39,15 +39,15 @@ export default {
       this.$store.dispatch("DslGameState/requestView", this.gameInfo);
       this.$store.dispatch("DslGameState/resetActions", { gameInfo: this.gameInfo });
     },
-    action(name, data) {
-      console.log("ACTION CHOICE", name, data)
-      let action = this.actions[name][data]
-      console.log("ACTION CHOICE", name, data, action)
+    action(_, data) {
+      let action = this.actionsAvailable[data]
+      console.log("ACTION CHOICE", data, action)
       if (action === undefined) {
         console.log("NO ACTION FOR", data)
         this.clearActions();
         return
       }
+      let name = action.actionType
       if (action.direct) {
         // Perform direct
         this.$store.dispatch("DslGameState/action", { gameInfo: this.gameInfo, name: name, data: action.value });
@@ -81,7 +81,8 @@ export default {
       return {
         chosen: this.actionChoice,
         perform: this.action,
-        available: this.actions,
+        available: this.actionsAvailable,
+        actionTypes: this.actionTypes,
         clear: this.clearActions,
         resetTo: this.resetActionsTo
       }
@@ -111,11 +112,15 @@ export default {
         return state.games[this.gameInfo.gameId].gameInfo.players.length;
       },
       players(state) {
-        if (!state.games[this.gameId]) { return null }
+        if (!state.games[this.gameId]) { return [] }
         return state.games[this.gameInfo.gameId].gameInfo.players;
       },
-      actions(state) {
-        if (!state.games[this.gameId]) { return null }
+      actionTypes(state) {
+        if (!state.games[this.gameId]) { return [] }
+        return state.games[this.gameInfo.gameId].gameData.actionTypes;
+      },
+      actionsAvailable(state) {
+        if (!state.games[this.gameId]) { return {} }
         return state.games[this.gameInfo.gameId].gameData.actions;
       }
     })

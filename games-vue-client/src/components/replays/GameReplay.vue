@@ -62,6 +62,7 @@ export default {
                 chosen: null,
                 perform: () => {},
                 available: {},
+                actionTypes: [],
                 clear: () => {},
                 resetTo: () => {}
             },

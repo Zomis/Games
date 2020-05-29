@@ -10,7 +10,7 @@
               class="piece"
               :class="'piece-' + slotProps.tile.tile.owner"
               :onclick="generateOnClickFor(areaIndex)"
-              :actionable="actions.play && actions.play[`${Math.floor(areaIndex % 3) * 3 + slotProps.tile.x},${Math.floor(areaIndex / 3) * 3 + slotProps.tile.y}`]"
+              :actionable="actions2.available[`${Math.floor(areaIndex % 3) * 3 + slotProps.tile.x},${Math.floor(areaIndex / 3) * 3 + slotProps.tile.y}`]"
               :piece="slotProps.tile">
             </UrPiece>
           </template>
@@ -49,7 +49,7 @@ import Map2D from "@/components/common/Map2D";
 
 export default {
   name: "UTTT",
-  props: ["view", "actions", "onAction"],
+  props: ["view", "actions2"],
   components: {
     Map2D,
     UrPiece
@@ -72,7 +72,7 @@ export default {
     pieceClick(areaIndex, piece) {
       let global = this.boardTileToGlobal({ boardIndex: areaIndex, x: piece.x, y: piece.y })
       console.log("play on", global)
-      this.onAction("play", `${global.x},${global.y}`);
+      this.actions2.perform("play", `${global.x},${global.y}`);
     },
     boardTileToGlobal(piece) {
       let x = (piece.boardIndex % 3) * 3 + piece.x;

@@ -1,7 +1,8 @@
 <template>
   <div :class="['game', 'player-' + currentPlayer]">
+    <!-- SKULL, HANABI -->
     <GameHead :gameInfo="gameInfo" :playerCount="playerCount" :view="view" :eliminations="eliminations" />
-    <component :is="viewComponent" :view="view" :onAction="action" :actions2="actions2" :actions="actions" :actionChoice="actionChoice" :players="gameInfo.players" />
+    <component :is="viewComponent" :view="view" :actions2="actions2" :players="gameInfo.players" />
     <v-btn @click="cancelAction()" :disabled="actionChoice === null">Reset Action</v-btn>
   </div>
 </template>
@@ -84,6 +85,7 @@ export default {
       console.log("CALLING UPDATE ACTIONS", this.actionChoice, this.viewer, this.view)
       let supportedGame = this.supportedGame
       let actions = {}
+      let actionTypes = []
       let choices = this.actionChoice ? this.actionChoice.choices : []
       let autoPerform = false
       this.game.actions.types().toArray().forEach(e => {
@@ -108,25 +110,26 @@ export default {
           console.log("AUTO PERFORM DONE")
           return
         }
-        actions[e.name] = supportedGames.actionInfo(supportedGame, e.name, mappedInfo, this.actionChoice);
+        actionTypes.push(e.name);
+        actions = { ...actions, ...supportedGames.actionInfo(supportedGame, e.name, mappedInfo, this.actionChoice) }
       });
       if (autoPerform) return
       this.actions = actions;
+      this.actionTypes = actionTypes;
       console.log("ACTIONS FOR", this.viewer, actions)
     },
-    action(name, data) {
+    action(_, data) {
       if (this.view.winner !== undefined && this.view.winner !== null) { // TODO: Replace with this.game.isGameOver
         console.log("GAME OVER")
         return
       }
-
-      console.log("ACTION CHOICE", name, data)
-      let action = this.actions[name][data]
-      console.log("ACTION CHOICE", name, data, action)
+      let action = this.actions[data]
+      console.log("ACTION CHOICE", data, action)
       if (action === undefined) {
         console.log("NO ACTION FOR", name, data, this.actions)
         return
       }
+      let name = action.actionType
       if (action.direct) {
         console.log("DIRECT PERFORM")
         let gameActionType = this.game.actions.type_61zpoe$(name)
@@ -160,6 +163,7 @@ export default {
         chosen: this.actionChoice,
         perform: this.action,
         available: this.actions,
+        actionTypes: this.actionTypes,
         clear: this.cancelAction,
         resetTo: this.resetActionTo
       }

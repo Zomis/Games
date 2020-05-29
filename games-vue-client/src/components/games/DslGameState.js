@@ -22,6 +22,7 @@ const gameStore = {
           eliminations: [],
           view: {},
           actionChoice: null, // actionName, choices
+          actionTypes: [],
           actions: {}
         }
       });
@@ -50,9 +51,12 @@ const gameStore = {
       let game = state.games[data.gameId].gameData;
       let supportedGame = supportedGames.games[data.gameType]
       let actions = {}
+      let actionTypes = []
       data.actions.forEach(e => {
-        actions[e.first] = supportedGames.actionInfo(supportedGame, e.first, e.second, game.actionChoice);
+        actions = { ...actions, ...supportedGames.actionInfo(supportedGame, e.first, e.second, game.actionChoice) }
+        actionTypes.push(e.first);
       });
+      game.actionTypes = actionTypes;
       game.actions = actions;
     }
   },

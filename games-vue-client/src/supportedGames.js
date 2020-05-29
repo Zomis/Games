@@ -86,8 +86,8 @@ const supportedGames = {
             GiveClue: (playerIndex) => ({
                 key: 'player-' + playerIndex,
                 next: (mode) => ({
-                    key: mode,
-                    next: (hintValue) => `${mode}-${hintValue}`
+                    key: 'giveclue-' + mode,
+                    next: (hintValue) => `giveclue-${mode}-${hintValue}`
                 })
             })
         },
@@ -251,7 +251,7 @@ export default {
             }
             a = a(value)
             if (typeof a === 'object') return { ...a, value: value, direct: false }
-            return { key: a, value: value, direct: choices.length === 0 }
+            return { key: a, value: value, direct: choices.length === 0, actionType: actionName }
         }
     
         if (actionChoice && actionName != actionChoice.actionName) {

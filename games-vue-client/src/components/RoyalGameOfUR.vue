@@ -127,7 +127,7 @@ function determinePlayerPieces(view) {
 
 export default {
   name: "RoyalGameOfUR",
-  props: ["view", "onAction"],
+  props: ["view", "actions2"],
   data() {
     return {
       showRules: false,
@@ -145,7 +145,7 @@ export default {
     doNothing() {},
     placeNew() { // playerIndex parameter
       if (this.canPlaceNew) {
-        this.onAction("move", 0);
+        this.actions2.perform("move", 0);
       }
     },
     onClick(piece) {
@@ -156,10 +156,10 @@ export default {
         return;
       }
       console.log("OnClick in URView: " + piece.x + ", " + piece.y);
-      this.onAction("move", `${piece.position}`);
+      this.actions2.perform("move", `${piece.position}`);
     },
     onDoRoll() {
-      this.onAction("roll", "roll");
+      this.actions2.perform("roll", "roll");
     },
     onPlaceNewHighlight(playerIndex) {
       if (playerIndex !== this.view.currentPlayer) {
