@@ -19,6 +19,10 @@ function convertToItems(recursiveFunction, parentId, key, data) {
         id: nextParentId,
         name: key
     };
+    if (nextParentId.startsWith('/Actions/')) return {
+        id: parentId + '/' + key,
+        name: key
+    };
     if (typeof data === 'object' && data !== null) {
         let keys = Object.keys(data);
         return { ...basic, children: keys.map(k => recursiveFunction(recursiveFunction, nextParentId, k, data[k])) }
@@ -50,13 +54,12 @@ export default {
             }
             let key = this.active[0].id;
             let keyParts = key.split("/");
-            if (keyParts.length !== 5) {
-                window.alert("You must do this when having selected a 'direct' item");
+            if (keyParts.length !== 3) {
+                window.alert("You must do this when having selected an action item");
                 return;
             }
-            let actionName = keyParts[2];
-            let sub = keyParts[3];
-            console.log("TreeView selected", actionName, sub);
+            let sub = keyParts[2];
+            console.log("TreeView selected", sub);
             this.actions.perform('ignored', sub);
 
             // /root/takeMoney/take-GREEN/direct
