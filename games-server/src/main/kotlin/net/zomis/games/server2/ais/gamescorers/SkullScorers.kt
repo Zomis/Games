@@ -15,7 +15,7 @@ object SkullScorers {
         return listOf(
             ScorerAIFactory("Skull", "#AI_Self_Destruct", playSkull, betHigh.weight(10)),
             ScorerAIFactory("Skull", "#AI_Play_Random_Pass", pass, betLow),
-            ScorerAIFactory("Skull", "#AI_Flower_Pass", playFlower, pass, betLow),
+            ScorerAIFactory("Skull", "#AI_Flower_Pass", playFlower.weight(20), pass.weight(10), betLow),
             ScorerAIFactory("Skull", "#AI_Keep_Playing", play)
         )
     }
