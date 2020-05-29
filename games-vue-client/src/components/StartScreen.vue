@@ -2,48 +2,7 @@
   <v-container fluid>
   <v-row>
     <v-col cols="12" md="6" lg="4" v-for="(users, gameType) in lobby" :key="gameType">
-    <v-card class="games">
-      <v-toolbar color="cyan" dark>
-        <v-toolbar-title>{{ displayNames[gameType] }}</v-toolbar-title>
-        <v-spacer></v-spacer>
-        <v-btn rounded @click="createInvite(gameType)">New Game</v-btn>
-      </v-toolbar>
-      <v-card-title>
-        Users
-      </v-card-title>
-      <v-list light>
-        <template v-for="(player, index) in users">
-          <v-divider :key="`divider-${player.id}`" v-if="index > 0"></v-divider>
-          <v-list-item :key="`player-${player.id}`">
-            <v-list-item-content>
-              <v-list-item-title v-html="player.name"></v-list-item-title>
-            </v-list-item-content>
-
-            <v-list-item-action>
-              <v-btn color="info" @click="invite(gameType, player.id)" v-if="player.name !== loginName">Invite</v-btn>
-            </v-list-item-action>
-          </v-list-item>
-        </template>
-      </v-list>
-
-      <v-divider></v-divider>
-
-      <v-card-title>Your Games</v-card-title>
-      <template v-for="game in activeGames" v-if="game.gameInfo.gameType === gameType && game.gameInfo.yourIndex >= 0">
-        <div class="active-game" :key="game.gameId">
-          <component :key="gameType + game.gameInfo.gameId" :is="game.component" :gameInfo="game.gameInfo"></component>
-        </div>
-      </template>
-
-      <v-divider></v-divider>
-
-      <v-card-title>Other Games</v-card-title>
-      <template v-for="game in activeGames" v-if="game.gameInfo.gameType === gameType && game.gameInfo.yourIndex < 0">
-        <div class="active-game" :key="game.gameId">
-          <component :key="gameType + game.gameInfo.gameId" :is="game.component" :gameInfo="game.gameInfo"></component>
-        </div>
-      </template>
-    </v-card>
+      <LobbyGameType :gameType="gameType" :users="users" :yourPlayer="yourPlayer" />
     </v-col>
 
     <v-col cols="12">
@@ -83,6 +42,7 @@
 
 <script>
 import Socket from "@/socket";
+import LobbyGameType from "@/components/lobby/LobbyGameType";
 
 import { mapState } from "vuex";
 import supportedGames from "@/supportedGames";
@@ -96,6 +56,7 @@ export default {
     };
   },
   components: {
+    LobbyGameType,
     ...supportedGames.components()
   },
   methods: {
@@ -118,18 +79,11 @@ export default {
     gameListMessage(message) {
       this.gameList = message.list;
     },
-    createInvite(gameType) {
-      Socket.route("invites/prepare", { gameType: gameType })
-    },
     unfinishedGameListMessage(message) {
       this.unfinishedGames = message.games
     },
     resumeGame(gameType, gameId) {
       this.$router.push(`/games/${gameType}/${gameId}`)
-    },
-    invite(gameType, playerId) {
-      this.$store.commit("lobby/createInvite", gameType);
-      Socket.route("invites/invite", { gameType: gameType, invite: [playerId] });
     }
   },
   created() {
@@ -142,18 +96,8 @@ export default {
     this.$store.dispatch("lobby/joinAndList");
   },
   computed: {
-    displayNames() {
-      let games = {};
-      supportedGames.enabledGameKeys().forEach(gameType => {
-        games[gameType] = supportedGames.games[gameType].displayName ? supportedGames.games[gameType].displayName : gameType;
-      });
-      return games
-    },
-    activeGames() {
-      return this.$store.getters.activeGames;
-    },
     ...mapState('lobby', {
-      loginName: state => state.yourPlayer.name,
+      yourPlayer: state => state.yourPlayer,
       lobby: state => state.lobby
     })
   },
