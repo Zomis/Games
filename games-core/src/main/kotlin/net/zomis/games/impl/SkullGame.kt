@@ -126,8 +126,10 @@ object SkullGame {
                 }
             }
             action(choose).after {
-                val emptyPlayer = game.players.find { it.hand.cards.isEmpty() }
+                val emptyPlayer = game.players.find { it.totalCards == 0 && eliminations.remainingPlayers().contains(it.index) }
                 if (emptyPlayer != null) {
+                    emptyPlayer.bet = 0
+                    emptyPlayer.pass = true
                     eliminations.result(emptyPlayer.index, WinResult.LOSS)
                     if (eliminations.remainingPlayers().size == 1) eliminations.eliminateRemaining(WinResult.WIN)
                 }
