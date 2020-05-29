@@ -14,11 +14,13 @@ object SkullScorers {
     fun ais(): List<ScorerAIFactory<SkullGameModel>> {
         return listOf(
             ScorerAIFactory("Skull", "#AI_Self_Destruct", playSkull, betHigh.weight(10)),
-            ScorerAIFactory("Skull", "#AI_Pass", pass, betLow),
+            ScorerAIFactory("Skull", "#AI_Play_Random_Pass", pass, betLow),
+            ScorerAIFactory("Skull", "#AI_Flower_Pass", playFlower, pass, betLow),
             ScorerAIFactory("Skull", "#AI_Keep_Playing", play)
         )
     }
 
+    val playFlower = scorers.conditional { action.actionType == SkullGame.play.name && action.parameter == SkullCard.FLOWER }
     val playSkull = scorers.conditional { action.actionType == SkullGame.play.name && action.parameter == SkullCard.SKULL }
     val betHigh = scorers.simple { if (action.actionType == SkullGame.bet.name) 1.1 + (action.parameter as Int).toDouble() / 100 else 0.0 }
     val betLow = scorers.simple { if (action.actionType == SkullGame.bet.name) 1.1 + -(action.parameter as Int).toDouble() / 100 else 0.0 }
