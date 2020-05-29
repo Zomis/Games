@@ -249,7 +249,12 @@ object HanabiGame {
                     }
                 }
             }
-            allActions.after { nextTurnEndCheck(game, eliminations) }
+            allActions.after {
+                game.nextTurn()
+                if (game.turnsLeft == 0) {
+                    eliminations.eliminateRemaining(WinResult.LOSS)
+                }
+            }
         }
         view {
             currentPlayer { it.currentPlayer }
@@ -313,14 +318,6 @@ object HanabiGame {
         }
         if (game.boardComplete()) {
             effectScope.playerEliminations.eliminateRemaining(WinResult.WIN)
-        }
-        nextTurnEndCheck(game, effectScope.playerEliminations)
-    }
-
-    private fun nextTurnEndCheck(game: Hanabi, playerEliminations: PlayerEliminations) {
-        game.nextTurn()
-        if (game.turnsLeft == 0) {
-            playerEliminations.eliminateRemaining(WinResult.LOSS)
         }
     }
 
