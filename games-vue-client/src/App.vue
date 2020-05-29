@@ -15,6 +15,8 @@
       </template>
       <v-spacer />
       <v-toolbar-items>
+        <span v-if="!connection.connected">Disconnected</span>
+        <span v-if="connection.connected">{{ connection.name }}</span>
         <v-btn text to="/">Home</v-btn>
         <v-btn text @click="logout()">Logout</v-btn>
       </v-toolbar-items>
@@ -52,6 +54,9 @@ export default {
     }
   },
   computed: {
+    ...mapState({
+      connection(state) { return state.connection }
+    }),
     ...mapState("lobby", {
       yourPlayer(state) { return state.yourPlayer }
     })

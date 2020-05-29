@@ -18,13 +18,16 @@ const emitter = new Vue({
     getServerURL() {
       return this.serverURL;
     },
-    connect(url) {
+    connect(server) {
+      let url = server.url;
       console.log("Connecting to " + url);
       this.serverURL = url;
       this.socket = new WebSocket(url);
       this.socket.onopen = e => {
         this.connected = true;
         this.$emit("connected", e);
+        console.log("connected", e, url);
+        store.dispatch("onSocketOpened", server)
       };
       this.socket.onmessage = msg => {
         let obj = JSON.parse(msg.data);
@@ -34,10 +37,12 @@ const emitter = new Vue({
       };
       this.socket.onclose = () => {
         console.log("Websocket closed");
+        store.dispatch("onSocketClosed")
       };
       this.socket.onerror = err => {
         console.log("Websocket error");
         this.$emit("error", err);
+        store.dispatch("onSocketError", err)
       };
     },
     disconnect() {

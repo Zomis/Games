@@ -13,6 +13,9 @@ const store = new Vuex.Store({
     lobby: lobbyStore,
     ...supportedGames.storeModules()
   },
+  state: {
+    connection: { name: null, url: null, connected: false }
+  },
   getters: {
     activeGames: state => {
       let modules = supportedGames.stateModules(state); // TODO: What about DSL-games where multiple game types can have the same store? GameId Collision?
@@ -20,6 +23,15 @@ const store = new Vuex.Store({
         .flatMap(m => m.games)
         .map(i => Object.values(i))
         .flat();
+    }
+  },
+  mutations: {
+    connected(state, data) {
+      if (data) {
+        state.connection = { ...data, connected: true };
+      } else {
+        state.connection.connected = false;
+      }
     }
   },
   actions: {
@@ -51,6 +63,15 @@ const store = new Vuex.Store({
         data.move
       )} }`;
       Socket.send(json);
+    },
+    onSocketOpened(context, data) {
+      context.commit("connected", data);
+    },
+    onSocketClosed(context) {
+      context.commit("connected", false);
+    },
+    onSocketError(context) {
+      context.commit("connected", false);
     },
     onSocketMessage(context, data) {
       if (data.type == "Auth") {
