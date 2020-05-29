@@ -1,7 +1,7 @@
 <template>
   <div class="game">
     <GameHead v-if="gameInfo" :gameInfo="gameInfo" :playerCount="playerCount" :view="view" :eliminations="eliminations" />
-    <component v-if="view" :is="viewComponent" :view="view" :actions2="actions2" :players="players" />
+    <component v-if="view" :is="viewComponent" :view="view" :actions="actions" :players="players" />
     <v-btn v-if="!isObserver" @click="clearActions()" :disabled="actionChoice === null">Reset Action</v-btn>
     <v-snackbar v-model="snackbar">
       {{snackbarText}}
@@ -77,7 +77,7 @@ export default {
       if (!this.gameInfo) { return true }
       return this.gameInfo.yourIndex < 0;
     },
-    actions2() {
+    actions() {
       return {
         chosen: this.actionChoice,
         perform: this.action,

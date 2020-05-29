@@ -23,7 +23,7 @@
 //let SPACE = 1;
 export default {
   name: "TTT3D",
-  props: ["view", "actions2"],
+  props: ["view", "actions"],
   data() {
     return {
       scene: null,
@@ -65,7 +65,7 @@ export default {
         let r = hit.material.albedoColor.r;
         console.log("Current:", r, b);
 */
-        this.actions2.perform("play", `${x},${y}`);
+        this.actions.perform("play", `${x},${y}`);
       }
     }
   },

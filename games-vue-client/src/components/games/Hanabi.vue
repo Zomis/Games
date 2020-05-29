@@ -42,7 +42,7 @@
                 </v-btn>
               </template>
               <v-btn v-for="(act, actIndex) in clueOptions" :key="actIndex"
-                   :class="[actIndex.includes('color-') ? actIndex : '']" @click="actions2.perform('GiveClue', 'giveclue-' + actIndex)">
+                   :class="[actIndex.includes('color-') ? actIndex : '']" @click="actions.perform('GiveClue', 'giveclue-' + actIndex)">
                  {{ actIndex }}
               </v-btn>
             </v-menu>
@@ -101,17 +101,17 @@ import HanabiCard from "./HanabiCard"
 
 export default {
   name: "Hanabi",
-  props: ["view", "actions2", "players"],
+  props: ["view", "actions", "players"],
   components: {
       PlayerProfile,
       HanabiCard
   },
   methods: {
     clue(index) {
-      this.actions2.resetTo("GiveClue", index);
+      this.actions.resetTo("GiveClue", index);
     },
     btnActions(action, index) {
-      this.actions2.perform(action, index);
+      this.actions.perform(action, index);
     }
   },
   watch: {
@@ -133,7 +133,7 @@ export default {
   },
   computed: {
     actionChoice() {
-      return this.actions2.chosen;
+      return this.actions.chosen;
     },
     otherPlayers() {
       if (!this.view.hand) return this.view.others;
@@ -141,10 +141,10 @@ export default {
       return [...this.view.others.slice(myIndex), ...this.view.others.slice(0, myIndex)]
     },
     clueOptions() {
-      if (!this.actions2.available) return [];
+      if (!this.actions.available) return [];
       let prefix = "giveclue-";
-      return Object.keys(this.actions2.available).filter(key => key.includes(prefix))
-        .reduce((obj, key) => ({ ...obj, [key.substring(prefix.length)]: this.actions2.available[key] }), {});
+      return Object.keys(this.actions.available).filter(key => key.includes(prefix))
+        .reduce((obj, key) => ({ ...obj, [key.substring(prefix.length)]: this.actions.available[key] }), {});
     },
     myTurn() {
       return this.view.currentPlayer == this.view.hand.index

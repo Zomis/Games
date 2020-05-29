@@ -33,7 +33,7 @@
         <div xs12>
             Started at {{ timeStarted }} - Ended at {{ timeLastAction }}
         </div>
-        <component xs12 :is="gameComponent" :actions="{}" :actions2="actions2" :view="currentView" :players="players" />
+        <component xs12 :is="gameComponent" :actions="actions" :view="currentView" :players="players" />
       </v-flex>
     </v-layout>
     <AiQuery :gameInfo="gameInfo" :gamePosition="position" />
@@ -58,7 +58,7 @@ export default {
             running: false,
             timer: null,
             position: 0,
-            actions2: {
+            actions: {
                 chosen: null,
                 perform: () => {},
                 available: {},

@@ -2,7 +2,7 @@
   <div :class="['game', 'player-' + currentPlayer]">
     <!-- SKULL, HANABI -->
     <GameHead :gameInfo="gameInfo" :playerCount="playerCount" :view="view" :eliminations="eliminations" />
-    <component :is="viewComponent" :view="view" :actions2="actions2" :players="gameInfo.players" />
+    <component :is="viewComponent" :view="view" :actions="actions" :players="gameInfo.players" />
     <v-btn @click="cancelAction()" :disabled="actionChoice === null">Reset Action</v-btn>
   </div>
 </template>
@@ -51,7 +51,7 @@ export default {
       eliminations: [],
       views: [],
       game: null,
-      actions: {},
+      actionsAvailable: {},
       view: {},
       viewer: 0
     }
@@ -84,7 +84,7 @@ export default {
     updateActions() {
       console.log("CALLING UPDATE ACTIONS", this.actionChoice, this.viewer, this.view)
       let supportedGame = this.supportedGame
-      let actions = {}
+      let actionsAvailable = {}
       let actionTypes = []
       let choices = this.actionChoice ? this.actionChoice.choices : []
       let autoPerform = false
@@ -111,22 +111,22 @@ export default {
           return
         }
         actionTypes.push(e.name);
-        actions = { ...actions, ...supportedGames.actionInfo(supportedGame, e.name, mappedInfo, this.actionChoice) }
+        actionsAvailable = { ...actionsAvailable, ...supportedGames.actionInfo(supportedGame, e.name, mappedInfo, this.actionChoice) }
       });
       if (autoPerform) return
-      this.actions = actions;
+      this.actionsAvailable = actionsAvailable;
       this.actionTypes = actionTypes;
-      console.log("ACTIONS FOR", this.viewer, actions)
+      console.log("ACTIONS FOR", this.viewer, actionsAvailable)
     },
     action(_, data) {
       if (this.view.winner !== undefined && this.view.winner !== null) { // TODO: Replace with this.game.isGameOver
         console.log("GAME OVER")
         return
       }
-      let action = this.actions[data]
+      let action = this.actionsAvailable[data]
       console.log("ACTION CHOICE", data, action)
       if (action === undefined) {
-        console.log("NO ACTION FOR", name, data, this.actions)
+        console.log("NO ACTION FOR", name, data, this.actionsAvailable)
         return
       }
       let name = action.actionType
@@ -158,11 +158,11 @@ export default {
     playerCount() {
       return this.gameInfo.players.length;
     },
-    actions2() {
+    actions() {
       return {
         chosen: this.actionChoice,
         perform: this.action,
-        available: this.actions,
+        available: this.actionsAvailable,
         actionTypes: this.actionTypes,
         clear: this.cancelAction,
         resetTo: this.resetActionTo

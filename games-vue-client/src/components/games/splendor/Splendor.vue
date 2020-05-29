@@ -7,7 +7,7 @@
             <v-col v-for="(player, index) in view.players" :key="index">
                 <SplendorPlayer :player="player" :playerInfo="players[index]"
                  :controllable="index == view.viewer"
-                 :actions="actions2" :class="{activePlayer: index == view.currentPlayer}" />
+                 :actions="actions" :class="{activePlayer: index == view.currentPlayer}" />
             </v-col>
         </v-row>
         <v-row>
@@ -15,7 +15,7 @@
                 <v-row v-for="level in view.cardLevels" :key="level.level" :class="'card-level-' + level.level">
                     <v-col><v-card><v-card-title>{{ level.remaining }}</v-card-title></v-card></v-col>
                     <v-col v-for="card in level.board" :key="card.id">
-                        <SplendorCard :card="card" :actions="actions2" />
+                        <SplendorCard :card="card" :actions="actions" />
                     </v-col>
                 </v-row>
             </v-col>
@@ -29,9 +29,9 @@
                             <v-col>
                                 <span :class="{
                                     ['bank-' + index]: true,
-                                    actionable: actions2.available['take-' + index],
-                                    'chosen-once': (actions2.chosen) ? actions2.chosen.choices.includes(index) : false,
-                                    'chose-again': (actions2.chosen) ? actions2.chosen.choices.includes(index) && actions2.available['take-' + index] : false}"
+                                    actionable: actions.available['take-' + index],
+                                    'chosen-once': (actions.chosen) ? actions.chosen.choices.includes(index) : false,
+                                    'chose-again': (actions.chosen) ? actions.chosen.choices.includes(index) && actions.available['take-' + index] : false}"
                                     @click="takeMoney(index)">{{ money }}</span>
                             </v-col>
                         </v-row>
@@ -56,11 +56,11 @@ import SplendorNoble from "./SplendorNoble"
 
 export default {
     name: "Splendor",
-    props: ["view", "actions2", "players"],
+    props: ["view", "actions", "players"],
     components: { SplendorPlayer, SplendorCard, SplendorNoble },
     methods: {
         takeMoney(moneyType) {
-            this.actions2.perform("takeMoney", 'take-' + moneyType)
+            this.actions.perform("takeMoney", 'take-' + moneyType)
         }
     },
     computed: {
