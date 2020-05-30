@@ -5,16 +5,16 @@
         <v-card>
           <v-card-title>{{ colorData.color }}</v-card-title>
           <v-card-text>
-            <transition-group name="list-complete" tag="div">
-              <HanabiCard v-for="card in colorData.board" class="list-complete-item" :key="card.id" :card="card" />
-            </transition-group>
+            <CardZone>
+              <HanabiCard v-for="card in colorData.board" :key="card.id" :card="card" />
+            </CardZone>
             <v-divider />
             <v-row>Discard</v-row>
-            <transition-group name="list-complete" tag="div">
-              <div v-for="card in colorData.discard" class="list-complete-item discarded-card ma-1" :key="card.id" :class="'color-' + card.color">
+            <CardZone>
+              <div v-for="card in colorData.discard" class="discarded-card animate ma-1" :key="card.id" :class="'color-' + card.color">
                 <span>{{ card.value }}</span>
               </div>
-            </transition-group>
+            </CardZone>
           </v-card-text>
         </v-card>
       </v-col>
@@ -30,9 +30,14 @@
             </span>
           </v-card-title>
           <v-card-text>
-            <transition-group name="list-complete" tag="div">
-              <HanabiCard v-for="card in player.cards" class="list-complete-item" :key="card.id" :card="card" doubleView="true" />
+            <CardZone>
+              <HanabiCard v-for="card in player.cards" class="list-complete-item animate" :key="card.id" :card="card" doubleView="true" />
+            </CardZone>
+            <!--
+            <transition-group name="list-complete" tag="div" :duration="20000" :class="['card-zone', 'animation-list-complete']">
+              <HanabiCard v-for="card in player.cards" :key="card.id" :card="card" class="animate" doubleView="true" />
             </transition-group>
+            -->
           </v-card-text>
           <v-card-actions>
             <v-menu v-model="showMenu[player.index]" offset-y bottom z-index="100" :close-on-content-click="false">
@@ -81,9 +86,9 @@
           </span>
         </v-card-title>
         <v-card-text>
-          <transition-group name="list-complete" tag="div">
-            <HanabiCard v-for="(card, cardIndex) in view.hand.cards" class="list-complete-item" :key="card.id" :card="card" :action="myTurn ? btnActions : false" :index="cardIndex" />
-          </transition-group>
+          <CardZone>
+            <HanabiCard v-for="(card, cardIndex) in view.hand.cards" class="animate" :key="card.id" :card="card" :action="myTurn ? btnActions : false" :index="cardIndex" />
+          </CardZone>
         </v-card-text>
       </v-card>
       </transition>
@@ -97,12 +102,14 @@
 
 <script>
 import PlayerProfile from "@/components/games/common/PlayerProfile"
+import CardZone from "@/components/games/common/CardZone"
 import HanabiCard from "./HanabiCard"
 
 export default {
   name: "Hanabi",
   props: ["view", "actions", "players"],
   components: {
+      CardZone,
       PlayerProfile,
       HanabiCard
   },
@@ -157,6 +164,7 @@ export default {
 </script>
 <style scoped>
 @import "../../assets/games-style.css";
+@import "../../assets/games-animations.css";
 
 .color-RED {
  background-color: #ef476f !important;
@@ -217,24 +225,6 @@ export default {
 .active-player .player-name {
   text-shadow: 3px 3px 5px #007F00;
 }
-
-.list-complete-item {
-  transition: all 1s linear;
-  display: inline-block !important;
-  margin-right: 10px;
-}
-.list-complete-enter {
-  opacity: 0;
-  transform: translateY(30px);
-}
-.list-complete-leave-to {
-  opacity: 0;
-  transform: translateY(-30px);
-}
-.list-complete-leave-active {
-  position: absolute;
-}
-
 
 .number-transition-enter-active {
   animation: bounce-in .75s;

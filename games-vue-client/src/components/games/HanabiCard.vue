@@ -82,7 +82,7 @@ export default {
 .hanabi-card {
     width: 48px;
     border: 1px solid black !important;
-    transition: background-color 2.5s ease;
+    transition: all 1s linear, background-color 2.5s ease;
 }
 
 .slide-fade-enter-active {
