@@ -15,6 +15,7 @@ Edit just one file instead of editing all the following files:
 import PlayGame from "@/components/PlayGame";
 
 import RoyalGameOfUR from "@/components/RoyalGameOfUR";
+import DungeonMayhem from "@/components/games/dungeon-mayhem/DungeonMayhem"
 import UTTT from "@/components/games/UTTT";
 import Hanabi from "@/components/games/Hanabi";
 import HanabiConfig from "@/components/games/hanabi/HanabiConfig";
@@ -134,13 +135,13 @@ const supportedGames = {
         component: TreeViewGame
     },
     "Dungeon Mayhem": {
-        dsl: true,
-        enabled: false,
+        dsl: gamejs.net.zomis.games.impl.DungeonMayhemDsl.game,
+        enabled: true,
         actions: {
             play: (index) => "play-" + index,
-            target: (index) => "target-" + index
+            target: (target) => "target:player-" + target.player + ';shield-' + target.shieldCard + ';discarded-' + target.discardedCard
         },
-        component: TreeViewGame
+        component: DungeonMayhem
     },
     "Artax": {
         displayName: "Artax",
