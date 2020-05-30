@@ -250,7 +250,7 @@ export default {
                 throw a;
             }
             a = a(value)
-            if (typeof a === 'object') return { ...a, value: value, direct: false }
+            if (typeof a === 'object') return { ...a, value: value, direct: false, actionType: actionName }
             return { key: a, value: value, direct: choices.length === 0, actionType: actionName }
         }
     
