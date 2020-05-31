@@ -4,10 +4,10 @@
       <v-list-item-title v-html="player.name"></v-list-item-title>
     </v-list-item-content>
     <v-list-item-action>
-      <v-btn v-if="inviteable && controllable" color="info" @click="sendInvite()">+</v-btn>
+      <v-btn v-if="inviteable && controllable" color="info" @click="sendInvite()"><v-icon>mdi-account-plus</v-icon></v-btn>
       <template v-for="(state, index) in playerState">
-        <v-btn :key="index" v-if="state === 'accepted'" color="success">v</v-btn>
-        <v-btn :key="index" v-if="state === 'invited'" color="warning">?</v-btn>
+        <v-btn :key="index" v-if="state === 'accepted'" color="green"><v-icon>mdi-check</v-icon></v-btn>
+        <v-btn :key="index" v-if="state === 'invited'" color="orange"><v-icon>mdi-timer-sand</v-icon></v-btn>
         <!-- TODO: Show declined invites but allow to invite again <v-btn :key="index" v-if="state === false" color="error">x</v-btn> -->
         <!-- TODO: Allow kicking/removing people from an invite -->
       </template>
