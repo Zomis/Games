@@ -165,13 +165,6 @@ export default {
 <style scoped>
 @import "../../assets/games-style.css";
 @import "../../assets/games-animations.css";
-/*
-.animate, .list-complete-item {
-    transition: all 1s linear;
-    display: inline-block !important;
-    margin-right: 10px;
-}
-*/
 
 .color-RED {
  background-color: #ef476f !important;
