@@ -59,6 +59,8 @@ export default {
 }
 </script>
 <style scoped>
+/*@import "../../assets/games-animations.css";*/
+
 .hanabi-card.actionable {
     width: 160px;
     height: 80px;
@@ -82,7 +84,7 @@ export default {
 .hanabi-card {
     width: 48px;
     border: 1px solid black !important;
-    transition: all 1s linear, background-color 2.5s ease;
+    transition: all 20s linear, background-color 2.5s ease;
 }
 
 .slide-fade-enter-active {

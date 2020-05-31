@@ -1,7 +1,7 @@
 <template>
     <transition-group name="list-complete" tag="div" :duration="20000"
         :class="['card-zone', 'animation-' + animation]">
-        <slot />
+        <slot :class="animation + '-item'" />
     </transition-group>
 </template>
 <script>

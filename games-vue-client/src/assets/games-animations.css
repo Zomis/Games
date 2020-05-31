@@ -1,8 +1,10 @@
+
 .animate, .list-complete-item {
     transition: all 1s linear;
     display: inline-block !important;
     margin-right: 10px;
 }
+
 .list-complete-enter {
     opacity: 0;
     transform: translateY(30px);
@@ -14,4 +16,3 @@
 .list-complete-leave-active {
     position: absolute;
 }
-  
