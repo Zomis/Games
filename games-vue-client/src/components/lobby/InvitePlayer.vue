@@ -1,7 +1,9 @@
 <template>
   <v-list-item :key="player.id">
     <v-list-item-content>
-      <v-list-item-title v-html="player.name"></v-list-item-title>
+      <v-list-item-title>
+        <PlayerProfile :player="player" show-name />
+      </v-list-item-title>
     </v-list-item-content>
     <v-list-item-action>
       <v-btn v-if="inviteable && controllable" color="info" @click="sendInvite()"><v-icon>mdi-account-plus</v-icon></v-btn>
@@ -23,11 +25,13 @@
 </template>
 <script>
 import Socket from "@/socket";
+import PlayerProfile from "@/components/games/common/PlayerProfile"
 import { mapState } from 'vuex';
 
 export default {
     name: "InvitePlayer",
     props: ["invite", "player", "controllable"],
+    components: { PlayerProfile },
     data() {
         return {}
     },
