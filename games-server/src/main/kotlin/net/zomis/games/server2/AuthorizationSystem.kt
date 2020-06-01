@@ -4,9 +4,17 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.kittinunf.fuel.Fuel
 import net.zomis.core.events.EventSystem
 import org.slf4j.LoggerFactory
+import java.net.URL
 import java.util.UUID
 
 data class ClientLoginEvent(val client: Client, val providerId: String, val loginName: String, val provider: String, val token: String)
+
+fun URL.lines(): List<String> {
+    return this.readText(Charsets.UTF_8).split("\n")
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }.distinct()
+        .map { it[0].toUpperCase() + it.substring(1) }
+}
 
 class AuthorizationSystem(private val events: EventSystem) {
     val router = MessageRouter(this)
@@ -18,9 +26,15 @@ class AuthorizationSystem(private val events: EventSystem) {
     private val mapper = ObjectMapper()
 
     private val guestRandom = kotlin.random.Random.Default
+    private val guestAdjectives = this.javaClass.classLoader.getResource("lists/adjectives.txt")?.lines()
+    private val guestAnimals = this.javaClass.classLoader.getResource("lists/animals.txt")?.lines()
+
     private fun handleGuest(message: ClientJsonMessage) {
         val client = message.client
-        val token: String = guestRandom.nextInt(100000).toString()
+        val token: String = guestAdjectives?.random()
+            ?.plus(guestAnimals?.random()?:"")
+            ?.plus(guestRandom.nextInt(10, 99))
+                ?: guestRandom.nextInt(100000).toString()
         this.handleGuest(client, token, UUID.randomUUID())
     }
     fun handleGuest(client: Client, token: String, uuid: UUID) {
