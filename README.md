@@ -23,6 +23,8 @@ For this project I decided to use Kotlin in order to be able to re-use code betw
 
 [Play Zomis' Games](https://games.zomis.net)
 
+[**Miss a game?**](https://github.com/Zomis/Games/issues/5)
+
 Existing features include:
 
 - Database which stores all games
