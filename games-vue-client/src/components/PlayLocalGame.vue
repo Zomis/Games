@@ -1,6 +1,5 @@
 <template>
   <div :class="['game', 'player-' + currentPlayer]">
-    <!-- SKULL, HANABI -->
     <GameHead :gameInfo="gameInfo" :playerCount="playerCount" :view="view" :eliminations="eliminations" />
     <component :is="viewComponent" :view="view" :actions="actions" :players="gameInfo.players" />
     <v-btn @click="cancelAction()" :disabled="actionChoice === null">Reset Action</v-btn>
