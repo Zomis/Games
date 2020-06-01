@@ -38,7 +38,7 @@ class AuthorizationSystem(private val events: EventSystem) {
         this.handleGuest(client, token, UUID.randomUUID())
     }
     fun handleGuest(client: Client, token: String, uuid: UUID) {
-        val loginName = "guest-$token"
+        val loginName = token
         logger.info("$client with token (empty) is guest/$loginName")
         client.updateInfo(loginName, uuid)
         events.execute(ClientLoginEvent(client, loginName, loginName, "guest", token))

@@ -24,7 +24,7 @@ class LoginLobbyDocTest {
         events.execute(GameTypeRegisterEvent("OtherGameType"))
 
         fun authTest(message: ClientJsonMessage) {
-            AuthorizationSystem(events).handleGuest(message.client, "12345", UUID.fromString("00000000-0000-0000-0000-000000000000"))
+            AuthorizationSystem(events).handleGuest(message.client, "guest-12345", UUID.fromString("00000000-0000-0000-0000-000000000000"))
         }
         server2.messageRouter.handler("auth/guest", ::authTest)
 

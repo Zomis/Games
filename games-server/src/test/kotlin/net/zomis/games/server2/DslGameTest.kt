@@ -27,7 +27,7 @@ class DslGameTest {
         server = Server2(EventSystem())
         server!!.start(config)
 
-        val tokens = mutableListOf("12345", "23456")
+        val tokens = mutableListOf("guest-12345", "guest-23456")
         fun authTest(message : ClientJsonMessage) {
             AuthorizationSystem(server!!.events).handleGuest(message.client, tokens.removeAt(0), UUID.randomUUID())
         }
