@@ -12,18 +12,18 @@ import net.zomis.games.impl.SkullGame
 object ServerGames {
 
     val games = mutableMapOf<String, Any>(
-        "DSL-TTT" to DslTTT().game,
-        "DSL-Connect4" to DslTTT().gameConnect4,
+        "Set" to SetGame.game,
+        "Dungeon Mayhem" to DungeonMayhemDsl.game,
+        "Skull" to SkullGame.game,
+        "Splendor" to DslSplendor.splendorGame,
+        "Hanabi" to HanabiGame.game,
+        "Artax" to ArtaxGame.gameArtax,
+        "Quixo" to TTSourceDestinationGames().gameQuixo,
+        "DSL-TTT3D" to DslTTT3D().game,
         "DSL-UTTT" to DslTTT().gameUTTT,
         "DSL-Reversi" to DslTTT().gameReversi,
-        "Quixo" to TTSourceDestinationGames().gameQuixo,
-        "Artax" to ArtaxGame.gameArtax,
-        "Hanabi" to HanabiGame.game,
-        "Set" to SetGame.game,
-        "Skull" to SkullGame.game,
-        "Dungeon Mayhem" to DungeonMayhemDsl.game,
-        "Splendor" to DslSplendor.splendorGame,
-        "DSL-TTT3D" to DslTTT3D().game,
+        "DSL-Connect4" to DslTTT().gameConnect4,
+        "DSL-TTT" to DslTTT().game,
         "DSL-UR" to DslUR().gameUR
     )
 
