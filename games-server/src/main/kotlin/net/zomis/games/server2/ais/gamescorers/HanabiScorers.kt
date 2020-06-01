@@ -29,7 +29,7 @@ object HanabiScorers {
         playProbability.weight(1.01), discardProbability.weight(0.2), playableCardPlayableClue.weight(2.0),
         indispensibleCardIndispensibleClue.weight(1.5), playFromRight, discardFromLeft)
 
-    fun aiDebugAnimations() = ScorerAIFactory("Hanabi", "#AI_Debug_Animations", discardFromLeft)
+    fun aiDebugAnimations() = ScorerAIFactory("Hanabi", "#AI_Debug_Animations", discardFromLeft, clueLowPlayer.weight(0.1))
     fun aiDebugHand() = ScorerAIFactory("Hanabi", "#AI_Debug_Hand", clue, clueLowPlayer, clueColor)
 
     fun random() = ScorerAIFactory("Hanabi", "#AI_Random", scorers.simple { 1.0 })
