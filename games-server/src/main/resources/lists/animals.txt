@@ -69,7 +69,7 @@ Echidna
 Eel
 Eland
 Elephant
-Elephant seal
+ElephantSeal
 Elk
 Emu
 Falcon
@@ -84,7 +84,7 @@ Gaur
 Gazelle
 Gecko
 Gerbil
-Giant panda
+GiantPanda
 Giraffe
 Gnat
 Gnu
@@ -97,14 +97,14 @@ Goshawk
 Grasshopper
 Grouse
 Guanaco
-Guinea fowl
-Guinea pig
+GuineaFowl
+GuineaPig
 Gull
 Hamster
 Hare
 Hawk
 Hedgehog
-Hermit crab
+HermitCrab
 Heron
 Herring
 Hippopotamus
@@ -128,7 +128,7 @@ Kangaroo
 Kingfisher
 Kinkajou
 Koala
-Komodo dragon
+KomodoDragon
 Kookaburra
 Kouprey
 Kudu
@@ -166,7 +166,7 @@ Myna
 Narwhal
 Newt
 Nightingale
-Nine-banded armadillo
+Nine-bandedArmadillo
 Octopus
 Okapi
 Opossum
@@ -186,11 +186,11 @@ Pheasant
 Pig
 Pigeon
 Pika
-Polar bear
+PolarBear
 Pony
 Porcupine
 Porpoise
-Prairie dog
+PrairieDog
 Pug
 Quail
 Quelea
@@ -200,18 +200,18 @@ Raccoon
 Ram
 Rat
 Raven
-Red deer
-Red panda
+RedDeer
+RedPanda
 Reindeer
 Rhea
 Rhinoceros
 Rook
 Salamander
 Salmon
-Sand dollar
+SandDollar
 Sandpiper
 Sardine
-Sea lion
+SeaLion
 Seahorse
 Seal
 Shark
@@ -246,7 +246,7 @@ Vulture
 Wallaby
 Walrus
 Wasp
-Water buffalo
+WaterBuffalo
 Waxwing
 Weasel
 Whale
