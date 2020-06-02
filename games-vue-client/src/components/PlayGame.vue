@@ -1,7 +1,7 @@
 <template>
   <div class="game">
     <GameHead v-if="gameInfo" :gameInfo="gameInfo" :playerCount="playerCount" :view="view" :eliminations="eliminations" />
-    <component v-if="view" :is="viewComponent" :view="view" :actions="actions" :players="players" />
+    <component v-if="view" :is="viewComponent" :view="view" :actions="actions" :players="players" :context="context" />
     <v-btn v-if="!isObserver" @click="clearActions()" :disabled="actionChoice === null">Reset Action</v-btn>
     <v-snackbar v-model="snackbar">
       {{snackbarText}}
@@ -85,6 +85,20 @@ export default {
         actionTypes: this.actionTypes,
         clear: this.clearActions,
         resetTo: this.resetActionsTo
+      }
+    },
+    context() {
+      /* TODO:
+       Players + add controllable property (true/false) or controllable int *array*.
+        Also add eliminated property
+       Viewer - Int. (Make it changable in local or when controlling multiple players)
+       Scope/Context/View/yadayada: Replay/Game/Local/Lobby...
+       Eliminations.
+      */
+      return {
+        players: this.players.map((p, idx) => ({ ...p, controllable: this.gameInfo.yourIndex === idx })),
+        viewer: this.gameInfo.yourIndex,
+        scope: 'play'
       }
     },
     gameOver() {

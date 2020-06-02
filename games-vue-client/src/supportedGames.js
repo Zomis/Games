@@ -21,6 +21,7 @@ import Hanabi from "@/components/games/Hanabi";
 import HanabiConfig from "@/components/games/hanabi/HanabiConfig";
 import Splendor from "@/components/games/splendor/Splendor";
 import TreeViewGame from "@/components/games/TreeViewGame";
+import Skull from "@/components/games/skull/Skull";
 import ECSGame from "@/components/ecs/ECSGame";
 import DSLTTT from "@/components/games/DSLTTT";
 import TTT3D from "@/components/games/TTT3D";
@@ -125,14 +126,14 @@ const supportedGames = {
     },
     "Skull": {
         dsl: gamejs.net.zomis.games.impl.SkullGame.game,
-        enabled: false,
+        enabled: true,
         actions: {
             play: (index) => "play-" + index,
             bet: (index) => "bet-" + index,
             pass: () => "pass",
             choose: (index) => "choose-" + index
         },
-        component: TreeViewGame
+        component: Skull
     },
     "Dungeon Mayhem": {
         dsl: gamejs.net.zomis.games.impl.DungeonMayhemDsl.game,
