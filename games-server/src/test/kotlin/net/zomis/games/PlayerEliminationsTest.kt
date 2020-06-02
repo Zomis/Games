@@ -1,5 +1,9 @@
 package net.zomis.games
 
+import net.zomis.games.dsl.Money
+import net.zomis.games.dsl.SplendorCard
+import net.zomis.games.dsl.SplendorConfig
+import net.zomis.games.dsl.SplendorGame
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -80,6 +84,24 @@ class PlayerEliminationsTest {
             WinResult.LOSS to 8,
             WinResult.DRAW to 3
         ), elims.scoreList())
+    }
+
+    @Test
+    fun splendor() {
+        val eliminations = PlayerEliminations(3)
+        val game = SplendorGame(SplendorConfig(false, 10, 1, false), eliminations, eliminations.playerCount)
+        game.players[0].owned.cards.add(SplendorCard(1, Money(), Money(), 1))
+        game.players[0].owned.cards.add(SplendorCard(1, Money(), Money(), 0))
+        game.players[1].owned.cards.add(SplendorCard(1, Money(), Money(), 1))
+        game.players[2].owned.cards.add(SplendorCard(1, Money(), Money(), 1))
+        game.players[2].owned.cards.add(SplendorCard(1, Money(), Money(), 0))
+        game.players[2].owned.cards.add(SplendorCard(1, Money(), Money(), 0))
+        game.endTurnCheck()
+        game.endTurnCheck()
+        game.endTurnCheck()
+        Assertions.assertEquals(1, game.eliminations.eliminations().first { it.playerIndex == 1 }.position)
+        Assertions.assertEquals(2, game.eliminations.eliminations().first { it.playerIndex == 0 }.position)
+        Assertions.assertEquals(3, game.eliminations.eliminations().first { it.playerIndex == 2 }.position)
     }
 
     // 1 2 3 4 - one at a time

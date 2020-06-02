@@ -222,7 +222,7 @@ G 4WWWUUUUUUGGG 4UUUUUUU 5UUUUUUUGGG 3WWWWWUUURRRBBB
 
         // End game
         if (turnsLeft == 0) {
-            eliminations.eliminateBy(players.mapIndexed { index, splendorPlayer -> index to splendorPlayer }, Comparator { a, b -> a.points - b.points })
+            eliminations.eliminateBy(players.mapIndexed { index, splendorPlayer -> index to splendorPlayer }, compareBy({ it.points }, { -it.owned.size }))
         }
     }
 
