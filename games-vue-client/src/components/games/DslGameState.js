@@ -82,6 +82,17 @@ const gameStore = {
       }
       Socket.route(`games/${data.gameInfo.gameType}/${data.gameInfo.gameId}/action`, obj);
     },
+    performChosenAction(context, data) {
+      let game = context.state.games[data.gameInfo.gameId];
+      let gameData = game.gameData
+      let obj = {
+        moveType: gameData.actionChoice.actionName,
+        playerIndex: data.gameInfo.yourIndex,
+        chosen: gameData.actionChoice.choices,
+        perform: true
+      }
+      Socket.route(`games/${data.gameInfo.gameType}/${data.gameInfo.gameId}/action`, obj);
+    },
     requestView(context, data) {
       Socket.route(`games/${data.gameType}/${data.gameId}/view`, {});
     },

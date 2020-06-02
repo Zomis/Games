@@ -24,7 +24,10 @@ class RulesActionTypeComplexNextOnly<T : Any, A : Any>(
     private val actionYielder: (A) -> Unit
 ): ActionChoicesNextScope<T, A> {
     override fun parameter(action: A) {
-        actionYielder(action)
+        // Ignore parameter if we haven't resolved all the chosen steps yet
+        if (chosen.isEmpty()) {
+            actionYielder(action)
+        }
     }
 
     override fun <E : Any> options(options: ActionOptionsScope<T>.() -> Iterable<E>, next: ActionChoicesNextScope<T, A>.(E) -> Unit) {

@@ -39,6 +39,9 @@ export default {
       this.$store.dispatch("DslGameState/requestView", this.gameInfo);
       this.$store.dispatch("DslGameState/resetActions", { gameInfo: this.gameInfo });
     },
+    performChosenAction() {
+      this.$store.dispatch("DslGameState/performChosenAction", { gameInfo: this.gameInfo });
+    },
     action(_, data) {
       let action = this.actionsAvailable[data]
       console.log("ACTION CHOICE", data, action)
@@ -81,6 +84,7 @@ export default {
       return {
         chosen: this.actionChoice,
         perform: this.action,
+        performChosen: this.performChosenAction,
         available: this.actionsAvailable,
         actionTypes: this.actionTypes,
         clear: this.clearActions,

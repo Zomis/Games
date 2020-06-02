@@ -35,6 +35,9 @@
                                     @click="takeMoney(index)">{{ money }}</span>
                             </v-col>
                         </v-row>
+                        <v-row>
+                            <v-col><v-btn @click="takeCurrentMoney()">Take</v-btn></v-col>
+                        </v-row>
                    </v-card-text>
                 </v-card>
             </v-col>
@@ -61,6 +64,9 @@ export default {
     methods: {
         takeMoney(moneyType) {
             this.actions.perform("takeMoney", 'take-' + moneyType)
+        },
+        takeCurrentMoney() {
+            this.actions.performChosen()
         }
     },
     computed: {

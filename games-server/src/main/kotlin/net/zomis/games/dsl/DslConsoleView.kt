@@ -133,8 +133,8 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
             }
             is Map<*, *> -> {
                 println("$prefix$name")
-                data.entries.sortedBy { it.key as String }.forEach {
-                    display(indentation + 2, it.key as String, it.value)
+                data.entries.sortedBy { it.key.toString() }.forEach {
+                    display(indentation + 2, it.key.toString(), it.value)
                 }
             }
             else -> {

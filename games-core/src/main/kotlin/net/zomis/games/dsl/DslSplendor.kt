@@ -263,124 +263,99 @@ object DslSplendor {
             init {
                 SplendorGame(config, eliminationCallback, playerCount)
             }
-            onStart {
-                val dealCards = (1..3).map { level -> it.deck.first(4) { card -> card.level == level } }.flatten()
-                val cardStates = this.strings("cards") {
+        }
+        rules {
+            gameStart {
+                val dealCards = (1..3).map { level -> game.deck.first(4) { card -> card.level == level } }.flatten()
+                val cardStates = replayable.strings("cards") {
                     dealCards.map { c -> c.toStateString() }
                 }
-                val cards = it.deck.findStates(cardStates) { c -> c.toStateString() }
-                it.deck.deal(cards, listOf(it.board))
-                
+                val cards = game.deck.findStates(cardStates) { c -> c.toStateString() }
+                game.deck.deal(cards, listOf(game.board))
+
                 // Nobles
-                if (it.config.useNobles) {
-                    val nobles = it.allNobles.top(it.players.size + 1)
-                    val nobleStates = this.strings("nobles") { nobles.map { c -> c.toStateString() } }
-                    it.allNobles.deal(it.allNobles.findStates(nobleStates) { c -> c.toStateString() }, listOf(it.nobles))
+                if (game.config.useNobles) {
+                    val nobles = game.allNobles.top(game.players.size + 1)
+                    val nobleStates = replayable.strings("nobles") { nobles.map { c -> c.toStateString() } }
+                    game.allNobles.deal(game.allNobles.findStates(nobleStates) { c -> c.toStateString() }, listOf(game.nobles))
                 }
             }
-        }
-        logic {
-            singleTarget(buy, {it.board.map { c -> c.id }}) {
-                allowed { isCurrentPlayer(it) && it.game.currentPlayer.chips.count <= it.game.config.maxMoney && it.game.currentPlayer.canBuy(it.game.board.cards.first { c -> c.id == it.parameter }) }
-                effect {
-                    val card = it.game.board.cards.first { c -> c.id == it.parameter }
-                    val actualCost = it.game.currentPlayer.pay(card.costs)
-                    it.game.currentPlayer.owned.cards.add(card)
-                    it.game.stock += actualCost
-                    replaceCard(this, it.game, card)
-                    it.game.endTurnCheck()
-                }
+
+            allActions.precondition { game.currentPlayerIndex == playerIndex }
+
+
+            action(buy).options { game.board.map { c -> c.id } }
+            action(buy).requires { game.currentPlayer.canBuy(game.board.cards.first { c -> c.id == action.parameter }) }
+            action(buy).effect {
+                val card = game.board.cards.first { c -> c.id == action.parameter }
+                val actualCost = game.currentPlayer.pay(card.costs)
+                game.currentPlayer.owned.cards.add(card)
+                game.stock += actualCost
+                replaceCard(replayable, game, card)
             }
-            singleTarget(buyReserved, {it.currentPlayer.reserved.map { c -> c.id }}) {
-                allowed { isCurrentPlayer(it) && it.game.currentPlayer.chips.count <= it.game.config.maxMoney && it.game.currentPlayer.canBuy(it.game.currentPlayer.reserved.cards.first { c -> c.id == it.parameter }) }
-                effect {
-                    val param = it.game.currentPlayer.reserved.cards.first { c -> c.id == it.parameter }
-                    val card = it.game.currentPlayer.reserved.card(param)
-                    val actualCost = it.game.currentPlayer.pay(card.card.costs)
-                    it.game.stock += actualCost
-                    card.moveTo(it.game.currentPlayer.owned)
-                    it.game.endTurnCheck()
-                }
+
+            action(buyReserved).options { game.currentPlayer.reserved.map { c -> c.id } }
+            action(buyReserved).requires { game.currentPlayer.canBuy(game.currentPlayer.reserved.cards.first { c -> c.id == action.parameter }) }
+            action(buyReserved).effect {
+                val param = game.currentPlayer.reserved.cards.first { c -> c.id == action.parameter }
+                val card = game.currentPlayer.reserved.card(param)
+                val actualCost = game.currentPlayer.pay(card.card.costs)
+                game.stock += actualCost
+                card.moveTo(game.currentPlayer.owned)
             }
-            singleTarget(discardMoney, {MoneyType.values().toList()}) {
-                allowed { isCurrentPlayer(it) && it.game.currentPlayer.chips.count > it.game.config.maxMoney
-                        && it.game.currentPlayer.chips.hasWithoutWildcards(it.parameter.toMoney(1)) }
-                effect {
-                    val money = it.parameter.toMoney(1)
-                    it.game.currentPlayer.chips -= money
-                    it.game.stock += money
-                    it.game.endTurnCheck()
-                }
+
+            action(discardMoney).forceUntil { game.currentPlayer.chips.count <= game.config.maxMoney }
+            action(discardMoney).options { MoneyType.values().toList() }
+            action(discardMoney).requires { game.currentPlayer.chips.hasWithoutWildcards(action.parameter.toMoney(1)) }
+            action(discardMoney).effect {
+                val money = action.parameter.toMoney(1)
+                game.currentPlayer.chips -= money
+                game.stock += money
             }
-            singleTarget(reserve, {it.board.map { c -> c.id }}) {
-                allowed { isCurrentPlayer(it) && it.game.currentPlayer.chips.count <= it.game.config.maxMoney && it.game.currentPlayer.reserved.size < 3 }
-                effect {
-                    val card = it.game.board.card(it.game.board.cards.first { c -> c.id == it.parameter })
-                    it.game.currentPlayer.reserved.cards.add(card.card)
-                    val wildcardIfAvailable = if (it.game.stock.wildcards > 0) Money(mutableMapOf(), 1) else Money()
-                    it.game.stock -= wildcardIfAvailable
-                    it.game.currentPlayer.chips += wildcardIfAvailable
-                    replaceCard(this, it.game, card.card)
-                    it.game.endTurnCheck()
-                }
+
+            action(reserve).options { game.board.map { c -> c.id } }
+            action(reserve).requires { game.currentPlayer.reserved.size < 3 }
+            action(reserve).effect {
+                val card = game.board.card(game.board.cards.first { c -> c.id == action.parameter })
+                game.currentPlayer.reserved.cards.add(card.card)
+                val wildcardIfAvailable = if (game.stock.wildcards > 0) Money(mutableMapOf(), 1) else Money()
+                game.stock -= wildcardIfAvailable
+                game.currentPlayer.chips += wildcardIfAvailable
+                replaceCard(replayable, game, card.card)
             }
-            singleTarget(takeSingle, { MoneyType.values().toList() }) {
-                allowed {
-                    if (!isCurrentPlayer(it)) { return@allowed false }
-                    if (it.game.currentPlayer.chips.count > it.game.config.maxMoney) return@allowed false
-                    val moneyChosen = it.parameter.toMoney(1)
-                    if (!it.game.stock.hasWithoutWildcards(moneyChosen)) {
-                        return@allowed false
-                    }
-                    val chosen = listOf(it.parameter)
-                    return@allowed when {
-                        chosen.size == 2 -> chosen.distinct().size == 1 && it.game.stock.hasWithoutWildcards(moneyChosen.plus(moneyChosen))
-                        chosen.size == 3 -> chosen.distinct().size == chosen.size
-                        else -> false
-                    }
-                }
-                effect {
-                    it.game.stock -= it.parameter.toMoney(1)
-                    it.game.currentPlayer.chips += it.parameter.toMoney(1)
-                    it.game.endTurnCheck()
-                }
-            }
-            action(takeMoney) {
-                options {
-                    option(MoneyType.values().asIterable()) { first ->
-                        // actionParameter(MoneyChoice(listOf(first))) // TODO: How to perform this action of only taking one or two?
-                        option(MoneyType.values().asIterable()) {second ->
-                            // actionParameter(MoneyChoice(listOf(first, second)))
-                            if (first == second) {
-                                actionParameter(MoneyChoice(listOf(first, second)))
-                            } else {
-                                option(MoneyType.values().asIterable().minus(first).minus(second)) {third ->
-                                    actionParameter(MoneyChoice(listOf(first, second, third)))
-                                }
+
+            action(takeMoney).choose {
+                options({MoneyType.values().asIterable()}) { first ->
+                    parameter(MoneyChoice(listOf(first))) // TODO: How to perform this action of only taking one or two?
+                    options({MoneyType.values().asIterable()}) {second ->
+                        parameter(MoneyChoice(listOf(first, second)))
+                        if (first != second) {
+                            options({MoneyType.values().asIterable().minus(first).minus(second)}) {third ->
+                                parameter(MoneyChoice(listOf(first, second, third)))
                             }
                         }
                     }
                 }
-                allowed {
-                    if (!isCurrentPlayer(it)) { return@allowed false }
-                    if (it.game.currentPlayer.chips.count > it.game.config.maxMoney) return@allowed false
-                    val moneyChosen = it.parameter.toMoney()
-                    if (!it.game.stock.hasWithoutWildcards(moneyChosen)) {
-                        return@allowed false
-                    }
-                    val chosen = it.parameter.moneys
-                    return@allowed when {
-                        chosen.size == 2 -> chosen.distinct().size == 1 && it.game.stock.hasWithoutWildcards(moneyChosen.plus(moneyChosen))
-                        chosen.size == 3 -> chosen.distinct().size == chosen.size
-                        else -> false
-                    }
+            }
+            action(takeMoney).requires {
+                val moneyChosen = action.parameter.toMoney()
+                if (!game.stock.hasWithoutWildcards(moneyChosen)) {
+                    return@requires false
                 }
-                effect {
-                    it.game.stock -= it.parameter.toMoney()
-                    it.game.currentPlayer.chips += it.parameter.toMoney()
-                    it.game.endTurnCheck()
+                val chosen = action.parameter.moneys
+                return@requires when (chosen.size) {
+                    1 -> true
+                    2 -> chosen.distinct().size != 1 || game.stock.hasWithoutWildcards(moneyChosen.plus(moneyChosen))
+                    3 -> chosen.distinct().size == chosen.size
+                    else -> false
                 }
             }
+            action(takeMoney).effect {
+                game.stock -= action.parameter.toMoney()
+                game.currentPlayer.chips += action.parameter.toMoney()
+            }
+
+            allActions.after { game.endTurnCheck() }
         }
         fun viewMoney(money: Money): Map<String, Int> {
             return money.moneys.entries.sortedBy { it.key.name }.map { it.key.name to it.value }
@@ -433,10 +408,10 @@ object DslSplendor {
         }
     }
 
-    private fun replaceCard(scope: EffectScope, game: SplendorGame, card: SplendorCard) {
+    private fun replaceCard(replayable: ReplayableScope, game: SplendorGame, card: SplendorCard) {
         game.board.card(card).remove()
         if (game.deck.cards.none { it.level == card.level }) return
-        val state = scope.replayable.string("card") {
+        val state = replayable.string("card") {
             game.deck.cards.first { it.level == card.level }.toStateString()
         }
         val replacementCard = game.deck.findState(state) { it.toStateString() }
