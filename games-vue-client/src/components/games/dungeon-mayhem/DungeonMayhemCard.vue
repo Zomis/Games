@@ -1,28 +1,35 @@
 <template>
-    <div>
-        <v-tooltip bottom>
-            <template v-slot:activator="{ on }">
-                <div @click="click()" v-on="on" :class="{ actionable: actions.available[action] }">
+    <Actionable :actions="actions" :actionable="actionable">
+        <v-card>
+            <v-card-title>
+                <div :class="{ actionable: actions.available[action] }">
                     {{ card.name }}
                 </div>
-            </template>
-            <div v-if="card.health">
-                {{ card.health }}
-            </div>
-            <div v-else>
-                <div v-for="(symbol, index) in card.symbols" :key="index">{{ symbol }}</div>
-            </div>
-        </v-tooltip>
-    </div>
+            </v-card-title>
+            <v-card-text>
+                <div v-if="card.health">
+                    {{ card.health }}
+                </div>
+                <div v-else>
+                    <v-tooltip bottom v-for="(symbol, index) in card.symbols" :key="index" >
+                        <template v-slot:activator="{ on }">
+                            <v-icon v-on="on">{{ icons[symbol] }}</v-icon>
+                        </template>
+                        <span>{{ symbol }}</span>
+                    </v-tooltip>
+                </div>
+            </v-card-text>
+        </v-card>
+    </Actionable>
 </template>
 <script>
+import Actionable from "@/components/games/common/Actionable"
+
 export default {
     name: "DungeonMayhemCard",
-    props: ["card", "actionType", "action", "actions"],
-    methods: {
-        click() {
-            this.actions.perform(this.actionType, this.action)
-        }
+    props: ["card", "actionable", "actions", "icons"],
+    components: {
+        Actionable
     }
 }
 </script>

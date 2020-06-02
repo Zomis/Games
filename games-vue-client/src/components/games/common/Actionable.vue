@@ -33,7 +33,7 @@ export default {
         actionType: {
             validator(value) { return typeof value === 'string' || Array.isArray(value) }
         },
-        actions: Object,
+        actions: { type: Object, required: true },
         button: { type: Boolean, default: false },
         icon: { type: String, required: false },
         value: { type: Number, required: false }
@@ -57,7 +57,8 @@ export default {
         },
         cssClass() {
             return {
-                actionable: this.isActionable
+                actionable: this.isActionable,
+                ['actionable-wrapper']: true
             }
         },
         component() {
@@ -68,7 +69,7 @@ export default {
             return 'Disabled'
         },
         menuItems() {
-            if (!this.actionable) {
+            if (!this.actionable && this.actionType) {
                 return Object.keys(this.actions.available).filter(act => this.actionType.includes(this.actions.available[act].actionType))
             }
             return []
@@ -76,3 +77,8 @@ export default {
     }
 }
 </script>
+<style scoped>
+.actionable-wrapper {
+    display: inline-block
+}
+</style>
