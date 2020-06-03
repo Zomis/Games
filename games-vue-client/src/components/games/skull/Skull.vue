@@ -2,15 +2,13 @@
     <v-container fluid>
         <v-row>
             <v-col v-for="(player, playerIndex) in view.players" :key="playerIndex"
-              :class="{ passed: player.pass, currentPlayer: playerIndex == view.currentPlayer }">
-                <v-card>
+              :class="{ currentPlayer: playerIndex == view.currentPlayer }">
+                <v-card :class="{ passed: player.pass }">
                     <v-card-title>
                         <PlayerProfile show-name :player="context.players[playerIndex]" />
                     </v-card-title>
                     <v-card-text>
                         <CardZone v-if="Array.isArray(player.hand)">
-                            <!-- Actionable button v-for=... :key :actionable="card" actionType="play" :icon="icons[card]" /> -->
-                            <!-- Actionable button :actionType="bet" -->
                             <Actionable button v-for="(card, index) in player.hand" :key="index"
                                 :actions="actions" class="list-complete-item" :actionable="'play-' + card">
                                 <v-icon>{{ icons[card] }}</v-icon>
@@ -74,7 +72,15 @@ export default {
 }
 </script>
 <style scoped>
+@import "../../../assets/games-animations.css";
+
 .v-card.passed {
     opacity: 0.5
+}
+
+.actionable {
+    border-style: solid !important;
+    border-width: thick !important;
+    border-color: #ffd166 !important;
 }
 </style>

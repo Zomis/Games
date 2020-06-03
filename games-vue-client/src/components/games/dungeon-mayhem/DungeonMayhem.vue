@@ -15,11 +15,11 @@
                     <div v-if="player.hand[0]">
                         <CardZone>
                             <DungeonMayhemCard v-for="(card, index) in player.hand" :key="index"
-                                :card="card" :icons="icons" :actionable="'play-' + card.name" :actions="actions" />
+                                :card="card" class="list-complete-item" :icons="icons" :actionable="'play-' + card.name" :actions="actions" />
                         </CardZone>
                     </div>
                     <CardZone v-else>
-                        <v-icon v-for="index in player.hand" :key="index">mdi-crosshairs-question</v-icon>
+                        <v-icon v-for="index in player.hand" class="list-complete-item" :key="index">mdi-crosshairs-question</v-icon>
                     </CardZone>
 
                     <v-menu>
@@ -30,18 +30,18 @@
                         </template>
                         <CardZone>
                             <DungeonMayhemCard v-for="(card, index) in player.discard" :key="index"
-                                :card="card" :icons="icons" :actions="actions" :actionable="`target:player-${playerIndex};shield-null;discarded-${index}`" />
+                                :card="card" class="list-complete-item" :icons="icons" :actions="actions" :actionable="`target:player-${playerIndex};shield-null;discarded-${index}`" />
                         </CardZone>
                     </v-menu>
 
                     <p>Played:</p>
                     <CardZone>
-                        <DungeonMayhemCard v-for="(card, index) in player.played" :key="index" :card="card" :icons="icons" :actions="actions" />
+                        <DungeonMayhemCard class="list-complete-item" v-for="(card, index) in player.played" :key="index" :card="card" :icons="icons" :actions="actions" />
                     </CardZone>
                     <p>Shields:</p>
                     <CardZone>
                         <DungeonMayhemCard v-for="(card, index) in player.shields" :key="index" :card="card" :icons="icons"
-                         :actions="actions" :actionable="`target:player-${playerIndex};shield-${index};discarded-null`" />
+                         :actions="actions" class="list-complete-item" :actionable="`target:player-${playerIndex};shield-${index};discarded-null`" />
                     </CardZone>
                 </v-card>
             </v-col>
@@ -93,3 +93,12 @@ export default {
     }
 }
 </script>
+<style scoped>
+@import "../../../assets/games-animations.css";
+
+.actionable {
+    border-style: solid !important;
+    border-width: thick !important;
+    border-color: #ffd166 !important;
+}
+</style>

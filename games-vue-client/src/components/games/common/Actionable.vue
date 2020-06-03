@@ -81,4 +81,10 @@ export default {
 .actionable-wrapper {
     display: inline-block
 }
+
+.actionable {
+    border-style: solid !important;
+    border-width: thick !important;
+    border-color: #ffd166 !important;
+}
 </style>

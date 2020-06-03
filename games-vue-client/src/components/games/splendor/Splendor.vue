@@ -12,12 +12,12 @@
         </v-row>
         <v-row>
             <v-col cols="9">
-                <v-row v-for="level in view.cardLevels" :key="level.level" :class="'card-level-' + level.level">
-                    <v-col><v-card><v-card-title>{{ level.remaining }}</v-card-title></v-card></v-col>
-                    <v-col v-for="card in level.board" :key="card.id">
+                <CardZone class="row" v-for="level in view.cardLevels" :key="level.level" :class="'card-level-' + level.level">
+                    <v-col :key="'remaining-' + level.level"><v-card><v-card-title>{{ level.remaining }}</v-card-title></v-card></v-col>
+                    <v-col v-for="card in level.board" :key="card.id" class="list-complete-item">
                         <SplendorCard :card="card" :actions="actions" />
                     </v-col>
-                </v-row>
+                </CardZone>
             </v-col>
             <v-col cols="1" class="stock">
                 <v-card>
@@ -43,11 +43,13 @@
             </v-col>
             <v-col class="nobles">
                 <p>Nobles</p>
-                <v-row v-for="noble in view.nobles" :key="noble.id">
-                    <v-col>
-                        <SplendorNoble :noble="noble" />
-                    </v-col>
-                </v-row>
+                <CardZone>
+                    <v-row v-for="noble in view.nobles" :key="noble.id">
+                        <v-col>
+                            <SplendorNoble :noble="noble" />
+                        </v-col>
+                    </v-row>
+                </CardZone>
             </v-col>
         </v-row>
     </v-container>
@@ -75,6 +77,25 @@ export default {
 }
 </script>
 <style>
+
+.animate, .list-complete-item {
+    transition: all 1.5s linear;
+    display: inline-block !important;
+    margin-right: 10px;
+}
+
+.list-complete-enter {
+    opacity: 0;
+    transform: translateY(30px);
+}
+.list-complete-leave-to {
+    opacity: 0;
+    transform: translateY(-30px);
+}
+.list-complete-leave-active {
+    position: absolute;
+}
+
 :root{
     --splendor-red: #ef476f;
     --splendor-blue: #118AB2;
