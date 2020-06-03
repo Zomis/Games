@@ -107,8 +107,8 @@ enum class DungeonMayhemSymbol {
         }
     }
 }
-class DungeonMayhemCard(val name: String, val symbols: List<DungeonMayhemSymbol>)
-class DungeonMayhemShield(val discard: CardZone<DungeonMayhemCard>, val card: DungeonMayhemCard, var health: Int) {
+data class DungeonMayhemCard(val name: String, val symbols: List<DungeonMayhemSymbol>)
+data class DungeonMayhemShield(val discard: CardZone<DungeonMayhemCard>, val card: DungeonMayhemCard, var health: Int) {
     fun destroy(card: Card<DungeonMayhemShield>) {
         discard.cards.add(card.remove().card)
     }
