@@ -63,9 +63,8 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
         return players.getOrNull(playerIndex) == client
     }
 
-    fun nextMoveIndex(): Int {
-        return nextMoveIndex.getAndIncrement()
-    }
+    fun nextMoveIndex(): Int = nextMoveIndex.getAndIncrement()
+    fun setMoveIndex(next: Int) = nextMoveIndex.set(next)
 
     private fun clientJoin(message: ClientJsonMessage) {
         // If player should be playing, set as player.
@@ -194,6 +193,7 @@ class GameType(private val callback: GameCallback, val type: String, private val
         val gameOptions = dbGame.summary.gameConfig
         val loadGameOptions = InviteOptions(false, InviteTurnOrder.ORDERED, -1, gameOptions, true)
         val serverGame = ServerGame(callback, this, gameId, loadGameOptions)
+        serverGame.setMoveIndex(dbGame.moveHistory.size)
         serverGame.obj = dbGame.game
         runningGames[serverGame.gameId] = serverGame
 
