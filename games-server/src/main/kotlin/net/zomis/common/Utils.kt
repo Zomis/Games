@@ -1,7 +1,5 @@
 package net.zomis.common
 
-import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -55,6 +53,7 @@ fun convertFromDBFormat(obj: Any?): Any? {
     return when (obj) {
         null -> null
         is BigDecimal -> obj.toInt()
+        is Boolean -> obj
         is Map<*, *> -> {
             val map = obj as Map<String, *>
             map.mapValues { convertFromDBFormat(it.value) }
