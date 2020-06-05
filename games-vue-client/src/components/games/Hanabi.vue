@@ -6,7 +6,7 @@
           <v-card-title>{{ colorData.color }}</v-card-title>
           <v-card-text>
             <CardZone>
-              <HanabiCard v-for="card in colorData.board" :key="card.id" :card="card" />
+              <HanabiCard v-for="card in colorData.board" class="animate" :key="card.id" :card="card" />
             </CardZone>
             <v-divider />
             <v-row>Discard</v-row>
