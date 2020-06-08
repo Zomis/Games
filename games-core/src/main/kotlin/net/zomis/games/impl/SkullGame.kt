@@ -139,6 +139,7 @@ object SkullGame {
             }
 
             // If you lost to your own skull... choose a card to get rid of
+            action(discard).requires { game.choseOwnSkull }
             action(discard).forceUntil { !game.choseOwnSkull }
             action(discard).options { game.currentPlayer.hand.cards }
             action(discard).effect {
