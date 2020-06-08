@@ -25,6 +25,7 @@ data class SkullGameConfig(val skulls: Int = 1, val flowers: Int = 3)
 
 class SkullGameModel(config: SkullGameConfig, playerCount: Int) {
 
+    var choseOwnSkull: Boolean = false
     val players = (0 until playerCount).map {
         SkullPlayer(it, CardZone(List(config.skulls){ SkullCard.SKULL }
                        .plus(List(config.flowers){ SkullCard.FLOWER }).toMutableList()))
@@ -52,6 +53,7 @@ object SkullGame {
     val bet = createActionType("bet", Int::class)
     val pass = createActionType("pass", Unit::class)
     val choose = createActionType("choose", SkullPlayer::class, ActionSerialization<SkullPlayer, SkullGameModel>({ it.index }, { game.players[it as Int] }))
+    val discard = createActionType("discard", SkullCard::class)
     val play = createActionType("play", SkullCard::class)
     val game = createGame<SkullGameModel>("Skull") {
         setup(SkullGameConfig::class) {
@@ -69,7 +71,7 @@ object SkullGame {
 
             action(play).options { game.currentPlayer.hand.cards }
             action(play).effect { game.currentPlayer.hand.card(action.parameter).moveTo(game.currentPlayer.played) }
-            action(play).forceUntil { game.currentPlayer.played.size + game.currentPlayer.chosen.size > 0 }
+            action(play).forceUntil { game.currentPlayer.played.size + game.currentPlayer.chosen.size > 0 || game.choseOwnSkull }
             view("players") {
                 game.players.mapIndexed {index, it -> mapOf(
                     "hand" to if (viewer == index) it.hand.cards else it.hand.size,
@@ -112,9 +114,12 @@ object SkullGame {
             action(choose).after {
                 val skullPlayer = game.players.find { it.chosen.cards.contains(SkullCard.SKULL) }
                 if (skullPlayer != null) {
+                    game.choseOwnSkull = skullPlayer == game.currentPlayer
                     game.currentPlayer.chosen.moveAllTo(game.currentPlayer.hand)
                     game.currentPlayer.played.moveAllTo(game.currentPlayer.hand)
-                    game.currentPlayer.hand.random(replayable, 1, "lost") { it.name }.forEach { it.remove() }
+                    if (!game.choseOwnSkull) {
+                        game.currentPlayer.hand.random(replayable, 1, "lost") { it.name }.forEach { it.remove() }
+                    }
                     game.newRound() // reset boards, bets and pass values
                     game.currentPlayerIndex = skullPlayer.index
                 }
@@ -132,6 +137,15 @@ object SkullGame {
                     eliminations.eliminateRemaining(WinResult.LOSS)
                 }
             }
+
+            // If you lost to your own skull... choose a card to get rid of
+            action(discard).forceUntil { !game.choseOwnSkull }
+            action(discard).options { game.currentPlayer.hand.cards }
+            action(discard).effect {
+                game.currentPlayer.hand.card(action.parameter).remove()
+                game.choseOwnSkull = false
+            }
+
             action(choose).after {
                 val emptyPlayer = game.players.find { it.totalCards == 0 && eliminations.remainingPlayers().contains(it.index) }
                 if (emptyPlayer != null) {
