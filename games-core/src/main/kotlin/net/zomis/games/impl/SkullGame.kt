@@ -46,6 +46,8 @@ class SkullGameModel(config: SkullGameConfig, playerCount: Int) {
         }
     }
 
+    fun currentBet(): Int = players.map { it.bet }.max()!!
+
 }
 
 object SkullGame {
