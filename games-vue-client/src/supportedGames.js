@@ -128,8 +128,9 @@ const supportedGames = {
         dsl: gamejs.net.zomis.games.impl.SkullGame.game,
         enabled: true,
         actions: {
-            play: (index) => "play-" + index,
+            play: (index) => "hand-" + index,
             bet: (index) => "bet-" + index,
+            discard: (index) => "hand-" + index,
             pass: () => "pass",
             choose: (index) => "choose-" + index
         },

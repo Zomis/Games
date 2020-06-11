@@ -10,7 +10,7 @@
                     <v-card-text>
                         <CardZone v-if="Array.isArray(player.hand)">
                             <Actionable button v-for="(card, index) in player.hand" :key="index"
-                                :actions="actions" class="list-complete-item" :actionable="'play-' + card">
+                                :actions="actions" class="list-complete-item" :actionable="'hand-' + card">
                                 <v-icon>{{ icons[card] }}</v-icon>
                             </Actionable>
                         </CardZone>
