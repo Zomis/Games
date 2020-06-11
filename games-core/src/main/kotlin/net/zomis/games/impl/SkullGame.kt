@@ -147,7 +147,7 @@ object SkullGame {
                 game.choseOwnSkull = false
             }
 
-            action(choose).after {
+            allActions.after {
                 val emptyPlayer = game.players.find { it.totalCards == 0 && eliminations.remainingPlayers().contains(it.index) }
                 if (emptyPlayer != null) {
                     emptyPlayer.bet = 0
