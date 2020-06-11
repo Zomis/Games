@@ -14,7 +14,7 @@ object SkullScorers {
     fun ais(): List<ScorerAIFactory<SkullGameModel>> {
         return listOf(
             ScorerAIFactory("Skull", "#AI_Reasonable",
-                play, betMinimal, pass, discardFirstTwoFlowers
+                play, betMinimal, pass, discardFirstTwoFlowers, chooseAny
             ),
             ScorerAIFactory("Skull", "#AI_Self_Destruct", playSkull, betHigh.weight(10), discardFlower),
             ScorerAIFactory("Skull", "#AI_Play_Random_Pass", play.weight(0.1), pass, betLow),
@@ -29,6 +29,7 @@ object SkullScorers {
     val betLow = scorers.simple { if (action.actionType == SkullGame.bet.name) 1.1 + -(action.parameter as Int).toDouble() / 100 else 0.0 }
     val betMinimal = scorers.conditional { action.actionType == SkullGame.bet.name && action.parameter == action.game.currentBet() + 1 }
     val play = scorers.conditional { action.actionType == SkullGame.play.name }
+    val chooseAny = scorers.conditional { action.actionType == SkullGame.choose.name }
     val pass = scorers.conditional { action.actionType == SkullGame.pass.name }
     val discardFlower = scorers.conditional { action.actionType == SkullGame.discard.name && action.parameter == SkullCard.FLOWER }
     val discardFirstTwoFlowers = scorers.conditional {
