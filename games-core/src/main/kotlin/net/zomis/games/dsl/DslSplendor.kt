@@ -3,6 +3,8 @@ package net.zomis.games.dsl
 import net.zomis.games.PlayerEliminationCallback
 import net.zomis.games.cards.CardZone
 import net.zomis.games.dsl.sourcedest.next
+import net.zomis.games.impl.splendorCards
+import net.zomis.games.impl.splendorCardsFromMultilineCSV
 import kotlin.math.absoluteValue
 import kotlin.math.max
 
@@ -129,22 +131,7 @@ fun startingStockForPlayerCount(playerCount: Int): Int {
     }
 }
 
-object SplendorCardFactory {
-    private fun costs(costString: String): Money {
-        return costString.map { cost -> MoneyType.values().find { it.char == cost } }.fold(Money()) { money, moneyType -> money + moneyType!!.toMoney(1) }
-    }
-    fun createCardLevel(level: Int, data: String): List<SplendorCard> {
-        return data.trim().split("\n").map { it.trim().split(" ") }.map { it[0] to it.drop(1) }.map {colorAndCards ->
-            val discountColor = MoneyType.values().find { it.char == colorAndCards.first.single() }!!
-            val pointsAndCost = colorAndCards.second.map { cardString ->
-                cardString.takeWhile { it.toString().toIntOrNull() != null }.toIntOrNull() to cardString.dropWhile { it.toString().toIntOrNull() != null }
-            }
-            pointsAndCost.map { SplendorCard(level, discountColor, costs(it.second), it.first ?: 0) }
-        }.flatten()
-    }
-}
-
-class SplendorGame(val config: SplendorConfig, val eliminations: PlayerEliminationCallback, playerCount: Int) {
+class SplendorGame(val config: SplendorConfig, val eliminations: PlayerEliminationCallback) {
 
     val allNobles = CardZone(listOf("BR", "UW", "UG", "RG", "BW", "BRG", "BUW", "BRW", "GUW", "GUR").map {string ->
         val moneyTypes = string.map { ch -> MoneyType.values().first { it.char == ch } }
@@ -154,25 +141,9 @@ class SplendorGame(val config: SplendorConfig, val eliminations: PlayerEliminati
     }.shuffled().toMutableList())
 
     val nobles = CardZone<SplendorNoble>()
-    val deck = CardZone(listOf("""
-W UGRB UGGRB WWWUB UUGGB UUBB RRB 1GGGG UUU
-U WGRB WGRRB UGGGR WGGRR GGBB WBB 1RRRR BBB
-B WUUGR WUGR GRRRB WWUUR WWGG GGR GGG 1UUUU
-R WWUGB WUGB WRBBB WWRR UUG 1WWWW WWW WWGBB
-G 1BBBB WURB WURBB WUUUG URRBB UURR WWU RRR
-""", """
-W 1GGGRRBB 1WWUUURRR 2GRRRRBB 2RRRRRBBB 2RRRRR 3WWWWWW
-U 1UUGGRRR 1UUGGGBBB 2WWWWWUUU 2WWRBBBB 3UUUUUU 2UUUUU
-B 1WWWGGGBB 2UGGGGRR 1WWWUUGG 2GGGGGRRR 2WWWWW 3BBBBBB
-R 1WWRRBBB 1UUURRBBB 2WUUUUGG 2WWWBBBBB 2BBBBB 3RRRRRR
-G 2GGGGG 2UUUUUGGG 3GGGGGG 1WWUUUBB 1WWWGGRR 2WWWWUUB
-""", """
-W 4WWWRRRBBBBBB 4BBBBBBB 5WWWBBBBBBB 3UUUGGGRRRRRBBB
-U 5WWWWWWWUUU 4WWWWWWUUUBBB 3WWWGGGRRRBBBBB 4WWWWWWW
-B 4RRRRRRR 4GGGRRRRRRBBB 5RRRRRRRBBB 3WWWUUUGGGGGRRR
-R 4GGGGGGG 3WWWUUUUUGGGBBB 5GGGGGGGRRR 4UUUGGGGGGRRR
-G 4WWWUUUUUUGGG 4UUUUUUU 5UUUUUUUGGG 3WWWWWUUURRRBBB
-""").mapIndexed { index, data -> SplendorCardFactory.createCardLevel(index + 1, data) }.flatten().shuffled().toMutableList())
+    val deck = splendorCards.withIndex().flatMap { level -> splendorCardsFromMultilineCSV(level.index + 1, level.value) }
+        .let { CardZone(it.shuffled().toMutableList()) }
+
     var turnsLeft = -1
     var roundNumber: Int = 1
 
@@ -226,6 +197,7 @@ G 4WWWUUUUUUGGG 4UUUUUUU 5UUUUUUUGGG 3WWWWWUUURRRBBB
         }
     }
 
+    val playerCount = eliminations.playerCount
     val players: List<SplendorPlayer> = (1..playerCount).map { SplendorPlayer() }
     val board: CardZone<SplendorCard> = CardZone(mutableListOf())
     var stock: Money = MoneyType.values().fold(Money()) {money, type -> money + type.toMoney(startingStockForPlayerCount(playerCount))}.plus(Money(mutableMapOf(), 5))
@@ -261,7 +233,7 @@ object DslSplendor {
                 showReservedCards = false
             )}
             init {
-                SplendorGame(config, eliminationCallback, playerCount)
+                SplendorGame(config, eliminationCallback)
             }
         }
         rules {

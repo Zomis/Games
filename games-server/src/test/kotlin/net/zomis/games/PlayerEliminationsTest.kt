@@ -89,7 +89,7 @@ class PlayerEliminationsTest {
     @Test
     fun splendor() {
         val eliminations = PlayerEliminations(3)
-        val game = SplendorGame(SplendorConfig(false, 10, 1, false), eliminations, eliminations.playerCount)
+        val game = SplendorGame(SplendorConfig(false, 10, 1, false), eliminations)
         game.players[0].owned.cards.add(SplendorCard(1, Money(), Money(), 1))
         game.players[0].owned.cards.add(SplendorCard(1, Money(), Money(), 0))
         game.players[1].owned.cards.add(SplendorCard(1, Money(), Money(), 1))
