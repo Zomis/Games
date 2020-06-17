@@ -75,17 +75,21 @@ object SkullGame {
             action(play).effect { game.currentPlayer.hand.card(action.parameter).moveTo(game.currentPlayer.played) }
             action(play).forceUntil { game.currentPlayer.played.size + game.currentPlayer.chosen.size > 0 || game.choseOwnSkull }
             view("players") {
-                game.players.mapIndexed {index, it -> mapOf(
-                    "hand" to if (viewer == index) it.hand.cards else it.hand.size,
-                    "board" to if (viewer == index) it.played.cards else it.played.size,
-                    "chosen" to it.chosen.cards,
-                    "points" to it.points,
-                    "bet" to it.bet,
-                    "pass" to it.pass
+                game.players.map {player -> mapOf(
+                    "hand" to if (viewer == player.index) player.hand.cards else player.hand.size,
+                    "board" to if (viewer == player.index) player.played.cards else player.played.size,
+                    "chosen" to player.chosen.cards,
+                    "points" to player.points,
+                    "bet" to player.bet,
+                    "pass" to player.pass
                 )}
             }
 
-            view("you") { if (viewer != null) game.players[viewer!!].let { mapOf("hand" to it.hand.cards, "board" to it.played.cards) } else null }
+            view("you") {
+                if (viewer != null)
+                    game.players[viewer!!].let { mapOf("hand" to it.hand.cards, "board" to it.played.cards) }
+                else null
+            }
             action(play).requires { game.players.all { it.bet == 0 } }
             action(bet).effect { game.currentPlayer.bet = action.parameter }
             action(bet).options { (game.players.map { it.bet }.max()!! + 1)..game.players.map { it.played.size }.sum() }
