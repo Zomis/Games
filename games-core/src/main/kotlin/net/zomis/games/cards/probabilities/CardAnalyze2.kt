@@ -1,10 +1,6 @@
-package net.zomis.games.cards.probabilities.v2
+package net.zomis.games.cards.probabilities
 
 import net.zomis.games.cards.CardZone
-import net.zomis.games.cards.probabilities.CardAssignment
-import net.zomis.games.cards.probabilities.CardGroup
-import net.zomis.games.cards.probabilities.Combinatorics
-import net.zomis.games.cards.probabilities.CountStyle
 import kotlin.math.min
 
 typealias CardPredicate<T> = (T) -> Boolean
@@ -131,7 +127,10 @@ class CardAssignments<T>(val groups: Collection<CardGroup2<T>>, val assignments:
     fun assign(vararg newAssignments: ZoneGroupAssignment<T>): CardAssignments<T> {
         val newAssignmentsPerGroup = newAssignments.groupBy {it.group}
                 .mapValues { it.value.sumBy { assignment -> assignment.count } }
-        val newGroups = groups.map { CardGroup2(it.cards, it.placementsLeft - (newAssignmentsPerGroup[it]?:0)) }
+        val newGroups = groups.map {
+            CardGroup2(it.cards, it.placementsLeft - (newAssignmentsPerGroup[it]
+                    ?: 0))
+        }
         return CardAssignments(newGroups, assignments + newAssignments.toList())
     }
 
@@ -208,10 +207,10 @@ class CardsAnalyze2<T> {
 }
 
 class ProgressAnalyze<T>(
-    private val zones: Set<CardZone<T>>,
-    private val groups: Set<CardGroup2<T>>,
-    private val rules: List<ZoneRule2<T>>,
-    private val assignments: CardAssignments<T>
+        private val zones: Set<CardZone<T>>,
+        private val groups: Set<CardGroup2<T>>,
+        private val rules: List<ZoneRule2<T>>,
+        private val assignments: CardAssignments<T>
 ) {
 
     fun findAutoAssignments(groups: Set<CardGroup2<T>>, rules: List<ZoneRule2<T>>): CardAssignments<T>? {
@@ -251,10 +250,10 @@ class ProgressAnalyze<T>(
             val zoneGroupsAssigned = zoneAssignments.map { it.group }
 
             val simplifiedRule = ZoneRule2(rule.zone, rule.size - zoneAssignmentSum,
-                rule.groups.minus(zoneGroupsAssigned).map {
-                    val placementsDone = groupAssignments[it]?:0
-                    CardGroup2(it.cards, it.placementsLeft - placementsDone)
-                }.toSet())
+                    rule.groups.minus(zoneGroupsAssigned).map {
+                        val placementsDone = groupAssignments[it] ?: 0
+                        CardGroup2(it.cards, it.placementsLeft - placementsDone)
+                    }.toSet())
             if (simplifiedRule.isEmpty()) null else simplifiedRule
         }
     }

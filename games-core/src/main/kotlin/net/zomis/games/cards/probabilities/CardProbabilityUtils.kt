@@ -1,12 +1,7 @@
 package net.zomis.games.cards.probabilities
 
-import net.zomis.games.cards.CardZone
-
 enum class CountStyle {
     EQUAL, NOT_EQUAL, MORE_THAN, LESS_THAN, UNKNOWN, DONE
-}
-interface CardSolutionCallback<Z : CardZone<*>, C> {
-    fun onSolved(results: List<ZoneRule<Z, C>>)
 }
 
 object Combinatorics {
@@ -32,15 +27,6 @@ object Combinatorics {
         return result
     }
 
-    fun factorial(n: Int): Double {
-        var n = n
-        if (n < 0) throw IllegalArgumentException("n must be >= 0 but was $n")
-        if (n <= 1) return 1.0
-        var result = n.toDouble()
-        while (--n > 1) result *= n.toDouble()
-        return result
-    }
-
     fun nCr(n: Int, r: Int): Double {
         if (r > n || r < 0) return 0.0
         if (r == 0 || r == n) return 1.0
@@ -50,36 +36,4 @@ object Combinatorics {
         }
         return start
     }
-}
-
-class CardGroup<C>(cards: Collection<C>) {
-    private val cards: List<C> = cards.toMutableList()
-    fun getCards(): Collection<C> {
-        return cards
-    }
-
-    override fun toString(): String {
-        return "CG:" + cards // + "@" + Integer.toString(this.hashCode(), 16);
-    }
-
-    fun splitCheck(group: CardGroup<C>): ListSplit<C>? {
-        return ListSplit.split(cards.toMutableList(), group.cards)
-    }
-
-    val isEmpty: Boolean
-        get() = cards.isEmpty()
-
-    fun size(): Int {
-        return cards.size
-    }
-
-    override fun hashCode(): Int {
-        return cards.hashCode()
-    }
-
-    override fun equals(obj: Any?): Boolean {
-        if (obj !is CardGroup<*>) return false
-        return obj.cards == cards
-    }
-
 }

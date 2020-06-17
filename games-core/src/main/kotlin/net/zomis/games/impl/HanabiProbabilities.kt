@@ -2,7 +2,7 @@ package net.zomis.games.impl
 
 import net.zomis.games.cards.CardZone
 import net.zomis.games.cards.probabilities.CardCounter
-import net.zomis.games.cards.probabilities.v2.CardAnalyzeSolutions
+import net.zomis.games.cards.probabilities.CardAnalyzeSolutions
 
 data class HanabiCardProbabilities(
     val playable: Double,
