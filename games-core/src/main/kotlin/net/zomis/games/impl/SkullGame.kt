@@ -2,9 +2,7 @@ package net.zomis.games.impl
 
 import net.zomis.games.WinResult
 import net.zomis.games.cards.CardZone
-import net.zomis.games.dsl.ActionSerialization
-import net.zomis.games.dsl.createActionType
-import net.zomis.games.dsl.createGame
+import net.zomis.games.dsl.*
 import net.zomis.games.dsl.sourcedest.next
 
 enum class SkullCard {
@@ -12,7 +10,8 @@ enum class SkullCard {
     FLOWER,
     ;
 }
-data class SkullPlayer(val index: Int, val hand: CardZone<SkullCard>) {
+
+data class SkullPlayer(val index: Int, val hand: CardZone<SkullCard>): Viewable {
     val played = CardZone<SkullCard>()
     val chosen = CardZone<SkullCard>()
     var bet: Int = 0
@@ -20,10 +19,28 @@ data class SkullPlayer(val index: Int, val hand: CardZone<SkullCard>) {
     var points: Int = 0
 
     val totalCards: Int get() = hand.size + played.size + chosen.size
-}
-data class SkullGameConfig(val skulls: Int = 1, val flowers: Int = 3)
 
-class SkullGameModel(config: SkullGameConfig, playerCount: Int) {
+    override fun toView(viewer: PlayerIndex): Any? {
+        return mapOf(
+            "hand" to if (viewer == index) hand.cards else hand.size,
+            "board" to if (viewer == index) played.cards else played.size,
+            "chosen" to chosen.cards,
+            "points" to points,
+            "bet" to bet,
+            "pass" to pass
+        )
+    }
+}
+
+data class SkullGameConfig(
+    val skulls: Int = 1,
+    val flowers: Int = 3,
+    // TODO: Technically same player should start. If player *eliminate* themselves, they should choose the next player.
+    val selfEliminatedChooseNextPlayer: Boolean = false,
+    val skullPlayerStarts: Boolean = false
+)
+
+class SkullGameModel(config: SkullGameConfig, playerCount: Int): Viewable {
 
     var choseOwnSkull: Boolean = false
     val players = (0 until playerCount).map {
@@ -47,6 +64,13 @@ class SkullGameModel(config: SkullGameConfig, playerCount: Int) {
     }
 
     fun currentBet(): Int = players.map { it.bet }.max()!!
+    override fun toView(viewer: PlayerIndex): Any? {
+        return mapOf(
+            "currentPlayer" to currentPlayerIndex,
+            "players" to players.map { it.toView(viewer) },
+            "you" to viewer?.let { players[viewer].let { mapOf("hand" to it.hand.cards, "board" to it.played.cards) } }
+        )
+    }
 
 }
 
@@ -69,27 +93,9 @@ object SkullGame {
             allActions.precondition { playerIndex == game.currentPlayerIndex }
             fun nextTurn(game: SkullGameModel) { game.currentPlayerIndex = game.currentPlayerIndex.next(game.players.size) }
 
-            view("currentPlayer") { game.currentPlayerIndex }
-
             action(play).options { game.currentPlayer.hand.cards }
             action(play).effect { game.currentPlayer.hand.card(action.parameter).moveTo(game.currentPlayer.played) }
             action(play).forceUntil { game.currentPlayer.played.size + game.currentPlayer.chosen.size > 0 || game.choseOwnSkull }
-            view("players") {
-                game.players.map {player -> mapOf(
-                    "hand" to if (viewer == player.index) player.hand.cards else player.hand.size,
-                    "board" to if (viewer == player.index) player.played.cards else player.played.size,
-                    "chosen" to player.chosen.cards,
-                    "points" to player.points,
-                    "bet" to player.bet,
-                    "pass" to player.pass
-                )}
-            }
-
-            view("you") {
-                if (viewer != null)
-                    game.players[viewer!!].let { mapOf("hand" to it.hand.cards, "board" to it.played.cards) }
-                else null
-            }
             action(play).requires { game.players.all { it.bet == 0 } }
             action(bet).effect { game.currentPlayer.bet = action.parameter }
             action(bet).options { (game.players.map { it.bet }.max()!! + 1)..game.players.map { it.played.size }.sum() }

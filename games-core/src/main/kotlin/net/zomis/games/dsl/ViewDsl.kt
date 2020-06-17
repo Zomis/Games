@@ -8,6 +8,10 @@ interface GameViewOnRequestScope<T> {
     val game: T
 }
 
+interface Viewable {
+    fun toView(viewer: PlayerIndex): Any?
+}
+
 interface ViewScope<T> {
     val game: T
     val viewer: PlayerIndex

@@ -63,6 +63,10 @@ class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override va
 
     fun view(playerIndex: PlayerIndex): Map<String, Any?> {
         val view = GameViewContext(model, eliminationCallback, playerIndex, replayState)
+        if (model is Viewable) {
+            val map = model.toView(playerIndex) as Map<String, Any?>
+            map.forEach { entry -> view.value(entry.key) { entry.value } }
+        }
         setupContext.viewDsl?.invoke(view)
         rules.view(view)
         return view.result()
