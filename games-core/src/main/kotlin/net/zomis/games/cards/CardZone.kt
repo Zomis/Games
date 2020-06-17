@@ -1,5 +1,6 @@
 package net.zomis.games.cards
 
+import net.zomis.games.dsl.Replayable
 import net.zomis.games.dsl.ReplayableScope
 
 data class Card<T>(val zone: CardZone<T>, val index: Int, val card: T) {
@@ -25,11 +26,6 @@ data class Card<T>(val zone: CardZone<T>, val index: Int, val card: T) {
 class CardZone<T>(internal val cards: MutableList<T> = mutableListOf()) {
 
     var name: String? = null
-
-    // cards should be private
-    // replace(destination, replacement)
-    // moveTo
-    // card(filter / object) - moveTo, create Card<T> when needed and set zone
 
     operator fun get(index: Int): Card<T> {
         return Card(this, index, cards[index])
@@ -104,4 +100,7 @@ class CardZone<T>(internal val cards: MutableList<T> = mutableListOf()) {
         return cards.asSequence().map { card(it) }
     }
 
+}
+fun <T: Replayable> CardZone<T>.random(replayable: ReplayableScope, count: Int, stateKey: String): Sequence<Card<T>> {
+    return this.random(replayable, count, stateKey) { it.toStateString() }
 }

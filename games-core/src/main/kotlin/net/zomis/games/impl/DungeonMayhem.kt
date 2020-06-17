@@ -3,6 +3,7 @@ package net.zomis.games.impl
 import net.zomis.games.WinResult
 import net.zomis.games.cards.Card
 import net.zomis.games.cards.CardZone
+import net.zomis.games.cards.random
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.sourcedest.next
 import kotlin.math.min
@@ -108,14 +109,16 @@ enum class DungeonMayhemSymbol {
                 player.health = temp
             }
             STEAL_CARD -> playEffect(DungeonMayhemPlayCard(game.config, game.currentPlayer, player,
-                player.deck.random(scope.replayable, 1, "topCard") { it.name }.first()
+                player.deck.random(scope.replayable, 1, "topCard").first()
             )).let {  }
             PICK_UP_CARD -> player.discard[target.discardedCard!!].moveTo(player.hand)
             else -> throw IllegalStateException("No targets required for $this")
         }
     }
 }
-data class DungeonMayhemCard(val name: String, val symbols: List<DungeonMayhemSymbol>)
+data class DungeonMayhemCard(val name: String, val symbols: List<DungeonMayhemSymbol>): Replayable {
+    override fun toStateString(): String = name
+}
 data class DungeonMayhemShield(val discard: CardZone<DungeonMayhemCard>, val card: DungeonMayhemCard, var health: Int) {
     fun destroy(card: Card<DungeonMayhemShield>) {
         discard.cards.add(card.remove().card)

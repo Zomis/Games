@@ -4,6 +4,7 @@ import net.zomis.games.PlayerEliminations
 import net.zomis.games.WinResult
 import net.zomis.games.cards.Card
 import net.zomis.games.cards.CardZone
+import net.zomis.games.cards.random
 import net.zomis.games.dsl.*
 import kotlin.math.min
 
@@ -22,7 +23,7 @@ import kotlin.math.min
 // 25 Legendariskt, alla är förstummade och hänförda
 
 enum class HanabiColor { YELLOW, WHITE, RED, BLUE, GREEN, RAINBOW }
-class HanabiCard(val color: HanabiColor, val value: Int, var colorKnown: Boolean, var valueKnown: Boolean) {
+class HanabiCard(val color: HanabiColor, val value: Int, var colorKnown: Boolean, var valueKnown: Boolean): Replayable {
     val possibleValues: MutableMap<Int, Boolean> = mutableMapOf()
     val possibleColors: MutableMap<HanabiColor, Boolean> = mutableMapOf()
     var id: Int = 0
@@ -50,13 +51,9 @@ class HanabiCard(val color: HanabiColor, val value: Int, var colorKnown: Boolean
         if (clue.color == this.color) this.colorKnown = true
     }
 
-    fun toStateString(): String {
-        return "$color-$value"
-    }
+    override fun toStateString(): String = "$color-$value"
 
-    override fun toString(): String {
-        return "$color($colorKnown) $value($valueKnown)"
-    }
+    override fun toString(): String = "$color($colorKnown) $value($valueKnown)"
 }
 
 data class HanabiPlayer(val index: Int, val cards: CardZone<HanabiCard> = CardZone())
@@ -196,7 +193,8 @@ object HanabiGame {
                 // 5 cards for 2 or 3 players, otherwise 4 cards.
                 val playerCount = game.players.size
                 val cardPerPlayer = if (playerCount in 2..3) 5 else 4
-                val cards = game.deck.random(replayable, cardPerPlayer * playerCount, "cards") { c -> c.toStateString() }.map { it.card }.toList()
+                val cards = game.deck.random(replayable, cardPerPlayer * playerCount, "cards")
+                    .map { it.card }.toList()
                 game.deck.deal(cards, game.players.map { p -> p.cards })
             }
             allActions.precondition { playerIndex == game.currentPlayer }

@@ -14,6 +14,9 @@ interface GameLogic<T : Any> {
     fun <A : Any> action(actionType: ActionType<A>, logic: ActionLogicAdvanced<T, A>)
 }
 
+interface Replayable {
+    fun toStateString(): String
+}
 interface ReplayableScope {
     fun map(key: String, default: () -> Map<String, Any>): Map<String, Any>
     fun int(key: String, default: () -> Int): Int
