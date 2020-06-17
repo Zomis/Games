@@ -59,7 +59,7 @@ class HanabiCard(val color: HanabiColor, val value: Int, var colorKnown: Boolean
     }
 }
 
-data class HanabiPlayer(val cards: CardZone<HanabiCard> = CardZone())
+data class HanabiPlayer(val index: Int, val cards: CardZone<HanabiCard> = CardZone())
 data class HanabiConfig(
         val viewAllowCardIsNot: Boolean, // TODO
         val viewAllowCardProbability: Boolean, // TODO
@@ -188,7 +188,7 @@ object HanabiGame {
             }
             players(2..5)
             init {
-                Hanabi(config, (0 until playerCount).map { HanabiPlayer() })
+                Hanabi(config, (0 until playerCount).map { HanabiPlayer(it) })
             }
         }
         rules {
@@ -259,12 +259,12 @@ object HanabiGame {
         view {
             currentPlayer { it.currentPlayer }
             value("others") {
-                it.players.mapIndexed { index, player ->
+                it.players.map { player ->
                     val cards = player.cards.map { card ->
-                        card.known(index != viewer)
+                        card.known(player.index != viewer)
                     }
-                    if (index == viewer) return@mapIndexed null
-                    mapOf("index" to index, "cards" to cards)
+                    if (player.index == viewer) return@map null
+                    mapOf("index" to player.index, "cards" to cards)
                 }.filterNotNull()
             }
             if (this.viewer != null) {
