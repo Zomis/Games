@@ -8,8 +8,11 @@ import net.zomis.games.impl.splendorCardsFromMultilineCSV
 import kotlin.math.absoluteValue
 import kotlin.math.max
 
-data class SplendorPlayer(var chips: Money = Money(), val owned: CardZone<SplendorCard> = CardZone(),
-                          val reserved: CardZone<SplendorCard> = CardZone()) {
+data class SplendorPlayer(val index: Int) {
+    var chips: Money = Money()
+    val owned: CardZone<SplendorCard> = CardZone()
+    val reserved: CardZone<SplendorCard> = CardZone()
+
     val nobles = CardZone<SplendorNoble>()
     val points: Int get() = owned.cards.sumBy { it.points } + nobles.cards.sumBy { it.points }
 
@@ -198,7 +201,7 @@ class SplendorGame(val config: SplendorConfig, val eliminations: PlayerEliminati
     }
 
     val playerCount = eliminations.playerCount
-    val players: List<SplendorPlayer> = (1..playerCount).map { SplendorPlayer() }
+    val players: List<SplendorPlayer> = (0 until playerCount).map { SplendorPlayer(it) }
     val board: CardZone<SplendorCard> = CardZone(mutableListOf())
     var stock: Money = MoneyType.values().fold(Money()) {money, type -> money + type.toMoney(startingStockForPlayerCount(playerCount))}.plus(Money(mutableMapOf(), 5))
     var currentPlayerIndex: Int = 0
@@ -364,8 +367,8 @@ object DslSplendor {
                 it.nobles.map {noble -> viewNoble(noble) }
             }
             value("players") {game ->
-                game.players.mapIndexed { index, player ->
-                    val reservedPair = if (index == viewer || game.config.showReservedCards)
+                game.players.map { player ->
+                    val reservedPair = if (player.index == viewer || game.config.showReservedCards)
                         "reservedCards" to player.reserved.map { viewCard(it) }
                             else "reserved" to player.reserved.size
                     mapOf(
