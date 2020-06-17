@@ -2,7 +2,7 @@ package net.zomis.games.dsl.impl
 
 import net.zomis.games.dsl.*
 
-class RulesActionTypeComplexNext<T : Any, A : Any>(private val context: ActionOptionsContext<T>, val yielder: (A) -> Unit): ActionChoicesNextScope<T, A> {
+class RulesActionTypeComplexNext<T : Any, A : Any>(override val context: ActionOptionsContext<T>, val yielder: (A) -> Unit): ActionChoicesNextScope<T, A> {
     override fun parameter(action: A) {
         yielder(action)
     }
@@ -17,7 +17,7 @@ class RulesActionTypeComplexNext<T : Any, A : Any>(private val context: ActionOp
 }
 
 class RulesActionTypeComplexNextOnly<T : Any, A : Any>(
-    private val context: ActionOptionsContext<T>,
+    override val context: ActionOptionsContext<T>,
     private val chosen: List<Any>,
     private val evaluateOptions: Boolean,
     private val nextYielder: (List<Any>) -> Unit,

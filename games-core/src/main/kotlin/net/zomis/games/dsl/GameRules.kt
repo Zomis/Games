@@ -1,6 +1,7 @@
 package net.zomis.games.dsl
 
 import net.zomis.games.PlayerEliminations
+import net.zomis.games.dsl.impl.ActionOptionsContext
 import kotlin.reflect.KClass
 
 interface GameRules<T : Any> {
@@ -48,6 +49,7 @@ interface ActionChoicesNextScope<T : Any, A : Any> : ActionChoicesStartScope<T, 
     fun parameter(action: A)
 }
 interface ActionChoicesStartScope<T : Any, A : Any> {
+    val context: ActionOptionsContext<T>
     fun <E : Any> options(options: ActionOptionsScope<T>.() -> Iterable<E>, next: ActionChoicesNextScope<T, A>.(E) -> Unit)
 }
 
