@@ -4,15 +4,13 @@ import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.dsl.sourcedest.ArtaxGame
 import net.zomis.games.dsl.sourcedest.TTSourceDestinationGames
-import net.zomis.games.impl.DungeonMayhemDsl
-import net.zomis.games.impl.HanabiGame
-import net.zomis.games.impl.SetGame
-import net.zomis.games.impl.SkullGame
+import net.zomis.games.impl.*
 
 object ServerGames {
 
     val games = mutableMapOf<String, Any>(
         "Set" to SetGame.game,
+        "Spice Road" to SpiceRoadDsl.game,
         "Dungeon Mayhem" to DungeonMayhemDsl.game,
         "Skull" to SkullGame.game,
         "Splendor" to DslSplendor.splendorGame,
