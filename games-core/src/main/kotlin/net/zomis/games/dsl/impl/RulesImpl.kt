@@ -53,6 +53,10 @@ class GameRulesContext<T : Any>(
     override fun <E : Any> trigger(triggerClass: KClass<E>): GameRuleTrigger<T, E> {
         return GameRuleTriggerImpl(model, replayable, eliminations)
     }
+
+    override fun <A : Any> action(actionType: ActionType<A>, ruleSpec: GameActionSpecificationScope<T, A>.() -> Unit) {
+        return this.action(actionType).invoke(ruleSpec)
+    }
 }
 
 class GameStartContext<T : Any>(override val game: T, override val replayable: ReplayableScope) : GameStartScope<T>
@@ -184,6 +188,10 @@ class GameActionRuleContext<T : Any, A : Any>(
 
     private fun checkPreconditions(context: ActionOptionsScope<T>): Boolean {
         return globalRules.preconditions.all { it.invoke(context) } && preconditions.all { it.invoke(context) }
+    }
+
+    override fun invoke(ruleSpec: GameActionSpecificationScope<T, A>.() -> Unit) {
+        ruleSpec(this)
     }
 
 }
