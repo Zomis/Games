@@ -25,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
+import java.lang.RuntimeException
 import java.net.URI
 import java.util.UUID
 import kotlin.random.Random
@@ -122,6 +123,9 @@ class DslRandomPlayTest {
         var actionCounter = 0
 
         while (!gameImpl.isGameOver()) {
+            if (actionCounter > 10000) {
+                throw RuntimeException("Game seems to be stuck. Not finishing after $actionCounter moves. Last view is ${gameImpl.view(0)}")
+            }
             actionCounter++
             if (actionCounter % 10 == 0) {
                 p1.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
