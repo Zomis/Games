@@ -7,6 +7,7 @@ import kotlin.reflect.KClass
 interface GameRules<T : Any> {
     val allActions: GameAllActionsRule<T>
     fun <A : Any> action(actionType: ActionType<A>): GameActionRule<T, A>
+    fun <A : Any> action(actionType: ActionType<A>, ruleSpec: GameActionSpecificationScope<T, A>.() -> Unit)
     fun view(key: String, value: ViewScope<T>.() -> Any?)
     fun gameStart(onStart: GameStartScope<T>.() -> Unit)
     fun <E : Any> trigger(triggerClass: KClass<E>): GameRuleTrigger<T, E>
@@ -35,7 +36,7 @@ interface GameAllActionsRule<T : Any> {
     fun precondition(rule: ActionOptionsScope<T>.() -> Boolean)
 }
 
-interface GameActionRule<T : Any, A : Any> {
+interface GameActionSpecificationScope<T : Any, A : Any> {
     fun after(rule: ActionRuleScope<T, A>.() -> Unit)
     fun effect(rule: ActionRuleScope<T, A>.() -> Unit)
     fun precondition(rule: ActionOptionsScope<T>.() -> Boolean)
@@ -43,6 +44,10 @@ interface GameActionRule<T : Any, A : Any> {
     fun options(rule: ActionOptionsScope<T>.() -> Iterable<A>)
     fun forceUntil(rule: ActionOptionsScope<T>.() -> Boolean)
     fun choose(options: ActionChoicesStartScope<T, A>.() -> Unit)
+}
+
+interface GameActionRule<T : Any, A : Any> : GameActionSpecificationScope<T, A> {
+    operator fun invoke(ruleSpec: GameActionSpecificationScope<T, A>.() -> Unit)
 }
 
 interface ActionChoicesNextScope<T : Any, A : Any> : ActionChoicesStartScope<T, A> {

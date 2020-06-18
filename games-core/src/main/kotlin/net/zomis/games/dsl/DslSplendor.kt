@@ -258,15 +258,16 @@ object DslSplendor {
 
             allActions.precondition { game.currentPlayerIndex == playerIndex }
 
-
-            action(buy).options { game.board.map { c -> c.id } }
-            action(buy).requires { game.currentPlayer.canBuy(game.board.cards.first { c -> c.id == action.parameter }) }
-            action(buy).effect {
-                val card = game.board.cards.first { c -> c.id == action.parameter }
-                val actualCost = game.currentPlayer.pay(card.costs)
-                game.currentPlayer.owned.cards.add(card)
-                game.stock += actualCost
-                replaceCard(replayable, game, card)
+            action(buy) {
+                options { game.board.map { c -> c.id } }
+                requires { game.currentPlayer.canBuy(game.board.cards.first { c -> c.id == action.parameter }) }
+                effect {
+                    val card = game.board.cards.first { c -> c.id == action.parameter }
+                    val actualCost = game.currentPlayer.pay(card.costs)
+                    game.currentPlayer.owned.cards.add(card)
+                    game.stock += actualCost
+                    replaceCard(replayable, game, card)
+                }
             }
 
             action(buyReserved).options { game.currentPlayer.reserved.map { c -> c.id } }
@@ -279,13 +280,15 @@ object DslSplendor {
                 card.moveTo(game.currentPlayer.owned)
             }
 
-            action(discardMoney).forceUntil { game.currentPlayer.chips.count <= game.config.maxMoney }
-            action(discardMoney).options { MoneyType.values().toList() }
-            action(discardMoney).requires { game.currentPlayer.chips.hasWithoutWildcards(action.parameter.toMoney(1)) }
-            action(discardMoney).effect {
-                val money = action.parameter.toMoney(1)
-                game.currentPlayer.chips -= money
-                game.stock += money
+            action(discardMoney) {
+                forceUntil { game.currentPlayer.chips.count <= game.config.maxMoney }
+                options { MoneyType.values().toList() }
+                requires { game.currentPlayer.chips.hasWithoutWildcards(action.parameter.toMoney(1)) }
+                effect {
+                    val money = action.parameter.toMoney(1)
+                    game.currentPlayer.chips -= money
+                    game.stock += money
+                }
             }
 
             action(reserve).options { game.board.map { c -> c.id } }
