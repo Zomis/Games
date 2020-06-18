@@ -66,15 +66,51 @@ interface GameDsl<T : Any> {
     fun rules(rulesDsl: GameRulesDsl<T>)
 }
 
+class GameActionCreator<T : Any, A : Any, S : Any>(
+    override val name: String,
+    override val parameterType: KClass<A>,
+    override val serializedType: KClass<S>,
+    val serializer: (A) -> S,
+    val deserializer: ActionOptionsScope<T>.(S) -> A
+): ActionType<A> {
+    override fun serialize(parameter: A): Any = serializer(parameter)
+    override fun <U: Any> deserialize(scope: ActionOptionsScope<U>, serialized: Any): A = deserializer(scope as ActionOptionsScope<T>, serialized as S)
+
+    fun <S2: Any> serialization(clazz: KClass<S2>, serializer: (A) -> S2, deserializer: ActionOptionsScope<T>.(S2) -> A): GameActionCreator<T, A, S2> {
+        return GameActionCreator(name, parameterType, clazz, serializer, deserializer)
+    }
+}
+
+class GameCreator<T : Any>(val modelClass: KClass<T>) {
+    fun game(name: String, dsl: GameDsl<T>.() -> Unit): GameSpec<T> = dsl
+    fun <A: Any> action(name: String, parameterType: KClass<A>): GameActionCreator<T, A, A>
+        = GameActionCreator(name, parameterType, parameterType, {it}, {it})
+}
+
 fun <T : Any> createGame(name: String, dsl: GameDsl<T>.() -> Unit): GameSpec<T> {
     return dsl
 }
 
+@Deprecated("Use GameCreator.action")
 data class ActionSerialization<A : Any, T : Any>(val serialize: (A) -> Any, val deserialize: ActionOptionsScope<T>.(Any) -> A)
-data class ActionType<A : Any>(val name: String, val parameterType: KClass<A>, val serialize: ActionSerialization<A, Any>)
-fun <A : Any> createActionType(name: String, parameterType: KClass<A>): ActionType<A> {
-    return ActionType(name, parameterType, ActionSerialization({it}, {it as A}))
+@Deprecated("Use GameCreator.action")
+data class ActionTypeImpl<A : Any>(
+    override val name: String,
+    override val parameterType: KClass<A>,
+    override val serializedType: KClass<*>,
+    val serialize: ActionSerialization<A, Any>
+): ActionType<A> {
+    override fun serialize(parameter: A): Any = serialize.serialize(parameter)
+    override fun <T: Any> deserialize(scope: ActionOptionsScope<T>, serialized: Any): A = serialize.deserialize(scope as ActionOptionsScope<Any>, serialized)
 }
-fun <A : Any, T : Any> createActionType(name: String, parameterType: KClass<A>, serialize: ActionSerialization<A, T>): ActionType<A> {
-    return ActionType(name, parameterType, serialize as ActionSerialization<A, Any>)
+interface ActionType<A : Any> {
+    val name: String
+    val parameterType: KClass<A>
+    val serializedType: KClass<*>
+    fun serialize(parameter: A): Any
+    fun <T: Any> deserialize(scope: ActionOptionsScope<T>, serialized: Any): A
+}
+@Deprecated("Use GameCreator.action")
+inline fun <reified A : Any> createActionType(name: String, parameterType: KClass<A>): ActionType<A> {
+    return ActionTypeImpl(name, parameterType, A::class, ActionSerialization({it}, {it as A}))
 }

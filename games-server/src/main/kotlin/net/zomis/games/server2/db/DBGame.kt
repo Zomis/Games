@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonUnwrapped
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.games.dsl.GameSpec
+import net.zomis.games.dsl.impl.ActionOptionsContext
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.dsl.impl.StateKeeper
@@ -57,7 +58,10 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
         val logic = game.actions[it.moveType]
             ?: throw BadReplayException("Unable to perform $it: No such move type")
         val param = if (it.move == null) Unit
-        else mapper.readValue(mapper.writeValueAsString(it.move), logic.parameterClass.java)
+        else {
+            val serialized = mapper.readValue(mapper.writeValueAsString(it.move), logic.actionType.serializedType.java)
+            logic.actionType.deserialize(ActionOptionsContext(game.model, it.moveType, it.playerIndex), serialized)
+        }
         val actionable = logic.createAction(it.playerIndex, param)
         if (!logic.isAllowed(actionable)) {
             addError("Unable to perform $it: Move at index ${move.index} is not allowed.")

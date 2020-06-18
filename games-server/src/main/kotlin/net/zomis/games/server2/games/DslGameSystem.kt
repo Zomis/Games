@@ -47,7 +47,7 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
                         mapper.readValue(moveJsonText, clazz.java)
                     } catch (e: Exception) {
                         val serializedMove = mapper.convertValue(it.move, Any::class.java)
-                        actionType.actionType.serialize.deserialize(
+                        actionType.actionType.deserialize(
                             ActionOptionsContext(controller.model,  actionType.name, it.player), serializedMove)
                     }
                 }

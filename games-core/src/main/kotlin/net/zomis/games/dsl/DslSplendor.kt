@@ -220,6 +220,8 @@ data class SplendorConfig(
 
 object DslSplendor {
 
+    val factory = GameCreator(SplendorGame::class)
+
     val buy = createActionType("buy", String::class)
     val buyReserved = createActionType("buyReserved", String::class)
     val takeMoney = createActionType("takeMoney", MoneyChoice::class)
@@ -301,7 +303,7 @@ object DslSplendor {
 
             action(takeMoney).choose {
                 options({MoneyType.values().asIterable()}) { first ->
-                    parameter(MoneyChoice(listOf(first))) // TODO: How to perform this action of only taking one or two?
+                    parameter(MoneyChoice(listOf(first)))
                     options({MoneyType.values().asIterable()}) {second ->
                         parameter(MoneyChoice(listOf(first, second)))
                         if (first != second) {

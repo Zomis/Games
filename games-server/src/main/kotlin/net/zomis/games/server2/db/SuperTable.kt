@@ -150,7 +150,12 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         val epochMilli = Instant.now().toEpochMilli()
         val serverGame = move.game
         val moveIndex = serverGame.nextMoveIndex()
-        val moveData = convertToDBFormat(move.move)
+        val dbMove = if (serverGame.obj is GameImpl<*>) {
+            val gameImpl = serverGame.obj as GameImpl<*>
+            val actionType = gameImpl.actions.type(move.moveType)!!.actionType
+            actionType.serialize(move.move)
+        } else { move.move }
+        val moveData = convertToDBFormat(dbMove)
         val state: Any? = gameRandomnessState(serverGame)
         val updates = mutableListOf(
             AttributeUpdate(Fields.MOVE_TIME.fieldName).put(epochMilli),

@@ -76,12 +76,14 @@ class SkullGameModel(config: SkullGameConfig, playerCount: Int): Viewable {
 
 object SkullGame {
 
-    val bet = createActionType("bet", Int::class)
-    val pass = createActionType("pass", Unit::class)
-    val choose = createActionType("choose", SkullPlayer::class, ActionSerialization<SkullPlayer, SkullGameModel>({ it.index }, { game.players[it as Int] }))
-    val discard = createActionType("discard", SkullCard::class)
-    val play = createActionType("play", SkullCard::class)
-    val game = createGame<SkullGameModel>("Skull") {
+    val factory = GameCreator(SkullGameModel::class)
+
+    val bet = factory.action("bet", Int::class)
+    val pass = factory.action("pass", Unit::class)
+    val choose = factory.action("choose", SkullPlayer::class).serialization(Int::class, { it.index }, { game.players[it] })
+    val discard = factory.action("discard", SkullCard::class)
+    val play = factory.action("play", SkullCard::class)
+    val game = factory.game("Skull") {
         setup(SkullGameConfig::class) {
             players(3..16)
             defaultConfig { SkullGameConfig() }
