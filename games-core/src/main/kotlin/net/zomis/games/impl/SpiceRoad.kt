@@ -1,6 +1,7 @@
 package net.zomis.games.impl
 
 import net.zomis.games.cards.CardZone
+import net.zomis.games.dsl.ActionChoicesNextScope
 import net.zomis.games.dsl.createActionType
 import net.zomis.games.dsl.createGame
 import net.zomis.games.dsl.mergeWith
@@ -54,21 +55,24 @@ object SpiceRoadDsl {
                     when {
                         card.gain != null -> parameter(PlayParameter(card, SpiceRoadGameModel.Caravan(), card.gain))
                         card.upgrade != null -> {
-                            fun rec(remaining: SpiceRoadGameModel.Caravan,
-                                    upgrades: Int,
+                            fun rec(scope: ActionChoicesNextScope<SpiceRoadGameModel, PlayParameter>,
+                                    remaining: SpiceRoadGameModel.Caravan, upgrades: Int,
                                     remove: SpiceRoadGameModel.Caravan = SpiceRoadGameModel.Caravan(),
                                     add: SpiceRoadGameModel.Caravan = SpiceRoadGameModel.Caravan()) {
-                                parameter(PlayParameter(card, remove, add))
-                                options({ remaining.spice.keys - SpiceRoadGameModel.Spice.BROWN }) { spiceToUpgrade ->
-                                    options({ 1..(minOf(SpiceRoadGameModel.Spice.BROWN.ordinal - spiceToUpgrade.ordinal, upgrades)) }) { times ->
-                                        rec(remaining - spiceToUpgrade.toCaravan(),
+                                scope.parameter(PlayParameter(card, remove, add))
+                                if (upgrades <= 0) {
+                                    return
+                                }
+                                scope.options({ remaining.spice.keys - SpiceRoadGameModel.Spice.BROWN }) { spiceToUpgrade ->
+                                    this.options({ 1..(minOf(SpiceRoadGameModel.Spice.BROWN.ordinal - spiceToUpgrade.ordinal, upgrades)) }) { times ->
+                                        rec(this, remaining - spiceToUpgrade.toCaravan(),
                                                 upgrades - times,
                                                 remove + spiceToUpgrade.toCaravan(),
                                                 add + (spiceToUpgrade + times).toCaravan())
                                     }
                                 }
                             }
-                            rec(context.game.currentPlayer.caravan, card.upgrade)
+                            rec(this, context.game.currentPlayer.caravan, card.upgrade)
                         }
                         card.trade != null -> options({ 1..(game.currentPlayer.caravan / card.trade.first) }) { times ->
                             parameter(PlayParameter(card, card.trade.first * times, card.trade.second * times))
