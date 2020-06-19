@@ -119,24 +119,22 @@ object ArtaxGame {
             defaultConfig { Point(7, 7) }
             init { TTArtax(eliminationCallback, playerCount, config.x, config.y) }
         }
-        logic {
+        rules {
             action(moveAction) {
-                options {
-                    optionFrom({ game -> game.board.points().filter { game.allowedSource(game.board.point(it)) } }) {source ->
-                        optionFrom({ game -> game.board.points().filter { game.allowedDestination(game.board.point(source), game.board.point(it)) } }) {destination ->
-                            actionParameter(PointMove(Point(source.x, source.y), Point(destination.x, destination.y)))
+                choose {
+                    options({ game.board.points().filter { game.allowedSource(game.board.point(it)) } }) {source ->
+                        options({ game.board.points().filter { game.allowedDestination(game.board.point(source), game.board.point(it)) } }) {destination ->
+                            parameter(PointMove(Point(source.x, source.y), Point(destination.x, destination.y)))
                         }
                     }
                 }
-                allowed {
-                    it.game.currentPlayer == it.playerIndex &&
-                        it.game.allowedSource(it.game.board.point(it.parameter.source)) &&
-                        it.game.allowedDestination(it.game.board.point(it.parameter.source),
-                            it.game.board.point(it.parameter.destination))
+                requires { game.currentPlayer == action.playerIndex }
+                requires { game.allowedSource(game.board.point(action.parameter.source)) }
+                requires {
+                    game.allowedDestination(game.board.point(action.parameter.source), game.board.point(action.parameter.destination))
                 }
                 effect {
-                    it.game.perform(it.game.board.point(it.parameter.source),
-                        it.game.board.point(it.parameter.destination))
+                    game.perform(game.board.point(action.parameter.source), game.board.point(action.parameter.destination))
                 }
             }
         }
