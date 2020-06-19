@@ -56,7 +56,7 @@ class ECSGameTest {
     private lateinit var player2_id: String
 
     @Test
-    @Disabled("having problems with Java-WebSocket clients connecting to Javalin server")
+    @Disabled("ECS game is a mess")
     fun uttt() {
         val p1 = WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket"))
         p1.connectBlocking()

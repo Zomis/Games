@@ -20,7 +20,6 @@ class QuixoTest {
     }
 
     @Test
-    @Disabled
     fun onlyOnePlayerOptionsAllowed() {
         createTestGame().expectPossibleOptions(1, move, 0)
     }

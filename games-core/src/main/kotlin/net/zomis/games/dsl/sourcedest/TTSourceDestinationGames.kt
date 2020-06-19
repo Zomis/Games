@@ -1,5 +1,6 @@
 package net.zomis.games.dsl.sourcedest
 
+import net.zomis.games.WinResult
 import net.zomis.games.dsl.*
 import net.zomis.tttultimate.Direction8
 import net.zomis.tttultimate.TTBase
@@ -103,8 +104,37 @@ class TTSourceDestinationGames {
             defaultConfig { TTOptions(5, 5, 5) }
             init { conf -> TTQuixoController(TTFactories().classicMNK(conf!!.m, conf.n, conf.k)) }
         }
-        logic(ttLogic())
+        rules(ttRules())
         view(ttView(grid))
+    }
+
+    private fun ttRules(): GameRules<TTControllerSourceDestination>.() -> Unit = {
+        allActions.precondition { playerIndex == game.currentPlayer.index() }
+        action(moveAction) {
+            choose {
+                options({ game.grid().filter { game.allowedSource(game.point(it)) } }) {source ->
+                    options({ game.grid().filter { game.allowedDestination(game.point(source), game.point(it)) } }) {destination ->
+                        parameter(PointMove(Point(source.x, source.y), Point(destination.x, destination.y)))
+                    }
+                }
+            }
+            requires {
+                game.allowedSource(game.point(action.parameter.source)) &&
+                        game.allowedDestination(game.point(action.parameter.source), game.point(action.parameter.destination))
+            }
+            effect {
+                game.perform(game.point(action.parameter.source), game.point(action.parameter.destination))
+            }
+        }
+        allActions.after {
+            if (game.board.isWon) {
+                if (game.board.wonBy.index() < 0) eliminations.eliminateRemaining(WinResult.DRAW)
+                else {
+                    eliminations.result(game.board.wonBy.index(), WinResult.WIN)
+                    eliminations.eliminateRemaining(WinResult.LOSS)
+                }
+            }
+        }
     }
 
     private val winner: (TTBase) -> Int? = {
@@ -127,27 +157,6 @@ class TTSourceDestinationGames {
     }
     private fun TTControllerSourceDestination.grid(): List<Point> {
         return this.board.subs().map { Point(it.x, it.y) }
-    }
-
-    private fun ttLogic(): GameLogicDsl<TTControllerSourceDestination> = {
-        winner { winner(it.board) }
-        action(moveAction) {
-            options {
-                optionFrom({ game -> game.grid().filter { game.allowedSource(game.point(it)) } }) {source ->
-                    optionFrom({ game -> game.grid().filter { game.allowedDestination(game.point(source), game.point(it)) } }) {destination ->
-                        actionParameter(PointMove(Point(source.x, source.y), Point(destination.x, destination.y)))
-                    }
-                }
-            }
-            allowed {
-                it.game.currentPlayer.index() == it.playerIndex &&
-                  it.game.allowedSource(it.game.point(it.parameter.source)) &&
-                    it.game.allowedDestination(it.game.point(it.parameter.source), it.game.point(it.parameter.destination))
-            }
-            effect {
-                it.game.perform(it.game.point(it.parameter.source), it.game.point(it.parameter.destination))
-            }
-        }
     }
 
 }
