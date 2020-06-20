@@ -157,7 +157,7 @@ class SplendorGame(val config: SplendorConfig, val eliminations: PlayerEliminati
         return SplendorCard(level, randomType(), Money(randomType() to level * 2), level)
     }
 
-    fun endTurnCheck() {
+    fun endTurnCheck(): SplendorNoble? {
         if (this.stock.negativeAmount() > 0) {
             throw IllegalStateException("Stock is negative")
         }
@@ -173,7 +173,7 @@ class SplendorGame(val config: SplendorConfig, val eliminations: PlayerEliminati
         }
 
         // Check money count > maxMoney
-        if (this.currentPlayer.chips.count > config.maxMoney) return // Need to discard some money
+        if (this.currentPlayer.chips.count > config.maxMoney) return null // Need to discard some money
 
         // Check noble conditions
         val noble = this.nobles.cards.find { it.requirementsFulfilled(currentPlayer) }
@@ -198,6 +198,7 @@ class SplendorGame(val config: SplendorConfig, val eliminations: PlayerEliminati
         if (turnsLeft == 0) {
             eliminations.eliminateBy(players.mapIndexed { index, splendorPlayer -> index to splendorPlayer }, compareBy({ it.points }, { -it.owned.size }))
         }
+        return noble
     }
 
     val playerCount = eliminations.playerCount
@@ -219,6 +220,22 @@ data class SplendorConfig(
 )
 
 object DslSplendor {
+
+    fun viewMoney(money: Money): Map<String, Int> {
+        return money.moneys.entries.sortedBy { it.key.name }.map { it.key.name to it.value }
+                .let { if (money.wildcards > 0) it.plus("wildcards" to money.wildcards) else it }.toMap()
+    }
+    fun viewNoble(noble: SplendorNoble): Map<String, Any>
+        = mapOf("points" to 3, "requirements" to viewMoney(noble.requirements), "id" to noble.toStateString())
+    fun viewCard(card: SplendorCard): Map<String, Any?> {
+        return mapOf(
+                "id" to card.id,
+                "level" to card.level,
+                "discount" to viewMoney(card.discounts),
+                "costs" to viewMoney(card.costs),
+                "points" to card.points
+        )
+    }
 
     val factory = GameCreator(SplendorGame::class)
 
@@ -269,6 +286,7 @@ object DslSplendor {
                     game.currentPlayer.owned.cards.add(card)
                     game.stock += actualCost
                     replaceCard(replayable, game, card)
+                    log { "$player bought ${viewLink("card", "card", viewCard(card))}" }
                 }
             }
 
@@ -280,6 +298,7 @@ object DslSplendor {
                 val actualCost = game.currentPlayer.pay(card.card.costs)
                 game.stock += actualCost
                 card.moveTo(game.currentPlayer.owned)
+                log { "$player bought ${viewLink("a reserved card", "card", viewCard(card.card))}" }
             }
 
             action(discardMoney) {
@@ -290,6 +309,7 @@ object DslSplendor {
                     val money = action.parameter.toMoney(1)
                     game.currentPlayer.chips -= money
                     game.stock += money
+                    log { "$player discards $action" }
                 }
             }
 
@@ -302,6 +322,8 @@ object DslSplendor {
                 game.stock -= wildcardIfAvailable
                 game.currentPlayer.chips += wildcardIfAvailable
                 replaceCard(replayable, game, card.card)
+                logSecret(action.playerIndex) { "$player reserved ${viewLink("card", "card", viewCard(card.card))}" }
+                    .publicLog { "$player reserved a level ${card.card.level} card" }
             }
 
             action(takeMoney).choose {
@@ -333,23 +355,15 @@ object DslSplendor {
             action(takeMoney).effect {
                 game.stock -= action.parameter.toMoney()
                 game.currentPlayer.chips += action.parameter.toMoney()
+                log { "$player took ${action.moneys}" }
             }
 
-            allActions.after { game.endTurnCheck() }
-        }
-        fun viewMoney(money: Money): Map<String, Int> {
-            return money.moneys.entries.sortedBy { it.key.name }.map { it.key.name to it.value }
-                .let { if (money.wildcards > 0) it.plus("wildcards" to money.wildcards) else it }.toMap()
-        }
-        fun viewNoble(noble: SplendorNoble): Map<String, Any> = mapOf("points" to 3, "requirements" to viewMoney(noble.requirements))
-        fun viewCard(card: SplendorCard): Map<String, Any?> {
-            return mapOf(
-                "id" to card.id,
-                "level" to card.level,
-                "discount" to viewMoney(card.discounts),
-                "costs" to viewMoney(card.costs),
-                "points" to card.points
-            )
+            allActions.after {
+                val noble = game.endTurnCheck()
+                if (noble != null) {
+                    log { "$player got ${viewLink("a noble", "noble", viewNoble(noble))}" }
+                }
+            }
         }
         view {
             currentPlayer { it.currentPlayerIndex }

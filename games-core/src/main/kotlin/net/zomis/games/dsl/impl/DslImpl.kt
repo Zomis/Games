@@ -145,16 +145,19 @@ class GameViewContext<T : Any>(val model: T, private val eliminations: PlayerEli
 
 class StateKeeper {
     private val currentAction = mutableMapOf<String, Any>()
+    private val logEntries = mutableListOf<ActionLogEntry>()
     var replayMode = false
 
     fun lastMoveState(): Map<String, Any?> = currentAction.toMap()
     fun clear() {
         currentAction.clear()
         replayMode = false
+        logEntries.clear()
     }
     fun setState(state: Map<String, Any>) {
         replayMode = true
         currentAction.putAll(state)
+        logEntries.clear()
     }
 
     fun save(key: String, value: Any) {
@@ -169,6 +172,10 @@ class StateKeeper {
         return currentAction.containsKey(key)
     }
 
+    fun logs(): List<ActionLogEntry> = logEntries.toList()
+    fun addLogs(logs: MutableList<ActionLogEntry>) {
+        logEntries.addAll(logs)
+    }
 }
 class ReplayState(val stateKeeper: StateKeeper, override val playerEliminations: PlayerEliminations): EffectScope, ReplayScope, ReplayableScope {
     private val mostRecent = mutableMapOf<String, Any>()

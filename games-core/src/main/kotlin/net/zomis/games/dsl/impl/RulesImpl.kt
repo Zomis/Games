@@ -78,14 +78,26 @@ class ActionOptionsContext<T : Any>(
     override val actionType: String,
     override val playerIndex: Int
 ) : ActionOptionsScope<T>
+
 class ActionRuleContext<T : Any, A : Any>(
     override val game: T,
     override val action: Actionable<T, A>,
     override val eliminations: PlayerEliminations,
     override val replayable: ReplayableScope
 ): ActionRuleScope<T, A> {
+    internal val logs = mutableListOf<ActionLogEntry>()
+
     override val playerIndex: Int get() = action.playerIndex
     override val actionType: String get() = action.actionType
+
+    override fun log(logging: LogActionScope<T, A>.() -> String) {
+        logs.add(LogActionContext(game, action.playerIndex, action.parameter).log(logging))
+    }
+    override fun logSecret(player: PlayerIndex, logging: LogActionScope<T, A>.() -> String): SecretLogging<T, A> {
+        val context = LogActionContext(game, action.playerIndex, action.parameter).secretLog(player, logging)
+        logs.add(context)
+        return context
+    }
 }
 
 class GameActionRuleContext<T : Any, A : Any>(
@@ -166,6 +178,7 @@ class GameActionRuleContext<T : Any, A : Any>(
         this.effects.forEach { it.invoke(context) }
         this.after.forEach { it.invoke(context) }
         this.globalRules.after.forEach { it.invoke(context as ActionRuleScope<T, Any>) }
+        replayable.stateKeeper.addLogs(context.logs)
     }
 
     override fun createAction(playerIndex: Int, parameter: A): Action<T, A>

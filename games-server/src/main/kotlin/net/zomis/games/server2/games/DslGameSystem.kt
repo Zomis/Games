@@ -3,11 +3,8 @@ package net.zomis.games.server2.games
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
-import net.zomis.games.WinResult
 import net.zomis.games.dsl.GameSpec
-import net.zomis.games.dsl.impl.ActionOptionsContext
-import net.zomis.games.dsl.impl.GameImpl
-import net.zomis.games.dsl.impl.GameSetupImpl
+import net.zomis.games.dsl.impl.*
 import net.zomis.games.server2.StartupEvent
 
 class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
@@ -23,6 +20,7 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
         events.listen("DslGameSystem $name Move", PlayerGameMoveRequest::class, {
             it.game.gameType.type == server2GameName
         }, {
+            val serverGame = it.game
             val controller = it.game.obj as GameImpl<T>
             if (controller.isGameOver()) {
                 events.execute(it.illegalMove("Game already finished"))
@@ -66,6 +64,7 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
             try {
                 events.execute(PreMoveEvent(it.game, it.player, it.moveType, parameter))
                 actionType.perform(action)
+                controller.stateKeeper.logs().forEach { log -> sendLogs(serverGame, log) }
                 controller.stateCheck()
             } catch (e: Exception) {
                 logger.error(e) { "Error processing move $it" }
@@ -86,6 +85,29 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
         events.listen("DslGameSystem register $name", StartupEvent::class, {true}, {
             events.execute(GameTypeRegisterEvent(server2GameName))
         })
+    }
+
+    private fun sendLogs(serverGame: ServerGame, log: ActionLogEntry) {
+        val yourLog = logEntryMessage(serverGame, log.secret ?: log.public)
+        val othersLog = logEntryMessage(serverGame, log.public)
+        serverGame.players.forEachIndexed { index, client ->
+            val msg = if (index == log.playerIndex) yourLog else othersLog
+            msg?.let { client.send(it) }
+        }
+        if (othersLog != null) {
+            serverGame.observers.forEach { client -> othersLog.let { client.send(it) } }
+        }
+    }
+
+    private fun logEntryMessage(serverGame: ServerGame, entry: LogEntry?): Map<String, Any>? {
+        if (entry == null) return null
+        return mapOf(
+            "type" to "ActionLog",
+            "gameType" to serverGame.gameType.type,
+            "gameId" to serverGame.gameId,
+            "highlights" to emptyList<Any>(),
+            "parts" to entry.parts
+        )
     }
 
 }

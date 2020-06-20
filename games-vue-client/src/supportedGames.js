@@ -26,6 +26,10 @@ import ECSGame from "@/components/ecs/ECSGame";
 import DSLTTT from "@/components/games/DSLTTT";
 import TTT3D from "@/components/games/TTT3D";
 
+// ViewTypes for ActionLog
+import SplendorCard from "@/components/games/splendor/SplendorCard"
+import SplendorNoble from "@/components/games/splendor/SplendorNoble"
+
 import DslGameState from "./components/games/DslGameState";
 const defaultRouteProps = route => ({
     gameInfo: route.params.gameInfo,
@@ -108,6 +112,10 @@ const supportedGames = {
         enabled: true,
         actions: splendorActions,
         component: Splendor,
+        viewTypes: {
+            card: { component: SplendorCard, binds: (v) => ({ card: v }) },
+            noble: { component: SplendorNoble, binds: (v) => ({ noble: v }) },
+        },
         routeProps: defaultRouteProps
     },
     "DSL-Connect4": {

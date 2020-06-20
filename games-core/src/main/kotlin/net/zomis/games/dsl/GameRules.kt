@@ -17,6 +17,19 @@ interface GameStartScope<T : Any> {
     val game: T
     val replayable: ReplayableScope
 }
+
+interface SecretLogging<T : Any, A : Any> {
+    fun publicLog(logging: LogActionScope<T, A>.() -> String)
+}
+interface LogActionScope<T : Any, A : Any> {
+    val game: T
+    val player: String
+    val action: A
+    fun obj(value: Any): String
+    fun player(value: PlayerIndex): String
+    fun viewLink(text: String, type: String, view: Any): String
+    fun highlight(values: List<*>)
+}
 interface ActionRuleScope<T : Any, A : Any> : GameUtils, ActionOptionsScope<T> {
     override val game: T
     val action: Actionable<T, A>
@@ -24,6 +37,8 @@ interface ActionRuleScope<T : Any, A : Any> : GameUtils, ActionOptionsScope<T> {
     override val replayable: ReplayableScope
     override val playerEliminations: PlayerEliminations
         get() = eliminations
+    fun log(logging: LogActionScope<T, A>.() -> String)
+    fun logSecret(player: PlayerIndex, logging: LogActionScope<T, A>.() -> String): SecretLogging<T, A>
 }
 interface ActionOptionsScope<T : Any> {
     val game: T

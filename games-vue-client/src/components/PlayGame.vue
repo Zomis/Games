@@ -3,6 +3,7 @@
     <GameHead v-if="gameInfo" :gameInfo="gameInfo" :playerCount="playerCount" :view="view" :eliminations="eliminations" />
     <component v-if="view" :is="viewComponent" :view="view" :actions="actions" :players="players" :context="context" />
     <v-btn v-if="!isObserver" @click="clearActions()" :disabled="actionChoice === null">Reset Action</v-btn>
+    <ActionLog :logEntries="actionLogEntries" :onHighlight="highlight" :context="context" />
     <v-snackbar v-model="snackbar">
       {{snackbarText}}
     </v-snackbar>
@@ -12,12 +13,13 @@
 import supportedGames from "@/supportedGames"
 import { mapState } from "vuex";
 import GameHead from "@/components/games/common/GameHead";
+import ActionLog from "@/components/games/ActionLog"
 
 export default {
   name: "PlayGame",
   props: ["gameType", "gameId", "showRules"],
   components: {
-    GameHead
+    GameHead, ActionLog
   },
   data() {
     return {
@@ -41,6 +43,9 @@ export default {
     },
     performChosenAction() {
       this.$store.dispatch("DslGameState/performChosenAction", { gameInfo: this.gameInfo });
+    },
+    highlight(highlight) {
+      this.$store.dispatch("DslGameState/highlight", { gameInfo: this.gameInfo, highlights: highlight });
     },
     action(_, data) {
       let action = this.actionsAvailable[data]
@@ -101,6 +106,8 @@ export default {
       */
       return {
         players: this.players.map((p, idx) => ({ ...p, controllable: this.gameInfo.yourIndex === idx })),
+        gameType: this.gameInfo.gameType,
+        gameId: this.gameInfo.gameId,
         viewer: this.gameInfo.yourIndex,
         scope: 'play'
       }
@@ -109,6 +116,10 @@ export default {
       return this.eliminations.length == this.players.length
     },
     ...mapState("DslGameState", {
+      actionLogEntries(state) {
+        if (!state.games[this.gameId]) { return [] }
+        return state.games[this.gameId].actionLog;
+      },
       gameInfo(state) {
         if (!state.games[this.gameId]) { return null }
         return state.games[this.gameId].gameInfo;
