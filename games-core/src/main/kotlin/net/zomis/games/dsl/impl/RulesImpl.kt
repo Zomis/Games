@@ -94,7 +94,7 @@ class ActionRuleContext<T : Any, A : Any>(
         logs.add(LogActionContext(game, action.playerIndex, action.parameter).log(logging))
     }
     override fun logSecret(player: PlayerIndex, logging: LogActionScope<T, A>.() -> String): SecretLogging<T, A> {
-        val context = LogActionContext(game, action.playerIndex, action.parameter).secretLog(player, logging)
+        val context = LogActionContext(game, player, action.parameter).secretLog(player, logging)
         logs.add(context)
         return context
     }

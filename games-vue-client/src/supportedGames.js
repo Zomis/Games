@@ -29,6 +29,7 @@ import TTT3D from "@/components/games/TTT3D";
 // ViewTypes for ActionLog
 import SplendorCard from "@/components/games/splendor/SplendorCard"
 import SplendorNoble from "@/components/games/splendor/SplendorNoble"
+import HanabiCard from "@/components/games/HanabiCard"
 
 import DslGameState from "./components/games/DslGameState";
 const defaultRouteProps = route => ({
@@ -96,6 +97,9 @@ const supportedGames = {
                     next: (hintValue) => `giveclue-${mode}-${hintValue}`
                 })
             })
+        },
+        viewTypes: {
+            card: { component: HanabiCard, binds: (v) => ({ card: v, doubleView: true }) }
         },
         component: Hanabi,
         routeProps: defaultRouteProps
