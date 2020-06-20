@@ -278,7 +278,7 @@ object HanabiGame {
             allActions.after {
                 game.nextTurn()
                 if (game.turnsLeft == 0) {
-                    eliminations.eliminateRemaining(WinResult.LOSS)
+                    eliminations.eliminateRemaining(WinResult.DRAW)
                 }
             }
         }
