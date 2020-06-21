@@ -41,4 +41,11 @@ class GameTest<T : Any>(val game: GameImpl<T>) {
         actionEntry.perform(action)
     }
 
+    fun performActionSerialized(playerIndex: Int, actionType: String, parameter: Any) {
+        val actionEntry = game.actions.type(actionType)!!
+        val action = actionEntry.createActionFromSerialized(playerIndex, parameter)
+        require(actionEntry.isAllowed(action)) { "Action is not allowed: $action" }
+        actionEntry.perform(action)
+    }
+
 }

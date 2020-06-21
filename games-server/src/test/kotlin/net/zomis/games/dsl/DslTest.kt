@@ -30,7 +30,8 @@ class DslTest {
         val act = game.actions.type("play") // should be <Point>
         Assertions.assertNotNull(act)
         Assertions.assertThrows(ClassCastException::class.java) {
-            act!!.createAction(0, 42)
+            val action = act!!.createAction(0, 42)
+            act.perform(action)
         }
     }
 
@@ -51,7 +52,8 @@ class DslTest {
     fun makeAMove() {
         val game = createGame()
         val actions = game.actions.type("play")!!
-        actions.perform(0, Point(1, 2))
+        val action = actions.createActionFromSerialized(0, Point(1, 2))
+        actions.perform(action)
         Assertions.assertEquals(TTPlayer.X, game.model.game.getSub(1, 2)!!.wonBy)
     }
 
@@ -70,7 +72,7 @@ class DslTest {
         val game = createGame()
         var counter = 0
         val random = Random(23)
-        while (game.view(0)["winner"] == null && counter < 20) {
+        while (!game.isGameOver() && counter < 20) {
             val playerIndex = counter % 2
             val actionType = game.actions.type("play")!!
             val availableActions = actionType.availableActions(playerIndex)
@@ -79,7 +81,7 @@ class DslTest {
             actionType.perform(action)
             counter++
         }
-        Assertions.assertNotNull(game.view(0)["winner"])
+        Assertions.assertEquals(2, game.eliminationCallback.eliminations().distinctBy { it.playerIndex }.size)
     }
 
 }

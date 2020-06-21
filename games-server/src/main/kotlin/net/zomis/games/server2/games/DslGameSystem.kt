@@ -41,7 +41,7 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
                 } else {
                     // it.move is a JsonNode
                     val serializedMove = mapper.convertValue(it.move, actionType.actionType.serializedType.java)
-                    actionType.createActionFromSerialized(ActionOptionsContext(controller.model,  actionType.name, it.player), serializedMove)
+                    actionType.createActionFromSerialized(it.player, serializedMove)
                 }
             } catch (e: Exception) {
                 logger.error(e, "Error reading move: $it")
@@ -58,7 +58,6 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
                 events.execute(PreMoveEvent(it.game, it.player, it.moveType, action.parameter))
                 actionType.perform(action)
                 controller.stateKeeper.logs().forEach { log -> sendLogs(serverGame, log) }
-                controller.stateCheck()
             } catch (e: Exception) {
                 logger.error(e) { "Error processing move $it" }
                 events.execute(it.illegalMove("Error occurred while processing move: $e"))

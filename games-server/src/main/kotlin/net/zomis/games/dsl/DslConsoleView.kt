@@ -24,7 +24,6 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
         while (!gameImpl.isGameOver()) {
             if (this.queryInput(gameImpl, scanner)) {
                 this.showView(gameImpl)
-                gameImpl.stateCheck()
                 gameImpl.stateKeeper.clear()
             }
         }

@@ -62,7 +62,7 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
                 logic.createAction(it.playerIndex, Unit)
             else {
                 val serialized = mapper.readValue(mapper.writeValueAsString(it.move), logic.actionType.serializedType.java)
-                logic.createActionFromSerialized(ActionOptionsContext(game.model, it.moveType, it.playerIndex), serialized)
+                logic.createActionFromSerialized(it.playerIndex, serialized)
             }
 
         if (!logic.isAllowed(actionable)) {
@@ -71,7 +71,6 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
         }
         try {
             logic.replayAction(actionable, it.state)
-            game.stateCheck()
         } catch (e: Exception) {
             logger.error(e) { "Unable to perform move: $move." }
             addError("Unable to perform move: $move. $e")

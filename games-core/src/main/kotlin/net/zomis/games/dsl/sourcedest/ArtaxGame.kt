@@ -108,10 +108,11 @@ class TTArtax(private val eliminationCallback: PlayerEliminationCallback,
 
 }
 
-private val moveAction = createActionType("move", PointMove::class)
 object ArtaxGame {
 
-    val gameArtax = createGame<TTArtax>("Artax") {
+    val factory = GameCreator(TTArtax::class)
+    val moveAction = factory.action("move", PointMove::class)
+    val gameArtax = factory.game("Artax") {
         val grid = gridSpec<Int?> {
             size(model.board.sizeX, model.board.sizeY)
             getter(model.board::get)

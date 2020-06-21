@@ -124,10 +124,6 @@ class ServerAlphaBetaAIs(private val aiRepository: AIRepository) {
             copy.currentPlayer = old.currentPlayer
             copy.allFields().forEach { it.piece = old.get(it.y, it.x, it.z) }
         }
-        val artaxAB = { old: TTArtax, copy: TTArtax ->
-            copy.currentPlayer = old.currentPlayer
-            copy.board.all().forEach { dest -> dest.value = old.board.get(dest.x, dest.y) }
-        }
         val aiFactories = listOf<AlphaBetaAIFactory<out Any>>(
             AlphaBetaAIFactory(ttAB,"DSL-TTT", "AlphaBeta",6, false, model(::heuristicTTT)),
             AlphaBetaAIFactory(ttAB,"DSL-Connect4", "AlphaBeta", 5, true, model(::heuristicTTT)),

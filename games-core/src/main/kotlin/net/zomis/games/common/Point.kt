@@ -13,3 +13,7 @@ data class Point(val x: Int, val y: Int) {
 }
 
 data class PointMove(val source: Point, val destination: Point)
+
+data class Grid2D(val width: Int, val height: Int) {
+    fun points(): Sequence<Point> = (0 until height).asSequence().flatMap { y -> (0 until width).asSequence().map { x -> Point(x, y) } }
+}

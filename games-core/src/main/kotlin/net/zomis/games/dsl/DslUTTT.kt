@@ -1,5 +1,6 @@
 package net.zomis.games.dsl
 
+import net.zomis.games.WinResult
 import net.zomis.games.common.Point
 import net.zomis.tttultimate.TTBase
 import net.zomis.tttultimate.TTFactories
@@ -18,8 +19,11 @@ fun TTPlayer.index(): Int {
 }
 
 class DslTTT {
-    val playAction = createActionType("play", Point::class)
-    val game = createGame<TTController>("TTT") {
+    val factory = GameCreator(TTController::class)
+    val playAction = factory.action("play", TTBase::class).serialization(Point::class, { Point(it.globalX, it.globalY) }, {
+        game.game.getSmallestTile(it.x, it.y)!!
+    })
+    val game = factory.game("TTT") {
         val grid = gridSpec<TTBase> {
             size(model.game.sizeX, model.game.sizeY)
             getter { x, y -> model.game.getSub(x, y)!! }
@@ -32,11 +36,11 @@ class DslTTT {
                 TTClassicController(TTFactories().classicMNK(conf!!.m, conf.n, conf.k))
             }
         }
-        logic(ttLogic(grid))
+        rules(ttRules())
         view(ttView(grid))
     }
 
-    val gameConnect4 = createGame<TTController>("Connect4") {
+    val gameConnect4 = factory.game("Connect4") {
         val grid = gridSpec<TTBase> {
             size(model.game.sizeX, model.game.sizeY)
             getter { x, y -> model.game.getSub(x, y)!! }
@@ -49,16 +53,11 @@ class DslTTT {
                 TTClassicControllerWithGravity(TTFactories().classicMNK(conf!!.m, conf.n, conf.k))
             }
         }
-        logic(ttLogic(grid))
+        rules(ttRules())
         view(ttView(grid))
     }
 
-    val gameUTTT = createGame<TTController>("UTTT") {
-        val grid = gridSpec<TTBase> {
-            size(model.game.sizeX * model.game.getSub(0, 0)!!.sizeX,
-                model.game.sizeY * model.game.getSub(0, 0)!!.sizeY)
-            getter { x, y -> model.game.getSmallestTile(x, y)!! }
-        }
+    val gameUTTT = factory.game("UTTT") {
         setup(TTOptions::class) {
             defaultConfig {
                 TTOptions(3, 3, 3)
@@ -67,10 +66,9 @@ class DslTTT {
                 TTUltimateController(TTFactories().ultimateMNK(conf!!.m, conf.n, conf.k))
             }
         }
-        logic(ttLogic(grid))
+        rules(ttRules())
         view {
             currentPlayer { it.currentPlayer.index() }
-            winner(winner)
             value("boards") {e ->
                 e.game.subs().chunked(3).map {areas ->
                     areas.map {area ->
@@ -91,7 +89,7 @@ class DslTTT {
         }
     }
 
-    val gameReversi = createGame<TTController>("Reversi") {
+    val gameReversi = factory.game("Reversi") {
         val grid = gridSpec<TTBase> {
             size(model.game.sizeX, model.game.sizeY)
             getter { x, y -> model.game.getSmallestTile(x, y)!! }
@@ -100,45 +98,45 @@ class DslTTT {
             defaultConfig { Unit }
             init { TTOthello(8) }
         }
-        logic(ttLogic(grid))
+        rules(ttRules())
         view(ttView(grid))
-    }
-
-    private val winner: (TTController) -> Int? = {
-        when {
-            it.isGameOver -> it.wonBy.index()
-            isPlacesLeft(it.game) -> null
-            else -> -1 // TODO: Make a better way to represent 'draw'
-        }
     }
 
     private fun ttView(grid: GridDsl<TTController, TTBase>): GameViewDsl<TTController> = {
         currentPlayer { it.currentPlayer.index() }
-        winner(winner)
         grid("board", grid) {
             owner { it.wonBy.index().takeIf {n -> n >= 0 } }
         }
     }
 
-    private fun ttLogic(grid: GridDsl<TTController, TTBase>): GameLogicDsl<TTController> = {
-        winner(winner)
-        action2D(playAction, grid) {
-            allowed { it.playerIndex == it.game.currentPlayer.index() && it.game.isAllowedPlay(it.target) }
-            effect {
-                it.game.play(it.target)
+    private fun ttRules(): GameRulesDsl<TTController> = {
+        allActions.precondition { playerIndex == game.currentPlayer.index() }
+        action(playAction) {
+            options { allSmallest(game.game).asIterable() }
+            requires { game.isAllowedPlay(action.parameter) }
+            effect { game.play(action.parameter) }
+        }
+        allActions.after {
+            if (game.isGameOver && game.wonBy.isExactlyOnePlayer) eliminations.singleWinner(game.wonBy.index())
+            else if (game.isGameOver && game.wonBy == TTPlayer.BLOCKED) eliminations.eliminateRemaining(WinResult.DRAW)
+            else if (!isPlacesLeft(game.game)) eliminations.eliminateRemaining(WinResult.DRAW)
+        }
+    }
+
+    private fun allSmallest(base: TTBase): Sequence<TTBase> {
+        return sequence {
+            if (!base.hasSubs()) {
+                yield(base)
+            } else {
+                (0 until base.sizeY).forEach { y ->
+                    (0 until base.sizeX).forEach { x ->
+                        yieldAll(allSmallest(base.getSub(x, y)!!))
+                    }
+                }
             }
         }
     }
 
-    private fun isPlacesLeft(tt: TTBase): Boolean {
-        if (!tt.hasSubs()) {
-            return !tt.isWon
-        }
-        return !tt.isWon && (0 until tt.sizeY).asSequence().flatMap { y ->
-            (0 until tt.sizeX).asSequence().map { x ->
-                tt.getSub(x, y)!!
-            }
-        }.any { isPlacesLeft(it) }
-    }
+    private fun isPlacesLeft(tt: TTBase) = allSmallest(tt).any { !it.isWon }
 
 }

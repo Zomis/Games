@@ -190,7 +190,6 @@ class DJLReinforcement {
         val move = this.actions.types()
             .sortedBy { it.name }.flatMap { it.availableActions(playerIndex) }[moveIndex]
         this.actions.type(move.actionType)!!.perform(playerIndex, move.parameter)
-        this.stateCheck()
         return this.eliminationCallback.eliminations().find { it.playerIndex == playerIndex }?.winResult?.result?.toFloat()?.times(100) ?: -0.01f
     }
 

@@ -130,22 +130,22 @@ object SetGame {
                 setCheck(it, this)
             }
         }
-        logic {
+        rules {
             action(callSet) {
-                options {
-                    optionFrom({ it.board.map { c -> c.toStateString() } }) {first ->
-                        optionFrom({ it.board.map { c -> c.toStateString() } }) {second ->
-                            optionFrom({ it.board.map { c -> c.toStateString() } }) {third ->
-                                actionParameter(SetAction(listOf(first, second, third)))
+                choose {
+                    options({ game.board.map { c -> c.toStateString() } }) {first ->
+                        options({ game.board.map { c -> c.toStateString() }.minus(first) }) {second ->
+                            options({ game.board.map { c -> c.toStateString() }.minus(first).minus(second) }) {third ->
+                                parameter(SetAction(listOf(first, second, third)))
                             }
                         }
                     }
                 }
-                allowed { it.parameter.set.distinct().size == it.parameter.set.size && it.parameter.set.size == 3 }
+                requires { action.parameter.set.distinct().size == action.parameter.set.size && action.parameter.set.size == 3 }
                 effect {
-                    it.game.playerChooseSet(it.playerIndex, it.parameter)
-                    if (!setCheck(it.game, this.replayable)) {
-                        playerEliminations.eliminateBy(it.game.scores.mapIndexed { index, i -> index to i }, Comparator { a, b -> a - b })
+                    game.playerChooseSet(action.playerIndex, action.parameter)
+                    if (!setCheck(game, this.replayable)) {
+                        playerEliminations.eliminateBy(game.scores.mapIndexed { index, i -> index to i }, Comparator { a, b -> a - b })
                     }
                 }
             }

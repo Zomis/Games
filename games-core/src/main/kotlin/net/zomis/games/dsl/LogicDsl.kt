@@ -5,15 +5,6 @@ import net.zomis.games.PlayerEliminations
 typealias ActionLogic<T, P, A> = ActionScope<T, P, A>.() -> Unit
 typealias ActionLogicAdvanced<T, A> = ActionComplexScope<T, A>.() -> Unit
 
-interface GameLogic<T : Any> {
-    fun <P : Any> action2D(actionType: ActionType<Point>, grid: GridDsl<T, P>, logic: ActionLogic<T, Point, Action2D<T, P>>)
-    fun winner(function: (T) -> PlayerIndex)
-    fun simpleAction(actionType: ActionType<Unit>, logic: ActionLogic<T, Unit, Action<T, Unit>>)
-    fun intAction(actionType: ActionType<Int>, options: (T) -> Iterable<Int>, logic: ActionLogic<T, Int, Action<T, Int>>)
-    fun <A : Any> singleTarget(actionType: ActionType<A>, options: (T) -> Iterable<A>, logic: ActionLogic<T, A, Action<T, A>>)
-    fun <A : Any> action(actionType: ActionType<A>, logic: ActionLogicAdvanced<T, A>)
-}
-
 interface Replayable {
     fun toStateString(): String
 }

@@ -4,31 +4,31 @@ import net.zomis.games.ur.RoyalGameOfUr
 
 class DslUR {
 
-    val roll = createActionType("roll", Unit::class)
-    val move = createActionType("move", Int::class)
+    val factory = GameCreator(RoyalGameOfUr::class)
+    val roll = factory.action("roll", Unit::class)
+    val move = factory.action("move", Int::class)
     val gameUR = createGame<RoyalGameOfUr>("UR") {
         setup(Unit::class) {
             playersFixed(2)
             init { RoyalGameOfUr() }
         }
-        logic {
-            winner { game -> game.winner.takeIf { game.isFinished } }
-            simpleAction(roll) {
-                allowed { it.game.currentPlayer == it.playerIndex && it.game.isRollTime() }
+        rules {
+            allActions.precondition { game.currentPlayer == playerIndex }
+            action(roll) {
+                precondition { game.isRollTime() }
                 effect {
-                    val rollResult = it.game.doRoll()
-                    state("roll", rollResult)
-                }
-                replayEffect {
-                    it.game.doRoll(state("roll") as Int)
+                    val roll = replayable.int("roll") { game.doRoll() }
+                    game.doRoll(roll)
                 }
             }
-            intAction(move, {0 until RoyalGameOfUr.EXIT}) {
-                allowed { it.game.currentPlayer == it.playerIndex &&
-                    it.game.isMoveTime && it.game.canMove(it.game.currentPlayer, it.parameter, it.game.roll) }
-                effect {
-                    it.game.move(it.game.currentPlayer, it.parameter, it.game.roll)
-                }
+            action(move) {
+                options { 0 until RoyalGameOfUr.EXIT }
+                precondition { game.isMoveTime }
+                requires { game.canMove(game.currentPlayer, action.parameter, game.roll) }
+                effect { game.move(game.currentPlayer, action.parameter, game.roll) }
+            }
+            allActions.after {
+                game.winner.takeIf { game.isFinished }?.let { eliminations.singleWinner(it) }
             }
         }
         view {

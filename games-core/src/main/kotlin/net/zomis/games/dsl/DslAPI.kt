@@ -1,7 +1,6 @@
 package net.zomis.games.dsl
 
 import net.zomis.games.PlayerEliminations
-import net.zomis.games.common.Point
 import kotlin.reflect.KClass
 
 interface Actionable<T : Any, A : Any> {
@@ -14,25 +13,23 @@ interface GameUtils {
     val playerEliminations: PlayerEliminations
     val replayable: ReplayableScope
 }
-data class Action2D<T : Any, P : Any>(override val game: T, override val playerIndex: Int,
-        override val actionType: String,
-        val x: Int, val y: Int, val target: P): Actionable<T, Point> {
-    override val parameter = Point(x, y)
-}
-data class Action<T : Any, A : Any>(override val game: T, override val playerIndex: Int,
-        override val actionType: String,
-        override val parameter: A): Actionable<T, A>
+data class Action<T : Any, A : Any>(
+    override val game: T,
+    override val playerIndex: Int,
+    override val actionType: String,
+    override val parameter: A
+): Actionable<T, A>
 
 typealias PlayerIndex = Int?
 fun PlayerIndex.isObserver(): Boolean = this == null
 
 typealias GameSpec<T> = GameDsl<T>.() -> Unit
 typealias GameModelDsl<T, C> = GameModel<T, C>.() -> Unit
-typealias GameLogicDsl<T> = GameLogic<T>.() -> Unit
 typealias GameViewDsl<T> = GameView<T>.() -> Unit
 typealias GameRulesDsl<T> = GameRules<T>.() -> Unit
 typealias GridDsl<T, P> = GameGrid<T, P>.() -> Unit
 
+@Deprecated("to be removed, try to use Grid2D or something instead")
 interface GameGrid<T, P> {
     val model: T
     fun size(sizeX: Int, sizeY: Int)
@@ -46,11 +43,10 @@ interface GridSpec<T, P> {
 }
 
 interface GameDsl<T : Any> {
+    @Deprecated("to be removed, try to use Grid2D or something instead")
     fun <P> gridSpec(spec: GridDsl<T, P>): GridDsl<T, P>
     fun <C : Any> setup(configClass: KClass<C>, modelDsl: GameModelDsl<T, C>)
     fun setup(modelDsl: GameModelDsl<T, Unit>)
-    @Deprecated("prefer rules instead")
-    fun logic(logicDsl: GameLogicDsl<T>)
     fun view(viewDsl: GameViewDsl<T>)
     fun rules(rulesDsl: GameRulesDsl<T>)
 }

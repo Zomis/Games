@@ -227,7 +227,6 @@ class GameDslContext<T : Any> : GameDsl<T> {
     lateinit var configClass: KClass<*>
     lateinit var modelDsl: GameModelDsl<T, Any>
     var viewDsl: GameViewDsl<T>? = null
-    var logicDsl: GameLogicDsl<T>? = null
     var rulesDsl: GameRulesDsl<T>? = null
 
     val model = GameModelContext<T, Any>()
@@ -241,9 +240,6 @@ class GameDslContext<T : Any> : GameDsl<T> {
         return this.setup(Unit::class, modelDsl)
     }
 
-    override fun logic(logicDsl: GameLogicDsl<T>) {
-        this.logicDsl = logicDsl
-    }
     override fun view(viewDsl: GameViewDsl<T>) {
         this.viewDsl = viewDsl
     }
