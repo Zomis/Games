@@ -3,7 +3,7 @@ package net.zomis.games.server2.djl
 import net.zomis.games.Map2DX
 import net.zomis.games.PlayerEliminationCallback
 import net.zomis.games.WinResult
-import net.zomis.games.dsl.Point
+import net.zomis.games.common.Point
 import net.zomis.games.dsl.createActionType
 import net.zomis.games.dsl.createGame
 

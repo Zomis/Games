@@ -1,13 +1,10 @@
 package net.zomis.games.server2.ais
 
 import com.fasterxml.jackson.databind.node.IntNode
-import net.zomis.aiscores.FScorer
 import net.zomis.aiscores.ScoreConfigFactory
-import net.zomis.aiscores.scorers.SimpleScorer
 import net.zomis.bestBy
 import net.zomis.core.events.EventSystem
-import net.zomis.games.dsl.Actionable
-import net.zomis.games.dsl.PointMove
+import net.zomis.games.common.PointMove
 import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.dsl.sourcedest.TTArtax

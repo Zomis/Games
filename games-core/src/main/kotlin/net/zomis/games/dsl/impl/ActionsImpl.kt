@@ -1,5 +1,6 @@
 package net.zomis.games.dsl.impl
 
+import net.zomis.games.common.Point
 import net.zomis.games.dsl.*
 import kotlin.reflect.KClass
 

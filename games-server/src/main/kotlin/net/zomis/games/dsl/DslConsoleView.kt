@@ -1,6 +1,7 @@
 package net.zomis.games.dsl
 
 import net.zomis.common.convertToDBFormat
+import net.zomis.games.common.Point
 import net.zomis.games.dsl.impl.*
 import net.zomis.games.server2.ServerGames
 import net.zomis.games.server2.games.ActionListRequestHandler

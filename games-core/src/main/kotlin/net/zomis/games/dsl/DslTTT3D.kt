@@ -1,5 +1,6 @@
 package net.zomis.games.dsl
 
+import net.zomis.games.common.Point
 import net.zomis.games.impl.TTT3D
 import net.zomis.games.impl.TTT3DPoint
 

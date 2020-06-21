@@ -1,5 +1,6 @@
 package net.zomis.games.dsl
 
+import net.zomis.games.common.Point
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.tttultimate.TTPlayer

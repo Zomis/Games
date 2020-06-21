@@ -1,20 +1,9 @@
 package net.zomis.games.dsl
 
 import net.zomis.games.PlayerEliminations
-import kotlin.math.absoluteValue
-import kotlin.math.sqrt
+import net.zomis.games.common.Point
 import kotlin.reflect.KClass
 
-data class Point(val x: Int, val y: Int) {
-    fun minus(other: Point): Point {
-        return Point(x - other.x, y - other.y)
-    }
-
-    fun abs(): Point = Point(this.x.absoluteValue, this.y.absoluteValue)
-    fun distance(): Double = sqrt(this.x.toDouble() * this.x + this.y.toDouble() * this.y)
-}
-
-data class PointMove(val source: Point, val destination: Point)
 interface Actionable<T : Any, A : Any> {
     val playerIndex: Int
     val game: T

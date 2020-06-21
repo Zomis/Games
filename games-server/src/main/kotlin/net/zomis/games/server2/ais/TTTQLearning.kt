@@ -9,12 +9,10 @@ import net.zomis.games.Map2D
 import net.zomis.games.Position
 import net.zomis.games.Transformation
 import net.zomis.games.dsl.PlayerIndex
-import net.zomis.games.dsl.Point
+import net.zomis.games.common.Point
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.dsl.index
-import net.zomis.games.server2.ClientJsonMessage
 import net.zomis.games.server2.games.*
-import net.zomis.games.server2.getTextOrDefault
 import net.zomis.tttultimate.TTPlayer
 import net.zomis.tttultimate.games.TTController
 

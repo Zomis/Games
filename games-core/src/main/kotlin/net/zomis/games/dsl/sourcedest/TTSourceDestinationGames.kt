@@ -1,13 +1,13 @@
 package net.zomis.games.dsl.sourcedest
 
 import net.zomis.games.WinResult
+import net.zomis.games.common.Point
+import net.zomis.games.common.PointMove
 import net.zomis.games.dsl.*
 import net.zomis.tttultimate.Direction8
 import net.zomis.tttultimate.TTBase
 import net.zomis.tttultimate.TTFactories
 import net.zomis.tttultimate.TTPlayer
-import kotlin.math.abs
-import kotlin.math.max
 
 abstract class TTControllerSourceDestination(val board: TTBase) {
     var currentPlayer: TTPlayer = TTPlayer.X
