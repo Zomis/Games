@@ -105,7 +105,7 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
             "type" to "ActionLog",
             "gameType" to serverGame.gameType.type,
             "gameId" to serverGame.gameId,
-            "highlights" to emptyList<Any>(),
+            "highlights" to entry.highlights.associateWith { true },
             "parts" to entry.parts
         )
     }

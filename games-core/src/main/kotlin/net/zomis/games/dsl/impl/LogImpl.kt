@@ -18,7 +18,7 @@ data class LogPartLink(val text: String, val viewType: String, val value: Any): 
 }
 
 interface LogPart { val type: String }
-data class LogEntry(val parts: List<LogPart>)
+data class LogEntry(val parts: List<LogPart>, val highlights: List<Any>)
 interface ActionLogEntry {
     val playerIndex: PlayerIndex
     val secret: LogEntry?
@@ -38,10 +38,11 @@ class LogActionContext<T : Any, A : Any>(
 
     var counter: Int = 0
     val parts = mutableListOf<LogPart>()
-    override val public: LogEntry? get() = postProcess(publicEntry)
-    override val secret: LogEntry? get() = postProcess(secretEntry)
-    var secretEntry: String? = null
-    var publicEntry: String? = null
+    val highlights = mutableListOf<Any>()
+    override val public: LogEntry? get() = publicEntry
+    override val secret: LogEntry? get() = secretEntry
+    var secretEntry: LogEntry? = null
+    var publicEntry: LogEntry? = null
     fun part(partFunction: () -> LogPart): String {
         val oldCounter = counter++
         parts.add(partFunction())
@@ -61,7 +62,7 @@ class LogActionContext<T : Any, A : Any>(
             textToParse = textToParse.substringAfter("}}")
         }
         if (textToParse.isNotEmpty()) parts.add(LogPartText(textToParse))
-        return LogEntry(parts.toList())
+        return LogEntry(parts.toList(), highlights.toList())
     }
 
     override val player: String get() = this.player(playerIndex)
@@ -69,17 +70,21 @@ class LogActionContext<T : Any, A : Any>(
     override fun obj(value: Any): String = part { LogPartHighlight(value) }
     override fun player(value: PlayerIndex): String = part { LogPartPlayer(value) }
     override fun viewLink(text: String, type: String, view: Any): String = part { LogPartLink(text, type, view) }
-    override fun highlight(values: List<*>) = TODO()
+    override fun highlight(values: List<Any>) {
+        highlights.addAll(values)
+    }
     override fun publicLog(logging: LogActionScope<T, A>.() -> String) { log(logging) }
 
     fun log(logging: LogActionScope<T, A>.() -> String): ActionLogEntry {
-        publicEntry = logging(this)
+        highlights.clear()
+        publicEntry = postProcess(logging(this))
         return this
     }
 
     fun secretLog(secretPlayer: PlayerIndex, logging: LogActionScope<T, A>.() -> String): LogActionContext<T, A> {
+        highlights.clear()
         if (this.playerIndex == secretPlayer) {
-            secretEntry = logging(this)
+            secretEntry = postProcess(logging(this))
         }
         return this
     }

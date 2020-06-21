@@ -85,9 +85,13 @@ export default {
       if (!this.gameInfo) { return true }
       return this.gameInfo.yourIndex < 0;
     },
+    lastActionLogEntry() {
+      return this.actionLogEntries.length > 0 ? this.actionLogEntries[this.actionLogEntries.length - 1] : { parts: [], highlights: {} }
+    },
     actions() {
       return {
         chosen: this.actionChoice,
+        highlights: this.lastActionLogEntry.highlights,
         perform: this.action,
         performChosen: this.performChosenAction,
         available: this.actionsAvailable,

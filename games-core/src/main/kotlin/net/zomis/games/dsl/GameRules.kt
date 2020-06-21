@@ -28,7 +28,7 @@ interface LogActionScope<T : Any, A : Any> {
     fun obj(value: Any): String
     fun player(value: PlayerIndex): String
     fun viewLink(text: String, type: String, view: Any): String
-    fun highlight(values: List<*>)
+    fun highlight(values: List<Any>)
 }
 interface ActionRuleScope<T : Any, A : Any> : GameUtils, ActionOptionsScope<T> {
     override val game: T

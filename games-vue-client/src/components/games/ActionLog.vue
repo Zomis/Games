@@ -1,5 +1,5 @@
 <template>
-    <v-card>
+    <v-card v-show="logEntries.length > 0">
         <v-card-title>
             <h1>Action Log</h1>
         </v-card-title>
@@ -66,3 +66,9 @@ export default {
     }
 }
 </script>
+<style scoped>
+.v-list {
+    display: flex;
+    flex-direction: column-reverse;
+}
+</style>

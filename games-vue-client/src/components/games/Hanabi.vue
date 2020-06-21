@@ -6,12 +6,13 @@
           <v-card-title>{{ colorData.color }}</v-card-title>
           <v-card-text>
             <CardZone>
-              <HanabiCard v-for="card in colorData.board" class="animate" :key="card.id" :card="card" />
+              <HanabiCard v-for="card in colorData.board" class="animate" :key="card.id" :card="card" :highlight="actions.highlights[card.id]" />
             </CardZone>
             <v-divider />
             <v-row>Discard</v-row>
             <CardZone>
-              <div v-for="card in colorData.discard" class="discarded-card animate ma-1" :key="card.id" :class="'color-' + card.color">
+              <div v-for="card in colorData.discard" class="discarded-card animate ma-1" :key="card.id"
+                  :class="{ ['color-' + card.color]: true, highlight: actions.highlights[card.id] }">
                 <span>{{ card.value }}</span>
               </div>
             </CardZone>
@@ -31,7 +32,7 @@
           </v-card-title>
           <v-card-text>
             <CardZone>
-              <HanabiCard v-for="card in player.cards" class="list-complete-item animate" :key="card.id" :card="card" doubleView="true" />
+              <HanabiCard v-for="card in player.cards" class="list-complete-item animate" :key="card.id" :card="card" doubleView="true" :highlight="actions.highlights[card.id]" />
             </CardZone>
             <!--
             <transition-group name="list-complete" tag="div" :duration="20000" :class="['card-zone', 'animation-list-complete']">
@@ -87,7 +88,7 @@
         </v-card-title>
         <v-card-text>
           <CardZone>
-            <HanabiCard v-for="(card, cardIndex) in view.hand.cards" class="animate" :key="card.id" :card="card" :action="myTurn ? btnActions : false" :index="cardIndex" />
+            <HanabiCard v-for="(card, cardIndex) in view.hand.cards" class="animate" :key="card.id" :card="card" :action="myTurn ? btnActions : false" :index="cardIndex" :highlight="actions.highlights[card.id]" />
           </CardZone>
         </v-card-text>
       </v-card>
@@ -192,6 +193,10 @@ export default {
   border-width: thin;
   border-color: black !important;
   border-radius: 20%;
+}
+.discarded-card.highlight {
+  border: 1px solid yellowgreen !important;
+  box-shadow: 0px 0px 5px 6px yellowgreen !important;
 }
 
 

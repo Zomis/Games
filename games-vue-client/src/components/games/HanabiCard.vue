@@ -1,5 +1,5 @@
 <template>
-    <v-card elevation="4" class="hanabi-card" :class="{ 'double-view': doubleView, 'actionable': typeof action !== 'undefined' }" :style="{ 'background-color': cardColor }">
+    <v-card elevation="4" class="hanabi-card" :class="{ 'double-view': doubleView, 'actionable': typeof action !== 'undefined', 'highlight': highlight }" :style="{ 'background-color': cardColor }">
         <transition name="slide-fade" mode="out-in">
             <v-card-title class="slide-fade-item others-view" :key="cardValue">
                 {{ cardValue }}
@@ -28,7 +28,7 @@ const colorToDisplayColor = {
 
 export default {
     name: "HanabiCard",
-    props: ["card", "index", "action", "doubleView"],
+    props: ["card", "index", "action", "doubleView", "highlight"],
     computed: {
         cardKnownValue() {
             if (this.card.valueKnown) {
@@ -83,6 +83,10 @@ export default {
     width: 48px;
     border: 1px solid black !important;
     transition: all 1s linear, background-color 2.5s ease;
+}
+.hanabi-card.highlight {
+    border: 1px solid yellowgreen !important;
+    box-shadow: 0px 0px 5px 6px yellowgreen !important;
 }
 
 .slide-fade-enter-active {
