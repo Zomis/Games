@@ -48,6 +48,8 @@ class ScorerFactory<T : Any> {
         return Scorer { if (clazz.isInstance(action.parameter)) scoreFunction(this) else null }
     }
 
+    fun <A> provider(provider: (ScorerContext<T>) -> A?): ScorerAnalyzeProvider<T, A> = provider
+
 }
 
 typealias ScoreFunction<T, A> = ScorerScope<T, A>.() -> Double?

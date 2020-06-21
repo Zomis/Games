@@ -50,13 +50,13 @@ object HanabiScorers {
                 .sumByDouble { if (HanabiProbabilities.indispensible(model).invoke(it)) 1.0 else -0.1 }
     } as Scorer<Hanabi, Any>
 
-    val probabilityProvider: ScorerAnalyzeProvider<Hanabi, HanabiHandProbabilities> = {ctx ->
+    val probabilityProvider = scorers.provider {ctx ->
         HanabiProbabilities.calculateProbabilities(ctx.model, ctx.playerIndex).also { probs ->
             probs.hand.forEach { cardProbs -> println(cardProbs) }
         }
     }
 
-    val clueChangeProbabilityProvider: ScorerAnalyzeProvider<Hanabi, Map<HanabiClue, HanabiHandProbabilities>> = {ctx ->
+    val clueChangeProbabilityProvider = scorers.provider {ctx ->
         val clues = ctx.model.possibleClues(ctx.playerIndex)
         val players = clues.map { it.player }.distinct()
         val probabilitiesBefore = players.map { playerIndex ->
