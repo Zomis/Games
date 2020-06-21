@@ -1,7 +1,5 @@
 <template>
     <v-container fluid>
-        <GameTreeView :view="view" />
-        <GameTreeView :actions="actions" />
         <v-row>
             <v-col v-for="(player, playerIndex) in view.players" :key="playerIndex">
                 <v-card :class="'color-' + player.color">
@@ -55,7 +53,6 @@
 </template>
 <script>
 import PlayerProfile from "@/components/games/common/PlayerProfile"
-import GameTreeView from "@/components/games/debug/GameTreeView"
 import CardZone from "@/components/games/common/CardZone"
 import DungeonMayhemCard from "./DungeonMayhemCard"
 import Actionable from "@/components/games/common/Actionable"
@@ -86,7 +83,6 @@ export default {
     },
     components: {
         PlayerProfile,
-        GameTreeView,
         Actionable,
         CardZone,
         DungeonMayhemCard
