@@ -387,7 +387,7 @@ object DungeonMayhemDsl {
                         action.shieldCard != null -> playerTarget.shields[action.shieldCard!!].card.card.let { viewLink(it.name, "card", it.view()) }
                         else -> player(playerTarget.index)
                     }
-                    "$player targets $target"
+                    "$player targets $target with ${count}x ${symbol.symbol.name}"
                 }
                 effectTrigger(DungeonMayhemEffect(game, playerTarget, symbol.player, symbol.symbol, count, action.parameter))
             }
