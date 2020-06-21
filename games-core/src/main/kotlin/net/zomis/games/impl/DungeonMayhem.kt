@@ -81,7 +81,7 @@ enum class DungeonMayhemSymbol {
             HEAL_AND_ATTACK_FOR_EACH_OPPONENT -> {
                 val opponents = game.players.minus(player).filterNotNull().filter { it.alive() }
                 player?.heal(opponents.size)
-                opponents.filter { !it.protectedFrom(trigger) }.forEach { it.damage(1) }
+                opponents.filter { !it.protectedFrom(trigger) }.forEach { it.damageShieldsOrPlayer(1) }
             }
             ALL_DISCARD_AND_DRAW -> repeat(count) {
                 game.players.filter { !it.protectedFrom(trigger) }
