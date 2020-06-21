@@ -118,6 +118,8 @@ enum class DungeonMayhemSymbol {
 }
 data class DungeonMayhemCard(val name: String, val symbols: List<DungeonMayhemSymbol>): Replayable {
     override fun toStateString(): String = name
+
+    fun view() = mapOf("name" to name, "symbols" to symbols.map { it.name })
 }
 data class DungeonMayhemShield(val discard: CardZone<DungeonMayhemCard>, val card: DungeonMayhemCard, var health: Int) {
     fun destroy(card: Card<DungeonMayhemShield>) {
@@ -348,8 +350,10 @@ object DungeonMayhemDsl {
 
             action(play).options { game.currentPlayer.hand.cards }
             action(play).effect { game.symbolsToResolve.remove(game.symbolsToResolve.firstOrNull { it.symbol == DungeonMayhemSymbol.PLAY_AGAIN }) }
-            action(play).effect { playTrigger(DungeonMayhemPlayCard(game.config, game.currentPlayer, game.currentPlayer,
-                game.currentPlayer.hand.card(action.parameter)))
+            action(play).effect {
+                log { "$player plays ${viewLink(action.name, "card", action.view())}" }
+                playTrigger(DungeonMayhemPlayCard(game.config, game.currentPlayer, game.currentPlayer,
+                    game.currentPlayer.hand.card(action.parameter)))
             }
             playTrigger.effect { game.symbolsToResolve.addAll(trigger.card.card.symbols.map { DungeonMayhemResolveSymbol(trigger.ownedByPlayer, it) }) }
             playTrigger.effect {
@@ -376,7 +380,16 @@ object DungeonMayhemDsl {
             action(target).effect {
                 val symbol = game.symbolsToResolve.first { it.symbol.availableTargets(game) != null }
                 val count = game.symbolsToResolve.count { it == symbol }
-                effectTrigger(DungeonMayhemEffect(game, game.players[action.playerIndex], symbol.player, symbol.symbol, count, action.parameter))
+                val playerTarget = game.players[action.parameter.player]
+                log {
+                    val target = when {
+                        action.discardedCard != null -> playerTarget.discard[action.discardedCard!!].card.let { viewLink(it.name, "card", it.view()) }
+                        action.shieldCard != null -> playerTarget.shields[action.shieldCard!!].card.card.let { viewLink(it.name, "card", it.view()) }
+                        else -> player(playerTarget.index)
+                    }
+                    "$player targets $target"
+                }
+                effectTrigger(DungeonMayhemEffect(game, playerTarget, symbol.player, symbol.symbol, count, action.parameter))
             }
             action(target).after { if (game.symbolsToResolve.none { it.symbol == DungeonMayhemSymbol.ATTACK }) game.attackedPlayer = null }
 

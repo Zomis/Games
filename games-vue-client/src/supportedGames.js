@@ -30,6 +30,7 @@ import TTT3D from "@/components/games/TTT3D";
 import SplendorCard from "@/components/games/splendor/SplendorCard"
 import SplendorNoble from "@/components/games/splendor/SplendorNoble"
 import HanabiCard from "@/components/games/HanabiCard"
+import DungeonMayhemCard from "@/components/games/dungeon-mayhem/DungeonMayhemCard"
 
 import DslGameState from "./components/games/DslGameState";
 const defaultRouteProps = route => ({
@@ -154,6 +155,9 @@ const supportedGames = {
         actions: {
             play: (index) => "play-" + index,
             target: (target) => "target:player-" + target.player + ';shield-' + target.shieldCard + ';discarded-' + target.discardedCard
+        },
+        viewTypes: {
+            card: { component: DungeonMayhemCard, binds: (v) => ({ card: v, actions: { available: {} } }) }
         },
         component: DungeonMayhem
     },
