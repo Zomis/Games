@@ -71,13 +71,17 @@ class GameActionCreator<T : Any, A : Any, S : Any>(
     override val parameterType: KClass<A>,
     override val serializedType: KClass<S>,
     val serializer: (A) -> S,
-    val deserializer: ActionOptionsScope<T>.(S) -> A
+    val deserializer: (ActionOptionsScope<T>.(S) -> A)?
 ): ActionType<A> {
     override fun serialize(parameter: A): Any = serializer(parameter)
-    override fun <U: Any> deserialize(scope: ActionOptionsScope<U>, serialized: Any): A = deserializer(scope as ActionOptionsScope<T>, serialized as S)
+    override fun <U: Any> deserialize(scope: ActionOptionsScope<U>, serialized: Any): A? = deserializer?.invoke(scope as ActionOptionsScope<T>, serialized as S)
 
     fun <S2: Any> serialization(clazz: KClass<S2>, serializer: (A) -> S2, deserializer: ActionOptionsScope<T>.(S2) -> A): GameActionCreator<T, A, S2> {
         return GameActionCreator(name, parameterType, clazz, serializer, deserializer)
+    }
+
+    fun <S2: Any> serializer(clazz: KClass<S2>, serializer: (A) -> S2): GameActionCreator<T, A, S2> {
+        return GameActionCreator(name, parameterType, clazz, serializer, null)
     }
 }
 
@@ -101,14 +105,14 @@ data class ActionTypeImpl<A : Any>(
     val serialize: ActionSerialization<A, Any>
 ): ActionType<A> {
     override fun serialize(parameter: A): Any = serialize.serialize(parameter)
-    override fun <T: Any> deserialize(scope: ActionOptionsScope<T>, serialized: Any): A = serialize.deserialize(scope as ActionOptionsScope<Any>, serialized)
+    override fun <T: Any> deserialize(scope: ActionOptionsScope<T>, serialized: Any): A? = serialize.deserialize(scope as ActionOptionsScope<Any>, serialized)
 }
 interface ActionType<A : Any> {
     val name: String
     val parameterType: KClass<A>
     val serializedType: KClass<*>
     fun serialize(parameter: A): Any
-    fun <T: Any> deserialize(scope: ActionOptionsScope<T>, serialized: Any): A
+    fun <T: Any> deserialize(scope: ActionOptionsScope<T>, serialized: Any): A?
 }
 @Deprecated("Use GameCreator.action")
 inline fun <reified A : Any> createActionType(name: String, parameterType: KClass<A>): ActionType<A> {

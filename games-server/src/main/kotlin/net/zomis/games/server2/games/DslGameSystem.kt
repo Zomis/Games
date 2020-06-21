@@ -3,6 +3,7 @@ package net.zomis.games.server2.games
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
+import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.*
 import net.zomis.games.server2.StartupEvent
@@ -33,28 +34,20 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
                 return@listen
             }
 
-            val parameter: Any
+            val action: Actionable<T, Any>
             try {
-                val clazz = actionType.parameterClass
-                parameter = if (clazz == Unit::class) {
-                    Unit
+                action = if (actionType.parameterClass == Unit::class) {
+                    actionType.createAction(it.player, Unit)
                 } else {
                     // it.move is a JsonNode
-                    val moveJsonText = mapper.writeValueAsString(it.move)
-                    try {
-                        mapper.readValue(moveJsonText, clazz.java)
-                    } catch (e: Exception) {
-                        val serializedMove = mapper.convertValue(it.move, Any::class.java)
-                        actionType.actionType.deserialize(
-                            ActionOptionsContext(controller.model,  actionType.name, it.player), serializedMove)
-                    }
+                    val serializedMove = mapper.convertValue(it.move, actionType.actionType.serializedType.java)
+                    actionType.createActionFromSerialized(ActionOptionsContext(controller.model,  actionType.name, it.player), serializedMove)
                 }
             } catch (e: Exception) {
                 logger.error(e, "Error reading move: $it")
                 return@listen
             }
 
-            val action = actionType.createAction(it.player, parameter)
             if (!actionType.isAllowed(action)) {
                 events.execute(it.illegalMove("Action is not allowed"))
                 return@listen
@@ -62,7 +55,7 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
 
             val beforeMoveEliminated = controller.eliminationCallback.eliminations()
             try {
-                events.execute(PreMoveEvent(it.game, it.player, it.moveType, parameter))
+                events.execute(PreMoveEvent(it.game, it.player, it.moveType, action.parameter))
                 actionType.perform(action)
                 controller.stateKeeper.logs().forEach { log -> sendLogs(serverGame, log) }
                 controller.stateCheck()
@@ -72,7 +65,7 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
             }
             val recentEliminations = controller.eliminationCallback.eliminations().minus(beforeMoveEliminated)
 
-            events.execute(MoveEvent(it.game, it.player, it.moveType, parameter))
+            events.execute(MoveEvent(it.game, it.player, it.moveType, action.parameter))
             for (elimination in recentEliminations) {
                 events.execute(PlayerEliminatedEvent(it.game, elimination.playerIndex,
                     elimination.winResult, elimination.position))

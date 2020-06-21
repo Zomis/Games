@@ -271,6 +271,21 @@ class ActionTypeImplEntry<T : Any, P : Any, A : Actionable<T, P>>(private val mo
         }
     }
 
+    fun createActionFromSerialized(actionOptionsContext: ActionOptionsContext<T>, serialized: Any): A {
+        if (actionType.parameterType == actionType.serializedType) {
+            return createAction(actionOptionsContext.playerIndex, serialized as P)
+        }
+
+        val parameter = actionType.deserialize(actionOptionsContext, serialized)
+        return if (parameter == null) {
+            availableActions(actionOptionsContext.playerIndex).single { action2 ->
+                actionType.serialize(action2.parameter) == serialized
+            } as A
+        } else {
+            createAction(actionOptionsContext.playerIndex, parameter)
+        }
+    }
+
     val name: String
         get() = actionType.name
     val parameterClass: KClass<P>

@@ -239,12 +239,11 @@ object DslSplendor {
 
     val factory = GameCreator(SplendorGame::class)
 
-    val buy = createActionType("buy", String::class)
-    val buyReserved = createActionType("buyReserved", String::class)
-    val takeMoney = createActionType("takeMoney", MoneyChoice::class)
-    val takeSingle = createActionType("takeMoneySingle", MoneyType::class)
-    val reserve = createActionType("reserve", String::class)
-    val discardMoney = createActionType("discardMoney", MoneyType::class)
+    val buy = factory.action("buy", SplendorCard::class).serializer(String::class) { it.toStateString() }
+    val buyReserved = factory.action("buyReserved", SplendorCard::class).serializer(String::class) { it.toStateString() }
+    val takeMoney = factory.action("takeMoney", MoneyChoice::class)
+    val reserve = factory.action("reserve", SplendorCard::class).serializer(String::class) { it.toStateString() }
+    val discardMoney = factory.action("discardMoney", MoneyType::class)
     val splendorGame = createGame<SplendorGame>("Splendor") {
         setup(SplendorConfig::class) {
             players(2..4)
@@ -278,10 +277,10 @@ object DslSplendor {
             allActions.precondition { game.currentPlayerIndex == playerIndex }
 
             action(buy) {
-                options { game.board.map { c -> c.id } }
-                requires { game.currentPlayer.canBuy(game.board.cards.first { c -> c.id == action.parameter }) }
+                options { game.board.cards }
+                requires { game.currentPlayer.canBuy(action.parameter) }
                 effect {
-                    val card = game.board.cards.first { c -> c.id == action.parameter }
+                    val card = action.parameter
                     val actualCost = game.currentPlayer.pay(card.costs)
                     game.currentPlayer.owned.cards.add(card)
                     game.stock += actualCost
@@ -290,10 +289,10 @@ object DslSplendor {
                 }
             }
 
-            action(buyReserved).options { game.currentPlayer.reserved.map { c -> c.id } }
-            action(buyReserved).requires { game.currentPlayer.canBuy(game.currentPlayer.reserved.cards.first { c -> c.id == action.parameter }) }
+            action(buyReserved).options { game.currentPlayer.reserved.cards }
+            action(buyReserved).requires { game.currentPlayer.canBuy(action.parameter) }
             action(buyReserved).effect {
-                val param = game.currentPlayer.reserved.cards.first { c -> c.id == action.parameter }
+                val param = action.parameter
                 val card = game.currentPlayer.reserved.card(param)
                 val actualCost = game.currentPlayer.pay(card.card.costs)
                 game.stock += actualCost
@@ -313,10 +312,10 @@ object DslSplendor {
                 }
             }
 
-            action(reserve).options { game.board.map { c -> c.id } }
+            action(reserve).options { game.board.cards }
             action(reserve).requires { game.currentPlayer.reserved.size < 3 }
             action(reserve).effect {
-                val card = game.board.card(game.board.cards.first { c -> c.id == action.parameter })
+                val card = game.board.card(action.parameter)
                 game.currentPlayer.reserved.cards.add(card.card)
                 val wildcardIfAvailable = if (game.stock.wildcards > 0) Money(mutableMapOf(), 1) else Money()
                 game.stock -= wildcardIfAvailable

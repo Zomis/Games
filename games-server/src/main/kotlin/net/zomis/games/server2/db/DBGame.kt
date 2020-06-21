@@ -57,12 +57,14 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
         val it = move.value
         val logic = game.actions[it.moveType]
             ?: throw BadReplayException("Unable to perform $it: No such move type")
-        val param = if (it.move == null) Unit
-        else {
-            val serialized = mapper.readValue(mapper.writeValueAsString(it.move), logic.actionType.serializedType.java)
-            logic.actionType.deserialize(ActionOptionsContext(game.model, it.moveType, it.playerIndex), serialized)
-        }
-        val actionable = logic.createAction(it.playerIndex, param)
+        val actionable =
+            if (it.move == null)
+                logic.createAction(it.playerIndex, Unit)
+            else {
+                val serialized = mapper.readValue(mapper.writeValueAsString(it.move), logic.actionType.serializedType.java)
+                logic.createActionFromSerialized(ActionOptionsContext(game.model, it.moveType, it.playerIndex), serialized)
+            }
+
         if (!logic.isAllowed(actionable)) {
             addError("Unable to perform $it: Move at index ${move.index} is not allowed.")
             return false
