@@ -29,7 +29,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
         }
     }
 
-    fun choiceActionable(actionLogic: ActionTypeImplEntry<T, Any, Actionable<T, Any>>, playerIndex: Int, scanner: Scanner): Actionable<T, Any>? {
+    fun choiceActionable(actionLogic: ActionTypeImplEntry<T, Any>, playerIndex: Int, scanner: Scanner): Actionable<T, Any>? {
         val options = actionLogic.availableActions(playerIndex).toList()
         options.forEachIndexed { index, actionable -> println("$index. $actionable") }
         if (options.size <= 1) { return options.getOrNull(0) }
@@ -54,14 +54,14 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
             return false
         }
 
-        val actionParameterClass = actionLogic.parameterClass
+        val actionParameterClass = actionLogic.actionType.serializedType
         val action: Actionable<T, Any>? = when (actionParameterClass) {
             Point::class -> {
                 println("Enter x position where you want to play")
                 val x = scanner.nextLine().toInt()
                 println("Enter y position where you want to play")
                 val y = scanner.nextLine().toInt()
-                actionLogic.createAction(playerIndex.toInt(), Point(x, y))
+                actionLogic.createActionFromSerialized(playerIndex.toInt(), Point(x, y))
             }
             else -> {
                 stepByStepActionable(game, playerIndex.toInt(), actionType, scanner)

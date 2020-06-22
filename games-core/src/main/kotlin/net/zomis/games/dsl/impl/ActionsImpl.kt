@@ -4,33 +4,33 @@ import net.zomis.games.dsl.*
 import kotlin.reflect.KClass
 
 // TODO: Can we reduce generics here? get rid of the `A : Actionable`? Only `GameLogicActionType2D` is special.
-interface GameLogicActionType<T : Any, P : Any, A : Actionable<T, P>> {
+interface GameLogicActionType<T : Any, P : Any> {
     val actionType: String
-    fun availableActions(playerIndex: Int): Iterable<A>
-    fun actionAllowed(action: A): Boolean
-    fun replayAction(action: A, state: Map<String, Any>?)
-    fun performAction(action: A)
-    fun createAction(playerIndex: Int, parameter: P): A
+    fun availableActions(playerIndex: Int): Iterable<Actionable<T, P>>
+    fun actionAllowed(action: Actionable<T, P>): Boolean
+    fun replayAction(action: Actionable<T, P>, state: Map<String, Any>?)
+    fun performAction(action: Actionable<T, P>)
+    fun createAction(playerIndex: Int, parameter: P): Actionable<T, P>
 }
 
 data class ActionInfo(val nextOptions: List<Any>, val parameters: List<Any>)
-class ActionTypeImplEntry<T : Any, P : Any, A : Actionable<T, P>>(private val model: T,
+class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
         private val replayState: ReplayState,
         val actionType: ActionType<P>,
-        private val impl: GameLogicActionType<T, P, A>) {
+        private val impl: GameLogicActionType<T, P>) {
     fun availableActions(playerIndex: Int): Iterable<Actionable<T, P>> = impl.availableActions(playerIndex)
     fun perform(playerIndex: Int, parameter: P) {
         this.perform(this.createAction(playerIndex, parameter))
     }
-    fun replayAction(action: A, state: Map<String, Any>?) {
+    fun replayAction(action: Actionable<T, P>, state: Map<String, Any>?) {
         impl.replayAction(action, state)
     }
-    fun perform(action: A) {
+    fun perform(action: Actionable<T, P>) {
         replayState.stateKeeper.clear()
         impl.performAction(action)
     }
-    fun createAction(playerIndex: Int, parameter: P): A = impl.createAction(playerIndex, parameter)
-    fun isAllowed(action: A): Boolean = impl.actionAllowed(action)
+    fun createAction(playerIndex: Int, parameter: P): Actionable<T, P> = impl.createAction(playerIndex, parameter)
+    fun isAllowed(action: Actionable<T, P>): Boolean = impl.actionAllowed(action)
     fun availableParameters(playerIndex: Int, previouslySelected: List<Any>): ActionInfo {
         val serializer: (P) -> Any = { actionType.serialize(it) }
         return if (impl is GameActionRuleContext) {
@@ -43,7 +43,7 @@ class ActionTypeImplEntry<T : Any, P : Any, A : Actionable<T, P>>(private val mo
         }
     }
 
-    fun createActionFromSerialized(playerIndex: Int, serialized: Any): A {
+    fun createActionFromSerialized(playerIndex: Int, serialized: Any): Actionable<T, P> {
         val actionOptionsContext = actionOptionsContext(playerIndex)
         if (actionType.parameterType == actionType.serializedType) {
             return createAction(actionOptionsContext.playerIndex, serialized as P)
@@ -53,7 +53,7 @@ class ActionTypeImplEntry<T : Any, P : Any, A : Actionable<T, P>>(private val mo
         return if (parameter == null) {
             availableActions(actionOptionsContext.playerIndex).single { action2 ->
                 actionType.serialize(action2.parameter) == serialized
-            } as A
+            }
         } else {
             createAction(actionOptionsContext.playerIndex, parameter)
         }
@@ -77,22 +77,22 @@ class ActionsImpl<T : Any>(
 
     val actionTypes: Set<String> get() = rules.actionTypes()
 
-    fun types(): Set<ActionTypeImplEntry<T, Any, Actionable<T, Any>>> {
+    fun types(): Set<ActionTypeImplEntry<T, Any>> {
         return actionTypes.map { type(it)!! }.toSet()
     }
 
-    operator fun get(actionType: String): ActionTypeImplEntry<T, Any, Actionable<T, Any>>? {
+    operator fun get(actionType: String): ActionTypeImplEntry<T, Any>? {
         return type(actionType)
     }
 
-    fun type(actionType: String): ActionTypeImplEntry<T, Any, Actionable<T, Any>>? = rules.actionType(actionType)
-    fun <P : Any> type(actionType: String, clazz: KClass<T>): ActionTypeImplEntry<T, P, out Actionable<T, P>>? {
+    fun type(actionType: String): ActionTypeImplEntry<T, Any>? = rules.actionType(actionType)
+    fun <P : Any> type(actionType: String, clazz: KClass<P>): ActionTypeImplEntry<T, P>? {
         val entry = this.type(actionType)
         if (entry != null) {
             if (entry.actionType.parameterType != clazz) {
                 throw IllegalArgumentException("ActionType '$actionType' has parameter ${entry.actionType.parameterType} and not $clazz")
             }
-            return this.type(actionType) as ActionTypeImplEntry<T, P, Actionable<T, P>>
+            return this.type(actionType) as ActionTypeImplEntry<T, P>
         }
         return null
     }

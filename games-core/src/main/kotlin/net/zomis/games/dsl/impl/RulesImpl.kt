@@ -44,7 +44,7 @@ class GameRulesContext<T : Any>(
         return this.ruleList.keys.toSet()
     }
 
-    fun actionType(actionType: String): ActionTypeImplEntry<T, Any, Actionable<T, Any>>? {
+    fun actionType(actionType: String): ActionTypeImplEntry<T, Any>? {
         return this.ruleList[actionType].let {
             if (it != null) { ActionTypeImplEntry(model, replayable, it.actionDefinition, it) } else null
         }
@@ -106,7 +106,7 @@ class GameActionRuleContext<T : Any, A : Any>(
     val eliminations: PlayerEliminations,
     val actionDefinition: ActionType<A>,
     val globalRules: GameRuleList<T>
-): GameActionRule<T, A>, GameLogicActionType<T, A, Actionable<T, A>> {
+): GameActionRule<T, A>, GameLogicActionType<T, A> {
     override val actionType: String = actionDefinition.name
 
     val effects = mutableListOf<ActionRuleScope<T, A>.() -> Unit>()
