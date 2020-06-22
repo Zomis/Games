@@ -2,7 +2,7 @@
     <Actionable :actions="actions" :actionable="actionable">
         <v-card>
             <v-card-title>
-                <div :class="{ actionable: actions.available[action] }">
+                <div>
                     {{ card.name }}
                 </div>
             </v-card-title>
