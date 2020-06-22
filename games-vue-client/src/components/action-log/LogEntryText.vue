@@ -1,7 +1,12 @@
 <template>
-    <v-tooltip bottom :disabled="!useTooltip">
+    <v-tooltip v-model="tooltipActive" bottom :disabled="!useTooltip" :open-on-hover="false">
         <template v-slot:activator="{ on }">
-            <span v-on="on" :class="cssClasses">{{ text }}</span>
+            <span v-on="on" :class="cssClasses"
+                    @click="clicked = !clicked"
+                    @mouseover="hover = true"
+                    @mouseleave="hover = false">
+                {{ text }}
+            </span>
         </template>
         <span>
             <component v-if="useTooltip" :is="tooltipComponent" v-bind="hoverBindings" />
@@ -12,6 +17,23 @@
 export default {
     name: "LogEntryText",
     props: ["text", "onHighlight", "tooltipComponent", "hoverBindings"],
+    data() {
+        return {
+            tooltipActive: false,
+            hover: false,
+            clicked: false
+        }
+    },
+    watch: {
+        hover(value) {
+            console.log("hover", value, this.clicked, this.tooltipActive)
+            this.tooltipActive = value || this.clicked
+        },
+        clicked(value) {
+            console.log("clicked", value, this.clicked, this.tooltipActive)
+            this.tooltipActive = value || this.hover
+        }
+    },
     computed: {
         cssClasses() {
             return {
@@ -26,6 +48,7 @@ export default {
 </script>
 <style scoped>
 .has-tooltip {
+    cursor: pointer;
     text-decoration: underline;
 }
 </style>
