@@ -2,8 +2,8 @@
     <v-container fluid>
         <v-row>
             <v-col v-for="(player, playerIndex) in view.players" :key="playerIndex">
-                <v-card :class="'color-' + player.color">
-                    <PlayerProfile :player="players[playerIndex]" show-name />
+                <v-card :class="'color-' + player.character.color">
+                    <PlayerProfile :player="players[playerIndex]" show-name :postFix="'(' + player.character.className + ')'" />
                     <p>Health: {{ player.health }}</p>
                     <p>Deck: {{ player.deck }}</p>
                     <Actionable button :actionable="`target:player-${playerIndex};shield-null;discarded-null`" actionType="target" :actions="actions">

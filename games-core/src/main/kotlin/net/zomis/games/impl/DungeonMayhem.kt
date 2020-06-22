@@ -167,7 +167,7 @@ class DungeonMayhemPlayer(val index: Int) {
     }
 
     var protected: Boolean = false
-    lateinit var color: String
+    lateinit var character: DungeonMayhemCharacter
     var health: Int = 10
     val deck = CardZone<DungeonMayhemCard>()
     val hand = CardZone<DungeonMayhemCard>()
@@ -178,9 +178,10 @@ class DungeonMayhemPlayer(val index: Int) {
 
 private typealias s = DungeonMayhemSymbol
 private operator fun Int.times(card: DungeonMayhemCard): List<DungeonMayhemCard> = (1..this).map { card }
+data class DungeonMayhemCharacter(val color: String, val name: String, val className: String)
 object DungeonMayhemDecks {
 
-    fun yellow() = "yellow" to listOf(
+    fun yellow() = DungeonMayhemCharacter("yellow", "Azzan the Mystic", "Wizard") to listOf(
         2 * ("Fireball" card s.FIREBALL),
         2 * ("Evil Sneer" card s.HEAL + s.PLAY_AGAIN),
         3 * ("Speed of Thought" card s.PLAY_AGAIN * 2),
@@ -195,7 +196,7 @@ object DungeonMayhemDecks {
         2 * ("Vampiric Touch" card s.SWAP_HITPOINTS)
     ).flatten()
 
-    fun red() = "red" to listOf(
+    fun red() = DungeonMayhemCharacter("red", "Lia the Radiant", "Paladin") to listOf(
         2 * ("For The Most Justice" card s.ATTACK * 3),
         2 * ("Divine Inspiration" card s.HEAL * 2 + s.PICK_UP_CARD),
         1 * ("Divine Smite" card s.ATTACK * 3 + s.HEAL),
@@ -211,7 +212,7 @@ object DungeonMayhemDecks {
         3 * ("Banishing Smite" card s.DESTROY_ALL_SHIELDS + s.PLAY_AGAIN)
     ).flatten()
 
-    fun purple() = "purple" to listOf(
+    fun purple() = DungeonMayhemCharacter("purple", "Oriax the Clever", "Rogue") to listOf(
         5 * ("One Thrown Dagger" card s.ATTACK + s.PLAY_AGAIN),
         3 * ("All The Thrown Daggers" card s.ATTACK * 3),
         2 * ("Winged Serpent" card s.SHIELD + s.DRAW),
@@ -226,7 +227,7 @@ object DungeonMayhemDecks {
         1 * ("Even More Daggers" card s.DRAW * 2 + s.HEAL)
     ).flatten()
 
-    fun blue() = "blue" to listOf(
+    fun blue() = DungeonMayhemCharacter("blue", "Sutha the Skullcrusher", "Barbarian") to listOf(
         5 * ("Big Axe Is The Best Axe" card s.ATTACK * 3),
         2 * ("Brutal Punch" card s.ATTACK * 2),
         1 * ("Riff" card s.SHIELD * 3),
@@ -315,11 +316,12 @@ object DungeonMayhemDsl {
                 // just shuffle characters in the beginning (playing it like this for a while might make me more motivated for real solution later)
                 val decks = listOf(DungeonMayhemDecks.blue(), DungeonMayhemDecks.purple(),
                         DungeonMayhemDecks.red(), DungeonMayhemDecks.yellow()).shuffled()
-                val deckStrings = replayable.strings("characters") { decks.map { it.first } }
+                val deckStrings = replayable.strings("characters") { decks.map { it.first.color } }
 
                 game.players.forEachIndexed { index, player ->
-                    player.color = deckStrings[index]
-                    player.deck.cards.addAll(decks.first { it.first == deckStrings[index] }.second)
+                    val playerSetup = decks.first { it.first.color == deckStrings[index] }
+                    player.character = playerSetup.first
+                    player.deck.cards.addAll(playerSetup.second)
                     player.drawCard(replayable, "gameStart", 3)
                 }
                 newTurnDrawCard(Unit)
@@ -337,7 +339,7 @@ object DungeonMayhemDsl {
 
             view("players") {
                 game.players.map { mapOf(
-                    "color" to it.color,
+                    "character" to it.character,
                     "health" to it.health,
                     "deck" to it.deck.size,
                     "hand" to if (viewer == it.index) it.hand.view() else it.hand.size,
