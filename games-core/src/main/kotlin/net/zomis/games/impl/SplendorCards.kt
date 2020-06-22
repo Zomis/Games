@@ -1,9 +1,5 @@
 package net.zomis.games.impl
 
-import net.zomis.games.dsl.Money
-import net.zomis.games.dsl.MoneyType
-import net.zomis.games.dsl.SplendorCard
-
 val splendorCards = listOf("""
         W,0,UGRB
         W,0,UGGRB

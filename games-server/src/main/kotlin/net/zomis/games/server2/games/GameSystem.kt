@@ -8,7 +8,7 @@ import net.zomis.core.events.EventSystem
 import net.zomis.core.events.ListenerPriority
 import net.zomis.games.Features
 import net.zomis.games.WinResult
-import net.zomis.games.dsl.PlayerIndex
+import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.server2.*

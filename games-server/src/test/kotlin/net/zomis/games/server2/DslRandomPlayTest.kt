@@ -4,7 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.Actionable
-import net.zomis.games.dsl.SplendorGame
+import net.zomis.games.impl.SplendorGame
 import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.dsl.impl.GameControllerContext
 import net.zomis.games.dsl.impl.GameControllerScope

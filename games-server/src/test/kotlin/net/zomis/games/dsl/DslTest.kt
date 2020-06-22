@@ -3,6 +3,8 @@ package net.zomis.games.dsl
 import net.zomis.games.common.Point
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.dsl.impl.GameSetupImpl
+import net.zomis.games.impl.ttt.DslTTT
+import net.zomis.games.impl.ttt.TTOptions
 import net.zomis.tttultimate.TTPlayer
 import net.zomis.tttultimate.games.TTController
 import org.junit.jupiter.api.Assertions
@@ -13,12 +15,12 @@ class DslTest {
 
     @Test
     fun config() {
-        val setup = GameSetupImpl(DslTTT().game)
+        val setup = GameSetupImpl(DslTTT.game)
         Assertions.assertEquals(TTOptions::class, setup.configClass())
     }
 
     private fun createGame(): GameImpl<TTController> {
-        val setup = GameSetupImpl(DslTTT().game)
+        val setup = GameSetupImpl(DslTTT.game)
         val game = setup.createGame(2, TTOptions(3, 3, 3))
         Assertions.assertNotNull(game)
         return game

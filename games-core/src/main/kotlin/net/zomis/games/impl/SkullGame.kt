@@ -2,8 +2,9 @@ package net.zomis.games.impl
 
 import net.zomis.games.WinResult
 import net.zomis.games.cards.CardZone
+import net.zomis.games.common.PlayerIndex
+import net.zomis.games.common.next
 import net.zomis.games.dsl.*
-import net.zomis.games.dsl.sourcedest.next
 
 enum class SkullCard {
     SKULL,
@@ -49,10 +50,6 @@ class SkullGameModel(config: SkullGameConfig, playerCount: Int): Viewable {
     }
     var currentPlayerIndex: Int = 0
     val currentPlayer get() = players[currentPlayerIndex]
-
-    fun nextTurn() {
-        this.currentPlayerIndex = this.currentPlayerIndex.next(players.size)
-    }
 
     fun newRound() {
         this.players.filter { it.totalCards > 0 }.forEach {

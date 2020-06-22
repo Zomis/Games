@@ -76,7 +76,7 @@ const setActions = {
 const supportedGames = {
     "DSL-UR": {
         displayName: "Royal Game of UR",
-        dsl: new gamejs.net.zomis.games.dsl.DslUR().gameUR,
+        dsl: gamejs.net.zomis.games.impl.DslUR.gameUR,
         actions: {
             roll: () => "roll",
             move: (i) => `${i}`
@@ -113,7 +113,7 @@ const supportedGames = {
         routeProps: defaultRouteProps
     },
     "Splendor": {
-        dsl: gamejs.net.zomis.games.dsl.DslSplendor.splendorGame,
+        dsl: gamejs.net.zomis.games.impl.DslSplendor.splendorGame,
         enabled: true,
         actions: splendorActions,
         component: Splendor,
@@ -125,14 +125,14 @@ const supportedGames = {
     },
     "DSL-Connect4": {
         displayName: "Connect Four",
-        dsl: new gamejs.net.zomis.games.dsl.DslTTT().gameConnect4,
+        dsl: gamejs.net.zomis.games.impl.ttt.DslTTT.gameConnect4,
         actions: tttActions,
         component: DSLTTT,
         routeProps: defaultRouteProps
     },
     "Quixo": {
         displayName: "Quixo",
-        dsl: new gamejs.net.zomis.games.dsl.sourcedest.TTSourceDestinationGames().gameQuixo,
+        dsl: gamejs.net.zomis.games.impl.TTSourceDestinationGames.gameQuixo,
         actions: tttMoveActions,
         component: DSLTTT,
         routeProps: defaultRouteProps
@@ -163,28 +163,28 @@ const supportedGames = {
     },
     "Artax": {
         displayName: "Artax",
-        dsl: gamejs.net.zomis.games.dsl.sourcedest.ArtaxGame.gameArtax,
+        dsl: gamejs.net.zomis.games.impl.ArtaxGame.gameArtax,
         actions: tttMoveActions,
         component: DSLTTT,
         routeProps: defaultRouteProps
     },
     "DSL-Reversi": {
         displayName: "Reversi",
-        dsl: new gamejs.net.zomis.games.dsl.DslTTT().gameReversi,
+        dsl: gamejs.net.zomis.games.impl.ttt.DslTTT.gameReversi,
         actions: tttActions,
         component: DSLTTT,
         routeProps: defaultRouteProps
     },
     "DSL-TTT3D": {
         displayName: "3D Tic-Tac-Toe / Connect Four",
-        dsl: new gamejs.net.zomis.games.dsl.DslTTT3D().game,
+        dsl: gamejs.net.zomis.games.impl.ttt.TTT3DGame.game,
         actions: tttActions,
         component: TTT3D,
         routeProps: defaultRouteProps
     },
     "DSL-UTTT": {
         displayName: "Tic-Tac-Toe Ultimate",
-        dsl: new gamejs.net.zomis.games.dsl.DslTTT().gameUTTT,
+        dsl: gamejs.net.zomis.games.impl.ttt.DslTTT.gameUTTT,
         actions: tttActions,
         component: UTTT,
         routeProps: defaultRouteProps
@@ -198,7 +198,7 @@ const supportedGames = {
     },
     "DSL-TTT": {
         displayName: "Tic-Tac-Toe",
-        dsl: new gamejs.net.zomis.games.dsl.DslTTT().game,
+        dsl: gamejs.net.zomis.games.impl.ttt.DslTTT.game,
         actions: tttActions,
         component: DSLTTT,
         routeProps: defaultRouteProps

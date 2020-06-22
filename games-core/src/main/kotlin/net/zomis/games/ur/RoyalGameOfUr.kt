@@ -143,7 +143,7 @@ class RoyalGameOfUr {
         if (!canMove(playerIndex, position, steps)) {
             return false
         }
-        for (i in 0 until this.pieces[playerIndex].size) {
+        for (i in this.pieces[playerIndex].indices) {
             if (this.pieces[playerIndex][i] == position) {
                 this.pieces[playerIndex][i] = position + steps
                 performKnockout(playerIndex, position + steps)

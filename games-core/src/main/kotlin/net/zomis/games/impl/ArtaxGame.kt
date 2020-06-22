@@ -1,4 +1,4 @@
-package net.zomis.games.dsl.sourcedest
+package net.zomis.games.impl
 
 import net.zomis.games.Map2DPoint
 import net.zomis.games.Map2DX
@@ -11,7 +11,6 @@ import net.zomis.tttultimate.Direction8
 import kotlin.math.abs
 import kotlin.math.max
 
-fun Int.next(playerCount: Int): Int = (this + 1) % playerCount
 class TTArtax(private val eliminationCallback: PlayerEliminationCallback,
           playerCount: Int, sizeX: Int, sizeY: Int) {
     val board = Map2DX<Int?>(sizeX, sizeY) { _, _ -> null }

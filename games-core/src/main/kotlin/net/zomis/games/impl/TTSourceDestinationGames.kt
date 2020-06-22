@@ -1,9 +1,11 @@
-package net.zomis.games.dsl.sourcedest
+package net.zomis.games.impl
 
 import net.zomis.games.WinResult
 import net.zomis.games.common.Point
 import net.zomis.games.common.PointMove
 import net.zomis.games.dsl.*
+import net.zomis.games.impl.ttt.TTOptions
+import net.zomis.games.impl.ttt.index
 import net.zomis.tttultimate.Direction8
 import net.zomis.tttultimate.TTBase
 import net.zomis.tttultimate.TTFactories
@@ -91,11 +93,12 @@ class TTQuixoController(game: TTBase): TTControllerSourceDestination(game) {
 
 }
 
-class TTSourceDestinationGames {
+object TTSourceDestinationGames {
 
-    val moveAction = createActionType("move", PointMove::class)
+    val factory = GameCreator(TTControllerSourceDestination::class)
+    val moveAction = factory.action("move", PointMove::class)
 
-    val gameQuixo = createGame<TTControllerSourceDestination>("Quixo") {
+    val gameQuixo = factory.game("Quixo") {
         val grid = gridSpec<TTBase> {
             size(model.board.sizeX, model.board.sizeY)
             getter { x, y -> model.board.getSub(x, y)!! }

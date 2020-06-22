@@ -1,6 +1,7 @@
 package net.zomis.games.dsl
 
 import net.zomis.games.PlayerEliminations
+import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.impl.ActionOptionsContext
 import kotlin.reflect.KClass
 

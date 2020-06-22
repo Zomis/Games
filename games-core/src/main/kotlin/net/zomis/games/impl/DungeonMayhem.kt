@@ -4,8 +4,8 @@ import net.zomis.games.WinResult
 import net.zomis.games.cards.Card
 import net.zomis.games.cards.CardZone
 import net.zomis.games.cards.random
+import net.zomis.games.common.next
 import net.zomis.games.dsl.*
-import net.zomis.games.dsl.sourcedest.next
 import kotlin.math.min
 
 data class DungeonMayhemConfig(

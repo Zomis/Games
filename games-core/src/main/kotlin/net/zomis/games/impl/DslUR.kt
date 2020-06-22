@@ -1,8 +1,10 @@
-package net.zomis.games.dsl
+package net.zomis.games.impl
 
+import net.zomis.games.dsl.GameCreator
+import net.zomis.games.dsl.createGame
 import net.zomis.games.ur.RoyalGameOfUr
 
-class DslUR {
+object DslUR {
 
     val factory = GameCreator(RoyalGameOfUr::class)
     val roll = factory.action("roll", Unit::class)

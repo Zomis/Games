@@ -20,9 +20,6 @@ data class Action<T : Any, A : Any>(
     override val parameter: A
 ): Actionable<T, A>
 
-typealias PlayerIndex = Int?
-fun PlayerIndex.isObserver(): Boolean = this == null
-
 typealias GameSpec<T> = GameDsl<T>.() -> Unit
 typealias GameModelDsl<T, C> = GameModel<T, C>.() -> Unit
 typealias GameViewDsl<T> = GameView<T>.() -> Unit

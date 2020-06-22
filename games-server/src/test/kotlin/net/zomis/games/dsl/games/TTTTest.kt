@@ -2,11 +2,10 @@ package net.zomis.games.dsl.games
 
 import net.zomis.games.WinResult
 import net.zomis.games.common.Point
-import net.zomis.games.dsl.DslTTT
 import net.zomis.games.dsl.GameTest
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.dsl.impl.GameSetupImpl
-import net.zomis.games.impl.SkullGameModel
+import net.zomis.games.impl.ttt.DslTTT
 import net.zomis.tttultimate.games.TTController
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
@@ -14,7 +13,7 @@ import org.junit.jupiter.api.Test
 
 class TTTTest {
 
-    val dsl = DslTTT().game
+    val dsl = DslTTT.game
     lateinit var game: GameImpl<TTController>
     lateinit var test: GameTest<TTController>
 
@@ -27,7 +26,7 @@ class TTTTest {
 
     @Test
     fun draw() {
-        val play = DslTTT().playAction.name
+        val play = DslTTT.playAction.name
         test.performActionSerialized(0, play, Point(1, 1))
         test.performActionSerialized(1, play, Point(0, 0))
         test.performActionSerialized(0, play, Point(0, 1))

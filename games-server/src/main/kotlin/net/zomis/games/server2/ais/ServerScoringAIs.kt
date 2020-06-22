@@ -7,7 +7,7 @@ import net.zomis.core.events.EventSystem
 import net.zomis.games.common.PointMove
 import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.dsl.impl.GameImpl
-import net.zomis.games.dsl.sourcedest.TTArtax
+import net.zomis.games.impl.TTArtax
 import net.zomis.games.server2.ais.gamescorers.DungeonMayhemScorers
 import net.zomis.games.server2.ais.gamescorers.HanabiScorers
 import net.zomis.games.server2.ais.gamescorers.SkullScorers

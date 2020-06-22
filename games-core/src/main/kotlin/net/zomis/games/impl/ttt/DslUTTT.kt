@@ -1,7 +1,11 @@
-package net.zomis.games.dsl
+package net.zomis.games.impl.ttt
 
 import net.zomis.games.WinResult
 import net.zomis.games.common.Point
+import net.zomis.games.dsl.GameCreator
+import net.zomis.games.dsl.GameRulesDsl
+import net.zomis.games.dsl.GameViewDsl
+import net.zomis.games.dsl.GridDsl
 import net.zomis.tttultimate.TTBase
 import net.zomis.tttultimate.TTFactories
 import net.zomis.tttultimate.TTPlayer
@@ -18,7 +22,7 @@ fun TTPlayer.index(): Int {
     }
 }
 
-class DslTTT {
+object DslTTT {
     val factory = GameCreator(TTController::class)
     val playAction = factory.action("play", TTBase::class).serialization(Point::class, { Point(it.globalX, it.globalY) }, {
         game.game.getSmallestTile(it.x, it.y)!!

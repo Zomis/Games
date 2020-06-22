@@ -1,12 +1,11 @@
-package net.zomis.games.dsl
+package net.zomis.games.impl.ttt
 
 import net.zomis.games.WinResult
 import net.zomis.games.common.Grid2D
 import net.zomis.games.common.Point
-import net.zomis.games.impl.TTT3D
-import net.zomis.games.impl.TTT3DPoint
+import net.zomis.games.dsl.GameCreator
 
-class DslTTT3D {
+object TTT3DGame {
     val factory = GameCreator(TTT3D::class)
     val playAction = factory.action("play", Point::class)
     val SIZE = 4

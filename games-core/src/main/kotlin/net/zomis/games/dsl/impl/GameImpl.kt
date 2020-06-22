@@ -1,8 +1,11 @@
 package net.zomis.games.dsl.impl
 
 import net.zomis.games.PlayerEliminations
-import net.zomis.games.WinResult
-import net.zomis.games.dsl.*
+import net.zomis.games.common.PlayerIndex
+import net.zomis.games.dsl.Actionable
+import net.zomis.games.dsl.GameFactoryScope
+import net.zomis.games.dsl.GameSpec
+import net.zomis.games.dsl.Viewable
 import kotlin.reflect.KClass
 
 class GameControllerContext<T : Any>(

@@ -1,9 +1,9 @@
 package net.zomis.games
 
-import net.zomis.games.dsl.Money
-import net.zomis.games.dsl.SplendorCard
-import net.zomis.games.dsl.SplendorConfig
-import net.zomis.games.dsl.SplendorGame
+import net.zomis.games.impl.Money
+import net.zomis.games.impl.SplendorCard
+import net.zomis.games.impl.SplendorConfig
+import net.zomis.games.impl.SplendorGame
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
