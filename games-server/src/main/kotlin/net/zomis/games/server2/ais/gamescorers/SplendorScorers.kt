@@ -1,8 +1,6 @@
 package net.zomis.games.server2.ais.gamescorers
 
-import net.zomis.games.dsl.DslSplendor
-import net.zomis.games.dsl.MoneyChoice
-import net.zomis.games.dsl.SplendorGame
+import net.zomis.games.impl.*
 import net.zomis.games.server2.ais.ScorerAIFactory
 import net.zomis.games.server2.ais.scorers.Scorer
 import net.zomis.games.server2.ais.scorers.ScorerFactory
