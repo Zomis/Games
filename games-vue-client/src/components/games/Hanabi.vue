@@ -155,7 +155,7 @@ export default {
         .reduce((obj, key) => ({ ...obj, [key.substring(prefix.length)]: this.actions.available[key] }), {});
     },
     myTurn() {
-      return this.view.currentPlayer == this.view.hand.index
+      return this.view.hand && this.view.currentPlayer == this.view.hand.index
     },
     deckEmpty() {
       return this.view.cardsLeft == 0
