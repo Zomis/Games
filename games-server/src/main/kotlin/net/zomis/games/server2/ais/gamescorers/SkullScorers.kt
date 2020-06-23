@@ -13,7 +13,7 @@ object SkullScorers {
     fun ais(): List<ScorerAIFactory<SkullGameModel>> {
         return listOf(
             ScorerAIFactory("Skull", "#AI_Reasonable",
-                play, betMinimal, pass, discardFirstTwoFlowers, chooseAny
+                play, betMinimal, pass, discardFirstTwoFlowers, discardSkullLast, chooseAny
             ),
             ScorerAIFactory("Skull", "#AI_Self_Destruct", playSkull, betHigh.weight(10), discardFlower),
             ScorerAIFactory("Skull", "#AI_Play_Random_Pass", play.weight(0.1), pass, betLow),
@@ -32,6 +32,7 @@ object SkullScorers {
     val pass = scorers.isAction(SkullGame.pass)
     val discardFlower = scorers.actionConditional(SkullGame.discard) { action.parameter == SkullCard.FLOWER }
     val discardFirstTwoFlowers = scorers.actionConditional(SkullGame.discard) { action.parameter == SkullCard.FLOWER && action.game.currentPlayer.hand.size > 2 }
+    val discardSkullLast = scorers.actionConditional(SkullGame.discard) { action.parameter == SkullCard.SKULL && action.game.currentPlayer.hand.size == 2 }
     val choose = scorers.action(SkullGame.choose) { action.parameter.index.toDouble() }
 
 }
