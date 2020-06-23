@@ -161,6 +161,7 @@ export default {
       return {
         chosen: this.actionChoice,
         perform: this.action,
+        highlights: {},
         available: this.actionsAvailable,
         actionTypes: this.actionTypes,
         clear: this.cancelAction,
