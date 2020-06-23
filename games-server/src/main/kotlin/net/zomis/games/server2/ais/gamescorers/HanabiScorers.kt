@@ -32,23 +32,21 @@ object HanabiScorers {
     fun aiDebugAnimations() = ScorerAIFactory("Hanabi", "#AI_Debug_Animations", discardFromLeft, clueLowPlayer.weight(0.1))
     fun aiDebugHand() = ScorerAIFactory("Hanabi", "#AI_Debug_Hand", clue, clueLowPlayer, clueColor)
 
-    fun random() = ScorerAIFactory("Hanabi", "#AI_Random", scorers.simple { 1.0 })
-
     val scorers = ScorerFactory<Hanabi>()
 
-    val clue = scorers.conditional { action.actionType == HanabiGame.giveClue.name }
-    val clueLowPlayer = scorers.conditionalType(HanabiClue::class) { -action.parameter.player.toDouble() } as Scorer<Hanabi, Any>
-    val clueColor = scorers.conditionalType(HanabiClue::class) { if (action.parameter.color != null) 1.0 else 0.0 } as Scorer<Hanabi, Any>
+    val clue = scorers.isAction(HanabiGame.giveClue)
+    val clueLowPlayer = scorers.action(HanabiGame.giveClue) { -action.parameter.player.toDouble() }
+    val clueColor = scorers.action(HanabiGame.giveClue) { if (action.parameter.color != null) 1.0 else 0.0 }
 
-    val playableClues = scorers.conditionalType(HanabiClue::class) {
+    val playableClues = scorers.action(HanabiGame.giveClue) {
         action.game.players[action.parameter.player].cards.cards.filter { it.matches(action.parameter) }
             .sumByDouble { if (HanabiProbabilities.playable(model).invoke(it)) 1.0 else -0.1 }
-    } as Scorer<Hanabi, Any>
+    }
 
-    val indispensibleClues = scorers.conditionalType(HanabiClue::class) {
+    val indispensibleClues = scorers.action(HanabiGame.giveClue) {
         action.game.players[action.parameter.player].cards.cards.filter { it.matches(action.parameter) }
                 .sumByDouble { if (HanabiProbabilities.indispensible(model).invoke(it)) 1.0 else -0.1 }
-    } as Scorer<Hanabi, Any>
+    }
 
     val probabilityProvider = scorers.provider {ctx ->
         HanabiProbabilities.calculateProbabilities(ctx.model, ctx.playerIndex).also { probs ->
@@ -79,34 +77,34 @@ object HanabiScorers {
         return cardProbs
     }
 
-    val playableCardPlayableClue = scorers.conditionalType(HanabiClue::class) {
+    val playableCardPlayableClue = scorers.action(HanabiGame.giveClue) {
         val playable = HanabiProbabilities.playable(model)
         val diffs = cardProbsDiff(this)
         diffs.sumByDouble { if (playable(it.first)) it.second.playable else -it.second.playable }
-    } as Scorer<Hanabi, Any>
+    }
 
-    val indispensibleCardIndispensibleClue = scorers.conditionalType(HanabiClue::class) {
+    val indispensibleCardIndispensibleClue = scorers.action(HanabiGame.giveClue) {
         val condition = HanabiProbabilities.indispensible(model)
         val diffs = cardProbsDiff(this)
         diffs.sumByDouble { if (condition(it.first)) it.second.playable else -it.second.playable }
-    } as Scorer<Hanabi, Any>
+    }
 
-    val playFromRight = scorers.conditional { action.actionType == HanabiGame.play.name }.multiply(scorers.simple { (action.parameter as Int).toDouble() * 0.001 })
-    val discardFromLeft = scorers.conditional { action.actionType == HanabiGame.discard.name }.multiply(scorers.simple {
-        (action.game.current.cards.cards.lastIndex - (action.parameter as Int).toDouble()) * 0.001
-    })
+    val playFromRight = scorers.action(HanabiGame.play) { (action.parameter).toDouble() * 0.001 }
+    val discardFromLeft = scorers.action(HanabiGame.discard) {
+        (action.game.current.cards.cards.lastIndex - (action.parameter).toDouble()) * 0.001
+    }
 
-    val playProbability = scorers.conditional { action.actionType == HanabiGame.play.name }.multiply(scorers.simple {
+    val playProbability = scorers.action(HanabiGame.play) {
         val probabilities = require(probabilityProvider)!!
-        val cardIndex = this.action.parameter as Int
+        val cardIndex = this.action.parameter
         probabilities.hand[cardIndex].playable
-    })
+    }
 
-    val discardProbability = scorers.conditional { action.actionType == HanabiGame.discard.name }.multiply(scorers.simple {
+    val discardProbability = scorers.action(HanabiGame.discard) {
         val probabilities = require(probabilityProvider)!!
-        val cardIndex = this.action.parameter as Int
+        val cardIndex = this.action.parameter
         probabilities.hand[cardIndex].discardable - probabilities.hand[cardIndex].indispensible
-    })
+    }
 
     // If I think card is indispensible, give clue.
     // If I think card can be played, give clue (unless someone else also has this card with a clue about playability?)

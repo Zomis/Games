@@ -12,6 +12,7 @@ class GameControllerContext<T : Any>(
     override val game: GameImpl<T>, override val playerIndex: Int
 ): GameControllerScope<T> {
     override val model: T get() = game.model
+    fun view(): Map<String, Any?> = game.view(playerIndex)
 }
 interface GameControllerScope<T : Any> {
     val game: GameImpl<T>

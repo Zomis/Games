@@ -1,5 +1,6 @@
 package net.zomis.games.server2.ais.scorers
 
+import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.Actionable
 import kotlin.reflect.KClass
 
@@ -32,23 +33,14 @@ interface ScorerScope<T : Any, A: Any> {
 
 class ScorerFactory<T : Any> {
 
-//    operator fun invoke(): Scorer<T, Any> {
-//        return
-//    }
-
-    fun simple(scoreFunction: ScoreFunction<T, Any>): Scorer<T, Any> {
-        return Scorer(scoreFunction)
-    }
-
-    fun conditional(condition: ScorerScope<T, Any>.() -> Boolean): Scorer<T, Any> {
-        return Scorer { if (condition(this)) 1.0 else null }
-    }
-
-    fun <S: Any> conditionalType(clazz: KClass<S>, scoreFunction: ScoreFunction<T, S>): Scorer<T, S> {
-        return Scorer { if (clazz.isInstance(action.parameter)) scoreFunction(this) else null }
-    }
-
     fun <A> provider(provider: (ScorerContext<T>) -> A?): ScorerAnalyzeProvider<T, A> = provider
+    fun isAction(action: ActionType<*>): Scorer<T, Any> = this.action(action) { 1.0 }
+    fun <A: Any> action(action: ActionType<A>, function: ScoreFunction<T, A>): Scorer<T, Any> {
+        return Scorer { if (this.action.actionType == action.name) function(this as ScorerScope<T, A>) else null }
+    }
+    fun <A: Any> actionConditional(action: ActionType<A>, function: ScorerScope<T, A>.() -> Boolean): Scorer<T, Any> {
+        return Scorer { if (this.action.actionType == action.name) if (function(this as ScorerScope<T, A>)) 1.0 else 0.0 else null }
+    }
 
 }
 

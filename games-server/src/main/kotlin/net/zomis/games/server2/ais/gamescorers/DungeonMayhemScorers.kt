@@ -19,20 +19,20 @@ object DungeonMayhemScorers {
         )
     }
 
-    fun symbolCount(symbol: DungeonMayhemSymbol): Scorer<DungeonMayhem, Any> = scorers.conditionalType(DungeonMayhemCard::class) {
+    fun symbolCount(symbol: DungeonMayhemSymbol) = scorers.action(DungeonMayhemDsl.play) {
         action.parameter.symbols.count { it == symbol }.toDouble()
-    } as Scorer<DungeonMayhem, Any>
-    val anyTarget = scorers.conditional { action.actionType == DungeonMayhemDsl.target.name }
-    val targetWeakShields = scorers.conditionalType(DungeonMayhemTarget::class) {
+    }
+    val anyTarget = scorers.isAction(DungeonMayhemDsl.target)
+    val targetWeakShields = scorers.action(DungeonMayhemDsl.target) {
         if (action.parameter.shieldCard != null)
             1 - 0.01 * action.game.players[action.parameter.player].shields[action.parameter.shieldCard!!].card.health.toDouble()
         else 0.0
-    } as Scorer<DungeonMayhem, Any>
-    val targetHighPlayerIndex = scorers.conditionalType(DungeonMayhemTarget::class) {
+    }
+    val targetHighPlayerIndex = scorers.action(DungeonMayhemDsl.target) {
         1 + 0.01 * action.parameter.player.toDouble()
-    } as Scorer<DungeonMayhem, Any>
-    val targetPlayerLowHealth = scorers.conditionalType(DungeonMayhemTarget::class) {
+    }
+    val targetPlayerLowHealth = scorers.action(DungeonMayhemDsl.target) {
         1 - 0.01 * action.game.players[action.parameter.player].health.toDouble()
-    } as Scorer<DungeonMayhem, Any>
+    }
 
 }
