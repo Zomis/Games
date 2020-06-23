@@ -168,11 +168,12 @@ data class PlayNamedAction(val cardIndex: Int, val color: HanabiColor)
 
 object HanabiGame {
 
-    val giveClue = createActionType("GiveClue", HanabiClue::class)
-    val discard = createActionType("Discard", Int::class)
-    val play = createActionType("Play", Int::class)
-    val playNamed = createActionType("PlayNamed", PlayNamedAction::class)
-    val game = createGame<Hanabi>("Hanabi") {
+    val factory = GameCreator(Hanabi::class)
+    val giveClue = factory.action("GiveClue", HanabiClue::class)
+    val discard = factory.action("Discard", Int::class)
+    val play = factory.action("Play", Int::class)
+    val playNamed = factory.action("PlayNamed", PlayNamedAction::class)
+    val game = factory.game("Hanabi") {
         setup(HanabiConfig::class) {
             defaultConfig {
                 HanabiConfig(

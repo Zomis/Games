@@ -1,7 +1,6 @@
 package net.zomis.games.impl
 
 import net.zomis.games.dsl.GameCreator
-import net.zomis.games.dsl.createGame
 import net.zomis.games.ur.RoyalGameOfUr
 
 object DslUR {
@@ -9,7 +8,7 @@ object DslUR {
     val factory = GameCreator(RoyalGameOfUr::class)
     val roll = factory.action("roll", Unit::class)
     val move = factory.action("move", Int::class)
-    val gameUR = createGame<RoyalGameOfUr>("UR") {
+    val gameUR = factory.game("UR") {
         setup(Unit::class) {
             playersFixed(2)
             init { RoyalGameOfUr() }

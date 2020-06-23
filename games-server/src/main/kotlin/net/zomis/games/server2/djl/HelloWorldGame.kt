@@ -1,14 +1,14 @@
 package net.zomis.games.server2.djl
 
 import net.zomis.games.WinResult
-import net.zomis.games.dsl.createActionType
-import net.zomis.games.dsl.createGame
+import net.zomis.games.dsl.GameCreator
 
 object HelloWorldGame {
 
     data class HelloWorldModel(val values: MutableList<Boolean>, var points: Int)
-    val action = createActionType("play", Int::class)
-    val game = createGame<HelloWorldModel>("HelloWorld") {
+    val factory = GameCreator(HelloWorldModel::class)
+    val action = factory.action("play", Int::class)
+    val game = factory.game("HelloWorld") {
         setup(Int::class) {
             this.defaultConfig { 4 }
             this.init { HelloWorldModel((0 until config).map { false }.toMutableList(), 0) }

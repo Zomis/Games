@@ -1,9 +1,8 @@
 package net.zomis.games.impl
 
 import net.zomis.games.cards.CardZone
+import net.zomis.games.dsl.GameCreator
 import net.zomis.games.dsl.ReplayableScope
-import net.zomis.games.dsl.createActionType
-import net.zomis.games.dsl.createGame
 import kotlin.random.Random
 
 data class SetPiece(val count: Int, val shape: String, val filling: String, val color: String) {
@@ -113,8 +112,9 @@ object SetGame {
         return true
     }
 
-    val callSet = createActionType("set", SetAction::class)
-    val game = createGame<SetGameModel>("Set") {
+    val factory = GameCreator(SetGameModel::class)
+    val callSet = factory.action("set", SetAction::class)
+    val game = factory.game("Set") {
         setup(SetConfig::class) {
             players(1..16)
             defaultConfig {

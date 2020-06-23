@@ -278,7 +278,7 @@ object DungeonMayhemDsl {
     val play = factory.action("play", DungeonMayhemCard::class)
         .serialization(String::class, { it.name }, { key -> game.currentPlayer.hand.cards.first { it.name == key } })
     val target = factory.action("target", DungeonMayhemTarget::class)
-    val game = createGame<DungeonMayhem>("Dungeon Mayhem") {
+    val game = factory.game("Dungeon Mayhem") {
         setup(DungeonMayhemConfig::class) {
             players(2..4)
             defaultConfig { DungeonMayhemConfig() }

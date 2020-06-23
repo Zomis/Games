@@ -20,7 +20,9 @@ data class Action<T : Any, A : Any>(
     override val parameter: A
 ): Actionable<T, A>
 
-typealias GameSpec<T> = GameDsl<T>.() -> Unit
+class GameSpec<T : Any>(val name: String, val dsl: GameDsl<T>.() -> Unit) {
+    operator fun invoke(context: GameDsl<T>) = dsl(context)
+}
 typealias GameModelDsl<T, C> = GameModel<T, C>.() -> Unit
 typealias GameViewDsl<T> = GameView<T>.() -> Unit
 typealias GameRulesDsl<T> = GameRules<T>.() -> Unit
@@ -68,35 +70,15 @@ class GameActionCreator<T : Any, A : Any, S : Any>(
 }
 
 class GameCreator<T : Any>(val modelClass: KClass<T>) {
-    fun game(name: String, dsl: GameDsl<T>.() -> Unit): GameSpec<T> = dsl
+    fun game(name: String, dsl: GameDsl<T>.() -> Unit): GameSpec<T> = GameSpec(name, dsl)
     fun <A: Any> action(name: String, parameterType: KClass<A>): GameActionCreator<T, A, A>
         = GameActionCreator(name, parameterType, parameterType, {it}, {it})
 }
 
-fun <T : Any> createGame(name: String, dsl: GameDsl<T>.() -> Unit): GameSpec<T> {
-    return dsl
-}
-
-@Deprecated("Use GameCreator.action")
-data class ActionSerialization<A : Any, T : Any>(val serialize: (A) -> Any, val deserialize: ActionOptionsScope<T>.(Any) -> A)
-@Deprecated("Use GameCreator.action")
-data class ActionTypeImpl<A : Any>(
-    override val name: String,
-    override val parameterType: KClass<A>,
-    override val serializedType: KClass<*>,
-    val serialize: ActionSerialization<A, Any>
-): ActionType<A> {
-    override fun serialize(parameter: A): Any = serialize.serialize(parameter)
-    override fun <T: Any> deserialize(scope: ActionOptionsScope<T>, serialized: Any): A? = serialize.deserialize(scope as ActionOptionsScope<Any>, serialized)
-}
 interface ActionType<A : Any> {
     val name: String
     val parameterType: KClass<A>
     val serializedType: KClass<*>
     fun serialize(parameter: A): Any
     fun <T: Any> deserialize(scope: ActionOptionsScope<T>, serialized: Any): A?
-}
-@Deprecated("Use GameCreator.action")
-inline fun <reified A : Any> createActionType(name: String, parameterType: KClass<A>): ActionType<A> {
-    return ActionTypeImpl(name, parameterType, A::class, ActionSerialization({it}, {it as A}))
 }

@@ -4,10 +4,7 @@ import net.zomis.games.Map2DX
 import net.zomis.games.PlayerEliminationCallback
 import net.zomis.games.WinResult
 import net.zomis.games.common.Direction4
-import net.zomis.games.common.Point
 import net.zomis.games.dsl.GameCreator
-import net.zomis.games.dsl.createActionType
-import net.zomis.games.dsl.createGame
 
 object GridWorldGame {
 
@@ -43,7 +40,7 @@ object GridWorldGame {
     )
     val factory = GameCreator(GridWorldModel::class)
     val actionType = factory.action("move", Direction4::class).serializer(Int::class) { it.order() }
-    val game = createGame<GridWorldModel>("GridWorld") {
+    val game = factory.game("GridWorld") {
         setup(GridWorldConfig::class) {
             players(1..1)
             defaultConfig { GridWorldConfig(3, 2, 42L, 1, 3, 2) }
