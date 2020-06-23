@@ -228,7 +228,7 @@ object HanabiGame {
                     }
                 } else {
                     log {
-                        highlight(listOf(card.card.id))
+                        highlight(listOf(card.card.id.toString() + "-fail"))
                         "$player tried to play ${viewLink(card.card.toStateString(), "card", card.card.known(true))} but failed"
                     }
                 }

@@ -12,7 +12,7 @@
             <v-row>Discard</v-row>
             <CardZone>
               <div v-for="card in colorData.discard" class="discarded-card animate ma-1" :key="card.id"
-                  :class="{ ['color-' + card.color]: true, highlight: actions.highlights[card.id] }">
+                  :class="{ ['color-' + card.color]: true, highlight: actions.highlights[card.id], failHighlight: actions.highlights[card.id + '-fail'] }">
                 <span>{{ card.value }}</span>
               </div>
             </CardZone>
@@ -197,6 +197,10 @@ export default {
 .discarded-card.highlight {
   border: 1px solid yellowgreen !important;
   box-shadow: 0px 0px 5px 6px yellowgreen !important;
+}
+.discarded-card.failHighlight {
+  border: 1px solid red !important;
+  box-shadow: 0px 0px 5px 6px red !important;
 }
 
 

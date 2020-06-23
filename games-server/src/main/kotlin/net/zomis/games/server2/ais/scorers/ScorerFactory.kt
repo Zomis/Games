@@ -2,7 +2,6 @@ package net.zomis.games.server2.ais.scorers
 
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.Actionable
-import kotlin.reflect.KClass
 
 typealias ScorerAnalyzeProvider<T, Z> = (ScorerContext<T>) -> Z?
 
