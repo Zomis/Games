@@ -1,12 +1,15 @@
-package net.zomis.games.dsl.sourcedest
+package net.zomis.games.impl
 
+import net.zomis.games.WinResult
+import net.zomis.games.common.Point
+import net.zomis.games.common.PointMove
 import net.zomis.games.dsl.*
+import net.zomis.games.impl.ttt.TTOptions
+import net.zomis.games.impl.ttt.index
 import net.zomis.tttultimate.Direction8
 import net.zomis.tttultimate.TTBase
 import net.zomis.tttultimate.TTFactories
 import net.zomis.tttultimate.TTPlayer
-import kotlin.math.abs
-import kotlin.math.max
 
 abstract class TTControllerSourceDestination(val board: TTBase) {
     var currentPlayer: TTPlayer = TTPlayer.X
@@ -90,11 +93,12 @@ class TTQuixoController(game: TTBase): TTControllerSourceDestination(game) {
 
 }
 
-class TTSourceDestinationGames {
+object TTSourceDestinationGames {
 
-    val moveAction = createActionType("move", PointMove::class)
+    val factory = GameCreator(TTControllerSourceDestination::class)
+    val moveAction = factory.action("move", PointMove::class)
 
-    val gameQuixo = createGame<TTControllerSourceDestination>("Quixo") {
+    val gameQuixo = factory.game("Quixo") {
         val grid = gridSpec<TTBase> {
             size(model.board.sizeX, model.board.sizeY)
             getter { x, y -> model.board.getSub(x, y)!! }
@@ -103,8 +107,37 @@ class TTSourceDestinationGames {
             defaultConfig { TTOptions(5, 5, 5) }
             init { conf -> TTQuixoController(TTFactories().classicMNK(conf!!.m, conf.n, conf.k)) }
         }
-        logic(ttLogic())
+        rules(ttRules())
         view(ttView(grid))
+    }
+
+    private fun ttRules(): GameRules<TTControllerSourceDestination>.() -> Unit = {
+        allActions.precondition { playerIndex == game.currentPlayer.index() }
+        action(moveAction) {
+            choose {
+                options({ game.grid().filter { game.allowedSource(game.point(it)) } }) {source ->
+                    options({ game.grid().filter { game.allowedDestination(game.point(source), game.point(it)) } }) {destination ->
+                        parameter(PointMove(Point(source.x, source.y), Point(destination.x, destination.y)))
+                    }
+                }
+            }
+            requires {
+                game.allowedSource(game.point(action.parameter.source)) &&
+                        game.allowedDestination(game.point(action.parameter.source), game.point(action.parameter.destination))
+            }
+            effect {
+                game.perform(game.point(action.parameter.source), game.point(action.parameter.destination))
+            }
+        }
+        allActions.after {
+            if (game.board.isWon) {
+                if (game.board.wonBy.index() < 0) eliminations.eliminateRemaining(WinResult.DRAW)
+                else {
+                    eliminations.result(game.board.wonBy.index(), WinResult.WIN)
+                    eliminations.eliminateRemaining(WinResult.LOSS)
+                }
+            }
+        }
     }
 
     private val winner: (TTBase) -> Int? = {
@@ -127,27 +160,6 @@ class TTSourceDestinationGames {
     }
     private fun TTControllerSourceDestination.grid(): List<Point> {
         return this.board.subs().map { Point(it.x, it.y) }
-    }
-
-    private fun ttLogic(): GameLogicDsl<TTControllerSourceDestination> = {
-        winner { winner(it.board) }
-        action(moveAction) {
-            options {
-                optionFrom({ game -> game.grid().filter { game.allowedSource(game.point(it)) } }) {source ->
-                    optionFrom({ game -> game.grid().filter { game.allowedDestination(game.point(source), game.point(it)) } }) {destination ->
-                        actionParameter(PointMove(Point(source.x, source.y), Point(destination.x, destination.y)))
-                    }
-                }
-            }
-            allowed {
-                it.game.currentPlayer.index() == it.playerIndex &&
-                  it.game.allowedSource(it.game.point(it.parameter.source)) &&
-                    it.game.allowedDestination(it.game.point(it.parameter.source), it.game.point(it.parameter.destination))
-            }
-            effect {
-                it.game.perform(it.game.point(it.parameter.source), it.game.point(it.parameter.destination))
-            }
-        }
     }
 
 }

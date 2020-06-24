@@ -17,6 +17,11 @@ interface PlayerEliminationCallback {
 
     fun eliminateRemaining(winResult: WinResult)
     fun <T> eliminateBy(playersAndScores: List<Pair<Int, T>>, comparator: Comparator<T>)
+    fun singleWinner(playerIndex: Int) {
+        require(playerIndex in (0 until playerCount)) { "PlayerIndex must be within range (0 until $playerCount)" }
+        this.result(playerIndex, WinResult.WIN)
+        this.eliminateRemaining(WinResult.LOSS)
+    }
 }
 
 data class PlayerElimination(val playerIndex: Int, val winResult: WinResult, val position: Int)

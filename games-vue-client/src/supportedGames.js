@@ -3,14 +3,6 @@ if (typeof gamejs["games-js"] !== "undefined") {
   // This is needed when doing a production build, but is not used for `npm run dev` locally.
   gamejs = gamejs["games-js"];
 }
-/*
-Edit just one file instead of editing all the following files:
-- route/index.js
-- StartScreen.vue
-- Invites.vue
-- store.js
-- etc...
-*/
 
 import PlayGame from "@/components/PlayGame";
 
@@ -22,9 +14,14 @@ import HanabiConfig from "@/components/games/hanabi/HanabiConfig";
 import Splendor from "@/components/games/splendor/Splendor";
 import TreeViewGame from "@/components/games/TreeViewGame";
 import Skull from "@/components/games/skull/Skull";
-import ECSGame from "@/components/ecs/ECSGame";
 import DSLTTT from "@/components/games/DSLTTT";
 import TTT3D from "@/components/games/TTT3D";
+
+// ViewTypes for ActionLog
+import SplendorCard from "@/components/games/splendor/SplendorCard"
+import SplendorNoble from "@/components/games/splendor/SplendorNoble"
+import HanabiCard from "@/components/games/HanabiCard"
+import DungeonMayhemCard from "@/components/games/dungeon-mayhem/DungeonMayhemCard"
 
 import DslGameState from "./components/games/DslGameState";
 const defaultRouteProps = route => ({
@@ -70,13 +67,12 @@ const setActions = {
 const supportedGames = {
     "DSL-UR": {
         displayName: "Royal Game of UR",
-        dsl: new gamejs.net.zomis.games.dsl.DslUR().gameUR,
+        dsl: gamejs.net.zomis.games.impl.DslUR.gameUR,
         actions: {
             roll: () => "roll",
             move: (i) => `${i}`
         },
         component: RoyalGameOfUR,
-        routeProps: defaultRouteProps
     },
     "Hanabi": {
         displayName: "Hanabi",
@@ -93,40 +89,41 @@ const supportedGames = {
                 })
             })
         },
+        viewTypes: {
+            card: { component: HanabiCard, binds: (v) => ({ card: v, doubleView: true }) }
+        },
         component: Hanabi,
-        routeProps: defaultRouteProps
     },
     "Set": {
         dsl: true,
         enabled: false,
         actions: setActions,
         component: TreeViewGame,
-        routeProps: defaultRouteProps
     },
     "Splendor": {
-        dsl: gamejs.net.zomis.games.dsl.DslSplendor.splendorGame,
+        dsl: gamejs.net.zomis.games.impl.DslSplendor.splendorGame,
         enabled: true,
         actions: splendorActions,
         component: Splendor,
-        routeProps: defaultRouteProps
+        viewTypes: {
+            card: { component: SplendorCard, binds: (v) => ({ card: v }) },
+            noble: { component: SplendorNoble, binds: (v) => ({ noble: v }) },
+        },
     },
     "DSL-Connect4": {
         displayName: "Connect Four",
-        dsl: new gamejs.net.zomis.games.dsl.DslTTT().gameConnect4,
+        dsl: gamejs.net.zomis.games.impl.ttt.DslTTT.gameConnect4,
         actions: tttActions,
         component: DSLTTT,
-        routeProps: defaultRouteProps
     },
     "Quixo": {
         displayName: "Quixo",
-        dsl: new gamejs.net.zomis.games.dsl.sourcedest.TTSourceDestinationGames().gameQuixo,
+        dsl: gamejs.net.zomis.games.impl.TTSourceDestinationGames.gameQuixo,
         actions: tttMoveActions,
         component: DSLTTT,
-        routeProps: defaultRouteProps
     },
     "Skull": {
         dsl: gamejs.net.zomis.games.impl.SkullGame.game,
-        enabled: true,
         actions: {
             play: (index) => "hand-" + index,
             bet: (index) => "bet-" + index,
@@ -143,49 +140,40 @@ const supportedGames = {
             play: (index) => "play-" + index,
             target: (target) => "target:player-" + target.player + ';shield-' + target.shieldCard + ';discarded-' + target.discardedCard
         },
+        viewTypes: {
+            card: { component: DungeonMayhemCard, binds: (v) => ({ card: v, actions: { available: {} } }) }
+        },
         component: DungeonMayhem
     },
     "Artax": {
         displayName: "Artax",
-        dsl: gamejs.net.zomis.games.dsl.sourcedest.ArtaxGame.gameArtax,
+        dsl: gamejs.net.zomis.games.impl.ArtaxGame.gameArtax,
         actions: tttMoveActions,
         component: DSLTTT,
-        routeProps: defaultRouteProps
     },
     "DSL-Reversi": {
         displayName: "Reversi",
-        dsl: new gamejs.net.zomis.games.dsl.DslTTT().gameReversi,
+        dsl: gamejs.net.zomis.games.impl.ttt.DslTTT.gameReversi,
         actions: tttActions,
         component: DSLTTT,
-        routeProps: defaultRouteProps
     },
     "DSL-TTT3D": {
         displayName: "3D Tic-Tac-Toe / Connect Four",
-        dsl: new gamejs.net.zomis.games.dsl.DslTTT3D().game,
+        dsl: gamejs.net.zomis.games.impl.ttt.TTT3DGame.game,
         actions: tttActions,
         component: TTT3D,
-        routeProps: defaultRouteProps
     },
     "DSL-UTTT": {
         displayName: "Tic-Tac-Toe Ultimate",
-        dsl: new gamejs.net.zomis.games.dsl.DslTTT().gameUTTT,
+        dsl: gamejs.net.zomis.games.impl.ttt.DslTTT.gameUTTT,
         actions: tttActions,
         component: UTTT,
-        routeProps: defaultRouteProps
-    },
-    "UTTT-ECS": {
-        enabled: false,
-        dsl: false,
-        store: null,
-        component: ECSGame,
-        routeProps: defaultRouteProps
     },
     "DSL-TTT": {
         displayName: "Tic-Tac-Toe",
-        dsl: new gamejs.net.zomis.games.dsl.DslTTT().game,
+        dsl: gamejs.net.zomis.games.impl.ttt.DslTTT.game,
         actions: tttActions,
         component: DSLTTT,
-        routeProps: defaultRouteProps
     }
 }
 

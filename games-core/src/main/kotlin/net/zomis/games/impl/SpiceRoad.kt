@@ -1,20 +1,18 @@
 package net.zomis.games.impl
 
 import net.zomis.games.cards.CardZone
-import net.zomis.games.dsl.ActionChoicesNextScope
-import net.zomis.games.dsl.createActionType
-import net.zomis.games.dsl.createGame
-import net.zomis.games.dsl.mergeWith
+import net.zomis.games.dsl.*
 import kotlin.math.absoluteValue
 
 object SpiceRoadDsl {
     data class PlayParameter(val card: SpiceRoadGameModel.ActionCard, val remove: SpiceRoadGameModel.Caravan, val add: SpiceRoadGameModel.Caravan)
 
-    val play = createActionType("play", PlayParameter::class)
-    val claim = createActionType("claim", SpiceRoadGameModel.PointCard::class)
-    val rest = createActionType("rest", Unit::class)
-    val acquire = createActionType("acquire", SpiceRoadGameModel.ActionCard::class)
-    val game = createGame<SpiceRoadGameModel>("Spice Road") {
+    val factory = GameCreator(SpiceRoadGameModel::class)
+    val play = factory.action("play", PlayParameter::class)
+    val claim = factory.action("claim", SpiceRoadGameModel.PointCard::class)
+    val rest = factory.action("rest", Unit::class)
+    val acquire = factory.action("acquire", SpiceRoadGameModel.ActionCard::class)
+    val game = factory.game("Spice Road") {
         this.setup {
             this.players(2..5)
             this.init {

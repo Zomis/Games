@@ -2,7 +2,7 @@
     <Actionable :actions="actions" :actionable="actionable">
         <v-card>
             <v-card-title>
-                <div :class="{ actionable: actions.available[action] }">
+                <div>
                     {{ card.name }}
                 </div>
             </v-card-title>
@@ -25,9 +25,32 @@
 <script>
 import Actionable from "@/components/games/common/Actionable"
 
+const iconsMap = {
+    ATTACK: 'mdi-sword',
+    PLAY_AGAIN: 'mdi-flash',
+    HEAL: 'mdi-heart',
+    DRAW: 'mdi-plus-box-multiple',
+    SHIELD: 'mdi-shield',
+    FIREBALL: 'mdi-fire',
+    STEAL_SHIELD: 'mdi-shield-home',
+    SWAP_HITPOINTS: 'mdi-rotate-3d-variant',
+    PICK_UP_CARD: 'mdi-delete-restore',
+    DESTROY_ALL_SHIELDS: 'mdi-shield-off',
+    PROTECTION_ONE_TURN: 'mdi-account-lock',
+    DESTROY_SINGLE_SHIELD: 'mdi-shield-half-full',
+    STEAL_CARD: 'mdi-credit-card-scan',
+    HEAL_AND_ATTACK_FOR_EACH_OPPONENT: 'mdi-hexagram-outline',
+    ALL_DISCARD_AND_DRAW: 'mdi-account-box-multiple'
+}
+
 export default {
     name: "DungeonMayhemCard",
-    props: ["card", "actionable", "actions", "icons"],
+    props: ["card", "actionable", "actions"],
+    data() {
+        return {
+            icons: iconsMap
+        }
+    },
     components: {
         Actionable
     }

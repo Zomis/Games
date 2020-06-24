@@ -1,8 +1,8 @@
 package net.zomis.games.ais
 
-import net.zomis.games.dsl.DslSplendor
 import net.zomis.games.dsl.impl.GameControllerContext
 import net.zomis.games.dsl.impl.GameSetupImpl
+import net.zomis.games.impl.DslSplendor
 import net.zomis.games.server2.ais.gamescorers.SplendorScorers
 
 class AIPlayTest {

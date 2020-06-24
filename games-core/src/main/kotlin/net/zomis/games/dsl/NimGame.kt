@@ -21,8 +21,9 @@ object NimGame {
     data class NimConfig(val piles: List<Int>, val lastWins: Boolean, val maxPerTurn: Int)
     data class NimMove(val pileIndex: Int, val amount: Int)
 
-    val nimAction = createActionType("Take", NimMove::class)
-    val game = createGame<Nim>("Nim") {
+    val factory = GameCreator(Nim::class)
+    val nimAction = factory.action("Take", NimMove::class)
+    val game = factory.game("Nim") {
         setup(NimConfig::class) {
             players(2..2)
             defaultConfig {
@@ -32,21 +33,21 @@ object NimGame {
                 Nim(this.config.piles.toMutableList(), this.playerCount, this.config.lastWins, this.config.maxPerTurn)
             }
         }
-        logic {
+        rules {
             action(nimAction) {
-                options {
-                    optionFrom({ it.piles.indices }) {pileIndex ->
-                        optionFrom({ 0..min(it.maxPerTurn, it.piles[pileIndex]) }) {amount ->
-                            actionParameter(NimMove(pileIndex, amount))
+                choose {
+                    options({ game.piles.indices }) {pileIndex ->
+                        options({ 0..min(game.maxPerTurn, game.piles[pileIndex]) }) {amount ->
+                            parameter(NimMove(pileIndex, amount))
                         }
                     }
                 }
-                effect {
-                    it.game.move(it.parameter, this.playerEliminations)
+                requires {
+                    val pileRemaining = game.piles[action.parameter.pileIndex]
+                    action.parameter.amount > pileRemaining && action.parameter.amount <= game.maxPerTurn
                 }
-                allowed {
-                    val pileRemaining = it.game.piles[it.parameter.pileIndex]
-                    it.parameter.amount > pileRemaining && it.parameter.amount <= it.game.maxPerTurn
+                effect {
+                    game.move(action.parameter, this.playerEliminations)
                 }
             }
         }

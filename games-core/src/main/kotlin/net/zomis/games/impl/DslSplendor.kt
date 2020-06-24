@@ -1,10 +1,10 @@
-package net.zomis.games.dsl
+package net.zomis.games.impl
 
 import net.zomis.games.PlayerEliminationCallback
 import net.zomis.games.cards.CardZone
-import net.zomis.games.dsl.sourcedest.next
-import net.zomis.games.impl.splendorCards
-import net.zomis.games.impl.splendorCardsFromMultilineCSV
+import net.zomis.games.common.next
+import net.zomis.games.dsl.GameCreator
+import net.zomis.games.dsl.ReplayableScope
 import kotlin.math.absoluteValue
 import kotlin.math.max
 
@@ -48,7 +48,7 @@ data class SplendorPlayer(val index: Int) {
 data class SplendorCard(val level: Int, val discounts: Money, val costs: Money, val points: Int) {
     // Possible to support multiple discounts on the same card. Because why not!
     constructor(level: Int, discount: MoneyType, costs: Money, points: Int):
-        this(level, Money(discount to 1), costs, points)
+            this(level, Money(discount to 1), costs, points)
 
     val id: String get() = toStateString()
 
@@ -120,9 +120,7 @@ data class Money(val moneys: MutableMap<MoneyType, Int> = mutableMapOf(), val wi
 }
 
 data class MoneyChoice(val moneys: List<MoneyType>) {
-    fun toMoney(): Money {
-        return Money(moneys.groupBy { it }.mapValues { it.value.size }.toMutableMap())
-    }
+    fun toMoney(): Money = Money(moneys.groupBy { it }.mapValues { it.value.size }.toMutableMap())
 }
 
 fun startingStockForPlayerCount(playerCount: Int): Int {
@@ -150,14 +148,7 @@ class SplendorGame(val config: SplendorConfig, val eliminations: PlayerEliminati
     var turnsLeft = -1
     var roundNumber: Int = 1
 
-    private fun randomType(): MoneyType {
-        return MoneyType.values().toList().shuffled().first()
-    }
-    private fun randomCard(level: Int): SplendorCard {
-        return SplendorCard(level, randomType(), Money(randomType() to level * 2), level)
-    }
-
-    fun endTurnCheck() {
+    fun endTurnCheck(): SplendorNoble? {
         if (this.stock.negativeAmount() > 0) {
             throw IllegalStateException("Stock is negative")
         }
@@ -173,7 +164,7 @@ class SplendorGame(val config: SplendorConfig, val eliminations: PlayerEliminati
         }
 
         // Check money count > maxMoney
-        if (this.currentPlayer.chips.count > config.maxMoney) return // Need to discard some money
+        if (this.currentPlayer.chips.count > config.maxMoney) return null // Need to discard some money
 
         // Check noble conditions
         val noble = this.nobles.cards.find { it.requirementsFulfilled(currentPlayer) }
@@ -198,12 +189,13 @@ class SplendorGame(val config: SplendorConfig, val eliminations: PlayerEliminati
         if (turnsLeft == 0) {
             eliminations.eliminateBy(players.mapIndexed { index, splendorPlayer -> index to splendorPlayer }, compareBy({ it.points }, { -it.owned.size }))
         }
+        return noble
     }
 
     val playerCount = eliminations.playerCount
     val players: List<SplendorPlayer> = (0 until playerCount).map { SplendorPlayer(it) }
     val board: CardZone<SplendorCard> = CardZone(mutableListOf())
-    var stock: Money = MoneyType.values().fold(Money()) {money, type -> money + type.toMoney(startingStockForPlayerCount(playerCount))}.plus(Money(mutableMapOf(), 5))
+    var stock: Money = MoneyType.values().fold(Money()) { money, type -> money + type.toMoney(startingStockForPlayerCount(playerCount))}.plus(Money(mutableMapOf(), 5))
     var currentPlayerIndex: Int = 0
 
     val currentPlayer: SplendorPlayer
@@ -220,21 +212,40 @@ data class SplendorConfig(
 
 object DslSplendor {
 
-    val buy = createActionType("buy", String::class)
-    val buyReserved = createActionType("buyReserved", String::class)
-    val takeMoney = createActionType("takeMoney", MoneyChoice::class)
-    val takeSingle = createActionType("takeMoneySingle", MoneyType::class)
-    val reserve = createActionType("reserve", String::class)
-    val discardMoney = createActionType("discardMoney", MoneyType::class)
-    val splendorGame = createGame<SplendorGame>("Splendor") {
+    fun viewMoney(money: Money): Map<String, Int> {
+        return money.moneys.entries.sortedBy { it.key.name }.map { it.key.name to it.value }
+                .let { if (money.wildcards > 0) it.plus("wildcards" to money.wildcards) else it }.toMap()
+    }
+    fun viewNoble(noble: SplendorNoble): Map<String, Any>
+        = mapOf("points" to 3, "requirements" to viewMoney(noble.requirements), "id" to noble.toStateString())
+    fun viewCard(card: SplendorCard): Map<String, Any?> {
+        return mapOf(
+                "id" to card.id,
+                "level" to card.level,
+                "discount" to viewMoney(card.discounts),
+                "costs" to viewMoney(card.costs),
+                "points" to card.points
+        )
+    }
+
+    val factory = GameCreator(SplendorGame::class)
+
+    val buy = factory.action("buy", SplendorCard::class).serializer(String::class) { it.toStateString() }
+    val buyReserved = factory.action("buyReserved", SplendorCard::class).serializer(String::class) { it.toStateString() }
+    val takeMoney = factory.action("takeMoney", MoneyChoice::class)
+    val reserve = factory.action("reserve", SplendorCard::class).serializer(String::class) { it.toStateString() }
+    val discardMoney = factory.action("discardMoney", MoneyType::class)
+    val splendorGame = factory.game("Splendor") {
         setup(SplendorConfig::class) {
             players(2..4)
-            defaultConfig { SplendorConfig(
-                useNobles = true,
-                maxMoney = 10,
-                targetPoints = 15,
-                showReservedCards = false
-            )}
+            defaultConfig {
+                SplendorConfig(
+                        useNobles = true,
+                        maxMoney = 10,
+                        targetPoints = 15,
+                        showReservedCards = false
+                )
+            }
             init {
                 SplendorGame(config, eliminationCallback)
             }
@@ -259,56 +270,62 @@ object DslSplendor {
             allActions.precondition { game.currentPlayerIndex == playerIndex }
 
             action(buy) {
-                options { game.board.map { c -> c.id } }
-                requires { game.currentPlayer.canBuy(game.board.cards.first { c -> c.id == action.parameter }) }
+                options { game.board.cards }
+                requires { game.currentPlayer.canBuy(action.parameter) }
                 effect {
-                    val card = game.board.cards.first { c -> c.id == action.parameter }
+                    val card = action.parameter
                     val actualCost = game.currentPlayer.pay(card.costs)
                     game.currentPlayer.owned.cards.add(card)
                     game.stock += actualCost
                     replaceCard(replayable, game, card)
+                    log { "$player bought ${viewLink("card", "card", viewCard(card))}" }
                 }
             }
 
-            action(buyReserved).options { game.currentPlayer.reserved.map { c -> c.id } }
-            action(buyReserved).requires { game.currentPlayer.canBuy(game.currentPlayer.reserved.cards.first { c -> c.id == action.parameter }) }
+            action(buyReserved).options { game.currentPlayer.reserved.cards }
+            action(buyReserved).requires { game.currentPlayer.canBuy(action.parameter) }
             action(buyReserved).effect {
-                val param = game.currentPlayer.reserved.cards.first { c -> c.id == action.parameter }
+                val param = action.parameter
                 val card = game.currentPlayer.reserved.card(param)
                 val actualCost = game.currentPlayer.pay(card.card.costs)
                 game.stock += actualCost
                 card.moveTo(game.currentPlayer.owned)
+                log { "$player bought ${viewLink("a reserved card", "card", viewCard(card.card))}" }
             }
 
             action(discardMoney) {
                 forceUntil { game.currentPlayer.chips.count <= game.config.maxMoney }
+                precondition { game.currentPlayer.chips.count > game.config.maxMoney }
                 options { MoneyType.values().toList() }
                 requires { game.currentPlayer.chips.hasWithoutWildcards(action.parameter.toMoney(1)) }
                 effect {
                     val money = action.parameter.toMoney(1)
                     game.currentPlayer.chips -= money
                     game.stock += money
+                    log { "$player discards $action" }
                 }
             }
 
-            action(reserve).options { game.board.map { c -> c.id } }
+            action(reserve).options { game.board.cards }
             action(reserve).requires { game.currentPlayer.reserved.size < 3 }
             action(reserve).effect {
-                val card = game.board.card(game.board.cards.first { c -> c.id == action.parameter })
+                val card = game.board.card(action.parameter)
                 game.currentPlayer.reserved.cards.add(card.card)
                 val wildcardIfAvailable = if (game.stock.wildcards > 0) Money(mutableMapOf(), 1) else Money()
                 game.stock -= wildcardIfAvailable
                 game.currentPlayer.chips += wildcardIfAvailable
                 replaceCard(replayable, game, card.card)
+                logSecret(action.playerIndex) { "$player reserved ${viewLink("card", "card", viewCard(card.card))}" }
+                    .publicLog { "$player reserved a level ${card.card.level} card" }
             }
 
             action(takeMoney).choose {
-                options({MoneyType.values().asIterable()}) { first ->
-                    parameter(MoneyChoice(listOf(first))) // TODO: How to perform this action of only taking one or two?
-                    options({MoneyType.values().asIterable()}) {second ->
+                options({ MoneyType.values().asIterable() }) { first ->
+                    parameter(MoneyChoice(listOf(first)))
+                    options({ MoneyType.values().asIterable() }) { second ->
                         parameter(MoneyChoice(listOf(first, second)))
                         if (first != second) {
-                            options({MoneyType.values().asIterable().minus(first).minus(second)}) {third ->
+                            options({ MoneyType.values().asIterable().minus(first).minus(second) }) { third ->
                                 parameter(MoneyChoice(listOf(first, second, third)))
                             }
                         }
@@ -331,55 +348,47 @@ object DslSplendor {
             action(takeMoney).effect {
                 game.stock -= action.parameter.toMoney()
                 game.currentPlayer.chips += action.parameter.toMoney()
+                log { "$player took ${action.moneys}" }
             }
 
-            allActions.after { game.endTurnCheck() }
-        }
-        fun viewMoney(money: Money): Map<String, Int> {
-            return money.moneys.entries.sortedBy { it.key.name }.map { it.key.name to it.value }
-                .let { if (money.wildcards > 0) it.plus("wildcards" to money.wildcards) else it }.toMap()
-        }
-        fun viewNoble(noble: SplendorNoble): Map<String, Any> = mapOf("points" to 3, "requirements" to viewMoney(noble.requirements))
-        fun viewCard(card: SplendorCard): Map<String, Any?> {
-            return mapOf(
-                "id" to card.id,
-                "level" to card.level,
-                "discount" to viewMoney(card.discounts),
-                "costs" to viewMoney(card.costs),
-                "points" to card.points
-            )
+            allActions.after {
+                val noble = game.endTurnCheck()
+                if (noble != null) {
+                    log { "$player got ${viewLink("a noble", "noble", viewNoble(noble))}" }
+                }
+            }
         }
         view {
             currentPlayer { it.currentPlayerIndex }
             eliminations()
             value("viewer") { viewer }
             value("round") { it.roundNumber }
-            value("cardLevels") {game ->
+            value("cardLevels") { game ->
                 game.board.cards.sortedBy { -it.level }.groupBy { it.level }.mapValues {
                     mapOf(
-                        "level" to it.key,
-                        "remaining" to game.deck.cards.count { c -> c.level == it.key },
-                        "board" to it.value.map { c -> viewCard(c) }
+                            "level" to it.key,
+                            "remaining" to game.deck.cards.count { c -> c.level == it.key },
+                            "board" to it.value.map { c -> viewCard(c) }
                     )
                 }.values.toList()
             }
-            value("stock") {game ->
+            value("stock") { game ->
                 MoneyType.values().associate { it to game.stock.moneys[it] }.plus("wildcards" to game.stock.wildcards)
             }
             value("nobles") {
-                it.nobles.map {noble -> viewNoble(noble) }
+                it.nobles.map { noble -> viewNoble(noble) }
             }
-            value("players") {game ->
+            value("players") { game ->
                 game.players.map { player ->
                     val reservedPair = if (player.index == viewer || game.config.showReservedCards)
                         "reservedCards" to player.reserved.map { viewCard(it) }
-                            else "reserved" to player.reserved.size
+                    else "reserved" to player.reserved.size
                     mapOf(
-                        "points" to player.points,
-                        "money" to viewMoney(player.chips).filter { it.value > 0 },
-                        "nobles" to player.nobles.cards.map { viewNoble(it) },
-                        "discounts" to viewMoney(player.discounts()),
-                        reservedPair
+                            "points" to player.points,
+                            "money" to viewMoney(player.chips).filter { it.value > 0 },
+                            "nobles" to player.nobles.cards.map { viewNoble(it) },
+                            "discounts" to viewMoney(player.discounts()),
+                            reservedPair
                     )
                 }
             }
@@ -396,7 +405,4 @@ object DslSplendor {
         game.deck.card(replacementCard).moveTo(game.board)
     }
 
-    private fun isCurrentPlayer(action: Action<SplendorGame, *>): Boolean {
-        return action.game.currentPlayerIndex == action.playerIndex
-    }
 }

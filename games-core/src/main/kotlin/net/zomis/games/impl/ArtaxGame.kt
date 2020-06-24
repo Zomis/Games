@@ -1,15 +1,16 @@
-package net.zomis.games.dsl.sourcedest
+package net.zomis.games.impl
 
 import net.zomis.games.Map2DPoint
 import net.zomis.games.Map2DX
 import net.zomis.games.PlayerEliminationCallback
 import net.zomis.games.WinResult
+import net.zomis.games.common.Point
+import net.zomis.games.common.PointMove
 import net.zomis.games.dsl.*
 import net.zomis.tttultimate.Direction8
 import kotlin.math.abs
 import kotlin.math.max
 
-fun Int.next(playerCount: Int): Int = (this + 1) % playerCount
 class TTArtax(private val eliminationCallback: PlayerEliminationCallback,
           playerCount: Int, sizeX: Int, sizeY: Int) {
     val board = Map2DX<Int?>(sizeX, sizeY) { _, _ -> null }
@@ -106,10 +107,11 @@ class TTArtax(private val eliminationCallback: PlayerEliminationCallback,
 
 }
 
-private val moveAction = createActionType("move", PointMove::class)
 object ArtaxGame {
 
-    val gameArtax = createGame<TTArtax>("Artax") {
+    val factory = GameCreator(TTArtax::class)
+    val moveAction = factory.action("move", PointMove::class)
+    val gameArtax = factory.game("Artax") {
         val grid = gridSpec<Int?> {
             size(model.board.sizeX, model.board.sizeY)
             getter(model.board::get)
@@ -119,24 +121,22 @@ object ArtaxGame {
             defaultConfig { Point(7, 7) }
             init { TTArtax(eliminationCallback, playerCount, config.x, config.y) }
         }
-        logic {
+        rules {
             action(moveAction) {
-                options {
-                    optionFrom({ game -> game.board.points().filter { game.allowedSource(game.board.point(it)) } }) {source ->
-                        optionFrom({ game -> game.board.points().filter { game.allowedDestination(game.board.point(source), game.board.point(it)) } }) {destination ->
-                            actionParameter(PointMove(Point(source.x, source.y), Point(destination.x, destination.y)))
+                choose {
+                    options({ game.board.points().filter { game.allowedSource(game.board.point(it)) } }) {source ->
+                        options({ game.board.points().filter { game.allowedDestination(game.board.point(source), game.board.point(it)) } }) {destination ->
+                            parameter(PointMove(Point(source.x, source.y), Point(destination.x, destination.y)))
                         }
                     }
                 }
-                allowed {
-                    it.game.currentPlayer == it.playerIndex &&
-                        it.game.allowedSource(it.game.board.point(it.parameter.source)) &&
-                        it.game.allowedDestination(it.game.board.point(it.parameter.source),
-                            it.game.board.point(it.parameter.destination))
+                requires { game.currentPlayer == action.playerIndex }
+                requires { game.allowedSource(game.board.point(action.parameter.source)) }
+                requires {
+                    game.allowedDestination(game.board.point(action.parameter.source), game.board.point(action.parameter.destination))
                 }
                 effect {
-                    it.game.perform(it.game.board.point(it.parameter.source),
-                        it.game.board.point(it.parameter.destination))
+                    game.perform(game.board.point(action.parameter.source), game.board.point(action.parameter.destination))
                 }
             }
         }

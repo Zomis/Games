@@ -2,8 +2,9 @@ package net.zomis.games.impl
 
 import net.zomis.games.WinResult
 import net.zomis.games.cards.CardZone
+import net.zomis.games.common.PlayerIndex
+import net.zomis.games.common.next
 import net.zomis.games.dsl.*
-import net.zomis.games.dsl.sourcedest.next
 
 enum class SkullCard {
     SKULL,
@@ -50,10 +51,6 @@ class SkullGameModel(config: SkullGameConfig, playerCount: Int): Viewable {
     var currentPlayerIndex: Int = 0
     val currentPlayer get() = players[currentPlayerIndex]
 
-    fun nextTurn() {
-        this.currentPlayerIndex = this.currentPlayerIndex.next(players.size)
-    }
-
     fun newRound() {
         this.players.filter { it.totalCards > 0 }.forEach {
             it.played.moveAllTo(it.hand)
@@ -76,12 +73,14 @@ class SkullGameModel(config: SkullGameConfig, playerCount: Int): Viewable {
 
 object SkullGame {
 
-    val bet = createActionType("bet", Int::class)
-    val pass = createActionType("pass", Unit::class)
-    val choose = createActionType("choose", SkullPlayer::class, ActionSerialization<SkullPlayer, SkullGameModel>({ it.index }, { game.players[it as Int] }))
-    val discard = createActionType("discard", SkullCard::class)
-    val play = createActionType("play", SkullCard::class)
-    val game = createGame<SkullGameModel>("Skull") {
+    val factory = GameCreator(SkullGameModel::class)
+
+    val bet = factory.action("bet", Int::class)
+    val pass = factory.action("pass", Unit::class)
+    val choose = factory.action("choose", SkullPlayer::class).serialization(Int::class, { it.index }, { game.players[it] })
+    val discard = factory.action("discard", SkullCard::class)
+    val play = factory.action("play", SkullCard::class)
+    val game = factory.game("Skull") {
         setup(SkullGameConfig::class) {
             players(3..16)
             defaultConfig { SkullGameConfig() }
@@ -102,6 +101,7 @@ object SkullGame {
             action(pass).requires { game.players.any { it.bet > 0 } }
             action(pass).requires { game.players.count { !it.pass } > 1 }
             action(pass).effect { game.currentPlayer.pass = true }
+            action(pass).effect { log { "$player passes" } }
             allActions.after { while (game.currentPlayer.pass || game.currentPlayer.totalCards == 0) nextTurn(game) }
             action(bet).requires {
                 val maxBet = game.players.maxBy { it.bet }!!.bet
@@ -114,11 +114,20 @@ object SkullGame {
                 }
             }
 
+            action(play).effect {
+                logSecret(action.playerIndex) { "$player played $action" }.publicLog { "$player played a card" }
+            }
             action(play).after { nextTurn(game) }
             action(pass).after { nextTurn(game) }
+            action(bet).effect { log { "$player bets $action" } }
             action(bet).after { nextTurn(game) }
 
-            action(choose).effect { action.parameter.let { it.played.card(it.played.cards.last()).moveTo(it.chosen) } }
+            action(choose).effect {
+                val player = action.parameter
+                val chosenCard = player.played.cards.last()
+                player.played.card(chosenCard).moveTo(player.chosen)
+                log { "${this.player} choose ${player(action.index)} and revealed $chosenCard" }
+            }
             action(choose).requires { action.parameter == game.currentPlayer || game.currentPlayer.played.cards.isEmpty() }
             action(choose).requires { game.currentPlayer.bet > 0 && !game.currentPlayer.pass && game.players.count { !it.pass } == 1 }
             action(choose).requires { action.parameter.played.cards.isNotEmpty() }
@@ -127,10 +136,16 @@ object SkullGame {
                 val skullPlayer = game.players.find { it.chosen.cards.contains(SkullCard.SKULL) }
                 if (skullPlayer != null) {
                     game.choseOwnSkull = skullPlayer == game.currentPlayer
+                    if (game.choseOwnSkull) {
+                        log { "$player chose their own and will have to choose a card to discard" }
+                    }
                     game.currentPlayer.chosen.moveAllTo(game.currentPlayer.hand)
                     game.currentPlayer.played.moveAllTo(game.currentPlayer.hand)
                     if (!game.choseOwnSkull) {
-                        game.currentPlayer.hand.random(replayable, 1, "lost") { it.name }.forEach { it.remove() }
+                        game.currentPlayer.hand.random(replayable, 1, "lost") { it.name }.forEach {
+                            logSecret(action.playerIndex) { "$player lost a ${it.card}" }.publicLog { "$player lost a card" }
+                            it.remove()
+                        }
                     }
                     game.newRound() // reset boards, bets and pass values
                     game.currentPlayerIndex = skullPlayer.index
@@ -139,6 +154,7 @@ object SkullGame {
             action(choose).after {
                 if (game.players.flatMap { it.chosen.cards }.count { it == SkullCard.FLOWER } == game.currentPlayer.bet && game.currentPlayer.bet > 0) {
                     game.currentPlayer.points++
+                    log { "$player completed the bet of ${game.currentPlayer.bet} and got a point!" }
                     game.newRound()
                     game.currentPlayerIndex = action.playerIndex
                 }
@@ -155,6 +171,7 @@ object SkullGame {
             action(discard).forceUntil { !game.choseOwnSkull }
             action(discard).options { game.currentPlayer.hand.cards }
             action(discard).effect {
+                logSecret(action.playerIndex) { "$player discarded $action" }
                 game.currentPlayer.hand.card(action.parameter).remove()
                 game.choseOwnSkull = false
             }
@@ -162,6 +179,7 @@ object SkullGame {
             allActions.after {
                 val emptyPlayer = game.players.find { it.totalCards == 0 && eliminations.remainingPlayers().contains(it.index) }
                 if (emptyPlayer != null) {
+                    log { "${player(emptyPlayer.index)} lost all their cards and is out of the game" }
                     emptyPlayer.bet = 0
                     emptyPlayer.pass = true
                     eliminations.result(emptyPlayer.index, WinResult.LOSS)

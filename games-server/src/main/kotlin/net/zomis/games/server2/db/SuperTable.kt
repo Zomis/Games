@@ -6,7 +6,6 @@ import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec
 import com.amazonaws.services.dynamodbv2.model.*
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.common.convertFromDBFormat
 import net.zomis.common.convertToDBFormat
@@ -150,7 +149,12 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         val epochMilli = Instant.now().toEpochMilli()
         val serverGame = move.game
         val moveIndex = serverGame.nextMoveIndex()
-        val moveData = convertToDBFormat(move.move)
+        val dbMove = if (serverGame.obj is GameImpl<*>) {
+            val gameImpl = serverGame.obj as GameImpl<*>
+            val actionType = gameImpl.actions.type(move.moveType)!!.actionType
+            actionType.serialize(move.move)
+        } else { move.move }
+        val moveData = convertToDBFormat(dbMove)
         val state: Any? = gameRandomnessState(serverGame)
         val updates = mutableListOf(
             AttributeUpdate(Fields.MOVE_TIME.fieldName).put(epochMilli),

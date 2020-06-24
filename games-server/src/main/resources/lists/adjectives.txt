@@ -175,7 +175,6 @@ bitter
 cool
 creamy
 delicious
-disgusting
 fresh
 greasy
 juicy
@@ -240,3 +239,4 @@ Jagged
 Grand
 Shiny
 Rusty
+friendly

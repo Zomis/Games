@@ -1,14 +1,18 @@
 package net.zomis.games.dsl.impl
 
 import net.zomis.games.PlayerEliminations
-import net.zomis.games.WinResult
-import net.zomis.games.dsl.*
+import net.zomis.games.common.PlayerIndex
+import net.zomis.games.dsl.Actionable
+import net.zomis.games.dsl.GameFactoryScope
+import net.zomis.games.dsl.GameSpec
+import net.zomis.games.dsl.Viewable
 import kotlin.reflect.KClass
 
 class GameControllerContext<T : Any>(
     override val game: GameImpl<T>, override val playerIndex: Int
 ): GameControllerScope<T> {
     override val model: T get() = game.model
+    fun view(): Map<String, Any?> = game.view(playerIndex)
 }
 interface GameControllerScope<T : Any> {
     val game: GameImpl<T>
@@ -46,14 +50,12 @@ class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override va
     override val eliminationCallback = PlayerEliminations(playerCount)
     val model = setupContext.model.factory(this, config)
     private val replayState = ReplayState(stateKeeper, eliminationCallback)
-    private val logic = GameLogicContext(model, replayState)
     private val rules = GameRulesContext(model, replayState, eliminationCallback)
     init {
         setupContext.model.onStart(replayState, model)
-        setupContext.logicDsl?.invoke(logic)
         setupContext.rulesDsl?.invoke(rules)
     }
-    val actions = ActionsImpl(model, logic, rules, replayState)
+    val actions = ActionsImpl(model, rules, replayState)
 
     fun copy(copier: (source: T, destination: T) -> Unit): GameImpl<T> {
         val copy = GameImpl(setupContext, playerCount, config, stateKeeper)
@@ -74,18 +76,6 @@ class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override va
 
     fun isGameOver(): Boolean {
         return eliminationCallback.isGameOver()
-    }
-
-    fun stateCheck() {
-        val winner = logic.winner(model)
-        if (winner != null) {
-            if (winner < 0) {
-                eliminationCallback.eliminateRemaining(WinResult.DRAW)
-                return
-            }
-            eliminationCallback.result(winner, WinResult.WIN)
-            eliminationCallback.eliminateRemaining(WinResult.LOSS)
-        }
     }
 
     fun viewRequest(playerIndex: PlayerIndex, key: String, params: Map<String, Any>): Any? {

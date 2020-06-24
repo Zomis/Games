@@ -1,6 +1,7 @@
 package net.zomis.games.dsl.impl
 
 import net.zomis.games.PlayerEliminations
+import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
 import kotlin.reflect.KClass
 
@@ -44,7 +45,7 @@ class GameRulesContext<T : Any>(
         return this.ruleList.keys.toSet()
     }
 
-    fun actionType(actionType: String): ActionTypeImplEntry<T, Any, Actionable<T, Any>>? {
+    fun actionType(actionType: String): ActionTypeImplEntry<T, Any>? {
         return this.ruleList[actionType].let {
             if (it != null) { ActionTypeImplEntry(model, replayable, it.actionDefinition, it) } else null
         }
@@ -78,14 +79,26 @@ class ActionOptionsContext<T : Any>(
     override val actionType: String,
     override val playerIndex: Int
 ) : ActionOptionsScope<T>
+
 class ActionRuleContext<T : Any, A : Any>(
     override val game: T,
     override val action: Actionable<T, A>,
     override val eliminations: PlayerEliminations,
     override val replayable: ReplayableScope
 ): ActionRuleScope<T, A> {
+    internal val logs = mutableListOf<ActionLogEntry>()
+
     override val playerIndex: Int get() = action.playerIndex
     override val actionType: String get() = action.actionType
+
+    override fun log(logging: LogActionScope<T, A>.() -> String) {
+        logs.add(LogActionContext(game, action.playerIndex, action.parameter).log(logging))
+    }
+    override fun logSecret(player: PlayerIndex, logging: LogActionScope<T, A>.() -> String): SecretLogging<T, A> {
+        val context = LogActionContext(game, player, action.parameter).secretLog(player, logging)
+        logs.add(context)
+        return context
+    }
 }
 
 class GameActionRuleContext<T : Any, A : Any>(
@@ -94,7 +107,7 @@ class GameActionRuleContext<T : Any, A : Any>(
     val eliminations: PlayerEliminations,
     val actionDefinition: ActionType<A>,
     val globalRules: GameRuleList<T>
-): GameActionRule<T, A>, GameLogicActionType<T, A, Actionable<T, A>> {
+): GameActionRule<T, A>, GameLogicActionType<T, A> {
     override val actionType: String = actionDefinition.name
 
     val effects = mutableListOf<ActionRuleScope<T, A>.() -> Unit>()
@@ -166,6 +179,7 @@ class GameActionRuleContext<T : Any, A : Any>(
         this.effects.forEach { it.invoke(context) }
         this.after.forEach { it.invoke(context) }
         this.globalRules.after.forEach { it.invoke(context as ActionRuleScope<T, Any>) }
+        replayable.stateKeeper.addLogs(context.logs)
     }
 
     override fun createAction(playerIndex: Int, parameter: A): Action<T, A>

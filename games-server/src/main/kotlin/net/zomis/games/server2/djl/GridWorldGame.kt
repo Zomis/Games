@@ -3,9 +3,8 @@ package net.zomis.games.server2.djl
 import net.zomis.games.Map2DX
 import net.zomis.games.PlayerEliminationCallback
 import net.zomis.games.WinResult
-import net.zomis.games.dsl.Point
-import net.zomis.games.dsl.createActionType
-import net.zomis.games.dsl.createGame
+import net.zomis.games.common.Direction4
+import net.zomis.games.dsl.GameCreator
 
 object GridWorldGame {
 
@@ -18,15 +17,9 @@ object GridWorldGame {
         ;
     }
     data class GridWorldModel(val eliminations: PlayerEliminationCallback, val map: Map2DX<GridWorldTile>) {
-        fun move(parameter: Int) {
+        fun move(parameter: Direction4) {
             val player = map.all().find { it.value == GridWorldTile.PLAYER }!!
-            val delta = when (parameter) {
-                0 -> Point(-1, 0)
-                1 -> Point(1, 0)
-                2 -> Point(0, -1)
-                3 -> Point(0, 1)
-                else -> throw IllegalArgumentException("Invalid move: $parameter")
-            }
+            val delta = parameter.delta()
             val newTile = map.point(player.x + delta.x, player.y + delta.y).rangeCheck(map)
             val value = newTile?.value ?: GridWorldTile.BLOCK
             if (value == GridWorldTile.GOAL) {
@@ -45,18 +38,18 @@ object GridWorldGame {
         val width: Int, val height: Int, val random: Long,
         val goals: Int, val fails: Int, val blocks: Int
     )
-    val actionType = createActionType("move", Int::class)
-    val game = createGame<GridWorldModel>("GridWorld") {
+    val factory = GameCreator(GridWorldModel::class)
+    val actionType = factory.action("move", Direction4::class).serializer(Int::class) { it.order() }
+    val game = factory.game("GridWorld") {
         setup(GridWorldConfig::class) {
             players(1..1)
             defaultConfig { GridWorldConfig(3, 2, 42L, 1, 3, 2) }
             init { GridWorldModel(eliminationCallback, generateMap(config)) }
         }
-        logic {
-            val options = (0..3).toList()
-            this.intAction(actionType, { options }) {
-                allowed { true }
-                effect { it.game.move(it.parameter) }
+        rules {
+            action(actionType) {
+                options { Direction4.values().asIterable() }
+                effect { game.move(action.parameter) }
             }
         }
         view {

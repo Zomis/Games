@@ -1,5 +1,7 @@
 package net.zomis.games.dsl
 
+import net.zomis.games.common.PlayerIndex
+
 typealias ViewDsl2D<T, P> = GameView2D<T, P>.() -> Unit
 
 typealias GameViewOnRequestFunction<T> = GameViewOnRequestScope<T>.(request: Map<String, Any>) -> Any

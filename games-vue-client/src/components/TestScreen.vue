@@ -1,5 +1,6 @@
 <template>
   <v-card>
+    <ActionLog :logEntries="logEntries" :context="context" />
     <h1>Hello World</h1>
 
     <v-card :key="view.hand.index" class="player-hand" :class="{ 'active-player': view.currentPlayer == view.hand.index }">
@@ -57,6 +58,7 @@
 
 <script>
 import HanabiCard from "@/components/games/HanabiCard"
+import ActionLog from "@/components/games/ActionLog"
 
 function shuffle(a) {
     for (let i = a.length - 1; i > 0; i--) {
@@ -68,9 +70,28 @@ function shuffle(a) {
 
 export default {
   name: "TestScreen",
-  components: { HanabiCard },
+  components: { HanabiCard, ActionLog },
   data() {
     return {
+      logEntries: [{
+        highlights: [2],
+        parts: [
+          { type: "player", value: 0 },
+          { type: "text", value: " changed the value by " },
+          { type: "highlight", value: 2 },
+          { type: "text", value: " to " },
+          { type: "link", text: "a card", viewType: "card",
+            value: {
+              costs: { WHITE: 4 }, discount: { BLACK: 1 }, id: "2:2:B.WWWW", level: 2, points: 2
+            }
+          },
+//          { type: "link", text: "something else", viewType: "number", value: 42 },
+        ]
+      }],
+      context: {
+        gameType: "Splendor",
+        players: [{ name: "Simon", picture: "https://www.gravatar.com/avatar/434d24777c7a98f41c8e41b258589e3a?s=128&d=identicon" }]
+      },
       items: [1,2,3,4,5,6,7,8,9],
       id: 6,
       nextNumber: 10,

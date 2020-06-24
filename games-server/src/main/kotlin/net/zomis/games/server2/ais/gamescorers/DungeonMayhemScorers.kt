@@ -11,27 +11,28 @@ object DungeonMayhemScorers {
 
     fun ais(): List<ScorerAIFactory<DungeonMayhem>> {
         return listOf(
-            ScorerAIFactory("Dungeon Mayhem", "#AI_Play_Again", symbolCount(DungeonMayhemSymbol.PLAY_AGAIN)),
+            ScorerAIFactory("Dungeon Mayhem", "#AI_Play_Again", symbolCount(DungeonMayhemSymbol.PLAY_AGAIN), anyTarget),
             ScorerAIFactory("Dungeon Mayhem", "#AI_Attack",
                 symbolCount(DungeonMayhemSymbol.PLAY_AGAIN).weight(10), symbolCount(DungeonMayhemSymbol.ATTACK),
-                    targetWeakShields, targetPlayerLowHealth.weight(10)
+                    targetWeakShields, targetPlayerLowHealth.weight(10), anyTarget
             )
         )
     }
 
-    fun symbolCount(symbol: DungeonMayhemSymbol): Scorer<DungeonMayhem, Any> = scorers.conditionalType(DungeonMayhemCard::class) {
+    fun symbolCount(symbol: DungeonMayhemSymbol) = scorers.action(DungeonMayhemDsl.play) {
         action.parameter.symbols.count { it == symbol }.toDouble()
-    } as Scorer<DungeonMayhem, Any>
-    val targetWeakShields = scorers.conditionalType(DungeonMayhemTarget::class) {
+    }
+    val anyTarget = scorers.isAction(DungeonMayhemDsl.target)
+    val targetWeakShields = scorers.action(DungeonMayhemDsl.target) {
         if (action.parameter.shieldCard != null)
             1 - 0.01 * action.game.players[action.parameter.player].shields[action.parameter.shieldCard!!].card.health.toDouble()
         else 0.0
-    } as Scorer<DungeonMayhem, Any>
-    val targetHighPlayerIndex = scorers.conditionalType(DungeonMayhemTarget::class) {
+    }
+    val targetHighPlayerIndex = scorers.action(DungeonMayhemDsl.target) {
         1 + 0.01 * action.parameter.player.toDouble()
-    } as Scorer<DungeonMayhem, Any>
-    val targetPlayerLowHealth = scorers.conditionalType(DungeonMayhemTarget::class) {
+    }
+    val targetPlayerLowHealth = scorers.action(DungeonMayhemDsl.target) {
         1 - 0.01 * action.game.players[action.parameter.player].health.toDouble()
-    } as Scorer<DungeonMayhem, Any>
+    }
 
 }

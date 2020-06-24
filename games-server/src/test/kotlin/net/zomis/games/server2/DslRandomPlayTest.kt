@@ -4,7 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.Actionable
-import net.zomis.games.dsl.SplendorGame
+import net.zomis.games.impl.SplendorGame
 import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.dsl.impl.GameControllerContext
 import net.zomis.games.dsl.impl.GameControllerScope
@@ -151,8 +151,9 @@ class DslRandomPlayTest {
             val playerSocket = players[request.player]
             val moveString = jacksonObjectMapper().writeValueAsString(request.move)
             playerSocket.send("""{ "route": "games/$dslGame/1/move", "moveType": "${request.moveType}", "move": $moveString }""")
-            p1.expectJsonObject { it.getTextOrDefault("type", "") == "GameMove" }
-            p2.expectJsonObject { it.getTextOrDefault("type", "") == "GameMove" }
+            // TODO: Also add checks for "ActionLog" messages?
+            p1.takeUntilJson { it.getTextOrDefault("type", "") == "GameMove" }
+            p2.takeUntilJson { it.getTextOrDefault("type", "") == "GameMove" }
         }
 
         // Game is finished

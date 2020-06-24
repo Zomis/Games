@@ -1,7 +1,7 @@
 package net.zomis.games
 
 import net.zomis.Best
-import net.zomis.games.dsl.Point
+import net.zomis.games.common.Point
 
 private fun flipX(start: Position): Position {
     return Position(start.sizeX - 1 - start.x, start.y, start.sizeX, start.sizeY)

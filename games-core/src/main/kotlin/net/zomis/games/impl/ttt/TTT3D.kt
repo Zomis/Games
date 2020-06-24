@@ -1,4 +1,4 @@
-package net.zomis.games.impl
+package net.zomis.games.impl.ttt
 
 import net.zomis.games.Map2D
 

@@ -9,7 +9,6 @@ import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
 import net.zomis.games.dsl.GameSpec
-import net.zomis.games.ecs.UTTT
 import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.ais.TTTQLearn
@@ -18,7 +17,6 @@ import net.zomis.games.server2.db.aurora.LinStats
 import net.zomis.games.server2.db.aurora.StatsDB
 import net.zomis.games.server2.debug.AIGames
 import net.zomis.games.server2.games.*
-import net.zomis.games.server2.games.impl.ECSGameSystem
 import net.zomis.games.server2.invites.InviteOptions
 import net.zomis.games.server2.invites.InviteSystem
 import net.zomis.games.server2.invites.LobbySystem
@@ -128,12 +126,10 @@ class Server2(val events: EventSystem) {
 
         features.add { feat, ev -> gameSystem.setup(feat, ev, config.idGenerator) }
 
-        features.add(ECSGameSystem("UTTT-ECS") { UTTT().setup() }::setup)
         dslGames.forEach { (name, spec) -> events.with(DslGameSystem(name, spec as GameSpec<Any>)::setup) }
 
         features.add(SimpleMatchMakingSystem()::setup)
         events.with(ServerConsole()::register)
-        features.add(ObserverSystem()::setup)
         features.add(GameListSystem()::setup)
         events.listen("Route", ClientJsonMessage::class, {it.data.has("route")}) {
             this.messageRouter.handle(it.data["route"].asText(), it)

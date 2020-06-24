@@ -40,12 +40,12 @@ data class AIAlphaBetaConfig<T: Any>(val factory: AlphaBetaAIFactory<T>, val lev
     private val branching: (GameImpl<T>, Actionable<T, Any>) -> GameImpl<T> = { oldGame, action ->
         val copy = oldGame.copy(factory.copier)
         val actionType = copy.actions.type(action.actionType)!!
-        val actionCopy = actionType.createAction(action.playerIndex, action.parameter)
+        val serializedAction = actionType.actionType.serialize(action.parameter)
+        val actionCopy = actionType.createActionFromSerialized(action.playerIndex, serializedAction)
         if (!actionType.isAllowed(actionCopy)) {
             throw Exception("Not allowed to perform $action in ${copy.view(null)}")
         }
         actionType.perform(actionCopy)
-        copy.stateCheck()
         copy
     }
 

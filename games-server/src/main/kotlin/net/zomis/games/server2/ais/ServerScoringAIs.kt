@@ -1,16 +1,14 @@
 package net.zomis.games.server2.ais
 
 import com.fasterxml.jackson.databind.node.IntNode
-import net.zomis.aiscores.FScorer
 import net.zomis.aiscores.ScoreConfigFactory
-import net.zomis.aiscores.scorers.SimpleScorer
 import net.zomis.bestBy
 import net.zomis.core.events.EventSystem
-import net.zomis.games.dsl.Actionable
-import net.zomis.games.dsl.PointMove
+import net.zomis.games.common.PointMove
 import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.dsl.impl.GameImpl
-import net.zomis.games.dsl.sourcedest.TTArtax
+import net.zomis.games.impl.ArtaxGame
+import net.zomis.games.impl.TTArtax
 import net.zomis.games.server2.ais.gamescorers.DungeonMayhemScorers
 import net.zomis.games.server2.ais.gamescorers.HanabiScorers
 import net.zomis.games.server2.ais.gamescorers.SkullScorers
@@ -85,8 +83,8 @@ class ServerScoringAIs(private val aiRepository: AIRepository) {
         })
 
         val artaxScorers = ScorerFactory<TTArtax>()
-        val artaxTake = artaxScorers.simple {
-            val pm = (action.parameter) as PointMove
+        val artaxTake = artaxScorers.action(ArtaxGame.moveAction) {
+            val pm = action.parameter
             val board = model.board
             val neighbors = Direction8.values()
                 .map { board.point(pm.destination.x + it.deltaX, pm.destination.y + it.deltaY) }
@@ -94,8 +92,8 @@ class ServerScoringAIs(private val aiRepository: AIRepository) {
                 .count { it.value != action.playerIndex && it.value != null }
             neighbors.toDouble()
         }
-        val copying = artaxScorers.simple {
-            action.parameter.let { it as PointMove }.let {
+        val copying = artaxScorers.action(ArtaxGame.moveAction) {
+            action.parameter.let {
                 -it.destination.minus(it.source).abs().distance()
             }
         }

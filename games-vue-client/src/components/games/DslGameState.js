@@ -18,6 +18,8 @@ const gameStore = {
           yourIndex: data.yourIndex,
           players: data.players
         },
+        highlights: [],
+        actionLog: [],
         gameData: {
           eliminations: [],
           view: {},
@@ -46,6 +48,14 @@ const gameStore = {
     setChoice(state, data) {
       let game = state.games[data.gameInfo.gameId].gameData;
       game.actionChoice = { actionName: data.name, choices: [data.action] }
+    },
+    setHighlight(state, data) {
+      let game = state.games[data.gameInfo.gameId];
+      game.highlights = data.highlights;
+    },
+    addActionLog(state, data) {
+      let game = state.games[data.gameId];
+      game.actionLog.push(data);
     },
     updateActions(state, data) {
       let game = state.games[data.gameId].gameData;
@@ -122,6 +132,9 @@ const gameStore = {
 
       Socket.route(`games/${data.gameInfo.gameType}/${data.gameInfo.gameId}/actionList`, obj);
     },
+    highlight(context, data) {
+      context.commit("setHighlight", data);
+    },
     onSocketMessage(context, data) {
       if (data.type === "GameStarted") {
         context.commit("createGame", data);
@@ -135,6 +148,9 @@ const gameStore = {
       }
       if (data.type === "GameView") {
         context.commit("updateView", data);
+      }
+      if (data.type === "ActionLog") {
+        context.commit("addActionLog", data);
       }
       if (data.type === "ActionList") {
         context.commit("updateActions", data);

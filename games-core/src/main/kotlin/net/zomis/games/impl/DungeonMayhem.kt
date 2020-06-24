@@ -4,8 +4,8 @@ import net.zomis.games.WinResult
 import net.zomis.games.cards.Card
 import net.zomis.games.cards.CardZone
 import net.zomis.games.cards.random
+import net.zomis.games.common.next
 import net.zomis.games.dsl.*
-import net.zomis.games.dsl.sourcedest.next
 import kotlin.math.min
 
 data class DungeonMayhemConfig(
@@ -81,7 +81,7 @@ enum class DungeonMayhemSymbol {
             HEAL_AND_ATTACK_FOR_EACH_OPPONENT -> {
                 val opponents = game.players.minus(player).filterNotNull().filter { it.alive() }
                 player?.heal(opponents.size)
-                opponents.filter { !it.protectedFrom(trigger) }.forEach { it.damage(1) }
+                opponents.filter { !it.protectedFrom(trigger) }.forEach { it.damageShieldsOrPlayer(1) }
             }
             ALL_DISCARD_AND_DRAW -> repeat(count) {
                 game.players.filter { !it.protectedFrom(trigger) }
@@ -118,6 +118,8 @@ enum class DungeonMayhemSymbol {
 }
 data class DungeonMayhemCard(val name: String, val symbols: List<DungeonMayhemSymbol>): Replayable {
     override fun toStateString(): String = name
+
+    fun view() = mapOf("name" to name, "symbols" to symbols.map { it.name })
 }
 data class DungeonMayhemShield(val discard: CardZone<DungeonMayhemCard>, val card: DungeonMayhemCard, var health: Int) {
     fun destroy(card: Card<DungeonMayhemShield>) {
@@ -165,7 +167,7 @@ class DungeonMayhemPlayer(val index: Int) {
     }
 
     var protected: Boolean = false
-    lateinit var color: String
+    lateinit var character: DungeonMayhemCharacter
     var health: Int = 10
     val deck = CardZone<DungeonMayhemCard>()
     val hand = CardZone<DungeonMayhemCard>()
@@ -176,9 +178,10 @@ class DungeonMayhemPlayer(val index: Int) {
 
 private typealias s = DungeonMayhemSymbol
 private operator fun Int.times(card: DungeonMayhemCard): List<DungeonMayhemCard> = (1..this).map { card }
+data class DungeonMayhemCharacter(val color: String, val name: String, val className: String)
 object DungeonMayhemDecks {
 
-    fun yellow() = "yellow" to listOf(
+    fun yellow() = DungeonMayhemCharacter("yellow", "Azzan the Mystic", "Wizard") to listOf(
         2 * ("Fireball" card s.FIREBALL),
         2 * ("Evil Sneer" card s.HEAL + s.PLAY_AGAIN),
         3 * ("Speed of Thought" card s.PLAY_AGAIN * 2),
@@ -193,7 +196,7 @@ object DungeonMayhemDecks {
         2 * ("Vampiric Touch" card s.SWAP_HITPOINTS)
     ).flatten()
 
-    fun red() = "red" to listOf(
+    fun red() = DungeonMayhemCharacter("red", "Lia the Radiant", "Paladin") to listOf(
         2 * ("For The Most Justice" card s.ATTACK * 3),
         2 * ("Divine Inspiration" card s.HEAL * 2 + s.PICK_UP_CARD),
         1 * ("Divine Smite" card s.ATTACK * 3 + s.HEAL),
@@ -209,7 +212,7 @@ object DungeonMayhemDecks {
         3 * ("Banishing Smite" card s.DESTROY_ALL_SHIELDS + s.PLAY_AGAIN)
     ).flatten()
 
-    fun purple() = "purple" to listOf(
+    fun purple() = DungeonMayhemCharacter("purple", "Oriax the Clever", "Rogue") to listOf(
         5 * ("One Thrown Dagger" card s.ATTACK + s.PLAY_AGAIN),
         3 * ("All The Thrown Daggers" card s.ATTACK * 3),
         2 * ("Winged Serpent" card s.SHIELD + s.DRAW),
@@ -224,7 +227,7 @@ object DungeonMayhemDecks {
         1 * ("Even More Daggers" card s.DRAW * 2 + s.HEAL)
     ).flatten()
 
-    fun blue() = "blue" to listOf(
+    fun blue() = DungeonMayhemCharacter("blue", "Sutha the Skullcrusher", "Barbarian") to listOf(
         5 * ("Big Axe Is The Best Axe" card s.ATTACK * 3),
         2 * ("Brutal Punch" card s.ATTACK * 2),
         1 * ("Riff" card s.SHIELD * 3),
@@ -270,9 +273,12 @@ data class DungeonMayhemEffect(
 
 object DungeonMayhemDsl {
 
-    val play = createActionType("play", DungeonMayhemCard::class, ActionSerialization<DungeonMayhemCard, DungeonMayhem>({ it.name }, { key -> game.currentPlayer.hand.cards.first { it.name == key } }))
-    val target = createActionType("target", DungeonMayhemTarget::class)
-    val game = createGame<DungeonMayhem>("Dungeon Mayhem") {
+    val factory = GameCreator(DungeonMayhem::class)
+
+    val play = factory.action("play", DungeonMayhemCard::class)
+        .serialization(String::class, { it.name }, { key -> game.currentPlayer.hand.cards.first { it.name == key } })
+    val target = factory.action("target", DungeonMayhemTarget::class)
+    val game = factory.game("Dungeon Mayhem") {
         setup(DungeonMayhemConfig::class) {
             players(2..4)
             defaultConfig { DungeonMayhemConfig() }
@@ -310,11 +316,12 @@ object DungeonMayhemDsl {
                 // just shuffle characters in the beginning (playing it like this for a while might make me more motivated for real solution later)
                 val decks = listOf(DungeonMayhemDecks.blue(), DungeonMayhemDecks.purple(),
                         DungeonMayhemDecks.red(), DungeonMayhemDecks.yellow()).shuffled()
-                val deckStrings = replayable.strings("characters") { decks.map { it.first } }
+                val deckStrings = replayable.strings("characters") { decks.map { it.first.color } }
 
                 game.players.forEachIndexed { index, player ->
-                    player.color = deckStrings[index]
-                    player.deck.cards.addAll(decks.first { it.first == deckStrings[index] }.second)
+                    val playerSetup = decks.first { it.first.color == deckStrings[index] }
+                    player.character = playerSetup.first
+                    player.deck.cards.addAll(playerSetup.second)
                     player.drawCard(replayable, "gameStart", 3)
                 }
                 newTurnDrawCard(Unit)
@@ -332,7 +339,7 @@ object DungeonMayhemDsl {
 
             view("players") {
                 game.players.map { mapOf(
-                    "color" to it.color,
+                    "character" to it.character,
                     "health" to it.health,
                     "deck" to it.deck.size,
                     "hand" to if (viewer == it.index) it.hand.view() else it.hand.size,
@@ -345,8 +352,10 @@ object DungeonMayhemDsl {
 
             action(play).options { game.currentPlayer.hand.cards }
             action(play).effect { game.symbolsToResolve.remove(game.symbolsToResolve.firstOrNull { it.symbol == DungeonMayhemSymbol.PLAY_AGAIN }) }
-            action(play).effect { playTrigger(DungeonMayhemPlayCard(game.config, game.currentPlayer, game.currentPlayer,
-                game.currentPlayer.hand.card(action.parameter)))
+            action(play).effect {
+                log { "$player plays ${viewLink(action.name, "card", action.view())}" }
+                playTrigger(DungeonMayhemPlayCard(game.config, game.currentPlayer, game.currentPlayer,
+                    game.currentPlayer.hand.card(action.parameter)))
             }
             playTrigger.effect { game.symbolsToResolve.addAll(trigger.card.card.symbols.map { DungeonMayhemResolveSymbol(trigger.ownedByPlayer, it) }) }
             playTrigger.effect {
@@ -373,7 +382,16 @@ object DungeonMayhemDsl {
             action(target).effect {
                 val symbol = game.symbolsToResolve.first { it.symbol.availableTargets(game) != null }
                 val count = game.symbolsToResolve.count { it == symbol }
-                effectTrigger(DungeonMayhemEffect(game, game.players[action.playerIndex], symbol.player, symbol.symbol, count, action.parameter))
+                val playerTarget = game.players[action.parameter.player]
+                log {
+                    val target = when {
+                        action.discardedCard != null -> playerTarget.discard[action.discardedCard!!].card.let { viewLink(it.name, "card", it.view()) }
+                        action.shieldCard != null -> playerTarget.shields[action.shieldCard!!].card.card.let { viewLink(it.name, "card", it.view()) }
+                        else -> player(playerTarget.index)
+                    }
+                    "$player targets $target with ${count}x ${symbol.symbol.name}"
+                }
+                effectTrigger(DungeonMayhemEffect(game, playerTarget, symbol.player, symbol.symbol, count, action.parameter))
             }
             action(target).after { if (game.symbolsToResolve.none { it.symbol == DungeonMayhemSymbol.ATTACK }) game.attackedPlayer = null }
 

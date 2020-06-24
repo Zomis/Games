@@ -5,7 +5,7 @@ import kotlinx.coroutines.runBlocking
 import net.zomis.bestBy
 import net.zomis.common.pmap
 import net.zomis.games.ais.AlphaBeta
-import net.zomis.games.dsl.Point
+import net.zomis.games.common.Point
 import net.zomis.tttultimate.TTFactories
 import net.zomis.tttultimate.TTPlayer
 import net.zomis.tttultimate.TTWinCondition
@@ -53,7 +53,7 @@ class TTAlphaBeta(val level: Int, val heuristic: (model: TTController, myPlayer:
         return copied
     }
 
-    val actions: (TTController) -> List<Point> = {model ->
+    val actions: (TTController) -> List<Point> = { model ->
         var subs = model.game.subs()
         if (model is TTUltimateController) {
             subs = subs.flatMap { it.subs() }

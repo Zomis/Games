@@ -1,9 +1,10 @@
 package net.zomis.games.dsl
 
-import net.zomis.games.dsl.sourcedest.TTQuixoController
+import net.zomis.games.common.Point
+import net.zomis.games.common.PointMove
+import net.zomis.games.impl.TTQuixoController
 import net.zomis.tttultimate.TTPlayer
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class QuixoTest {
@@ -20,7 +21,6 @@ class QuixoTest {
     }
 
     @Test
-    @Disabled
     fun onlyOnePlayerOptionsAllowed() {
         createTestGame().expectPossibleOptions(1, move, 0)
     }

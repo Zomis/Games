@@ -1,19 +1,12 @@
 package net.zomis.games.server2.ais
 
 import klog.KLoggers
-import kotlinx.coroutines.runBlocking
-import net.zomis.bestBy
-import net.zomis.common.pmap
 import net.zomis.core.events.EventSystem
-import net.zomis.games.ais.AlphaBeta
-import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.impl.GameImpl
-import net.zomis.games.dsl.sourcedest.TTArtax
-import net.zomis.games.dsl.sourcedest.TTQuixoController
-import net.zomis.games.impl.TTT3D
-import net.zomis.games.impl.TTT3DPiece
+import net.zomis.games.impl.TTQuixoController
+import net.zomis.games.impl.ttt.TTT3D
+import net.zomis.games.impl.ttt.TTT3DPiece
 import net.zomis.games.server2.games.GameTypeRegisterEvent
-import net.zomis.games.server2.games.PlayerGameMoveRequest
 import net.zomis.games.server2.games.impl.TTConnect4AlphaBeta
 import net.zomis.games.server2.games.impl.toWinResult
 import net.zomis.tttultimate.TTBase
@@ -123,10 +116,6 @@ class ServerAlphaBetaAIs(private val aiRepository: AIRepository) {
         val tt3Dab = { old: TTT3D, copy: TTT3D ->
             copy.currentPlayer = old.currentPlayer
             copy.allFields().forEach { it.piece = old.get(it.y, it.x, it.z) }
-        }
-        val artaxAB = { old: TTArtax, copy: TTArtax ->
-            copy.currentPlayer = old.currentPlayer
-            copy.board.all().forEach { dest -> dest.value = old.board.get(dest.x, dest.y) }
         }
         val aiFactories = listOf<AlphaBetaAIFactory<out Any>>(
             AlphaBetaAIFactory(ttAB,"DSL-TTT", "AlphaBeta",6, false, model(::heuristicTTT)),

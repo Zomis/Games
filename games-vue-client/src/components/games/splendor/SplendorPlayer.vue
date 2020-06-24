@@ -12,10 +12,10 @@
                     <v-row justify="center" align="center">
                         <div v-for="moneyType in moneyTypes" :key="moneyType">
                             <div class="ma-1" v-if="moneyType !== 'wildcards'">
-                                <span :class="{ resource: true, ['color-' + moneyType]: true, empty: !player.discounts[moneyType] }">{{ player.discounts[moneyType] || 0 }}</span>
+                                <span class="resource" :class="{ ['color-' + moneyType]: true, empty: !player.discounts[moneyType] }">{{ player.discounts[moneyType] || 0 }}</span>
                             </div>
                             <div @click="discard(moneyType)" :class="{ discardable: controllable && actions.available['discardMoney-' + moneyType] }">
-                                <span :class="{ gems: true, ['color-' + moneyType]: true, empty: !player.money[moneyType] }">{{ player.money[moneyType] || 0 }}</span>
+                                <span class="gems" :class="{ ['color-' + moneyType]: true, empty: !player.money[moneyType] }">{{ player.money[moneyType] || 0 }}</span>
                             </div>
                         </div>
                     </v-row>
@@ -72,6 +72,11 @@ export default {
     border-style: solid;
     border-width: thin;
     border-color: var(--splendor-black) !important;
+}
+.discardable .gems {
+    border-width: thick !important;
+    border-color: var(--splendor-red) !important;
+    cursor: pointer;
 }
 .resource {
     border-radius: 20%;

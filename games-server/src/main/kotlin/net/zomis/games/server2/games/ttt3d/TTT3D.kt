@@ -1,14 +1,15 @@
 package net.zomis.games.server2.games.ttt3d
 
 import kotlinx.coroutines.*
-import net.zomis.Best
-import net.zomis.best
 import net.zomis.bestBy
 import net.zomis.common.pmap
 import net.zomis.fight.ext.WinResult
 import net.zomis.fights.Fights
 import net.zomis.games.ais.AlphaBeta
-import net.zomis.games.impl.*
+import net.zomis.games.impl.ttt.TTT3D
+import net.zomis.games.impl.ttt.TTT3DAI
+import net.zomis.games.impl.ttt.TTT3DPiece
+import net.zomis.games.impl.ttt.TTT3DPoint
 import net.zomis.scorers.*
 import net.zomis.scorers.FieldScore
 import java.util.Scanner

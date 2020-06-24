@@ -89,6 +89,6 @@ class ServerAI(val gameType: String, val name: String, val perform: ServerGameAI
 
 fun PlayerGameMoveRequest.serialize(gameImpl: GameImpl<*>): PlayerGameMoveRequest {
     val serializedMove = gameImpl.actions.type(this.moveType)!!
-            .actionType.serialize.serialize(this.move)
+            .actionType.serialize(this.move)
     return PlayerGameMoveRequest(this.game, this.player, this.moveType, serializedMove)
 }

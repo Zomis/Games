@@ -1,6 +1,7 @@
 package net.zomis.games.dsl
 
 import net.zomis.common.convertToDBFormat
+import net.zomis.games.common.Point
 import net.zomis.games.dsl.impl.*
 import net.zomis.games.server2.ServerGames
 import net.zomis.games.server2.games.ActionListRequestHandler
@@ -23,13 +24,12 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
         while (!gameImpl.isGameOver()) {
             if (this.queryInput(gameImpl, scanner)) {
                 this.showView(gameImpl)
-                gameImpl.stateCheck()
                 gameImpl.stateKeeper.clear()
             }
         }
     }
 
-    fun choiceActionable(actionLogic: ActionTypeImplEntry<T, Any, Actionable<T, Any>>, playerIndex: Int, scanner: Scanner): Actionable<T, Any>? {
+    fun choiceActionable(actionLogic: ActionTypeImplEntry<T, Any>, playerIndex: Int, scanner: Scanner): Actionable<T, Any>? {
         val options = actionLogic.availableActions(playerIndex).toList()
         options.forEachIndexed { index, actionable -> println("$index. $actionable") }
         if (options.size <= 1) { return options.getOrNull(0) }
@@ -54,14 +54,14 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
             return false
         }
 
-        val actionParameterClass = actionLogic.parameterClass
+        val actionParameterClass = actionLogic.actionType.serializedType
         val action: Actionable<T, Any>? = when (actionParameterClass) {
             Point::class -> {
                 println("Enter x position where you want to play")
                 val x = scanner.nextLine().toInt()
                 println("Enter y position where you want to play")
                 val y = scanner.nextLine().toInt()
-                actionLogic.createAction(playerIndex.toInt(), Point(x, y))
+                actionLogic.createActionFromSerialized(playerIndex.toInt(), Point(x, y))
             }
             else -> {
                 stepByStepActionable(game, playerIndex.toInt(), actionType, scanner)
@@ -100,7 +100,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
             if (choice >= next.size) {
                 val param = params.getOrNull(choice - next.size) ?: return null
                 val actionType = game.actions.type(moveType)
-                val deserializedParam = actionType?.actionType?.serialize?.deserialize?.invoke(
+                val deserializedParam = actionType?.actionType?.deserialize(
                     ActionOptionsContext(game.model, actionType.name, playerIndex), param
                 )
                 return actionType?.createAction(playerIndex, deserializedParam!!)
