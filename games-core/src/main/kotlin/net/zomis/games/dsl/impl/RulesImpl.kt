@@ -138,6 +138,14 @@ class GameActionRuleContext<T : Any, A : Any>(
         }
     }
 
+    override fun forceWhen(rule: ActionOptionsScope<T>.() -> Boolean) {
+        val myActionType = actionType
+        globalRules.preconditions.add {
+            actionType == myActionType || !rule(this)
+        }
+        this.preconditions.add(rule)
+    }
+
     // GameLogicActionType implementation below
 
     override fun availableActions(playerIndex: Int): Iterable<Actionable<T, A>> {

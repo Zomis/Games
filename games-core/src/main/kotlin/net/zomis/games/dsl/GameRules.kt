@@ -58,6 +58,7 @@ interface GameActionSpecificationScope<T : Any, A : Any> {
     fun precondition(rule: ActionOptionsScope<T>.() -> Boolean)
     fun requires(rule: ActionRuleScope<T, A>.() -> Boolean)
     fun options(rule: ActionOptionsScope<T>.() -> Iterable<A>)
+    fun forceWhen(rule: ActionOptionsScope<T>.() -> Boolean)
     fun forceUntil(rule: ActionOptionsScope<T>.() -> Boolean)
     fun choose(options: ActionChoicesStartScope<T, A>.() -> Unit)
 }
