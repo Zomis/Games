@@ -129,6 +129,7 @@ const supportedGames = {
             bet: (index) => "bet-" + index,
             discard: (index) => "hand-" + index,
             pass: () => "pass",
+            chooseNextPlayer: (index) => "choosePlayer-" + index,
             choose: (index) => "choose-" + index
         },
         component: Skull

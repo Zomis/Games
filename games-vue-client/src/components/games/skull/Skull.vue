@@ -15,7 +15,10 @@
                             </Actionable>
                         </CardZone>
                         <CardZone v-else>
-                            <v-icon v-for="index in player.hand" :key="index" class="list-complete-item">mdi-crosshairs-question</v-icon>
+                            <Actionable button v-for="(index) in player.hand" :key="index"
+                                :actions="actions" class="list-complete-item" :actionable="'choosePlayer-' + playerIndex">
+                                <v-icon>mdi-crosshairs-question</v-icon>
+                            </Actionable>
                         </CardZone>
 
                         <div>Played</div>
