@@ -26,11 +26,9 @@ export default {
     },
     watch: {
         hover(value) {
-            console.log("hover", value, this.clicked, this.tooltipActive)
             this.tooltipActive = value || this.clicked
         },
         clicked(value) {
-            console.log("clicked", value, this.clicked, this.tooltipActive)
             this.tooltipActive = value || this.hover
         }
     },

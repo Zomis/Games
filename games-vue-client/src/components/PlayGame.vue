@@ -125,7 +125,7 @@ export default {
         return state.games[this.gameId].actionLog;
       },
       gameInfo(state) {
-        if (!state.games[this.gameId]) { return null }
+        if (!state.games[this.gameId]) { return {} }
         return state.games[this.gameId].gameInfo;
       },
       actionChoice(state) {
