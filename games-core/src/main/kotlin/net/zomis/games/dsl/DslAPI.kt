@@ -73,6 +73,7 @@ class GameCreator<T : Any>(val modelClass: KClass<T>) {
     fun game(name: String, dsl: GameDsl<T>.() -> Unit): GameSpec<T> = GameSpec(name, dsl)
     fun <A: Any> action(name: String, parameterType: KClass<A>): GameActionCreator<T, A, A>
         = GameActionCreator(name, parameterType, parameterType, {it}, {it})
+    fun singleAction(name: String) = this.action(name, Unit::class)
 }
 
 interface ActionType<A : Any> {
