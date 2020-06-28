@@ -5,7 +5,9 @@ import net.zomis.aiscores.ScoreConfigFactory
 import net.zomis.bestBy
 import net.zomis.core.events.EventSystem
 import net.zomis.games.common.PointMove
+import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.impl.GameController
+import net.zomis.games.dsl.impl.GameControllerScope
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.impl.ArtaxGame
 import net.zomis.games.impl.TTArtax
@@ -27,30 +29,38 @@ import java.util.function.ToIntFunction
 
 class ScorerAIFactory<T: Any>(val gameType: String, val name: String, vararg configArr: Scorer<T, Any>) {
     val config = configArr.toList()
+
+    fun availableActions(scope: GameControllerScope<T>): List<Actionable<T, Any>> {
+        return scope.game.actions.types().flatMap {
+            it.availableActions(scope.playerIndex)
+        }.filter {
+            scope.game.actions.type(it.actionType)!!.isAllowed(it)
+        }
+    }
+
+    fun score(scope: GameControllerScope<T>): List<Pair<ScorerContext<T>, Double?>> {
+        val providers = mutableMapOf<ScorerAnalyzeProvider<T, Any>, Any?>()
+        val availableActions = this.availableActions(scope)
+        val scoreContext = availableActions.map {action ->
+            ScorerContext(scope.game.model, scope.playerIndex, action, providers)
+        }
+        val scores = scoreContext.map {scorerContext ->
+            val scored = config.mapNotNull { it.score(scorerContext) }
+            val sum = if (scored.isEmpty()) null else scored.sum()
+            scorerContext to sum
+        }.filter { it.second != null }
+        return scores
+    }
+
     fun createController(): GameController<T> = {scope ->
         if (config.isEmpty()) {
             throw IllegalArgumentException("All controllers must have at least one scorer (even if it just returns zero for everything)")
         }
         if (!noAvailableActions(scope.game, scope.playerIndex)) {
-            val providers = mutableMapOf<ScorerAnalyzeProvider<T, Any>, Any?>()
-            val availableActions = scope.game.actions.types().flatMap {
-                it.availableActions(scope.playerIndex)
-            }.filter {
-                scope.game.actions.type(it.actionType)!!.isAllowed(it)
-            }
-            val scoreContext = availableActions.map {action ->
-                ScorerContext(scope.game.model, scope.playerIndex, action, providers)
-            }
-            val scores = scoreContext.map {scorerContext ->
-                val scored = config.mapNotNull { it.score(scorerContext) }
-                val sum = if (scored.isEmpty()) null else scored.sum()
-                scorerContext to sum
-            }.filter { it.second != null }
-
-
+            val scores = this.score(scope)
             // TODO: Random action if none is found
             val bestScores = scores.bestBy { it.second!! }
-            val move = if (bestScores.isNotEmpty()) bestScores.random().first.action else availableActions.random()
+            val move = if (bestScores.isNotEmpty()) bestScores.random().first.action else this.availableActions(scope).random()
             move
         } else null
     }
