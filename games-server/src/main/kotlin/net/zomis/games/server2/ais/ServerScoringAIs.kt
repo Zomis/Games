@@ -47,9 +47,11 @@ class ScorerAIFactory<T: Any>(val gameType: String, val name: String, vararg con
                 scorerContext to sum
             }.filter { it.second != null }
 
+
+            // TODO: Random action if none is found
             val bestScores = scores.bestBy { it.second!! }
-            val move = bestScores.random()
-            move.first.action
+            val move = if (bestScores.isNotEmpty()) bestScores.random().first.action else availableActions.random()
+            move
         } else null
     }
 
