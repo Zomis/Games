@@ -1,17 +1,19 @@
 package net.zomis.games.impl
 
 import net.zomis.games.cards.CardZone
+import net.zomis.games.common.next
 import net.zomis.games.dsl.*
 import kotlin.math.absoluteValue
 
 object SpiceRoadDsl {
     data class PlayParameter(val card: SpiceRoadGameModel.ActionCard, val remove: SpiceRoadGameModel.Caravan, val add: SpiceRoadGameModel.Caravan)
+    data class AcquireParameter(val card: SpiceRoadGameModel.ActionCard, val payArray: List<SpiceRoadGameModel.Spice>)
 
     val factory = GameCreator(SpiceRoadGameModel::class)
     val play = factory.action("play", PlayParameter::class)
     val claim = factory.action("claim", SpiceRoadGameModel.PointCard::class)
     val rest = factory.action("rest", Unit::class)
-    val acquire = factory.action("acquire", SpiceRoadGameModel.ActionCard::class)
+    val acquire = factory.action("acquire", AcquireParameter::class)
     val game = factory.game("Spice Road") {
         this.setup {
             this.players(2..5)
@@ -33,8 +35,10 @@ object SpiceRoadDsl {
             this.view("silverCoins") { game.silverCoins.size }
             this.action(claim).requires { game.currentPlayer.caravan.has(this.action.parameter.cost) }
             this.action(claim).effect {
+                //TODO add gold and silver logic
                 game.currentPlayer.caravan -= this.action.parameter.cost
                 game.currentPlayer.points += this.action.parameter.points
+                game.currentPlayer.pointCards++
                 game.visiblePointCards.card(this.action.parameter).remove()
                 if (game.pointsDeck.size > 0) {
                     game.pointsDeck.random(this.replayable, 1, "NewPointCard") { it.toStateString() }.forEach { it.moveTo(game.visiblePointCards) }
@@ -54,7 +58,8 @@ object SpiceRoadDsl {
                         card.gain != null -> parameter(PlayParameter(card, SpiceRoadGameModel.Caravan(), card.gain))
                         card.upgrade != null -> {
                             fun rec(scope: ActionChoicesNextScope<SpiceRoadGameModel, PlayParameter>,
-                                    remaining: SpiceRoadGameModel.Caravan, upgrades: Int,
+                                    remaining: SpiceRoadGameModel.Caravan,
+                                    upgrades: Int,
                                     remove: SpiceRoadGameModel.Caravan = SpiceRoadGameModel.Caravan(),
                                     add: SpiceRoadGameModel.Caravan = SpiceRoadGameModel.Caravan()) {
                                 scope.parameter(PlayParameter(card, remove, add))
@@ -78,6 +83,51 @@ object SpiceRoadDsl {
                     }
                 }
             }
+            this.action(acquire).effect {
+                game.currentPlayer.caravan -= action.parameter.payArray.fold(SpiceRoadGameModel.Caravan(), { acc, x -> acc + x.toCaravan() })
+                game.visibleActionCards.cards.mapIndexed { index, card -> card.addSpice(action.parameter.payArray.getOrNull(index)) }
+
+                game.currentPlayer.caravan += action.parameter.card.takeAllSpice()
+                game.visibleActionCards.card(action.parameter.card).moveTo(game.currentPlayer.hand)
+
+                if (game.actionDeck.size > 0) {
+                    game.actionDeck.random(this.replayable, 1, "NewActionCard") { it.toStateString() }.forEach { it.moveTo(game.visibleActionCards) }
+                }
+            }
+            this.action(acquire).choose {
+                options({ game.visibleActionCards.cards.filterIndexed { index, _ -> index <= game.currentPlayer.caravan.count } }) { card ->
+                    fun rec(scope: ActionChoicesNextScope<SpiceRoadGameModel, AcquireParameter>,
+                            remaining: SpiceRoadGameModel.Caravan,
+                            leftToPay: Int,
+                            payList: List<SpiceRoadGameModel.Spice> = emptyList()
+                    ) {
+                        if (leftToPay <= 0) {
+                            scope.parameter(AcquireParameter(card, payList))
+                            return
+                        }
+                        scope.options({ remaining.spice.keys }) { payWith ->
+                            rec(this, remaining - payWith.toCaravan(), leftToPay - 1, payList + payWith)
+                        }
+                    }
+                    rec(this, context.game.currentPlayer.caravan, context.game.visibleActionCards.card(card).index)
+                }
+            }
+            this.allActions.precondition { game.currentPlayer.index == playerIndex }
+            this.allActions.after {
+                val gameEnd = when (game.playerCount) {
+                    1, 2, 3 -> game.currentPlayer.pointCards == 6
+                    else -> game.currentPlayer.pointCards == 5
+                }
+                if (gameEnd) {
+                    when (game.turnsLeft) {
+                        -1 -> game.turnsLeft = game.playerCount - (game.currentPlayerIndex + 1)
+                        0 -> this.eliminations.eliminateBy(game.players.mapIndexed { index, player -> index to player }, compareBy({ it.points }, { +it.index }))
+                        else -> game.turnsLeft--
+                    }
+                }
+            }
+            this.allActions.after { game.currentPlayerIndex = game.currentPlayerIndex.next(game.playerCount) }
+
         }
     }
 }
@@ -85,7 +135,8 @@ object SpiceRoadDsl {
 class SpiceRoadGameModel(val playerCount: Int) {
     //Turn: Action -> Caravan Limit (discard to hand size) (-> Game end trigger check)
     //Actions: acquire, claim, rest, play
-    val currentPlayerIndex = 0
+    var turnsLeft = -1
+    var currentPlayerIndex = 0
     val currentPlayer: Player get() = players[currentPlayerIndex]
     val players = (0 until playerCount).map { Player(it) }
     val pointsDeck = CardZone<PointCard>(pointsCards.split("\n").map { x -> x.split(",") }.map { (x, y) -> PointCard(x.toInt(), y.toCaravan()!!) }.toMutableList())
@@ -104,9 +155,22 @@ class SpiceRoadGameModel(val playerCount: Int) {
     val silverCoins = (0 until playerCount * 2).map { Coin(1) }
 
     class ActionCard(val upgrade: Int?, val gain: Caravan?, val trade: Pair<Caravan, Caravan>?) {
+        var spiceOnMe = Caravan()
         fun toStateString(): String = "$upgrade $gain ${trade?.first}->${trade?.second}"
 
-        fun toViewable(): Map<String, Any?> = mapOf("upgrade" to upgrade, "gain" to gain?.toViewable(), "trade" to if (trade == null) null else mapOf("give" to trade.first.toViewable(), "get" to trade.second.toViewable()))
+        fun toViewable(): Map<String, Any?> = mapOf("upgrade" to upgrade, "gain" to gain?.toViewable(), "trade" to if (trade == null) null else mapOf("give" to trade.first.toViewable(), "get" to trade.second.toViewable()), "bonusSpice" to spiceOnMe.toViewable())
+
+        fun addSpice(spice: Spice?) {
+            if (spice != null) {
+                spiceOnMe += spice.toCaravan()
+            }
+        }
+
+        fun takeAllSpice(): Caravan {
+            val tmp = spiceOnMe
+            spiceOnMe = Caravan()
+            return tmp
+        }
     }
 
     class PointCard(val points: Int, val cost: Caravan) {
@@ -130,6 +194,7 @@ class SpiceRoadGameModel(val playerCount: Int) {
                 ActionCard(null, Spice.YELLOW.toCaravan(2), null))
         )
         var points = 0
+        var pointCards = 0
 
         fun toViewable(): Map<String, Any?> {
             return mapOf(
