@@ -16,6 +16,7 @@ import TreeViewGame from "@/components/games/TreeViewGame";
 import Skull from "@/components/games/skull/Skull";
 import DSLTTT from "@/components/games/DSLTTT";
 import TTT3D from "@/components/games/TTT3D";
+import LiarsDice from "@/components/games/LiarsDice";
 
 // ViewTypes for ActionLog
 import SplendorCard from "@/components/games/splendor/SplendorCard"
@@ -133,6 +134,19 @@ const supportedGames = {
             choose: (index) => "choose-" + index
         },
         component: Skull
+    },
+    "LiarsDice": {
+        displayName: "Liar's Dice",
+        dsl: true,
+        actions: {
+            bet: (amount) => ({
+                key: 'amount-' + amount,
+                next: (face) => `bet ${amount}x ${face}'s`
+            }),
+            liar: () => "liar",
+            spotOn: () => "spotOn"
+        },
+        component: LiarsDice
     },
     "Dungeon Mayhem": {
         dsl: gamejs.net.zomis.games.impl.DungeonMayhemDsl.game,

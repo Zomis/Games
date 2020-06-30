@@ -9,6 +9,7 @@ object ServerGames {
 
     val games = mutableMapOf<String, Any>(
         "Set" to SetGame.game,
+        "LiarsDice" to LiarsDiceGame.game,
         "Dungeon Mayhem" to DungeonMayhemDsl.game,
         "Skull" to SkullGame.game,
         "Splendor" to DslSplendor.splendorGame,
