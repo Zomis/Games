@@ -51,9 +51,10 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
 
         val parameter = actionType.deserialize(actionOptionsContext, serialized)
         return if (parameter == null) {
-            availableActions(actionOptionsContext.playerIndex).single { action2 ->
+            val expectedSingleAction = availableActions(actionOptionsContext.playerIndex).filter { action2 ->
                 actionType.serialize(action2.parameter) == serialized
             }
+            expectedSingleAction.singleOrNull() ?: throw IllegalArgumentException("Unable to deserialize $serialized, matching deserialized actions is $expectedSingleAction")
         } else {
             createAction(actionOptionsContext.playerIndex, parameter)
         }
