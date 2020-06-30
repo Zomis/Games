@@ -32,8 +32,7 @@ data class DBGameSummary(
     val gameState: Int,
     @JsonIgnore
     val startingState: Map<String, Any>?,
-    val timeStarted: Long,
-    val timeLastAction: Long
+    val timeStarted: Long
 )
 class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHistory: List<MoveHistory>) {
     private val logger = KLoggers.logger(this)
@@ -44,6 +43,7 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
     val game = gameSetup.createGameWithState(summary.playersInGame.size, summary.gameConfig, stateKeeper)
     val views = mutableListOf<Map<String, Any?>>()
     val errors = mutableListOf<String>()
+    val timeLastAction = moveHistory.map { it.time }.maxBy { it ?: 0 }
 
     init {
         views.add(game.view(null))

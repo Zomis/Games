@@ -10,6 +10,7 @@ import net.zomis.games.server2.db.*
 import net.zomis.games.server2.games.GameCallback
 import net.zomis.games.server2.games.GameSystem
 import net.zomis.games.server2.invites.ClientList
+import java.time.Instant
 import java.util.UUID
 import kotlin.math.max
 
@@ -112,7 +113,7 @@ ORDER BY gameid ASC, "PlayerIndex" ASC
             return
         }
         println(game)
-        println("Type ${game.gameType} state ${game.gameState} LastAction ${game.timeLastAction} Started ${game.timeStarted}")
+        println("Type ${game.gameType} state ${game.gameState} Started ${game.timeStarted}")
         hikariDataSource.connection.use {conn ->
             val tags = gameTags(game)
             tags.forEach {
@@ -150,7 +151,7 @@ ORDER BY gameid ASC, "PlayerIndex" ASC
     }
 
     private fun gameTags(game: DBGameSummary): List<Pair<String, Long>> {
-        return listOf("type/" + game.gameType to max(game.timeLastAction, game.timeStarted))
+        return listOf("type/" + game.gameType to Instant.now().toEpochMilli())
     }
 
 }
