@@ -23,7 +23,7 @@ import java.time.Instant
 import java.util.UUID
 
 data class UnfinishedGames(val unfinishedGames: MutableSet<DBGameSummary>)
-data class MoveHistory(val moveType: String, val playerIndex: Int, val move: Any?, val state: Map<String, Any>?)
+data class MoveHistory(val moveType: String, val playerIndex: Int, val move: Any?, val state: Map<String, Any>?, val time: Long? = null)
 data class PlayerView(val playerId: String, val name: String)
 
 class SuperTable(private val dynamoDB: AmazonDynamoDB) {
@@ -148,6 +148,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
     fun addMove(move: MoveEvent) {
         val epochMilli = Instant.now().toEpochMilli()
         val serverGame = move.game
+        move.game.lastMove = epochMilli
         val moveIndex = serverGame.nextMoveIndex()
         val dbMove = if (serverGame.obj is GameImpl<*>) {
             val gameImpl = serverGame.obj as GameImpl<*>
@@ -241,7 +242,8 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
                 it[Fields.MOVE_TYPE.fieldName] as String,
                 (it[Fields.MOVE_PLAYER_INDEX.fieldName] as BigDecimal).toInt(),
                 convertFromDBFormat(it[Fields.MOVE.fieldName]),
-                convertFromDBFormat(it[Fields.MOVE_STATE.fieldName]) as Map<String, Any>?
+                convertFromDBFormat(it[Fields.MOVE_STATE.fieldName]) as Map<String, Any>?,
+                (it[Fields.MOVE_TIME.fieldName] as BigDecimal).toLong() / 1000
             )
         }.sortedBy { it.first }.map { it.second }
     }
@@ -349,7 +351,6 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         }
         val startingState = convertFromDBFormat(gameDetails[Fields.MOVE_STATE.fieldName]) as Map<String, Any>?
         val timeStarted = gameDetails[Fields.GAME_TIME_STARTED.fieldName] as BigDecimal
-        val timeLastAction = gameDetails[Fields.GAME_TIME_LAST.fieldName] as BigDecimal?
 
         val gameType = gameDetails[Fields.GAME_TYPE.fieldName] as String
         val gameSpec = ServerGames.games[gameType] as GameSpec<Any>?
@@ -366,7 +367,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         } else setup.getDefaultConfig()
 
         return DBGameSummary(gameSpec, config, Prefix.GAME.extract(gameId), playersInGame, gameType, gameState.value,
-                startingState, timeStarted.longValueExact(), timeLastAction?.longValueExact()?:0)
+                startingState, timeStarted.longValueExact())
     }
 
     private fun findPlayerName(playerId: String): String? {

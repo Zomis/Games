@@ -1,6 +1,5 @@
 package net.zomis.games.server2.games
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
 import klog.KLoggers
@@ -19,6 +18,7 @@ import net.zomis.games.server2.invites.ClientList
 import net.zomis.games.server2.invites.InviteOptions
 import net.zomis.games.server2.invites.InviteTurnOrder
 import net.zomis.games.server2.invites.playerMessage
+import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -49,6 +49,7 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
     internal val players: MutableList<Client> = mutableListOf()
     internal val observers: MutableSet<Client> = mutableSetOf()
     var obj: Any? = null
+    var lastMove: Long = Instant.now().toEpochMilli()
 
     fun broadcast(message: (Client) -> Any) {
         players.forEach { it.send(message.invoke(it)) }
@@ -236,7 +237,6 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>, private val callback:
     val router = MessageRouter(this).dynamic(dynamicRouter)
 
     data class GameTypes(val gameTypes: MutableMap<String, GameType> = mutableMapOf())
-    private val objectMapper = ObjectMapper()
     private lateinit var features: Features
 
     fun setup(features: Features, events: EventSystem, idGenerator: GameIdGenerator) {

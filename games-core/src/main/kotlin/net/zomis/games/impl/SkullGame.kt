@@ -37,11 +37,11 @@ data class SkullGameConfig(
     val skulls: Int = 1,
     val flowers: Int = 3,
     // TODO: Technically same player should start. If player *eliminate* themselves, they should choose the next player.
-    val selfEliminatedChooseNextPlayer: Boolean = false,
-    val skullPlayerStarts: Boolean = false
+    val selfEliminatedChooseNextPlayer: Boolean = true,
+    val bettingPlayerAlwaysStart: Boolean = true
 )
 
-class SkullGameModel(config: SkullGameConfig, playerCount: Int): Viewable {
+class SkullGameModel(val config: SkullGameConfig, playerCount: Int): Viewable {
 
     var choseOwnSkull: Boolean = false
     val players = (0 until playerCount).map {
@@ -78,6 +78,8 @@ object SkullGame {
     val bet = factory.action("bet", Int::class)
     val pass = factory.action("pass", Unit::class)
     val choose = factory.action("choose", SkullPlayer::class).serialization(Int::class, { it.index }, { game.players[it] })
+    val chooseNextPlayer = factory.action("chooseNextPlayer", SkullPlayer::class)
+        .serialization(Int::class, { it.index }, { game.players[it] })
     val discard = factory.action("discard", SkullCard::class)
     val play = factory.action("play", SkullCard::class)
     val game = factory.game("Skull") {
@@ -102,7 +104,11 @@ object SkullGame {
             action(pass).requires { game.players.count { !it.pass } > 1 }
             action(pass).effect { game.currentPlayer.pass = true }
             action(pass).effect { log { "$player passes" } }
-            allActions.after { while (game.currentPlayer.pass || game.currentPlayer.totalCards == 0) nextTurn(game) }
+            allActions.after {
+                if (!game.choseOwnSkull) {
+                    while (game.currentPlayer.pass || game.currentPlayer.totalCards == 0) nextTurn(game)
+                }
+            }
             action(bet).requires {
                 val maxBet = game.players.maxBy { it.bet }!!.bet
                 game.currentPlayer.bet < maxBet || maxBet == 0
@@ -137,7 +143,7 @@ object SkullGame {
                 if (skullPlayer != null) {
                     game.choseOwnSkull = skullPlayer == game.currentPlayer
                     if (game.choseOwnSkull) {
-                        log { "$player chose their own and will have to choose a card to discard" }
+                        log { "$player chose their own skull and will have to choose a card to discard" }
                     }
                     game.currentPlayer.chosen.moveAllTo(game.currentPlayer.hand)
                     game.currentPlayer.played.moveAllTo(game.currentPlayer.hand)
@@ -148,7 +154,9 @@ object SkullGame {
                         }
                     }
                     game.newRound() // reset boards, bets and pass values
-                    game.currentPlayerIndex = skullPlayer.index
+                    if (!game.config.bettingPlayerAlwaysStart) {
+                        game.currentPlayerIndex = skullPlayer.index
+                    }
                 }
             }
             action(choose).after {
@@ -167,17 +175,30 @@ object SkullGame {
             }
 
             // If you lost to your own skull... choose a card to get rid of
-            action(discard).requires { game.choseOwnSkull }
-            action(discard).forceUntil { !game.choseOwnSkull }
+            action(discard).forceWhen { game.currentPlayer.totalCards > 0 && game.choseOwnSkull }
             action(discard).options { game.currentPlayer.hand.cards }
             action(discard).effect {
                 logSecret(action.playerIndex) { "$player discarded $action" }
                 game.currentPlayer.hand.card(action.parameter).remove()
+                game.choseOwnSkull = (game.currentPlayer.totalCards == 0) // Allow chooseNextPlayer action if player is eliminated
+                if (game.choseOwnSkull) {
+                    log { "$player was eliminated by their own skull and has to choose the player to go next" }
+                }
+            }
+
+            action(chooseNextPlayer).forceWhen { game.currentPlayer.totalCards == 0 && game.config.selfEliminatedChooseNextPlayer && game.choseOwnSkull }
+            action(chooseNextPlayer).options { game.players.filter { it.totalCards > 0 } }
+            action(chooseNextPlayer).effect {
+                val nextPlayer = action.parameter.index
+                log { "$player chose ${player(nextPlayer)} to be the next player" }
                 game.choseOwnSkull = false
+                game.currentPlayerIndex = nextPlayer
             }
 
             allActions.after {
-                val emptyPlayer = game.players.find { it.totalCards == 0 && eliminations.remainingPlayers().contains(it.index) }
+                val emptyPlayer = game.players.find {
+                    it.totalCards == 0 && eliminations.remainingPlayers().contains(it.index) && game.currentPlayer != it && !game.choseOwnSkull
+                }
                 if (emptyPlayer != null) {
                     log { "${player(emptyPlayer.index)} lost all their cards and is out of the game" }
                     emptyPlayer.bet = 0

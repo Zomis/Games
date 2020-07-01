@@ -33,7 +33,7 @@
         <div xs12>
             Started at {{ timeStarted }} - Ended at {{ timeLastAction }}
         </div>
-        <component xs12 :is="gameComponent" :actions="actions" :view="currentView" :players="players" />
+        <component xs12 :is="gameComponent" :actions="actions" :view="currentView" :players="players" :context="context" />
       </v-flex>
     </v-layout>
     <AiQuery :gameInfo="gameInfo" :gamePosition="position" />
@@ -131,6 +131,15 @@ export default {
         },
         currentEliminations() {
             return [] // TODO: Determine when eliminations were done and add dynamically here based on position.
+        },
+        context() {
+            return {
+                players: this.replay.playersInGame.map(pig => ({ ...pig.player, controllable: false })),
+                gameType: this.replay.gameType,
+                gameId: this.gameInfo.gameId,
+                viewer: -1,
+                scope: 'replay'
+            }
         },
         playerNames() {
             if (this.replay == null) { return [] }

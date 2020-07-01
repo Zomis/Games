@@ -378,7 +378,7 @@ object DungeonMayhemDsl {
                 }
             }
             action(target).options { game.symbolsToResolve.mapNotNull { it.symbol.availableTargets(game) }.firstOrNull() ?: emptyList() }
-            action(target).forceUntil { game.symbolsToResolve.none { it.symbol.availableTargets(game) != null } }
+            action(target).forceWhen { game.symbolsToResolve.any { it.symbol.availableTargets(game) != null } }
             action(target).effect {
                 val symbol = game.symbolsToResolve.first { it.symbol.availableTargets(game) != null }
                 val count = game.symbolsToResolve.count { it == symbol }

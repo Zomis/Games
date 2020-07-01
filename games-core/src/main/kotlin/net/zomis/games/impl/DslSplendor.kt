@@ -294,8 +294,7 @@ object DslSplendor {
             }
 
             action(discardMoney) {
-                forceUntil { game.currentPlayer.chips.count <= game.config.maxMoney }
-                precondition { game.currentPlayer.chips.count > game.config.maxMoney }
+                forceWhen { game.currentPlayer.chips.count > game.config.maxMoney }
                 options { MoneyType.values().toList() }
                 requires { game.currentPlayer.chips.hasWithoutWildcards(action.parameter.toMoney(1)) }
                 effect {

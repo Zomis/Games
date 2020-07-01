@@ -69,7 +69,8 @@ class SkullTest {
         test.performAction(0, "choose", game.model.players[0])
         test.performAction(0, "choose", game.model.players[1])
         Assertions.assertEquals(3, game.model.players[0].totalCards)
-        Assertions.assertEquals(1, game.model.currentPlayerIndex)
+        // With the default options, currentPlayer should not change if you lose a bet.
+        Assertions.assertEquals(0, game.model.currentPlayerIndex)
     }
 
 }
