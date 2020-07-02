@@ -21,7 +21,7 @@
 
                         <Actionable button v-if="context.players[playerIndex].controllable" actionable="liar" :actions="actions">Liar</Actionable>
                         <Actionable button v-if="context.players[playerIndex].controllable" actionable="spotOn" :actions="actions">Spot-On!</Actionable>
-                        <Actionable button v-if="context.players[playerIndex].controllable" :actionType="['bet']" :actions="actions">Bet</Actionable>
+                        <Actionable button v-if="context.players[playerIndex].controllable" :actionType="['bet']" :actions="actions" stickyMenu>Bet</Actionable>
                     </v-card-text>
                 </v-card>
             </v-col>
