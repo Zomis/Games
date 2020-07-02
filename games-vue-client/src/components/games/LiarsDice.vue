@@ -26,8 +26,10 @@
                 </v-card>
             </v-col>
         </v-row>
-        <v-row>
-            Current Bet: {{ view.bet }} by {{ view.better }}
+        <v-row v-if="view.bet">
+            <v-col>
+                Current Bet: {{ view.bet.amount }}x {{ view.bet.value }} by <PlayerProfile show-name :player="context.players[view.better]" />
+            </v-col>
         </v-row>
         <v-row>
             Config: {{ view.config }}
