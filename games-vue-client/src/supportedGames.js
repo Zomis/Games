@@ -76,7 +76,6 @@ const supportedGames = {
         component: RoyalGameOfUR,
     },
     "Hanabi": {
-        displayName: "Hanabi",
         dsl: gamejs.net.zomis.games.impl.HanabiGame.game,
         configComponent: HanabiConfig,
         actions: {
@@ -137,7 +136,7 @@ const supportedGames = {
     },
     "LiarsDice": {
         displayName: "Liar's Dice",
-        dsl: true,
+        dsl: gamejs.net.zomis.games.impl.LiarsDiceGame.game,
         actions: {
             bet: (amount) => ({
                 key: 'amount-' + amount,
@@ -150,7 +149,6 @@ const supportedGames = {
     },
     "Dungeon Mayhem": {
         dsl: gamejs.net.zomis.games.impl.DungeonMayhemDsl.game,
-        enabled: true,
         actions: {
             play: (index) => "play-" + index,
             target: (target) => "target:player-" + target.player + ';shield-' + target.shieldCard + ';discarded-' + target.discardedCard
@@ -161,7 +159,6 @@ const supportedGames = {
         component: DungeonMayhem
     },
     "Artax": {
-        displayName: "Artax",
         dsl: gamejs.net.zomis.games.impl.ArtaxGame.gameArtax,
         actions: tttMoveActions,
         component: DSLTTT,
