@@ -19,7 +19,7 @@ class Server2WS(private val javalin: Javalin, private val handler: WebsocketMess
 
     private fun onOpen(conn: WsSession) {
         val client = WebClient(conn)
-        logger.info("Connection opened: " + conn.remoteAddress)
+        logger.info("Connection opened: $client = " + conn.remoteAddress)
         conn.idleTimeout = TimeUnit.MINUTES.toMillis(30)
         clients[conn] = client
         client.connected()
