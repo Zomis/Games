@@ -88,7 +88,7 @@ export default {
 }
 
 .player.current-player {
-    border: 1px solid yellow !important;
-    box-shadow: 0px 0px 5px 6px yellow !important;
+    border: 1px solid #ddf9fd !important;
+    box-shadow: 0px 0px 5px 6px #ddf9fd !important;
 }
 </style>
