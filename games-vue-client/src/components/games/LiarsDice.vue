@@ -56,4 +56,8 @@ export default {
     border-width: thick !important;
     border-color: #ffd166 !important;
 }
+
+.currentPlayer {
+    background-color: #ddf9fd;
+}
 </style>
