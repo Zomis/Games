@@ -23,9 +23,9 @@ data class SkullPlayer(val index: Int, val hand: CardZone<SkullCard>): Viewable 
 
     override fun toView(viewer: PlayerIndex): Any? {
         return mapOf(
-            "hand" to if (viewer == index) hand.cards else hand.size,
-            "board" to if (viewer == index) played.cards else played.size,
-            "chosen" to chosen.cards,
+            "hand" to if (viewer == index) hand.cards.map { it.name } else hand.size,
+            "board" to if (viewer == index) played.cards.map { it.name } else played.size,
+            "chosen" to chosen.cards.map { it.name },
             "points" to points,
             "bet" to bet,
             "pass" to pass
