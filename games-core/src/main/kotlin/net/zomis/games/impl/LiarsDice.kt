@@ -76,7 +76,7 @@ object LiarsDiceGame {
     fun newRound(game: LiarsDice, replayable: ReplayableScope) {
         game.bet = null
         game.players.forEach {
-            it.dice = replayable.ints("player-" + it.index) { it.dice.map { random.nextInt(1, 6) } }.toMutableList()
+            it.dice = replayable.ints("player-" + it.index) { it.dice.map { random.nextInt(6) + 1 } }.toMutableList()
         }
     }
 
