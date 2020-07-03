@@ -1,5 +1,5 @@
 <template>
-    <v-container fluid>
+    <v-container fluid class="splendor">
         <v-row>
             <v-col>Round {{ view.round }}</v-col>
         </v-row>
@@ -157,8 +157,8 @@ export default {
     color: var(--splendor-black) !important;
 }
 
-.chosen-once,
-.actionable:hover {
+.splendor .chosen-once,
+.splendor .actionable:hover {
     border-width: thick !important;
     border-color: var(--splendor-yellow) !important;
 }
