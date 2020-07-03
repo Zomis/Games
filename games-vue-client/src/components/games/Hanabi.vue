@@ -25,10 +25,7 @@
       <v-col md="auto" v-for="player in otherPlayers" :key="'player-' + player.index" class="animate-all">
         <v-card :class="{ 'current-player': view.currentPlayer == player.index }" class="animate-all">
           <v-card-title>
-            <span class="player-name">
-              <span>{{ player.index + 1 }}.</span>
-              <PlayerProfile :player="players[player.index]" :size="32" show-name />
-            </span>
+            <PlayerProfile :player="players[player.index]" :size="32" show-name />
           </v-card-title>
           <v-card-text>
             <CardZone>
@@ -81,10 +78,7 @@
       <transition name="translate-animation">
       <v-card :key="view.hand.index" class="animate-all player-hand" :class="{ 'current-player': view.currentPlayer == view.hand.index }">
         <v-card-title>
-          <span class="player-name">
-            <span>{{ view.hand.index + 1 }}.</span>
-            <PlayerProfile :player="players[view.hand.index]" :size="32" show-name post-fix="(You)" />
-          </span>
+          <PlayerProfile :player="players[view.hand.index]" :size="32" show-name post-fix="(You)" />
         </v-card-title>
         <v-card-text>
           <CardZone>
