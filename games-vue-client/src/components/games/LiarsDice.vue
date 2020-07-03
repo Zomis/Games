@@ -1,9 +1,8 @@
 <template>
     <v-container fluid>
         <v-row>
-            <v-col v-for="(player, playerIndex) in view.players" :key="playerIndex"
-              :class="{ currentPlayer: playerIndex == view.currentPlayer }">
-                <v-card>
+            <v-col v-for="(player, playerIndex) in view.players" :key="playerIndex">
+                <v-card :class="{ currentPlayer: playerIndex == view.currentPlayer }">
                     <v-card-title>
                         <PlayerProfile show-name :player="context.players[playerIndex]" />
                     </v-card-title>
