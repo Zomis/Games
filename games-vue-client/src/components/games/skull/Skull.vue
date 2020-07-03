@@ -1,9 +1,8 @@
 <template>
     <v-container fluid>
         <v-row>
-            <v-col v-for="(player, playerIndex) in view.players" :key="playerIndex"
-              :class="{ currentPlayer: playerIndex == view.currentPlayer }">
-                <v-card :class="{ passed: player.pass }">
+            <v-col v-for="(player, playerIndex) in view.players" :key="playerIndex">
+                <v-card class="player" :class="{ passed: player.pass, 'current-player': playerIndex == view.currentPlayer }">
                     <v-card-title>
                         <PlayerProfile show-name :player="context.players[playerIndex]" />
                     </v-card-title>
@@ -85,5 +84,10 @@ export default {
     border-style: solid !important;
     border-width: thick !important;
     border-color: #ffd166 !important;
+}
+
+.player.current-player {
+    border: 1px solid yellow !important;
+    box-shadow: 0px 0px 5px 6px yellow !important;
 }
 </style>

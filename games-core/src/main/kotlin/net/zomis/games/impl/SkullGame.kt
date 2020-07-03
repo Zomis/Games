@@ -65,7 +65,7 @@ class SkullGameModel(val config: SkullGameConfig, playerCount: Int): Viewable {
         return mapOf(
             "currentPlayer" to currentPlayerIndex,
             "players" to players.map { it.toView(viewer) },
-            "you" to viewer?.let { players[viewer].let { mapOf("hand" to it.hand.cards, "board" to it.played.cards) } }
+            "you" to viewer?.let { players[viewer].let { pl -> mapOf("hand" to pl.hand.cards.map { it.name }, "board" to pl.played.cards.map { it.name }) } }
         )
     }
 
