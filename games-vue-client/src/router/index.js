@@ -99,14 +99,13 @@ export default new Router({
       component: PlayLocalGame,
       props: route => {
         let playerCount = 2;
-        if (route.params.gameType === 'Artax') {
-          playerCount = 2 + Math.floor(Math.random() * 3);
-        }
-        if (route.params.gameType === 'Hanabi') {
-          playerCount = 2 + Math.floor(Math.random() * 4);
-        }
-        if (route.params.gameType === 'Splendor') {
-          playerCount = 2 + Math.floor(Math.random() * 3);
+        let game = supportedGames.games[route.params.gameType];
+        if (game.dsl && game.dsl !== true) {
+          let setup = new supportedGames.gamejs.net.zomis.games.dsl.impl.GameSetupImpl(game.dsl)
+          let min = setup.playersCount.first
+          let max = setup.playersCount.last
+          playerCount = min + Math.floor(Math.random() * (max - min + 1));
+          console.log(`Random from ${min} to ${max} = ${playerCount}`)
         }
         let players = new Array(playerCount).fill(0).map((_, index) => index).map(i => ({
           index: i,
