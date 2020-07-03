@@ -10,7 +10,7 @@
                         <CardZone v-if="Array.isArray(player.hand)">
                             <Actionable button v-for="(card, index) in player.hand" :key="index"
                                 :actions="actions" class="list-complete-item" :actionable="'hand-' + card">
-                                <v-icon>{{ icons[card] }}</v-icon>
+                                <v-icon :color="colors[card]">{{ icons[card] }}</v-icon>
                             </Actionable>
                         </CardZone>
                         <CardZone v-else>
@@ -24,7 +24,7 @@
                         <CardZone v-if="Array.isArray(player.board)">
                             <Actionable button v-for="(card, index) in player.board" :key="index"
                                 :actions="actions" class="list-complete-item" :actionable="'choose-' + playerIndex">
-                                <v-icon>{{ icons[card] }}</v-icon>
+                                <v-icon :color="colors[card]">{{ icons[card] }}</v-icon>
                             </Actionable>
                         </CardZone>
                         <span v-else>
@@ -39,7 +39,7 @@
                         <div>Chosen</div>
                         <CardZone>
                             <v-icon v-for="(card, index) in player.chosen" :key="index"
-                                class="list-complete-item">{{ icons[card] }}</v-icon>
+                                class="list-complete-item" :color="colors[card]">{{ icons[card] }}</v-icon>
                         </CardZone>
 
                         <div>Bet</div>
@@ -68,6 +68,7 @@ export default {
     },
     data() {
         return {
+            colors: { FLOWER: 'green', SKULL: 'black' },
             icons: { FLOWER: 'mdi-flower', SKULL: 'mdi-skull' }
         }
     }
