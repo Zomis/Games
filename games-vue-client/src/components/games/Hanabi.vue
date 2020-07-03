@@ -23,7 +23,7 @@
 
     <v-row justify="center">
       <v-col md="auto" v-for="player in otherPlayers" :key="'player-' + player.index" class="animate-all">
-        <v-card :class="{ 'active-player': view.currentPlayer == player.index }" class="animate-all">
+        <v-card :class="{ 'current-player': view.currentPlayer == player.index }" class="animate-all">
           <v-card-title>
             <span class="player-name">
               <span>{{ player.index + 1 }}.</span>
@@ -79,7 +79,7 @@
 
     <v-row justify="center" class="translate-animation-wrapper" v-if="view.hand">
       <transition name="translate-animation">
-      <v-card :key="view.hand.index" class="animate-all player-hand" :class="{ 'active-player': view.currentPlayer == view.hand.index }">
+      <v-card :key="view.hand.index" class="animate-all player-hand" :class="{ 'current-player': view.currentPlayer == view.hand.index }">
         <v-card-title>
           <span class="player-name">
             <span>{{ view.hand.index + 1 }}.</span>
@@ -228,11 +228,9 @@ export default {
   transform: translateX(-400px);
 }
 
-.player-name {
-  transition: text-shadow 1.5s ease;
-}
-.active-player .player-name {
-  text-shadow: 3px 3px 5px #007F00;
+.current-player {
+  border: 1px solid #ddf9fd !important;
+  box-shadow: 0px 0px 5px 6px #ddf9fd !important;
 }
 
 .number-transition-enter-active {
