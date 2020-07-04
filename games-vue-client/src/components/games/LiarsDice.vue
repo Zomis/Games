@@ -2,7 +2,7 @@
     <v-container fluid>
         <v-row>
             <v-col v-for="(player, playerIndex) in view.players" :key="playerIndex">
-                <v-card :class="{ currentPlayer: playerIndex == view.currentPlayer }">
+                <v-card :class="{ currentPlayer: playerIndex == view.currentPlayer, eliminated: player.dice.length === 0 }">
                     <v-card-title>
                         <PlayerProfile show-name :player="context.players[playerIndex]" />
                     </v-card-title>
@@ -50,6 +50,9 @@ export default {
 }
 </script>
 <style scoped>
+.eliminated {
+    opacity: 0.5
+}
 .actionable {
     border-style: solid !important;
     border-width: thick !important;
