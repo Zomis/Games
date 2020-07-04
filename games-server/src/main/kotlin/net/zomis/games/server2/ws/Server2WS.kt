@@ -19,7 +19,7 @@ class Server2WS(private val javalin: Javalin, private val handler: WebsocketMess
 
     private fun onOpen(conn: WsSession) {
         val client = WebClient(conn)
-        logger.info("Connection opened: $client = " + conn.remoteAddress)
+        logger.info("Connection opened: $conn = " + conn.remoteAddress)
         conn.idleTimeout = TimeUnit.MINUTES.toMillis(30)
         clients[conn] = client
         client.connected()
@@ -38,11 +38,11 @@ class Server2WS(private val javalin: Javalin, private val handler: WebsocketMess
     private fun onMessage(conn: WsSession, message: String?) {
         val client = clients[conn]
         if (client == null) {
-            logger.warn { "Message from null--$conn: $message" }
+            logger.error { "Message from null--$conn: $message" }
             return
         }
         try {
-            logger.info("Message from $client: $message")
+            logger.info("Message from $client connection $conn: $message")
             handler.incomingMessage(client, message!!)
         } catch (e: Exception) {
             logger.warn(e) { "Error handling $message" }
