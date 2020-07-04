@@ -59,6 +59,9 @@ export default {
     LobbyGameType,
     ...supportedGames.components()
   },
+  mounted() {
+    this.$store.dispatch("setTitle", '')
+  },
   methods: {
     vsify(players) {
       let result = "";

@@ -195,6 +195,10 @@ function enabledGames() {
 
 export default {
     gamejs: gamejs,
+    displayName(gameType) {
+        let game = supportedGames[gameType]
+        return game && game.displayName ? game.displayName : gameType
+    },
     storeModules() {
         let modules = {}
         for (let key of enabledGames()) {

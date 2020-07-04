@@ -16,7 +16,7 @@ import ActionLog from "@/components/games/ActionLog"
 
 export default {
   name: "PlayGame",
-  props: ["gameType", "gameId", "showRules"],
+  props: ["gameType", "gameId"],
   components: {
     GameHead, ActionLog
   },
@@ -32,6 +32,7 @@ export default {
   mounted() {
     console.log("PlayGame mounted")
     this.$store.dispatch('wall').then(() => {
+      this.$store.dispatch("setTitle", this.supportedGames.displayName(this.gameType))
       this.$store.dispatch("DslGameState/joinGame", { gameType: this.gameType, gameId: this.gameId })
     })
   },

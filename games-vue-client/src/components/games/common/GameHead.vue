@@ -37,8 +37,7 @@ export default {
   },
   computed: {
     gameDisplayName() {
-      let game = supportedGames.games[this.context.gameType]
-      return game && game.displayName ? game.displayName : this.context.gameType
+      return supportedGames.displayName(this.context.gameType);
     },
     displayStyle() {
       if (!this.context.players) return 0;
