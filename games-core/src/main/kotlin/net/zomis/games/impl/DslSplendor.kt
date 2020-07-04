@@ -135,7 +135,7 @@ class SplendorGame(val config: SplendorConfig, val eliminations: PlayerEliminati
         val requiredPerType = if (moneyTypes.size == 2) 4 else 3
         val money = moneyTypes.map { it.toMoney(requiredPerType) }.reduce { acc, money -> acc + money }
         SplendorNoble(3, money)
-    }.shuffled().toMutableList())
+    }.toMutableList())
 
     val nobles = CardZone<SplendorNoble>()
     val deck = splendorCards.withIndex().flatMap { level -> splendorCardsFromMultilineCSV(level.index + 1, level.value) }
@@ -212,8 +212,12 @@ object DslSplendor {
         return money.moneys.entries.sortedBy { it.key.name }.map { it.key.name to it.value }
                 .let { if (money.wildcards > 0) it.plus("wildcards" to money.wildcards) else it }.toMap()
     }
-    fun viewNoble(noble: SplendorNoble): Map<String, Any>
-        = mapOf("points" to 3, "requirements" to viewMoney(noble.requirements), "id" to noble.toStateString())
+    fun viewNoble(game: SplendorGame, noble: SplendorNoble): Map<String, Any?> = mapOf(
+        "points" to 3,
+        "requirements" to viewMoney(noble.requirements),
+        "id" to noble.toStateString(),
+        "owner" to game.players.find { it.nobles.cards.contains(noble) }?.index
+    )
     fun viewCard(card: SplendorCard): Map<String, Any?> {
         return mapOf(
                 "id" to card.id,
@@ -257,9 +261,9 @@ object DslSplendor {
 
                 // Nobles
                 if (game.config.useNobles) {
-                    val nobles = game.allNobles.top(game.players.size + 1)
-                    val nobleStates = replayable.strings("nobles") { nobles.map { c -> c.toStateString() } }
-                    game.allNobles.deal(game.allNobles.findStates(nobleStates) { c -> c.toStateString() }, listOf(game.nobles))
+                    game.allNobles.random(replayable, game.players.size + 1, "nobles") { it.toStateString() }.forEach {
+                        it.moveTo(game.nobles)
+                    }
                 }
             }
 
@@ -349,7 +353,7 @@ object DslSplendor {
             allActions.after {
                 val noble = game.endTurnCheck()
                 if (noble != null) {
-                    log { "$player got ${viewLink("a noble", "noble", viewNoble(noble))}" }
+                    log { "$player got ${viewLink("a noble", "noble", viewNoble(game, noble))}" }
                 }
             }
         }
@@ -371,7 +375,8 @@ object DslSplendor {
                 MoneyType.values().associate { it to game.stock.moneys[it] }.plus("wildcards" to game.stock.wildcards)
             }
             value("nobles") {
-                it.nobles.map { noble -> viewNoble(noble) }
+                val allNobles = it.players.flatMap { pl -> pl.nobles.cards } + it.nobles.cards
+                allNobles.map { noble -> viewNoble(game, noble) }
             }
             value("players") { game ->
                 game.players.map { player ->
@@ -381,7 +386,7 @@ object DslSplendor {
                     mapOf(
                             "points" to player.points,
                             "money" to viewMoney(player.chips).filter { it.value > 0 },
-                            "nobles" to player.nobles.cards.map { viewNoble(it) },
+                            "nobles" to player.nobles.cards.map { viewNoble(game, it) },
                             "discounts" to viewMoney(player.discounts()),
                             reservedPair
                     )
