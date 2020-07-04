@@ -21,6 +21,8 @@ import net.zomis.games.server2.games.*
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.TimeUnit
+import kotlin.system.measureNanoTime
 
 data class UnfinishedGames(val unfinishedGames: MutableSet<DBGameSummary>)
 data class MoveHistory(val moveType: String, val playerIndex: Int, val move: Any?, val state: Map<String, Any>?, val time: Long? = null)
@@ -307,8 +309,6 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         this.update("Simple Update $pkValue, $skValue", update)
     }
 
-    fun authenticateSession(session: String) {}
-
     fun getGameSummary(gameId: String): DBGameSummary? {
         val pureGameId = Prefix.GAME.extract(gameId)
         val query = QuerySpec()
@@ -383,5 +383,30 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
             this.table.table.query(query.withReturnConsumedCapacity(ReturnConsumedCapacity.INDEXES))
         }
     }
+
+    fun cookieAuth(cookie: String): PlayerInfo? {
+        val time = System.currentTimeMillis()
+        val earliestPreviousLoginTime = time - TimeUnit.DAYS.toMillis(30)
+        logger.info { "Looking for cookie $cookie with earliest previous login time $earliestPreviousLoginTime" }
+        val skValue = Prefix.OAUTH.sk("guest/$cookie")
+        val existing = this.gsiLookup(QuerySpec().withHashKey(this.sk, skValue)
+                .withRangeKeyCondition(RangeKeyCondition(this.data).gt(earliestPreviousLoginTime / 1000))
+        ).firstOrNull() ?: return null
+
+        val itemWithData = this.getItem(existing.getString(this.pk), existing.getString(this.sk)) ?: return null
+        logger.info { itemWithData.asMap() }
+        val playerId = Prefix.PLAYER.extract(itemWithData.getString(this.pk))
+        return PlayerInfo(itemWithData.getString(Fields.PLAYER_NAME.fieldName), UUID.fromString(playerId))
+    }
+
+    private fun getItem(pkValue: String, skValue: String): Item? {
+        var result: Item? = null
+        val time = measureNanoTime {
+            result = table.table.getItem(this.pk, pkValue, this.sk, skValue)
+        }
+        logger.info { "Consumed Capacity on GetItem($pkValue, $skValue) consumed null and took $time" }
+        return result
+    }
+
 
 }

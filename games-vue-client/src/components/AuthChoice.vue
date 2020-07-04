@@ -25,6 +25,7 @@ export default {
   },
   methods: {
     authenticateGuest: function() {
+      localStorage.authCookie = null;
       this.auth = { provider: "guest" };
       Socket.connect(this.server);
     },
@@ -41,6 +42,9 @@ export default {
       if (this.$auth.isAuthenticated()) {
         return this.$auth.getToken();
       }
+      if (localStorage.authCookie && localStorage.authCookie !== "null") {
+        return "cookie:" + localStorage.authCookie;
+      }
       return false;
     },
     connected: function() {
@@ -49,6 +53,11 @@ export default {
       Socket.route(`auth/${this.auth.provider}`, { token: token });
     },
     authenticated: function(e) {
+      // Authenticated by server
+      if (e.cookie) {
+        localStorage.authCookie = e.cookie;
+        localStorage.lastUsedProvider = "guest";
+      }
       this.onAuthenticated(e);
     }
   },

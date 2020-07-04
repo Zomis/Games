@@ -5,9 +5,18 @@ import com.github.kittinunf.fuel.Fuel
 import net.zomis.core.events.EventSystem
 import org.slf4j.LoggerFactory
 import java.net.URL
+import java.security.SecureRandom
+import java.util.Base64
 import java.util.UUID
 
-data class ClientLoginEvent(val client: Client, val providerId: String, val loginName: String, val provider: String, val token: String)
+data class ClientLoginEvent(
+    val client: Client,
+    val providerId: String,
+    val loginName: String,
+    val provider: String,
+    @Deprecated("unused")
+    val token: String
+)
 
 fun URL.lines(): List<String> {
     return this.readText(Charsets.UTF_8).split("\n")
@@ -16,7 +25,13 @@ fun URL.lines(): List<String> {
         .map { it[0].toUpperCase() + it.substring(1) }
 }
 
-class AuthorizationSystem(private val events: EventSystem) {
+class AuthorizationCallback(
+    val cookieLookup: (String) -> PlayerInfo? = { null }
+)
+data class PlayerInfo(val name: String, val playerId: PlayerId)
+
+class AuthorizationSystem(private val events: EventSystem, private val callback: AuthorizationCallback = AuthorizationCallback()) {
+    private val secureRandom: SecureRandom = SecureRandom()
     val router = MessageRouter(this)
         .handler("guest", this::handleGuest)
         .handler("github", this::handleGitHub)
@@ -31,18 +46,41 @@ class AuthorizationSystem(private val events: EventSystem) {
 
     private fun handleGuest(message: ClientJsonMessage) {
         val client = message.client
-        val token: String = guestAdjectives?.random()
-            ?.plus(guestAnimals?.random()?:"")
-            ?.plus(guestRandom.nextInt(10, 99))
+        val cookie = message.data["token"].asText()
+        if (cookie.startsWith("cookie:")) {
+            val playerInfo = callback.cookieLookup(cookie.substringAfter("cookie:"))
+            if (playerInfo == null) {
+                // No need to log client information as client is not logged in
+                logger.info("Invalid cookie was sent: $cookie")
+                return
+            }
+
+            client.updateInfo(playerInfo.name, playerInfo.playerId, null)
+            events.execute(ClientLoginEvent(client, cookie, playerInfo.name, "guest", cookie))
+            sendLoginToClient(client, cookie)
+        } else {
+            val token: String = guestAdjectives?.random()
+                ?.plus(guestAnimals?.random()?:"")
+                ?.plus(guestRandom.nextInt(10, 99))
                 ?: guestRandom.nextInt(100000).toString()
-        this.handleGuest(client, token, UUID.randomUUID())
+            this.handleGuest(client, token, UUID.randomUUID())
+        }
     }
+
     fun handleGuest(client: Client, token: String, uuid: UUID) {
         val loginName = token
         logger.info("$client with token (empty) is guest/$loginName")
         client.updateInfo(loginName, uuid)
-        events.execute(ClientLoginEvent(client, loginName, loginName, "guest", token))
-        sendLoginToClient(client)
+
+        val cookie = generateSecureCookie()
+        events.execute(ClientLoginEvent(client, cookie, loginName, "guest", token))
+        sendLoginToClient(client, cookie)
+    }
+
+    private fun generateSecureCookie(): String {
+        val bytes = ByteArray(32)
+        secureRandom.nextBytes(bytes)
+        return Base64.getEncoder().encodeToString(bytes)
     }
 
     private fun handleGitHub(message: ClientJsonMessage) {
@@ -81,12 +119,12 @@ class AuthorizationSystem(private val events: EventSystem) {
         sendLoginToClient(client)
     }
 
-    private fun sendLoginToClient(client: Client) {
+    private fun sendLoginToClient(client: Client, cookie: String? = null) {
         client.send(mapOf(
             "type" to "Auth", "playerId" to client.playerId,
             "name" to client.name,
             "picture" to client.picture
-        ))
+        ).let { if (cookie != null) it.plus("cookie" to cookie) else it })
     }
 
 }
