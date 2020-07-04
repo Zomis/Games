@@ -277,10 +277,16 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>, private val callback:
 }
 
 fun MoveEvent.moveMessage(): Map<String, Any?> {
+    val serverGame = this.game
+    val moveData = if (serverGame.obj is GameImpl<*>) {
+        val gameImpl = serverGame.obj as GameImpl<*>
+        val actionType = gameImpl.actions.type(this.moveType)!!.actionType
+        actionType.serialize(this.move)
+    } else { this.move }
     return this.game.toJson("GameMove")
         .plus("player" to this.player)
         .plus("moveType" to this.moveType)
-        .plus("move" to this.move)
+        .plus("move" to moveData)
 }
 
 fun PlayerEliminatedEvent.eliminatedMessage(): Map<String, Any?> {
