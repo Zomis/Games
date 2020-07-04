@@ -1,4 +1,4 @@
-# Server2
+# Zomis' Games
 
 One of the goals with this project is to easily create implementations of several turn-based multiplayer games, both logic and GUI.
 
@@ -58,9 +58,9 @@ One of the main goals of this project is that it should be easy to implement a n
 To implement a new game you'll need to add:
 
 - Kotlin code written in the Game-DSL specifying the game model, the game actions, and the game view.
-- Mapping in [ServerGames.kt](https://github.com/Zomis/Server2/blob/master/games-server/src/main/kotlin/net/zomis/games/server2/ServerGames.kt)
+- Mapping in [ServerGames.kt](https://github.com/Zomis/Games/blob/master/games-server/src/main/kotlin/net/zomis/games/server2/ServerGames.kt)
 - Vue component to display the game state and fire actions
-- Mapping in [supportedGames.js](https://github.com/Zomis/Server2/blob/master/games-vue-client/src/supportedGames.js)
+- Mapping in [supportedGames.js](https://github.com/Zomis/Games/blob/master/games-vue-client/src/supportedGames.js)
 
 ## Lessons learned from previous projects
 
