@@ -47,7 +47,7 @@ class DslRandomPlayTest {
 
         val tokens = mutableListOf("guest-12345", "guest-23456")
         fun authTest(message : ClientJsonMessage) {
-            AuthorizationSystem(server!!.events).handleGuest(message.client, tokens.removeAt(0), UUID.randomUUID())
+            AuthorizationSystem(server!!.events).handleGuest(message.client, tokens.removeAt(0), UUID.randomUUID()) {""}
         }
         server!!.messageRouter.handler("auth/guest", ::authTest)
     }

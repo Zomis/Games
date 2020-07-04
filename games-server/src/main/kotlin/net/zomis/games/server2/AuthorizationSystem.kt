@@ -63,16 +63,16 @@ class AuthorizationSystem(private val events: EventSystem, private val callback:
                 ?.plus(guestAnimals?.random()?:"")
                 ?.plus(guestRandom.nextInt(10, 99))
                 ?: guestRandom.nextInt(100000).toString()
-            this.handleGuest(client, token, UUID.randomUUID())
+            this.handleGuest(client, token, UUID.randomUUID(), this::generateSecureCookie)
         }
     }
 
-    fun handleGuest(client: Client, token: String, uuid: UUID) {
+    fun handleGuest(client: Client, token: String, uuid: UUID, cookieProvider: () -> String) {
         val loginName = token
         logger.info("$client with token (empty) is guest/$loginName")
         client.updateInfo(loginName, uuid)
 
-        val cookie = generateSecureCookie()
+        val cookie = cookieProvider()
         events.execute(ClientLoginEvent(client, cookie, loginName, "guest", token))
         sendLoginToClient(client, cookie)
     }
