@@ -30,7 +30,7 @@ Existing features include:
 - Database which stores all games
 - Online Multiplayer
 - AIs
-- 8+ different games implemented
+- 12+ different games implemented
 
 ## Building and running locally
 
@@ -73,6 +73,36 @@ See [Decisions made documentation](https://github.com/Zomis/Games/blob/master/do
 ### Documentation and test-cases at the same time
 
 I wrote my own tool to generate documentation for how the client and server communicates. As I am sometimes not motivated to write test-cases and even less motivated to write documentation, I figured that I might as well generate the documentation from the test-cases. I have integrated a check in my build pipeline to make sure that the documentation is not outdated.
+
+## Project goals, and differences from other projects
+
+### Project Goals
+
+- Open Source
+- Implementation of game rules
+- Easy accessible (works on all major browsers, should also work on mobile browsers)
+- Easy to get started
+  - Login using OAuth, or login as guest
+  - No complicated registration required
+- Relatively uncheatable, including no information sent to frontend that shouldn't be seen
+- Statistics and replays
+- No achievements and unnecessary stuff
+- Computer-controlled opponents to entertain yourself or to think about optimal actions
+- Possibility to make your own computer-controlled opponent (if you're a programmer at least, possibly also for others in the future)
+- AI:s with Reinforcement Learning (not yet implemented)
+- Easy to make new games
+- Platform for implementing and play-testing new games and game ideas
+  - Provides re-usable components (see #96 for frontend components, some similar functionality also exist for back-end)
+
+### Differences from Tabletop Simulator, Board Game Arena and other projects
+
+- No need to download anything, or register
+- No "flip table" button (some might consider it the best feature of Tabletop, others both the best and the worst)
+- Not just a physics engine. This has all the rules implemented and fully automated
+- Computer-controlled opponents
+- All games are free, no premium-specific games
+- No achievements and unnecessary stuff
+- Open Source
 
 ## TODO-list / Roadmap / Future features
 
