@@ -39,7 +39,7 @@ export default {
   computed: {
     gameDisplayName() {
       let game = supportedGames.games[this.gameInfo.gameType]
-      return game.displayName ? game.displayName : this.gameInfo.gameType
+      return game && game.displayName ? game.displayName : this.gameInfo.gameType
     },
     displayStyle() {
       if (this.playerCount <= 2) {
