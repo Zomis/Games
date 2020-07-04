@@ -195,7 +195,7 @@ class InviteSystem(
     private fun invitePrepare(message: ClientJsonMessage) {
         val gameType = message.data.get("gameType")?.asText() ?: throw IllegalArgumentException("Missing field: gameType")
         val setup = ServerGames.setup(gameType)
-        val gameOptions = setup?.getDefaultConfig()
+        val gameOptions = setup?.getDefaultConfig()?.takeUnless { it == Unit }
         message.client.send(mapOf(
             "type" to "InvitePrepare",
             "gameType" to gameType,

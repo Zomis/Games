@@ -62,13 +62,14 @@ class LiarsDice(val config: LiarsDiceConfig, val playerCount: Int): Viewable {
 }
 
 data class LiarsDiceConfig(
+    val dicePerPlayer: Int = 5,
     val allowHigherQuantityAnyFace: Boolean = true,
     val allowHigherFaceAnyQuantity: Boolean = false,
-    val onesAreWild: Boolean = false,
+//    val onesAreWild: Boolean = false,
     val allowSpotOn: Boolean = true,
-    val spotOnEveryoneLoses: Boolean = true,
-    val callingWildsFirstResetsThem: Boolean = false, // point 5 at https://www.wikihow.com/Play-Liar%27s-Dice
-    val twoDiceLeftBetOnSum: Boolean = false // If 2 players left with only one die each, bet on sum of the dice. (point 9 in wikihow)
+    val spotOnEveryoneLoses: Boolean = true
+//    val callingWildsFirstResetsThem: Boolean = false, // point 5 at https://www.wikihow.com/Play-Liar%27s-Dice
+//    val twoDiceLeftBetOnSum: Boolean = false // If 2 players left with only one die each, bet on sum of the dice. (point 9 in wikihow)
 )
 
 object LiarsDiceGame {
