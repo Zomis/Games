@@ -1,6 +1,5 @@
 <template>
   <div :class="['game', 'player-' + currentPlayer]">
-    <GameHead :gameInfo="gameInfo" :playerCount="playerCount" :view="view" :eliminations="eliminations" />
     <component :is="viewComponent" :view="view" :actions="actions" :players="gameInfo.players" :context="context" />
     <v-btn @click="cancelAction()" :disabled="actionChoice === null">Reset Action</v-btn>
   </div>
@@ -159,7 +158,7 @@ export default {
     },
     context() {
       return {
-        players: this.gameInfo.players.map(p => ({ ...p, controllable: true })),
+        players: this.gameInfo.players.map(p => ({ ...p, controllable: true, elimination: this.eliminations.find(e => e.playerIndex == p.index) })),
         gameType: this.gameInfo.gameType,
         gameId: "00000000-0000-0000-0000-000localgame",
         viewer: this.gameInfo.yourIndex,

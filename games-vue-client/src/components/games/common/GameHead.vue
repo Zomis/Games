@@ -11,14 +11,13 @@
               vs.
             </v-col>
             <PlayerInGameInfo :key="'player-in-game-' + playerIndex"
-             :player="player" :view="view"
-             :eliminations="eliminations"
+             :player="player"
              :displayStyle="displayStyle"
             />
           </template>
         </v-row>
         <v-row v-if="gameOver">
-          <v-col><router-link :to="`/games/${gameInfo.gameType}/${gameInfo.gameId}/replay`">Watch replay</router-link></v-col>
+          <v-col><router-link :to="`/games/${context.gameType}/${context.gameId}/replay`">Watch replay</router-link></v-col>
           <!-- TODO: Play again option (re-send same invite to same players, then switch to specific-Invite screen) -->
         </v-row>
       </v-container>
@@ -32,34 +31,37 @@ import md5 from 'md5';
 
 export default {
   name: "GameHead",
-  props: ["gameInfo", "playerCount", "view", "eliminations"],
+  props: ["context"],
   components: {
     PlayerInGameInfo
   },
   computed: {
     gameDisplayName() {
-      let game = supportedGames.games[this.gameInfo.gameType]
-      return game && game.displayName ? game.displayName : this.gameInfo.gameType
+      let game = supportedGames.games[this.context.gameType]
+      return game && game.displayName ? game.displayName : this.context.gameType
     },
     displayStyle() {
-      if (this.playerCount <= 2) {
+      if (!this.context.players) return 0;
+      let playerCount = this.context.players.length;
+      if (playerCount <= 2) {
         return "vs";
       }
-      if (this.playerCount <= 3) {
+      if (playerCount <= 3) {
         // For testing avatars as well, later I think this could work with up to 5 players
         return "table";
       }
       return "avatars";
     },
     gameOver() {
-      return this.eliminations.length == this.players.length
+      return this.context.players.every(p => p.elimination)
     },
     players() {
-      return this.gameInfo.players.map((player, i) => {
+      return this.context.players.map((player, i) => {
         let playerId = player.id || player.playerId
         return {
           index: i,
           id: playerId,
+          elimination: player.elimination,
           name: player.name,
           picture: player.picture || `https://www.gravatar.com/avatar/${md5(playerId)}?s=128&d=identicon`
         }
