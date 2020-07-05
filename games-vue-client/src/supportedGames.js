@@ -236,8 +236,9 @@ export default {
         }
         return components
     },
-    actionInfo(supportedGame, actionName, actionInfo, actionChoice) {
-        console.log("actionInfo", supportedGame, actionName, actionInfo, actionChoice)
+    actionInfo(supportedGame, frontendActionInfo, actionChoice) {
+        let actionName = frontendActionInfo.actionType
+        console.log("actionInfo", supportedGame, frontendActionInfo, actionChoice)
         function resolveActionPath(actionName, actionChoice, value) {
             let actionKeys = supportedGame.actions[actionName]
             if (actionChoice === null) {
@@ -252,7 +253,7 @@ export default {
                 }
             }
             if (typeof a !== 'function') {
-                console.error("'a' is not a function", a, actionName, actionInfo, actionChoice)
+                console.error("'a' is not a function", a, actionName, frontendActionInfo, actionChoice)
                 //return a;
                 throw a;
             }
@@ -267,18 +268,18 @@ export default {
 
         let ca = {}
         console.log("ACTION INFO FOR", actionName, actionChoice)
-        console.log("ACTION INFO", actionInfo)
-        actionInfo.nextOptions.forEach(value => {
+        console.log("ACTION INFO", frontendActionInfo)
+        frontendActionInfo.nextOptions.forEach(value => {
             let key = resolveActionPath(actionName, actionChoice, value)
             ca[key.key] = key
             console.log("POSSIBLE NEXT", key)
         })
-        if (actionInfo.nextOptions.length > 0) {
+        if (frontendActionInfo.nextOptions.length > 0) {
             console.log("RETURN OPTIONS", ca)
             return ca;
         }
 
-        actionInfo.parameters.forEach(value => {
+        frontendActionInfo.parameters.forEach(value => {
             let key = resolveActionPath(actionName, actionChoice, value)
             ca[key.key] = { ...key, final: true }
             console.log("POSSIBLE PARAM", key)

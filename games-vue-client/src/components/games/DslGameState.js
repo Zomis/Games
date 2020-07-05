@@ -62,9 +62,9 @@ const gameStore = {
       let supportedGame = supportedGames.games[data.gameType]
       let actions = {}
       let actionTypes = []
-      data.actions.forEach(e => {
-        actions = { ...actions, ...supportedGames.actionInfo(supportedGame, e.first, e.second, game.actionChoice) }
-        actionTypes.push(e.first);
+      data.actions.forEach(frontendActionInfo => {
+        actions = { ...actions, ...supportedGames.actionInfo(supportedGame, frontendActionInfo, game.actionChoice) }
+        actionTypes.push(frontendActionInfo.actionType);
       });
       game.actionTypes = actionTypes;
       game.actions = actions;

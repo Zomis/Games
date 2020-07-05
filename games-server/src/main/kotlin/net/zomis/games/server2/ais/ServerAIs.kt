@@ -30,7 +30,7 @@ class ServerAIs(private val aiRepository: AIRepository, private val dslGameTypes
         val controller = game.obj as GameImpl<Any>
         val actionable = randomActionable(controller, index)
         return listOfNotNull(actionable?.let {
-            PlayerGameMoveRequest(game, it.playerIndex, it.actionType, it.parameter)
+            PlayerGameMoveRequest(game, it.playerIndex, it.actionType, it.parameter, false)
         })
     }
 

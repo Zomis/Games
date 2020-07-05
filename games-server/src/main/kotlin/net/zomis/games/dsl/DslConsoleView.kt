@@ -88,25 +88,23 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
             val act = reqHandler.availableActionsMessage(game, playerIndex, moveType, chosen).singleOrNull()
                 ?: return null
 
-            println(act.first)
-            println(" Next " + act.second.nextOptions.size + ". Params " + act.second.parameters.size)
-            val next = act.second.nextOptions
-            next.forEachIndexed { index, value -> println("$index. Next $value") }
+            println(act.actionType)
+            println(" Next " + act.actionInfo.nextOptions.size + ". Params " + act.actionInfo.parameters.size)
+            val next = act.actionInfo.nextOptions
+            next.forEachIndexed { index, value -> println("$index. Next ${value.first} - ${value.second}") }
 
-            val params = act.second.parameters
+            val params = act.actionInfo.parameters
             params.forEachIndexed { index, value -> println("${index + next.size}. Choice $value") }
 
             val choice = scanner.nextLine().toIntOrNull() ?: return null
             if (choice >= next.size) {
                 val param = params.getOrNull(choice - next.size) ?: return null
                 val actionType = game.actions.type(moveType)
-                val deserializedParam = actionType?.actionType?.deserialize(
-                    ActionOptionsContext(game.model, actionType.name, playerIndex), param
-                )
-                return actionType?.createAction(playerIndex, deserializedParam!!)
+//                val deserializedParam = actionType?.createAction(playerIndex, param)
+                return actionType?.createAction(playerIndex, param)
             } else {
                 val chosenNext = next.getOrNull(choice) ?: return null
-                chosen.add(chosenNext)
+                chosen.add(chosenNext.first ?: chosenNext.second)
 //                chosen.add(choice)
             }
         }

@@ -58,7 +58,6 @@ class ScorerAIFactory<T: Any>(val gameType: String, val name: String, vararg con
         }
         if (!noAvailableActions(scope.game, scope.playerIndex)) {
             val scores = this.score(scope)
-            // TODO: Random action if none is found
             val bestScores = scores.bestBy { it.second!! }
             val move = if (bestScores.isNotEmpty()) bestScores.random().first.action else this.availableActions(scope).random()
             move
@@ -142,11 +141,11 @@ class ServerScoringAIs(private val aiRepository: AIRepository) {
             }
 
             if (ur.isRollTime()) {
-                return@ServerAI listOf(PlayerGameMoveRequest(game, index, "roll", -1))
+                return@ServerAI listOf(PlayerGameMoveRequest(game, index, "roll", Unit, false))
             }
 
             val move = ai.applyAsInt(ur)
-            listOf(PlayerGameMoveRequest(game, index, "move", IntNode(move)))
+            listOf(PlayerGameMoveRequest(game, index, "move", move, false))
         }.register(events)
         return ai
     }

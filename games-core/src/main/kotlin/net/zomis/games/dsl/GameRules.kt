@@ -73,6 +73,7 @@ interface ActionChoicesNextScope<T : Any, A : Any> : ActionChoicesStartScope<T, 
 interface ActionChoicesStartScope<T : Any, A : Any> {
     val context: ActionOptionsContext<T>
     fun <E : Any> options(options: ActionOptionsScope<T>.() -> Iterable<E>, next: ActionChoicesNextScope<T, A>.(E) -> Unit)
+    fun <E : Any> optionsWithIds(options: ActionOptionsScope<T>.() -> Iterable<Pair<String, E>>, next: ActionChoicesNextScope<T, A>.(E) -> Unit)
 }
 
 interface GameRuleTriggerScope<T, E> {

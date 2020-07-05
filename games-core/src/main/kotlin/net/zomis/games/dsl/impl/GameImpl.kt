@@ -34,9 +34,8 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
     fun configClass(): KClass<*> = context.configClass
     fun getDefaultConfig(): Any = if (configClass() == Unit::class) Unit else context.model.config()
 
-    fun createGame(playerCount: Int, config: Any): GameImpl<T> {
-        return GameImpl(context, playerCount, config, StateKeeper())
-    }
+    fun createGame(playerCount: Int, config: Any): GameImpl<T>
+        = this.createGameWithState(playerCount, config, StateKeeper())
 
     fun createGameWithState(playerCount: Int, config: Any, stateKeeper: StateKeeper): GameImpl<T> {
         return GameImpl(context, playerCount, config, stateKeeper)

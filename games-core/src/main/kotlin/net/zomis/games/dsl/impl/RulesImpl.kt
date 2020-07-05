@@ -204,7 +204,7 @@ class GameActionRuleContext<T : Any, A : Any>(
             require(this.availableActionsEvaluator == null) { "An action must have only one rule for either choices or options" }
             val complex = RulesActionTypeComplex<T, A>(context, this.choices!!)
             val actionInfo = complex.availableOptionsNext(previouslySelected)
-            ActionInfo(actionInfo.first, actionInfo.second.filter { actionAllowed(createAction(playerIndex, it)) })
+            ActionInfo(actionInfo.next, actionInfo.parameters.filter { actionAllowed(createAction(playerIndex, it)) })
         }
     }
 

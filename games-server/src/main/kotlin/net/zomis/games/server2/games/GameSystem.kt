@@ -84,6 +84,7 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
         this.actionListHandler.actionRequest(message, callback)
     }
 
+    @Deprecated("hopefully unused. Only required for non-DSL games which no longer exists")
     private fun moveRequest(message: ClientJsonMessage) {
         val moveType = message.data.get("moveType").asText()
         val move = message.data.get("move")
@@ -93,7 +94,7 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
         if (!verifyPlayerIndex(message.client, playerIndex)) {
             throw IllegalArgumentException("Client ${message.client.name} does not have playerIndex $playerIndex")
         }
-        callback.moveHandler(PlayerGameMoveRequest(this, playerIndex, moveType, move))
+        callback.moveHandler(PlayerGameMoveRequest(this, playerIndex, moveType, move, true))
     }
 
     private fun requireDslGame(): Boolean {
@@ -163,7 +164,7 @@ data class GameStartedEvent(val game: ServerGame)
 data class GameEndedEvent(val game: ServerGame)
 data class PlayerEliminatedEvent(val game: ServerGame, val player: Int, val winner: WinResult, val position: Int)
 
-data class PlayerGameMoveRequest(val game: ServerGame, val player: Int, val moveType: String, val move: Any) {
+data class PlayerGameMoveRequest(val game: ServerGame, val player: Int, val moveType: String, val move: Any, val serialized: Boolean) {
     fun illegalMove(reason: String): IllegalMoveEvent {
         return IllegalMoveEvent(game, player, moveType, move, reason)
     }

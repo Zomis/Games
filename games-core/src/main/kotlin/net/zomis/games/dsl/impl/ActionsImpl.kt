@@ -13,7 +13,7 @@ interface GameLogicActionType<T : Any, P : Any> {
     fun createAction(playerIndex: Int, parameter: P): Actionable<T, P>
 }
 
-data class ActionInfo(val nextOptions: List<Any>, val parameters: List<Any>)
+data class ActionInfo(val nextOptions: List<Pair<String?, Any>>, val parameters: List<Any>)
 class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
         private val replayState: ReplayState,
         val actionType: ActionType<P>,

@@ -64,7 +64,7 @@ class ServerAI(val gameType: String, val name: String, val perform: ServerGameAI
             executor.submit {
                 try {
                     val aiMoves = playerIndex.map {
-                        perform.invoke(game, it).map { act -> act.serialize(game.obj as GameImpl<Any>) }
+                        perform.invoke(game, it)
                     }
                     aiMoves.filter { it.isNotEmpty() }.forEach {singleAIMoves ->
                         events.execute(DelayedAIMoves(singleAIMoves))
@@ -88,7 +88,8 @@ class ServerAI(val gameType: String, val name: String, val perform: ServerGameAI
 }
 
 fun PlayerGameMoveRequest.serialize(gameImpl: GameImpl<*>): PlayerGameMoveRequest {
+    if (this.serialized) return this
     val serializedMove = gameImpl.actions.type(this.moveType)!!
             .actionType.serialize(this.move)
-    return PlayerGameMoveRequest(this.game, this.player, this.moveType, serializedMove)
+    return PlayerGameMoveRequest(this.game, this.player, this.moveType, serializedMove, true)
 }

@@ -136,7 +136,8 @@ class DslRandomPlayTest {
                 if (moveHandler != null) {
                     val controllerContext = GameControllerContext(gameImpl, playerIndex)
                     moveHandler.invoke(controllerContext)?.let {
-                        PlayerGameMoveRequest(game, playerIndex, it.actionType, it.parameter)
+                        val serialized = gameImpl.actions.type(it.actionType)!!.actionType.serialize(it.parameter)
+                        PlayerGameMoveRequest(game, playerIndex, it.actionType, serialized, true)
                     }
                 } else {
                     serverAIs.randomAction(game, playerIndex).firstOrNull()
@@ -150,7 +151,7 @@ class DslRandomPlayTest {
             val request = actions.first()
             val playerSocket = players[request.player]
             val moveString = jacksonObjectMapper().writeValueAsString(request.move)
-            playerSocket.send("""{ "route": "games/$dslGame/1/move", "moveType": "${request.moveType}", "move": $moveString }""")
+            playerSocket.send("""{ "route": "games/$dslGame/1/move", "playerIndex": ${request.player}, "moveType": "${request.moveType}", "move": $moveString }""")
             // TODO: Also add checks for "ActionLog" messages?
             p1.takeUntilJson { it.getTextOrDefault("type", "") == "GameMove" }
             p2.takeUntilJson { it.getTextOrDefault("type", "") == "GameMove" }

@@ -2,6 +2,8 @@ package net.zomis.games.dsl
 
 import net.zomis.games.PlayerEliminations
 
+fun <T> Iterable<T>.withIds(idFunction: (T) -> String) = this.map { idFunction(it) to it }
+
 interface Replayable {
     fun toStateString(): String
 }
