@@ -39,7 +39,7 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
             if (previouslySelected.isNotEmpty()) {
                 throw IllegalArgumentException("Unable to select any options for action ${actionType.name}")
             }
-            ActionInfo(emptyList(), availableActions(playerIndex).map { it.parameter }.map(serializer))
+            ActionInfo(emptyList(), availableActions(playerIndex).map { it.parameter })
         }
     }
 

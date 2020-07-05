@@ -28,6 +28,8 @@
                     <v-card-text>
                         <v-icon color="orange" v-if="player.leader">mdi-crown</v-icon>
                         <v-icon v-if="player.thumb">mdi-eye-circle</v-icon>
+                        <v-icon v-if="player.ladyOfTheLakeImmunity">mdi-face-woman-outline</v-icon>
+                        <v-icon color="blue" v-if="player.ladyOfTheLakePlayer">mdi-face-woman</v-icon>
                         <v-icon color="purple" v-if="player.inTeam">mdi-helicopter</v-icon>
                         <p v-if="player.vote !== null">
                             <v-icon color="green" v-if="player.vote">mdi-check-circle</v-icon>
@@ -53,6 +55,8 @@
                 <Actionable button :actionType="['teamChoice']" :actions="actions" stickyMenu>Choose team</Actionable>
                 <Actionable button :actionType="['vote']" :actions="actions">Vote for team</Actionable>
                 <Actionable button :actionType="['performMission']" :actions="actions">Perform mission</Actionable>
+                <Actionable button :actionType="['assassinate']" :actions="actions" stickyMenu>Assassinate</Actionable>
+                <Actionable button :actionType="['useLadyOfTheLake']" :actions="actions">Lady of the lake</Actionable>
             </v-col>
         </v-row>
         <v-row>
@@ -100,6 +104,7 @@ export default {
             }
         },
         charactersInGame() {
+            if (!this.view || !this.view.characters) return []
             let displayCharacters = this.view.characters.map(c => ({
                 name: c,
                 description: this.characters[c]

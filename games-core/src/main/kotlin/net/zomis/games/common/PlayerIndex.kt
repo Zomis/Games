@@ -4,3 +4,4 @@ typealias PlayerIndex = Int?
 fun PlayerIndex.isObserver(): Boolean = this == null
 
 fun Int.next(playerCount: Int): Int = (this + 1) % playerCount
+fun Int.nextReversed(playerCount: Int): Int = (this - 1 + playerCount) % playerCount

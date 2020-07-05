@@ -3,6 +3,7 @@ package net.zomis.games.impl
 import net.zomis.games.WinResult
 import net.zomis.games.cards.CardZone
 import net.zomis.games.common.next
+import net.zomis.games.common.nextReversed
 import net.zomis.games.dsl.ActionChoicesNextScope
 import net.zomis.games.dsl.GameCreator
 import net.zomis.games.dsl.withIds
@@ -120,12 +121,7 @@ object ResistanceAvalonGame {
         setup(ResistanceAvalonConfig::class) {
             players(5..10)
             defaultConfig { ResistanceAvalonConfig() }
-            init {
-                if (config.ladyOfTheLake) {
-                    throw UnsupportedOperationException("Lady of the lake not yet supported")
-                }
-                ResistanceAvalon(config, playerCount)
-            }
+            init { ResistanceAvalon(config, playerCount) }
         }
         rules {
             gameStart {
@@ -137,8 +133,10 @@ object ResistanceAvalonGame {
                     it.knownThumbs = it.character!!.seesThumbs().mapNotNull { ch -> game.players.find { pl -> pl.character == ch } }.toSet()
                 }
 
-                val leader = replayable.int("leader") { 0 } // TODO: Random.Default.nextInt(game.playerCount) }
+                val leader = replayable.int("leader") { Random.Default.nextInt(game.playerCount) }
                 game.leaderIndex = leader
+                game.ladyOfTheLakePlayer = game.players[game.leaderIndex.nextReversed(game.playerCount)]
+                    .takeIf { game.config.ladyOfTheLake }
             }
 
             view("characters") { game.charactersUsed.map { it.name }.distinct() }
@@ -148,7 +146,9 @@ object ResistanceAvalonGame {
                 game.players.map {
                     mapOf(
                         "thumb" to myself?.knownThumbs?.contains(it),
-                        "character" to if (myself?.index == it.index || true) it.character?.name else null,
+                        "character" to if (myself?.index == it.index) it.character?.name else null,
+                        "ladyOfTheLakePlayer" to (game.ladyOfTheLakePlayer == it),
+                        "ladyOfTheLakeImmunity" to it.ladyOfTheLakeImmunity,
                         "vote" to it.vote.takeIf { allVoted },
                         "leader" to (it.index == game.leaderIndex),
                         "inTeam" to game.voteTeam?.team?.contains(it)
@@ -206,7 +206,7 @@ object ResistanceAvalonGame {
                     game.players.forEach { it.vote = null }
                     game.voteTeam = action.parameter
                     log {
-                        val team = action.team.map { player(it.index) }.joinToString(", ")
+                        val team = action.team.map { player(it.index) }.joinToString(" ")
                         "$player chose mission ${action.mission.missionNumber} and team $team"
                     }
                 }
@@ -264,20 +264,49 @@ object ResistanceAvalonGame {
                 }
             }
 
+            action(assassinate) {
+                precondition { game.missions.count { it.result == true } >= 3 }
+                precondition { game.players[playerIndex].character == ResistanceAvalonPlayerCharacter.ASSASSIN }
+                precondition { playerIndex == 0 }
+                options { game.players.filter { it.character!!.good } }
+                effect {
+                    log { "$player assassinated ${player(action.index)} who was ${action.character?.name}" }
+                    val goodWins = action.parameter.character != ResistanceAvalonPlayerCharacter.MERLIN
+                    eliminations.eliminateMany(game.players.filter { it.character!!.good == goodWins }.map { it.index }, WinResult.WIN)
+                    eliminations.eliminateRemaining(WinResult.LOSS)
+                }
+            }
+
+            action(useLadyOfTheLake) {
+                precondition { game.ladyOfTheLakePlayer?.index == playerIndex }
+                forceWhen {
+                    val completedMissions = game.missions.count { it.completed }
+                    val expectedUsages = completedMissions - 2
+                    game.config.ladyOfTheLake && completedMissions in 2..4
+                        && game.players.count { it.ladyOfTheLakeImmunity } <= expectedUsages
+                }
+                options { game.players.filter { !it.ladyOfTheLakeImmunity } }
+                effect {
+                    game.ladyOfTheLakePlayer?.ladyOfTheLakeImmunity = true
+                    val goodText = if (action.parameter.character!!.good) "GOOD" else "EVIL"
+                    logSecret(game.ladyOfTheLakePlayer!!.index) {
+                        "You used lady of the lake on ${player(action.index)} who was revealed to be $goodText"
+                    }.publicLog { "${player(game.ladyOfTheLakePlayer?.index)} used lady of the lake on ${player(action.index)}" }
+                    game.ladyOfTheLakePlayer = action.parameter
+                }
+            }
+
             allActions.after {
                 val failedMissions = game.missions.count { it.result == false }
                 val successMissions = game.missions.count { it.result == true }
-                val goodWins: Boolean? = when {
+                val goodWins: Boolean = when {
                     failedMissions >= 3 -> false
                     successMissions >= 3 -> true
                     game.rejectedTeams >= 5 -> false
-                    else -> null
+                    else -> return@after
                 }
-                if (goodWins != null) {
-                    val winners = game.players.filter { it.character!!.good == goodWins }
-                    winners.forEach {
-                        eliminations.result(it.index, WinResult.WIN)
-                    }
+                if (!goodWins || game.players.none { it.character == ResistanceAvalonPlayerCharacter.ASSASSIN }) {
+                    eliminations.eliminateMany(game.players.filter { it.character!!.good == goodWins }.map { it.index }, WinResult.WIN)
                     eliminations.eliminateRemaining(WinResult.LOSS)
                 }
             }
