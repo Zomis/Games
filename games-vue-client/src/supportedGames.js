@@ -17,6 +17,7 @@ import Skull from "@/components/games/skull/Skull";
 import DSLTTT from "@/components/games/DSLTTT";
 import TTT3D from "@/components/games/TTT3D";
 import LiarsDice from "@/components/games/LiarsDice";
+import Avalon from "@/components/games/Avalon";
 
 // ViewTypes for ActionLog
 import SplendorCard from "@/components/games/splendor/SplendorCard"
@@ -65,7 +66,28 @@ const setActions = {
     })
 }
 
+function recursiveAvalon(teamMember) {
+    return {
+        key: 'players/' + teamMember,
+        next: recursiveAvalon
+    }
+}
+
 const supportedGames = {
+    "Avalon": {
+        dsl: gamejs.net.zomis.games.impl.ResistanceAvalonGame.game,
+        actions: {
+            teamChoice: (missionNumber) => ({
+                key: 'mission-' + missionNumber,
+                next: recursiveAvalon
+            }),
+            vote: (result) => `${result}`,
+            performMission: (result) => `${result}`,
+            assassinate: (targetPlayer) => "players/" + targetPlayer,
+            useLadyOfTheLake: (targetPlayer) => "players/" + targetPlayer
+        },
+        component: Avalon,
+    },
     "DSL-UR": {
         displayName: "Royal Game of UR",
         dsl: gamejs.net.zomis.games.impl.DslUR.gameUR,
