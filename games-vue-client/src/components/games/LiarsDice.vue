@@ -33,7 +33,7 @@
         <v-row>
             Config: {{ view.config }}
         </v-row>
-</v-container>
+    </v-container>
 </template>
 <script>
 import CardZone from "@/components/games/common/CardZone"

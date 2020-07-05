@@ -38,6 +38,9 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
         = this.createGameWithState(playerCount, config, StateKeeper())
 
     fun createGameWithState(playerCount: Int, config: Any, stateKeeper: StateKeeper): GameImpl<T> {
+        if (playerCount !in playersCount) {
+            throw IllegalArgumentException("Invalid number of players: $playerCount, expected $playersCount")
+        }
         return GameImpl(context, playerCount, config, stateKeeper)
     }
 

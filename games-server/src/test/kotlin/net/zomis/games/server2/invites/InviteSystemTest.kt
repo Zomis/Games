@@ -93,7 +93,6 @@ class InviteSystemTest {
         docWriter.document(events, "Inviting someone to play a game") {
             text("Inviting players is done by inviting their playerId, which will be unique")
             send(host, """{ "route": "invites/invite", "gameType": "TestGameType", "invite": ["11111111-1111-1111-1111-111111111111"] }""")
-            receive(host, """{"type":"InviteWaiting","inviteId":"12345678-1234-1234-1234-123456789abc","playersMin":2,"playersMax":2}""")
 
             receive(invitee, """{"type":"Invite","host":"TestClientA","game":"TestGameType","inviteId":"12345678-1234-1234-1234-123456789abc"}""")
             receive(host, """{"type":"InviteStatus","playerId":"11111111-1111-1111-1111-111111111111","status":"pending","inviteId":"12345678-1234-1234-1234-123456789abc"}""")
@@ -129,7 +128,6 @@ class InviteSystemTest {
 
         val invite = system.createInvite("MyGame", "inv-1", inviteOptions, host, listOf(invitee))
         Assertions.assertEquals("""{"type":"Invite","host":"Host","game":"MyGame","inviteId":"inv-1"}""", invitee.nextMessage())
-        Assertions.assertEquals("""{"type":"InviteWaiting","inviteId":"inv-1","playersMin":2,"playersMax":2}""", host.nextMessage())
 
         Assertions.assertEquals("""{"type":"InviteStatus","playerId":"11111111-1111-1111-1111-111111111111","status":"pending","inviteId":"inv-1"}""", host.nextMessage())
         stringMapExpect(host.nextMessage(), "type" to "InviteView")
@@ -150,7 +148,6 @@ class InviteSystemTest {
         events.execute(GameTypeRegisterEvent("MyGame"))
         val invite = system.createInvite("MyGame", "inv-1", inviteOptions, host, listOf(invitee))
         Assertions.assertEquals("""{"type":"Invite","host":"Host","game":"MyGame","inviteId":"inv-1"}""", invitee.nextMessage())
-        Assertions.assertEquals("""{"type":"InviteWaiting","inviteId":"inv-1","playersMin":2,"playersMax":2}""", host.nextMessage())
 
         Assertions.assertEquals("""{"type":"InviteStatus","playerId":"11111111-1111-1111-1111-111111111111","status":"pending","inviteId":"inv-1"}""", host.nextMessage())
         stringMapExpect(host.nextMessage(), "type" to "InviteView")

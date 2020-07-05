@@ -50,7 +50,6 @@ export default {
             Socket.route("invites/prepare", { gameType: gameType })
         },
         invite(gameType, playerId) {
-            this.$store.commit("lobby/createInvite", gameType);
             Socket.route("invites/invite", { gameType: gameType, invite: [playerId] });
         }
     },

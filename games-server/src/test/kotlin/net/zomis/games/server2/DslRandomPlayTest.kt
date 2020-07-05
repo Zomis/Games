@@ -17,7 +17,6 @@ import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.ais.gamescorers.SplendorScorers
 import net.zomis.games.server2.ais.serialize
 import net.zomis.games.server2.clients.WSClient
-import net.zomis.games.server2.clients.getInt
 import net.zomis.games.server2.clients.getText
 import net.zomis.games.server2.games.PlayerGameMoveRequest
 import org.junit.jupiter.api.AfterEach
@@ -45,15 +44,17 @@ class DslRandomPlayTest {
         server = Server2(EventSystem())
         server!!.start(config)
 
-        val tokens = mutableListOf("guest-12345", "guest-23456")
+        val tokens = generateSequence(1) { it + 1 }.map { "guest-$it" }.iterator()
         fun authTest(message : ClientJsonMessage) {
-            AuthorizationSystem(server!!.events).handleGuest(message.client, tokens.removeAt(0), UUID.randomUUID()) {""}
+            val nextToken = tokens.next()
+            AuthorizationSystem(server!!.events).handleGuest(message.client, nextToken, UUID.randomUUID()) {""}
         }
         server!!.messageRouter.handler("auth/guest", ::authTest)
     }
 
     @AfterEach
     fun stopServer() {
+        logger.info { "Stopping server from test" }
         server!!.stop()
     }
 
@@ -82,44 +83,64 @@ class DslRandomPlayTest {
     @ParameterizedTest(name = "Random play {0}")
     @MethodSource("serverGames")
     fun dsl(dslGame: String) {
-        val p1 = WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket"))
-        p1.connectBlocking()
+        val playerCount = ServerGames.setup(dslGame)!!.playersCount
+        val randomCount = playerCount.random()
+        val clients = (1..randomCount).map { WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket")) }
+        clients.forEach { it.connectBlocking() }
 
-        val p2 = WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket"))
-        p2.connectBlocking()
-
-        p1.send("""{ "route": "auth/guest" }""")
-        val playerId1 = p1.expectJsonObject { it.getText("type") == "Auth" }.get("playerId").asText()
-        p2.send("""{ "route": "auth/guest" }""")
-        val playerId2 = p2.expectJsonObject { it.getText("type") == "Auth" }.get("playerId").asText()
-
-        p1.send("""{ "route": "lobby/join", "gameTypes": ["$dslGame"], "maxGames": 1 }""")
-        Thread.sleep(100)
-        p2.send("""{ "route": "lobby/join", "gameTypes": ["$dslGame"], "maxGames": 1 }""")
-
-        p1.send("""{ "game": "$dslGame", "type": "matchMake" }""")
-        Thread.sleep(100)
-        p2.send("""{ "game": "$dslGame", "type": "matchMake" }""")
-        p1.expectJsonObject { it.getText("type") == "LobbyChange" }
-        p1.expectJsonObject {
-            it.getText("type") == "GameStarted" && it.getText("gameType") == dslGame &&
-                    it.getInt("yourIndex") == 0
-        }
-        p2.expectJsonObject {
-            it.getText("type") == "GameStarted" && it.getText("gameType") == dslGame &&
-                    it.getInt("yourIndex") == 1
+        val playerIds = clients.map {client ->
+            client.send("""{ "route": "auth/guest" }""")
+            client.expectJsonObject { it.getText("type") == "Auth" }.get("playerId").asText()
         }
 
-        p1.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
-        p1.expectJsonObject { it.getText("type") == "GameView" }
-        p2.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
-        p2.expectJsonObject { it.getText("type") == "GameView" }
-        val players = arrayOf(p1, p2)
+        clients.forEach { client ->
+            client.send("""{ "route": "lobby/join", "gameTypes": ["$dslGame"], "maxGames": 1 }""")
+            Thread.sleep(100)
+        }
+        clients.forEachIndexed { index, client ->
+            repeat(clients.size - 1 - index) {
+                client.expectJsonObject { it.getText("type") == "LobbyChange" }
+            }
+        }
+
+        clients[0].send("""{ "route": "invites/prepare", "gameType": "$dslGame" }""")
+        val config = clients[0].expectJsonObject { it.getText("type") == "InvitePrepare" }["config"]
+        val mapper = jacksonObjectMapper()
+        val configString = mapper.writeValueAsString(config)
+
+        clients[0].send("""{ "route": "invites/start", "gameType": "$dslGame", "options": {}, "gameOptions": $configString }""")
+        val inviteId = clients[0].expectJsonObject { it.getText("type") == "InviteView" }.getText("inviteId")
+        val remainingPlayers = playerIds.subList(1, playerIds.size)
+
+        val invitees = mapper.writeValueAsString(remainingPlayers)
+        clients[0].sendAndExpectResponse("""{ "route": "invites/$inviteId/send", "gameType": "$dslGame", "invite": $invitees }""")
+
+        clients.subList(1, clients.size).forEach { client ->
+            client.sendAndExpectResponse("""{ "route": "invites/$inviteId/respond", "accepted": true }""")
+        }
+        clients.forEach { client ->
+            val json = client.takeUntilJson {
+                it.getText("type") == "InviteView" && it["players"].size() == clients.size
+            }
+        }
+
+        clients[0].send("""{ "route": "invites/$inviteId/start" }""")
+
+        clients.forEach {client ->
+            client.takeUntilJson { it.getText("type") == "GameStarted" }
+        }
+
+        clients.forEach {client ->
+            client.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
+            client.takeUntilJson { it.getText("type") == "GameView" }
+        }
 
         // Find game
         val game = server!!.gameSystem.getGameType(dslGame)!!.runningGames["1"]!!
         val gameImpl = game.obj as GameImpl<*>
-        val playerRange = 0 until game.players.size
+        val players = game.players.mapIndexed { index, client ->
+            index to clients[playerIds.indexOf(client.playerId!!.toString())]
+        }
         var actionCounter = 0
 
         while (!gameImpl.isGameOver()) {
@@ -128,10 +149,11 @@ class DslRandomPlayTest {
             }
             actionCounter++
             if (actionCounter % 10 == 0) {
-                p1.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
-                p1.expectJsonObject { it.getText("type") == "GameView" }
+                clients[0].sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
+                clients[0].takeUntilJson { it.getText("type") == "GameView" }
             }
-            val actions: List<PlayerGameMoveRequest> = playerRange.mapNotNull {playerIndex ->
+            val actions: List<PlayerGameMoveRequest> = players.mapNotNull {playerClient ->
+                val playerIndex = playerClient.first
                 val moveHandler = playingMap[gameImpl.model::class]
                 if (moveHandler != null) {
                     val controllerContext = GameControllerContext(gameImpl, playerIndex)
@@ -144,56 +166,37 @@ class DslRandomPlayTest {
                 }
             }.map { it.serialize(gameImpl) }
             if (actions.isEmpty()) {
-                p1.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
-                val view = p1.expectJsonObject { it.getText("type") == "GameView" }
+                clients[0].sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
+                val view = clients[0].expectJsonObject { it.getText("type") == "GameView" }
                 throw IllegalStateException("Game is not over but no actions available. Is the game a draw? View is $view")
             }
             val request = actions.first()
-            val playerSocket = players[request.player]
+            val playerSocket = clients[playerIds.indexOf(game.players[request.player].playerId!!.toString())]
             val moveString = jacksonObjectMapper().writeValueAsString(request.move)
             playerSocket.send("""{ "route": "games/$dslGame/1/move", "playerIndex": ${request.player}, "moveType": "${request.moveType}", "move": $moveString }""")
             // TODO: Also add checks for "ActionLog" messages?
-            p1.takeUntilJson { it.getTextOrDefault("type", "") == "GameMove" }
-            p2.takeUntilJson { it.getTextOrDefault("type", "") == "GameMove" }
+            clients.forEach {client ->
+                client.takeUntilJson { it.getTextOrDefault("type", "") == "GameMove" }
+            }
         }
+        logger.info { "Game is finished" }
 
         // Game is finished
-        var obj = p1.takeUntilJson { it.getText("type") == "PlayerEliminated" }
-        assert(obj.getText("gameType") == dslGame)
-        assert(obj.get("winner").isBoolean)
-//        assert(obj.getInt("player") == 0)
-//        assert(obj.getInt("position") == 1)
-
-        obj = p1.expectJsonObject { it.getText("type") == "PlayerEliminated" }
-        assert(obj.getText("gameType") == dslGame)
-        assert(obj.get("winner").isBoolean)
-
-        obj = p2.takeUntilJson { it.getText("type") == "PlayerEliminated" }
-        assert(obj.getText("gameType") == dslGame)
-        assert(obj.get("winner").isBoolean)
-
-        obj = p2.expectJsonObject { it.getText("type") == "PlayerEliminated" }
-        assert(obj.getText("gameType") == dslGame)
-        assert(obj.get("winner").isBoolean)
-
-        p1.expectJsonObject { it.getText("type") == "GameEnded" }
-        p2.expectJsonObject { it.getText("type") == "GameEnded" }
-
-        p1.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
-        p1.expectJsonObject { it.getText("type") == "GameView" }
-        p2.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
-        obj = p2.expectJsonObject { it.getText("type") == "GameView" }
-        val winner = obj["view"]["winner"]
-        println("Winner is $winner")
-        if (winner != null) {
-            assert(winner.isInt) { "Winner is not an int" }
-        } else {
-            val eliminations = gameImpl.eliminationCallback.eliminations()
-            assert(eliminations.size == 2)
+        clients.forEach {client ->
+            /*
+            repeat(clients.size) {
+                val obj = client.takeUntilJson { it.getText("type") == "PlayerEliminated" }
+                assert(obj.getText("gameType") == dslGame)
+                assert(obj.get("winner").isBoolean)
+            }
+            */
+            client.takeUntilJson { it.getText("type") == "GameEnded" }
         }
 
-        p1.close()
-        p2.close()
+        val eliminations = gameImpl.eliminationCallback.eliminations()
+        assert(eliminations.size == clients.size)
+
+        clients.forEach { it.close() }
     }
 
 }

@@ -51,9 +51,13 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
 
         val parameter = actionType.deserialize(actionOptionsContext, serialized)
         return if (parameter == null) {
-            availableActions(actionOptionsContext.playerIndex).single { action2 ->
+            val actions = availableActions(actionOptionsContext.playerIndex).filter { action2 ->
                 actionType.serialize(action2.parameter) == serialized
             }
+            if (actions.size != 1) {
+                throw IllegalStateException("Actions available: ${actions.size} for player $playerIndex move $serialized")
+            }
+            actions.single()
         } else {
             createAction(actionOptionsContext.playerIndex, parameter)
         }
