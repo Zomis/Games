@@ -140,16 +140,8 @@ object TTSourceDestinationGames {
         }
     }
 
-    private val winner: (TTBase) -> Int? = {
-        when {
-            it.isWon -> it.wonBy.index() // returns -1 for both X and O
-            else -> null
-        }
-    }
-
     private fun ttView(grid: GridDsl<TTControllerSourceDestination, TTBase>): GameViewDsl<TTControllerSourceDestination> = {
         currentPlayer { it.currentPlayer.index() }
-        winner { winner(it.board) }
         grid("board", grid) {
             owner { it.wonBy.index().takeIf {n -> n >= 0 } }
         }

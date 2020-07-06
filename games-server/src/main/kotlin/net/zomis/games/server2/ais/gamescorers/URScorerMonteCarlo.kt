@@ -50,7 +50,7 @@ class URScorerMonteCarlo(private val fights: Int, private val ai: ScorerAIFactor
     private fun singleFight(game: RoyalGameOfUr, me: Int, i: Int): WinResult {
         while (!game.isFinished) {
             while (game.isRollTime()) {
-                game.doRoll()
+                game.doRoll(game.randomRoll())
             }
             val movePosition = askAI(game)
             val allowed = game.move(game.currentPlayer, movePosition, game.roll)

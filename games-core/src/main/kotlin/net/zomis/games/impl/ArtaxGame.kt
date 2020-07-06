@@ -123,6 +123,7 @@ object ArtaxGame {
         }
         rules {
             action(moveAction) {
+                precondition { game.currentPlayer == playerIndex }
                 choose {
                     options({ game.board.points().filter { game.allowedSource(game.board.point(it)) } }) {source ->
                         options({ game.board.points().filter { game.allowedDestination(game.board.point(source), game.board.point(it)) } }) {destination ->
@@ -130,7 +131,6 @@ object ArtaxGame {
                         }
                     }
                 }
-                requires { game.currentPlayer == action.playerIndex }
                 requires { game.allowedSource(game.board.point(action.parameter.source)) }
                 requires {
                     game.allowedDestination(game.board.point(action.parameter.source), game.board.point(action.parameter.destination))

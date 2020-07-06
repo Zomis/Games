@@ -18,7 +18,12 @@ object DslUR {
             action(roll) {
                 precondition { game.isRollTime() }
                 effect {
-                    val roll = replayable.int("roll") { game.doRoll() }
+                    val roll = replayable.int("roll") { game.randomRoll() }
+                    if (game.canMove(roll)) {
+                        log { "$player rolled $roll" }
+                    } else {
+                        log { "$player rolled $roll and cannot move" }
+                    }
                     game.doRoll(roll)
                 }
             }
@@ -34,8 +39,7 @@ object DslUR {
         }
         view {
             currentPlayer { it.currentPlayer }
-            winner { game -> game.winner.takeIf { game.isFinished } }
-            state("lastRoll") { this.fullState("roll") ?: 0 }
+            value("lastRoll") { it.lastRoll }
             value("roll") { it.roll }
             value("pieces") { game -> game.piecesCopy.map { it.toList() }.toList() }
         }

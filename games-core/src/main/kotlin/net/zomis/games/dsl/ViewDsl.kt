@@ -23,9 +23,7 @@ interface GameView<T> : ViewScope<T> {
     fun result(): Map<String, Any?>
     fun currentPlayer(function: (T) -> Int)
     fun <P> grid(name: String, grid: GridDsl<T, P>, view: ViewDsl2D<T, P>)
-    fun winner(function: (T) -> Int?)
     fun value(key: String, value: (T) -> Any?)
-    fun state(key: String, function: ReplayScope.(T) -> Any?)
     fun eliminations()
     fun onRequest(requestName: String, function: GameViewOnRequestFunction<T>)
 }

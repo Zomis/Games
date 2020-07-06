@@ -67,7 +67,7 @@ class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override va
     }
 
     fun view(playerIndex: PlayerIndex): Map<String, Any?> {
-        val view = GameViewContext(model, eliminationCallback, playerIndex, replayState)
+        val view = GameViewContext(model, eliminationCallback, playerIndex)
         if (model is Viewable) {
             val map = model.toView(playerIndex) as Map<String, Any?>
             map.forEach { entry -> view.value(entry.key) { entry.value } }
@@ -82,7 +82,7 @@ class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override va
     }
 
     fun viewRequest(playerIndex: PlayerIndex, key: String, params: Map<String, Any>): Any? {
-        val view = GameViewContext(model, eliminationCallback, playerIndex, replayState)
+        val view = GameViewContext(model, eliminationCallback, playerIndex)
         setupContext.viewDsl?.invoke(view)
         return view.request(playerIndex, key, params)
     }

@@ -78,8 +78,11 @@ class GameGridBuilder<T : Any, P>(override val model: T) : GameGrid<T, P>, GridS
 
 }
 
-class GameViewContext<T : Any>(val model: T, private val eliminations: PlayerEliminations,
-       override val viewer: PlayerIndex, private val replayState: ReplayState) : GameView<T> {
+class GameViewContext<T : Any>(
+    val model: T,
+    private val eliminations: PlayerEliminations,
+    override val viewer: PlayerIndex
+) : GameView<T> {
     override val game: T = model
     private val requestable = mutableMapOf<String, GameViewOnRequestFunction<T>>()
     private val viewResult: MutableMap<String, Any?> = mutableMapOf()
@@ -90,10 +93,6 @@ class GameViewContext<T : Any>(val model: T, private val eliminations: PlayerEli
 
     override fun value(key: String, value: (T) -> Any?) {
         this.viewResult[key] = value(model)
-    }
-
-    override fun state(key: String, function: ReplayScope.(T) -> Any?) {
-        this.viewResult[key] = function(replayState, model)
     }
 
     override fun currentPlayer(function: (T) -> Int) {
@@ -111,10 +110,6 @@ class GameViewContext<T : Any>(val model: T, private val eliminations: PlayerEli
                 context.view(p)
             }
         }
-    }
-
-    override fun winner(function: (T) -> Int?) {
-        viewResult["winner"] = function(model)
     }
 
     override fun eliminations() {
@@ -178,7 +173,7 @@ class StateKeeper {
         logEntries.addAll(logs)
     }
 }
-class ReplayState(val stateKeeper: StateKeeper, override val playerEliminations: PlayerEliminations): EffectScope, ReplayScope, ReplayableScope {
+class ReplayState(val stateKeeper: StateKeeper, override val playerEliminations: PlayerEliminations): EffectScope, ReplayableScope {
     private val mostRecent = mutableMapOf<String, Any>()
 
     override val replayable: ReplayableScope get() = this
@@ -215,9 +210,6 @@ class ReplayState(val stateKeeper: StateKeeper, override val playerEliminations:
         stateKeeper.save(key, value)
     }
 
-    override fun fullState(key: String): Any? = mostRecent[key]
-
-    override fun state(key: String): Any = stateKeeper[key] ?: throw IllegalStateException("State '$key' not found")
 }
 
 class GameDslContext<T : Any> : GameDsl<T> {

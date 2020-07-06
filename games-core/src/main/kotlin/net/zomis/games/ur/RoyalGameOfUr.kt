@@ -24,6 +24,7 @@ class RoyalGameOfUr {
     var currentPlayer: Int private set
     val opponentPlayer: Int get() = (currentPlayer + 1) % 2
 
+    var lastRoll: Int = 0
     var roll: Int = NOT_ROLLED
         private set
 
@@ -58,16 +59,15 @@ class RoyalGameOfUr {
         return (0..1).shuffled().first() == 1
     }
 
-    fun doRoll(): Int {
+    fun randomRoll(): Int {
         if (!isRollTime()) {
             throw IllegalStateException("Not time to roll. Current roll is $roll")
         }
-
-        val sum = (0..3).map { if (randomBoolean()) 1 else 0 }.sum()
-        return doRoll(sum)
+        return (0..3).map { randomBoolean() }.count { it }
     }
 
     fun doRoll(sum: Int): Int {
+        this.lastRoll = sum
         if (canMove(sum)) {
             this.roll = sum
         } else {
