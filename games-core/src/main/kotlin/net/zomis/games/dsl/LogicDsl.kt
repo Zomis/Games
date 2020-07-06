@@ -19,5 +19,4 @@ interface ReplayableScope {
 interface EffectScope : GameUtils {
     override val playerEliminations: PlayerEliminations
     override val replayable: ReplayableScope
-    fun state(key: String, value: Any)
 }

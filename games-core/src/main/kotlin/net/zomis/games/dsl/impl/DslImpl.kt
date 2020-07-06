@@ -205,11 +205,6 @@ class ReplayState(val stateKeeper: StateKeeper, override val playerEliminations:
     override fun strings(key: String, default: () -> List<String>): List<String> = replayable(key, default)
     override fun list(key: String, default: () -> List<Map<String, Any>>): List<Map<String, Any>> = replayable(key, default)
 
-    override fun state(key: String, value: Any) {
-        mostRecent[key] = value
-        stateKeeper.save(key, value)
-    }
-
 }
 
 class GameDslContext<T : Any> : GameDsl<T> {

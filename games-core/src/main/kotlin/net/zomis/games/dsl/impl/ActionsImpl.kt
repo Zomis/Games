@@ -18,9 +18,7 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
         val actionType: ActionType<P>,
         private val impl: GameLogicActionType<T, P>) {
     fun availableActions(playerIndex: Int): Iterable<Actionable<T, P>> = impl.availableActions(playerIndex)
-    fun perform(playerIndex: Int, parameter: P) {
-        this.perform(this.createAction(playerIndex, parameter))
-    }
+    fun perform(playerIndex: Int, parameter: P) = this.perform(this.createAction(playerIndex, parameter))
     fun replayAction(action: Actionable<T, P>, state: Map<String, Any>?) {
         impl.replayAction(action, state)
     }

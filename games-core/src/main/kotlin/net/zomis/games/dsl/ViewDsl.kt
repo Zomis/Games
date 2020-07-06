@@ -5,10 +5,7 @@ import net.zomis.games.common.PlayerIndex
 typealias ViewDsl2D<T, P> = GameView2D<T, P>.() -> Unit
 
 typealias GameViewOnRequestFunction<T> = GameViewOnRequestScope<T>.(request: Map<String, Any>) -> Any
-interface GameViewOnRequestScope<T> {
-    val viewer: PlayerIndex
-    val game: T
-}
+interface GameViewOnRequestScope<T>: ViewScope<T>
 
 interface Viewable {
     fun toView(viewer: PlayerIndex): Any?
