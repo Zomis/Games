@@ -199,7 +199,7 @@ class GameActionRuleContext<T : Any, A : Any>(
             return ActionInfo(emptyList(), emptyList())
         }
         return if (this.choices == null) {
-            ActionInfo(emptyList(), availableActions(playerIndex).map { it.parameter }.map(serializer))
+            ActionInfo(emptyList(), availableActions(playerIndex).map { it.parameter })
         } else {
             require(this.availableActionsEvaluator == null) { "An action must have only one rule for either choices or options" }
             val complex = RulesActionTypeComplex<T, A>(context, this.choices!!)
