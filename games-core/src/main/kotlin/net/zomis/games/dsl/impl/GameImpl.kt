@@ -23,6 +23,7 @@ typealias GameController<T> = (GameControllerScope<T>) -> Actionable<T, Any>?
 
 class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
 
+    val gameType: String = gameSpec.name
     private val context = GameDslContext<T>()
     init {
         gameSpec(context)

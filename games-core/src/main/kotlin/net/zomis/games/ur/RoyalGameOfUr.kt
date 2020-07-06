@@ -22,6 +22,7 @@ class RoyalGameOfUr {
     }
 
     var currentPlayer: Int private set
+    val opponentPlayer: Int get() = (currentPlayer + 1) % 2
 
     var roll: Int = NOT_ROLLED
         private set

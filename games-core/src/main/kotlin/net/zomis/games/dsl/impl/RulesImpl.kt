@@ -193,7 +193,7 @@ class GameActionRuleContext<T : Any, A : Any>(
     override fun createAction(playerIndex: Int, parameter: A): Action<T, A>
         = Action(model, playerIndex, actionType, parameter)
 
-    fun actionInfo(playerIndex: Int, previouslySelected: List<Any>, serializer: (A) -> Any): ActionInfo {
+    fun actionInfo(playerIndex: Int, previouslySelected: List<Any>): ActionInfo {
         val context = ActionOptionsContext(model, actionType, playerIndex)
         if (!checkPreconditions(context)) {
             return ActionInfo(emptyList(), emptyList())

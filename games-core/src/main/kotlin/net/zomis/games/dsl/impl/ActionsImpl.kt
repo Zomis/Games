@@ -3,7 +3,6 @@ package net.zomis.games.dsl.impl
 import net.zomis.games.dsl.*
 import kotlin.reflect.KClass
 
-// TODO: Can we reduce generics here? get rid of the `A : Actionable`? Only `GameLogicActionType2D` is special.
 interface GameLogicActionType<T : Any, P : Any> {
     val actionType: String
     fun availableActions(playerIndex: Int): Iterable<Actionable<T, P>>
@@ -32,9 +31,8 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
     fun createAction(playerIndex: Int, parameter: P): Actionable<T, P> = impl.createAction(playerIndex, parameter)
     fun isAllowed(action: Actionable<T, P>): Boolean = impl.actionAllowed(action)
     fun availableParameters(playerIndex: Int, previouslySelected: List<Any>): ActionInfo {
-        val serializer: (P) -> Any = { actionType.serialize(it) }
         return if (impl is GameActionRuleContext) {
-            impl.actionInfo(playerIndex, previouslySelected, serializer)
+            impl.actionInfo(playerIndex, previouslySelected)
         } else {
             if (previouslySelected.isNotEmpty()) {
                 throw IllegalArgumentException("Unable to select any options for action ${actionType.name}")
