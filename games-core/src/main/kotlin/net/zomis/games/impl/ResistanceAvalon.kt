@@ -206,8 +206,8 @@ object ResistanceAvalonGame {
                     game.players.forEach { it.vote = null }
                     game.voteTeam = action.parameter
                     log {
-                        val team = action.team.map { player(it.index) }.joinToString(" ")
-                        "$player chose mission ${action.mission.missionNumber} and team $team"
+                        val teamString = action.team.joinToString(" ") { player(it.index) }
+                        "$player chose mission ${action.mission.missionNumber} and team $teamString"
                     }
                 }
             }
@@ -218,7 +218,6 @@ object ResistanceAvalonGame {
                 options { listOf(false, true) }
                 effect {
                     game.players[playerIndex].vote = action.parameter
-                    log { "$player has voted" }
                 }
                 after {
                     if (game.players.all { it.vote != null }) {
@@ -226,7 +225,7 @@ object ResistanceAvalonGame {
                         val rejected = game.players.count { it.vote == false }
 
                         game.players.forEach { pl ->
-                            log { "${player(pl.index)} voted ${pl.vote}" }
+                            log { "${player(pl.index)} ${if (pl.vote == true) "approved" else "rejected"}" }
                         }
                         val approved = accepted > rejected
                         log { "The mission was ${if (approved) "approved" else "rejected"}" }
@@ -254,7 +253,10 @@ object ResistanceAvalonGame {
                     val team = game.voteTeam!!.team
                     if (team.all { it.missionSuccess != null }) {
                         val fails = team.count { it.missionSuccess == false }
-                        log { "Mission completed with $fails fails" }
+                        log {
+                            val teamString = team.joinToString(" ") { player(it.index) }
+                            "Mission ${game.voteTeam!!.mission.missionNumber} completed with $fails fails by team $teamString"
+                        }
                         game.activeMission!!.markAsCompleted(fails)
                         game.leaderIndex = game.leaderIndex.next(game.playerCount)
                         game.activeMission = null
