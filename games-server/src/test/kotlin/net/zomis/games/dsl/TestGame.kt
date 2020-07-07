@@ -20,7 +20,7 @@ class GameTest<T : Any>(val game: GameImpl<T>) {
 
     fun expectPossibleOptions(playerIndex: Int, actionType: String, expected: Int, vararg chosen: Any) {
         val actionInfo = game.actions.type(actionType)!!.actionInfoKeys(playerIndex, chosen.toList())
-        Assertions.assertEquals(expected, actionInfo.size)
+        Assertions.assertEquals(expected, actionInfo.keys.size)
     }
 
     fun expectPossibleActions(playerIndex: Int, actionType: String, expected: Int) {
