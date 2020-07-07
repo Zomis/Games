@@ -27,7 +27,7 @@ object DslTTT {
     val playAction = factory.action("play", TTBase::class).serialization(Point::class, { Point(it.globalX, it.globalY) }, {
         game.game.getSmallestTile(it.x, it.y)!!
     })
-    val game = factory.game("TTT") {
+    val game = factory.game("DSL-TTT") {
         val grid = gridSpec<TTBase> {
             size(model.game.sizeX, model.game.sizeY)
             getter { x, y -> model.game.getSub(x, y)!! }
@@ -44,7 +44,7 @@ object DslTTT {
         view(ttView(grid))
     }
 
-    val gameConnect4 = factory.game("Connect4") {
+    val gameConnect4 = factory.game("DSL-Connect4") {
         val grid = gridSpec<TTBase> {
             size(model.game.sizeX, model.game.sizeY)
             getter { x, y -> model.game.getSub(x, y)!! }
@@ -61,7 +61,7 @@ object DslTTT {
         view(ttView(grid))
     }
 
-    val gameUTTT = factory.game("UTTT") {
+    val gameUTTT = factory.game("DSL-UTTT") {
         setup(TTOptions::class) {
             defaultConfig {
                 TTOptions(3, 3, 3)
@@ -93,7 +93,7 @@ object DslTTT {
         }
     }
 
-    val gameReversi = factory.game("Reversi") {
+    val gameReversi = factory.game("DSL-Reversi") {
         val grid = gridSpec<TTBase> {
             size(model.game.sizeX, model.game.sizeY)
             getter { x, y -> model.game.getSmallestTile(x, y)!! }

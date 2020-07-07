@@ -8,7 +8,7 @@ object DslUR {
     val factory = GameCreator(RoyalGameOfUr::class)
     val roll = factory.action("roll", Unit::class)
     val move = factory.action("move", Int::class)
-    val gameUR = factory.game("UR") {
+    val gameUR = factory.game("DSL-UR") {
         setup(Unit::class) {
             playersFixed(2)
             init { RoyalGameOfUr() }
