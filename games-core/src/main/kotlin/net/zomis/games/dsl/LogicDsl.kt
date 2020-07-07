@@ -2,6 +2,8 @@ package net.zomis.games.dsl
 
 import net.zomis.games.PlayerEliminations
 
+fun <T> Iterable<T>.withIds(idFunction: (T) -> String) = this.map { idFunction(it) to it }
+
 interface Replayable {
     fun toStateString(): String
 }
@@ -13,13 +15,8 @@ interface ReplayableScope {
     fun strings(key: String, default: () -> List<String>): List<String>
     fun list(key: String, default: () -> List<Map<String, Any>>): List<Map<String, Any>>
 }
-@Deprecated("Use ReplayableScope instead")
-interface ReplayScope {
-    fun state(key: String): Any
-    fun fullState(key: String): Any?
-}
+
 interface EffectScope : GameUtils {
     override val playerEliminations: PlayerEliminations
     override val replayable: ReplayableScope
-    fun state(key: String, value: Any)
 }

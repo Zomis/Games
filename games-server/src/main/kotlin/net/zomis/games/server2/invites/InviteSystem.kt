@@ -18,7 +18,7 @@ data class InviteOptions(
     val publicInvite: Boolean,
     val turnOrder: InviteTurnOrder,
     val timeLimit: Int,
-    val gameOptions: Any,
+    val gameOptions: Any?,
     val database: Boolean
 )
 
@@ -179,8 +179,6 @@ class InviteSystem(
         val invite = Invite(playerRange, tools, options, gameType, inviteId, host)
         invites[inviteId] = invite
 
-        invite.host.send(mapOf("type" to "InviteWaiting", "inviteId" to invite.id,
-            "playersMin" to playerRange.min(), "playersMax" to playerRange.max()))
         invite.sendInviteTo(invitees)
         invite.broadcastInviteView()
         return invite
@@ -195,7 +193,7 @@ class InviteSystem(
     private fun invitePrepare(message: ClientJsonMessage) {
         val gameType = message.data.get("gameType")?.asText() ?: throw IllegalArgumentException("Missing field: gameType")
         val setup = ServerGames.setup(gameType)
-        val gameOptions = setup?.getDefaultConfig()
+        val gameOptions = setup?.getDefaultConfig()?.takeUnless { it == Unit }
         message.client.send(mapOf(
             "type" to "InvitePrepare",
             "gameType" to gameType,

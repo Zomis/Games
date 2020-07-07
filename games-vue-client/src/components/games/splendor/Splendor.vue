@@ -1,11 +1,11 @@
 <template>
-    <v-container fluid>
+    <v-container fluid class="splendor">
         <v-row>
             <v-col>Round {{ view.round }}</v-col>
         </v-row>
         <v-row class="players">
             <v-col v-for="(player, index) in view.players" :key="index">
-                <SplendorPlayer :player="player" :playerInfo="players[index]"
+                <SplendorPlayer :player="player" :playerInfo="context.players[index]"
                  :controllable="index == view.viewer"
                  :actions="actions" :class="{activePlayer: index == view.currentPlayer}" />
             </v-col>
@@ -46,7 +46,7 @@
                 <CardZone>
                     <v-row v-for="noble in view.nobles" :key="noble.id">
                         <v-col>
-                            <SplendorNoble :noble="noble" />
+                            <SplendorNoble :noble="noble" :context="context" />
                         </v-col>
                     </v-row>
                 </CardZone>
@@ -62,7 +62,7 @@ import CardZone from "@/components/games/common/CardZone"
 
 export default {
     name: "Splendor",
-    props: ["view", "actions", "players"],
+    props: ["view", "actions", "context"],
     components: {
         SplendorPlayer, SplendorCard, SplendorNoble, CardZone
     },
@@ -157,8 +157,8 @@ export default {
     color: var(--splendor-black) !important;
 }
 
-.chosen-once,
-.actionable:hover {
+.splendor .chosen-once,
+.splendor .actionable:hover {
     border-width: thick !important;
     border-color: var(--splendor-yellow) !important;
 }

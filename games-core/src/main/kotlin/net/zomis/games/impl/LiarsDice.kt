@@ -62,13 +62,14 @@ class LiarsDice(val config: LiarsDiceConfig, val playerCount: Int): Viewable {
 }
 
 data class LiarsDiceConfig(
+    val dicePerPlayer: Int = 5,
     val allowHigherQuantityAnyFace: Boolean = true,
     val allowHigherFaceAnyQuantity: Boolean = false,
-    val onesAreWild: Boolean = false,
+//    val onesAreWild: Boolean = false,
     val allowSpotOn: Boolean = true,
-    val spotOnEveryoneLoses: Boolean = false,
-    val callingWildsFirstResetsThem: Boolean = false, // point 5 at https://www.wikihow.com/Play-Liar%27s-Dice
-    val twoDiceLeftBetOnSum: Boolean = false // If 2 players left with only one die each, bet on sum of the dice. (point 9 in wikihow)
+    val spotOnEveryoneLoses: Boolean = true
+//    val callingWildsFirstResetsThem: Boolean = false, // point 5 at https://www.wikihow.com/Play-Liar%27s-Dice
+//    val twoDiceLeftBetOnSum: Boolean = false // If 2 players left with only one die each, bet on sum of the dice. (point 9 in wikihow)
 )
 
 object LiarsDiceGame {
@@ -76,7 +77,7 @@ object LiarsDiceGame {
     fun newRound(game: LiarsDice, replayable: ReplayableScope) {
         game.bet = null
         game.players.forEach {
-            it.dice = replayable.ints("player-" + it.index) { it.dice.map { random.nextInt(1, 6) } }.toMutableList()
+            it.dice = replayable.ints("player-" + it.index) { it.dice.map { random.nextInt(6) + 1 } }.toMutableList()
         }
     }
 
@@ -168,7 +169,9 @@ object LiarsDiceGame {
     }
 
     private fun logRevealAllDice(call: String, scope: ActionRuleScope<LiarsDice, *>) {
-        scope.log { "$player calls $call and everyone reveals their dice!" }
+        val bet = scope.game.bet!!
+        val actual = scope.game.players.sumBy { player -> player.dice.count { it == bet.second.value } }
+        scope.log { "$player calls $call on the bet ${bet.second.amount}x ${bet.second.value} by ${player(bet.first.index)} and everyone reveals their dice! (A total of $actual was revealed)" }
         scope.game.players.filter { !it.eliminated }.forEach {
             scope.log { "${player(it.index)} had ${it.dice.sorted().joinToString(", ")}" }
         }

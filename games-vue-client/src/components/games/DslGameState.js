@@ -62,10 +62,15 @@ const gameStore = {
       let supportedGame = supportedGames.games[data.gameType]
       let actions = {}
       let actionTypes = []
-      data.actions.forEach(e => {
-        actions = { ...actions, ...supportedGames.actionInfo(supportedGame, e.first, e.second, game.actionChoice) }
-        actionTypes.push(e.first);
+      console.log("UPDATE ACTIONS DSLGAMESTATE", data.actions, supportedGame)
+      Object.keys(data.actions).forEach(actionKey => {
+        let actionDataList = data.actions[actionKey]
+        actionDataList.forEach(actionData => {
+          actions[supportedGames.resolveActionKey(supportedGame, actionData, game.actionChoice)] = actionData
+          actionTypes.push(actionData.actionType);
+        })
       });
+      console.log("UPDATE ACTIONS RESULT", actions)
       game.actionTypes = actionTypes;
       game.actions = actions;
     }

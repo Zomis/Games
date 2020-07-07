@@ -13,8 +13,8 @@
         <v-switch v-model="config.allowEmptyClues" label="Allow Empty Clues" />
         <v-switch v-model="config.playUntilFullEnd" label="Play until max fails or all cards played" disabled />
 
-        <v-text-field v-model="config.maxClueTokens" hide-details single-line type="number" label="Max clue tokens" />
-        <v-text-field v-model="config.maxFailTokens" hide-details single-line type="number" label="Max fail tokens" />
+        <v-text-field v-model="config.maxClueTokens" type="number" label="Max clue tokens" />
+        <v-text-field v-model="config.maxFailTokens" type="number" label="Max fail tokens" />
     </v-card>
 </template>
 <script>

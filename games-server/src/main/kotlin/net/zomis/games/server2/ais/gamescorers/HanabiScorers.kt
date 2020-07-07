@@ -1,14 +1,14 @@
 package net.zomis.games.server2.ais.gamescorers
 
+import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.impl.*
-import net.zomis.games.server2.ais.ScorerAIFactory
-import net.zomis.games.server2.ais.scorers.Scorer
-import net.zomis.games.server2.ais.scorers.ScorerAnalyzeProvider
-import net.zomis.games.server2.ais.scorers.ScorerFactory
-import net.zomis.games.server2.ais.scorers.ScorerScope
+import net.zomis.games.scorers.ScorerController
+import net.zomis.games.scorers.ScorerScope
 
 object HanabiScorers {
-    fun ais(): List<ScorerAIFactory<Hanabi>> {
+    val scorers = GamesImpl.game(HanabiGame.game).scorers()
+
+    fun ais(): List<ScorerController<Hanabi>> {
         return listOf(
             aiFirst(),
             aiFirstImproved()
@@ -17,22 +17,20 @@ object HanabiScorers {
             // AI Second is so far too slow to play
         )
     }
-    fun aiFirst() = ScorerAIFactory("Hanabi", "#AI_Probabilistic_Player",
+    fun aiFirst() = scorers.ai("#AI_Probabilistic_Player",
         playProbability.weight(1.01), discardProbability.weight(0.5), playableClues.weight(2.0),
         indispensibleClues.weight(0.7))
 
-    fun aiFirstImproved() = ScorerAIFactory("Hanabi", "#AI_Probabilistic_Player_2",
+    fun aiFirstImproved() = scorers.ai("#AI_Probabilistic_Player_2",
         playProbability.weight(1.01), discardProbability.weight(0.5), playableClues.weight(2.0),
         indispensibleClues.weight(0.7), playFromRight, discardFromLeft)
 
-    fun aiSecond() = ScorerAIFactory("Hanabi", "#AI_Probabilistic_Player_ClueGiver",
+    fun aiSecond() = scorers.ai("#AI_Probabilistic_Player_ClueGiver",
         playProbability.weight(1.01), discardProbability.weight(0.2), playableCardPlayableClue.weight(2.0),
         indispensibleCardIndispensibleClue.weight(1.5), playFromRight, discardFromLeft)
 
-    fun aiDebugAnimations() = ScorerAIFactory("Hanabi", "#AI_Debug_Animations", discardFromLeft, clueLowPlayer.weight(0.1))
-    fun aiDebugHand() = ScorerAIFactory("Hanabi", "#AI_Debug_Hand", clue, clueLowPlayer, clueColor)
-
-    val scorers = ScorerFactory<Hanabi>()
+    fun aiDebugAnimations() = scorers.ai("#AI_Debug_Animations", discardFromLeft, clueLowPlayer.weight(0.1))
+    fun aiDebugHand() = scorers.ai("#AI_Debug_Hand", clue, clueLowPlayer, clueColor)
 
     val clue = scorers.isAction(HanabiGame.giveClue)
     val clueLowPlayer = scorers.action(HanabiGame.giveClue) { -action.parameter.player.toDouble() }

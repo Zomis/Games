@@ -7,7 +7,7 @@
                         :src="player.picture"
                         :alt="player.name" />
                 </v-avatar>
-                <span v-if="showName">{{ player.name }} {{ postFix }}</span>
+                <span v-if="showName">&nbsp;{{ player.name }} {{ postFix }}</span>
             </template>
             <span>{{ player.name }}</span>
         </v-tooltip>

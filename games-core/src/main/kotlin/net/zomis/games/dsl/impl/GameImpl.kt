@@ -23,6 +23,7 @@ typealias GameController<T> = (GameControllerScope<T>) -> Actionable<T, Any>?
 
 class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
 
+    val gameType: String = gameSpec.name
     private val context = GameDslContext<T>()
     init {
         gameSpec(context)
@@ -34,11 +35,13 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
     fun configClass(): KClass<*> = context.configClass
     fun getDefaultConfig(): Any = if (configClass() == Unit::class) Unit else context.model.config()
 
-    fun createGame(playerCount: Int, config: Any): GameImpl<T> {
-        return GameImpl(context, playerCount, config, StateKeeper())
-    }
+    fun createGame(playerCount: Int, config: Any): GameImpl<T>
+        = this.createGameWithState(playerCount, config, StateKeeper())
 
     fun createGameWithState(playerCount: Int, config: Any, stateKeeper: StateKeeper): GameImpl<T> {
+        if (playerCount !in playersCount) {
+            throw IllegalArgumentException("Invalid number of players: $playerCount, expected $playersCount")
+        }
         return GameImpl(context, playerCount, config, stateKeeper)
     }
 
@@ -64,7 +67,7 @@ class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override va
     }
 
     fun view(playerIndex: PlayerIndex): Map<String, Any?> {
-        val view = GameViewContext(model, eliminationCallback, playerIndex, replayState)
+        val view = GameViewContext(model, eliminationCallback, playerIndex)
         if (model is Viewable) {
             val map = model.toView(playerIndex) as Map<String, Any?>
             map.forEach { entry -> view.value(entry.key) { entry.value } }
@@ -79,7 +82,7 @@ class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override va
     }
 
     fun viewRequest(playerIndex: PlayerIndex, key: String, params: Map<String, Any>): Any? {
-        val view = GameViewContext(model, eliminationCallback, playerIndex, replayState)
+        val view = GameViewContext(model, eliminationCallback, playerIndex)
         setupContext.viewDsl?.invoke(view)
         return view.request(playerIndex, key, params)
     }

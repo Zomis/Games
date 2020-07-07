@@ -19,17 +19,17 @@ object TestGame {
 class GameTest<T : Any>(val game: GameImpl<T>) {
 
     fun expectPossibleOptions(playerIndex: Int, actionType: String, expected: Int, vararg chosen: Any) {
-        val actionInfo = game.actions.type(actionType)!!.availableParameters(playerIndex, chosen.toList())
-        Assertions.assertEquals(expected, actionInfo.nextOptions.size)
+        val actionInfo = game.actions.type(actionType)!!.actionInfoKeys(playerIndex, chosen.toList())
+        Assertions.assertEquals(expected, actionInfo.keys.size)
     }
 
     fun expectPossibleActions(playerIndex: Int, actionType: String, expected: Int) {
-        val availableActions = game.actions.type(actionType)!!.availableActions(playerIndex)
+        val availableActions = game.actions.type(actionType)!!.availableActions(playerIndex, null)
         Assertions.assertEquals(expected, availableActions.count()) { "Available actions are: $availableActions" }
     }
 
     fun expectPossibleActions(playerIndex: Int, expected: Int): List<Actionable<T, Any>> {
-        val availableActions = game.actions.types().flatMap { it.availableActions(playerIndex) }
+        val availableActions = game.actions.types().flatMap { it.availableActions(playerIndex, null) }
         Assertions.assertEquals(expected, availableActions.count()) { "Available actions are: $availableActions" }
         return availableActions
     }

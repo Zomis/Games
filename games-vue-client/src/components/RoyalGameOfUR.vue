@@ -191,7 +191,7 @@ export default {
   },
   computed: {
     lastRoll() {
-      return this.view.roll;
+      return this.view.lastRoll;
     },
     isMoveTime() {
       return this.view.roll > 0;
@@ -199,10 +199,7 @@ export default {
     canControlPlayer: function() {
       return [true, true]; // TODO: Add information about which players can be controlled
     },
-    canControlCurrentPlayer: function() {
-      if (this.view.winner !== null) {
-        return false;
-      }
+    canControlCurrentPlayer() {
       return true;
     },
     destination() {

@@ -1,9 +1,8 @@
 <template>
     <v-container fluid>
         <v-row>
-            <v-col v-for="(player, playerIndex) in view.players" :key="playerIndex"
-              :class="{ currentPlayer: playerIndex == view.currentPlayer }">
-                <v-card>
+            <v-col v-for="(player, playerIndex) in view.players" :key="playerIndex">
+                <v-card :class="{ currentPlayer: playerIndex == view.currentPlayer, eliminated: player.dice.length === 0 }">
                     <v-card-title>
                         <PlayerProfile show-name :player="context.players[playerIndex]" />
                     </v-card-title>
@@ -21,18 +20,20 @@
 
                         <Actionable button v-if="context.players[playerIndex].controllable" actionable="liar" :actions="actions">Liar</Actionable>
                         <Actionable button v-if="context.players[playerIndex].controllable" actionable="spotOn" :actions="actions">Spot-On!</Actionable>
-                        <Actionable button v-if="context.players[playerIndex].controllable" :actionType="['bet']" :actions="actions">Bet</Actionable>
+                        <Actionable button v-if="context.players[playerIndex].controllable" :actionType="['bet']" :actions="actions" stickyMenu>Bet</Actionable>
                     </v-card-text>
                 </v-card>
             </v-col>
         </v-row>
-        <v-row>
-            Current Bet: {{ view.bet }} by {{ view.better }}
+        <v-row v-if="view.bet">
+            <v-col>
+                Current Bet: {{ view.bet.amount }}x {{ view.bet.value }} by <PlayerProfile show-name :player="context.players[view.better]" />
+            </v-col>
         </v-row>
         <v-row>
             Config: {{ view.config }}
         </v-row>
-</v-container>
+    </v-container>
 </template>
 <script>
 import CardZone from "@/components/games/common/CardZone"
@@ -49,9 +50,16 @@ export default {
 }
 </script>
 <style scoped>
+.eliminated {
+    opacity: 0.5
+}
 .actionable {
     border-style: solid !important;
     border-width: thick !important;
     border-color: #ffd166 !important;
+}
+
+.currentPlayer {
+    background-color: #ddf9fd;
 }
 </style>

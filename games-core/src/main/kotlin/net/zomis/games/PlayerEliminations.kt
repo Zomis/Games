@@ -8,7 +8,6 @@ interface PlayerEliminationCallback {
     fun eliminations(): List<PlayerElimination>
     fun nextPlayer(currentPlayer: Int): Int?
 
-    // TODO: Clean up some of the methods below
     fun result(playerIndex: Int, winResult: WinResult)
     fun position(playerIndex: Int, winResult: WinResult, position: Int)
     fun eliminate(elimination: PlayerElimination)

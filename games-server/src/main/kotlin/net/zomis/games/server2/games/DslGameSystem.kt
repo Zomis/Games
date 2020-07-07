@@ -7,6 +7,8 @@ import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.*
 import net.zomis.games.server2.StartupEvent
+import java.lang.UnsupportedOperationException
+import kotlin.reflect.full.cast
 
 class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
 
@@ -16,7 +18,7 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
         val server2GameName = name
         val setup = GameSetupImpl(dsl)
         events.listen("DslGameSystem $name Setup", GameStartedEvent::class, {it.game.gameType.type == server2GameName}, {
-            it.game.obj = setup.createGame(it.game.players.size, it.game.gameMeta.gameOptions)
+            it.game.obj = setup.createGame(it.game.players.size, it.game.gameMeta.gameOptions ?: Unit)
         })
         events.listen("DslGameSystem $name Move", PlayerGameMoveRequest::class, {
             it.game.gameType.type == server2GameName
@@ -39,9 +41,15 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
                 action = if (actionType.parameterClass == Unit::class) {
                     actionType.createAction(it.player, Unit)
                 } else {
-                    // it.move is a JsonNode
-                    val serializedMove = mapper.convertValue(it.move, actionType.actionType.serializedType.java)
-                    actionType.createActionFromSerialized(it.player, serializedMove)
+                    if (actionType.actionType.parameterType.isInstance(it.move)) {
+                        actionType.createAction(it.player, actionType.actionType.parameterType.cast(it.move))
+                    } else if (it.serialized) {
+                        // it.move is a JsonNode
+                        val serializedMove = mapper.convertValue(it.move, actionType.actionType.serializedType.java)
+                        actionType.createActionFromSerialized(it.player, serializedMove)
+                    } else {
+                        throw UnsupportedOperationException("Unknown object of type " + it.move.javaClass + " serialized? " + it.serialized)
+                    }
                 }
             } catch (e: Exception) {
                 logger.error(e, "Error reading move: $it")

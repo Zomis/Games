@@ -134,7 +134,6 @@ class Server2(val events: EventSystem) {
         events.listen("Route", ClientJsonMessage::class, {it.data.has("route")}) {
             this.messageRouter.handle(it.data["route"].asText(), it)
         }
-        messageRouter.route("auth", AuthorizationSystem(events).router)
         val executor = Executors.newScheduledThreadPool(2)
         if (config.githubClient.isNotEmpty()) {
             LinAuth(javalin, config.githubConfig(), config.googleConfig()).register()
@@ -147,6 +146,9 @@ class Server2(val events: EventSystem) {
             LinReplay(aiRepository, dbIntegration).setup(javalin)
             LinStats(StatsDB(dbIntegration.superTable)).setup(events, javalin)
         }
+        val authCallback = AuthorizationCallback { dbIntegration?.superTable?.cookieAuth(it) }
+        messageRouter.route("auth", AuthorizationSystem(events, authCallback).router)
+
         events.with(lobbySystem::setup)
         messageRouter.route("lobby", lobbySystem.router)
         features.add(AIGames(lobbySystem::gameClients)::setup)
