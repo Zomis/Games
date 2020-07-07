@@ -5,12 +5,12 @@ import net.zomis.fight.ext.FightCollectors
 import net.zomis.fight.ext.WinResult
 import net.zomis.games.dsl.Action
 import net.zomis.games.dsl.Actionable
-import net.zomis.games.server2.ais.ScorerAIFactory
+import net.zomis.games.scorers.ScorerController
 import net.zomis.games.ur.RoyalGameOfUr
 import java.util.function.ToIntFunction
 import java.util.stream.IntStream
 
-class URScorerMonteCarlo(private val fights: Int, private val ai: ScorerAIFactory<RoyalGameOfUr>) : ToIntFunction<RoyalGameOfUr> {
+class URScorerMonteCarlo(private val fights: Int, private val ai: ScorerController<RoyalGameOfUr>) : ToIntFunction<RoyalGameOfUr> {
     val logger = KLoggers.logger(this)
     fun positionToMove(game: RoyalGameOfUr): Int {
         val possibleActions = getPossibleActions(game)

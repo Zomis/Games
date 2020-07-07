@@ -1,36 +1,34 @@
 package net.zomis.games.server2.ais.gamescorers
 
+import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.impl.DslUR
-import net.zomis.games.server2.ais.ScorerAIFactory
-import net.zomis.games.server2.ais.scorers.ScorerAnalyzeProvider
-import net.zomis.games.server2.ais.scorers.ScorerFactory
+import net.zomis.games.scorers.ScorerAnalyzeProvider
+import net.zomis.games.scorers.ScorerController
 import net.zomis.games.ur.RoyalGameOfUr
 import java.util.function.IntUnaryOperator
 
 object URScorers {
 
-    val scorers = ScorerFactory<RoyalGameOfUr>()
+    val scorers = GamesImpl.game(DslUR.gameUR).scorers()
 
-    fun ais(): List<ScorerAIFactory<RoyalGameOfUr>> {
-        return listOf(
-            ScorerAIFactory("DSL-UR", "#AI_KFE521S3",
+    fun ais() = listOf(
+            scorers.ai("#AI_KFE521S3",
                 knockout.weight(5), gotoFlower.weight(2), gotoSafety.weight(0.1),
                 leaveSafety.weight(-0.1), riskOfBeingTakenThere.weight(-0.1), exit
             ),
             monteCarloSimulatingAI(),
-            ScorerAIFactory("DSL-UR", "#AI_Horrible",
+            scorers.ai("#AI_Horrible",
                 knockout.weight(-5), gotoFlower.weight(-2), riskOfBeingTakenThere.weight(0.1), exit.weight(-1)
             ),
-            ScorerAIFactory("DSL-UR", "#AI_KnockoutAndFlower",
+            scorers.ai("#AI_KnockoutAndFlower",
                 knockout.weight(5), gotoFlower.weight(2)
             ),
-            ScorerAIFactory("DSL-UR", "#AI_MonteCarlo",
+            scorers.ai("#AI_MonteCarlo",
                 monteCarloScorer(monteCarloProvider(1000, monteCarloSimulatingAI()))
             )
         )
-    }
 
-    fun monteCarloProvider(fights: Int, simulatingAI: ScorerAIFactory<RoyalGameOfUr>) = scorers.provider { ctx ->
+    fun monteCarloProvider(fights: Int, simulatingAI: ScorerController<RoyalGameOfUr>) = scorers.provider { ctx ->
         println("Invoking MonteCarloProvider for $fights fights")
         val monteCarloAI = URScorerMonteCarlo(fights, simulatingAI)
         monteCarloAI.positionToMove(ctx.model)
@@ -41,7 +39,7 @@ object URScorers {
         best == action.parameter
     }
 
-    fun monteCarloSimulatingAI() = ScorerAIFactory("DSL-UR", "#AI_KFE521T",
+    fun monteCarloSimulatingAI() = scorers.ai("#AI_KFE521T",
         knockout.weight(5), gotoFlower.weight(2), riskOfBeingTakenThere.weight(-0.1), exit
     )
 

@@ -17,10 +17,6 @@ data class DelayedAIMoves(val moves: List<PlayerGameMoveRequest>)
 
 val ServerAIProvider = "server-ai"
 
-fun <T: Any> noAvailableActions(model: GameImpl<T>, index: Int): Boolean {
-    return model.actions.types().all { it.availableActions(index, null).none() }
-}
-
 class ServerAI(val gameType: String, val name: String, val perform: ServerGameAI) {
 
     private val logger = KLoggers.logger(this)

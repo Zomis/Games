@@ -1,14 +1,12 @@
 package net.zomis.games.server2.ais.gamescorers
 
+import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.impl.ArtaxGame
-import net.zomis.games.impl.TTArtax
-import net.zomis.games.server2.ais.ScorerAIFactory
-import net.zomis.games.server2.ais.scorers.ScorerFactory
 import net.zomis.tttultimate.Direction8
 
 object ArtaxScorers {
 
-    val scorers = ScorerFactory<TTArtax>()
+    val scorers = GamesImpl.game(ArtaxGame.gameArtax).scorers()
     val artaxTake = scorers.action(ArtaxGame.moveAction) {
         val pm = action.parameter
         val board = model.board
@@ -25,9 +23,9 @@ object ArtaxScorers {
     }
 
     fun ais() = listOf(
-        ScorerAIFactory("Artax", "#AI_Aggressive_Simple", artaxTake),
-        ScorerAIFactory("Artax", "#AI_Aggressive_Defensive", copying, artaxTake.weight(0.35)),
-        ScorerAIFactory("Artax", "#AI_Defensive", copying.weight(2), artaxTake.weight(0.35))
+        scorers.ai("#AI_Aggressive_Simple", artaxTake),
+        scorers.ai("#AI_Aggressive_Defensive", copying, artaxTake.weight(0.35)),
+        scorers.ai("#AI_Defensive", copying.weight(2), artaxTake.weight(0.35))
     )
 
 }

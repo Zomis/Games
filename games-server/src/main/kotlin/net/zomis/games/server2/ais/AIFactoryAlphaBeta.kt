@@ -6,6 +6,7 @@ import net.zomis.bestBy
 import net.zomis.common.pmap
 import net.zomis.core.events.EventSystem
 import net.zomis.games.ais.AlphaBeta
+import net.zomis.games.ais.noAvailableActions
 import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.server2.games.PlayerGameMoveRequest

@@ -1,7 +1,8 @@
-package net.zomis.games.server2.ais.scorers
+package net.zomis.games.scorers
 
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.Actionable
+import net.zomis.games.dsl.GameSpec
 
 typealias ScorerAnalyzeProvider<T, Z> = (ScorerContext<T>) -> Z?
 
@@ -30,7 +31,7 @@ interface ScorerScope<T : Any, A: Any> {
     fun <Z> require(analyzeProvider: ScorerAnalyzeProvider<T, Z>): Z?
 }
 
-class ScorerFactory<T : Any> {
+class ScorerFactory<T : Any>(val gameSpec: GameSpec<T>) {
 
     fun <A> provider(provider: (ScorerContext<T>) -> A?): ScorerAnalyzeProvider<T, A> = provider
     fun isAction(action: ActionType<T, *>): Scorer<T, Any> = this.action(action) { 1.0 }
@@ -40,6 +41,7 @@ class ScorerFactory<T : Any> {
     fun <A: Any> actionConditional(action: ActionType<T, A>, function: ScorerScope<T, A>.() -> Boolean): Scorer<T, Any> {
         return Scorer { if (this.action.actionType == action.name) if (function(this as ScorerScope<T, A>)) 1.0 else 0.0 else null }
     }
+    fun ai(name: String, vararg config: Scorer<T, Any>) = ScorerController(gameSpec.name, name, *config)
 
 }
 

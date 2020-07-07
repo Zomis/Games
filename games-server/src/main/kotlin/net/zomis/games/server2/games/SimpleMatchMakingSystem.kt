@@ -7,7 +7,7 @@ import net.zomis.games.server2.*
 import net.zomis.games.server2.invites.InviteOptions
 import net.zomis.games.server2.invites.InviteTurnOrder
 
-@Deprecated("currently only used in tests. To be removed")
+@Deprecated("currently only used in DslGameTest. To be removed")
 class SimpleMatchMakingSystem {
 
     private val logger = KLoggers.logger(this)

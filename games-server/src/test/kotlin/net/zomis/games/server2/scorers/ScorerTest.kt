@@ -2,10 +2,10 @@ package net.zomis.games.server2.scorers
 
 import net.zomis.games.dsl.Action
 import net.zomis.games.dsl.GameCreator
-import net.zomis.games.server2.ais.scorers.Scorer
-import net.zomis.games.server2.ais.scorers.ScorerContext
-import net.zomis.games.server2.ais.scorers.ScorerFactory
-import net.zomis.games.server2.ais.scorers.ScorerScope
+import net.zomis.games.scorers.Scorer
+import net.zomis.games.scorers.ScorerContext
+import net.zomis.games.scorers.ScorerFactory
+import net.zomis.games.scorers.ScorerScope
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -14,8 +14,11 @@ class ScorerGame(val value: String)
 class ScorerTest {
 
     val factory = GameCreator(ScorerGame::class)
+    val gameDsl = factory.game("ScorerGame") {
+        // Unused in this test (so far)
+    }
     val theGame = ScorerGame("Hello World!")
-    val testFactory = ScorerFactory<ScorerGame>()
+    val testFactory = ScorerFactory<ScorerGame>(gameDsl)
     val actionType = factory.action("Remove", String::class)
     val theAction = Action(theGame, 0, "Remove", "ae")
 

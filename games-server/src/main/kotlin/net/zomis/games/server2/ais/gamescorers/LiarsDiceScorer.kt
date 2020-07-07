@@ -1,16 +1,14 @@
 package net.zomis.games.server2.ais.gamescorers
 
-import net.zomis.games.impl.LiarsDice
+import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.impl.LiarsDiceGame
-import net.zomis.games.server2.ais.ScorerAIFactory
-import net.zomis.games.server2.ais.scorers.ScorerFactory
 
 object LiarsDiceScorer {
 
-    val scorers = ScorerFactory<LiarsDice>()
+    val scorers = GamesImpl.game(LiarsDiceGame.game).scorers()
 
     fun ais() = listOf(
-        ScorerAIFactory("LiarsDice", "#AI_Unpredictable_Cheater", cheatingLiar, cheatingSpotOn,
+        scorers.ai("#AI_Unpredictable_Cheater", cheatingLiar, cheatingSpotOn,
             cheatingBetExact, cheatingBetOneLess, cheatingBetOneMore
         )
     )
