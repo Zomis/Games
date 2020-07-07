@@ -21,7 +21,7 @@ class ActionListRequestHandler(private val game: ServerGame?) {
         return if (moveType != null) {
             val actionType = obj.actions.type(moveType)!!
             val actionInfo = actionType.actionInfoKeys(playerIndex, chosen ?: emptyList())
-            FrontendActionInfo(ActionInfoByKey(actionInfo.groupBy { it.serialized }))
+            FrontendActionInfo(actionInfo)
         } else {
             FrontendActionInfo(obj.actions.allActionInfo(playerIndex, chosen ?: emptyList()))
         }

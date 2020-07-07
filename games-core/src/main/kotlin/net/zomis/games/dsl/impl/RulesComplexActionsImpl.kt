@@ -22,7 +22,8 @@ class RulesActionTypeComplexKeys<T : Any, A : Any>(
         if (chosen.isNotEmpty()) {
             val nextChosenKey = chosen[0]
             val nextChosenList = chosen.subList(1, chosen.size)
-            val nextE = evaluated.single { it.first.serialized == nextChosenKey }
+            val nextE = evaluated.singleOrNull { it.first.serialized == nextChosenKey }
+                ?: throw NoSuchElementException("Evaluated contains $evaluated and we're looking for it.first.serialized == $chosen")
 
             val nextScope = RulesActionTypeComplexKeys(context, actionType, nextChosenList, yielder)
             next.invoke(nextScope, nextE.second)

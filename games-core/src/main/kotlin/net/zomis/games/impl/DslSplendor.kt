@@ -2,6 +2,7 @@ package net.zomis.games.impl
 
 import net.zomis.games.PlayerEliminationCallback
 import net.zomis.games.cards.CardZone
+import net.zomis.games.common.mergeWith
 import net.zomis.games.common.next
 import net.zomis.games.dsl.GameCreator
 import net.zomis.games.dsl.ReplayableScope
@@ -60,12 +61,6 @@ data class SplendorNoble(val points: Int, val requirements: Money) {
 
     fun toStateString(): String {
         return "$points:${requirements.toStateString()}"
-    }
-}
-
-fun <K, V> Map<K, V>.mergeWith(other: Map<K, V>, merger: (V?, V?) -> V): Map<K, V> {
-    return (this.keys + other.keys).associateWith {
-        merger(this[it], other[it])
     }
 }
 

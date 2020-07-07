@@ -1,5 +1,6 @@
 package net.zomis.games.dsl.impl
 
+import net.zomis.games.common.mergeWith
 import net.zomis.games.dsl.*
 import kotlin.reflect.KClass
 
@@ -14,7 +15,11 @@ interface GameLogicActionType<T : Any, P : Any> {
 
 data class ActionInfo<T: Any, A: Any>(val actionType: ActionType<T, A>, val parameter: A?, val nextStep: Any?)
 data class ActionInfoKey(val serialized: Any, val actionType: String, val highlightKeys: List<Any>, val isParameter: Boolean)
-data class ActionInfoByKey(val keys: Map<Any, List<ActionInfoKey>>)
+data class ActionInfoByKey(val keys: Map<Any, List<ActionInfoKey>>) {
+    operator fun plus(other: ActionInfoByKey): ActionInfoByKey {
+        return ActionInfoByKey(keys.toMutableMap().mergeWith(other.keys) { a, b -> (a ?: emptyList()) + (b ?: emptyList()) })
+    }
+}
 data class ActionSampleSize(val sampleSizes: List<Int>) {
     fun nextSample(): Pair<Int, ActionSampleSize> = sampleSizes.first() to ActionSampleSize(sampleSizes.subList(1, sampleSizes.size))
 }
@@ -59,10 +64,10 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
     fun actionOptionsContext(playerIndex: Int): ActionOptionsContext<T>
         = ActionOptionsContext(model, this.actionType.name, playerIndex)
 
-    fun actionInfoKeys(playerIndex: Int, previouslySelected: List<Any>): List<ActionInfoKey> {
+    fun actionInfoKeys(playerIndex: Int, previouslySelected: List<Any>): ActionInfoByKey {
         val ruleContext = impl as GameActionRuleContext<T, P>?
             ?: throw UnsupportedOperationException("Impl class ${impl::class} not supported for actionType ${actionType.name}")
-        return ruleContext.actionInfoKeys(playerIndex, previouslySelected)
+        return ActionInfoByKey(ruleContext.actionInfoKeys(playerIndex, previouslySelected).groupBy { it.serialized })
     }
 
     val name: String
@@ -101,7 +106,9 @@ class ActionsImpl<T : Any>(
     }
 
     fun allActionInfo(playerIndex: Int, previouslySelected: List<Any>): ActionInfoByKey {
-        return ActionInfoByKey(types().flatMap { it.actionInfoKeys(playerIndex, previouslySelected) }.groupBy { it.serialized })
+        return types().fold(ActionInfoByKey(emptyMap())) { acc, next ->
+            acc + next.actionInfoKeys(playerIndex, previouslySelected)
+        }
     }
 
 }
