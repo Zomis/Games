@@ -56,13 +56,13 @@ export default {
         return
       }
       let name = action.actionType
-      if (action.direct) {
+      if (action.parameter) {
         // Perform direct
-        this.$store.dispatch("DslGameState/action", { gameInfo: this.gameInfo, name: name, data: action.value });
+        this.$store.dispatch("DslGameState/action", { gameInfo: this.gameInfo, name: name, data: action.serialized });
         return
       }
 
-      this.$store.dispatch("DslGameState/nextAction", { gameInfo: this.gameInfo, name: name, action: action.value });
+      this.$store.dispatch("DslGameState/nextAction", { gameInfo: this.gameInfo, name: name, action: action.serialized });
       return;
     },
     resetActionsTo(actionName, actionValue) {

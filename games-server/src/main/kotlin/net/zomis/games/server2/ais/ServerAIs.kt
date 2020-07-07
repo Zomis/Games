@@ -18,7 +18,7 @@ class ServerAIs(private val aiRepository: AIRepository, private val dslGameTypes
     fun <T: Any> randomActionable(game: GameImpl<T>, playerIndex: Int): Actionable<T, Any>? {
         val actionTypes = game.actions.types()
         val actions = actionTypes.flatMap {actionType ->
-            actionType.availableActions(playerIndex)
+            actionType.availableActions(playerIndex, null)
         }
         if (actions.isEmpty()) {
             return null

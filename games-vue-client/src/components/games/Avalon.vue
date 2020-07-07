@@ -98,7 +98,7 @@ export default {
                 PERCIVAL: "Loyal servant of King Arthur. Sees Merlin and Morgana.",
                 MORGANA: "Evil. Is seen by Percival." + oberonMessage,
                 ASSASSIN: "Evil. Should figure out who Merlin is and kill him at the end." + oberonMessage,
-                MINION_OF_MORDRED: "Evil. Sees other evil except Oberyn." + oberonMessage,
+                MINION_OF_MORDRED: "Evil." + oberonMessage,
                 OBERON: "Evil. Does not know the other evil.",
                 LOYAL_SERVANT_OF_KING_ARTHUR: "Loyal servant of King Arthur. Knows nothing."
             }

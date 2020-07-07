@@ -7,8 +7,8 @@ import kotlin.reflect.KClass
 
 interface GameRules<T : Any> {
     val allActions: GameAllActionsRule<T>
-    fun <A : Any> action(actionType: ActionType<A>): GameActionRule<T, A>
-    fun <A : Any> action(actionType: ActionType<A>, ruleSpec: GameActionSpecificationScope<T, A>.() -> Unit)
+    fun <A : Any> action(actionType: ActionType<T, A>): GameActionRule<T, A>
+    fun <A : Any> action(actionType: ActionType<T, A>, ruleSpec: GameActionSpecificationScope<T, A>.() -> Unit)
     fun view(key: String, value: ViewScope<T>.() -> Any?)
     fun gameStart(onStart: GameStartScope<T>.() -> Unit)
     fun <E : Any> trigger(triggerClass: KClass<E>): GameRuleTrigger<T, E>
@@ -59,6 +59,7 @@ interface GameActionSpecificationScope<T : Any, A : Any> {
     fun requires(rule: ActionRuleScope<T, A>.() -> Boolean)
     fun options(rule: ActionOptionsScope<T>.() -> Iterable<A>)
     fun forceWhen(rule: ActionOptionsScope<T>.() -> Boolean)
+    @Deprecated("prefer forceWhen")
     fun forceUntil(rule: ActionOptionsScope<T>.() -> Boolean)
     fun choose(options: ActionChoicesStartScope<T, A>.() -> Unit)
 }

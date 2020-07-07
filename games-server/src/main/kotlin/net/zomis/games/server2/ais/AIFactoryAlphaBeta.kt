@@ -32,7 +32,7 @@ data class AIAlphaBetaConfig<T: Any>(val factory: AlphaBetaAIFactory<T>, val lev
         val players = 0 until it.playerCount
         players.flatMap { actionPlayer ->
             it.actions.types().flatMap {
-                at -> at.availableActions(actionPlayer)
+                at -> at.availableActions(actionPlayer, null)
             }
         }
     }

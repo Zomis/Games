@@ -4,20 +4,27 @@ import net.zomis.games.dsl.*
 import kotlin.reflect.KClass
 
 interface GameLogicActionType<T : Any, P : Any> {
-    val actionType: String
-    fun availableActions(playerIndex: Int): Iterable<Actionable<T, P>>
+    val actionType: ActionType<T, P>
+    fun availableActions(playerIndex: Int, sampleSize: ActionSampleSize?): Iterable<Actionable<T, P>>
     fun actionAllowed(action: Actionable<T, P>): Boolean
     fun replayAction(action: Actionable<T, P>, state: Map<String, Any>?)
     fun performAction(action: Actionable<T, P>)
     fun createAction(playerIndex: Int, parameter: P): Actionable<T, P>
 }
 
-data class ActionInfo(val nextOptions: List<Pair<String?, Any>>, val parameters: List<Any>)
+data class ActionInfo<T: Any, A: Any>(val actionType: ActionType<T, A>, val parameter: A?, val nextStep: Any?)
+data class ActionInfoKey(val serialized: Any, val actionType: String, val highlightKeys: List<Any>, val isParameter: Boolean)
+data class ActionInfoByKey(val keys: Map<Any, List<ActionInfoKey>>)
+data class ActionSampleSize(val sampleSizes: List<Int>) {
+    fun nextSample(): Pair<Int, ActionSampleSize> = sampleSizes.first() to ActionSampleSize(sampleSizes.subList(1, sampleSizes.size))
+}
+
 class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
-        private val replayState: ReplayState,
-        val actionType: ActionType<P>,
-        private val impl: GameLogicActionType<T, P>) {
-    fun availableActions(playerIndex: Int): Iterable<Actionable<T, P>> = impl.availableActions(playerIndex)
+    private val replayState: ReplayState,
+    val actionType: ActionType<T, P>,
+    private val impl: GameLogicActionType<T, P>
+) {
+    fun availableActions(playerIndex: Int, sampleSize: ActionSampleSize?): Iterable<Actionable<T, P>> = impl.availableActions(playerIndex, sampleSize)
     fun perform(playerIndex: Int, parameter: P) = this.perform(this.createAction(playerIndex, parameter))
     fun replayAction(action: Actionable<T, P>, state: Map<String, Any>?) {
         impl.replayAction(action, state)
@@ -28,16 +35,6 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
     }
     fun createAction(playerIndex: Int, parameter: P): Actionable<T, P> = impl.createAction(playerIndex, parameter)
     fun isAllowed(action: Actionable<T, P>): Boolean = impl.actionAllowed(action)
-    fun availableParameters(playerIndex: Int, previouslySelected: List<Any>): ActionInfo {
-        return if (impl is GameActionRuleContext) {
-            impl.actionInfo(playerIndex, previouslySelected)
-        } else {
-            if (previouslySelected.isNotEmpty()) {
-                throw IllegalArgumentException("Unable to select any options for action ${actionType.name}")
-            }
-            ActionInfo(emptyList(), availableActions(playerIndex).map { it.parameter })
-        }
-    }
 
     fun createActionFromSerialized(playerIndex: Int, serialized: Any): Actionable<T, P> {
         val actionOptionsContext = actionOptionsContext(playerIndex)
@@ -47,7 +44,7 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
 
         val parameter = actionType.deserialize(actionOptionsContext, serialized)
         return if (parameter == null) {
-            val actions = availableActions(actionOptionsContext.playerIndex).filter { action2 ->
+            val actions = availableActions(actionOptionsContext.playerIndex, null).filter { action2 ->
                 actionType.serialize(action2.parameter) == serialized
             }
             if (actions.size != 1) {
@@ -59,8 +56,13 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
         }
     }
 
-    fun actionOptionsContext(playerIndex: Int): ActionOptionsContext<T> {
-        return ActionOptionsContext(model, this.actionType.name, playerIndex)
+    fun actionOptionsContext(playerIndex: Int): ActionOptionsContext<T>
+        = ActionOptionsContext(model, this.actionType.name, playerIndex)
+
+    fun actionInfoKeys(playerIndex: Int, previouslySelected: List<Any>): List<ActionInfoKey> {
+        val ruleContext = impl as GameActionRuleContext<T, P>?
+            ?: throw UnsupportedOperationException("Impl class ${impl::class} not supported for actionType ${actionType.name}")
+        return ruleContext.actionInfoKeys(playerIndex, previouslySelected)
     }
 
     val name: String
@@ -85,6 +87,7 @@ class ActionsImpl<T : Any>(
         return type(actionType)
     }
 
+    fun <A: Any> type(actionType: ActionType<T, A>) = rules.actionType(actionType.name) as ActionTypeImplEntry<T, A>
     fun type(actionType: String): ActionTypeImplEntry<T, Any>? = rules.actionType(actionType)
     fun <P : Any> type(actionType: String, clazz: KClass<P>): ActionTypeImplEntry<T, P>? {
         val entry = this.type(actionType)
@@ -95,6 +98,10 @@ class ActionsImpl<T : Any>(
             return this.type(actionType) as ActionTypeImplEntry<T, P>
         }
         return null
+    }
+
+    fun allActionInfo(playerIndex: Int, previouslySelected: List<Any>): ActionInfoByKey {
+        return ActionInfoByKey(types().flatMap { it.actionInfoKeys(playerIndex, previouslySelected) }.groupBy { it.serialized })
     }
 
 }

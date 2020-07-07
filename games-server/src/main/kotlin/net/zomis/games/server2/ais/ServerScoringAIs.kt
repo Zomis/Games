@@ -16,7 +16,7 @@ class ScorerAIFactory<T: Any>(val gameType: String, val name: String, vararg con
 
     fun availableActions(scope: GameControllerScope<T>): List<Actionable<T, Any>> {
         return scope.game.actions.types().flatMap {
-            it.availableActions(scope.playerIndex)
+            it.availableActions(scope.playerIndex, null)
         }.filter {
             scope.game.actions.type(it.actionType)!!.isAllowed(it)
         }
@@ -60,6 +60,7 @@ class ScorerAIFactory<T: Any>(val gameType: String, val name: String, vararg con
 class ServerScoringAIs(private val aiRepository: AIRepository) {
     fun setup(events: EventSystem) {
         val factories = listOf(
+            LiarsDiceScorer.ais(),
             ArtaxScorers.ais(),
             SplendorScorers.ais(), HanabiScorers.ais(), URScorers.ais(),
             DungeonMayhemScorers.ais(), SkullScorers.ais()

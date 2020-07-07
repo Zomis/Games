@@ -18,7 +18,7 @@ class GameRulesContext<T : Any>(
     override val allActions: GameAllActionsRule<T>
         get() = globalRules
 
-    override fun <A : Any> action(actionType: ActionType<A>): GameActionRule<T, A> {
+    override fun <A : Any> action(actionType: ActionType<T, A>): GameActionRule<T, A> {
         return ruleList.getOrPut(actionType.name) {
             GameActionRuleContext(model, replayable, eliminations, actionType, globalRules) as GameActionRuleContext<T, Any>
         } as GameActionRule<T, A>
@@ -55,7 +55,7 @@ class GameRulesContext<T : Any>(
         return GameRuleTriggerImpl(model, replayable, eliminations)
     }
 
-    override fun <A : Any> action(actionType: ActionType<A>, ruleSpec: GameActionSpecificationScope<T, A>.() -> Unit) {
+    override fun <A : Any> action(actionType: ActionType<T, A>, ruleSpec: GameActionSpecificationScope<T, A>.() -> Unit) {
         return this.action(actionType).invoke(ruleSpec)
     }
 }
@@ -105,10 +105,10 @@ class GameActionRuleContext<T : Any, A : Any>(
     val model: T,
     val replayable: ReplayState,
     val eliminations: PlayerEliminations,
-    val actionDefinition: ActionType<A>,
+    val actionDefinition: ActionType<T, A>,
     val globalRules: GameRuleList<T>
 ): GameActionRule<T, A>, GameLogicActionType<T, A> {
-    override val actionType: String = actionDefinition.name
+    override val actionType: ActionType<T, A> = actionDefinition
 
     val effects = mutableListOf<ActionRuleScope<T, A>.() -> Unit>()
     val after = mutableListOf<ActionRuleScope<T, A>.() -> Unit>()
@@ -134,22 +134,22 @@ class GameActionRuleContext<T : Any, A : Any>(
     override fun forceUntil(rule: ActionOptionsScope<T>.() -> Boolean) {
         val myActionType = actionType
         globalRules.preconditions.add {
-            actionType == myActionType || rule(this)
+            actionType == myActionType.name || rule(this)
         }
     }
 
     override fun forceWhen(rule: ActionOptionsScope<T>.() -> Boolean) {
         val myActionType = actionType
         globalRules.preconditions.add {
-            actionType == myActionType || !rule(this)
+            actionType == myActionType.name || !rule(this)
         }
         this.preconditions.add(rule)
     }
 
     // GameLogicActionType implementation below
 
-    override fun availableActions(playerIndex: Int): Iterable<Actionable<T, A>> {
-        val context = ActionOptionsContext(model, actionType, playerIndex)
+    override fun availableActions(playerIndex: Int, sampleSize: ActionSampleSize?): Iterable<Actionable<T, A>> {
+        val context = ActionOptionsContext(model, actionType.name, playerIndex)
         if (!checkPreconditions(context)) {
             return emptyList()
         }
@@ -164,8 +164,8 @@ class GameActionRuleContext<T : Any, A : Any>(
             } else evaluator(context).map { createAction(playerIndex, it) }.filter { this.actionAllowed(it) }
         } else {
             require(this.availableActionsEvaluator == null) { "An action must have only one rule for either choices or options" }
-            val complex = RulesActionTypeComplex<T, A>(context, this.choices!!)
-            val actions = complex.availableActions()
+            val complex = RulesActionTypeComplex(context, actionType, this.choices!!)
+            val actions = complex.availableActions(sampleSize)
             actions.toList().filter { actionAllowed(it) }
         }
     }
@@ -191,22 +191,30 @@ class GameActionRuleContext<T : Any, A : Any>(
     }
 
     override fun createAction(playerIndex: Int, parameter: A): Action<T, A>
-        = Action(model, playerIndex, actionType, parameter)
+        = Action(model, playerIndex, actionType.name, parameter)
 
-    fun actionInfo(playerIndex: Int, previouslySelected: List<Any>): ActionInfo {
-        val context = ActionOptionsContext(model, actionType, playerIndex)
+    fun actionInfoKeys(playerIndex: Int, previouslySelected: List<Any>): List<ActionInfoKey> {
+        val context = ActionOptionsContext(model, actionType.name, playerIndex)
         if (!checkPreconditions(context)) {
-            return ActionInfo(emptyList(), emptyList())
+            return emptyList()
         }
+        val evaluator = this.availableActionsEvaluator
         return if (this.choices == null) {
-            ActionInfo(emptyList(), availableActions(playerIndex).map { it.parameter })
+            if (evaluator == null) {
+                require(this.actionDefinition.parameterType == Unit::class) {
+                    "Action type ${this.actionDefinition.name} with parameter ${actionDefinition.parameterType} needs to specify a list of allowed parameters"
+                }
+                listOf(createAction(playerIndex, Unit as A)).filter { actionAllowed(it) }.map(this::actionInfoKey)
+            } else evaluator(context).map { createAction(playerIndex, it) }.filter { this.actionAllowed(it) }.map(this::actionInfoKey)
         } else {
             require(this.availableActionsEvaluator == null) { "An action must have only one rule for either choices or options" }
-            val complex = RulesActionTypeComplex<T, A>(context, this.choices!!)
-            val actionInfo = complex.availableOptionsNext(previouslySelected)
-            ActionInfo(actionInfo.next, actionInfo.parameters.filter { actionAllowed(createAction(playerIndex, it)) })
+            val complex = RulesActionTypeComplex(context, actionType, this.choices!!)
+            return complex.availableActionKeys(previouslySelected)
         }
     }
+
+    private fun actionInfoKey(actionable: Actionable<T, A>)
+        = ActionInfoKey(actionType.serialize(actionable.parameter), actionType.name, emptyList(), true)
 
     private fun checkPreconditions(context: ActionOptionsScope<T>): Boolean {
         return globalRules.preconditions.all { it.invoke(context) } && preconditions.all { it.invoke(context) }

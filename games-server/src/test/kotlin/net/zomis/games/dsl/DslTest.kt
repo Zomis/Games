@@ -47,7 +47,7 @@ class DslTest {
     @Test
     fun allowedActions() {
         val game = createGame()
-        Assertions.assertEquals(9, game.actions.type("play")!!.availableActions(0).count())
+        Assertions.assertEquals(9, game.actions.type("play")!!.availableActions(0, null).count())
     }
 
     @Test
@@ -64,7 +64,7 @@ class DslTest {
         val game = createGame()
         Assertions.assertEquals(0, game.view(0)["currentPlayer"])
         val actionType = game.actions.type("play")!!
-        val action = actionType.availableActions(0).toList().random()
+        val action = actionType.availableActions(0, null).toList().random()
         actionType.perform(action)
         Assertions.assertEquals(1, game.view(0)["currentPlayer"])
     }
@@ -77,7 +77,7 @@ class DslTest {
         while (!game.isGameOver() && counter < 20) {
             val playerIndex = counter % 2
             val actionType = game.actions.type("play")!!
-            val availableActions = actionType.availableActions(playerIndex)
+            val availableActions = actionType.availableActions(playerIndex, null)
             Assertions.assertFalse(availableActions.none(), "Game is not over but no available actions after $counter actions")
             val action = availableActions.toList().random(random)
             actionType.perform(action)
