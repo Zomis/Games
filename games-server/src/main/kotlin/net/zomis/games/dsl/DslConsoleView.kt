@@ -10,52 +10,50 @@ import java.util.Scanner
 class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
 
     fun play(scanner: Scanner) {
-        val context = GameSetupImpl(game)
-        println(context.configClass())
+        val entryPoint = GamesImpl.game(game)
+        val setup = entryPoint.setup()
+        println(setup.configClass())
 
-        val config = context.getDefaultConfig()
+        val config = setup.getDefaultConfig()
         println(config)
         println("Enter number of players:")
         val playerCount = scanner.nextLine().toInt()
-        val gameImpl = context.createGame(playerCount, config)
-        println(gameImpl)
 
-        this.showView(gameImpl)
-        while (!gameImpl.isGameOver()) {
-            if (this.queryInput(gameImpl, scanner)) {
-                this.showView(gameImpl)
-                gameImpl.stateKeeper.clear()
-            }
+        val replay = entryPoint.inMemoryReplay()
+        val replayable = entryPoint.replayable(playerCount, config, replay)
+        replayable.playThrough {
+            this.showView(replayable.game)
+            inputRepeat { this.queryInput(replayable.game, scanner) }
+        }
+        val savedReplay = entryPoint.replay(replay.data()).goToEnd()
+        listOf<Int?>(null).plus(replayable.game.playerIndices).forEach {
+            val match = replayable.game.view(it) == savedReplay.game.view(it)
+            println("Replay for player $it verification: $match")
         }
     }
 
-    fun choiceActionable(actionLogic: ActionTypeImplEntry<T, Any>, playerIndex: Int, scanner: Scanner): Actionable<T, Any>? {
-        val options = actionLogic.availableActions(playerIndex, null).toList()
-        options.forEachIndexed { index, actionable -> println("$index. $actionable") }
-        if (options.size <= 1) { return options.getOrNull(0) }
-        else {
-            println("Choose your action.")
-            val actionIndex = scanner.nextLine().toIntOrNull()
-            return options.getOrNull(actionIndex ?: -1)
-        }
+    fun <E> inputRepeat(function: () -> E?): E {
+        var result: E? = null
+        while (result == null) result = function()
+        return result
     }
 
-    fun queryInput(game: GameImpl<T>, scanner: Scanner): Boolean {
+    fun queryInput(game: GameImpl<T>, scanner: Scanner): Actionable<T, Any>? {
         println("Available actions is: ${game.actions.actionTypes}. Who is playing and what is your action?")
         val line = scanner.nextLine()
         if (!line.contains(" ")) {
             println("You forgot something.")
-            return false
+            return null
         }
         val (playerIndex, actionType) = line.split(" ")
         val actionLogic = game.actions.types().find { it.name.toLowerCase() == actionType.toLowerCase() }
         if (actionLogic == null) {
             println("Invalid action")
-            return false
+            return null
         }
 
         val actionParameterClass = actionLogic.actionType.serializedType
-        val action: Actionable<T, Any>? = when (actionParameterClass) {
+        val action: Actionable<T, Any> = when (actionParameterClass) {
             Point::class -> {
                 println("Enter x position where you want to play")
                 val x = scanner.nextLine().toInt()
@@ -65,19 +63,11 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
             }
             else -> {
                 stepByStepActionable(game, playerIndex.toInt(), actionType, scanner)
-//                choiceActionable(actionLogic, playerIndex.toInt(), scanner)
             }
-        }
-        if (action == null) {
-            println("Not a valid action.")
-            return false
-        }
+        } ?: return null
         val allowed = actionLogic.isAllowed(action)
         println("Action $action allowed: $allowed")
-        if (allowed) {
-            actionLogic.perform(action)
-        }
-        return allowed
+        return action.takeIf { allowed }
     }
 
     private fun stepByStepActionable(game: GameImpl<T>, playerIndex: Int, moveType: String, scanner: Scanner): Actionable<T, Any>? {

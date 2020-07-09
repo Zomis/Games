@@ -7,7 +7,7 @@ object HelloWorldGame {
 
     data class HelloWorldModel(val values: MutableList<Boolean>, var points: Int)
     val factory = GameCreator(HelloWorldModel::class)
-    val action = factory.action("play", Int::class)
+    internal val playHelloWorldDJL = factory.action("play", Int::class)
     val game = factory.game("HelloWorld") {
         setup(Int::class) {
             this.defaultConfig { 4 }
@@ -15,7 +15,7 @@ object HelloWorldGame {
             this.players(1..1)
         }
         rules {
-            action(action) {
+            action(playHelloWorldDJL) {
                 options { 0 until 4 }
                 effect {
                     game.points += if (game.values[action.parameter]) -1 else 1

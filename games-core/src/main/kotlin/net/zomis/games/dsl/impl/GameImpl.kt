@@ -50,6 +50,7 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
 class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override val playerCount: Int,
         override val config: Any, val stateKeeper: StateKeeper): GameFactoryScope<Any> {
 
+    val playerIndices = 0 until playerCount
     override val eliminationCallback = PlayerEliminations(playerCount)
     val model = setupContext.model.factory(this, config)
     private val replayState = ReplayState(stateKeeper, eliminationCallback)

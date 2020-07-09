@@ -35,7 +35,6 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
         impl.replayAction(action, state)
     }
     fun perform(action: Actionable<T, P>) {
-        replayState.stateKeeper.clear()
         impl.performAction(action)
     }
     fun createAction(playerIndex: Int, parameter: P): Actionable<T, P> = impl.createAction(playerIndex, parameter)
@@ -53,7 +52,8 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
                 actionType.serialize(action2.parameter) == serialized
             }
             if (actions.size != 1) {
-                throw IllegalStateException("Actions available: ${actions.size} for player $playerIndex move $serialized")
+                throw IllegalStateException("Actions available: ${actions.size} for player $playerIndex " +
+                        "move ${this.actionType.name} $serialized")
             }
             actions.single()
         } else {

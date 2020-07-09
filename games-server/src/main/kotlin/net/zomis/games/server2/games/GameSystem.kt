@@ -46,6 +46,7 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
     private val nextMoveIndex = AtomicInteger(0)
     internal val players: MutableList<Client> = mutableListOf()
     internal val observers: MutableSet<Client> = mutableSetOf()
+    // TODO: Declare as GameReplayable? Only DSL-games are used anyway.
     var obj: Any? = null
     var lastMove: Long = Instant.now().toEpochMilli()
 
@@ -80,11 +81,11 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
     }
 
     private fun actionRequest(message: ClientJsonMessage) {
-        // Should not matter if it's an incomplete action or not
+        // Does not matter if it's an incomplete action or not
         this.actionListHandler.actionRequest(message, callback)
     }
 
-    @Deprecated("hopefully unused. Only required for non-DSL games which no longer exists")
+    @Deprecated("Replace with action instead. This approach is only *required* for non-DSL games which no longer exists")
     private fun moveRequest(message: ClientJsonMessage) {
         val moveType = message.data.get("moveType").asText()
         val move = message.data.get("move")

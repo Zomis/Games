@@ -21,6 +21,8 @@ interface PlayerEliminationCallback {
         this.result(playerIndex, WinResult.WIN)
         this.eliminateRemaining(WinResult.LOSS)
     }
+
+    fun eliminationFor(playerIndex: Int): PlayerElimination? = eliminations().find { it.playerIndex == playerIndex }
 }
 
 data class PlayerElimination(val playerIndex: Int, val winResult: WinResult, val position: Int)

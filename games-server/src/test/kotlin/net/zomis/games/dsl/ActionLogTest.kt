@@ -46,12 +46,12 @@ class ActionLogTest {
 
     @Test
     fun test() {
-        val setup = GameSetupImpl(spec)
-        val game = setup.createGame(2, setup.getDefaultConfig())
-        val action = game.actions.type(change.name)!!
-        action.perform(0, 2)
-        action.perform(0, 3)
-        action.perform(1, -2)
+        val entry = GamesImpl.game(spec)
+        val play = entry.replayable(2, null, entry.inMemoryReplay())
+        play.action(0, change, 2)
+        play.action(0, change, 3)
+        play.action(1, change, -2)
+        val game = play.game
         val logs = game.stateKeeper.logs()
         Assertions.assertEquals(2, logs.size)
         Assertions.assertEquals(LogPartPlayer(1), logs[0].secret!!.parts[0])
@@ -66,9 +66,9 @@ class ActionLogTest {
         Assertions.assertEquals(LogPartPlayer(1), logs[1].public!!.parts[0])
         Assertions.assertEquals(LogPartText(" changed the value in direction -1"), logs[1].public!!.parts[1])
 
-        action.perform(1, -2)
-        action.perform(0, 1)
-        action.perform(1, -2)
+        play.action(1, change,-2)
+        play.action(0, change,1)
+        play.action(1, change,-2)
         Assertions.assertTrue(game.isGameOver())
     }
 

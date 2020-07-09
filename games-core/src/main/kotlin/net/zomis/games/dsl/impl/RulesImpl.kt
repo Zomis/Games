@@ -183,6 +183,7 @@ class GameActionRuleContext<T : Any, A : Any>(
     }
 
     override fun performAction(action: Actionable<T, A>) {
+        if (!actionAllowed(action)) throw IllegalStateException("Action is not allowed: $action")
         val context = ActionRuleContext(model, action, eliminations, replayable)
         this.effects.forEach { it.invoke(context) }
         this.after.forEach { it.invoke(context) }

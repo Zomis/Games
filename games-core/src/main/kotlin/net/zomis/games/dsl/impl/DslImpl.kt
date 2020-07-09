@@ -140,11 +140,12 @@ class GameViewContext<T : Any>(
 }
 
 class StateKeeper {
+    // A single action needs to have multiple keys, so we can't use callback directly.
     private val currentAction = mutableMapOf<String, Any>()
     private val logEntries = mutableListOf<ActionLogEntry>()
     var replayMode = false
 
-    fun lastMoveState(): Map<String, Any?> = currentAction.toMap()
+    fun lastMoveState(): Map<String, Any> = currentAction.toMap()
     fun clear() {
         currentAction.clear()
         replayMode = false
