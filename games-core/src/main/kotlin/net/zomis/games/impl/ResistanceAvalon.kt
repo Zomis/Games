@@ -269,7 +269,6 @@ object ResistanceAvalonGame {
             action(assassinate) {
                 precondition { game.missions.count { it.result == true } >= 3 }
                 precondition { game.players[playerIndex].character == ResistanceAvalonPlayerCharacter.ASSASSIN }
-                precondition { playerIndex == 0 }
                 options { game.players.filter { it.character!!.good } }
                 effect {
                     log { "$player assassinated ${player(action.index)} who was ${action.character?.name}" }
