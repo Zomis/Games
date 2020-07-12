@@ -1,5 +1,5 @@
 <template>
-    <v-menu bottom offset-y :disabled="!useMenu" v-model="showMenu" :close-on-content-click="!this.stickyMenu">
+    <v-menu bottom offset-y :disabled="!useMenu" v-model="showMenu" v-if="shouldBeVisible" :close-on-content-click="!this.stickyMenu">
         <template v-slot:activator="{ on: menu }">
             <v-tooltip bottom disabled>
                 <template v-slot:activator="{ on: tooltip }">
@@ -33,6 +33,7 @@ export default {
         actionType: {
             validator(value) { return typeof value === 'string' || Array.isArray(value) }
         },
+        hideIfIrrelevant: { type: Boolean, default: false },
         stickyMenu: { type: Boolean, default: false },
         actions: { type: Object, required: true },
         button: { type: Boolean, default: false },
@@ -55,6 +56,9 @@ export default {
         }
     },
     computed: {
+        shouldBeVisible() {
+            return !this.hideIfIrrelevant || this.isActionable
+        },
         useMenu() {
             return !this.actionable // or if there are multiple actions for this actionable (such as both 'Play' and 'Discard' using the same parameter)
         },

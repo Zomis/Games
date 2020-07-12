@@ -12,6 +12,9 @@
                 <p>
                     <v-icon color="purple" v-if="view.votingTeam && view.votingTeam.missionNumber == mission.missionNumber">mdi-helicopter</v-icon>
                 </p>
+                <Actionable hideIfIrrelevant button :actionable="`mission-${mission.missionNumber}`" :actions="actions">
+                    Choose mission
+                </Actionable>
             </v-col>
         </v-row>
         <v-row>
@@ -35,6 +38,11 @@
                             <v-icon color="green" v-if="player.vote">mdi-check-circle</v-icon>
                             <v-icon color="red" v-else>mdi-close-circle</v-icon>
                         </p>
+                        <div>
+                            <Actionable v-if="actions.available[`players/${playerIndex}`]" button :actionable="`players/${playerIndex}`" :actions="actions">
+                                {{ actionDescriptions[actions.available[`players/${playerIndex}`].actionType] }}
+                            </Actionable>
+                        </div>
                         <div v-if="player.character">
                             <p>{{ player.character }}</p>
                             <p>{{ characters[player.character] }}</p>
@@ -52,11 +60,8 @@
         </v-row>
         <v-row>
             <v-col>
-                <Actionable button :actionType="['teamChoice']" :actions="actions" stickyMenu>Choose team</Actionable>
                 <Actionable button :actionType="['vote']" :actions="actions">Vote for team</Actionable>
                 <Actionable button :actionType="['performMission']" :actions="actions">Perform mission</Actionable>
-                <Actionable button :actionType="['assassinate']" :actions="actions" stickyMenu>Assassinate</Actionable>
-                <Actionable button :actionType="['useLadyOfTheLake']" :actions="actions">Lady of the lake</Actionable>
             </v-col>
         </v-row>
         <v-row>
@@ -90,6 +95,13 @@ export default {
         PlayerProfile, Actionable
     },
     computed: {
+        actionDescriptions() {
+            return {
+                teamChoice: "Add to team",
+                assassinate: "Assassinate",
+                useLadyOfTheLake: "Target with lady of the lake"
+            }
+        },
         characters() {
             let oberonMessage = " Sees other evil except Oberon."
             return {
