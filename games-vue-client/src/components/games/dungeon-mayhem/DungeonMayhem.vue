@@ -49,6 +49,25 @@
                 <div v-for="(item, index) in view.stack" :key="index">{{ item }}</div>
             </v-col>
         </v-row>
+        <v-row>
+            <v-card max-width="800" class="mx-auto">
+                <v-toolbar color="cyan" dark>
+                    <v-toolbar-title>Symbols</v-toolbar-title>
+                </v-toolbar>
+
+                <v-row no-gutters>
+                    <template v-for="(symbol, index) in symbolsInGame">
+                        <v-col :key="index" cols="4">
+                            <v-card class="pa-2" outlined tile>
+                                <v-icon :color="symbol.color">{{ symbol.icon }}</v-icon>
+                                <span>{{ symbol.text }}</span>
+                            </v-card>
+                        </v-col>
+                        <v-responsive v-if="index % 2 === 0" :key="`width-${index}`" width="100%" />
+                    </template>
+                </v-row>
+            </v-card>
+        </v-row>
     </v-container>
 </template>
 <script>
@@ -56,6 +75,7 @@ import PlayerProfile from "@/components/games/common/PlayerProfile"
 import CardZone from "@/components/games/common/CardZone"
 import DungeonMayhemCard from "./DungeonMayhemCard"
 import Actionable from "@/components/games/common/Actionable"
+import dungeonMayhemSymbols from "./dungeonMayhemSymbols"
 
 export default {
     name: "DungeonMayhem",
@@ -65,6 +85,9 @@ export default {
         Actionable,
         CardZone,
         DungeonMayhemCard
+    },
+    computed: {
+        symbolsInGame: () => dungeonMayhemSymbols
     }
 }
 </script>
