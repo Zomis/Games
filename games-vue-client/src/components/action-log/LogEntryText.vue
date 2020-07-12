@@ -4,9 +4,7 @@
             <span v-on="on" :class="cssClasses"
                     @click="clicked = !clicked"
                     @mouseover="hover = true"
-                    @mouseleave="hover = false">
-                {{ text }}
-            </span>
+                    @mouseleave="hover = false">{{ text }}</span>
         </template>
         <span>
             <component v-if="useTooltip" :is="tooltipComponent" v-bind="hoverBindings" />

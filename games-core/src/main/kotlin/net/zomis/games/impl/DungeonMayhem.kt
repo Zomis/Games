@@ -386,7 +386,9 @@ object DungeonMayhemDsl {
                 log {
                     val target = when {
                         action.discardedCard != null -> playerTarget.discard[action.discardedCard!!].card.let { viewLink(it.name, "card", it.view()) }
-                        action.shieldCard != null -> playerTarget.shields[action.shieldCard!!].card.card.let { viewLink(it.name, "card", it.view()) }
+                        action.shieldCard != null -> playerTarget.shields[action.shieldCard!!].card.card.let {
+                            player(playerTarget.index) + " " + viewLink(it.name, "card", it.view())
+                        }
                         else -> player(playerTarget.index)
                     }
                     "$player targets $target with ${count}x ${symbol.symbol.name}"
