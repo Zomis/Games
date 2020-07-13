@@ -126,7 +126,7 @@ class Server2(val events: EventSystem) {
 
         features.add { feat, ev -> gameSystem.setup(feat, ev, config.idGenerator) }
 
-        dslGames.forEach { (name, spec) -> events.with(DslGameSystem(name, spec as GameSpec<Any>)::setup) }
+        dslGames.values.forEach { spec -> events.with(DslGameSystem(spec as GameSpec<Any>)::setup) }
 
         features.add(SimpleMatchMakingSystem()::setup)
         events.with(ServerConsole()::register)

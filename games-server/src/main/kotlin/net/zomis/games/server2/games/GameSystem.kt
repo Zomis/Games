@@ -7,8 +7,12 @@ import net.zomis.core.events.ListenerPriority
 import net.zomis.games.Features
 import net.zomis.games.WinResult
 import net.zomis.games.common.PlayerIndex
+import net.zomis.games.dsl.GameReplayableImpl
+import net.zomis.games.dsl.GameSpec
+import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.dsl.impl.GameSetupImpl
+import net.zomis.games.server.GamesServer
 import net.zomis.games.server2.*
 import net.zomis.games.server2.clients.FakeClient
 import net.zomis.games.server2.db.DBGame
@@ -24,12 +28,12 @@ import java.util.concurrent.atomic.AtomicInteger
 fun ServerGame.toJson(type: String): Map<String, Any?> {
     return mapOf(
         "type" to type,
-        "gameType" to this.gameType.type,
+        "gameType" to this.gameType.gameSpec.name,
         "gameId" to this.gameId
     )
 }
 fun ServerGame.map(type: String): Map<String, Any> {
-    return mapOf("type" to type, "gameType" to this.gameType.type, "gameId" to this.gameId)
+    return mapOf("type" to type, "gameType" to this.gameType.gameSpec.name, "gameId" to this.gameId)
 }
 
 class ServerGame(private val callback: GameCallback, val gameType: GameType, val gameId: String, val gameMeta: InviteOptions) {
@@ -48,8 +52,7 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
     val mutex = Mutex()
     internal val players: MutableList<Client> = mutableListOf()
     internal val observers: MutableSet<Client> = mutableSetOf()
-    // TODO: Declare as GameReplayable? Only DSL-games are used anyway.
-    var obj: Any? = null
+    var obj: GameReplayableImpl<Any>? = null
     var lastMove: Long = Instant.now().toEpochMilli()
 
     fun broadcast(message: (Client) -> Any) {
@@ -100,18 +103,8 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
         callback.moveHandler(PlayerGameMoveRequest(this, playerIndex, moveType, move, true))
     }
 
-    private fun requireDslGame(): Boolean {
-        if (this.obj !is GameImpl<*>) {
-            logger.error("Game $gameId of type $gameType is not a valid DSL game")
-            return false
-        }
-        return true
-    }
-
     private fun view(message: ClientJsonMessage) {
-        if (!requireDslGame()) return
-
-        val obj = this.obj as GameImpl<*>
+        val obj = this.obj!!.game
         val viewer = message.client to this.clientPlayerIndex(message.client)
         logger.info { "Sending view data for $gameId of type ${gameType.type} to $viewer" }
         val view = obj.view(viewer.second)
@@ -125,12 +118,9 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
     }
 
     private fun viewRequest(message: ClientJsonMessage) {
-        if (!requireDslGame()) return
-
-        val obj = this.obj as GameImpl<*>
         val viewer = message.client to this.clientPlayerIndex(message.client)
 
-        val viewDetailsResult = obj.viewRequest(viewer.second,
+        val viewDetailsResult = this.obj!!.game.viewRequest(viewer.second,
               message.data.getTextOrDefault("viewRequest", ""), emptyMap())
 
         message.client.send(mapOf(
@@ -160,7 +150,11 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
 
 }
 
-data class GameTypeRegisterEvent(val gameType: String)
+class GameTypeRegisterEvent(spec: GameSpec<*>) {
+    val gameSpec = spec as GameSpec<Any>
+    val gameType: String = gameSpec.name
+}
+
 data class PreMoveEvent(val game: ServerGame, val player: Int, val moveType: String, val move: Any)
 data class MoveEvent(val game: ServerGame, val player: Int, val moveType: String, val move: Any)
 data class GameStartedEvent(val game: ServerGame)
@@ -181,9 +175,10 @@ class GameCallback(
     val gameLoader: (String) -> DBGame?,
     val moveHandler: (PlayerGameMoveRequest) -> Unit
 )
-class GameType(private val callback: GameCallback, val type: String, private val gameClients: () -> ClientList?,
+class GameType(private val callback: GameCallback, val gameSpec: GameSpec<Any>, private val gameClients: () -> ClientList?,
        events: EventSystem, private val idGenerator: GameIdGenerator) {
 
+    val type: String = gameSpec.name
     private val logger = KLoggers.logger(this)
     val runningGames: MutableMap<String, ServerGame> = mutableMapOf()
     val features: Features = Features(events)
@@ -197,7 +192,7 @@ class GameType(private val callback: GameCallback, val type: String, private val
         val loadGameOptions = InviteOptions(false, InviteTurnOrder.ORDERED, -1, gameOptions, true)
         val serverGame = ServerGame(callback, this, gameId, loadGameOptions)
         serverGame.setMoveIndex(dbGame.moveHistory.size)
-        serverGame.obj = dbGame.game
+        serverGame.obj = GamesImpl.game(gameSpec).replay(dbGame.replayData(), GamesServer.replayStorage.database(gameId)).replayable()
         runningGames[serverGame.gameId] = serverGame
 
         fun findOrCreatePlayers(playersInGame: List<PlayerInGame>): Collection<Client> {
@@ -270,7 +265,7 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>, private val callback:
             )
         })
         events.listen("Register GameType", GameTypeRegisterEvent::class, {true}, {
-            gameTypes.gameTypes[it.gameType] = GameType(callback, it.gameType, { gameClients(it.gameType) }, events, idGenerator)
+            gameTypes.gameTypes[it.gameType] = GameType(callback, it.gameSpec, { gameClients(it.gameType) }, events, idGenerator)
         })
     }
 
@@ -282,11 +277,9 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>, private val callback:
 
 fun MoveEvent.moveMessage(): Map<String, Any?> {
     val serverGame = this.game
-    val moveData = if (serverGame.obj is GameImpl<*>) {
-        val gameImpl = serverGame.obj as GameImpl<*>
-        val actionType = gameImpl.actions.type(this.moveType)!!.actionType
-        actionType.serialize(this.move)
-    } else { this.move }
+    val gameImpl = serverGame.obj!!.game
+    val actionType = gameImpl.actions.type(this.moveType)!!.actionType
+    val moveData = actionType.serialize(this.move)
     return this.game.toJson("GameMove")
         .plus("player" to this.player)
         .plus("moveType" to this.moveType)

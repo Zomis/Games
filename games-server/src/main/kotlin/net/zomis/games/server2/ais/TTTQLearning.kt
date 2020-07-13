@@ -120,7 +120,7 @@ class TTTQLearn(val games: GameSystem) {
     private val learn = this.newLearner(QStoreMap())
 
     fun setup(events: EventSystem) {
-        events.listen("register ServerAIs for DSL Game", GameTypeRegisterEvent::class, { it.gameType == gameType }, { event ->
+        events.listen("register ServerAIs for DSL Game", GameTypeRegisterEvent::class, { it.gameType == gameType }, {
             registerAI(events)
         })
     }
@@ -130,7 +130,7 @@ class TTTQLearn(val games: GameSystem) {
         learn.randomMoveProbability = 0.0
 
         val serverAI = ServerAI(gameType, "#AI_QLearn_$gameType") { game, index ->
-            val controller = game.obj as GameImpl<Any>
+            val controller = game.obj!!.game
             val model = controller.model as TTController
             if (model.currentPlayer.index() != index) {
                 return@ServerAI null
@@ -171,7 +171,7 @@ class TTTQLearn(val games: GameSystem) {
         events.listen("#AI_QLearn_$gameType pre-move", PreMoveEvent::class, {
             it.game.players.contains(serverAI.client)
         }, {
-            val game = it.game.obj as GameImpl<TTController>
+            val game = it.game.obj!!.game as GameImpl<TTController>
             val point = it.move as Point
 
             val action = it.move.y * game.model.game.sizeX + it.move.x
@@ -194,7 +194,7 @@ class TTTQLearn(val games: GameSystem) {
                     }
                     awaitingResults.entries.remove(entry)
 
-                    val reward = observeReward(event.game.obj as GameImpl<TTController>,
+                    val reward = observeReward(event.game.obj!!.game as GameImpl<TTController>,
                             entry.value.action, entry.key.second)
                     learn.performReward(entry.value as QAwaitingReward<String>, reward)
                 }

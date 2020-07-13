@@ -5,6 +5,7 @@ import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.GameplayCallbacks
 import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.ReplayData
+import net.zomis.games.server.db.GameplayDynamoDB
 import net.zomis.games.server2.ServerGames
 import java.io.File
 
@@ -28,7 +29,7 @@ object GamesServer {
 
     object replayStorage {
         fun <T: Any> fileRecordReplay(fileName: String): GameplayCallbacks<T> = TODO()
-        fun <T: Any> database(): GameplayCallbacks<T> = TODO()
+        fun <T: Any> database(gameId: String): GameplayCallbacks<T> = GameplayDynamoDB(gameId)
     }
 
 }

@@ -49,7 +49,7 @@ class ActionListRequestHandler(private val game: ServerGame?) {
             throw IllegalArgumentException("Game ${game.gameId} of type ${game.gameType.type} is not a valid DSL game")
         }
 
-        val obj = game.obj as GameImpl<Any>
+        val obj = game.obj!!.game
         val playerIndex = message.data.getTextOrDefault("playerIndex", "-1").toInt()
         if (!game.verifyPlayerIndex(message.client, playerIndex)) {
             throw IllegalArgumentException("Client ${message.client} does not have index $playerIndex in Game ${game.gameId} of type ${game.gameType.type}")

@@ -2,6 +2,8 @@ package net.zomis.games.server2.invites
 
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
+import net.zomis.games.dsl.GameSpec
+import net.zomis.games.example.TestGames
 import net.zomis.games.server2.Client
 import net.zomis.games.server2.ClientDisconnected
 import net.zomis.games.server2.doctools.DocEventSystem
@@ -45,8 +47,8 @@ class LobbySystemTest {
         clientB1 = FakeClient().apply { updateInfo("B1", UUID.fromString("33333333-3333-3333-3333-333333333333")) }
         asker = FakeClient().apply { updateInfo("Asker", UUID.fromString("44444444-4444-4444-4444-444444444444")) }
 
-        events.execute(GameTypeRegisterEvent("A"))
-        events.execute(GameTypeRegisterEvent("B"))
+        events.execute(GameTypeRegisterEvent(TestGames.gameTypeA))
+        events.execute(GameTypeRegisterEvent(TestGames.gameTypeB))
         setForClient(ClientInterestingGames(setOf("A", "B"), 2, mutableSetOf()), clientAB2)
         setForClient(ClientInterestingGames(setOf("A"), 1, mutableSetOf()), clientA1)
         setForClient(ClientInterestingGames(setOf("B"), 1, mutableSetOf()), clientB1)
@@ -88,7 +90,7 @@ class LobbySystemTest {
             moveHandler = {}
         )
         val inviteOptions = InviteOptions(false, InviteTurnOrder.ORDERED, -1, Unit, false)
-        val game = ServerGame(callback, GameType(callback, "A", {null}, events, idGenerator), idGenerator(), inviteOptions)
+        val game = ServerGame(callback, GameType(callback, TestGames.gameTypeA as GameSpec<Any>, {null}, events, idGenerator), idGenerator(), inviteOptions)
         game.players.add(clientAB2)
         game.players.add(clientA1)
         events.execute(GameStartedEvent(game))

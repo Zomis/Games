@@ -137,7 +137,7 @@ class DslRandomPlayTest {
 
         // Find game
         val game = server!!.gameSystem.getGameType(dslGame)!!.runningGames["1"]!!
-        val gameImpl = game.obj as GameImpl<*>
+        val gameImpl = game.obj!!.game
         val players = game.players.mapIndexed { index, client ->
             index to clients[playerIds.indexOf(client.playerId!!.toString())]
         }

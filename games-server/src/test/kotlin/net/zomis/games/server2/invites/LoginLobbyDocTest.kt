@@ -1,5 +1,6 @@
 package net.zomis.games.server2.invites
 
+import net.zomis.games.example.TestGames
 import net.zomis.games.server2.*
 import net.zomis.games.server2.clients.FakeClient
 import net.zomis.games.server2.doctools.DocEventSystem
@@ -20,8 +21,8 @@ class LoginLobbyDocTest {
         val events = DocEventSystem(docWriter)
         val server2 = Server2(events)
         server2.start(testServerConfig())
-        events.execute(GameTypeRegisterEvent("TestGameType"))
-        events.execute(GameTypeRegisterEvent("OtherGameType"))
+        events.execute(GameTypeRegisterEvent(TestGames.testGameType))
+        events.execute(GameTypeRegisterEvent(TestGames.otherGameType))
 
         fun authTest(message: ClientJsonMessage) {
             AuthorizationSystem(events).handleGuest(message.client, "guest-12345",

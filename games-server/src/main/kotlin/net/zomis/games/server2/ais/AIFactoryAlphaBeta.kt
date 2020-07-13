@@ -68,7 +68,7 @@ class AIFactoryAlphaBeta {
     fun <S: Any> createAlphaBetaAI(factory: AlphaBetaAIFactory<S>, events: EventSystem, depth: Int, speedMode: AlphaBetaSpeedMode) {
         val alphaBetaConfig = AIAlphaBetaConfig(factory, depth, speedMode)
         ServerAI(factory.gameType, factory.aiName(depth, speedMode)) { game, index ->
-            val model = game.obj as GameImpl<S>
+            val model = game.obj!!.game as GameImpl<S>
             if (noAvailableActions(model, index)) {
                 return@ServerAI null
             }

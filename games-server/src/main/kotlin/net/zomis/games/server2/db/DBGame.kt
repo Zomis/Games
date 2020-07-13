@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonUnwrapped
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
+import net.zomis.games.dsl.ActionReplay
 import net.zomis.games.dsl.GameSpec
+import net.zomis.games.dsl.ReplayData
 import net.zomis.games.dsl.impl.ActionOptionsContext
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.dsl.impl.GameSetupImpl
@@ -92,6 +94,14 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
 
     fun hasErrors(): Boolean {
         return this.errors.any()
+    }
+
+    fun replayData(): ReplayData {
+        return ReplayData(
+            summary.gameType, summary.playersInGame.size,
+            summary.gameConfig, summary.startingState,
+            moveHistory.map { ActionReplay(it.moveType, it.playerIndex, it.move ?: Unit, it.state) }
+        )
     }
 
 }

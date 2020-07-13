@@ -57,15 +57,14 @@ class ServerAlphaBetaAIs(private val aiRepository: AIRepository) {
     fun heuristicTTT3D(game: TTT3D, myIndex: Int): Double {
         val me = if (myIndex == 0) TTT3DPiece.X else TTT3DPiece.O
         val opp = me.opponent()
-        var result = 0.0
-        if (game.findWinner() != null) {
-            result = if (game.findWinner() == me) 100.0 else -100.0
+        var result = if (game.findWinner() != null) {
+            if (game.findWinner() == me) 100.0 else -100.0
         } else {
             val myWins = game.winConditions.filter { it.canWin(me) }.groupBy { it.emptySpaces() }.mapValues { it.value.size }
             val opWins = game.winConditions.filter { it.canWin(opp) }.groupBy { it.emptySpaces() }.mapValues { it.value.size }
             val positive = (myWins[1]?:0) * 4 + (myWins[2]?:0) * 2 + (myWins[3]?:0) * 0.1
             val negative = (opWins[1]?:0) * 4 + (opWins[2]?:0) * 2 + (opWins[3]?:0) * 0.1
-            result = positive - negative
+            positive - negative
         }
         return result
     }

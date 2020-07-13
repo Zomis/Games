@@ -10,7 +10,7 @@ class AIFactoryScoring {
 
     fun <T: Any> createAI(events: EventSystem, gameType: String, name: String, controller: GameController<T>) {
         ServerAI(gameType, name) { game, index ->
-            val obj = game.obj as GameImpl<T>
+            val obj = game.obj!!.game as GameImpl<T>
             val controllerContext = GameControllerContext(obj, index)
             val action = controller(controllerContext)
             if (action != null) PlayerGameMoveRequest(game, index, action.actionType, action.parameter, false)

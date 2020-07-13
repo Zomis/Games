@@ -5,22 +5,23 @@ import klog.KLoggers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.withLock
 import net.zomis.core.events.EventSystem
-import net.zomis.games.dsl.Actionable
-import net.zomis.games.dsl.GameSpec
+import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.*
+import net.zomis.games.server.GamesServer
 import net.zomis.games.server2.StartupEvent
 import java.lang.IllegalStateException
 import java.lang.UnsupportedOperationException
 import kotlin.reflect.full.cast
 
-class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
+class DslGameSystem<T : Any>(val dsl: GameSpec<T>) {
+    val gameTypeName = dsl.name
 
     private val mapper = jacksonObjectMapper()
     private val logger = KLoggers.logger(this)
 
     fun perform(events: EventSystem, it: PlayerGameMoveRequest) {
         val serverGame = it.game
-        val controller = it.game.obj as GameImpl<T>
+        val controller = it.game.obj!!.game as GameImpl<T>
         if (controller.isGameOver()) {
             events.execute(it.illegalMove("Game already finished"))
             return
@@ -82,14 +83,20 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
     }
 
     fun setup(events: EventSystem) {
-        val server2GameName = name
-        val setup = GameSetupImpl(dsl)
-        events.listen("DslGameSystem $name Setup", GameStartedEvent::class, {it.game.gameType.type == server2GameName}, {
-            // TODO: Change to a replayable game, `GamesServer` single point of entry.
-            it.game.obj = setup.createGame(it.game.players.size, it.game.gameMeta.gameOptions ?: Unit)
+        val entryPoint = GamesImpl.game(dsl)
+        events.listen("DslGameSystem $gameTypeName Setup", GameStartedEvent::class, {it.game.gameType.type == gameTypeName}, {
+            val appropriateReplayListener =
+                if (it.game.gameMeta.database) GamesServer.replayStorage.database<T>(it.game.gameId)
+                else GameplayCallbacks()
+            it.game.obj = entryPoint.replayable(
+                it.game.players.size,
+                it.game.gameMeta.gameOptions ?: Unit,
+                serverGameListener(it.game),
+                appropriateReplayListener
+            ) as GameReplayableImpl<Any>
         })
-        events.listen("DslGameSystem $name Move", PlayerGameMoveRequest::class, {
-            it.game.gameType.type == server2GameName
+        events.listen("DslGameSystem $gameTypeName Move", PlayerGameMoveRequest::class, {
+            it.game.gameType.type == gameTypeName
         }, {
             runBlocking {
                 it.game.mutex.withLock {
@@ -97,9 +104,14 @@ class DslGameSystem<T : Any>(val name: String, val dsl: GameSpec<T>) {
                 }
             }
         })
-        events.listen("DslGameSystem register $name", StartupEvent::class, {true}, {
-            events.execute(GameTypeRegisterEvent(server2GameName))
+        events.listen("DslGameSystem register $gameTypeName", StartupEvent::class, {true}, {
+            events.execute(GameTypeRegisterEvent(dsl))
         })
+    }
+
+    private fun serverGameListener(game: ServerGame): GameplayCallbacks<T> {
+        // TODO: Use callbacks here instead of methods in ServerGame class
+        return GameplayCallbacks()
     }
 
     private fun sendLogs(serverGame: ServerGame, log: ActionLogEntry) {

@@ -152,11 +152,11 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         val serverGame = move.game
         move.game.lastMove = epochMilli
         val moveIndex = serverGame.nextMoveIndex()
-        val dbMove = if (serverGame.obj is GameImpl<*>) {
-            val gameImpl = serverGame.obj as GameImpl<*>
-            val actionType = gameImpl.actions.type(move.moveType)!!.actionType
-            actionType.serialize(move.move)
-        } else { move.move }
+
+        val gameImpl = serverGame.obj!!.game
+        val actionType = gameImpl.actions.type(move.moveType)!!.actionType
+        val dbMove = actionType.serialize(move.move)
+
         val moveData = convertToDBFormat(dbMove)
         val state: Any? = gameRandomnessState(serverGame)
         val updates = mutableListOf(
@@ -177,12 +177,10 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
     }
 
     private fun gameRandomnessState(serverGame: ServerGame): Any? {
-        if (serverGame.obj is GameImpl<*>) {
-            val game = serverGame.obj as GameImpl<*>
-            val lastMoveState = game.stateKeeper.lastMoveState()
-            if (lastMoveState.isNotEmpty()) {
-                return convertToDBFormat(lastMoveState)
-            }
+        val game = serverGame.obj!!.game as GameImpl<*>
+        val lastMoveState = game.stateKeeper.lastMoveState()
+        if (lastMoveState.isNotEmpty()) {
+            return convertToDBFormat(lastMoveState)
         }
         return null
     }

@@ -27,7 +27,7 @@ class ServerAIs(private val aiRepository: AIRepository, private val dslGameTypes
     }
 
     fun randomAction(game: ServerGame, index: Int): PlayerGameMoveRequest? {
-        val controller = game.obj as GameImpl<Any>
+        val controller = game.obj!!.game
         val actionable = randomActionable(controller, index)
         return actionable?.let {
             PlayerGameMoveRequest(game, it.playerIndex, it.actionType, it.parameter, false)
