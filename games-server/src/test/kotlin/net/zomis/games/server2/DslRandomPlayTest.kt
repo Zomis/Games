@@ -4,6 +4,8 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.Actionable
+import net.zomis.games.dsl.GameEntryPoint
+import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.impl.SplendorGame
 import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.dsl.impl.GameControllerContext
@@ -61,7 +63,13 @@ class DslRandomPlayTest {
     companion object {
         @JvmStatic
         fun serverGames(): List<Arguments> {
-            return ServerGames.games.keys.sorted().map { Arguments.of(it) }
+            return ServerGames.games.values.sortedBy { it.name }.map {
+                val entryPoint = GamesImpl.game(it)
+                val playerCount = entryPoint.setup().playersCount
+                val randomCount = playerCount.random()
+
+                Arguments.of(entryPoint.gameType, randomCount)
+            }
         }
     }
 
@@ -80,12 +88,11 @@ class DslRandomPlayTest {
         SplendorGame::class to { ctx -> SplendorScorers.aiBuyFirst.createController().invoke(ctx as GameControllerScope<SplendorGame>) }
     )
 
-    @ParameterizedTest(name = "Random play {0}")
+    @ParameterizedTest(name = "Random play {0} with {1} players")
     @MethodSource("serverGames")
-    fun dsl(dslGame: String) {
-        val playerCount = ServerGames.setup(dslGame)!!.playersCount
-        val randomCount = playerCount.random()
-        val clients = (1..randomCount).map { WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket")) }
+    fun dsl(gameType: String, playerCount: Int) {
+        val dslGame = gameType
+        val clients = (1..playerCount).map { WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket")) }
         clients.forEach { it.connectBlocking() }
 
         val playerIds = clients.map {client ->
