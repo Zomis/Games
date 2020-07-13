@@ -116,6 +116,7 @@ data class MoneyChoice(val moneys: List<MoneyType>) {
 
 fun startingStockForPlayerCount(playerCount: Int): Int {
     return when (playerCount) {
+        1 -> 4
         2 -> 4
         3 -> 5
         4 -> 7
