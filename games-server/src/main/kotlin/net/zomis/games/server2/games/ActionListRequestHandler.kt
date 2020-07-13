@@ -45,11 +45,7 @@ class ActionListRequestHandler(private val game: ServerGame?) {
     }
 
     private fun actionParams(message: ClientJsonMessage): ActionList {
-        if (game!!.obj !is GameImpl<*>) {
-            throw IllegalArgumentException("Game ${game.gameId} of type ${game.gameType.type} is not a valid DSL game")
-        }
-
-        val obj = game.obj!!.game
+        val obj = game!!.obj!!.game
         val playerIndex = message.data.getTextOrDefault("playerIndex", "-1").toInt()
         if (!game.verifyPlayerIndex(message.client, playerIndex)) {
             throw IllegalArgumentException("Client ${message.client} does not have index $playerIndex in Game ${game.gameId} of type ${game.gameType.type}")
