@@ -232,7 +232,7 @@ object DslSplendor {
     val discardMoney = factory.action("discardMoney", MoneyType::class)
     val splendorGame = factory.game("Splendor") {
         setup(SplendorConfig::class) {
-            players(2..4)
+            players(1..4)
             defaultConfig {
                 SplendorConfig(
                         useNobles = true,
