@@ -238,7 +238,7 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>, private val callback:
     data class GameTypes(val gameTypes: MutableMap<String, GameType> = mutableMapOf())
     private lateinit var features: Features
 
-    fun setup(features: Features, events: EventSystem, idGenerator: GameIdGenerator, dbIntegration: () -> DBIntegration?) {
+    fun setup(features: Features, events: EventSystem, idGenerator: GameIdGenerator, dbIntegration: () -> DBIntegration? = { null }) {
         this.features = features
         val gameTypes = features.addData(GameTypes())
 
