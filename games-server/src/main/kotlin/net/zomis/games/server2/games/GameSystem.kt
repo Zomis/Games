@@ -1,6 +1,7 @@
 package net.zomis.games.server2.games
 
 import klog.KLoggers
+import kotlinx.coroutines.sync.Mutex
 import net.zomis.core.events.EventSystem
 import net.zomis.core.events.ListenerPriority
 import net.zomis.games.Features
@@ -44,6 +45,7 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
         .handler("viewRequest", this::viewRequest)
     var gameOver: Boolean = false
     private val nextMoveIndex = AtomicInteger(0)
+    val mutex = Mutex()
     internal val players: MutableList<Client> = mutableListOf()
     internal val observers: MutableSet<Client> = mutableSetOf()
     // TODO: Declare as GameReplayable? Only DSL-games are used anyway.
