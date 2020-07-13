@@ -162,7 +162,7 @@ class DslRandomPlayTest {
                         PlayerGameMoveRequest(game, playerIndex, it.actionType, serialized, true)
                     }
                 } else {
-                    serverAIs.randomAction(game, playerIndex).firstOrNull()
+                    serverAIs.randomAction(game, playerIndex)
                 }
             }.map { it.serialize(gameImpl) }
             if (actions.isEmpty()) {
