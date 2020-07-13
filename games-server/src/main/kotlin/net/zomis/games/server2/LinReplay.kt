@@ -32,7 +32,7 @@ class LinReplay(private val aiRepository: AIRepository, private val dbIntegratio
                 val gameId = ctx.pathParam("gameid")
                 log(ctx, "get queryable AIs for $gameId")
                 val dbGame = caffeine.get(gameId)!!
-                ctx.json(aiRepository.queryableAIs(dbGame.summary.gameType)!!)
+                ctx.json(aiRepository.queryableAIs(dbGame.summary.gameType))
                 // Get queryable AIs
             }
             get("/games/:gameid/analyze/:ai/:position/:playerindex") {ctx ->
