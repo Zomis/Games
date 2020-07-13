@@ -13,7 +13,7 @@ import java.util.UUID
 import java.util.concurrent.Executors
 
 data class AIMoveRequest(val client: Client, val game: ServerGame)
-data class DelayedAIMoves(val moves: List<PlayerGameMoveRequest>)
+data class DelayedAIMoves(val move: PlayerGameMoveRequest)
 
 val ServerAIProvider = "server-ai"
 
@@ -53,16 +53,16 @@ class ServerAI(val gameType: String, val name: String, val perform: ServerGameAI
         })
         events.listen("ai move $name", AIMoveRequest::class, {it.client == client}, {event ->
             val game = event.game
-            val playerIndex = event.game.players.indices.filter { game.verifyPlayerIndex(client, it) }
-            if (playerIndex.isEmpty()) {
+            val playerIndices = event.game.players.indices.filter { game.verifyPlayerIndex(client, it) }
+            if (playerIndices.isEmpty()) {
                 return@listen
             }
             executor.submit {
                 try {
-                    val aiMoves = playerIndex.map {
+                    val aiMoves = playerIndices.map {
                         perform.invoke(game, it)
                     }
-                    aiMoves.filter { it.isNotEmpty() }.forEach {singleAIMoves ->
+                    aiMoves.filterNotNull().forEach {singleAIMoves ->
                         events.execute(DelayedAIMoves(singleAIMoves))
                     }
                 } catch (e: Exception) {

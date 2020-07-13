@@ -22,6 +22,8 @@ class ScorerContext<T : Any>(
         return value
     }
 
+    override fun toString(): String = "(index $playerIndex action ${action.actionType} ${action.parameter})"
+
 }
 
 interface ScorerScope<T : Any, A: Any> {
@@ -39,7 +41,11 @@ class ScorerFactory<T : Any>(val gameSpec: GameSpec<T>) {
         return Scorer { if (this.action.actionType == action.name) function(this as ScorerScope<T, A>) else null }
     }
     fun <A: Any> actionConditional(action: ActionType<T, A>, function: ScorerScope<T, A>.() -> Boolean): Scorer<T, Any> {
-        return Scorer { if (this.action.actionType == action.name) if (function(this as ScorerScope<T, A>)) 1.0 else 0.0 else null }
+        return Scorer {
+            if (this.action.actionType == action.name) {
+                if (function(this as ScorerScope<T, A>)) 1.0 else 0.0
+            } else null
+        }
     }
     fun ai(name: String, vararg config: Scorer<T, Any>) = ScorerController(gameSpec.name, name, *config)
 

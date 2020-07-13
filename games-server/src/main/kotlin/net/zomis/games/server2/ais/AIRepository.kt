@@ -6,7 +6,7 @@ import net.zomis.games.scorers.ScorerController
 import net.zomis.games.server2.games.PlayerGameMoveRequest
 import net.zomis.games.server2.games.ServerGame
 
-typealias ServerGameAI = (game: ServerGame, playerIndex: Int) -> List<PlayerGameMoveRequest>
+typealias ServerGameAI = (game: ServerGame, playerIndex: Int) -> PlayerGameMoveRequest?
 
 class AIRepository {
 

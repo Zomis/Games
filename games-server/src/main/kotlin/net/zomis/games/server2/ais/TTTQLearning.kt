@@ -133,10 +133,10 @@ class TTTQLearn(val games: GameSystem) {
             val controller = game.obj as GameImpl<Any>
             val model = controller.model as TTController
             if (model.currentPlayer.index() != index) {
-                return@ServerAI listOf()
+                return@ServerAI null
             }
             if (model.isGameOver || isDraw(model)) {
-                return@ServerAI listOf()
+                return@ServerAI null
             }
 
             // Always do actions based on the standardized state
@@ -148,7 +148,7 @@ class TTTQLearn(val games: GameSystem) {
             val x = action % model.game.sizeX
             val y = action / model.game.sizeX
             val point = Point(x, y)
-            return@ServerAI listOf(PlayerGameMoveRequest(game, index, "play", point, true))
+            return@ServerAI PlayerGameMoveRequest(game, index, "play", point, true)
 
             /*
             Alternative approach of finding available actions to evaluate:

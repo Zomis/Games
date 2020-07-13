@@ -26,23 +26,21 @@ class ServerAIs(private val aiRepository: AIRepository, private val dslGameTypes
         return actions.random()
     }
 
-    fun randomAction(game: ServerGame, index: Int): List<PlayerGameMoveRequest> {
+    fun randomAction(game: ServerGame, index: Int): PlayerGameMoveRequest? {
         val controller = game.obj as GameImpl<Any>
         val actionable = randomActionable(controller, index)
-        return listOfNotNull(actionable?.let {
+        return actionable?.let {
             PlayerGameMoveRequest(game, it.playerIndex, it.actionType, it.parameter, false)
-        })
+        }
     }
 
     fun register(events: EventSystem, executor: ScheduledExecutorService) {
         events.listen("ServerAIs Delayed move", DelayedAIMoves::class, {true}, {
             executor.schedule({
-                it.moves.forEach {
-                    try {
-                        events.execute(it)
-                    } catch (e: Exception) {
-                        logger.error(e, "Unable to call AI")
-                    }
+                try {
+                    events.execute(it.move)
+                } catch (e: Exception) {
+                    logger.error(e, "Unable to call AI")
                 }
             }, 1000, TimeUnit.MILLISECONDS)
         })

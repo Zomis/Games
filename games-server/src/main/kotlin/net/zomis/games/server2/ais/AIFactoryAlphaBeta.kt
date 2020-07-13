@@ -70,14 +70,14 @@ class AIFactoryAlphaBeta {
         ServerAI(factory.gameType, factory.aiName(depth, speedMode)) { game, index ->
             val model = game.obj as GameImpl<S>
             if (noAvailableActions(model, index)) {
-                return@ServerAI emptyList()
+                return@ServerAI null
             }
 
             logger.info { "Evaluating AlphaBeta options for ${factory.gameType} $depth" }
 
             val options = alphaBetaConfig.evaluateActions(model, index)
             val move = options.bestBy { it.second }.random()
-            return@ServerAI listOf(PlayerGameMoveRequest(game, index, move.first.actionType, move.first.parameter, false))
+            return@ServerAI PlayerGameMoveRequest(game, index, move.first.actionType, move.first.parameter, false)
         }.register(events)
     }
 
