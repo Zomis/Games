@@ -124,9 +124,9 @@ class Server2(val events: EventSystem) {
             events.execute(ClientJsonMessage(it.client, mapper.readTree(it.message)))
         })
 
-        features.add { feat, ev -> gameSystem.setup(feat, ev, config.idGenerator) }
+        features.add { feat, ev -> gameSystem.setup(feat, ev, config.idGenerator) { dbIntegration } }
 
-        dslGames.values.forEach { spec -> events.with(DslGameSystem(spec as GameSpec<Any>)::setup) }
+        dslGames.values.forEach { spec -> events.with(DslGameSystem(spec as GameSpec<Any>) { dbIntegration }::setup) }
 
         features.add(SimpleMatchMakingSystem()::setup)
         events.with(ServerConsole()::register)

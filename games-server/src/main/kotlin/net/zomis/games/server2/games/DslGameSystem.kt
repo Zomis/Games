@@ -9,11 +9,12 @@ import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.*
 import net.zomis.games.server.GamesServer
 import net.zomis.games.server2.StartupEvent
+import net.zomis.games.server2.db.DBIntegration
 import java.lang.IllegalStateException
 import java.lang.UnsupportedOperationException
 import kotlin.reflect.full.cast
 
-class DslGameSystem<T : Any>(val dsl: GameSpec<T>) {
+class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: () -> DBIntegration?) {
     val gameTypeName = dsl.name
 
     private val mapper = jacksonObjectMapper()
@@ -85,8 +86,9 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>) {
     fun setup(events: EventSystem) {
         val entryPoint = GamesImpl.game(dsl)
         events.listen("DslGameSystem $gameTypeName Setup", GameStartedEvent::class, {it.game.gameType.type == gameTypeName}, {
+            val dbIntegration = this.dbIntegration()
             val appropriateReplayListener =
-                if (it.game.gameMeta.database) GamesServer.replayStorage.database<T>(it.game.gameId)
+                if (it.game.gameMeta.database && dbIntegration != null) GamesServer.replayStorage.database<T>(dbIntegration, it.game.gameId)
                 else GameplayCallbacks()
             it.game.obj = entryPoint.replayable(
                 it.game.players.size,

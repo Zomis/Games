@@ -16,6 +16,7 @@ import net.zomis.games.server.GamesServer
 import net.zomis.games.server2.*
 import net.zomis.games.server2.clients.FakeClient
 import net.zomis.games.server2.db.DBGame
+import net.zomis.games.server2.db.DBIntegration
 import net.zomis.games.server2.db.PlayerInGame
 import net.zomis.games.server2.invites.ClientList
 import net.zomis.games.server2.invites.InviteOptions
@@ -176,7 +177,7 @@ class GameCallback(
     val moveHandler: (PlayerGameMoveRequest) -> Unit
 )
 class GameType(private val callback: GameCallback, val gameSpec: GameSpec<Any>, private val gameClients: () -> ClientList?,
-       events: EventSystem, private val idGenerator: GameIdGenerator) {
+       events: EventSystem, private val idGenerator: GameIdGenerator, private val dbIntegration: DBIntegration?) {
 
     val type: String = gameSpec.name
     private val logger = KLoggers.logger(this)
@@ -192,7 +193,7 @@ class GameType(private val callback: GameCallback, val gameSpec: GameSpec<Any>, 
         val loadGameOptions = InviteOptions(false, InviteTurnOrder.ORDERED, -1, gameOptions, true)
         val serverGame = ServerGame(callback, this, gameId, loadGameOptions)
         serverGame.setMoveIndex(dbGame.moveHistory.size)
-        serverGame.obj = GamesImpl.game(gameSpec).replay(dbGame.replayData(), GamesServer.replayStorage.database(gameId)).replayable()
+        serverGame.obj = GamesImpl.game(gameSpec).replay(dbGame.replayData(), GamesServer.replayStorage.database(dbIntegration!!, gameId)).replayable()
         runningGames[serverGame.gameId] = serverGame
 
         fun findOrCreatePlayers(playersInGame: List<PlayerInGame>): Collection<Client> {
@@ -218,7 +219,8 @@ class GameType(private val callback: GameCallback, val gameSpec: GameSpec<Any>, 
     }
 
     fun createGame(serverGameOptions: InviteOptions): ServerGame {
-        val game = ServerGame(callback, this, idGenerator(), serverGameOptions)
+        val gameId = idGenerator()
+        val game = ServerGame(callback, this, gameId, serverGameOptions)
         runningGames[game.gameId] = game
         logger.info { "Create game with id ${game.gameId} of type $type" }
         return game
@@ -236,7 +238,7 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>, private val callback:
     data class GameTypes(val gameTypes: MutableMap<String, GameType> = mutableMapOf())
     private lateinit var features: Features
 
-    fun setup(features: Features, events: EventSystem, idGenerator: GameIdGenerator) {
+    fun setup(features: Features, events: EventSystem, idGenerator: GameIdGenerator, dbIntegration: () -> DBIntegration?) {
         this.features = features
         val gameTypes = features.addData(GameTypes())
 
@@ -265,7 +267,7 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>, private val callback:
             )
         })
         events.listen("Register GameType", GameTypeRegisterEvent::class, {true}, {
-            gameTypes.gameTypes[it.gameType] = GameType(callback, it.gameSpec, { gameClients(it.gameType) }, events, idGenerator)
+            gameTypes.gameTypes[it.gameType] = GameType(callback, it.gameSpec, { gameClients(it.gameType) }, events, idGenerator, dbIntegration())
         })
     }
 
