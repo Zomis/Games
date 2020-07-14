@@ -10,10 +10,11 @@ object SpiceRoadDsl {
     data class AcquireParameter(val card: SpiceRoadGameModel.ActionCard, val payArray: List<SpiceRoadGameModel.Spice>)
 
     val factory = GameCreator(SpiceRoadGameModel::class)
-    val play = factory.action("play", PlayParameter::class)
-    val claim = factory.action("claim", SpiceRoadGameModel.PointCard::class)
+    val play = factory.action("play", PlayParameter::class).serializer(String::class) { "Play Card " + it.card.toStateString() + " Remove " + it.remove.toStateString() + " Add " + it.add.toStateString() }
+    val claim = factory.action("claim", SpiceRoadGameModel.PointCard::class).serializer(String::class) { "Claim " + it.toStateString()}
     val rest = factory.action("rest", Unit::class)
-    val acquire = factory.action("acquire", AcquireParameter::class)
+    val acquire = factory.action("acquire", AcquireParameter::class).serializer(String::class){ "Acquire Card " + it.card.toStateString() + " PayArray " + it.payArray.forEach { x -> x.char } }
+    val discard = factory.action("discard", SpiceRoadGameModel.Spice::class).serializer(String::class){"Discard " + it.char}
     val game = factory.game("Spice Road") {
         this.setup {
             this.players(2..5)
@@ -35,7 +36,11 @@ object SpiceRoadDsl {
             this.view("silverCoins") { game.silverCoins.size }
             this.action(claim).requires { game.currentPlayer.caravan.has(this.action.parameter.cost) }
             this.action(claim).effect {
-                //TODO add gold and silver logic
+                game.currentPlayer.points += when (game.visiblePointCards.cards.indexOf(this.action.parameter)) {
+                    0 -> if (game.goldCoins.isNotEmpty()) 3 else if (game.silverCoins.isNotEmpty()) 1 else 0
+                    1 -> if (game.goldCoins.isNotEmpty() && game.silverCoins.isNotEmpty()) 1 else 0
+                    else -> 0
+                }
                 game.currentPlayer.caravan -= this.action.parameter.cost
                 game.currentPlayer.points += this.action.parameter.points
                 game.currentPlayer.pointCards++
@@ -112,6 +117,12 @@ object SpiceRoadDsl {
                     rec(this, context.game.currentPlayer.caravan, context.game.visibleActionCards.card(card).index)
                 }
             }
+            this.action(discard).forceUntil { game.currentPlayer.caravan.count <= 10 }
+            this.action(discard).precondition { game.currentPlayer.caravan.count > 10 }
+            this.action(discard).options { game.currentPlayer.caravan.spice.keys }
+            this.action(discard).effect {
+                game.currentPlayer.caravan -= this.action.parameter.toCaravan()
+            }
             this.allActions.precondition { game.currentPlayer.index == playerIndex }
             this.allActions.after {
                 val gameEnd = when (game.playerCount) {
@@ -127,7 +138,6 @@ object SpiceRoadDsl {
                 }
             }
             this.allActions.after { game.currentPlayerIndex = game.currentPlayerIndex.next(game.playerCount) }
-
         }
     }
 }
