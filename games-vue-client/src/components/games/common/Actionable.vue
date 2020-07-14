@@ -1,5 +1,5 @@
 <template>
-    <v-menu bottom offset-y :disabled="!useMenu">
+    <v-menu bottom offset-y :disabled="!useMenu" v-model="showMenu" :close-on-content-click="!this.stickyMenu">
         <template v-slot:activator="{ on: menu }">
             <v-tooltip bottom disabled>
                 <template v-slot:activator="{ on: tooltip }">
@@ -33,10 +33,16 @@ export default {
         actionType: {
             validator(value) { return typeof value === 'string' || Array.isArray(value) }
         },
+        stickyMenu: { type: Boolean, default: false },
         actions: { type: Object, required: true },
         button: { type: Boolean, default: false },
         icon: { type: String, required: false },
         value: { type: Number, required: false }
+    },
+    data() {
+        return {
+            showMenu: false
+        }
     },
     components: {
         VBtn

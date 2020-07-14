@@ -126,6 +126,7 @@ class TTTQLearn(val games: GameSystem) {
     }
 
     fun registerAI(events: EventSystem) {
+        if (true) return // Disabled until a better framework for it is in place
         learn.randomMoveProbability = 0.0
 
         val serverAI = ServerAI(gameType, "#AI_QLearn_$gameType") { game, index ->
@@ -147,7 +148,7 @@ class TTTQLearn(val games: GameSystem) {
             val x = action % model.game.sizeX
             val y = action / model.game.sizeX
             val point = Point(x, y)
-            return@ServerAI listOf(PlayerGameMoveRequest(game, index, "play", point))
+            return@ServerAI listOf(PlayerGameMoveRequest(game, index, "play", point, true))
 
             /*
             Alternative approach of finding available actions to evaluate:

@@ -6,10 +6,6 @@ TestClientA sends:
 
     { "route": "invites/invite", "gameType": "TestGameType", "invite": ["11111111-1111-1111-1111-111111111111"] }
 
-TestClientA will receive:
-
-    {"type":"InviteWaiting","inviteId":"12345678-1234-1234-1234-123456789abc","playersMin":2,"playersMax":2}
-
 TestClientB will receive:
 
     {"type":"Invite","host":"TestClientA","game":"TestGameType","inviteId":"12345678-1234-1234-1234-123456789abc"}

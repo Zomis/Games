@@ -2,6 +2,7 @@ package net.zomis.games.server2.ais
 
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.scorers.ScorerController
 import net.zomis.games.server2.games.PlayerGameMoveRequest
 import net.zomis.games.server2.games.ServerGame
 
@@ -10,7 +11,7 @@ typealias ServerGameAI = (game: ServerGame, playerIndex: Int) -> List<PlayerGame
 class AIRepository {
 
     private class AIRepositoryForGame<T: Any> {
-        val scoringAIs = mutableMapOf<String, ScorerAIFactory<T>>()
+        val scoringAIs = mutableMapOf<String, ScorerController<T>>()
         val alphaBetaAIs = mutableMapOf<String, AlphaBetaAIFactory<T>>()
         val otherAIs = mutableMapOf<String, ServerGameAI>()
     }
@@ -21,7 +22,7 @@ class AIRepository {
         return gameTypeAIs[gameType]!! as AIRepositoryForGame<T>
     }
 
-    fun <T: Any> createScoringAI(events: EventSystem, factory: ScorerAIFactory<T>) {
+    fun <T: Any> createScoringAI(events: EventSystem, factory: ScorerController<T>) {
         val repo = repositoryForGameType<T>(factory.gameType)
         repo.scoringAIs[factory.name] = factory
         val scoringFactory = AIFactoryScoring()

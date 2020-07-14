@@ -1,5 +1,6 @@
 <template>
   <div class="game-dsl-ttt game-piece-color-change">
+    <GameHead v-if="context" :context="context" />
     <Map2D :width="width" :height="height" :grid="view.board" :clickHandler="onClick" :actionable="actions.available"
       :pieceExists="e => e.owner !== null">
       <template v-slot:default="slotProps">
@@ -18,11 +19,13 @@
 <script>
 import Map2D from "@/components/common/Map2D";
 import UrPiece from "../ur/UrPiece";
+import GameHead from "@/components/games/common/GameHead";
 
 export default {
   name: "DSLTTT",
-  props: ["view", "actions", "onAction"],
+  props: ["view", "actions", "onAction", "context"],
   components: {
+    GameHead,
     Map2D,
     UrPiece
   },

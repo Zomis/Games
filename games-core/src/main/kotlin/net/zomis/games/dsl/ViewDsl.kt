@@ -5,10 +5,7 @@ import net.zomis.games.common.PlayerIndex
 typealias ViewDsl2D<T, P> = GameView2D<T, P>.() -> Unit
 
 typealias GameViewOnRequestFunction<T> = GameViewOnRequestScope<T>.(request: Map<String, Any>) -> Any
-interface GameViewOnRequestScope<T> {
-    val viewer: PlayerIndex
-    val game: T
-}
+interface GameViewOnRequestScope<T>: ViewScope<T>
 
 interface Viewable {
     fun toView(viewer: PlayerIndex): Any?
@@ -23,9 +20,7 @@ interface GameView<T> : ViewScope<T> {
     fun result(): Map<String, Any?>
     fun currentPlayer(function: (T) -> Int)
     fun <P> grid(name: String, grid: GridDsl<T, P>, view: ViewDsl2D<T, P>)
-    fun winner(function: (T) -> Int?)
     fun value(key: String, value: (T) -> Any?)
-    fun state(key: String, function: ReplayScope.(T) -> Any?)
     fun eliminations()
     fun onRequest(requestName: String, function: GameViewOnRequestFunction<T>)
 }

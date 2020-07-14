@@ -56,29 +56,41 @@ class GameActionCreator<T : Any, A : Any, S : Any>(
     override val serializedType: KClass<S>,
     val serializer: (A) -> S,
     val deserializer: (ActionOptionsScope<T>.(S) -> A)?
-): ActionType<A> {
+): ActionType<T, A> {
     override fun serialize(parameter: A): Any = serializer(parameter)
-    override fun <U: Any> deserialize(scope: ActionOptionsScope<U>, serialized: Any): A? = deserializer?.invoke(scope as ActionOptionsScope<T>, serialized as S)
+    override fun deserialize(scope: ActionOptionsScope<T>, serialized: Any): A? = deserializer?.invoke(scope, serialized as S)
 
+    inline fun <reified S2: Any> serialization(noinline serializer: (A) -> S2, noinline deserializer: ActionOptionsScope<T>.(S2) -> A): GameActionCreator<T, A, S2> {
+        return this.serialization(S2::class, serializer, deserializer)
+    }
+
+    @Deprecated("Use reified version instead")
     fun <S2: Any> serialization(clazz: KClass<S2>, serializer: (A) -> S2, deserializer: ActionOptionsScope<T>.(S2) -> A): GameActionCreator<T, A, S2> {
         return GameActionCreator(name, parameterType, clazz, serializer, deserializer)
     }
 
+    inline fun <reified S2: Any> serializer(noinline serializer: (A) -> S2): GameActionCreator<T, A, S2> {
+        return this.serializer(S2::class, serializer)
+    }
+
+    @Deprecated("Use reified version instead")
     fun <S2: Any> serializer(clazz: KClass<S2>, serializer: (A) -> S2): GameActionCreator<T, A, S2> {
         return GameActionCreator(name, parameterType, clazz, serializer, null)
     }
+
 }
 
 class GameCreator<T : Any>(val modelClass: KClass<T>) {
     fun game(name: String, dsl: GameDsl<T>.() -> Unit): GameSpec<T> = GameSpec(name, dsl)
     fun <A: Any> action(name: String, parameterType: KClass<A>): GameActionCreator<T, A, A>
         = GameActionCreator(name, parameterType, parameterType, {it}, {it})
+    fun singleAction(name: String) = this.action(name, Unit::class)
 }
 
-interface ActionType<A : Any> {
+interface ActionType<T : Any, A : Any> {
     val name: String
     val parameterType: KClass<A>
     val serializedType: KClass<*>
     fun serialize(parameter: A): Any
-    fun <T: Any> deserialize(scope: ActionOptionsScope<T>, serialized: Any): A?
+    fun deserialize(scope: ActionOptionsScope<T>, serialized: Any): A?
 }

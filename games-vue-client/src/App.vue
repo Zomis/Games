@@ -2,8 +2,9 @@
   <v-app>
     <v-app-bar app>
       <router-link to="/">
-        <v-toolbar-title v-text="title"></v-toolbar-title>
+        <v-toolbar-title v-text="titlePrefix"></v-toolbar-title>
       </router-link>
+      <span :style="{ 'margin-left': '5px' }">{{ titleAppend }}</span>
       <template v-if="yourPlayer.loggedIn">
         <v-spacer />
         <span>Welcome, {{ yourPlayer.name }}</span>
@@ -38,11 +39,6 @@ import { mapState } from "vuex";
 export default {
   name: "App",
   store,
-  data() {
-    return {
-      title: "Zomis Games"
-    };
-  },
   methods: {
     logout() {
       Socket.disconnect();
@@ -55,6 +51,8 @@ export default {
   },
   computed: {
     ...mapState({
+      titlePrefix(state) { return state.titlePrefix },
+      titleAppend(state) { return state.titleAppend },
       connection(state) { return state.connection }
     }),
     ...mapState("lobby", {

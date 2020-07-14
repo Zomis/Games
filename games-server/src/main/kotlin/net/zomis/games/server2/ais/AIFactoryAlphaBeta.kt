@@ -6,6 +6,7 @@ import net.zomis.bestBy
 import net.zomis.common.pmap
 import net.zomis.core.events.EventSystem
 import net.zomis.games.ais.AlphaBeta
+import net.zomis.games.ais.noAvailableActions
 import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.server2.games.PlayerGameMoveRequest
@@ -32,7 +33,7 @@ data class AIAlphaBetaConfig<T: Any>(val factory: AlphaBetaAIFactory<T>, val lev
         val players = 0 until it.playerCount
         players.flatMap { actionPlayer ->
             it.actions.types().flatMap {
-                at -> at.availableActions(actionPlayer)
+                at -> at.availableActions(actionPlayer, null)
             }
         }
     }
@@ -76,7 +77,7 @@ class AIFactoryAlphaBeta {
 
             val options = alphaBetaConfig.evaluateActions(model, index)
             val move = options.bestBy { it.second }.random()
-            return@ServerAI listOf(PlayerGameMoveRequest(game, index, move.first.actionType, move.first.parameter))
+            return@ServerAI listOf(PlayerGameMoveRequest(game, index, move.first.actionType, move.first.parameter, false))
         }.register(events)
     }
 

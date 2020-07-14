@@ -16,6 +16,8 @@ import TreeViewGame from "@/components/games/TreeViewGame";
 import Skull from "@/components/games/skull/Skull";
 import DSLTTT from "@/components/games/DSLTTT";
 import TTT3D from "@/components/games/TTT3D";
+import LiarsDice from "@/components/games/LiarsDice";
+import Avalon from "@/components/games/Avalon";
 
 // ViewTypes for ActionLog
 import SplendorCard from "@/components/games/splendor/SplendorCard"
@@ -64,7 +66,28 @@ const setActions = {
     })
 }
 
+function recursiveAvalon(teamMember) {
+    return {
+        key: 'players/' + teamMember,
+        next: recursiveAvalon
+    }
+}
+
 const supportedGames = {
+    "Avalon": {
+        dsl: gamejs.net.zomis.games.impl.ResistanceAvalonGame.game,
+        actions: {
+            teamChoice: (missionNumber) => ({
+                key: 'mission-' + missionNumber,
+                next: recursiveAvalon
+            }),
+            vote: (result) => `${result}`,
+            performMission: (result) => `${result}`,
+            assassinate: (targetPlayer) => "players/" + targetPlayer,
+            useLadyOfTheLake: (targetPlayer) => "players/" + targetPlayer
+        },
+        component: Avalon,
+    },
     "DSL-UR": {
         displayName: "Royal Game of UR",
         dsl: gamejs.net.zomis.games.impl.DslUR.gameUR,
@@ -75,7 +98,6 @@ const supportedGames = {
         component: RoyalGameOfUR,
     },
     "Hanabi": {
-        displayName: "Hanabi",
         dsl: gamejs.net.zomis.games.impl.HanabiGame.game,
         configComponent: HanabiConfig,
         actions: {
@@ -129,13 +151,26 @@ const supportedGames = {
             bet: (index) => "bet-" + index,
             discard: (index) => "hand-" + index,
             pass: () => "pass",
+            chooseNextPlayer: (index) => "choosePlayer-" + index,
             choose: (index) => "choose-" + index
         },
         component: Skull
     },
+    "LiarsDice": {
+        displayName: "Liar's Dice",
+        dsl: gamejs.net.zomis.games.impl.LiarsDiceGame.game,
+        actions: {
+            bet: (amount) => ({
+                key: 'amount-' + amount,
+                next: (face) => `bet ${amount}x ${face}'s`
+            }),
+            liar: () => "liar",
+            spotOn: () => "spotOn"
+        },
+        component: LiarsDice
+    },
     "Dungeon Mayhem": {
         dsl: gamejs.net.zomis.games.impl.DungeonMayhemDsl.game,
-        enabled: true,
         actions: {
             play: (index) => "play-" + index,
             target: (target) => "target:player-" + target.player + ';shield-' + target.shieldCard + ';discarded-' + target.discardedCard
@@ -146,7 +181,6 @@ const supportedGames = {
         component: DungeonMayhem
     },
     "Artax": {
-        displayName: "Artax",
         dsl: gamejs.net.zomis.games.impl.ArtaxGame.gameArtax,
         actions: tttMoveActions,
         component: DSLTTT,
@@ -183,6 +217,10 @@ function enabledGames() {
 
 export default {
     gamejs: gamejs,
+    displayName(gameType) {
+        let game = supportedGames[gameType]
+        return game && game.displayName ? game.displayName : gameType
+    },
     storeModules() {
         let modules = {}
         for (let key of enabledGames()) {
@@ -220,55 +258,35 @@ export default {
         }
         return components
     },
-    actionInfo(supportedGame, actionName, actionInfo, actionChoice) {
-        console.log("actionInfo", supportedGame, actionName, actionInfo, actionChoice)
-        function resolveActionPath(actionName, actionChoice, value) {
-            let actionKeys = supportedGame.actions[actionName]
-            if (actionChoice === null) {
-                actionChoice = { choices: [] };
-            }
-            let choices = [...actionChoice.choices]
-            let a = actionKeys;
-            for (let i = 0; i < choices.length; i++) {
-                a = a(choices[i]); // Returns either string or { key: string, next: function }
-                if (typeof a === 'object' && a.next) {
-                    a = a.next
-                }
-            }
-            if (typeof a !== 'function') {
-                console.error("'a' is not a function", a, actionName, actionInfo, actionChoice)
-                //return a;
-                throw a;
-            }
-            a = a(value)
-            if (typeof a === 'object') return { ...a, value: value, direct: false, actionType: actionName }
-            return { key: a, value: value, direct: choices.length === 0, actionType: actionName }
+    resolveActionKey(supportedGame, actionData, actionChoice) {
+        let actionName = actionData.actionType
+        let value = actionData.serialized
+        let actionKeys = supportedGame.actions[actionName]
+        if (!actionKeys) {
+            console.log("No actionKeys set for", actionName, "default to same as serialized value", value)
+            return value
         }
-    
-        if (actionChoice && actionName != actionChoice.actionName) {
-            return null
+        if (actionChoice === null) {
+            actionChoice = { choices: [] };
         }
-
-        let ca = {}
-        console.log("ACTION INFO FOR", actionName, actionChoice)
-        console.log("ACTION INFO", actionInfo)
-        actionInfo.nextOptions.forEach(value => {
-            let key = resolveActionPath(actionName, actionChoice, value)
-            ca[key.key] = key
-            console.log("POSSIBLE NEXT", key)
-        })
-        if (actionInfo.nextOptions.length > 0) {
-            console.log("RETURN OPTIONS", ca)
-            return ca;
+        let choices = actionChoice.choices.slice()
+        let a = actionKeys;
+        for (let i = 0; i < choices.length; i++) {
+            a = a(choices[i]); // Returns either string or { key: string, next: function }
+            if (typeof a === 'object' && a.next) {
+                a = a.next
+            }
         }
-
-        actionInfo.parameters.forEach(value => {
-            let key = resolveActionPath(actionName, actionChoice, value)
-            ca[key.key] = { ...key, final: true }
-            console.log("POSSIBLE PARAM", key)
-        })
-        console.log("RETURN PARAM", ca)
-        return ca
+        if (typeof a !== 'function') {
+            console.error("'a' is not a function", a, actionName, actionData, actionChoice)
+            //return a;
+            throw a;
+        }
+        a = a(value)
+        if (typeof a === 'object') {
+            return a.key
+        }
+        return a
     },
     stateModules(state) {
         let modules = this.storeModules()

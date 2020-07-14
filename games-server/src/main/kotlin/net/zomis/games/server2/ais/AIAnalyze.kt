@@ -1,12 +1,13 @@
 package net.zomis.games.server2.ais
 
 import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.scorers.ScorerController
 
 data class AIAnalyzeResult(val scores: List<ActionAnalyze>?, val heuristic: Double?)
 data class ActionAnalyze(val moveType: String, val parameter: Any, val score: Double)
 
 class AIAnalyze {
-    fun scoring(game: GameImpl<Any>, scoring: ScorerAIFactory<Any>, playerIndex: Int): AIAnalyzeResult? {
+    fun scoring(game: GameImpl<Any>, scoring: ScorerController<Any>, playerIndex: Int): AIAnalyzeResult? {
         TODO("Fix for scorers")
         /*
         val scorer = AIFactoryScoring().scorer(scoring.config.build(), playerIndex)

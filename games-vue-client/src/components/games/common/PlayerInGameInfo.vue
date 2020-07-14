@@ -13,7 +13,7 @@
             </v-tooltip>
         </template>
         <template v-if="displayStyle == 'vs'">
-            <span>{{ player.name }}</span>
+            <span>&nbsp;{{ player.name }}</span>
             <span v-if="elim">({{ elimResult }})</span>
         </template>
         <template v-if="displayStyle == 'table'">
@@ -46,7 +46,7 @@ function winResultValue(winResult) {
 
 export default {
     name: "PlayerInGameInfo",
-    props: ["player", "view", "eliminations", "displayStyle"],
+    props: ["player", "displayStyle"],
     computed: {
         cols() {
             if (this.displayStyle === 'vs') {
@@ -72,13 +72,6 @@ export default {
         tooltip() {
             return this.player.name
         },
-        myTurn() {
-            return this.view.currentPlayer === this.player.index
-        },
-        score() {
-            if (!this.view.scores) return null;
-            return this.view.scores[this.player.index]
-        },
         elimResult() {
             if (!this.elim) return ''
             let winValue = this.elim.winResult
@@ -91,7 +84,7 @@ export default {
             return this.elim.position
         },
         elim() {
-            let elimination = this.elimination
+            let elimination = this.player.elimination
             if (!elimination) return null
             let server = !!elimination.type
             if (server) {
@@ -104,9 +97,6 @@ export default {
                 position: elimination.position,
                 winResult: elimination.winResult.result
             }
-        },
-        elimination() {
-            return this.eliminations.find(elim => elim.playerIndex === this.player.index || elim.player === this.player.index)
         }
     }
 }

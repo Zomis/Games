@@ -2,6 +2,7 @@ package net.zomis.games.impl
 
 import net.zomis.games.PlayerEliminations
 import net.zomis.games.WinResult
+import net.zomis.games.api.GamesApi
 import net.zomis.games.cards.Card
 import net.zomis.games.cards.CardZone
 import net.zomis.games.cards.random
@@ -168,7 +169,7 @@ data class PlayNamedAction(val cardIndex: Int, val color: HanabiColor)
 
 object HanabiGame {
 
-    val factory = GameCreator(Hanabi::class)
+    val factory = GamesApi.gameCreator(Hanabi::class)
     val giveClue = factory.action("GiveClue", HanabiClue::class)
     val discard = factory.action("Discard", Int::class)
     val play = factory.action("Play", Int::class)

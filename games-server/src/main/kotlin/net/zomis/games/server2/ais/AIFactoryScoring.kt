@@ -13,7 +13,7 @@ class AIFactoryScoring {
             val obj = game.obj as GameImpl<T>
             val controllerContext = GameControllerContext(obj, index)
             val action = controller(controllerContext)
-            if (action != null) listOf(PlayerGameMoveRequest(game, index, action.actionType, action.parameter))
+            if (action != null) listOf(PlayerGameMoveRequest(game, index, action.actionType, action.parameter, false))
             else emptyList()
         }.register(events)
     }

@@ -188,7 +188,7 @@ class DJLReinforcement {
     private fun <T: Any> GameImpl<T>.performActionObserveReward(moveIndex: Int): Float {
         val playerIndex = 0
         val move = this.actions.types()
-            .sortedBy { it.name }.flatMap { it.availableActions(playerIndex) }[moveIndex]
+            .sortedBy { it.name }.flatMap { it.availableActions(playerIndex, null) }[moveIndex]
         this.actions.type(move.actionType)!!.perform(playerIndex, move.parameter)
         return this.eliminationCallback.eliminations().find { it.playerIndex == playerIndex }?.winResult?.result?.toFloat()?.times(100) ?: -0.01f
     }

@@ -1,8 +1,5 @@
 package net.zomis.games.server2.games
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.JsonNodeFactory
-import com.fasterxml.jackson.databind.node.ObjectNode
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.core.events.ListenerPriority
@@ -19,15 +16,16 @@ import net.zomis.games.server2.invites.ClientList
 import net.zomis.games.server2.invites.InviteOptions
 import net.zomis.games.server2.invites.InviteTurnOrder
 import net.zomis.games.server2.invites.playerMessage
+import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
-val nodeFactory = JsonNodeFactory(false)
-fun ServerGame.toJson(type: String): ObjectNode {
-    return nodeFactory.objectNode()
-        .put("type", type)
-        .put("gameType", this.gameType.type)
-        .put("gameId", this.gameId)
+fun ServerGame.toJson(type: String): Map<String, Any?> {
+    return mapOf(
+        "type" to type,
+        "gameType" to this.gameType.type,
+        "gameId" to this.gameId
+    )
 }
 fun ServerGame.map(type: String): Map<String, Any> {
     return mapOf("type" to type, "gameType" to this.gameType.type, "gameId" to this.gameId)
@@ -49,6 +47,7 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
     internal val players: MutableList<Client> = mutableListOf()
     internal val observers: MutableSet<Client> = mutableSetOf()
     var obj: Any? = null
+    var lastMove: Long = Instant.now().toEpochMilli()
 
     fun broadcast(message: (Client) -> Any) {
         players.forEach { it.send(message.invoke(it)) }
@@ -85,6 +84,7 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
         this.actionListHandler.actionRequest(message, callback)
     }
 
+    @Deprecated("hopefully unused. Only required for non-DSL games which no longer exists")
     private fun moveRequest(message: ClientJsonMessage) {
         val moveType = message.data.get("moveType").asText()
         val move = message.data.get("move")
@@ -94,7 +94,7 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
         if (!verifyPlayerIndex(message.client, playerIndex)) {
             throw IllegalArgumentException("Client ${message.client.name} does not have playerIndex $playerIndex")
         }
-        callback.moveHandler(PlayerGameMoveRequest(this, playerIndex, moveType, move))
+        callback.moveHandler(PlayerGameMoveRequest(this, playerIndex, moveType, move, true))
     }
 
     private fun requireDslGame(): Boolean {
@@ -164,7 +164,7 @@ data class GameStartedEvent(val game: ServerGame)
 data class GameEndedEvent(val game: ServerGame)
 data class PlayerEliminatedEvent(val game: ServerGame, val player: Int, val winner: WinResult, val position: Int)
 
-data class PlayerGameMoveRequest(val game: ServerGame, val player: Int, val moveType: String, val move: Any) {
+data class PlayerGameMoveRequest(val game: ServerGame, val player: Int, val moveType: String, val move: Any, val serialized: Boolean) {
     fun illegalMove(reason: String): IllegalMoveEvent {
         return IllegalMoveEvent(game, player, moveType, move, reason)
     }
@@ -236,7 +236,6 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>, private val callback:
     val router = MessageRouter(this).dynamic(dynamicRouter)
 
     data class GameTypes(val gameTypes: MutableMap<String, GameType> = mutableMapOf())
-    private val objectMapper = ObjectMapper()
     private lateinit var features: Features
 
     fun setup(features: Features, events: EventSystem, idGenerator: GameIdGenerator) {
@@ -263,9 +262,8 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>, private val callback:
             }
         })
         events.listen("Send IllegalMove", IllegalMoveEvent::class, {true}, {event ->
-            event.game.players[event.player].send(event.game.toJson("IllegalMove")
-                .put("player", event.player)
-                .put("reason", event.reason)
+            event.game.players[event.player].send(
+                event.game.toJson("IllegalMove").plus("player" to event.player).plus("reason" to event.reason)
             )
         })
         events.listen("Register GameType", GameTypeRegisterEvent::class, {true}, {
@@ -279,17 +277,23 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>, private val callback:
     }
 }
 
-fun MoveEvent.moveMessage(): ObjectNode {
+fun MoveEvent.moveMessage(): Map<String, Any?> {
+    val serverGame = this.game
+    val moveData = if (serverGame.obj is GameImpl<*>) {
+        val gameImpl = serverGame.obj as GameImpl<*>
+        val actionType = gameImpl.actions.type(this.moveType)!!.actionType
+        actionType.serialize(this.move)
+    } else { this.move }
     return this.game.toJson("GameMove")
-            .put("player", this.player)
-            .put("moveType", this.moveType)
-            .putPOJO("move", this.move)
+        .plus("player" to this.player)
+        .plus("moveType" to this.moveType)
+        .plus("move" to moveData)
 }
 
-fun PlayerEliminatedEvent.eliminatedMessage(): ObjectNode {
+fun PlayerEliminatedEvent.eliminatedMessage(): Map<String, Any?> {
     return this.game.toJson("PlayerEliminated")
-            .put("player", this.player)
-            .put("winner", this.winner.isWinner())
-            .put("winResult", this.winner.name)
-            .put("position", this.position)
+        .plus("player" to this.player)
+        .plus("winner" to this.winner.isWinner())
+        .plus("winResult" to this.winner.name)
+        .plus("position" to this.position)
 }

@@ -18,7 +18,7 @@
             ></v-select>
         </v-card>
         <div class="game-options">
-            <component :is="gameOptionComponent" v-if="gameOptionComponent" :config="config" />
+            <component :is="gameOptionComponent" v-if="config && gameOptionComponent" :config="config" />
         </div>
         <v-btn @click="createInvite()">Create Invite</v-btn>
     </div>
@@ -26,10 +26,14 @@
 <script>
 import supportedGames from "@/supportedGames"
 import Socket from "@/socket"
+import ConfigSetupGeneric from "@/components/games/ConfigSetupGeneric"
 
 export default {
     name: "InviteCreateNew",
     props: ["gameType", "defaultConfig"],
+    components: {
+        ConfigSetupGeneric
+    },
     data() {
         return {
             useDatabase: true,
@@ -37,7 +41,7 @@ export default {
             timeLimit: 'No Limit',
             timeLimitOptions: ['No Limit'],
             playerOrder: 'Ordered',
-            gameOptionComponent: supportedGames.games[this.gameType].configComponent || false,
+            gameOptionComponent: supportedGames.games[this.gameType].configComponent || ConfigSetupGeneric,
             config: this.defaultConfig
         }
     },

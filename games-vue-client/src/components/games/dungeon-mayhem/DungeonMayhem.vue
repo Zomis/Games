@@ -2,7 +2,7 @@
     <v-container fluid>
         <v-row>
             <v-col v-for="(player, playerIndex) in view.players" :key="playerIndex">
-                <v-card :class="'color-' + player.character.color">
+                <v-card :class="{ ['color-' + player.character.color ]: true, currentPlayer: playerIndex == view.currentPlayer }">
                     <PlayerProfile :player="players[playerIndex]" show-name :postFix="'(' + player.character.className + ')'" />
                     <p>Health: {{ player.health }}</p>
                     <p>Deck: {{ player.deck }}</p>
@@ -75,5 +75,9 @@ export default {
     border-style: solid !important;
     border-width: thick !important;
     border-color: #ffd166 !important;
+}
+
+.currentPlayer {
+    background-color: #ddf9fd;
 }
 </style>

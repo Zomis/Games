@@ -39,7 +39,7 @@ object GridWorldGame {
         val goals: Int, val fails: Int, val blocks: Int
     )
     val factory = GameCreator(GridWorldModel::class)
-    val actionType = factory.action("move", Direction4::class).serializer(Int::class) { it.order() }
+    val gridWorldMove = factory.action("move", Direction4::class).serializer(Int::class) { it.order() }
     val game = factory.game("GridWorld") {
         setup(GridWorldConfig::class) {
             players(1..1)
@@ -47,7 +47,7 @@ object GridWorldGame {
             init { GridWorldModel(eliminationCallback, generateMap(config)) }
         }
         rules {
-            action(actionType) {
+            action(gridWorldMove) {
                 options { Direction4.values().asIterable() }
                 effect { game.move(action.parameter) }
             }

@@ -30,7 +30,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
     }
 
     fun choiceActionable(actionLogic: ActionTypeImplEntry<T, Any>, playerIndex: Int, scanner: Scanner): Actionable<T, Any>? {
-        val options = actionLogic.availableActions(playerIndex).toList()
+        val options = actionLogic.availableActions(playerIndex, null).toList()
         options.forEachIndexed { index, actionable -> println("$index. $actionable") }
         if (options.size <= 1) { return options.getOrNull(0) }
         else {
@@ -85,30 +85,24 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
 
         val chosen = mutableListOf<Any>()
         while (true) {
-            val act = reqHandler.availableActionsMessage(game, playerIndex, moveType, chosen).singleOrNull()
-                ?: return null
+            val act = reqHandler.availableActionsMessage(game, playerIndex, moveType, chosen).keys.keys
 
-            println(act.first)
-            println(" Next " + act.second.nextOptions.size + ". Params " + act.second.parameters.size)
-            val next = act.second.nextOptions
-            next.forEachIndexed { index, value -> println("$index. Next $value") }
-
-            val params = act.second.parameters
-            params.forEachIndexed { index, value -> println("${index + next.size}. Choice $value") }
+            println("  " + act.size + " choices")
+            val entryList = act.entries.toList()
+            entryList.forEachIndexed { index, value ->
+                println("$index. ${value.key} - ${value.value.map { it.serialized }}")
+            }
 
             val choice = scanner.nextLine().toIntOrNull() ?: return null
-            if (choice >= next.size) {
-                val param = params.getOrNull(choice - next.size) ?: return null
-                val actionType = game.actions.type(moveType)
-                val deserializedParam = actionType?.actionType?.deserialize(
-                    ActionOptionsContext(game.model, actionType.name, playerIndex), param
-                )
-                return actionType?.createAction(playerIndex, deserializedParam!!)
-            } else {
-                val chosenNext = next.getOrNull(choice) ?: return null
-                chosen.add(chosenNext)
-//                chosen.add(choice)
+            val entryChosen = entryList.getOrNull(choice) ?: return null
+
+            val actionType = game.actions.type(moveType)!!
+            val actionInfoKey = entryChosen.value.single()
+            if (actionInfoKey.isParameter) {
+                return actionType.createActionFromSerialized(playerIndex, actionInfoKey.serialized)
             }
+
+            chosen.add(actionInfoKey.serialized)
         }
     }
 

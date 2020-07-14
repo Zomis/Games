@@ -21,9 +21,11 @@ import net.zomis.games.server2.games.*
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.TimeUnit
+import kotlin.system.measureNanoTime
 
 data class UnfinishedGames(val unfinishedGames: MutableSet<DBGameSummary>)
-data class MoveHistory(val moveType: String, val playerIndex: Int, val move: Any?, val state: Map<String, Any>?)
+data class MoveHistory(val moveType: String, val playerIndex: Int, val move: Any?, val state: Map<String, Any>?, val time: Long? = null)
 data class PlayerView(val playerId: String, val name: String)
 
 class SuperTable(private val dynamoDB: AmazonDynamoDB) {
@@ -115,7 +117,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
             AttributeUpdate(Fields.GAME_TIME_STARTED.fieldName).put(Instant.now().epochSecond)
         )
         if (game.gameMeta.gameOptions != game.gameSetup().getDefaultConfig()) {
-            updates = updates.plus(AttributeUpdate(Fields.GAME_OPTIONS.fieldName).put(convertToDBFormat(game.gameMeta.gameOptions)))
+            updates = updates.plus(AttributeUpdate(Fields.GAME_OPTIONS.fieldName).put(convertToDBFormat(game.gameMeta.gameOptions ?: Unit)))
         }
         if (state != null) {
             updates = updates.plus(AttributeUpdate(Fields.MOVE_STATE.fieldName).put(state))
@@ -148,6 +150,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
     fun addMove(move: MoveEvent) {
         val epochMilli = Instant.now().toEpochMilli()
         val serverGame = move.game
+        move.game.lastMove = epochMilli
         val moveIndex = serverGame.nextMoveIndex()
         val dbMove = if (serverGame.obj is GameImpl<*>) {
             val gameImpl = serverGame.obj as GameImpl<*>
@@ -241,7 +244,8 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
                 it[Fields.MOVE_TYPE.fieldName] as String,
                 (it[Fields.MOVE_PLAYER_INDEX.fieldName] as BigDecimal).toInt(),
                 convertFromDBFormat(it[Fields.MOVE.fieldName]),
-                convertFromDBFormat(it[Fields.MOVE_STATE.fieldName]) as Map<String, Any>?
+                convertFromDBFormat(it[Fields.MOVE_STATE.fieldName]) as Map<String, Any>?,
+                (it[Fields.MOVE_TIME.fieldName] as BigDecimal).toLong() / 1000
             )
         }.sortedBy { it.first }.map { it.second }
     }
@@ -305,8 +309,6 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         this.update("Simple Update $pkValue, $skValue", update)
     }
 
-    fun authenticateSession(session: String) {}
-
     fun getGameSummary(gameId: String): DBGameSummary? {
         val pureGameId = Prefix.GAME.extract(gameId)
         val query = QuerySpec()
@@ -349,7 +351,6 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         }
         val startingState = convertFromDBFormat(gameDetails[Fields.MOVE_STATE.fieldName]) as Map<String, Any>?
         val timeStarted = gameDetails[Fields.GAME_TIME_STARTED.fieldName] as BigDecimal
-        val timeLastAction = gameDetails[Fields.GAME_TIME_LAST.fieldName] as BigDecimal?
 
         val gameType = gameDetails[Fields.GAME_TYPE.fieldName] as String
         val gameSpec = ServerGames.games[gameType] as GameSpec<Any>?
@@ -366,7 +367,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         } else setup.getDefaultConfig()
 
         return DBGameSummary(gameSpec, config, Prefix.GAME.extract(gameId), playersInGame, gameType, gameState.value,
-                startingState, timeStarted.longValueExact(), timeLastAction?.longValueExact()?:0)
+                startingState, timeStarted.longValueExact())
     }
 
     private fun findPlayerName(playerId: String): String? {
@@ -382,5 +383,30 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
             this.table.table.query(query.withReturnConsumedCapacity(ReturnConsumedCapacity.INDEXES))
         }
     }
+
+    fun cookieAuth(cookie: String): PlayerInfo? {
+        val time = System.currentTimeMillis()
+        val earliestPreviousLoginTime = time - TimeUnit.DAYS.toMillis(30)
+        logger.info { "Looking for cookie $cookie with earliest previous login time $earliestPreviousLoginTime" }
+        val skValue = Prefix.OAUTH.sk("guest/$cookie")
+        val existing = this.gsiLookup(QuerySpec().withHashKey(this.sk, skValue)
+                .withRangeKeyCondition(RangeKeyCondition(this.data).gt(earliestPreviousLoginTime / 1000))
+        ).firstOrNull() ?: return null
+
+        val itemWithData = this.getItem(existing.getString(this.pk), existing.getString(this.sk)) ?: return null
+        logger.info { itemWithData.asMap() }
+        val playerId = Prefix.PLAYER.extract(itemWithData.getString(this.pk))
+        return PlayerInfo(itemWithData.getString(Fields.PLAYER_NAME.fieldName), UUID.fromString(playerId))
+    }
+
+    private fun getItem(pkValue: String, skValue: String): Item? {
+        var result: Item? = null
+        val time = measureNanoTime {
+            result = table.table.getItem(this.pk, pkValue, this.sk, skValue)
+        }
+        logger.info { "Consumed Capacity on GetItem($pkValue, $skValue) consumed null and took $time" }
+        return result
+    }
+
 
 }

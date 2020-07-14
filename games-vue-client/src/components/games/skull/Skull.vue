@@ -1,9 +1,8 @@
 <template>
     <v-container fluid>
         <v-row>
-            <v-col v-for="(player, playerIndex) in view.players" :key="playerIndex"
-              :class="{ currentPlayer: playerIndex == view.currentPlayer }">
-                <v-card :class="{ passed: player.pass }">
+            <v-col v-for="(player, playerIndex) in view.players" :key="playerIndex">
+                <v-card class="player" :class="{ passed: player.pass, 'current-player': playerIndex == view.currentPlayer }">
                     <v-card-title>
                         <PlayerProfile show-name :player="context.players[playerIndex]" />
                     </v-card-title>
@@ -11,18 +10,21 @@
                         <CardZone v-if="Array.isArray(player.hand)">
                             <Actionable button v-for="(card, index) in player.hand" :key="index"
                                 :actions="actions" class="list-complete-item" :actionable="'hand-' + card">
-                                <v-icon>{{ icons[card] }}</v-icon>
+                                <v-icon :color="colors[card]">{{ icons[card] }}</v-icon>
                             </Actionable>
                         </CardZone>
                         <CardZone v-else>
-                            <v-icon v-for="index in player.hand" :key="index" class="list-complete-item">mdi-crosshairs-question</v-icon>
+                            <Actionable button v-for="(index) in player.hand" :key="index"
+                                :actions="actions" class="list-complete-item" :actionable="'choosePlayer-' + playerIndex">
+                                <v-icon>mdi-crosshairs-question</v-icon>
+                            </Actionable>
                         </CardZone>
 
                         <div>Played</div>
                         <CardZone v-if="Array.isArray(player.board)">
                             <Actionable button v-for="(card, index) in player.board" :key="index"
                                 :actions="actions" class="list-complete-item" :actionable="'choose-' + playerIndex">
-                                <v-icon>{{ icons[card] }}</v-icon>
+                                <v-icon :color="colors[card]">{{ icons[card] }}</v-icon>
                             </Actionable>
                         </CardZone>
                         <span v-else>
@@ -37,7 +39,7 @@
                         <div>Chosen</div>
                         <CardZone>
                             <v-icon v-for="(card, index) in player.chosen" :key="index"
-                                class="list-complete-item">{{ icons[card] }}</v-icon>
+                                class="list-complete-item" :color="colors[card]">{{ icons[card] }}</v-icon>
                         </CardZone>
 
                         <div>Bet</div>
@@ -66,6 +68,7 @@ export default {
     },
     data() {
         return {
+            colors: { FLOWER: 'green', SKULL: 'black' },
             icons: { FLOWER: 'mdi-flower', SKULL: 'mdi-skull' }
         }
     }
@@ -82,5 +85,10 @@ export default {
     border-style: solid !important;
     border-width: thick !important;
     border-color: #ffd166 !important;
+}
+
+.player.current-player {
+    border: 1px solid #ddf9fd !important;
+    box-shadow: 0px 0px 5px 6px #ddf9fd !important;
 }
 </style>

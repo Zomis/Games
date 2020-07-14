@@ -1,82 +1,146 @@
 package net.zomis.games.dsl.impl
 
 import net.zomis.games.dsl.*
+import kotlin.random.Random
 
-class RulesActionTypeComplexNext<T : Any, A : Any>(override val context: ActionOptionsContext<T>, val yielder: (A) -> Unit): ActionChoicesNextScope<T, A> {
-    override fun parameter(action: A) {
-        yielder(action)
-    }
-
-    override fun <E : Any> options(options: ActionOptionsScope<T>.() -> Iterable<E>, next: ActionChoicesNextScope<T, A>.(E) -> Unit) {
-        val evaluated = options(context)
-        evaluated.forEach {
-            val nextScope = RulesActionTypeComplexNext(context, yielder)
-            next.invoke(nextScope, it)
-        }
-    }
-}
-
-class RulesActionTypeComplexNextOnly<T : Any, A : Any>(
+class RulesActionTypeComplexKeys<T : Any, A : Any>(
     override val context: ActionOptionsContext<T>,
+    private val actionType: ActionType<T, A>,
     private val chosen: List<Any>,
-    private val evaluateOptions: Boolean,
-    private val nextYielder: (List<Any>) -> Unit,
-    private val actionYielder: (A) -> Unit
+    private val yielder: (List<ActionInfo<T, A>>) -> Unit
 ): ActionChoicesNextScope<T, A> {
+
     override fun parameter(action: A) {
         // Ignore parameter if we haven't resolved all the chosen steps yet
         if (chosen.isEmpty()) {
-            actionYielder(action)
+            yielder(listOf(ActionInfo(actionType, action, null)))
         }
     }
 
-    override fun <E : Any> options(options: ActionOptionsScope<T>.() -> Iterable<E>, next: ActionChoicesNextScope<T, A>.(E) -> Unit) {
+    private fun <E: Any> internalEvaluation(options: ActionOptionsScope<T>.() -> List<Pair<ActionInfoKey, E>>, next: ActionChoicesNextScope<T, A>.(E) -> Unit) {
         val evaluated = options(context)
         if (chosen.isNotEmpty()) {
-            val nextChosen = chosen[0] as E
+            val nextChosenKey = chosen[0]
             val nextChosenList = chosen.subList(1, chosen.size)
+            val nextE = evaluated.singleOrNull { it.first.serialized == nextChosenKey }
+                ?: throw NoSuchElementException("Evaluated contains $evaluated and we're looking for it.first.serialized == $chosen")
 
-            val nextScope = RulesActionTypeComplexNextOnly<T, A>(context, nextChosenList,true, nextYielder, actionYielder)
-            next.invoke(nextScope, nextChosen)
+            val nextScope = RulesActionTypeComplexKeys(context, actionType, nextChosenList, yielder)
+            next.invoke(nextScope, nextE.second)
         } else {
-            nextYielder(evaluated.toList())
+            yielder(evaluated.map { ActionInfo(actionType, null, it.first.serialized) })
+            // TODO: Figure out if the below commented code can be removed. Or perhaps use `evaluateParametersOnly` as last step?
+/*
             if (!evaluateOptions) {
                 return
             }
             evaluated.forEach {
-                val nextScope = RulesActionTypeComplexNextOnly<T, A>(context, emptyList(), false, {}, actionYielder)
+                val nextScope = RulesActionTypeComplexKeys<T, A>(context, emptyList(), false, {}, actionYielder)
                 next.invoke(nextScope, it)
             }
+*/
         }
     }
+
+    override fun <E : Any> options(options: ActionOptionsScope<T>.() -> Iterable<E>, next: ActionChoicesNextScope<T, A>.(E) -> Unit)
+        = this.internalEvaluation({ options(context).map { ActionInfoKey(it, actionType, emptyList(), false) to it } }, next)
+
+    override fun <E : Any> optionsWithIds(options: ActionOptionsScope<T>.() -> Iterable<Pair<String, E>>, next: ActionChoicesNextScope<T, A>.(E) -> Unit)
+        = this.internalEvaluation({ options(context).map { ActionInfoKey(it.first, actionType, emptyList(), false) to it.second } }, next)
+
+}
+
+class RulesActionTypeComplexAvailableActions<T: Any, A: Any>(
+    val context: ActionOptionsContext<T>,
+    private val actionType: ActionType<T, A>,
+    private val chosen: List<Any>,
+    private val yielder: (A) -> Unit
+
+) {
+
+    private fun <E> List<E>.randomSample(count: Int, random: Random): MutableList<E> {
+        val indices = this.indices.toMutableList()
+        val result = mutableListOf<E>()
+        repeat(count) {
+            result.add(this[indices.removeAt(random.nextInt(indices.size))])
+        }
+        return result
+    }
+
+    fun availableActions(
+        actionSampleSize: ActionSampleSize?,
+        block: ActionChoicesStartScope<T, A>.() -> Unit
+    ) {
+        var nextOptions = mutableListOf<Any>()
+        val yielder: (List<ActionInfo<T, A>>) -> Unit = {list ->
+            list.forEach { actionInfo ->
+                val parameter = actionInfo.parameter
+                if (parameter != null) yielder(parameter)
+                else nextOptions.add(actionInfo.nextStep!!)
+            }
+        }
+
+        block.invoke(RulesActionTypeComplexKeys(context, actionType, chosen, yielder))
+        if (actionSampleSize?.sampleSizes?.isEmpty() == true) {
+            return
+        }
+
+        var nextSample: ActionSampleSize? = actionSampleSize
+        if (actionSampleSize != null) {
+            val (next, sample) = actionSampleSize.nextSample()
+            nextSample = sample
+            if (nextOptions.size > next) {
+                nextOptions = nextOptions.randomSample(next, Random.Default)
+            }
+        }
+
+        nextOptions.forEach {
+            RulesActionTypeComplexAvailableActions(context, actionType, chosen + it, this.yielder)
+                .availableActions(nextSample, block)
+        }
+        /*
+        * Evaluate options
+        * - Pick X of them (sample size)
+        *   - Evaluate those options
+        *     - Pick X of them (sample size)
+        *
+        * Store all parameters in one place
+        * Store intermediate options in another
+        */
+    }
+
+
 }
 
 class RulesActionTypeComplex<T : Any, A : Any>(
     val context: ActionOptionsContext<T>,
+    private val actionType: ActionType<T, A>,
     val options: ActionChoicesStartScope<T, A>.() -> Unit
 ) {
 
-    fun availableOptionsNext(chosen: List<Any>): Pair<List<Any>, List<A>> {
-        val nexts = mutableListOf<Any>()
-        val actionParams = mutableListOf<A>()
-        val yielder: (List<Any>) -> Unit = { nexts.addAll(it) }
-        val actionYielder: (A) -> Unit = { actionParams.add(it) }
-
-        val nextScope = RulesActionTypeComplexNextOnly<T, A>(context, chosen, true, yielder, actionYielder)
-        this.options.invoke(nextScope)
-        return nexts to actionParams
+    fun availableActions(actionSampleSize: ActionSampleSize?): Iterable<Actionable<T, A>> {
+        // If needed later, it's easy to add `chosen: List<Any>` to parameters of this method and pass them on
+        val actionParameters = mutableListOf<A>()
+        RulesActionTypeComplexAvailableActions(context, actionType, emptyList()) {
+            actionParameters.add(it)
+        }.availableActions(actionSampleSize, options)
+        return actionParameters.map(this::createAction)
     }
 
-    fun availableActions(): Iterable<Action<T, A>> {
-        val result = mutableListOf<A>()
-        val yielder: (A) -> Unit = { result.add(it) }
-        val nextScope = RulesActionTypeComplexNext<T, A>(context, yielder)
-        this.options.invoke(nextScope)
-        return result.map { createAction(it) }
-    }
-
-    fun createAction(parameter: A): Action<T, A>
+    fun createAction(parameter: A): Actionable<T, A>
         = Action(context.game, context.playerIndex, context.actionType, parameter)
+
+    fun availableActionKeys(previouslySelected: List<Any>): List<ActionInfoKey> {
+        val results = mutableListOf<ActionInfo<T, A>>()
+        val yielder: (List<ActionInfo<T, A>>) -> Unit = { list -> results.addAll(list) }
+
+        val nextScope = RulesActionTypeComplexKeys(context, actionType, previouslySelected, yielder)
+        this.options.invoke(nextScope)
+        return results.map { action ->
+            ActionInfoKey(action.parameter?.let { actionType.serialize(it) } ?: action.nextStep!!,
+                actionType.name, emptyList(), action.parameter != null)
+        }
+    }
 
 }
 

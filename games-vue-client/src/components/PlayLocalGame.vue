@@ -1,7 +1,6 @@
 <template>
   <div :class="['game', 'player-' + currentPlayer]">
-    <GameHead :gameInfo="gameInfo" :playerCount="playerCount" :view="view" :eliminations="eliminations" />
-    <component :is="viewComponent" :view="view" :actions="actions" :players="gameInfo.players" />
+    <component :is="viewComponent" :view="view" :actions="actions" :players="gameInfo.players" :context="context" />
     <v-btn @click="cancelAction()" :disabled="actionChoice === null">Reset Action</v-btn>
   </div>
 </template>
@@ -83,42 +82,50 @@ export default {
     updateActions() {
       console.log("CALLING UPDATE ACTIONS", this.actionChoice, this.viewer, this.view)
       let supportedGame = this.supportedGame
-      let actionsAvailable = {}
       let actionTypes = []
       let choices = this.actionChoice ? this.actionChoice.choices : []
-      let autoPerform = false
-      this.game.actions.types().toArray().forEach(e => {
-        if (this.actionChoice && this.actionChoice.actionName !== e.name) {
-          return;
-        }
-        let actionInfo = e.availableParameters_okoyba$(this.viewer, kotlin.kotlin.collections.listOf_i5x0yv$(choices))
-        let mappedInfo = {
-          nextOptions: actionInfo.nextOptions.size > 0 ? actionInfo.nextOptions.toArray() : [],
-          parameters: actionInfo.parameters.size > 0 ? actionInfo.parameters.toArray() : []
-        }
-        if (this.actionChoice && mappedInfo.nextOptions.length === 0 && mappedInfo.parameters.length === 1) {
-          // If we're choosing something, there is only one action to choose, and it is a final step, then perform action
-          console.log("AUTO PERFORM", this.actionChoice, mappedInfo.parameters[0])
-          this.actionChoice = null
-          autoPerform = true
 
-          let gameActionType = this.game.actions.type_61zpoe$(e.name)
-          gameActionType.perform_y5fo13$(this.viewer, mappedInfo.parameters[0])
-          console.log("AUTO PERFORM WILL UPDATE VIEW")
-          this.updateView()
-          console.log("AUTO PERFORM DONE")
-          return
-        }
-        actionTypes.push(e.name);
-        actionsAvailable = { ...actionsAvailable, ...supportedGames.actionInfo(supportedGame, e.name, mappedInfo, this.actionChoice) }
+      let kotlinChosen = kotlin.kotlin.collections.listOf_i5x0yv$(choices)
+      let actionInfoKeys
+      if (this.actionChoice) {
+        let actionType = this.actionChoice.actionName
+        let actionTypeImpl = this.game.actions.type_61zpoe$(actionType)
+        actionInfoKeys = actionTypeImpl.actionInfoKeys_okoyba$(this.viewer, kotlinChosen)
+      } else {
+        actionInfoKeys = this.game.actions.allActionInfo_okoyba$(this.viewer, kotlinChosen)
+      }
+      actionInfoKeys = actionInfoKeys.keys.entries.toArray()
+      console.log(actionInfoKeys)
+
+      let actions = {}
+
+      if (this.actionChoice && actionInfoKeys.length === 1 && actionInfoKeys[0].value.size === 1 && actionInfoKeys[0].value.toArray()[0].isParameter) {
+        let singleActionData = actionInfoKeys[0].value.toArray()[0]
+        // If we're choosing something, there is only one action to choose, and it is a parameter, then perform action
+        console.log("AUTO PERFORM", this.actionChoice, singleActionData)
+        this.actionChoice = null
+
+        let gameActionType = this.game.actions.type_61zpoe$(singleActionData.actionType)
+        gameActionType.perform_y5fo13$(this.viewer, singleActionData.serialized)
+        console.log("AUTO PERFORM WILL UPDATE VIEW")
+        this.updateView()
+        console.log("AUTO PERFORM DONE")
+        return
+      }
+      actionInfoKeys.forEach(actionEntry => {
+        actionEntry.value.toArray().forEach(actionData => {
+          actions[supportedGames.resolveActionKey(supportedGame, actionData, this.actionChoice)] = actionData
+          actionTypes.push(actionData.actionType);
+        })
       });
-      if (autoPerform) return
-      this.actionsAvailable = actionsAvailable;
+      console.log("UPDATE ACTIONS RESULT", actions)
+
+      this.actionsAvailable = actions;
       this.actionTypes = actionTypes;
-      console.log("ACTIONS FOR", this.viewer, actionsAvailable)
+      console.log("ACTIONS FOR", this.viewer, actions)
     },
     action(_, data) {
-      if (this.view.winner !== undefined && this.view.winner !== null) { // TODO: Replace with this.game.isGameOver
+      if (this.game.isGameOver()) {
         console.log("GAME OVER")
         return
       }
@@ -132,14 +139,14 @@ export default {
       if (action.direct) {
         console.log("DIRECT PERFORM")
         let gameActionType = this.game.actions.type_61zpoe$(name)
-        gameActionType.perform_y5fo13$(this.viewer, action.value)
+        gameActionType.perform_y5fo13$(this.viewer, action.serialized)
         this.updateView()
         return
       }
       if (this.actionChoice !== null && this.actionChoice.actionName === name) {
-        this.actionChoice.choices.push(action.value);
+        this.actionChoice.choices.push(action.serialized);
       } else {
-        this.actionChoice = { actionName: name, choices: [action.value] }
+        this.actionChoice = { actionName: name, choices: [action.serialized] }
       }
       console.log("LAST UPDATE ACTIONS")
       this.updateActions()
@@ -156,6 +163,15 @@ export default {
   computed: {
     playerCount() {
       return this.gameInfo.players.length;
+    },
+    context() {
+      return {
+        players: this.gameInfo.players.map(p => ({ ...p, controllable: true, elimination: this.eliminations.find(e => e.playerIndex == p.index) })),
+        gameType: this.gameInfo.gameType,
+        gameId: "00000000-0000-0000-0000-000localgame",
+        viewer: this.gameInfo.yourIndex,
+        scope: 'local-play'
+      }
     },
     actions() {
       return {

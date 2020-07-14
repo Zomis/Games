@@ -1,6 +1,6 @@
 ### Authentication
 
-"Use `"route": "auth/guest"` and don't send a `name`. You will be randomly given a guest name.
+Use `"route": "auth/guest"` and don't send a `name`. You will be randomly given a guest name and a cookie that allows you to enter with the same guest name again
 
 When you have not yet been given a name you can send
 
@@ -10,7 +10,15 @@ You will receive your name, playerId and picture URL
 
 guest-12345 will receive:
 
-    {"type":"Auth","playerId":"00000000-0000-0000-0000-000000000000","name":"guest-12345","picture":"https://www.gravatar.com/avatar/9f89c84a559f573636a47ff8daed0d33?s=128&d=identicon"}
+    {"type":"Auth","playerId":"00000000-0000-0000-0000-000000000000","name":"guest-12345","picture":"https://www.gravatar.com/avatar/9f89c84a559f573636a47ff8daed0d33?s=128&d=identicon","cookie":"<this is your cookie>"}
+
+The next time you login, you can send along the cookie and you will get the same user
+
+    { "route": "auth/guest", "token": "<this is your cookie>" }
+
+guest-12345 will receive:
+
+    {"type":"Auth","playerId":"00000000-0000-0000-0000-000000000000","name":"guest-12345","picture":"https://www.gravatar.com/avatar/9f89c84a559f573636a47ff8daed0d33?s=128&d=identicon","cookie":"<this is your cookie>"}
 
 ### Entering a lobby
 

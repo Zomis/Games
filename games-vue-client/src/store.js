@@ -8,12 +8,16 @@ import router from "@/router/index";
 // const debug = process.env.NODE_ENV !== "production";
 Vue.use(Vuex);
 
+let titlePrefix = "Zomis' Games"
 const store = new Vuex.Store({
   modules: {
     lobby: lobbyStore,
     ...supportedGames.storeModules()
   },
   state: {
+    titlePrefix: titlePrefix,
+    titleAppend: '',
+    title: titlePrefix,
     connection: { name: null, url: null, connected: false }
   },
   getters: {
@@ -26,6 +30,10 @@ const store = new Vuex.Store({
     }
   },
   mutations: {
+    setTitle(state, titleAppend) {
+      state.titleAppend = titleAppend;
+      state.title = titlePrefix + titleAppend;
+    },
     connected(state, data) {
       if (data) {
         state.connection = { ...data, connected: true };
@@ -35,6 +43,13 @@ const store = new Vuex.Store({
     }
   },
   actions: {
+    setTitle(context, title) {
+      console.log("SET TITLE", title);
+      let titleAppend = (title.length > 0 ? ' - ' + title : '')
+      title = titlePrefix + titleAppend;
+      context.commit("setTitle", titleAppend);
+      document.title = title;
+    },
     wall() {
       if (!Socket.isConnected()) {
         return new Promise((resolve) => {

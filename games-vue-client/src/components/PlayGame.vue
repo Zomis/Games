@@ -1,6 +1,5 @@
 <template>
   <div class="game">
-    <GameHead v-if="gameInfo" :gameInfo="gameInfo" :playerCount="playerCount" :view="view" :eliminations="eliminations" />
     <component v-if="view" :is="viewComponent" :view="view" :actions="actions" :players="players" :context="context" />
     <v-btn v-if="!isObserver" @click="clearActions()" :disabled="actionChoice === null">Reset Action</v-btn>
     <ActionLog :logEntries="actionLogEntries" :onHighlight="highlight" :context="context" />
@@ -17,7 +16,7 @@ import ActionLog from "@/components/games/ActionLog"
 
 export default {
   name: "PlayGame",
-  props: ["gameType", "gameId", "showRules"],
+  props: ["gameType", "gameId"],
   components: {
     GameHead, ActionLog
   },
@@ -33,6 +32,7 @@ export default {
   mounted() {
     console.log("PlayGame mounted")
     this.$store.dispatch('wall').then(() => {
+      this.$store.dispatch("setTitle", this.supportedGames.displayName(this.gameType))
       this.$store.dispatch("DslGameState/joinGame", { gameType: this.gameType, gameId: this.gameId })
     })
   },
@@ -56,13 +56,13 @@ export default {
         return
       }
       let name = action.actionType
-      if (action.direct) {
+      if (action.parameter) {
         // Perform direct
-        this.$store.dispatch("DslGameState/action", { gameInfo: this.gameInfo, name: name, data: action.value });
+        this.$store.dispatch("DslGameState/action", { gameInfo: this.gameInfo, name: name, data: action.serialized });
         return
       }
 
-      this.$store.dispatch("DslGameState/nextAction", { gameInfo: this.gameInfo, name: name, action: action.value });
+      this.$store.dispatch("DslGameState/nextAction", { gameInfo: this.gameInfo, name: name, action: action.serialized });
       return;
     },
     resetActionsTo(actionName, actionValue) {
@@ -109,7 +109,7 @@ export default {
        Eliminations.
       */
       return {
-        players: this.players.map((p, idx) => ({ ...p, controllable: this.gameInfo.yourIndex === idx })),
+        players: this.players.map((p, idx) => ({ ...p, controllable: this.gameInfo.yourIndex === idx, elimination: this.eliminations.find(e => e.player == idx) })),
         gameType: this.gameInfo.gameType,
         gameId: this.gameInfo.gameId,
         viewer: this.gameInfo.yourIndex,
@@ -125,7 +125,7 @@ export default {
         return state.games[this.gameId].actionLog;
       },
       gameInfo(state) {
-        if (!state.games[this.gameId]) { return null }
+        if (!state.games[this.gameId]) { return {} }
         return state.games[this.gameId].gameInfo;
       },
       actionChoice(state) {
