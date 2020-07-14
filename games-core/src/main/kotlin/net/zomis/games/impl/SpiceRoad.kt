@@ -14,7 +14,9 @@ object SpiceRoadDsl {
     val play = factory.action("play", PlayParameter::class).serializer(String::class) { "Play Card " + it.card.toStateString() + " Remove " + it.remove.toStateString() + " Add " + it.add.toStateString() }
     val claim = factory.action("claim", SpiceRoadGameModel.PointCard::class).serializer(String::class) { "Claim " + it.toStateString()}
     val rest = factory.action("rest", Unit::class)
-    val acquire = factory.action("acquire", AcquireParameter::class).serializer(String::class){ "Acquire Card " + it.card.toStateString() + " PayArray " + it.payArray.forEach { x -> x.char } }
+    val acquire = factory.action("acquire", AcquireParameter::class).serializer(String::class) {
+        "Acquire Card " + it.card.toStateString() + " PayArray " + it.payArray.joinToString("") { x -> x.char.toString() }
+    }
     val discard = factory.action("discard", SpiceRoadGameModel.Spice::class).serializer(String::class){"Discard " + it.char}
     val game = factory.game("Spice Road") {
         this.setup {
