@@ -26,7 +26,11 @@
       <router-view :key="$route.path" />
     </v-content>
     <v-footer fixed app>
-      <span>&copy; 2018-2020 Zomis' Games - <a href="https://github.com/Zomis/Games" target="_blank">GitHub</a></span>
+      <span>
+          &copy; 2018-2020 Zomis' Games
+           - <a href="https://github.com/Zomis/Games" target="_blank">GitHub</a>
+           - <a href="https://discord.gg/GfXFUvc" target="_blank">Discord</a>
+      </span>
     </v-footer>
   </v-app>
 </template>
