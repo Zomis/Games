@@ -281,11 +281,9 @@ fun MoveEvent.moveMessage(): Map<String, Any?> {
     val serverGame = this.game
     val gameImpl = serverGame.obj!!.game
     val actionType = gameImpl.actions.type(this.moveType)!!.actionType
-    val moveData = actionType.serialize(this.move)
     return this.game.toJson("GameMove")
         .plus("player" to this.player)
         .plus("moveType" to this.moveType)
-        .plus("move" to moveData)
 }
 
 fun PlayerEliminatedEvent.eliminatedMessage(): Map<String, Any?> {
