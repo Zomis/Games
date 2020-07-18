@@ -156,6 +156,7 @@ object ResistanceAvalonGame {
             }
 
             view("characters") { game.charactersUsed.map { it.name }.distinct() }
+            view("evilCount") { game.players.count { it.character?.good == false } }
             view("players") {
                 val myself = if (viewer != null) game.players[viewer!!] else null
                 val allVoted = game.players.all { it.vote != null }

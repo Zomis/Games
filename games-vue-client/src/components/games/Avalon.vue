@@ -70,7 +70,7 @@
         <v-row>
             <v-card max-width="450" class="mx-auto">
                 <v-toolbar color="cyan" dark>
-                    <v-toolbar-title>Characters</v-toolbar-title>
+                    <v-toolbar-title>Characters ({{ view.evilCount }} evil in total)</v-toolbar-title>
                 </v-toolbar>
                 <v-list three-line>
                     <template v-for="(character, index) in charactersInGame">
