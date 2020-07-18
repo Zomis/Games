@@ -7,6 +7,7 @@
                         <PlayerProfile show-name :player="context.players[playerIndex]" />
                     </v-card-title>
                     <v-card-text>
+                        <span v-if="playerIndex == context.viewer && mustDiscard" class="discard-notice">Choose a card to DISCARD</span>
                         <CardZone v-if="Array.isArray(player.hand)">
                             <Actionable button v-for="(card, index) in player.hand" :key="index"
                                 :actions="actions" class="list-complete-item" :actionable="'hand-' + card">
@@ -77,11 +78,23 @@ export default {
             colors: { FLOWER: 'green', SKULL: 'black' },
             icons: { FLOWER: 'mdi-flower', SKULL: 'mdi-skull' }
         }
+    },
+    computed: {
+        mustDiscard() {
+            let keys = Object.keys(this.actions.available)
+            if (keys.length === 0) return false
+
+            return keys.every(key => this.actions.available[key].actionType === "discard")
+        }
     }
 }
 </script>
 <style scoped>
 @import "../../../assets/games-animations.css";
+
+.discard-notice {
+    color: red;
+}
 
 .v-card.passed {
     opacity: 0.5
