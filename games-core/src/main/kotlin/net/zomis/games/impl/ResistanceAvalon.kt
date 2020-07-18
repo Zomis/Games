@@ -94,12 +94,28 @@ class ResistanceAvalon(val config: ResistanceAvalonConfig, val playerCount: Int)
             else -> throw IllegalArgumentException("Invalid number of players $playerCount")
         }.let { it[missionNumber - 1] })
     }
+    var assassinatedPlayer: ResistanceAvalonPlayer? = null
     var ladyOfTheLakePlayer: ResistanceAvalonPlayer? = null
     var leaderIndex: Int = 0
 
     var voteTeam: ResistanceAvalonTeamChoice? = null
     var activeMission: ResistanceAvalonMission? = null
     var rejectedTeams: Int = 0
+
+    fun failedMissions(): Int = missions.count { it.result == false }
+    fun successMissions(): Int = missions.count { it.result == true }
+    fun merlinAssassinated(): Boolean? = if (players.any { it.character!! == ResistanceAvalonPlayerCharacter.ASSASSIN })
+        assassinatedPlayer?.let { it.character == ResistanceAvalonPlayerCharacter.MERLIN } else false
+    fun goodWins(): Boolean? = when {
+        failedMissions() >= 3 -> false
+        successMissions() >= 3 && (merlinAssassinated() == false) -> true
+        rejectedTeams >= 5 -> false
+        else -> null
+    }
+
+    fun allowMoreMissions() = missions.count { it.result == false } < 3 && missions.count { it.result == true } < 3
+    fun isGameFullyOver(): Boolean = failedMissions() >= 3 || assassinatedPlayer != null
+
 }
 
 class ResistanceAvalonTeamChoice(val mission: ResistanceAvalonMission, val team: List<ResistanceAvalonPlayer>)
@@ -146,9 +162,11 @@ object ResistanceAvalonGame {
                 game.players.map {
                     mapOf(
                         "thumb" to myself?.knownThumbs?.contains(it),
-                        "character" to if (myself?.index == it.index) it.character?.name else null,
+                        "character" to if (myself?.index == it.index || game.isGameFullyOver()) it.character?.name else null,
                         "ladyOfTheLakePlayer" to (game.ladyOfTheLakePlayer == it),
                         "ladyOfTheLakeImmunity" to it.ladyOfTheLakeImmunity,
+                        "good" to if (!game.allowMoreMissions()) it.character!!.good else null,
+                        "assassinated" to (game.assassinatedPlayer == it),
                         "vote" to it.vote.takeIf { allVoted },
                         "leader" to (it.index == game.leaderIndex),
                         "inTeam" to game.voteTeam?.team?.contains(it)
@@ -181,6 +199,7 @@ object ResistanceAvalonGame {
                 precondition { game.voteTeam == null && game.activeMission == null }
                 precondition { game.leaderIndex == playerIndex }
                 precondition { game.missions.any { !it.completed } }
+                precondition { game.allowMoreMissions() }
                 choose {
                     optionsWithIds({
                         val remainingMissions = game.missions.filter { !it.completed }
@@ -272,9 +291,7 @@ object ResistanceAvalonGame {
                 options { game.players.filter { it.character!!.good } }
                 effect {
                     log { "$player assassinated ${player(action.index)} who was ${action.character?.name}" }
-                    val goodWins = action.parameter.character != ResistanceAvalonPlayerCharacter.MERLIN
-                    eliminations.eliminateMany(game.players.filter { it.character!!.good == goodWins }.map { it.index }, WinResult.WIN)
-                    eliminations.eliminateRemaining(WinResult.LOSS)
+                    game.assassinatedPlayer = action.parameter
                 }
             }
 
@@ -298,15 +315,8 @@ object ResistanceAvalonGame {
             }
 
             allActions.after {
-                val failedMissions = game.missions.count { it.result == false }
-                val successMissions = game.missions.count { it.result == true }
-                val goodWins: Boolean = when {
-                    failedMissions >= 3 -> false
-                    successMissions >= 3 -> true
-                    game.rejectedTeams >= 5 -> false
-                    else -> return@after
-                }
-                if (!goodWins || game.players.none { it.character == ResistanceAvalonPlayerCharacter.ASSASSIN }) {
+                val goodWins = game.goodWins()
+                if (goodWins != null) {
                     eliminations.eliminateMany(game.players.filter { it.character!!.good == goodWins }.map { it.index }, WinResult.WIN)
                     eliminations.eliminateRemaining(WinResult.LOSS)
                 }
