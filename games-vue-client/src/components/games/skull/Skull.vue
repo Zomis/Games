@@ -52,7 +52,13 @@
                 </v-card>
             </v-col>
         </v-row>
-</v-container>
+        <v-row>
+            <v-col>
+                <p>{{ view.cardsTotal }} cards played</p>
+                <p>{{ view.cardsChosenRemaining }} cards remaining to be chosen</p>
+            </v-col>
+        </v-row>
+    </v-container>
 </template>
 <script>
 import CardZone from "@/components/games/common/CardZone"
