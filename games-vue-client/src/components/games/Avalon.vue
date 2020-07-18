@@ -34,6 +34,9 @@
                         <v-icon v-if="player.ladyOfTheLakeImmunity">mdi-face-woman-outline</v-icon>
                         <v-icon color="blue" v-if="player.ladyOfTheLakePlayer">mdi-face-woman</v-icon>
                         <v-icon color="purple" v-if="player.inTeam">mdi-helicopter</v-icon>
+                        <v-icon color="black" v-if="player.assassinated">mdi-skull</v-icon>
+                        <v-icon color="red" v-if="player.good === false">mdi-emoticon-devil</v-icon>
+                        <v-icon color="blue" v-if="player.good === true">mdi-shield</v-icon>
                         <p v-if="player.vote !== null">
                             <v-icon color="green" v-if="player.vote">mdi-check-circle</v-icon>
                             <v-icon color="red" v-else>mdi-close-circle</v-icon>

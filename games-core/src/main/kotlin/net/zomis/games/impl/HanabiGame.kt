@@ -1,6 +1,5 @@
 package net.zomis.games.impl
 
-import net.zomis.games.PlayerEliminations
 import net.zomis.games.WinResult
 import net.zomis.games.api.GamesApi
 import net.zomis.games.cards.Card
@@ -15,13 +14,6 @@ import kotlin.math.min
 // game ends when players are defeated or an indispensible card has been discarded
 // game normally ends one full turn after the last card drawn.
 // allow empty clues - true/false
-
-// 0-5 Fruktansvärt utbuad av publiken.
-// 6-10 Mediokert, spridda applåder som bäst.
-// 11-15 Anmärkningsvärt, men kommer inte bli ihågkommet så länge
-// 16-20 Utmärkt, publiken är väldigt nöjd
-// 21-24 Suveränt, kommer att komma ihåg väldigt länge
-// 25 Legendariskt, alla är förstummade och hänförda
 
 enum class HanabiColor { YELLOW, WHITE, RED, BLUE, GREEN, RAINBOW }
 class HanabiCard(val color: HanabiColor, val value: Int, var colorKnown: Boolean, var valueKnown: Boolean): Replayable {
@@ -157,6 +149,15 @@ data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
             colors.map { HanabiClue(cluePlayer, it.color, null) } +
                 config.values().map { HanabiClue(cluePlayer, null, it) }
         }
+    }
+
+    fun scoreDescription(): String = when (score()) {
+        in 0..5 -> "Horrible. Booed by the crowd."
+        in 6..10 -> "Mediocre, just a splattering of applause"
+        in 11..15 -> "Honourable, but will not be remembered for very long"
+        in 16..20 -> "Excellent, crowd pleasing"
+        in 21..24 -> "Amazing, will be remembered for a very long time!"
+        else -> "Legendary, everyone left speechless, stars in their eyes"
     }
 
 }
@@ -328,6 +329,7 @@ object HanabiGame {
             value("cardsLeft") { it.deck.size }
             value("clues") { it.clueTokens }
             value("score") { it.score() }
+            value("scoreDescription") { it.scoreDescription() }
             value("fails") { it.failTokens }
             value("maxFails") { it.config.maxFailTokens }
             if (game.config.viewAllowCardIsNot) {

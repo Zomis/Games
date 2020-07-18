@@ -71,6 +71,7 @@
       <v-col>
         <span>Score</span>
         <transition name="number-transition" mode="out-in"><p :key="view.score">{{ view.score }}</p></transition>
+        <span>{{ view.scoreDescription }}</span>
       </v-col>
     </v-row>
 
