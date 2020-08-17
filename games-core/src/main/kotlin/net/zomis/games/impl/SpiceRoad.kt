@@ -35,8 +35,12 @@ object SpiceRoadDsl {
             this.view("pointsDeck") { game.pointsDeck.size }
             this.view("actionCards") { game.visibleActionCards.cards.map(SpiceRoadGameModel.ActionCard::toViewable) }
             this.view("pointCards") { game.visiblePointCards.cards.map(SpiceRoadGameModel.PointCard::toViewable) }
-            this.view("goldCoins") { game.goldCoins.size }
-            this.view("silverCoins") { game.silverCoins.size }
+            this.view("coins") {
+                var coins = mutableMapOf<String, Int>()
+                if (game.goldCoins.isNotEmpty()) coins.put("gold", game.goldCoins.size)
+                if (game.silverCoins.isNotEmpty()) coins.put("silver", game.silverCoins.size)
+                coins
+            }
             this.action(claim).requires { game.currentPlayer.caravan.has(this.action.parameter.cost) }
             this.action(claim).effect {
                 game.currentPlayer.points += when (game.visiblePointCards.cards.indexOf(this.action.parameter)) {
@@ -129,15 +133,11 @@ object SpiceRoadDsl {
             this.allActions.precondition { game.currentPlayer.index == playerIndex }
             this.allActions.after {
                 val gameEnd = when (game.playerCount) {
-                    1, 2, 3 -> game.currentPlayer.pointCards == 6
+                    1, 2, 3 -> game.players.any{ player -> player.pointCards == 6 }
                     else -> game.currentPlayer.pointCards == 5
                 }
-                if (gameEnd) {
-                    when (game.turnsLeft) {
-                        -1 -> game.turnsLeft = game.playerCount - (game.currentPlayerIndex + 1)
-                        0 -> this.eliminations.eliminateBy(game.players.mapIndexed { index, player -> index to player }, compareBy({ it.points }, { +it.index }))
-                        else -> game.turnsLeft--
-                    }
+                if (gameEnd && game.currentPlayerIndex == game.playerCount-1) {
+                   this.eliminations.eliminateBy(game.players.mapIndexed { index, player -> index to player }, compareBy({ it.points }, { +it.index }))
                 }
             }
             this.allActions.after { game.currentPlayerIndex = game.currentPlayerIndex.next(game.playerCount) }
