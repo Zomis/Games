@@ -95,7 +95,7 @@ data class SetGameModel(val config: SetConfig, val playersCount: Int) {
                 colors.map { color -> SetPiece(count, shape, filling, color) }
             }
         }
-    }.shuffled(Random(42)).toMutableList())
+    }.shuffled().toMutableList())
 
     val board = CardZone<SetPiece>()
 
