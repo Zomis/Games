@@ -1,5 +1,5 @@
 <template>
-    <v-card elevation="4" :class="'set-card fill-' + card.color + ' fadeIn'">
+    <v-card elevation="4" :class="'set-card fill-' + card.color + ' fadeIn'" @click="click">
         <transition name="slide-fade" mode="out-in">
             <v-card-text class="slide-fade-item card-content">
                 <svg viewbox="-2 -2 54 104" v-for="shape in shapes" :key="shape.key">
@@ -37,7 +37,12 @@ const fill = (card) => {
 
 export default {
     name: "SetCard",
-    props: ["card"],
+    props: ["card", "onClick"],
+    methods: {
+        click() {
+            this.onClick(this.card);
+        }
+    },
     computed: {
         color() {
             return colors[this.card.color]

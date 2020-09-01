@@ -12,7 +12,8 @@ import UTTT from "@/components/games/UTTT";
 import Hanabi from "@/components/games/Hanabi";
 import HanabiConfig from "@/components/games/hanabi/HanabiConfig";
 import Splendor from "@/components/games/splendor/Splendor";
-import TreeViewGame from "@/components/games/TreeViewGame";
+//import TreeViewGame from "@/components/games/TreeViewGame";
+import SetGame from "@/components/games/set/SetGame";
 import Skull from "@/components/games/skull/Skull";
 import DSLTTT from "@/components/games/DSLTTT";
 import TTT3D from "@/components/games/TTT3D";
@@ -118,9 +119,9 @@ const supportedGames = {
     },
     "Set": {
         dsl: true,
-        enabled: false,
+        enabled: true,
         actions: setActions,
-        component: TreeViewGame,
+        component: SetGame,
     },
     "Splendor": {
         dsl: gamejs.net.zomis.games.impl.DslSplendor.splendorGame,

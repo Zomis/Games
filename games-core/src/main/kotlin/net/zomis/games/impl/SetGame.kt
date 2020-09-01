@@ -9,12 +9,81 @@ data class SetPiece(val count: Int, val shape: String, val filling: String, val 
     fun toStateString(): String {
         return "$count-$shape-$filling-$color"
     }
+
+    fun toMap() = mapOf(
+        "count" to this.count,
+        "shape" to this.shape,
+        "filling" to this.filling,
+        "color" to this.color,
+        "key" to this.toStateString()
+    )
+
 }
 data class SetAction(val set: List<String>)
 data class SetConfig(val losePoints: Boolean)
-data class SetGameModel(val config: SetConfig, val players: Int) {
+class SetPropertyResult(val values: List<Any>) {
+    private val distinct = values.distinct().size
+    val valid = distinct == 1 || distinct == values.size
+    private val counts = values.associateWith { a -> values.count { a == it } }
+    val majorityValue: Any? = if (valid) null else counts.entries.single { it.value == 2 }.key
+    val minorityValue: Any? = if (valid) null else counts.entries.single { it.value == 1 }.key
 
-    val scores: MutableList<Int> = (1..players).map { 0 }.toMutableList()
+    fun toMap(): Map<String, Any?> = mapOf("valid" to valid, "uniqueCount" to distinct).let {
+        if (!valid) {
+            it.plus("majorityValue" to majorityValue).plus("minorityValue" to minorityValue)
+        } else it
+    }
+}
+private val properties = mutableMapOf<String, (SetPiece) -> Any>().also { props ->
+    props["count"] = { it.count }
+    props["shape"] = { it.shape }
+    props["filling"] = { it.filling }
+    props["color"] = { it.color }
+}
+data class SetCardsResult(val cards: List<SetPiece>) {
+    private fun match(pieces: Set<SetPiece>, mapping: (SetPiece) -> Any): SetPropertyResult {
+        return SetPropertyResult(pieces.map(mapping))
+    }
+
+    val propertiesMatching: Map<String, SetPropertyResult> = properties.entries.associate {
+        it.key to match(cards.toSet(), it.value)
+    }
+
+    fun toMap(): Map<String, Any?> = mapOf(
+        "cards" to cards.map { it.toMap() },
+        "valid" to validSet,
+        "properties" to propertiesMatching.mapValues { it.value.toMap() }
+    )
+
+    val validSet = propertiesMatching.all { it.value.valid }
+}
+class SetPlayer(val playerIndex: Int) {
+    fun chooseSet(cardsResult: SetCardsResult, config: SetConfig) {
+        this.lastResult = cardsResult
+        this.tries++
+        if (!cardsResult.validSet) {
+            if (config.losePoints) {
+                this.points--
+            }
+        }
+        if (cardsResult.validSet) {
+            this.points++
+            this.setsFound++
+        }
+    }
+
+    fun toMap(): Map<String, Any?> = mapOf(
+        "lastResult" to lastResult?.toMap(),
+        "points" to points
+    )
+
+    var lastResult: SetCardsResult? = null
+    var points: Int = 0
+    var setsFound: Int = 0
+    var tries: Int = 0
+}
+data class SetGameModel(val config: SetConfig, val playersCount: Int) {
+    val players = (0 until playersCount).map { SetPlayer(it) }
 
     val counts = setOf(1, 2, 3)
     val shapes = setOf("ellipse", "squiggly", "diamond")
@@ -71,26 +140,13 @@ data class SetGameModel(val config: SetConfig, val players: Int) {
         return SetPiece(count, shape, filling, color)
     }
 
-    private fun isMatch(set: List<String>): List<SetPiece> {
-        val pieces = set.map { convertToPiece(it) }
-        return if (pieces.size == 3 && isMatch(pieces[0], pieces[1], pieces[2])) pieces else emptyList()
-    }
-
-    fun playerChooseSet(playerIndex: Int, parameter: SetAction) {
-        val setFound = isMatch(parameter.set)
-        if (setFound.isEmpty() && config.losePoints) {
-            scores[playerIndex]--
-        }
-        if (setFound.isNotEmpty()) {
-            scores[playerIndex]++
-            setFound.asSequence().forEach { board.card(it).remove() }
-        }
-    }
-
     fun setExists(extras: List<SetPiece>): Boolean {
         return this.findSets(this.board.cards + extras).any()
     }
 
+    fun stringsToCards(strings: List<String>): List<SetPiece> = strings.map { convertToPiece(it) }
+
+    fun setCardsResult(cards: List<SetPiece>): SetCardsResult = SetCardsResult(cards)
 }
 object SetGame {
     fun setCheck(game: SetGameModel, replayableScope: ReplayableScope): Boolean {
@@ -143,18 +199,24 @@ object SetGame {
                 }
                 requires { action.parameter.set.distinct().size == action.parameter.set.size && action.parameter.set.size == 3 }
                 effect {
-                    game.playerChooseSet(action.playerIndex, action.parameter)
+                    val cardsResult = game.setCardsResult(game.stringsToCards(action.parameter.set))
+                    game.players[action.playerIndex].chooseSet(cardsResult, game.config)
+                    if (cardsResult.validSet) {
+                        cardsResult.cards.asSequence().forEach { game.board.card(it).remove() }
+                    }
                     if (!setCheck(game, this.replayable)) {
-                        playerEliminations.eliminateBy(game.scores.mapIndexed { index, i -> index to i }, Comparator { a, b -> a - b })
+                        playerEliminations.eliminateBy(game.players.mapIndexed { index, i -> index to i.points }, Comparator { a, b -> a - b })
                     }
                 }
             }
         }
         view {
             value("deck") { it.deck.size }
-            value("scores") { it.scores }
+            value("players") {
+                it.players.map { player -> player.toMap() }
+            }
             value("cards") {
-                it.board.map { c -> c.toStateString() }
+                it.board.map { card -> card.toMap() }
             }
         }
     }
