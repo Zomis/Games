@@ -21,28 +21,6 @@
                             </Actionable>
                         </CardZone>
 
-                        <div>Played</div>
-                        <CardZone v-if="Array.isArray(player.board)">
-                            <Actionable button v-for="(card, index) in player.board" :key="index"
-                                :actions="actions" class="list-complete-item" :actionable="'choose-' + playerIndex">
-                                <v-icon :color="colors[card]">{{ icons[card] }}</v-icon>
-                            </Actionable>
-                        </CardZone>
-                        <span v-else>
-                            <CardZone>
-                                <Actionable button v-for="index in player.board" :actionable="'choose-' + playerIndex" :key="index"
-                                  class="list-complete-item" :actions="actions">
-                                    <v-icon>mdi-crosshairs-question</v-icon>
-                                </Actionable>
-                            </CardZone>
-                        </span>
-
-                        <div>Chosen</div>
-                        <CardZone>
-                            <v-icon v-for="(card, index) in player.chosen" :key="index"
-                                class="list-complete-item" :color="colors[card]">{{ icons[card] }}</v-icon>
-                        </CardZone>
-
                         <div>Bet</div>
                         <div>{{ player.bet }}</div>
                         <Actionable button v-if="context.players[playerIndex].controllable" :actionType="['pass', 'bet']" :actions="actions">Bet/Pass</Actionable>
@@ -51,6 +29,26 @@
                         <span>{{ player.points }}</span>
                     </v-card-text>
                 </v-card>
+
+                <CardZone v-if="Array.isArray(player.board)">
+                    <Actionable button v-for="(card, index) in player.board" :key="index"
+                        :actions="actions" class="list-complete-item" :actionable="'choose-' + playerIndex">
+                        <v-icon :color="colors[card]">{{ icons[card] }}</v-icon>
+                    </Actionable>
+                </CardZone>
+                <span v-else>
+                    <CardZone>
+                        <Actionable button v-for="index in player.board" :actionable="'choose-' + playerIndex" :key="index"
+                            class="list-complete-item" :actions="actions">
+                            <v-icon>mdi-crosshairs-question</v-icon>
+                        </Actionable>
+                    </CardZone>
+                </span>
+                <CardZone>
+                    <v-icon v-for="(card, index) in player.chosen" :key="index"
+                        class="list-complete-item" :color="colors[card]">{{ icons[card] }}</v-icon>
+                </CardZone>
+
             </v-col>
         </v-row>
         <v-row>

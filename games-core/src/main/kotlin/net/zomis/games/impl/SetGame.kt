@@ -3,7 +3,6 @@ package net.zomis.games.impl
 import net.zomis.games.cards.CardZone
 import net.zomis.games.dsl.GameCreator
 import net.zomis.games.dsl.ReplayableScope
-import kotlin.random.Random
 
 data class SetPiece(val count: Int, val shape: String, val filling: String, val color: String) {
     fun toStateString(): String {
