@@ -45,6 +45,10 @@ class ServerAIs(private val aiRepository: AIRepository, private val dslGameTypes
             }, 1000, TimeUnit.MILLISECONDS)
         })
         events.listen("register AI Random for DSL Game", GameTypeRegisterEvent::class, { isDSLGameType(it.gameType) }, {event ->
+            if (event.gameSpec.name == "Set") {
+                // Do not add Random AI for Set game because of it playing continuously
+                return@listen
+            }
             ServerAI(event.gameType, "#AI_Random_" + event.gameType) { game, index ->
                 return@ServerAI randomAction(game, index)
             }.register(events)
