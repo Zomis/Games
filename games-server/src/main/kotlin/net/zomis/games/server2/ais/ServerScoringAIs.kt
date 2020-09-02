@@ -8,6 +8,7 @@ class ServerScoringAIs(private val aiRepository: AIRepository) {
     fun setup(events: EventSystem) {
         listOf(
             SplendorScorers.ais(),
+            SetScorers.ais(),
             AvalonScorers.ais(),
             DungeonMayhemScorers.ais(), SkullScorers.ais(),
             URScorers.ais(),
