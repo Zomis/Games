@@ -120,6 +120,7 @@ const supportedGames = {
     "Set": {
         dsl: true,
         enabled: true,
+        resetActions: false,
         actions: setActions,
         component: SetGame,
     },
