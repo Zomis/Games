@@ -84,6 +84,12 @@ export default {
         ? this.supportedGame.displayName
         : this.gameType;
     },
+    supportedPlayers() {
+      return this.supportedGame.players ? this.supportedGame.players : "N/A";
+    },
+    playTime() {
+      return this.supportedGame.time ? this.supportedGame.time : "N/A";
+    },
     yourGames() {
       return this.activeGames.filter(game => game.gameInfo.yourIndex >= 0);
     },
