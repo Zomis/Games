@@ -146,7 +146,8 @@ object ResistanceAvalonGame {
                     .forEachIndexed { index, card -> game.players[index].character = card.card }
 
                 game.players.forEach {
-                    it.knownThumbs = it.character!!.seesThumbs().mapNotNull { ch -> game.players.find { pl -> pl.character == ch } }.toSet()
+                    val seesThumbs = it.character!!.seesThumbs()
+                    it.knownThumbs = game.players.filter { pl -> seesThumbs.contains(pl.character) }.toSet()
                 }
 
                 val leader = replayable.int("leader") { Random.Default.nextInt(game.playerCount) }
