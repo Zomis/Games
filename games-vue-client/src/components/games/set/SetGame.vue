@@ -21,7 +21,8 @@
     <v-row>
       <v-col>
         <CardZone class="board">
-          <SetCard class="list-complete-item animate" v-for="card in cards" :key="card.key" :card="card" :onClick="cardClick" />
+          <SetCard class="list-complete-item animate" v-for="card in cards" :key="card.key" :card="card" :onClick="cardClick"
+             :selected="actions.chosen ? actions.chosen.choices.includes(card.key) : false" />
         </CardZone>
       </v-col>
     </v-row>
