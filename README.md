@@ -1,4 +1,4 @@
-# Zomis' Games -An Amazing Server for Games
+# Zomis' Games - An Amazing Server for Games
 
 [Join us on Discord!](https://discord.gg/GfXFUvc)
 
