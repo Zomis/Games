@@ -1,10 +1,10 @@
-# Zomis' Games
+# Zomis' Games -An Amazing Server for Games
 
 [Join us on Discord!](https://discord.gg/GfXFUvc)
 
 One of the goals with this project is to easily create implementations of several turn-based multiplayer games, both logic and GUI.
 
-This project is a flexible server meant for games. The main idea is to re-use a lot of things between games, so that you don't have to implement these things for every game:
+This project is a flexible server meant for games. The main idea is to reuse a lot of things between games, so that you don't have to implement these things for every game:
 
 - Online Multiplayer
 - AIs
@@ -19,7 +19,7 @@ To accomplish this, I realized that a game consists of three different parts:
 
 These three things: Model, Actions, View, are specified in a DSL (Domain Specific Language). The DSL only works as a wrapper around your game implementation, so no matter how complex or simple your game is, it's possible to build it in this DSL.
 
-For this project I decided to use Kotlin in order to be able to re-use code between the server and the client.
+For this project I decided to use Kotlin in order to be able to reuse code between the server and the client.
 
 ## If you just want to play...
 
@@ -94,7 +94,7 @@ I wrote my own tool to generate documentation for how the client and server comm
 - AI:s with Reinforcement Learning (not yet implemented)
 - Easy to make new games
 - Platform for implementing and play-testing new games and game ideas
-  - Provides re-usable components (see #96 for frontend components, some similar functionality also exist for back-end)
+  - Provides reusable components (see #96 for frontend components, some similar functionality also exist for back-end)
 
 ### Differences from Tabletop Simulator, Board Game Arena and other projects
 
