@@ -343,6 +343,7 @@ object DungeonMayhemDsl {
                     "health" to it.health,
                     "deck" to it.deck.size,
                     "hand" to if (viewer == it.index) it.hand.view() else it.hand.size,
+                    "protected" to it.protected,
                     "discard" to it.discard.view(),
                     "played" to it.played.view(),
                     "shields" to it.shields.view()

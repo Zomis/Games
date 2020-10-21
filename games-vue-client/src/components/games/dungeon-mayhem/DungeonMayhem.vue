@@ -4,7 +4,7 @@
             <v-col v-for="(player, playerIndex) in view.players" :key="playerIndex">
                 <v-card :class="{ ['color-' + player.character.color ]: true, currentPlayer: playerIndex == view.currentPlayer }">
                     <PlayerProfile :player="players[playerIndex]" show-name :postFix="'(' + player.character.className + ')'" />
-                    <p>Health: {{ player.health }}</p>
+                    <p>Health: {{ player.health }} <v-icon v-if="player.protected">mdi-account-lock</v-icon></p>
                     <p>Deck: {{ player.deck }}</p>
                     <Actionable button :actionable="`target:player-${playerIndex};shield-null;discarded-null`" actionType="target" :actions="actions">
                         Target
