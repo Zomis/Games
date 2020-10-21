@@ -171,6 +171,7 @@ object ResistanceAvalonGame {
                         "assassinated" to (game.assassinatedPlayer == it),
                         "vote" to it.vote.takeIf { allVoted },
                         "leader" to (it.index == game.leaderIndex),
+                        "decided" to (it.vote.takeIf { !allVoted } != null || it.missionSuccess != null),
                         "inTeam" to game.voteTeam?.team?.contains(it)
                     )
                 }

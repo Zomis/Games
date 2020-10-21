@@ -37,6 +37,7 @@
                         <v-icon color="black" v-if="player.assassinated">mdi-skull</v-icon>
                         <v-icon color="red" v-if="player.good === false">mdi-emoticon-devil</v-icon>
                         <v-icon color="blue" v-if="player.good === true">mdi-shield</v-icon>
+                        <v-icon v-if="player.decided" color="blue">mdi-arrow-decision</v-icon>
                         <p v-if="player.vote !== null">
                             <v-icon color="green" v-if="player.vote">mdi-check-circle</v-icon>
                             <v-icon color="red" v-else>mdi-close-circle</v-icon>
