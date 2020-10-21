@@ -83,6 +83,7 @@ data class ResistanceAvalonConfig(
     }
 }
 class ResistanceAvalon(val config: ResistanceAvalonConfig, val playerCount: Int) {
+    val MAX_REJECTED_TEAMS = 5
     val charactersUsed = config.characters(playerCount)
     val players = (0 until playerCount).map { ResistanceAvalonPlayer(it) }
     val missions = (1..5).map { missionNumber -> ResistanceAvalonMission(playerCount = playerCount, missionNumber = missionNumber,
@@ -109,12 +110,15 @@ class ResistanceAvalon(val config: ResistanceAvalonConfig, val playerCount: Int)
     fun goodWins(): Boolean? = when {
         failedMissions() >= 3 -> false
         successMissions() >= 3 && (merlinAssassinated() == false) -> true
-        rejectedTeams >= 5 -> false
+        rejectedTeams >= MAX_REJECTED_TEAMS -> false
         else -> null
     }
 
-    fun allowMoreMissions() = missions.count { it.result == false } < 3 && missions.count { it.result == true } < 3
+    fun allowMoreMissions() = missions.count { it.result == false } < 3
+            && missions.count { it.result == true } < 3
+            && rejectedTeams < MAX_REJECTED_TEAMS
     fun isGameFullyOver(): Boolean = failedMissions() >= 3 || assassinatedPlayer != null
+            || rejectedTeams >= MAX_REJECTED_TEAMS
 
 }
 
