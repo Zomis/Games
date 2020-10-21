@@ -1,4 +1,4 @@
-FROM openjdk:8u151-jre
+FROM openjdk:8-jre
 
 EXPOSE 42638
 
