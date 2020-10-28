@@ -39,10 +39,11 @@ export default {
       });
     },
     getToken() {
-      if (this.$auth.isAuthenticated()) {
+      console.log("Checking token", this.auth)
+      if (this.auth.provider !== 'guest' && this.$auth.isAuthenticated()) {
         return this.$auth.getToken();
       }
-      if (localStorage.authCookie && localStorage.authCookie !== "null") {
+      if (this.auth.provider === 'guest' && localStorage.authCookie && localStorage.authCookie !== "null") {
         return "cookie:" + localStorage.authCookie;
       }
       return false;
