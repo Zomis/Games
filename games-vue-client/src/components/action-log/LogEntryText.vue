@@ -14,7 +14,7 @@
 <script>
 export default {
     name: "LogEntryText",
-    props: ["text", "onHighlight", "tooltipComponent", "hoverBindings"],
+    props: ["text", "onHighlight", "tooltipComponent", "hoverBindings", "private"],
     data() {
         return {
             tooltipActive: false,
@@ -33,7 +33,8 @@ export default {
     computed: {
         cssClasses() {
             return {
-                ['has-tooltip']: this.useTooltip
+                ['has-tooltip']: this.useTooltip,
+                ['private-log']: this.private
             }
         },
         useTooltip() {
@@ -46,5 +47,9 @@ export default {
 .has-tooltip {
     cursor: pointer;
     text-decoration: underline;
+}
+
+.private-log {
+    font-style: italic;
 }
 </style>

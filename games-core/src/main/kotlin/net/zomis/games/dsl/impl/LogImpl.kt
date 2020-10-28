@@ -18,7 +18,7 @@ data class LogPartLink(val text: String, val viewType: String, val value: Any): 
 }
 
 interface LogPart { val type: String }
-data class LogEntry(val parts: List<LogPart>, val highlights: List<Any>)
+data class LogEntry(val parts: List<LogPart>, val highlights: List<Any>, val private: Boolean)
 interface ActionLogEntry {
     val playerIndex: PlayerIndex
     val secret: LogEntry?
@@ -48,7 +48,7 @@ class LogActionContext<T : Any, A : Any>(
         parts.add(partFunction())
         return "part:{{$oldCounter}}"
     }
-    private fun postProcess(entry: String?): LogEntry? {
+    private fun postProcess(entry: String?, secret: Boolean): LogEntry? {
         if (entry == null) return null
         val parts = mutableListOf<LogPart>()
         var textToParse = entry!!
@@ -62,7 +62,7 @@ class LogActionContext<T : Any, A : Any>(
             textToParse = textToParse.substringAfter("}}")
         }
         if (textToParse.isNotEmpty()) parts.add(LogPartText(textToParse))
-        return LogEntry(parts.toList(), highlights.toList())
+        return LogEntry(parts.toList(), highlights.toList(), secret)
     }
 
     override val player: String get() = this.player(playerIndex)
@@ -77,14 +77,14 @@ class LogActionContext<T : Any, A : Any>(
 
     fun log(logging: LogActionScope<T, A>.() -> String): ActionLogEntry {
         highlights.clear()
-        publicEntry = postProcess(logging(this))
+        publicEntry = postProcess(logging(this), false)
         return this
     }
 
     fun secretLog(secretPlayer: PlayerIndex, logging: LogActionScope<T, A>.() -> String): LogActionContext<T, A> {
         highlights.clear()
         if (this.playerIndex == secretPlayer) {
-            secretEntry = postProcess(logging(this))
+            secretEntry = postProcess(logging(this), true)
         }
         return this
     }

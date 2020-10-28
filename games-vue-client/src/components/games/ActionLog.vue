@@ -14,7 +14,7 @@
                     </v-list-item-title>
                     <v-list-item-subtitle>
                         <component v-for="(part, partIndex) in entry.parts" :key="partIndex"
-                            :is="components[part.type].component" v-bind="components[part.type].binds(part)" />
+                            :is="components[part.type].component" :private="entry.private" v-bind="components[part.type].binds(part)" />
                     </v-list-item-subtitle>
                 </v-list-item-content>
             </v-list-item>
