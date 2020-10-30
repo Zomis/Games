@@ -23,6 +23,7 @@ data class Action<T : Any, A : Any>(
 class GameSpec<T : Any>(val name: String, val dsl: GameDsl<T>.() -> Unit) {
     operator fun invoke(context: GameDsl<T>) = dsl(context)
 }
+typealias GameTestDsl<T> = GameTest<T>.() -> Unit
 typealias GameModelDsl<T, C> = GameModel<T, C>.() -> Unit
 typealias GameViewDsl<T> = GameView<T>.() -> Unit
 typealias GameRulesDsl<T> = GameRules<T>.() -> Unit
@@ -48,6 +49,7 @@ interface GameDsl<T : Any> {
     fun setup(modelDsl: GameModelDsl<T, Unit>)
     fun view(viewDsl: GameViewDsl<T>)
     fun rules(rulesDsl: GameRulesDsl<T>)
+    fun testCase(players: Int, testDsl: GameTestDsl<T>)
 }
 
 class GameActionCreator<T : Any, A : Any, S : Any>(

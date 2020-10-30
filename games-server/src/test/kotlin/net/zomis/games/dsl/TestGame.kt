@@ -7,16 +7,16 @@ import org.junit.jupiter.api.Assertions
 
 object TestGame {
 
-    fun <E : Any> create(name: String, config: Any? = null): GameTest<E> {
+    fun <E : Any> create(name: String, config: Any? = null): GameAsserts<E> {
         val dsl = ServerGames.games[name] as GameSpec<E>
         val setup = GameSetupImpl(dsl)
         val impl = setup.createGame(2, config ?: setup.getDefaultConfig())
-        return GameTest(impl)
+        return GameAsserts(impl)
     }
 
 }
 
-class GameTest<T : Any>(val game: GameImpl<T>) {
+class GameAsserts<T : Any>(val game: GameImpl<T>) {
 
     fun expectPossibleOptions(playerIndex: Int, actionType: String, expected: Int, vararg chosen: Any) {
         val actionInfo = game.actions.type(actionType)!!.actionInfoKeys(playerIndex, chosen.toList())

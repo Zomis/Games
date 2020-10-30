@@ -217,6 +217,7 @@ class GameDslContext<T : Any> : GameDsl<T> {
     lateinit var modelDsl: GameModelDsl<T, Any>
     var viewDsl: GameViewDsl<T>? = null
     var rulesDsl: GameRulesDsl<T>? = null
+    val testCases: MutableList<GameTestCaseContext<T>> = mutableListOf()
 
     val model = GameModelContext<T, Any>()
 
@@ -236,4 +237,9 @@ class GameDslContext<T : Any> : GameDsl<T> {
     override fun rules(rulesDsl: GameRulesDsl<T>) {
         this.rulesDsl = rulesDsl
     }
+
+    override fun testCase(players: Int, testDsl: GameTestDsl<T>) {
+        this.testCases.add(GameTestCaseContext(players, testDsl))
+    }
+
 }

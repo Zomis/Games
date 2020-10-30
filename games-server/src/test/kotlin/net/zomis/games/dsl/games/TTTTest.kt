@@ -2,6 +2,7 @@ package net.zomis.games.dsl.games
 
 import net.zomis.games.WinResult
 import net.zomis.games.common.Point
+import net.zomis.games.dsl.GameAsserts
 import net.zomis.games.dsl.GameTest
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.dsl.impl.GameSetupImpl
@@ -15,13 +16,13 @@ class TTTTest {
 
     val dsl = DslTTT.game
     lateinit var game: GameImpl<TTController>
-    lateinit var test: GameTest<TTController>
+    lateinit var test: GameAsserts<TTController>
 
     @BeforeEach
     fun setup() {
         val setup = GameSetupImpl(dsl)
         game = setup.createGame(2, setup.getDefaultConfig())
-        test = GameTest(game)
+        test = GameAsserts(game)
     }
 
     @Test
