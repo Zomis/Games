@@ -55,7 +55,7 @@ $tagJoins
 ORDER BY gameid ASC, "PlayerIndex" ASC
             """.trimIndent()
             val stmt = conn.prepareStatement(sql)
-            players.forEachIndexed { index, playerId -> stmt.setString(index + 1, playerId) }
+            players.forEachIndexed { index, playerId -> stmt.setObject(index + 1, UUID.fromString(playerId)) }
             tags.forEachIndexed { index, tagId -> stmt.setString(index + 1 + players.size, tagId) }
 
             logger.info { "Executing $sql with parameters $players and $tags" }
