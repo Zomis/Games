@@ -92,7 +92,6 @@ export default {
             gameList: [],
             playerConditions: this.players ? this.players : "",
             tagConditions: this.tags ? this.tags : "",
-            chosenTag: "",
         }
     },
     created() {
