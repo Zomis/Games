@@ -3,7 +3,7 @@
         <transition name="slide-fade" mode="out-in">
             <v-card-text class="slide-fade-item card-content">
                 <svg viewbox="-2 -2 54 104" v-for="shape in shapes" :key="shape.key">
-                    <path :d="shape.d" :fill="shape.fill" />
+                    <path :d="shape.d" :fill="shape.fill" style="stroke-width:2.5" />
                 </svg>
             </v-card-text>
         </transition>
