@@ -107,7 +107,7 @@ export default {
 
 .set-card path,
 .set-card rect {
-    stroke-width: 2;
+    stroke-width: 2.5;
 }
 
 .fill-green path, .fill-green rect { stroke: #06D6A0; }
