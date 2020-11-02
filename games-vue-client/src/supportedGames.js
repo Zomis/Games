@@ -223,6 +223,9 @@ export default {
         let game = supportedGames[gameType]
         return game && game.displayName ? game.displayName : gameType
     },
+    enabledGamesTextValue() {
+        return this.enabledGameKeys().map(gameType => ({ text: this.displayName(gameType), value: `type/${gameType}`}))
+    },
     storeModules() {
         let modules = {}
         for (let key of enabledGames()) {
