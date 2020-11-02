@@ -3,14 +3,16 @@ module.exports = {
   env: {
     node: true
   },
-  'extends': [
+  extends: [
     'plugin:vue/essential',
+    'plugin:prettier-vue/recommended',
+    'prettier/vue',
     'eslint:recommended'
   ],
   rules: {
     'vue/no-use-v-if-with-v-for': 'warn',
-    'no-console': 'warn',
-    'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'warn'
+    'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+    'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
   },
   parserOptions: {
     parser: 'babel-eslint'
@@ -18,7 +20,8 @@ module.exports = {
   overrides: [
     {
       files: [
-        '**/__tests__/*.{j,t}s?(x)'
+        '**/__tests__/*.{j,t}s?(x)',
+        '**/tests/unit/**/*.spec.{j,t}s?(x)'
       ],
       env: {
         mocha: true
