@@ -24,7 +24,8 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
     }
 
     override fun <A : Any> action(playerIndex: Int, action: ActionType<T, A>, parameter: A) {
-        val actionImpl = initializedGame().actions[action.name]!!
+        val actionImpl = initializedGame().actions[action.name]
+        requireNotNull(actionImpl) { "No such action name: ${action.name}" }
         val action = actionImpl.createAction(playerIndex, parameter)
         actionImpl.perform(action)
     }
@@ -37,6 +38,12 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
 
     override fun branches(branches: GameTestBranches<T>.() -> Unit) {
         TODO("Not yet implemented")
+    }
+
+    override fun expectTrue(condition: Boolean) {
+        if (!condition) {
+            throw IllegalStateException("$condition was not true")
+        }
     }
 
 }

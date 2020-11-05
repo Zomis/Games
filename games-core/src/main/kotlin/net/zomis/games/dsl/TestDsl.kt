@@ -9,5 +9,6 @@ interface GameTest<T: Any> {
     fun state(key: String, value: Any)
     fun <A: Any> action(playerIndex: Int, action: ActionType<T, A>, parameter: A)
     fun expectEquals(expected: Any, actual: Any)
+    fun expectTrue(condition: Boolean)
     fun branches(branches: GameTestBranches<T>.() -> Unit)
 }
