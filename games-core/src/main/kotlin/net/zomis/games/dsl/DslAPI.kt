@@ -1,6 +1,7 @@
 package net.zomis.games.dsl
 
 import net.zomis.games.PlayerEliminations
+import net.zomis.games.dsl.rulebased.GameRules
 import kotlin.reflect.KClass
 
 interface Actionable<T : Any, A : Any> {
@@ -26,6 +27,7 @@ class GameSpec<T : Any>(val name: String, val dsl: GameDsl<T>.() -> Unit) {
 typealias GameTestDsl<T> = GameTest<T>.() -> Unit
 typealias GameModelDsl<T, C> = GameModel<T, C>.() -> Unit
 typealias GameViewDsl<T> = GameView<T>.() -> Unit
+typealias GameActionRulesDsl<T> = GameActionRules<T>.() -> Unit
 typealias GameRulesDsl<T> = GameRules<T>.() -> Unit
 typealias GridDsl<T, P> = GameGrid<T, P>.() -> Unit
 
@@ -48,8 +50,11 @@ interface GameDsl<T : Any> {
     fun <C : Any> setup(configClass: KClass<C>, modelDsl: GameModelDsl<T, C>)
     fun setup(modelDsl: GameModelDsl<T, Unit>)
     fun view(viewDsl: GameViewDsl<T>)
-    fun rules(rulesDsl: GameRulesDsl<T>)
+    @Deprecated("use actionRules instead")
+    fun rules(actionRulesDsl: GameActionRulesDsl<T>) { actionRules(actionRulesDsl) }
     fun testCase(players: Int, testDsl: GameTestDsl<T>)
+    fun actionRules(actionRulesDsl: GameActionRulesDsl<T>)
+    fun gameRules(rulesDsl: GameRulesDsl<T>)
 }
 
 class GameActionCreator<T : Any, A : Any, S : Any>(

@@ -5,22 +5,22 @@ import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
 import kotlin.reflect.KClass
 
-class GameRulesContext<T : Any>(
+class GameActionRulesContext<T : Any>(
     val model: T,
     val replayable: ReplayState,
     val eliminations: PlayerEliminations
-): GameRules<T> {
+): GameActionRules<T> {
     private val views = mutableListOf<Pair<String, ViewScope<T>.() -> Any?>>()
 //    private val logger = KLoggers.logger(this)
-    private val globalRules = GameRuleList<T>(model, replayable, eliminations)
-    private val ruleList = mutableMapOf<String, GameActionRuleContext<T, Any>>()
+    private val allActionRules = GameRuleList<T>(model, replayable, eliminations)
+    private val actionRules = mutableMapOf<String, GameActionRuleContext<T, Any>>()
 
     override val allActions: GameAllActionsRule<T>
-        get() = globalRules
+        get() = allActionRules
 
     override fun <A : Any> action(actionType: ActionType<T, A>): GameActionRule<T, A> {
-        return ruleList.getOrPut(actionType.name) {
-            GameActionRuleContext(model, replayable, eliminations, actionType, globalRules) as GameActionRuleContext<T, Any>
+        return actionRules.getOrPut(actionType.name) {
+            GameActionRuleContext(model, replayable, eliminations, actionType, allActionRules) as GameActionRuleContext<T, Any>
         } as GameActionRule<T, A>
     }
 
@@ -42,11 +42,11 @@ class GameRulesContext<T : Any>(
     }
 
     fun actionTypes(): Set<String> {
-        return this.ruleList.keys.toSet()
+        return this.actionRules.keys.toSet()
     }
 
     fun actionType(actionType: String): ActionTypeImplEntry<T, Any>? {
-        return this.ruleList[actionType].let {
+        return this.actionRules[actionType].let {
             if (it != null) { ActionTypeImplEntry(model, replayable, it.actionDefinition, it) } else null
         }
     }

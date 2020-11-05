@@ -54,10 +54,10 @@ class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override va
     override val eliminationCallback = PlayerEliminations(playerCount)
     val model = setupContext.model.factory(this, config)
     private val replayState = ReplayState(stateKeeper, eliminationCallback)
-    private val rules = GameRulesContext(model, replayState, eliminationCallback)
+    private val rules = GameActionRulesContext(model, replayState, eliminationCallback)
     init {
         setupContext.model.onStart(replayState, model)
-        setupContext.rulesDsl?.invoke(rules)
+        setupContext.actionRulesDsl?.invoke(rules)
     }
     val actions = ActionsImpl(model, rules, replayState)
 

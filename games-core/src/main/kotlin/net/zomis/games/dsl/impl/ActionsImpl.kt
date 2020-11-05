@@ -78,7 +78,7 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
 
 class ActionsImpl<T : Any>(
     private val model: T,
-    private val rules: GameRulesContext<T>,
+    private val rules: GameActionRulesContext<T>,
     private val replayState: ReplayState
 ) {
 

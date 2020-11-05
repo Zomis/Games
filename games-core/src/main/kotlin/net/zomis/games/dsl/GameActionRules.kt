@@ -5,7 +5,7 @@ import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.impl.ActionOptionsContext
 import kotlin.reflect.KClass
 
-interface GameRules<T : Any> {
+interface GameActionRules<T : Any> {
     val allActions: GameAllActionsRule<T>
     fun <A : Any> action(actionType: ActionType<T, A>): GameActionRule<T, A>
     fun <A : Any> action(actionType: ActionType<T, A>, ruleSpec: GameActionSpecificationScope<T, A>.() -> Unit)

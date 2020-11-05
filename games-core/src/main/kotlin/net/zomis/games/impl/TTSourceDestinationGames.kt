@@ -111,7 +111,7 @@ object TTSourceDestinationGames {
         view(ttView(grid))
     }
 
-    private fun ttRules(): GameRules<TTControllerSourceDestination>.() -> Unit = {
+    private fun ttRules(): GameActionRules<TTControllerSourceDestination>.() -> Unit = {
         allActions.precondition { playerIndex == game.currentPlayer.index() }
         action(moveAction) {
             choose {
