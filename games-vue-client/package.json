@@ -5,6 +5,7 @@
   "description": "Vue-Client for Server2",
   "author": "Simon Forsberg <zomis2k@hotmail.com>",
   "scripts": {
+    "start": "npm run serve",
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "test:unit": "vue-cli-service test:unit",
