@@ -58,6 +58,8 @@ class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override va
     init {
         setupContext.model.onStart(replayState, model)
         setupContext.actionRulesDsl?.invoke(rules)
+        setupContext.rulesDsl?.invoke(rules)
+        rules.gameStart()
     }
     val actions = ActionsImpl(model, rules, replayState)
 

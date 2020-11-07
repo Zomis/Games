@@ -3,17 +3,28 @@ package net.zomis.games.dsl.impl
 import net.zomis.games.PlayerEliminations
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
+import net.zomis.games.dsl.rulebased.*
 import kotlin.reflect.KClass
+
+class GameRuleContext<T: Any>(
+    override val game: T,
+    override val eliminations: PlayerEliminations,
+    override val replayable: ReplayableScope
+): GameRuleScope<T>
 
 class GameActionRulesContext<T : Any>(
     val model: T,
     val replayable: ReplayState,
     val eliminations: PlayerEliminations
-): GameActionRules<T> {
+): GameActionRules<T>, GameRules<T> {
     private val views = mutableListOf<Pair<String, ViewScope<T>.() -> Any?>>()
 //    private val logger = KLoggers.logger(this)
-    private val allActionRules = GameRuleList<T>(model, replayable, eliminations)
+    private val allActionRules = GameRuleList(model, replayable, eliminations)
     private val actionRules = mutableMapOf<String, GameActionRuleContext<T, Any>>()
+    private val gameRules = mutableListOf<GameRuleImpl<T>>()
+    init {
+        allActionRules.after { stateCheck() }
+    }
 
     override val allActions: GameAllActionsRule<T>
         get() = allActionRules
@@ -47,7 +58,7 @@ class GameActionRulesContext<T : Any>(
 
     fun actionType(actionType: String): ActionTypeImplEntry<T, Any>? {
         return this.actionRules[actionType].let {
-            if (it != null) { ActionTypeImplEntry(model, replayable, it.actionDefinition, it) } else null
+            if (it != null) { ActionTypeImplEntry(model, replayable, eliminations, it.actionDefinition, it) } else null
         }
     }
 
@@ -57,6 +68,47 @@ class GameActionRulesContext<T : Any>(
 
     override fun <A : Any> action(actionType: ActionType<T, A>, ruleSpec: GameActionSpecificationScope<T, A>.() -> Unit) {
         return this.action(actionType).invoke(ruleSpec)
+    }
+
+    override fun rule(name: String, rule: GameRule<T>.() -> Any?): GameRule<T> {
+        val ruleImpl = GameRuleImpl(this, null, name)
+        rule.invoke(ruleImpl)
+        gameRules.add(ruleImpl)
+        return ruleImpl
+    }
+
+    private val ruleContext = GameRuleContext(model, eliminations, replayable)
+    private fun determineActiveRules(list: List<GameRuleImpl<T>>): GameRulesActive<T> {
+        val rulesActive = mutableListOf<GameRuleImpl<T>>()
+        for (rule in list) {
+            if (rule.isActive(ruleContext)) {
+                rulesActive.add(rule)
+                rulesActive.addAll(determineActiveRules(rule.subRules()).rules)
+            }
+        }
+        return GameRulesActive(rulesActive)
+    }
+
+    fun gameStart(): List<GameRule<T>> {
+        val activeRules = determineActiveRules(gameRules)
+        return activeRules.runGameStart(ruleContext) + stateCheck()
+    }
+
+    fun stateCheck(): List<GameRule<T>> {
+        var loop = 0
+        val rulesTriggered = mutableListOf<GameRule<T>>()
+        while (loop < 100_000) {
+            val activeRules = determineActiveRules(gameRules)
+            val result = activeRules.stateCheck(ruleContext)
+            rulesTriggered.addAll(result)
+            if (result.isEmpty()) {
+                return rulesTriggered
+            }
+            loop++
+        }
+        throw IllegalStateException("Stuck in a loop, most recent rules are " +
+            rulesTriggered.drop(rulesTriggered.size - 10)
+        )
     }
 }
 
@@ -77,15 +129,17 @@ class GameRuleList<T : Any>(
 class ActionOptionsContext<T : Any>(
     override val game: T,
     override val actionType: String,
-    override val playerIndex: Int
-) : ActionOptionsScope<T>
+    override val playerIndex: Int,
+    override val eliminations: PlayerEliminations,
+    override val replayable: ReplayableScope
+) : ActionOptionsScope<T>, GameRuleScope<T>
 
 class ActionRuleContext<T : Any, A : Any>(
     override val game: T,
     override val action: Actionable<T, A>,
     override val eliminations: PlayerEliminations,
     override val replayable: ReplayableScope
-): ActionRuleScope<T, A> {
+): ActionRuleScope<T, A>, GameRuleScope<T> {
     internal val logs = mutableListOf<ActionLogEntry>()
 
     override val playerIndex: Int get() = action.playerIndex
@@ -149,7 +203,7 @@ class GameActionRuleContext<T : Any, A : Any>(
     // GameLogicActionType implementation below
 
     override fun availableActions(playerIndex: Int, sampleSize: ActionSampleSize?): Iterable<Actionable<T, A>> {
-        val context = ActionOptionsContext(model, actionType.name, playerIndex)
+        val context = ActionOptionsContext(model, actionType.name, playerIndex, eliminations, replayable)
         if (!checkPreconditions(context)) {
             return emptyList()
         }
@@ -195,7 +249,7 @@ class GameActionRuleContext<T : Any, A : Any>(
         = Action(model, playerIndex, actionType.name, parameter)
 
     fun actionInfoKeys(playerIndex: Int, previouslySelected: List<Any>): List<ActionInfoKey> {
-        val context = ActionOptionsContext(model, actionType.name, playerIndex)
+        val context = ActionOptionsContext(model, actionType.name, playerIndex, eliminations, replayable)
         if (!checkPreconditions(context)) {
             return emptyList()
         }

@@ -23,9 +23,9 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
         stateKeeper.save(key, value)
     }
 
-    override fun <A : Any> action(playerIndex: Int, action: ActionType<T, A>, parameter: A) {
-        val actionImpl = initializedGame().actions[action.name]
-        requireNotNull(actionImpl) { "No such action name: ${action.name}" }
+    override fun <A : Any> action(playerIndex: Int, actionType: ActionType<T, A>, parameter: A) {
+        val actionImpl = initializedGame().actions[actionType.name]
+        requireNotNull(actionImpl) { "No such action name: ${actionType.name}" }
         val action = actionImpl.createAction(playerIndex, parameter)
         actionImpl.perform(action)
     }
@@ -44,6 +44,13 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
         if (!condition) {
             throw IllegalStateException("$condition was not true")
         }
+    }
+
+    override fun <A : Any> actionNotAllowed(playerIndex: Int, actionType: ActionType<T, A>, parameter: A) {
+        val actionImpl = initializedGame().actions[actionType.name]
+        requireNotNull(actionImpl) { "No such action name: ${actionType.name}" }
+        val actionable = actionImpl.createAction(playerIndex, parameter)
+        require(!actionImpl.isAllowed(actionable)) { "Action is allowed when it shouldn't be: $playerIndex $actionable" }
     }
 
 }
