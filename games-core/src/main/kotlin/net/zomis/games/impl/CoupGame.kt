@@ -26,6 +26,8 @@ enum class CoupActionType(val needsTarget: Boolean, val claim: CoupCharacter?, v
     ;
 }
 data class CoupPlayer(val playerIndex: Int) {
+    fun isAlive(): Boolean = influence.size > 0
+
     var coins: Int = 0
     val influence = CardZone<CoupCharacter>()
     val previousInfluence = CardZone<CoupCharacter>()

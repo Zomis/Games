@@ -53,6 +53,15 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
         require(!actionImpl.isAllowed(actionable)) { "Action is allowed when it shouldn't be: $playerIndex $actionable" }
     }
 
+    override fun expectNoActions(playerIndex: Int) {
+        for (actionType in initializedGame().actions.types()) {
+            val actions = actionType.availableActions(playerIndex, null).take(5)
+            if (actions.isNotEmpty()) {
+                throw IllegalStateException("Found possible action(s) for player $playerIndex action '${actionType.name}': $actions")
+            }
+        }
+    }
+
 }
 
 class GameTestCaseContext<T: Any>(val players: Int, val testContext: GameTestDsl<T>) {

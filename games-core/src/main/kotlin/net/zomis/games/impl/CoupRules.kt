@@ -44,7 +44,6 @@ object CoupRuleBased {
     val ambassadorPutBack = factory.action("putBack", CoupCharacter::class).serializer { it.name }
     val loseInfluence = factory.action("lose", CoupCharacter::class).serializer { it.name }
 
-    val model = Coup(3)
     val game = factory.game("Coup") {
         setup {
             players(2..6)
@@ -66,6 +65,11 @@ object CoupRuleBased {
             value("deck") { it.deck.size }
             value("stack") {game ->
                 game.stack.asList().map { it.toString() }
+            }
+        }
+        actionRules {
+            allActions.precondition {
+                game.players[playerIndex].influence.size > 0
             }
         }
         gameRules {
@@ -96,7 +100,7 @@ object CoupRuleBased {
             rule("setup") {
                 gameSetup {
                     game.players.forEach { player ->
-                        val influence = model.deck.random(replayable, 2, "start-" + player.playerIndex) { it.name }
+                        val influence = game.deck.random(replayable, 2, "start-" + player.playerIndex) { it.name }
                         influence.forEach { it.moveTo(player.influence) }
                     }
                 }
@@ -112,14 +116,24 @@ object CoupRuleBased {
                         val task = game.stack.peek()
                         if (task is CoupChallengedClaim) task.claim.character != action.parameter else true
                     }
-                    options { (game.stack.peek() as CoupLoseInfluence).player.influence.cards }
+                    options { (game.stack.peek() as CoupLoseInfluence).player.influence.cards.toSet() }
                     perform {
                         val player = game.players[action.playerIndex]
                         player.influence.card(action.parameter).moveTo(player.previousInfluence)
 
-                        game.stack.pop()
+                        val topTask = game.stack.pop() as CoupLoseInfluence
+                        val actionTask = game.stack.asList().filterIsInstance<CoupAction>().first()
+                        if (topTask.player == actionTask.player) {
+                            // Everything either challenged or countered
+                            if (actionTask.action == CoupActionType.ASSASSINATE) {
+                                actionTask.player.coins += 3
+                            }
+                            game.currentPlayerIndex = game.currentPlayerIndex.next(eliminations.playerCount)
+                            game.stack.clear()
+                        }
                         if (game.stack.peek() is CoupCounteract) {
                             game.stack.pop()
+                            return@perform
                         }
                     }
                 }
@@ -148,7 +162,7 @@ object CoupRuleBased {
                 appliesWhen { game.stack.peek() is CoupPlayerExchangeCards }
                 action(ambassadorPutBack) {
                     precondition { playerIndex == (game.stack.peek() as CoupPlayerExchangeCards).player.playerIndex }
-                    options { game.players[playerIndex].influence.cards }
+                    options { game.players[playerIndex].influence.cards.toSet() }
                     perform {
                         val exchangeTask = game.stack.peek() as CoupPlayerExchangeCards
                         game.players[playerIndex].influence.card(action.parameter).moveTo(game.deck)
@@ -172,7 +186,8 @@ object CoupRuleBased {
                         optionsWithIds({ CoupActionType.values().asIterable().map { it.name to it } }) {type ->
                             val player = context.game.players[context.playerIndex]
                             if (type.needsTarget) {
-                                options({ game.players.minus(player) }) {target ->
+                                optionsWithIds({ game.players.minus(player).filter { it.isAlive() }
+                                        .map { it.playerIndex.toString() to it } }) {target ->
                                     parameter(CoupAction(player, type, target))
                                 }
                             } else {
@@ -197,7 +212,6 @@ object CoupRuleBased {
                     }
                 }
             }
-            // TODO: If no rule applies and no actions can be taken, THROW
             rule("assassinate") {
                 action(perform) {
                     appliesForActions { action.parameter.action == CoupActionType.ASSASSINATE }
@@ -229,14 +243,23 @@ object CoupRuleBased {
                     }
                 }
             }
-            rule("counteract possibility") {
-                appliesWhen { game.stack.peek() is CoupAwaitCountering }
+            rule("approve needs one applicable rule active") {
                 action(approve) {
                     precondition {
+                        val task = game.stack.peek()
+                        task is CoupAwaitCountering || task is CoupClaim
+                    }
+                }
+            }
+            rule("counteract possibility") {
+                action(approve) {
+                    precondition {
+                        if (game.stack.peek() !is CoupAwaitCountering) return@precondition true
                         val task = game.stack.peek() as CoupAwaitCountering
                         task.possibleCounters.contains(playerIndex)
                     }
                     perform {
+                        if (game.stack.peek() !is CoupAwaitCountering) return@perform
                         val task = game.stack.peek() as CoupAwaitCountering
                         task.possibleCounters.remove(action.playerIndex)
                         if (task.possibleCounters.isEmpty()) {
@@ -246,8 +269,9 @@ object CoupRuleBased {
                 }
                 action(counter) {
                     precondition {
+                        if (game.stack.peek() !is CoupAwaitCountering) return@precondition false
                         val task = game.stack.peek() as CoupAwaitCountering
-                        task.target == null || task.target.playerIndex == playerIndex
+                        task.possibleCounters.contains(playerIndex)
                     }
                     options {
                         val task = game.stack.peek() as CoupAwaitCountering
@@ -295,10 +319,13 @@ object CoupRuleBased {
                 // TODO: Some kind of concensus approach. Allow people to change their minds? "Lock-in"?
                 // Preferably auto-accept somehow
                 // TODO: actions.consensus... { until, effect, exludePlayers... }
-                appliesWhen { game.stack.peek() is CoupClaim }
                 action(approve) {
-                    precondition { playerIndex != (game.stack.peek() as CoupClaim).player.playerIndex }
+                    precondition {
+                        game.stack.peek() !is CoupClaim ||
+                            playerIndex != (game.stack.peek() as CoupClaim).player.playerIndex
+                    }
                     perform {
+                        if (game.stack.peek() !is CoupClaim) return@perform
                         if (game.stack.peek().let { it as CoupClaim }.accept(action.playerIndex)) {
                             game.stack.pop()
                         }
@@ -322,30 +349,73 @@ object CoupRuleBased {
             // challenging returns coins, counteraction does not (Assassination)
         }
         testCase(players = 3) {
+            state("start-0", listOf("CONTESSA", "ASSASSIN"))
+            action(0, perform, CoupAction(game.players[0], CoupActionType.STEAL, game.players[1]))
+            action(1, challenge, Unit)
+            action(0, loseInfluence, CoupCharacter.CONTESSA)
+            expectTrue(game.stack.isEmpty())
+            expectEquals(1, game.currentPlayerIndex)
+            expectEquals(2, game.players[0].coins)
+            expectEquals(listOf(CoupCharacter.ASSASSIN), game.players[0].influence.cards)
+        }
+        testCase(players = 3) {
+            state("start-0", listOf("CONTESSA", "ASSASSIN"))
+            state("start-1", listOf("CONTESSA", "ASSASSIN"))
+            state("start-2", listOf("DUKE", "DUKE"))
+            actionNotAllowed(1, counter, CoupCharacter.DUKE) // Not time to counter yet
+            action(0, perform, CoupAction(game.players[0], CoupActionType.FOREIGN_AID, null))
+            action(1, counter, CoupCharacter.DUKE)
+            action(0, challenge, Unit)
+            action(1, loseInfluence, CoupCharacter.CONTESSA)
+
+            actionNotAllowed(1, counter, CoupCharacter.DUKE) // Player has already attempted this
+            action(2, counter, CoupCharacter.DUKE)
+            action(0, challenge, Unit)
+            state("replacement", listOf("CAPTAIN"))
+            action(2, reveal, Unit)
+            action(0, loseInfluence, CoupCharacter.ASSASSIN) // This results in action successfully countered
+
+            expectTrue(game.stack.isEmpty())
+            expectEquals(1, game.currentPlayerIndex)
+            expectEquals(2, game.players[0].coins)
+            expectEquals(2, game.players[1].coins)
+            expectEquals(2, game.players[2].coins)
+            expectEquals(listOf(CoupCharacter.CONTESSA), game.players[0].influence.cards)
+            expectEquals(listOf(CoupCharacter.ASSASSIN), game.players[1].influence.cards)
+            expectEquals(listOf(CoupCharacter.DUKE, CoupCharacter.CAPTAIN), game.players[2].influence.cards)
+        }
+        testCase(players = 3) {
             // Both challenge and counteract. Challenge fails, counteraction success
             state("start-0", listOf("CAPTAIN", "ASSASSIN"))
+            state("start-1", listOf("AMBASSADOR", "DUKE"))
+            state("start-2", listOf("CONTESSA", "CONTESSA"))
             expectTrue(game.stack.isEmpty())
 
-            actionNotAllowed(0, CoupGame.approve, Unit)
-            actionNotAllowed(1, CoupGame.challenge, Unit)
+            actionNotAllowed(0, approve, Unit)
+            actionNotAllowed(1, challenge, Unit)
+            expectNoActions(1)
+            expectNoActions(2)
             action(0, perform, CoupAction(game.players[0], CoupActionType.STEAL, game.players[1]))
             expectTrue(game.stack.peek() is CoupClaim)
-            action(1, CoupGame.approve, Unit)
-            action(2, CoupGame.challenge, Unit)
+            action(1, approve, Unit)
+            action(2, challenge, Unit)
 
             expectTrue(game.stack.peek() is CoupChallengedClaim)
             state("replacement", listOf("CONTESSA"))
-            action(0, CoupGame.reveal, Unit)
+            action(0, reveal, Unit)
             expectEquals(2, game.players[0].influence.cards.size)
             expectTrue(game.players[0].influence.cards.contains(CoupCharacter.CONTESSA))
             expectTrue(game.players[0].influence.cards.contains(CoupCharacter.ASSASSIN))
 
+            expectTrue(game.stack.peek() is CoupLoseInfluenceTask)
+            action(2, loseInfluence, CoupCharacter.CONTESSA)
+
             expectTrue(game.stack.peek() is CoupAwaitCountering)
-            action(1, CoupGame.counter, CoupCharacter.AMBASSADOR)
+            action(1, counter, CoupCharacter.AMBASSADOR)
 
             expectTrue(game.stack.peek() is CoupClaim)
-            action(0, CoupGame.approve, Unit)
-            action(2, CoupGame.approve, Unit)
+            action(0, approve, Unit)
+            action(2, approve, Unit)
 
             expectTrue(game.stack.isEmpty())
             expectEquals(1, game.currentPlayerIndex)

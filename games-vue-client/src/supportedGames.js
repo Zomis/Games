@@ -9,6 +9,7 @@ import PlayGame from "@/components/PlayGame";
 import RoyalGameOfUR from "@/components/RoyalGameOfUR";
 import DungeonMayhem from "@/components/games/dungeon-mayhem/DungeonMayhem"
 import UTTT from "@/components/games/UTTT";
+import Coup from "@/components/games/Coup";
 import Hanabi from "@/components/games/Hanabi";
 import HanabiConfig from "@/components/games/hanabi/HanabiConfig";
 import Splendor from "@/components/games/splendor/Splendor";
@@ -97,6 +98,22 @@ const supportedGames = {
             move: (i) => `${i}`
         },
         component: RoyalGameOfUR,
+    },
+    "Coup": {
+        dsl: true,
+        actions: {
+            lose: (card) => `${card}`,
+            reveal: () => "reveal",
+            challenge: () => "challenge",
+            accept: () => "accept",
+            perform: (action) => ({
+                key: 'action-' + action,
+                next: (target) => `players/${target}`
+            }),
+            counteract: (counteract) => `counteract-${counteract}`,
+            putBack: (card) => `${card}`
+        },
+        component: Coup
     },
     "Hanabi": {
         dsl: gamejs.net.zomis.games.impl.HanabiGame.game,

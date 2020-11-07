@@ -272,6 +272,7 @@ class GameActionRuleContext<T : Any, A : Any>(
         = ActionInfoKey(actionType.serialize(actionable.parameter), actionType.name, emptyList(), true)
 
     private fun checkPreconditions(context: ActionOptionsScope<T>): Boolean {
+        // TODO: Possibly re-work check by initializing to null and using mappers. To require at least one related rule to be active?
         return globalRules.preconditions.all { it.invoke(context) } && preconditions.all { it.invoke(context) }
     }
 
