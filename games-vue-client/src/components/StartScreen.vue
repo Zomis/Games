@@ -1,8 +1,21 @@
 <template>
   <v-container fluid>
   <v-row>
+    <v-col cols="12" md="6" lg="4">
+      <v-row>
+        <v-col cols="2" md="2" lg="2">
+          <input type="checkbox" id="hideAIUsers" v-model="hideAIUsers" @change="toggleAIUsers()">
+        </v-col>
+        <v-col cols="4" md="4" lg="4">
+          <label for="hideAIUsers">Hide AI Users</label>
+        </v-col>
+      </v-row>
+    </v-col>
+  </v-row>
+  <v-row>
+
     <v-col cols="12" md="6" lg="4" v-for="(users, gameType) in lobby" :key="gameType">
-      <LobbyGameType :gameType="gameType" :users="users" :yourPlayer="yourPlayer" />
+      <LobbyGameType :gameType="gameType" :users="usersToDisplay(users)" :yourPlayer="yourPlayer" />
     </v-col>
 
     <v-col cols="12">
@@ -52,7 +65,8 @@ export default {
   data() {
     return {
       gameList: [],
-      unfinishedGames: []
+      unfinishedGames: [],
+      hideAIUsers: false
     };
   },
   components: {
@@ -87,6 +101,12 @@ export default {
     },
     resumeGame(gameType, gameId) {
       this.$router.push(`/games/${gameType}/${gameId}`)
+    },
+    toggleAIUsers() {
+      this.$store.commit("lobby/toggleAIUsers", this.hideAIUsers);
+    },
+    usersToDisplay(users) {
+      return users.filter(user => !user.hidden);
     }
   },
   created() {

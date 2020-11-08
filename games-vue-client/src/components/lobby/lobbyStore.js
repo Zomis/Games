@@ -59,7 +59,19 @@ const lobbyStore = {
       } else {
         throw "Unknown action: " + e.action;
       }
-    }
+    },
+    toggleAIUsers(state, hidden) {
+      state.lobby = Object.entries(state.lobby).reduce((acc, [gameType, players]) => {
+        const updatedPlayers = Object.values(players).map((player) => {
+          if (player.name.includes('#AI_')) {
+            return { ...player, hidden: !!hidden };
+          }
+          return player;
+        });
+
+        return { ...acc, [gameType]: updatedPlayers };
+      }, {});
+    },
   },
   actions: {
     inviteView(context, data) {
