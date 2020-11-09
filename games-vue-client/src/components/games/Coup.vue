@@ -2,7 +2,7 @@
     <v-container fluid>
         <v-row>
             <v-col cols="2" v-for="(player, playerIndex) in view.players" :key="playerIndex">
-                <v-card>
+                <v-card :class="{ 'current-player': view.currentPlayer == playerIndex }" class="animate-all">
                     <v-card-title>
                         <PlayerProfile show-name :player="context.players[playerIndex]" />
                     </v-card-title>
@@ -17,6 +17,20 @@
                                     </v-card-title>
                                 </v-card>
                             </Actionable>
+                            <v-card v-for="cardIndex in player.influenceCount" :key="cardIndex">
+                                <v-card-title>
+                                    <div>
+                                        ???
+                                    </div>
+                                </v-card-title>
+                            </v-card>
+                            <v-card v-for="(card, cardIndex) in player.previousInfluence" :key="cardIndex">
+                                <v-card-title>
+                                    <div>
+                                        {{ card }}
+                                    </div>
+                                </v-card-title>
+                            </v-card>
                         </CardZone>
                         <div>
                             <Actionable v-if="actions.available[`players/${playerIndex}`]" button :actionable="`players/${playerIndex}`" :actions="actions">
@@ -24,7 +38,7 @@
                             </Actionable>
                         </div>
                         <div>
-                            <p>{{ player.coins }}</p>
+                            <h2>{{ player.coins }}</h2>
                         </div>
                     </v-card-text>
                 </v-card>
@@ -36,6 +50,9 @@
                     {{ task }}
                 </p>
             </v-col>
+        </v-row>
+        <v-row>
+            {{ view.currentPlayer }}
         </v-row>
         <v-row>
             <v-col>
@@ -63,3 +80,13 @@ export default {
     },
 }
 </script>
+<style scoped>
+@import "../../assets/games-style.css";
+@import "../../assets/games-animations.css";
+
+.current-player {
+    border-style: solid !important;
+    border-width: thick !important;
+    border-color: var(--splendor-yellow) !important;
+}
+</style>

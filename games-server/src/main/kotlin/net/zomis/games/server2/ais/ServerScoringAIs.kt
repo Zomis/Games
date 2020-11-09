@@ -7,6 +7,7 @@ import net.zomis.games.server2.games.GameTypeRegisterEvent
 class ServerScoringAIs(private val aiRepository: AIRepository) {
     fun setup(events: EventSystem) {
         listOf(
+            CoupScorers.ais(),
             SplendorScorers.ais(),
             SetScorers.ais(),
             AvalonScorers.ais(),
