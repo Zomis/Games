@@ -1,15 +1,25 @@
 <template>
     <v-container fluid>
         <v-row dense>
-            <v-col cols="12">
-                <v-btn @click="query()" />
+            <v-col cols="4">
+                <v-text-field v-model="playerConditions" label="Player Ids" />
+            </v-col>
+            <v-col cols="2">
+                <v-select :items="supportedGames" item-text="text" item-value="value" v-model="tagConditions" label="Game">
+                </v-select>
+            </v-col>
+            <v-col cols="2">
+                <v-btn @click="applyFilter()">Apply filter</v-btn>
             </v-col>
         </v-row>
         <v-row dense v-for="game in gameList" :key="game.gameId">
             <v-col cols="12">
                 <v-card>
                     <v-card-title class="subheading font-weight-bold">
-                        <router-link :to="`/stats/games/${game.gameId}/replay`">{{ game.gameId }}</router-link>
+                        <v-icon color="blue">mdi-replay</v-icon>
+                        <router-link :to="`/stats/games/${game.gameId}/replay`">
+                            {{ game.title }}
+                        </router-link>
                     </v-card-title>
 
                     <v-divider />
@@ -38,11 +48,13 @@
 
         <!--
             Show games from <timeperiod> (24 hours)
+                - How to query on a time period?
             
             Search player name
+                - How to search and list a player's name?
 
             Query based on tags and players
-
+                - Tags - success!
 
             For each game show: Players playing, tags.
         -->
@@ -50,23 +62,50 @@
 </template>
 <script>
 import axios from "axios"
+import supportedGames from "@/supportedGames"
+
+const buildTitleFromGame = (game) => {
+    const titleTag = game.tags.reduce((acc, { tagId }) => {
+        const pre = acc.length > 0 ? ' ' : '';
+        const tagName = tagId.substring(5, tagId.length);
+
+        return `${pre}${acc} ${tagName}`;
+    }, '');
+    const shortGameId = game.gameId.substring(0, 8);
+
+    return `${titleTag} - ${shortGameId}`;
+}
+
+const appendedData = (data) => data.map((game) => {
+    return { ...game, title: buildTitleFromGame(game) };
+});
 
 export default {
     name: "StatsScreen",
     props: ["players", "tags"],
     data() {
         return {
+            supportedGames: [
+                { text: '', value: '' },
+                ...supportedGames.enabledGamesTextValue()
+            ],
             gameList: [],
             playerConditions: this.players ? this.players : "",
-            tagConditions: this.tags ? this.tags : ""
+            tagConditions: this.tags ? this.tags : "",
         }
     },
+    created() {
+        this.query();
+    },
     methods: {
+        applyFilter() {
+            this.$router.push(`/stats?players=${this.playerConditions}&tags=${this.tagConditions}`);
+            this.query();
+        },
         query() {
-            let cleanURI = encodeURI(`${this.baseURL}stats/query?players=${this.playerConditions}&tags=${this.tagConditions}`).replace(/#/g, '%23')
+            const cleanURI = encodeURI(`${this.baseURL}stats/query?players=${this.playerConditions}&tags=${this.tagConditions}`).replace(/#/g, '%23')
             axios.get(cleanURI).then(response => {
-                console.log(response.data)
-                this.gameList = response.data
+                this.gameList = appendedData(response.data);
             })
         }
     },
