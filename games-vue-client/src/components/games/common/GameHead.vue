@@ -5,19 +5,32 @@
     </v-card-title>
     <v-card-text>
       <v-container>
-        <v-row align-content="center" justify="center" dense>
+        <v-row
+          align-content="center"
+          justify="center"
+          dense
+        >
           <template v-for="(player, playerIndex) in players">
-            <v-col cols="1" v-if="playerIndex > 0 && displayStyle === 'vs'" :key="'col-' + playerIndex">
+            <v-col
+              v-if="playerIndex > 0 && displayStyle === 'vs'"
+              :key="'col-' + playerIndex"
+              cols="1"
+            >
               vs.
             </v-col>
-            <PlayerInGameInfo :key="'player-in-game-' + playerIndex"
-             :player="player"
-             :displayStyle="displayStyle"
+            <PlayerInGameInfo
+              :key="'player-in-game-' + playerIndex"
+              :player="player"
+              :display-style="displayStyle"
             />
           </template>
         </v-row>
         <v-row v-if="gameOver">
-          <v-col><router-link :to="`/games/${context.gameType}/${context.gameId}/replay`">Watch replay</router-link></v-col>
+          <v-col>
+            <router-link :to="`/games/${context.gameType}/${context.gameId}/replay`">
+              Watch replay
+            </router-link>
+          </v-col>
           <!-- TODO: Play again option (re-send same invite to same players, then switch to specific-Invite screen) -->
         </v-row>
       </v-container>

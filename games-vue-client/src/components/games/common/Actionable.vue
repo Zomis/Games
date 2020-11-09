@@ -1,27 +1,45 @@
 <template>
-    <v-menu bottom offset-y :disabled="!useMenu" v-model="showMenu" v-if="shouldBeVisible" :close-on-content-click="!this.stickyMenu">
-        <template v-slot:activator="{ on: menu }">
-            <v-tooltip bottom disabled>
-                <template v-slot:activator="{ on: tooltip }">
-                    <component :is="component" :class="cssClass" @click="componentClick()" v-on="{ ...tooltip, ...menu }" :disabled="!isActionable">
-                        <slot />
-                        <!-- Actionable button v-for=... :key :actionable="card" actionType="play" :icon="icons[card]" /> -->
-                        <!-- Actionable button :actionType="['bet', 'pass']" -->
-                        <!-- Maybe use an action-button to select which available bet action you want to perform, or if you want to pass -->
-                        <!-- Outer component can be: v-btn, div, v-icon, v-menu... -->
-                    </component>
-                </template>
-                <span>{{ tooltip }}</span>
-            </v-tooltip>
+  <v-menu
+    v-if="shouldBeVisible"
+    v-model="showMenu"
+    bottom
+    offset-y
+    :disabled="!useMenu"
+    :close-on-content-click="!this.stickyMenu"
+  >
+    <template v-slot:activator="{ on: menu }">
+      <v-tooltip
+        bottom
+        disabled
+      >
+        <template v-slot:activator="{ on: tooltip }">
+          <component
+            :is="component"
+            :class="cssClass"
+            :disabled="!isActionable"
+            @click="componentClick()"
+            v-on="{ ...tooltip, ...menu }"
+          >
+            <slot />
+            <!-- Actionable button v-for=... :key :actionable="card" actionType="play" :icon="icons[card]" /> -->
+            <!-- Actionable button :actionType="['bet', 'pass']" -->
+            <!-- Maybe use an action-button to select which available bet action you want to perform, or if you want to pass -->
+            <!-- Outer component can be: v-btn, div, v-icon, v-menu... -->
+          </component>
         </template>
-        <div v-if="useMenu">
-            <v-btn 
-                v-for="(item, index) in menuItems"
-                :key="index" @click="actions.perform('', item)">
-                {{ item }}
-            </v-btn>
-        </div>
-    </v-menu>
+        <span>{{ tooltip }}</span>
+      </v-tooltip>
+    </template>
+    <div v-if="useMenu">
+      <v-btn 
+        v-for="(item, index) in menuItems"
+        :key="index"
+        @click="actions.perform('', item)"
+      >
+        {{ item }}
+      </v-btn>
+    </div>
+  </v-menu>
 </template>
 <script>
 import { VBtn } from 'vuetify/lib'

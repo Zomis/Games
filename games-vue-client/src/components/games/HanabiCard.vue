@@ -1,20 +1,43 @@
 <template>
-    <v-card elevation="4" class="hanabi-card" :class="{ 'double-view': doubleView, 'actionable': typeof action !== 'undefined', 'highlight': highlight }" :style="{ 'background-color': cardColor }">
-        <transition name="slide-fade" mode="out-in">
-            <v-card-title class="slide-fade-item others-view" :key="cardValue">
-                {{ cardValue }}
-            </v-card-title>
-        </transition>
-        <transition name="slide-fade" mode="out-in">
-            <v-card-text class="slide-fade-item player-known" v-if="doubleView" :style="{'background-color': cardKnownColor}" :key="cardKnownValue + '-' + cardKnownColor">
-                {{ cardKnownValue }}
-            </v-card-text>
-        </transition>
-        <v-card-actions v-if="action">
-            <v-btn @click="action('Play', 'play-' + index)">Play</v-btn>
-            <v-btn @click="action('Discard', 'discard-' + index)">Discard</v-btn>
-        </v-card-actions>
-    </v-card>
+  <v-card
+    elevation="4"
+    class="hanabi-card"
+    :class="{ 'double-view': doubleView, 'actionable': typeof action !== 'undefined', 'highlight': highlight }"
+    :style="{ 'background-color': cardColor }"
+  >
+    <transition
+      name="slide-fade"
+      mode="out-in"
+    >
+      <v-card-title
+        :key="cardValue"
+        class="slide-fade-item others-view"
+      >
+        {{ cardValue }}
+      </v-card-title>
+    </transition>
+    <transition
+      name="slide-fade"
+      mode="out-in"
+    >
+      <v-card-text
+        v-if="doubleView"
+        :key="cardKnownValue + '-' + cardKnownColor"
+        class="slide-fade-item player-known"
+        :style="{'background-color': cardKnownColor}"
+      >
+        {{ cardKnownValue }}
+      </v-card-text>
+    </transition>
+    <v-card-actions v-if="action">
+      <v-btn @click="action('Play', 'play-' + index)">
+        Play
+      </v-btn>
+      <v-btn @click="action('Discard', 'discard-' + index)">
+        Discard
+      </v-btn>
+    </v-card-actions>
+  </v-card>
 </template>
 <script>
 const colorToDisplayColor = {

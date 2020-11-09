@@ -1,46 +1,88 @@
 <template>
-    <v-container fluid>
-        <h3 v-if="invite">{{ invite.host.name }} is preparing a game of {{ invite.gameType }}</h3>
-        <v-alert type="error" v-if="invite.cancelled">Invite Cancelled</v-alert>
-        <v-card
-          class="invite-step mb-12"
-          color="grey lighten-1"
-          v-if="invite"
+  <v-container fluid>
+    <h3 v-if="invite">
+      {{ invite.host.name }} is preparing a game of {{ invite.gameType }}
+    </h3>
+    <v-alert
+      v-if="invite.cancelled"
+      type="error"
+    >
+      Invite Cancelled
+    </v-alert>
+    <v-card
+      v-if="invite"
+      class="invite-step mb-12"
+      color="grey lighten-1"
+    >
+      <v-card-text>
+        <v-row>
+          <v-col cols="12">
+            <v-list light>
+              <template v-for="(player, index) in users">
+                <v-divider
+                  v-if="index > 0"
+                  :key="`divider-${player.id}`"
+                />
+                <InvitePlayer
+                  :key="`player-${player.id}`"
+                  :invite="invite"
+                  :player="player"
+                  :controllable="isHost"
+                />
+              </template>
+              <template v-if="isHost">
+                <v-divider :key="`divider-${invite.host.id}`" />
+                <InvitePlayer
+                  :key="`player-${invite.host.id}`"
+                  :invite="invite"
+                  :player="invite.host"
+                  :controllable="isHost"
+                />
+              </template>
+              <template v-if="!isHost">
+                <v-divider :key="`divider-${yourPlayer.id}`" />
+                <InvitePlayer
+                  :key="`player-${yourPlayer.id}`"
+                  :invite="invite"
+                  :player="yourPlayer"
+                  :controllable="isHost"
+                />
+              </template>
+            </v-list>
+          </v-col>
+        </v-row>
+      </v-card-text>
+      <v-card-actions v-if="isHost">
+        <v-btn
+          color="primary"
+          :disabled="!gameStartable"
+          @click="startInvite()"
         >
-            <v-card-text>
-                <v-row>
-                    <v-col cols="12">
-                        <v-list light>
-                            <template v-for="(player, index) in users">
-                                <v-divider :key="`divider-${player.id}`" v-if="index > 0"></v-divider>
-                                <InvitePlayer :key="`player-${player.id}`" :invite="invite" :player="player" :controllable="isHost" />
-                            </template>
-                            <template v-if="isHost">
-                                <v-divider :key="`divider-${invite.host.id}`" />
-                                <InvitePlayer :key="`player-${invite.host.id}`" :invite="invite" :player="invite.host" :controllable="isHost" />
-                            </template>
-                            <template v-if="!isHost">
-                                <v-divider :key="`divider-${yourPlayer.id}`" />
-                                <InvitePlayer :key="`player-${yourPlayer.id}`" :invite="invite" :player="yourPlayer" :controllable="isHost" />
-                            </template>
-                        </v-list>
-                    </v-col>
-                </v-row>
-            </v-card-text>
-            <v-card-actions v-if="isHost">
-                <v-btn
-                  color="primary"
-                  @click="startInvite()" :disabled="!gameStartable">Start Game</v-btn>
-                <v-btn @click="cancelInvite()" color="error">Cancel</v-btn>
-            </v-card-actions>
-            <v-card-actions v-if="!isInGame">
-                <v-btn
-                  color="primary"
-                  @click="joinInvite()">Join Game</v-btn>
-                <v-btn @click="declineInvite()" color="error">Decline</v-btn>
-            </v-card-actions>
-        </v-card>
-    </v-container>
+          Start Game
+        </v-btn>
+        <v-btn
+          color="error"
+          @click="cancelInvite()"
+        >
+          Cancel
+        </v-btn>
+      </v-card-actions>
+      <v-card-actions v-if="!isInGame">
+        <v-btn
+          color="primary"
+          @click="joinInvite()"
+        >
+          Join Game
+        </v-btn>
+        <v-btn
+          color="error"
+          @click="declineInvite()"
+        >
+          Decline
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-container>
 </template>
 <script>
 import { mapState } from "vuex"

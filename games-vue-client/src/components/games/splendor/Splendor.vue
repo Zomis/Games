@@ -1,58 +1,100 @@
 <template>
-    <v-container fluid class="splendor">
-        <v-row>
-            <v-col>Round {{ view.round }}</v-col>
-        </v-row>
-        <v-row class="players">
-            <v-col v-for="(player, index) in view.players" :key="index">
-                <SplendorPlayer :player="player" :playerInfo="context.players[index]"
-                 :controllable="index == view.viewer"
-                 :actions="actions" :class="{activePlayer: index == view.currentPlayer}" />
+  <v-container
+    fluid
+    class="splendor"
+  >
+    <v-row>
+      <v-col>Round {{ view.round }}</v-col>
+    </v-row>
+    <v-row class="players">
+      <v-col
+        v-for="(player, index) in view.players"
+        :key="index"
+      >
+        <SplendorPlayer
+          :player="player"
+          :player-info="context.players[index]"
+          :controllable="index == view.viewer"
+          :actions="actions"
+          :class="{activePlayer: index == view.currentPlayer}"
+        />
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col cols="9">
+        <CardZone
+          v-for="level in view.cardLevels"
+          :key="level.level"
+          class="row"
+          :class="'card-level-' + level.level"
+        >
+          <v-col :key="'remaining-' + level.level">
+            <v-card><v-card-title>{{ level.remaining }}</v-card-title></v-card>
+          </v-col>
+          <v-col
+            v-for="card in level.board"
+            :key="card.id"
+            class="list-complete-item"
+          >
+            <SplendorCard
+              :card="card"
+              :actions="actions"
+            />
+          </v-col>
+        </CardZone>
+      </v-col>
+      <v-col
+        cols="1"
+        class="stock"
+      >
+        <v-card>
+          <v-card-title>
+            Bank
+          </v-card-title>
+          <v-card-text>
+            <v-row
+              v-for="(money, index) in view.stock"
+              :key="index"
+            >
+              <v-col>
+                <span
+                  :class="{
+                    ['bank-' + index]: true,
+                    actionable: actions.available['take-' + index],
+                    'chosen-once': (actions.chosen) ? actions.chosen.choices.includes(index) : false,
+                    'chose-again': (actions.chosen) ? actions.chosen.choices.includes(index) && actions.available['take-' + index] : false}"
+                  @click="takeMoney(index)"
+                >{{ money }}</span>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col>
+                <v-btn @click="takeCurrentMoney()">
+                  Take
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col class="nobles">
+        <p>Nobles</p>
+        <CardZone>
+          <v-row
+            v-for="noble in view.nobles"
+            :key="noble.id"
+          >
+            <v-col>
+              <SplendorNoble
+                :noble="noble"
+                :context="context"
+              />
             </v-col>
-        </v-row>
-        <v-row>
-            <v-col cols="9">
-                <CardZone class="row" v-for="level in view.cardLevels" :key="level.level" :class="'card-level-' + level.level">
-                    <v-col :key="'remaining-' + level.level"><v-card><v-card-title>{{ level.remaining }}</v-card-title></v-card></v-col>
-                    <v-col v-for="card in level.board" :key="card.id" class="list-complete-item">
-                        <SplendorCard :card="card" :actions="actions" />
-                    </v-col>
-                </CardZone>
-            </v-col>
-            <v-col cols="1" class="stock">
-                <v-card>
-                    <v-card-title>
-                        Bank
-                    </v-card-title>
-                    <v-card-text>
-                        <v-row v-for="(money, index) in view.stock" :key="index">
-                            <v-col>
-                                <span :class="{
-                                    ['bank-' + index]: true,
-                                    actionable: actions.available['take-' + index],
-                                    'chosen-once': (actions.chosen) ? actions.chosen.choices.includes(index) : false,
-                                    'chose-again': (actions.chosen) ? actions.chosen.choices.includes(index) && actions.available['take-' + index] : false}"
-                                    @click="takeMoney(index)">{{ money }}</span>
-                            </v-col>
-                        </v-row>
-                        <v-row>
-                            <v-col><v-btn @click="takeCurrentMoney()">Take</v-btn></v-col>
-                        </v-row>
-                   </v-card-text>
-                </v-card>
-            </v-col>
-            <v-col class="nobles">
-                <p>Nobles</p>
-                <CardZone>
-                    <v-row v-for="noble in view.nobles" :key="noble.id">
-                        <v-col>
-                            <SplendorNoble :noble="noble" :context="context" />
-                        </v-col>
-                    </v-row>
-                </CardZone>
-            </v-col>
-        </v-row>
-    </v-container>
+          </v-row>
+        </CardZone>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 <script>
 import SplendorCard from "./SplendorCard"

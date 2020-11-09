@@ -1,25 +1,31 @@
 <template>
-    <v-card v-show="logEntries.length > 0">
-        <v-card-title>
-            <h1>Action Log</h1>
-        </v-card-title>
-        <v-list>
-            <v-list-item v-for="(entry, index) in logEntries" :key="index">
-                <v-list-item-avatar>
-<!--                    <PlayerProfile /> -->
-                </v-list-item-avatar>
-                <v-list-item-content>
-                    <v-list-item-title>
-
-                    </v-list-item-title>
-                    <v-list-item-subtitle>
-                        <component v-for="(part, partIndex) in entry.parts" :key="partIndex"
-                            :is="components[part.type].component" :private="entry.private" v-bind="components[part.type].binds(part)" />
-                    </v-list-item-subtitle>
-                </v-list-item-content>
-            </v-list-item>
-        </v-list>
-    </v-card>
+  <v-card v-show="logEntries.length > 0">
+    <v-card-title>
+      <h1>Action Log</h1>
+    </v-card-title>
+    <v-list>
+      <v-list-item
+        v-for="(entry, index) in logEntries"
+        :key="index"
+      >
+        <v-list-item-avatar>
+          <!--                    <PlayerProfile /> -->
+        </v-list-item-avatar>
+        <v-list-item-content>
+          <v-list-item-title />
+          <v-list-item-subtitle>
+            <component
+              :is="components[part.type].component"
+              v-for="(part, partIndex) in entry.parts"
+              :key="partIndex"
+              :private="entry.private"
+              v-bind="components[part.type].binds(part)"
+            />
+          </v-list-item-subtitle>
+        </v-list-item-content>
+      </v-list-item>
+    </v-list>
+  </v-card>
 </template>
 <script>
 import supportedGames from "@/supportedGames"

@@ -1,11 +1,13 @@
 <template>
   <transition name="fade">
-  <div class="piece"
-    @click="click(piece)"
-    :class="[piece.id, {actionable: actionable}]"
-    @mouseover="mouseover(piece)" @mouseleave="mouseleave()"
-     v-bind:style="{ gridArea: (piece.y+1) + '/' + (piece.x+1) }">
-  </div>
+    <div
+      class="piece"
+      :class="[piece.id, {actionable: actionable}]"
+      :style="{ gridArea: (piece.y+1) + '/' + (piece.x+1) }"
+      @click="click(piece)"
+      @mouseover="mouseover(piece)"
+      @mouseleave="mouseleave()"
+    />
   </transition>
 </template>
 <script>

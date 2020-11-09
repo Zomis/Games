@@ -1,13 +1,23 @@
 <template>
   <div class="ur-roll">
-    <div class="ur-dice" @click="onclick()" :class="{ moveable: usable }">
-      <div v-for="i in 4" :key="i" class="ur-die">
-        <div v-if="rolls[i - 1]" class="ur-die-filled"></div>
+    <div
+      class="ur-dice"
+      :class="{ moveable: usable }"
+      @click="onclick()"
+    >
+      <div
+        v-for="i in 4"
+        :key="i"
+        class="ur-die"
+      >
+        <div
+          v-if="rolls[i - 1]"
+          class="ur-die-filled"
+        />
       </div>
     </div>
     <span>{{ roll }}</span>
   </div>
-
 </template>
 <script>
 function shuffle(array) {

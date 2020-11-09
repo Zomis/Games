@@ -1,6 +1,10 @@
 <template>
   <div class="tv">
-    <component v-if="game !== null" :is="game.component" :gameInfo="currentGameInfo"></component>
+    <component
+      :is="game.component"
+      v-if="game !== null"
+      :game-info="currentGameInfo"
+    />
   </div>
 </template>
 <script>

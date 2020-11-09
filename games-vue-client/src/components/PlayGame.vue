@@ -1,10 +1,27 @@
 <template>
   <div class="game">
-    <component v-if="view" :is="viewComponent" :view="view" :actions="actions" :players="players" :context="context" />
-    <v-btn v-if="!isObserver" @click="clearActions()" :disabled="actionChoice === null">Reset Action</v-btn>
-    <ActionLog :logEntries="actionLogEntries" :onHighlight="highlight" :context="context" />
+    <component
+      :is="viewComponent"
+      v-if="view"
+      :view="view"
+      :actions="actions"
+      :players="players"
+      :context="context"
+    />
+    <v-btn
+      v-if="!isObserver"
+      :disabled="actionChoice === null"
+      @click="clearActions()"
+    >
+      Reset Action
+    </v-btn>
+    <ActionLog
+      :log-entries="actionLogEntries"
+      :on-highlight="highlight"
+      :context="context"
+    />
     <v-snackbar v-model="snackbar">
-      {{snackbarText}}
+      {{ snackbarText }}
     </v-snackbar>
   </div>
 </template>

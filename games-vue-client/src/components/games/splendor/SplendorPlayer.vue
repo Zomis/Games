@@ -1,34 +1,65 @@
 <template>
-    <v-card>
-        <v-card-text>
-            <v-row justify="start">
-                <v-col cols="3">
-                    <PlayerProfile :size="32" show-name :player="playerInfo" />
-                </v-col>
-                <v-col cols="1">
-                    <h1>{{ player.points }}</h1>
-                </v-col>
-                <v-col>
-                    <v-row justify="center" align="center">
-                        <div v-for="moneyType in moneyTypes" :key="moneyType">
-                            <div class="ma-1" v-if="moneyType !== 'wildcards'">
-                                <span class="resource" :class="{ ['color-' + moneyType]: true, empty: !player.discounts[moneyType] }">{{ player.discounts[moneyType] || 0 }}</span>
-                            </div>
-                            <div @click="discard(moneyType)" :class="{ discardable: controllable && actions.available['discardMoney-' + moneyType] }">
-                                <span class="gems" :class="{ ['color-' + moneyType]: true, empty: !player.money[moneyType] }">{{ player.money[moneyType] || 0 }}</span>
-                            </div>
-                        </div>
-                    </v-row>
-                </v-col>
-            </v-row>
-            <p v-if="player.reserved">Reserved Cards: {{ player.reserved }}</p>
-            <v-row justify="start">
-                <v-col cols="4" v-for="card in player.reservedCards" :key="card.id">
-                    <SplendorCard :card="card" :actions="actions" />
-                </v-col>
-            </v-row>
-        </v-card-text>
-    </v-card>
+  <v-card>
+    <v-card-text>
+      <v-row justify="start">
+        <v-col cols="3">
+          <PlayerProfile
+            :size="32"
+            show-name
+            :player="playerInfo"
+          />
+        </v-col>
+        <v-col cols="1">
+          <h1>{{ player.points }}</h1>
+        </v-col>
+        <v-col>
+          <v-row
+            justify="center"
+            align="center"
+          >
+            <div
+              v-for="moneyType in moneyTypes"
+              :key="moneyType"
+            >
+              <div
+                v-if="moneyType !== 'wildcards'"
+                class="ma-1"
+              >
+                <span
+                  class="resource"
+                  :class="{ ['color-' + moneyType]: true, empty: !player.discounts[moneyType] }"
+                >{{ player.discounts[moneyType] || 0 }}</span>
+              </div>
+              <div
+                :class="{ discardable: controllable && actions.available['discardMoney-' + moneyType] }"
+                @click="discard(moneyType)"
+              >
+                <span
+                  class="gems"
+                  :class="{ ['color-' + moneyType]: true, empty: !player.money[moneyType] }"
+                >{{ player.money[moneyType] || 0 }}</span>
+              </div>
+            </div>
+          </v-row>
+        </v-col>
+      </v-row>
+      <p v-if="player.reserved">
+        Reserved Cards: {{ player.reserved }}
+      </p>
+      <v-row justify="start">
+        <v-col
+          v-for="card in player.reservedCards"
+          :key="card.id"
+          cols="4"
+        >
+          <SplendorCard
+            :card="card"
+            :actions="actions"
+          />
+        </v-col>
+      </v-row>
+    </v-card-text>
+  </v-card>
 </template>
 <script>
 import PlayerProfile from "@/components/games/common/PlayerProfile"
