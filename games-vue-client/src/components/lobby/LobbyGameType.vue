@@ -61,7 +61,7 @@ export default {
             return supportedGames.games[this.gameType];
         },
         displayName() {
-            return this.supportedGame?.displayName || this.gameType;
+            return this.supportedGame.displayName ? this.supportedGame.displayName : this.gameType;
         },
         yourGames() {
             return this.activeGames.filter(game => game.gameInfo.yourIndex >= 0)

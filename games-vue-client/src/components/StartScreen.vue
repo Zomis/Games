@@ -1,21 +1,17 @@
 <template>
   <v-container fluid>
   <v-row>
-    <v-col cols="12" md="6" lg="4">
-      <v-row>
-        <v-col cols="2" md="2" lg="2">
-          <input type="checkbox" id="hideAIUsers" v-model="hideAIUsers" @change="toggleAIUsers()">
-        </v-col>
-        <v-col cols="4" md="4" lg="4">
-          <label for="hideAIUsers">Hide AI Users</label>
-        </v-col>
-      </v-row>
+    <v-col cols="1">
+      <input type="checkbox" id="hideAIUsers" v-model="hideAIUsers" @change="toggleAIUsers()">
+    </v-col>
+    <v-col cols="11" sm="6" md="2">
+      <label for="hideAIUsers">Hide AI Users</label>
     </v-col>
   </v-row>
   <v-row>
 
     <v-col cols="12" md="6" lg="4" v-for="(users, gameType) in lobby" :key="gameType">
-      <LobbyGameType :gameType="gameType" :users="usersToDisplay(users)" :yourPlayer="yourPlayer" />
+      <LobbyGameType :gameType="gameType" :users="users" :yourPlayer="yourPlayer" />
     </v-col>
 
     <v-col cols="12">
@@ -105,9 +101,6 @@ export default {
     toggleAIUsers() {
       this.$store.commit("lobby/toggleAIUsers", this.hideAIUsers);
     },
-    usersToDisplay(users) {
-      return users.filter(user => !user.hidden);
-    }
   },
   created() {
     if (!Socket.isConnected()) {
@@ -121,8 +114,12 @@ export default {
   computed: {
     ...mapState('lobby', {
       yourPlayer: state => state.yourPlayer,
-      lobby: state => state.lobby
-    })
+      lobby: state => Object.entries(state.lobby).reduce((acc, [gameType, players]) => {
+        const visiblePlayers = Object.values(players).filter((player) => !player.hidden);
+
+        return { ...acc, [gameType]: visiblePlayers };
+      }, {}),
+    }),
   },
   beforeDestroy() {
     Socket.$off("type:GameList", this.gameListMessage);
