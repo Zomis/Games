@@ -1,9 +1,16 @@
 <template>
   <v-card>
-    <ActionLog :logEntries="logEntries" :context="context" />
+    <ActionLog
+      :log-entries="logEntries"
+      :context="context"
+    />
     <h1>Hello World</h1>
 
-    <v-card :key="view.hand.index" class="player-hand" :class="{ 'active-player': view.currentPlayer == view.hand.index }">
+    <v-card
+      :key="view.hand.index"
+      class="player-hand"
+      :class="{ 'active-player': view.currentPlayer == view.hand.index }"
+    >
       <v-card-title>
         <span class="player-name">
           {{ view.hand.index + 1 }}. (You)
@@ -11,26 +18,49 @@
       </v-card-title>
       <v-card-text>
         <v-row>
-        <transition-group name="list-complete" tag="p">
-          <v-col class="list-complete-item" md="auto" xs="auto" v-for="item in items" :key="item">
-          <span>
-            {{ item }}
-          </span>
-          </v-col>
-        </transition-group>
+          <transition-group
+            name="list-complete"
+            tag="p"
+          >
+            <v-col
+              v-for="item in items"
+              :key="item"
+              class="list-complete-item"
+              md="auto"
+              xs="auto"
+            >
+              <span>
+                {{ item }}
+              </span>
+            </v-col>
+          </transition-group>
         </v-row>
       </v-card-text>
     </v-card>
 
-    <div id="list-complete-demo" class="demo">
-      <v-btn v-on:click="shuffle">Shuffle</v-btn>
-      <v-btn v-on:click="add">Add</v-btn>
-      <v-btn v-on:click="addRemove">Add and Remove</v-btn>
-      <v-btn v-on:click="remove">Remove</v-btn>
-      <transition-group name="list-complete" tag="p">
+    <div
+      id="list-complete-demo"
+      class="demo"
+    >
+      <v-btn @click="shuffle">
+        Shuffle
+      </v-btn>
+      <v-btn @click="add">
+        Add
+      </v-btn>
+      <v-btn @click="addRemove">
+        Add and Remove
+      </v-btn>
+      <v-btn @click="remove">
+        Remove
+      </v-btn>
+      <transition-group
+        name="list-complete"
+        tag="p"
+      >
         <span
           v-for="item in items"
-          v-bind:key="item"
+          :key="item"
           class="list-complete-item"
         >
           {{ item }}
@@ -39,19 +69,33 @@
     </div>
 
     <transition name="no-mode-translate-fade">
-      <v-card :key="view.hand.index" class="player-hand" :class="{ 'active-player': view.currentPlayer == view.hand.index }">
+      <v-card
+        :key="view.hand.index"
+        class="player-hand"
+        :class="{ 'active-player': view.currentPlayer == view.hand.index }"
+      >
         <v-card-title>
           <span class="player-name">
             {{ view.hand.index + 1 }}. (You)
           </span>
         </v-card-title>
         <v-card-text>
-          <transition-group name="list-complete" tag="div" class="">
-            <HanabiCard v-for="(card, cardIndex) in view.hand.cards" class="list-complete-item" :key="card.id" :card="card" :action="myTurn ? btnActions : false" :index="cardIndex" />
+          <transition-group
+            name="list-complete"
+            tag="div"
+            class=""
+          >
+            <HanabiCard
+              v-for="(card, cardIndex) in view.hand.cards"
+              :key="card.id"
+              class="list-complete-item"
+              :card="card"
+              :action="myTurn ? btnActions : false"
+              :index="cardIndex"
+            />
           </transition-group>
         </v-card-text>
       </v-card>
-
     </transition>
   </v-card>
 </template>

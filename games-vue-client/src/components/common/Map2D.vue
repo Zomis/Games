@@ -1,22 +1,37 @@
 <template>
   <div class="board-parent">
-    <div class="board" :style="{width: width*64 + 'px', height: height*64 + 'px'}">
-      <div class="pieces pieces-bg" :style="{ 'grid-template-columns': `repeat(${width}, 1fr)`, 'grid-template-rows': `repeat(${height}, 1fr)` }">
+    <div
+      class="board"
+      :style="{width: width*64 + 'px', height: height*64 + 'px'}"
+    >
+      <div
+        class="pieces pieces-bg"
+        :style="{ 'grid-template-columns': `repeat(${width}, 1fr)`, 'grid-template-rows': `repeat(${height}, 1fr)` }"
+      >
         <template v-for="y in height">
           <template v-for="x in width">
-            <div :key="`${x}_${y}`"
+            <div
+              :key="`${x}_${y}`"
               :class="['piece', 'piece-bg', {actionable: actionable && actionable[`${x-1},${y-1}`]}]"
-              @click="onClick({ x: x - 1, y: y - 1 })">
-            </div>
+              @click="onClick({ x: x - 1, y: y - 1 })"
+            />
           </template>
         </template>
       </div>
-      <div class="pieces player-pieces" :style="{ 'grid-template-columns': `repeat(${width}, 1fr)`, 'grid-template-rows': `repeat(${height}, 1fr)` }">
+      <div
+        class="pieces player-pieces"
+        :style="{ 'grid-template-columns': `repeat(${width}, 1fr)`, 'grid-template-rows': `repeat(${height}, 1fr)` }"
+      >
         <template v-for="piece in gridTiles">
-          <div class="grid-element-wrapper" :key="piece.key" v-bind:style="{
+          <div
+            :key="piece.key"
+            class="grid-element-wrapper"
+            :style="{
               gridArea: (piece.y+1) + '/' + (piece.x+1),
               actionable: actionable && actionable[`${piece.x-1},${piece.y-1}`]
-            }" @click="onClick(piece)">
+            }"
+            @click="onClick(piece)"
+          >
             <slot :tile="piece" />
           </div>
         </template>

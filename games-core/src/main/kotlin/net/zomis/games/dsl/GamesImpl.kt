@@ -4,6 +4,7 @@ import net.zomis.games.PlayerElimination
 import net.zomis.games.api.GamesApi
 import net.zomis.games.dsl.impl.ActionLogEntry
 import net.zomis.games.dsl.impl.GameSetupImpl
+import net.zomis.games.dsl.impl.GameTestContext
 import net.zomis.games.scorers.ScorerFactory
 
 class GameplayCallbacksList<T: Any>(val list: List<GameplayCallbacks<T>>): GameplayCallbacks<T>() {
@@ -35,6 +36,14 @@ class GameEntryPoint<T : Any>(private val gameSpec: GameSpec<T>) {
         return Replay(gameSpec, replay.playerCount, replay.config, replay, postReplayMoveCallback, alwaysCallback)
     }
     fun inMemoryReplay() = InMemoryReplayCallbacks<T>(gameSpec.name)
+
+    fun runTests() {
+        setup().context.testCases.forEach {
+            it.runTests(this)
+        }
+    }
+
+    override fun toString(): String = "EntryPoint:$gameType"
 
 }
 

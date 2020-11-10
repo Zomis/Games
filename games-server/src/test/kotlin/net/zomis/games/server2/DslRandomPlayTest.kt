@@ -68,7 +68,7 @@ class DslRandomPlayTest {
                 val playerCount = entryPoint.setup().playersCount
                 val randomCount = playerCount.random()
 
-                Arguments.of(entryPoint.gameType, randomCount)
+                Arguments.of(entryPoint, randomCount)
             }
         }
     }
@@ -90,8 +90,10 @@ class DslRandomPlayTest {
 
     @ParameterizedTest(name = "Random play {0} with {1} players")
     @MethodSource("serverGames")
-    fun dsl(gameType: String, playerCount: Int) {
-        val dslGame = gameType
+    fun dsl(gameType: GameEntryPoint<Any>, playerCount: Int) {
+        val dslGame = gameType.gameType
+        gameType.runTests()
+
         val clients = (1..playerCount).map { WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket")) }
         clients.forEach { it.connectBlocking() }
 

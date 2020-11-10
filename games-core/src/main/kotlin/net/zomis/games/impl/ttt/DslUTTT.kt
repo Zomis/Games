@@ -3,7 +3,7 @@ package net.zomis.games.impl.ttt
 import net.zomis.games.WinResult
 import net.zomis.games.common.Point
 import net.zomis.games.dsl.GameCreator
-import net.zomis.games.dsl.GameRulesDsl
+import net.zomis.games.dsl.GameActionRulesDsl
 import net.zomis.games.dsl.GameViewDsl
 import net.zomis.games.dsl.GridDsl
 import net.zomis.tttultimate.TTBase
@@ -113,7 +113,7 @@ object DslTTT {
         }
     }
 
-    private fun ttRules(): GameRulesDsl<TTController> = {
+    private fun ttRules(): GameActionRulesDsl<TTController> = {
         allActions.precondition { playerIndex == game.currentPlayer.index() }
         action(playAction) {
             options { allSmallest(game.game).asIterable() }

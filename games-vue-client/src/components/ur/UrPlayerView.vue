@@ -1,25 +1,40 @@
 <template>
   <div class="player-view">
     <div class="side side-remaining">
-      <div class="number">{{ remaining }}</div>
+      <div class="number">
+        {{ remaining }}
+      </div>
       <div class="pieces-container">
-        <div v-for="n in remaining" :key="n" class="piece-small pointer"
+        <div
+          v-for="n in remaining"
+          :key="n"
+          class="piece-small pointer"
           :class="{ ['piece-' + playerIndex]: true, moveable: canPlaceNew && n === remaining }"
-          @mouseover="onPlaceNewHighlight(playerIndex)" @mouseleave="mouseleave()"
-          :style="{ left: (n-1)*12 + 'px' }" v-on:click="placeNew()">
-        </div>
+          :style="{ left: (n-1)*12 + 'px' }"
+          @mouseover="onPlaceNewHighlight(playerIndex)"
+          @mouseleave="mouseleave()"
+          @click="placeNew()"
+        />
       </div>
     </div>
     <transition name="fade">
-      <div class="player-active-indicator" v-if="view.currentPlayer == playerIndex"></div>
+      <div
+        v-if="view.currentPlayer == playerIndex"
+        class="player-active-indicator"
+      />
     </transition>
     <div class="side side-out">
-      <div class="number">{{ out }}</div>
+      <div class="number">
+        {{ out }}
+      </div>
       <div class="pieces-container">
-        <div v-for="n in out" :key="n" class="piece-small"
+        <div
+          v-for="n in out"
+          :key="n"
+          class="piece-small"
           :class="['piece-' + playerIndex]"
-          :style="{ right: (n-1)*12 + 'px' }">
-        </div>
+          :style="{ right: (n-1)*12 + 'px' }"
+        />
       </div>
     </div>
   </div>

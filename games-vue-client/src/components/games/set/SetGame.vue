@@ -1,15 +1,42 @@
 <template>
   <v-container fluid>
-    <svg width="0" height="0">
+    <svg
+      width="0"
+      height="0"
+    >
       <!--  Define the patterns for the different fill colors  -->
-      <pattern id="striped-red" patternUnits="userSpaceOnUse" width="4" height="4">
-        <path d="M-1,1 H5" style="stroke:#e74c3c; stroke-width:1" />
+      <pattern
+        id="striped-red"
+        patternUnits="userSpaceOnUse"
+        width="4"
+        height="4"
+      >
+        <path
+          d="M-1,1 H5"
+          style="stroke:#e74c3c; stroke-width:1"
+        />
       </pattern>
-      <pattern id="striped-green" patternUnits="userSpaceOnUse" width="4" height="4">
-        <path d="M-1,1 H5" style="stroke:#27ae60; stroke-width:1" />
+      <pattern
+        id="striped-green"
+        patternUnits="userSpaceOnUse"
+        width="4"
+        height="4"
+      >
+        <path
+          d="M-1,1 H5"
+          style="stroke:#27ae60; stroke-width:1"
+        />
       </pattern>
-      <pattern id="striped-purple" patternUnits="userSpaceOnUse" width="4" height="4">
-        <path d="M-1,1 H5" style="stroke:#8e44ad; stroke-width:1" />
+      <pattern
+        id="striped-purple"
+        patternUnits="userSpaceOnUse"
+        width="4"
+        height="4"
+      >
+        <path
+          d="M-1,1 H5"
+          style="stroke:#8e44ad; stroke-width:1"
+        />
       </pattern>
     </svg>
 
@@ -21,16 +48,28 @@
     <v-row>
       <v-col>
         <CardZone class="board">
-          <SetCard class="list-complete-item animate" v-for="card in cards" :key="card.key" :card="card" :onClick="cardClick"
-             :selected="actions.chosen ? actions.chosen.choices.includes(card.key) : false" />
+          <SetCard
+            v-for="card in cards"
+            :key="card.key"
+            class="list-complete-item animate"
+            :card="card"
+            :on-click="cardClick"
+            :selected="actions.chosen ? actions.chosen.choices.includes(card.key) : false"
+          />
         </CardZone>
       </v-col>
     </v-row>
     <v-row>
-      <v-col v-for="(player, playerIndex) in view.players" :key="playerIndex">
+      <v-col
+        v-for="(player, playerIndex) in view.players"
+        :key="playerIndex"
+      >
         <v-card>
           <v-card-title>
-            <PlayerProfile show-name :player="context.players[playerIndex]" />
+            <PlayerProfile
+              show-name
+              :player="context.players[playerIndex]"
+            />
           </v-card-title>
           <v-card-text>
             <v-row>
@@ -38,9 +77,22 @@
             </v-row>
             <v-row v-if="player.lastResult">
               <v-col>
-                <div v-for="(property, propertyName) in player.lastResult.properties" :key="propertyName">
-                  <v-icon color="green" v-if="property.valid">mdi-check-circle</v-icon>
-                  <v-icon color="red" v-else>mdi-close-circle</v-icon>
+                <div
+                  v-for="(property, propertyName) in player.lastResult.properties"
+                  :key="propertyName"
+                >
+                  <v-icon
+                    v-if="property.valid"
+                    color="green"
+                  >
+                    mdi-check-circle
+                  </v-icon>
+                  <v-icon
+                    v-else
+                    color="red"
+                  >
+                    mdi-close-circle
+                  </v-icon>
                   <span v-if="property.uniqueCount == 1">All {{ propertyName }}s equal</span>
                   <span v-if="property.uniqueCount == 2">The {{ propertyName }}s does not match: Two {{ property.majorityValue }} and one {{ property.minorityValue }}</span>
                   <span v-if="property.uniqueCount == 3">All {{ propertyName }}s unique</span>
@@ -49,17 +101,26 @@
             </v-row>
             <v-row v-if="player.lastResult">
               <v-col v-if="player.lastResult.valid">
-                <v-icon color="green">mdi-check-circle</v-icon>
+                <v-icon color="green">
+                  mdi-check-circle
+                </v-icon>
                 <span>Set Found!</span>
               </v-col>
               <v-col v-else>
-                <v-icon color="red">mdi-close-circle</v-icon>
+                <v-icon color="red">
+                  mdi-close-circle
+                </v-icon>
                 <span>Not a set</span>
               </v-col>
             </v-row>
             <v-row v-if="player.lastResult">
               <v-col>
-                <SetCard class="list-complete-item animate" v-for="card in player.lastResult.cards" :key="card.key" :card="card" />
+                <SetCard
+                  v-for="card in player.lastResult.cards"
+                  :key="card.key"
+                  class="list-complete-item animate"
+                  :card="card"
+                />
               </v-col>
             </v-row>
           </v-card-text>

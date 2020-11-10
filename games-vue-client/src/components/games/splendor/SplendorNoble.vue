@@ -1,23 +1,41 @@
 <template>
-    <v-card class="splendor-noble" :class="{ claimed: noble.owner !== null }">
-        <v-card-text>
-            <v-row>
-                <v-col cols="2">
-                    <h1 class="ma-1" style="text-align:left;">{{ noble.points }}</h1>
-                </v-col>
-                <v-col cols="1" v-if="noble.owner !== null">
-                    <PlayerProfile :size="32" :player="context.players[noble.owner]" />
-                </v-col>
-                <v-col>
-                    <v-row justify="end">
-                        <div class="ma-1" v-for="(cost, index) in noble.requirements" :key="index">
-                            <span :class="'resource-' + index">{{ cost }}</span>
-                        </div>
-                    </v-row>
-                </v-col>
-            </v-row>
-        </v-card-text>
-    </v-card>
+  <v-card
+    class="splendor-noble"
+    :class="{ claimed: noble.owner !== null }"
+  >
+    <v-card-text>
+      <v-row>
+        <v-col cols="2">
+          <h1
+            class="ma-1"
+            style="text-align:left;"
+          >
+            {{ noble.points }}
+          </h1>
+        </v-col>
+        <v-col
+          v-if="noble.owner !== null"
+          cols="1"
+        >
+          <PlayerProfile
+            :size="32"
+            :player="context.players[noble.owner]"
+          />
+        </v-col>
+        <v-col>
+          <v-row justify="end">
+            <div
+              v-for="(cost, index) in noble.requirements"
+              :key="index"
+              class="ma-1"
+            >
+              <span :class="'resource-' + index">{{ cost }}</span>
+            </div>
+          </v-row>
+        </v-col>
+      </v-row>
+    </v-card-text>
+  </v-card>
 </template>
 <script>
 import PlayerProfile from "@/components/games/common/PlayerProfile"

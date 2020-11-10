@@ -8,6 +8,7 @@ import net.zomis.games.impl.ttt.*
 object ServerGames {
 
     val games = listOf(
+        CoupRuleBased.game,
         SetGame.game,
         ResistanceAvalonGame.game,
         LiarsDiceGame.game,

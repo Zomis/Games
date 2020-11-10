@@ -1,34 +1,50 @@
 <template>
-    <v-menu
-      v-model="showMenu"
-      offset-y
-      bottom
-      z-index="100"
-    >
-      <template v-slot:activator="{ on }">
-        <v-card :class="{ ['discount-' + discountColor]: true, buyable: isBuyable || isReservedBuyable, actionable: isActionable }" v-on="on">
-            <v-card-text>
-                <v-row>
-                    <v-col cols="2">
-                        <h1 class="ma-1" style="text-align:left;">{{ card.points }}</h1>
-                    </v-col>
-                    <v-col cols="10">
-                        <v-row justify="end">
-                            <div class="ma-1" v-for="(cost, index) in card.costs" :key="index">
-                                <span :class="'cost-' + index">{{ cost }}</span>
-                            </div>
-                        </v-row>
-                    </v-col>
-                </v-row>
-            </v-card-text>
-        </v-card>
-      </template>
-      <v-list>
-        <v-list-item v-for="(item, index) in cardActions" :key="index" @click="performAction(item)">
-          <v-list-item-title>{{ item }}</v-list-item-title>
-        </v-list-item>
-      </v-list>
-    </v-menu>
+  <v-menu
+    v-model="showMenu"
+    offset-y
+    bottom
+    z-index="100"
+  >
+    <template v-slot:activator="{ on }">
+      <v-card
+        :class="{ ['discount-' + discountColor]: true, buyable: isBuyable || isReservedBuyable, actionable: isActionable }"
+        v-on="on"
+      >
+        <v-card-text>
+          <v-row>
+            <v-col cols="2">
+              <h1
+                class="ma-1"
+                style="text-align:left;"
+              >
+                {{ card.points }}
+              </h1>
+            </v-col>
+            <v-col cols="10">
+              <v-row justify="end">
+                <div
+                  v-for="(cost, index) in card.costs"
+                  :key="index"
+                  class="ma-1"
+                >
+                  <span :class="'cost-' + index">{{ cost }}</span>
+                </div>
+              </v-row>
+            </v-col>
+          </v-row>
+        </v-card-text>
+      </v-card>
+    </template>
+    <v-list>
+      <v-list-item
+        v-for="(item, index) in cardActions"
+        :key="index"
+        @click="performAction(item)"
+      >
+        <v-list-item-title>{{ item }}</v-list-item-title>
+      </v-list-item>
+    </v-list>
+  </v-menu>
 </template>
 <script>
 export default {

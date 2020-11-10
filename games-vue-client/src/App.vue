@@ -2,34 +2,57 @@
   <v-app>
     <v-app-bar app>
       <router-link to="/">
-        <v-toolbar-title v-text="titlePrefix"></v-toolbar-title>
+        <v-toolbar-title v-text="titlePrefix" />
       </router-link>
       <span :style="{ 'margin-left': '5px' }">{{ titleAppend }}</span>
       <template v-if="yourPlayer.loggedIn">
         <v-spacer />
         <span>Welcome, {{ yourPlayer.name }}</span>
-        <v-avatar :size="48" :style="{ 'margin-left': '4px' }">
+        <v-avatar
+          :size="48"
+          :style="{ 'margin-left': '4px' }"
+        >
           <img
             :src="yourPlayer.picture"
-            :alt="yourPlayer.name" />
+            :alt="yourPlayer.name"
+          >
         </v-avatar>
       </template>
       <v-spacer />
       <v-toolbar-items>
         <span v-if="!connection.connected">Disconnected</span>
         <span v-if="connection.connected">{{ connection.name }}</span>
-        <v-btn text to="/">Home</v-btn>
-        <v-btn text @click="logout()">Logout</v-btn>
+        <v-btn
+          text
+          to="/"
+        >
+          Home
+        </v-btn>
+        <v-btn
+          text
+          @click="logout()"
+        >
+          Logout
+        </v-btn>
       </v-toolbar-items>
     </v-app-bar>
     <v-content>
       <router-view :key="$route.path" />
     </v-content>
-    <v-footer fixed app>
+    <v-footer
+      fixed
+      app
+    >
       <span>
-          &copy; 2018-2020 Zomis' Games
-           - <a href="https://github.com/Zomis/Games" target="_blank">GitHub</a>
-           - <a href="https://discord.gg/GfXFUvc" target="_blank">Discord</a>
+        &copy; 2018-2020 Zomis' Games
+        - <a
+          href="https://github.com/Zomis/Games"
+          target="_blank"
+        >GitHub</a>
+        - <a
+          href="https://discord.gg/GfXFUvc"
+          target="_blank"
+        >Discord</a>
       </span>
     </v-footer>
   </v-app>

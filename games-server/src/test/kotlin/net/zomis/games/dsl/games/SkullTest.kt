@@ -1,5 +1,6 @@
 package net.zomis.games.dsl.games
 
+import net.zomis.games.dsl.GameAsserts
 import net.zomis.games.dsl.GameTest
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.dsl.impl.GameSetupImpl
@@ -14,13 +15,13 @@ class SkullTest {
 
     val dsl = SkullGame.game
     lateinit var game: GameImpl<SkullGameModel>
-    lateinit var test: GameTest<SkullGameModel>
+    lateinit var test: GameAsserts<SkullGameModel>
 
     @BeforeEach
     fun setup() {
         val setup = GameSetupImpl(dsl)
         game = setup.createGame(3, setup.getDefaultConfig())
-        test = GameTest(game)
+        test = GameAsserts(game)
     }
 
     @Test

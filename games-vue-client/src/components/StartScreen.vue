@@ -1,51 +1,80 @@
 <template>
   <v-container fluid>
-  <v-row>
-    <v-col cols="1">
-      <input type="checkbox" id="hideAIUsers" v-model="hideAIUsers" @change="toggleAIUsers()">
-    </v-col>
-    <v-col cols="11" sm="6" md="2">
-      <label for="hideAIUsers">Hide AI Users</label>
-    </v-col>
-  </v-row>
-  <v-row>
-
-    <v-col cols="12" md="6" lg="4" v-for="(users, gameType) in lobby" :key="gameType">
-      <LobbyGameType :gameType="gameType" :users="users" :yourPlayer="yourPlayer" />
-    </v-col>
-
-    <v-col cols="12">
-    <v-btn @click="requestGameList()">Request game list</v-btn>
-    <v-list class="gamelist">
-      <template v-for="game in gameList">
-        <v-list-item :key="game.gameType + game.gameId">
-          <v-list-item-content>
-            <v-list-item-title v-html="game.gameType + ' Game ' + game.gameId"></v-list-item-title>
-            <v-list-item-sub-title v-html="vsify(game.players)"></v-list-item-sub-title>
-          </v-list-item-content>
-          <v-list-item-action>
-            <v-btn color="info" @click="observe(game)">Observe</v-btn>
-          </v-list-item-action>
-        </v-list-item>
-      </template>
-    </v-list>
-    <v-list class="unfinished">
-      <template v-for="(gameList, gameType) in unfinishedGames">
-      <template v-for="game in gameList">
-        <v-list-item :key="game.gameId">
-          <v-list-item-content>
-            <v-list-item-title v-html="gameType + ' Game ' + game.GameId"></v-list-item-title>
-<!--            <v-list-item-sub-title v-html="vsify(game.players)"></v-list-item-sub-title> -->
-          </v-list-item-content>
-          <v-list-item-action>
-            <v-btn color="info" @click="resumeGame(gameType, game.GameId)">Resume</v-btn>
-          </v-list-item-action>
-        </v-list-item>
-      </template>
-      </template>
-    </v-list>
-    </v-col>
-  </v-row>
+    <v-row>
+      <v-col cols="1">
+        <input
+          id="hideAIUsers"
+          v-model="hideAIUsers"
+          type="checkbox"
+          @change="toggleAIUsers()"
+        >
+      </v-col>
+      <v-col
+        cols="11"
+        sm="6"
+        md="2"
+      >
+        <label for="hideAIUsers">Hide AI Users</label>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col
+        v-for="(users, gameType) in lobby"
+        :key="gameType"
+        cols="12"
+        md="6"
+        lg="4"
+      >
+        <LobbyGameType
+          :game-type="gameType"
+          :users="users"
+          :your-player="yourPlayer"
+        />
+      </v-col>
+      <v-col cols="12">
+        <v-btn @click="requestGameList()">
+          Request game list
+        </v-btn>
+        <v-list class="gamelist">
+          <template v-for="game in gameList">
+            <v-list-item :key="game.gameType + game.gameId">
+              <v-list-item-content>
+                <v-list-item-title v-html="game.gameType + ' Game ' + game.gameId" />
+                <v-list-item-sub-title v-html="vsify(game.players)" />
+              </v-list-item-content>
+              <v-list-item-action>
+                <v-btn
+                  color="info"
+                  @click="observe(game)"
+                >
+                  Observe
+                </v-btn>
+              </v-list-item-action>
+            </v-list-item>
+          </template>
+        </v-list>
+        <v-list class="unfinished">
+          <template v-for="(gameList, gameType) in unfinishedGames">
+            <template v-for="game in gameList">
+              <v-list-item :key="game.gameId">
+                <v-list-item-content>
+                  <v-list-item-title v-html="gameType + ' Game ' + game.GameId" />
+                  <!--            <v-list-item-sub-title v-html="vsify(game.players)"></v-list-item-sub-title> -->
+                </v-list-item-content>
+                <v-list-item-action>
+                  <v-btn
+                    color="info"
+                    @click="resumeGame(gameType, game.GameId)"
+                  >
+                    Resume
+                  </v-btn>
+                </v-list-item-action>
+              </v-list-item>
+            </template>
+          </template>
+        </v-list>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 

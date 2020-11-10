@@ -1,13 +1,27 @@
 <template>
-    <v-card elevation="4" :class="['set-card', 'fill-' + card.color, 'fadeIn', selectedClass]" @click="click">
-        <transition name="slide-fade" mode="out-in">
-            <v-card-text class="slide-fade-item card-content">
-                <svg viewbox="-2 -2 54 104" v-for="shape in shapes" :key="shape.key">
-                    <path :d="shape.d" :fill="shape.fill" />
-                </svg>
-            </v-card-text>
-        </transition>
-    </v-card>
+  <v-card
+    elevation="4"
+    :class="['set-card', 'fill-' + card.color, 'fadeIn', selectedClass]"
+    @click="click"
+  >
+    <transition
+      name="slide-fade"
+      mode="out-in"
+    >
+      <v-card-text class="slide-fade-item card-content">
+        <svg
+          v-for="shape in shapes"
+          :key="shape.key"
+          viewbox="-2 -2 54 104"
+        >
+          <path
+            :d="shape.d"
+            :fill="shape.fill"
+          />
+        </svg>
+      </v-card-text>
+    </transition>
+  </v-card>
 </template>
 
 <script>
@@ -107,7 +121,7 @@ export default {
 
 .set-card path,
 .set-card rect {
-    stroke-width: 2;
+    stroke-width: 2.5;
 }
 
 .fill-green path, .fill-green rect { stroke: #06D6A0; }

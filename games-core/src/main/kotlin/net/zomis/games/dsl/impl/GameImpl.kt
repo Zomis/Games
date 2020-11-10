@@ -24,7 +24,7 @@ typealias GameController<T> = (GameControllerScope<T>) -> Actionable<T, Any>?
 class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
 
     val gameType: String = gameSpec.name
-    private val context = GameDslContext<T>()
+    internal val context = GameDslContext<T>()
     init {
         gameSpec(context)
         context.modelDsl(context.model)
@@ -54,10 +54,12 @@ class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override va
     override val eliminationCallback = PlayerEliminations(playerCount)
     val model = setupContext.model.factory(this, config)
     private val replayState = ReplayState(stateKeeper, eliminationCallback)
-    private val rules = GameRulesContext(model, replayState, eliminationCallback)
+    private val rules = GameActionRulesContext(model, replayState, eliminationCallback)
     init {
         setupContext.model.onStart(replayState, model)
+        setupContext.actionRulesDsl?.invoke(rules)
         setupContext.rulesDsl?.invoke(rules)
+        rules.gameStart()
     }
     val actions = ActionsImpl(model, rules, replayState)
 

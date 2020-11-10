@@ -1,54 +1,99 @@
 <template>
   <div class="game-ur">
     <div class="board-parent">
-      <UrPlayerView :view="view" :playerIndex="0"
-        :onPlaceNewHighlight="onPlaceNewHighlight"
+      <UrPlayerView
+        :view="view"
+        :player-index="0"
+        :on-place-new-highlight="onPlaceNewHighlight"
         :class="{ opponent: !canControlPlayer[0] }"
         :mouseleave="mouseleave"
-        :onPlaceNew="placeNew" />
+        :on-place-new="placeNew"
+      />
 
       <div class="board ur-board">
         <div class="pieces pieces-bg">
-          <div v-for="idx in 20" class="piece piece-bg" :key="idx">
-          </div>
-          <div class="piece-black" style="grid-area: 1 / 5 / 2 / 7"></div>
-          <div class="piece-black" style="grid-area: 3 / 5 / 4 / 7"></div>
+          <div
+            v-for="idx in 20"
+            :key="idx"
+            class="piece piece-bg"
+          />
+          <div
+            class="piece-black"
+            style="grid-area: 1 / 5 / 2 / 7"
+          />
+          <div
+            class="piece-black"
+            style="grid-area: 3 / 5 / 4 / 7"
+          />
         </div>
         <div class="pieces ur-pieces-flowers">
-          <UrFlower :x="0" :y="0" />
-          <UrFlower :x="3" :y="1" />
-          <UrFlower :x="0" :y="2" />
-          <UrFlower :x="6" :y="0" />
-          <UrFlower :x="6" :y="2" />
+          <UrFlower
+            :x="0"
+            :y="0"
+          />
+          <UrFlower
+            :x="3"
+            :y="1"
+          />
+          <UrFlower
+            :x="0"
+            :y="2"
+          />
+          <UrFlower
+            :x="6"
+            :y="0"
+          />
+          <UrFlower
+            :x="6"
+            :y="2"
+          />
         </div>
 
         <div class="pieces player-pieces">
-          <UrPiece v-if="destination !== null" :piece="destination" class="highlighted"
-            :mouseover="doNothing" :mouseleave="doNothing"
-            :class="{['piece-' + destination.player]: true}">
-          </UrPiece>
-          <UrPiece v-for="piece in playerPieces"
+          <UrPiece
+            v-if="destination !== null"
+            :piece="destination"
+            class="highlighted"
+            :mouseover="doNothing"
+            :mouseleave="doNothing"
+            :class="{['piece-' + destination.player]: true}"
+          />
+          <UrPiece
+            v-for="piece in playerPieces"
             :key="piece.key"
             class="piece"
-            :mouseover="mouseover" :mouseleave="mouseleave"
+            :mouseover="mouseover"
+            :mouseleave="mouseleave"
             :class="{['piece-' + piece.player]: true, 'moveable':
-              view.isMoveTime && piece.player === view.currentPlayer,
-              opponent: !canControlCurrentPlayer}"
+                       view.isMoveTime && piece.player === view.currentPlayer,
+                     opponent: !canControlCurrentPlayer}"
             :piece="piece"
-            :onclick="onClick">
-          </UrPiece>
+            :onclick="onClick"
+          />
         </div>
       </div>
-      <UrPlayerView :view="view" :playerIndex="1"
-       :onPlaceNewHighlight="onPlaceNewHighlight"
-       :class="{ opponent: !canControlPlayer[1] }"
-       :mouseleave="mouseleave"
-       :onPlaceNew="placeNew" />
-      <UrRoll :roll="lastRoll" :usable="view.roll < 0 && canControlCurrentPlayer" :onDoRoll="onDoRoll" />
+      <UrPlayerView
+        :view="view"
+        :player-index="1"
+        :on-place-new-highlight="onPlaceNewHighlight"
+        :class="{ opponent: !canControlPlayer[1] }"
+        :mouseleave="mouseleave"
+        :on-place-new="placeNew"
+      />
+      <UrRoll
+        :roll="lastRoll"
+        :usable="view.roll < 0 && canControlCurrentPlayer"
+        :on-do-roll="onDoRoll"
+      />
     </div>
-    <v-expansion-panel v-if="showRules" expand>
+    <v-expansion-panel
+      v-if="showRules"
+      expand
+    >
       <v-expansion-panel-content>
-        <div slot="header">Objective</div>
+        <div slot="header">
+          Objective
+        </div>
         <v-card>
           <v-card-text>
             Two players are fighting to be the first player who races all their 7 pieces to the exit.
@@ -57,7 +102,9 @@
         </v-card>
       </v-expansion-panel-content>
       <v-expansion-panel-content>
-        <div slot="header">Dice</div>
+        <div slot="header">
+          Dice
+        </div>
         <v-card>
           <v-card-text>
             Players take turns in rolling the four dice. Each die can be 1 or 0. Then you move a piece a number of steps that equals the sum of these four dice.
@@ -65,7 +112,9 @@
         </v-card>
       </v-expansion-panel-content>
       <v-expansion-panel-content>
-        <div slot="header">Flowers</div>
+        <div slot="header">
+          Flowers
+        </div>
         <v-card>
           <v-card-text>
             Five tiles are marked with flowers. When a piece lands on a flower the player get to roll again.

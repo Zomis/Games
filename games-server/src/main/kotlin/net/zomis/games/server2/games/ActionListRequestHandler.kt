@@ -40,7 +40,7 @@ class ActionListRequestHandler(private val game: ServerGame?) {
             "gameType" to game.gameType.type,
             "gameId" to game.gameId,
             "playerIndex" to actionParams.playerIndex,
-            "actions" to actionParams.actions.keys.keys
+            "actions" to if (game.obj!!.game.isGameOver()) emptyMap<String, Any>() else actionParams.actions.keys.keys
         ))
     }
 

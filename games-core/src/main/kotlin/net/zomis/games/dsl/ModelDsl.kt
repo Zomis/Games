@@ -12,5 +12,6 @@ interface GameModel<T, C> {
     fun playersFixed(playerCount: Int)
     fun defaultConfig(creator: () -> C)
     fun init(factory: GameFactoryScope<C>.(C?) -> T)
+    @Deprecated("use actionRules or gameRules instead and put game setup logic there")
     fun onStart(effect: ReplayableScope.(T) -> Unit)
 }

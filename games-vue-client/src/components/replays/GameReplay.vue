@@ -1,23 +1,50 @@
 <template>
   <v-container fluid>
-    <v-layout column fill-height>
-      <v-layout row wrap justify-center align-center>
-        <v-flex xs1 text-xs-center>{{ position }} / {{ maxReplayStep }}</v-flex>
+    <v-layout
+      column
+      fill-height
+    >
+      <v-layout
+        row
+        wrap
+        justify-center
+        align-center
+      >
+        <v-flex
+          xs1
+          text-xs-center
+        >
+          {{ position }} / {{ maxReplayStep }}
+        </v-flex>
         <v-flex xs10>
-          <v-slider v-model="position" :max="maxReplayStep" :min="0"></v-slider>
+          <v-slider
+            v-model="position"
+            :max="maxReplayStep"
+            :min="0"
+          />
         </v-flex>
       </v-layout>
-      <v-layout row justify-center align-center>
+      <v-layout
+        row
+        justify-center
+        align-center
+      >
         <v-btn @click="setPosition(0)">
           <v-icon>mdi-skip-previous</v-icon>
         </v-btn>
         <v-btn @click="changePosition(-1)">
           <v-icon>mdi-rewind</v-icon>
         </v-btn>
-        <v-btn v-if="!running" @click="setRunning(true)">
+        <v-btn
+          v-if="!running"
+          @click="setRunning(true)"
+        >
           <v-icon>mdi-play</v-icon>
         </v-btn>
-        <v-btn v-else @click="setRunning(false)">
+        <v-btn
+          v-else
+          @click="setRunning(false)"
+        >
           <v-icon>mdi-pause</v-icon>
         </v-btn>
         <v-btn @click="changePosition(1)">
@@ -27,16 +54,41 @@
           <v-icon>mdi-skip-next</v-icon>
         </v-btn>
       </v-layout>
-      <v-flex grow v-if="replay">
-        <GameHead xs12 :gameInfo="gameInfo" :view="currentView" :eliminations="currentEliminations" v-if="gameInfo"></GameHead>
-        <v-alert type="warning" v-for="error in replay.errors" :key="error">{{ error }}</v-alert>
+      <v-flex
+        v-if="replay"
+        grow
+      >
+        <GameHead
+          v-if="gameInfo"
+          xs12
+          :game-info="gameInfo"
+          :view="currentView"
+          :eliminations="currentEliminations"
+        />
+        <v-alert
+          v-for="error in replay.errors"
+          :key="error"
+          type="warning"
+        >
+          {{ error }}
+        </v-alert>
         <div xs12>
-            Started at {{ timeStarted }} - Ended at {{ timeLastAction }}
+          Started at {{ timeStarted }} - Ended at {{ timeLastAction }}
         </div>
-        <component xs12 :is="gameComponent" :actions="actions" :view="currentView" :players="players" :context="context" />
+        <component
+          :is="gameComponent"
+          xs12
+          :actions="actions"
+          :view="currentView"
+          :players="players"
+          :context="context"
+        />
       </v-flex>
     </v-layout>
-    <AiQuery :gameInfo="gameInfo" :gamePosition="position" />
+    <AiQuery
+      :game-info="gameInfo"
+      :game-position="position"
+    />
   </v-container>
 </template>
 <script>

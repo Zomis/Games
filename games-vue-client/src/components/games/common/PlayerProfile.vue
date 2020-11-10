@@ -1,17 +1,22 @@
 <template>
-    <div class="player-profile">
-        <v-tooltip bottom>
-            <template v-slot:activator="{ on }">
-                <v-avatar :size="size" v-on="on" :class="[winResultClass, eliminatedOpacityClass]">
-                    <img
-                        :src="player.picture"
-                        :alt="player.name" />
-                </v-avatar>
-                <span v-if="showName">&nbsp;{{ player.name }} {{ postFix }}</span>
-            </template>
-            <span>{{ player.name }}</span>
-        </v-tooltip>
-    </div>
+  <div class="player-profile">
+    <v-tooltip bottom>
+      <template v-slot:activator="{ on }">
+        <v-avatar
+          :size="size"
+          :class="[winResultClass, eliminatedOpacityClass]"
+          v-on="on"
+        >
+          <img
+            :src="player.picture"
+            :alt="player.name"
+          >
+        </v-avatar>
+        <span v-if="showName">&nbsp;{{ player.name }} {{ postFix }}</span>
+      </template>
+      <span>{{ player.name }}</span>
+    </v-tooltip>
+  </div>
 </template>
 <script>
 export default {

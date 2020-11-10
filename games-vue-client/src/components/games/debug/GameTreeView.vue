@@ -1,16 +1,28 @@
 <template>
-    <div>
-        <v-treeview
-            activatable hoverable open-on-click :return-object="isActions"
-            :active.sync="active"
-            :items="items"
-            :open.sync="open">
-            <template v-slot:prepend="{ item }">
-                <v-icon v-if="item.children" v-text="`mdi-${item.id === 'root' ? 'home-variant' : 'folder-network'}`" />
-            </template>
-        </v-treeview>
-        <v-btn v-if="isActions" @click="performAction">Perform Action</v-btn>
-    </div>
+  <div>
+    <v-treeview
+      activatable
+      hoverable
+      open-on-click
+      :return-object="isActions"
+      :active.sync="active"
+      :items="items"
+      :open.sync="open"
+    >
+      <template v-slot:prepend="{ item }">
+        <v-icon
+          v-if="item.children"
+          v-text="`mdi-${item.id === 'root' ? 'home-variant' : 'folder-network'}`"
+        />
+      </template>
+    </v-treeview>
+    <v-btn
+      v-if="isActions"
+      @click="performAction"
+    >
+      Perform Action
+    </v-btn>
+  </div>
 </template>
 <script>
 function convertToItems(recursiveFunction, parentId, key, data) {
