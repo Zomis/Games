@@ -2,19 +2,17 @@
   <v-container fluid>
     <v-row>
       <v-col cols="1">
-        <input
-          id="hideAIUsers"
+        <v-checkbox
           v-model="hideAIUsers"
-          type="checkbox"
+          label="Hide AI Users"
           @change="toggleAIUsers()"
-        >
+        />
       </v-col>
       <v-col
         cols="11"
         sm="6"
         md="2"
       >
-        <label for="hideAIUsers">Hide AI Users</label>
       </v-col>
     </v-row>
     <v-row>
