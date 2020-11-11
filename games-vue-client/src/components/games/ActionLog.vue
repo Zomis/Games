@@ -1,9 +1,9 @@
 <template>
   <v-card v-show="logEntries.length > 0">
     <v-card-title>
-      <h1>Action Log</h1>
+      <h2>{{ title }}</h2>
     </v-card-title>
-    <v-list>
+    <v-list :class="{ reversed: reversed }">
       <v-list-item
         v-for="(entry, index) in logEntries"
         :key="index"
@@ -34,7 +34,12 @@ import LogEntryText from "@/components/action-log/LogEntryText"
 
 export default {
     name: "ActionLog",
-    props: ["logEntries", "context"],
+    props: {
+      logEntries: Array,
+      context: Object,
+      title: { type: String, default: "Action Log" },
+      reversed: { type: Boolean, default: true }
+    },
     components: { PlayerProfile },
     methods: {
         highlight(value) {
@@ -49,7 +54,7 @@ export default {
             return {
                 player: {
                     component: PlayerProfile,
-                    binds: (part) => ({ player: this.context.players[part.playerIndex] })
+                    binds: (part) => ({ context: this.context, playerIndex: part.playerIndex })
                 },
                 text: {
                     component: LogEntryText,
@@ -74,6 +79,10 @@ export default {
 </script>
 <style scoped>
 .v-list {
+    display: flex;
+    flex-direction: column;
+}
+.v-list.reversed {
     display: flex;
     flex-direction: column-reverse;
 }

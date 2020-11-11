@@ -8,13 +8,13 @@
           v-on="on"
         >
           <img
-            :src="player.picture"
-            :alt="player.name"
+            :src="playerToDisplay.picture"
+            :alt="playerToDisplay.name"
           >
         </v-avatar>
-        <span v-if="showName">&nbsp;{{ player.name }} {{ postFix }}</span>
+        <span v-if="showName">&nbsp;{{ playerToDisplay.name }} {{ postFix }}</span>
       </template>
-      <span>{{ player.name }}</span>
+      <span><span v-if="typeof playerIndex !== 'undefined'">({{ playerIndex }}) </span> <span>{{ playerToDisplay.name }}</span></span>
     </v-tooltip>
   </div>
 </template>
@@ -23,12 +23,18 @@ export default {
     // Tooltip, Menu/v-router-link (go to profile page), v-avatar, show-name
     name: "PlayerProfile",
     props: {
-        player: Object,
+        context: { type: Object, default: null },
+        playerIndex: { type: Number, default: null },
+        player: { type: Object, default: null },
         showName: { type: Boolean, default: false },
         size: { type: Number, default: 32 },
         postFix: { type: String, default: "" }
     },
     computed: {
+        playerToDisplay() {
+            if (this.player) return this.player;
+            return this.context.players[this.playerIndex]
+        },
         elim() {
             return null
         },

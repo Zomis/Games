@@ -53,12 +53,14 @@ object CoupRuleBased {
                 game.players.map {player ->
                     if (player.playerIndex != this.viewer) {
                         return@map mapOf(
+                            "alive" to player.isAlive(),
                             "influenceCount" to player.influence.size,
                             "coins" to player.coins,
                             "previousInfluence" to player.previousInfluence.cards.map { it.name }
                         )
                     }
                     mapOf(
+                        "alive" to player.isAlive(),
                         "influence" to player.influence.cards.map { it.name },
                         "coins" to player.coins,
                         "previousInfluence" to player.previousInfluence.cards.map { it.name }
@@ -68,7 +70,53 @@ object CoupRuleBased {
             value("currentPlayer") { it.currentPlayerIndex }
             value("deck") { it.deck.size }
             value("stack") {game ->
-                game.stack.asList().map { it.toString() }
+                game.stack.asList().map {task ->
+                    // This is shown in an ActionLog-like format
+                    fun playerPart(player: CoupPlayer?): Map<String, Any>? {
+                        return if (player != null) mapOf("type" to "player", "playerIndex" to player.playerIndex) else null
+                    }
+                    fun textPart(text: String): Map<String, Any>
+                        = mapOf("type" to "text", "text" to text)
+                    fun characterPart(charactrer: CoupCharacter): Map<String, Any>
+                        = mapOf("type" to "text", "text" to charactrer.name)
+
+                    val parts = when (task) {
+                        is CoupLoseInfluenceTask -> listOf(
+                            playerPart(task.player),
+                            textPart("has to lose influence")
+                        )
+                        is CoupAction -> listOf(
+                            playerPart(task.player),
+                            textPart("wants to " + task.action.name),
+                            playerPart(task.target)
+                        ).filterNotNull()
+                        is CoupAwaitCountering -> listOf(
+                            textPart("can be countered")
+                        )
+                        is CoupChallengedClaim -> listOf(
+                            playerPart(game.players[task.challengedBy]),
+                            textPart("challenged claim"),
+                            characterPart(task.claim.character),
+                            textPart("by"),
+                            playerPart(task.claim.player)
+                        )
+                        is CoupClaim -> listOf(
+                            playerPart(task.player),
+                            textPart("claims"),
+                            characterPart(task.character)
+                        )
+                        is CoupCounteract -> listOf(
+                            playerPart(task.claim.player),
+                            textPart("wants to counteract")
+                        )
+                        is CoupPlayerExchangeCards -> listOf(
+                            playerPart(task.player),
+                            textPart("exchanges cards with the deck")
+                        )
+                        else -> throw UnsupportedOperationException("Task not yet supported in view: $task")
+                    }
+                    mapOf("parts" to parts)
+                }
             }
         }
         actionRules {

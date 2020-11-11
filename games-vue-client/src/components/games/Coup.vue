@@ -7,13 +7,14 @@
         cols="2"
       >
         <v-card
-          :class="{ 'current-player': view.currentPlayer == playerIndex }"
+          :class="{ 'current-player': view.currentPlayer == playerIndex, dead: !player.alive }"
           class="animate-all"
         >
           <v-card-title>
             <PlayerProfile
               show-name
-              :player="context.players[playerIndex]"
+              :context="context"
+              :playerIndex="playerIndex"
             />
           </v-card-title>
           <v-card-text>
@@ -45,6 +46,7 @@
               <v-card
                 v-for="(card, cardIndex) in player.previousInfluence"
                 :key="cardIndex"
+                class="dead"
               >
                 <v-card-title>
                   <div>
@@ -69,19 +71,6 @@
           </v-card-text>
         </v-card>
       </v-col>
-    </v-row>
-    <v-row>
-      <v-col>
-        <p
-          v-for="(task, taskIndex) in view.stack"
-          :key="taskIndex"
-        >
-          {{ task }}
-        </p>
-      </v-col>
-    </v-row>
-    <v-row>
-      {{ view.currentPlayer }}
     </v-row>
     <v-row>
       <v-col>
@@ -136,18 +125,29 @@
         </Actionable>
       </v-col>
     </v-row>
+    <v-row>
+      <v-col>
+        <ActionLog
+          :log-entries="view.stack"
+          :context="context"
+          title="Actions"
+          :reversed="false"
+        />
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 <script>
 import PlayerProfile from "@/components/games/common/PlayerProfile"
 import Actionable from "@/components/games/common/Actionable"
 import CardZone from "@/components/games/common/CardZone"
+import ActionLog from "@/components/games/ActionLog"
 
 export default {
     name: "Coup",
     props: ["view", "actions", "context"],
     components: {
-        PlayerProfile, Actionable, CardZone
+        PlayerProfile, Actionable, CardZone, ActionLog
     },
 }
 </script>
@@ -155,6 +155,9 @@ export default {
 @import "../../assets/games-style.css";
 @import "../../assets/games-animations.css";
 
+.dead {
+    opacity: 0.4;
+}
 .current-player {
     border-style: solid !important;
     border-width: thick !important;
