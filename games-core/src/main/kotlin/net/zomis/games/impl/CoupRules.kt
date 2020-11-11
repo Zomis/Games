@@ -42,10 +42,11 @@ object CoupRuleBased {
     val loseInfluence = factory.action("lose", CoupCharacter::class).serializer { it.name }
 
     val game = factory.game("Coup") {
-        setup {
+        setup(CoupConfig::class) {
+            defaultConfig { CoupConfig(0) }
             players(2..6)
             init {
-                Coup(playerCount)
+                Coup(config, playerCount)
             }
         }
         view {
@@ -197,7 +198,7 @@ object CoupRuleBased {
                     precondition { playerIndex == (game.stack.peek() as CoupChallengedClaim).player.playerIndex }
                     precondition {
                         val challengedClaim = game.stack.peek() as CoupChallengedClaim
-                        challengedClaim.claim.player.influence.cards.contains(challengedClaim.claim.character)
+                        challengedClaim.claim.canReveal()
                     }
                     perform {
                         // Put back card, draw a new one
