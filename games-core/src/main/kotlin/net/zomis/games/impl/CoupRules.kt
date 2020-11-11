@@ -46,7 +46,7 @@ object CoupRuleBased {
             defaultConfig { CoupConfig(0) }
             players(2..6)
             init {
-                Coup(config, playerCount)
+                Coup(events, config, playerCount)
             }
         }
         view {
@@ -161,8 +161,17 @@ object CoupRuleBased {
                     game.players.forEach { it.coins = 2 }
                 }
             }
+            rule("Get 1 coin (from the challenged player?) when winning a challenge") {
+                appliesWhen { game.config.gainMoneyOnSuccessfulChallenge > 0 }
+                onEvent { game.challengeEvents }.perform {
+                    if (!event.trueClaim) {
+                        game.players[event.challengedClaim.challengedBy].coins += game.config.gainMoneyOnSuccessfulChallenge
+                    }
+                    // TODO: Add log?
+                }
+            }
             rule("lose influence") {
-                appliesWhen { game.stack.peek() is CoupLoseInfluence || game.stack.peek() is CoupChallengedClaim }
+                appliesWhen { game.stack.peek() is CoupLoseInfluence }
                 action(loseInfluence) {
                     precondition { playerIndex == (game.stack.peek() as CoupLoseInfluence).player.playerIndex }
                     requires {
@@ -176,6 +185,10 @@ object CoupRuleBased {
                         player.influence.card(action.parameter).moveTo(player.previousInfluence)
 
                         val topTask = game.stack.pop() as CoupLoseInfluence
+                        if (topTask is CoupChallengedClaim) {
+                            game.challengeEvents.fire(CoupChallengeResolved(topTask, false))
+                        }
+
                         val actionTask = game.stack.asList().filterIsInstance<CoupAction>().firstOrNull()
                         if (topTask.player == actionTask?.player) {
                             // Everything either challenged or countered
@@ -203,6 +216,8 @@ object CoupRuleBased {
                     perform {
                         // Put back card, draw a new one
                         val challengedClaim = game.stack.pop() as CoupChallengedClaim
+                        game.challengeEvents.fire(CoupChallengeResolved(challengedClaim, true))
+
                         log { "$player reveals ${challengedClaim.claim.character} and draws a new card" }
                         challengedClaim.claim.player.influence.card(challengedClaim.claim.character).moveTo(game.deck)
                         game.deck.random(replayable, 1, "replacement") { it.name }.forEach {
@@ -412,7 +427,18 @@ object CoupRuleBased {
                 }
             }
             // challenging returns coins, counteraction does not (Assassination)
-            // TODO: Extra rule: Get 1 coin (from the challenged player?) when winning a challenge.
+        }
+        testCase(players = 3) {
+            config(CoupConfig(gainMoneyOnSuccessfulChallenge = 1))
+            state("start-0", listOf("CONTESSA", "ASSASSIN"))
+            action(0, perform, CoupAction(game.players[0], CoupActionType.TAX))
+            action(1, challenge, Unit)
+            action(0, loseInfluence, CoupCharacter.CONTESSA)
+
+            expectEquals(1, game.currentPlayerIndex)
+            expectEquals(2, game.players[0].coins)
+            expectEquals(3, game.players[1].coins)
+            expectEquals(listOf(CoupCharacter.ASSASSIN), game.players[0].influence.cards)
         }
         testCase(players = 3) {
             state("start-0", listOf("CONTESSA", "ASSASSIN"))
