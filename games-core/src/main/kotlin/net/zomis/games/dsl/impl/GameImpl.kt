@@ -1,11 +1,9 @@
 package net.zomis.games.dsl.impl
 
 import net.zomis.games.PlayerEliminations
+import net.zomis.games.common.GameEvents
 import net.zomis.games.common.PlayerIndex
-import net.zomis.games.dsl.Actionable
-import net.zomis.games.dsl.GameFactoryScope
-import net.zomis.games.dsl.GameSpec
-import net.zomis.games.dsl.Viewable
+import net.zomis.games.dsl.*
 import kotlin.reflect.KClass
 
 class GameControllerContext<T : Any>(
@@ -47,8 +45,12 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
 
 }
 
-class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override val playerCount: Int,
-        override val config: Any, val stateKeeper: StateKeeper): GameFactoryScope<Any> {
+class GameImpl<T : Any>(
+    private val setupContext: GameDslContext<T>,
+    override val playerCount: Int,
+    override val config: Any,
+    val stateKeeper: StateKeeper
+): GameFactoryScope<Any>, GameEventsExecutor {
 
     val playerIndices = 0 until playerCount
     override val eliminationCallback = PlayerEliminations(playerCount)
@@ -89,5 +91,8 @@ class GameImpl<T : Any>(private val setupContext: GameDslContext<T>, override va
         setupContext.viewDsl?.invoke(view)
         return view.request(playerIndex, key, params)
     }
+
+    override val events: GameEventsExecutor get() = this
+    override fun fire(executor: GameEvents<*>, event: Any?) = this.rules.fire(executor, event)
 
 }

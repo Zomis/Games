@@ -1,6 +1,7 @@
 package net.zomis.games.dsl.impl
 
 import net.zomis.games.PlayerEliminations
+import net.zomis.games.common.GameEvents
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.rulebased.*
@@ -16,7 +17,7 @@ class GameActionRulesContext<T : Any>(
     val model: T,
     val replayable: ReplayState,
     val eliminations: PlayerEliminations
-): GameActionRules<T>, GameRules<T> {
+): GameActionRules<T>, GameRules<T>, GameEventsExecutor {
     private val views = mutableListOf<Pair<String, ViewScope<T>.() -> Any?>>()
 //    private val logger = KLoggers.logger(this)
     private val allActionRules = GameRuleList(model, replayable, eliminations)
@@ -110,6 +111,11 @@ class GameActionRulesContext<T : Any>(
             rulesTriggered.drop(rulesTriggered.size - 10)
         )
     }
+
+    override fun fire(executor: GameEvents<*>, event: Any?) {
+        this.gameRules.forEach { it.fire(ruleContext, executor as GameEvents<Any?>, event) }
+    }
+
 }
 
 class GameStartContext<T : Any>(override val game: T, override val replayable: ReplayableScope) : GameStartScope<T>

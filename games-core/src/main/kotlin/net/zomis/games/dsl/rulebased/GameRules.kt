@@ -1,6 +1,7 @@
 package net.zomis.games.dsl.rulebased
 
 import net.zomis.games.PlayerEliminations
+import net.zomis.games.common.GameEvents
 import net.zomis.games.dsl.*
 
 interface GameRules<T : Any> {
@@ -11,6 +12,9 @@ interface GameRuleScope<T : Any> {
     val game: T
     val eliminations: PlayerEliminations
     val replayable: ReplayableScope
+}
+interface GameRuleEventScope<T: Any, E>: GameRuleScope<T> {
+    val event: E
 }
 
 interface GameRuleForEach<T : Any, E> {
@@ -25,6 +29,12 @@ interface GameRule<T : Any> {
     fun <A: Any> action(actionType: ActionType<T, A>, actionRule: GameRuleAction<T, A>.() -> Unit)
 
     fun rule(name: String, rule: GameRule<T>.() -> Any?): GameRule<T>
+    fun <E> onEvent(gameEvents: GameRuleScope<T>.() -> GameEvents<E>): GameRuleEvents<T, E>
+}
+
+interface GameRuleEvents<T: Any, E> {
+//    fun filter(...): GameRuleEvents<T, E>
+    fun perform(perform: GameRuleEventScope<T, E>.() -> Unit)
 }
 
 interface GameRuleAction<T : Any, A: Any> {

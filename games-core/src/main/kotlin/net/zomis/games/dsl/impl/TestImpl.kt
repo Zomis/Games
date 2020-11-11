@@ -62,6 +62,10 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
         }
     }
 
+    override fun config(config: Any) {
+        this.config = config
+    }
+
 }
 
 class GameTestCaseContext<T: Any>(val players: Int, val testContext: GameTestDsl<T>) {
