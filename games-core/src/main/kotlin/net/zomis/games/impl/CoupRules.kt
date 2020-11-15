@@ -131,6 +131,17 @@ object CoupRuleBased {
                 appliesWhen { eliminations.remainingPlayers().size == 1 }
                 effect { eliminations.eliminateRemaining(WinResult.WIN) }
             }
+            rule("cancel lose influence") {
+                appliesWhen {
+                    val peek = game.stack.peek()
+                    if (peek !is CoupLoseInfluence) return@appliesWhen false
+                    val task = peek as CoupLoseInfluence
+                    task.player.influence.size == 0
+                }
+                effect {
+                    game.stack.pop()
+                }
+            }
             // TODO: rules.players.losers { game.players.filter { it.influence.size == 0 }.map { it.playerIndex } }
             rule("eliminate players") {
                 applyForEach {
