@@ -12,8 +12,7 @@
         cols="11"
         sm="6"
         md="2"
-      >
-      </v-col>
+      />
     </v-row>
     <v-row>
       <v-col
