@@ -43,6 +43,14 @@
       fixed
       app
     >
+      <cookie-law button-text="I want cookies">
+        <div slot="message">
+          Join the dark side, we use <a
+            target="_blank"
+            href="https://en.wikipedia.org/wiki/HTTP_cookie"
+          >cookies</a> to store settings. Otherwise, please - "Leave now and never come back" - Smeagol.
+        </div>
+      </cookie-law>
       <span>
         &copy; 2018-2020 Zomis' Games
         - <a
@@ -62,10 +70,12 @@
 import Socket from "./socket";
 import store from "./store";
 import { mapState } from "vuex";
+import CookieLaw from 'vue-cookie-law'
 
 export default {
   name: "App",
   store,
+  components: { CookieLaw },
   methods: {
     logout() {
       Socket.disconnect();
