@@ -43,6 +43,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
         val line = scanner.nextLine()
         if (!line.contains(" ")) {
             println("You forgot something.")
+            if (line.isEmpty()) printAvailableActions(game)
             return null
         }
         val (playerIndex, actionType) = line.split(" ")
@@ -68,6 +69,18 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
         val allowed = actionLogic.isAllowed(action)
         println("Action $action allowed: $allowed")
         return action.takeIf { allowed }
+    }
+
+    private fun printAvailableActions(game: GameImpl<T>) {
+        game.playerIndices.map { playerIndex ->
+            game.actions.types().forEach { actionType ->
+                val actionsCount = actionType.availableActions(playerIndex, null).asSequence().take(1000).count()
+                val plus = if (actionsCount == 1000) "+" else ""
+                if (actionsCount > 0) {
+                    println("$playerIndex ${actionType.name}: $actionsCount$plus actions")
+                }
+            }
+        }
     }
 
     private fun stepByStepActionable(game: GameImpl<T>, playerIndex: Int, moveType: String, scanner: Scanner): Actionable<T, Any>? {
