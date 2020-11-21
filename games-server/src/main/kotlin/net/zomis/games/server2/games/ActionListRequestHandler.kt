@@ -3,10 +3,8 @@ package net.zomis.games.server2.games
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
-import net.zomis.games.dsl.impl.ActionInfo
 import net.zomis.games.dsl.impl.ActionInfoByKey
-import net.zomis.games.dsl.impl.ActionTypeImplEntry
-import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.dsl.impl.Game
 import net.zomis.games.server2.Client
 import net.zomis.games.server2.ClientJsonMessage
 import net.zomis.games.server2.getTextOrDefault
@@ -17,7 +15,7 @@ class ActionListRequestHandler(private val game: ServerGame?) {
     private val logger = KLoggers.logger(this)
     private val mapper = jacksonObjectMapper()
 
-    fun <T: Any> availableActionsMessage(obj: GameImpl<T>, playerIndex: Int, moveType: String?, chosen: List<Any>?): FrontendActionInfo {
+    fun <T: Any> availableActionsMessage(obj: Game<T>, playerIndex: Int, moveType: String?, chosen: List<Any>?): FrontendActionInfo {
         return if (moveType != null) {
             val actionType = obj.actions.type(moveType)!!
             val actionInfo = actionType.actionInfoKeys(playerIndex, chosen ?: emptyList())

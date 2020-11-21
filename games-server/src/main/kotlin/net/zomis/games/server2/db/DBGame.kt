@@ -7,8 +7,7 @@ import klog.KLoggers
 import net.zomis.games.dsl.ActionReplay
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.ReplayData
-import net.zomis.games.dsl.impl.ActionOptionsContext
-import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.dsl.impl.StateKeeper
 
@@ -55,7 +54,7 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
         }
     }
 
-    private fun performMove(game: GameImpl<Any>, move: IndexedValue<MoveHistory>): Boolean {
+    private fun performMove(game: Game<Any>, move: IndexedValue<MoveHistory>): Boolean {
         val it = move.value
         val logic = game.actions[it.moveType]
             ?: throw BadReplayException("Unable to perform $it: No such move type")
@@ -81,7 +80,7 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
         return true
     }
 
-    fun at(position: Int): GameImpl<Any> {
+    fun at(position: Int): Game<Any> {
         val stateKeeper = StateKeeper().also { if (summary.startingState != null) it.setState(summary.startingState) }
         val game = gameSetup.createGameWithState(summary.playersInGame.size, gameSetup.getDefaultConfig(), stateKeeper)
         moveHistory.slice(0 until position).withIndex().forEach { performMove(game, it) }

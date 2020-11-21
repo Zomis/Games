@@ -38,7 +38,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
         return result
     }
 
-    fun queryInput(game: GameImpl<T>, scanner: Scanner): Actionable<T, Any>? {
+    fun queryInput(game: Game<T>, scanner: Scanner): Actionable<T, Any>? {
         println("Available actions is: ${game.actions.actionTypes}. Who is playing and what is your action?")
         val line = scanner.nextLine()
         if (!line.contains(" ")) {
@@ -71,7 +71,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
         return action.takeIf { allowed }
     }
 
-    private fun printAvailableActions(game: GameImpl<T>) {
+    private fun printAvailableActions(game: Game<T>) {
         game.playerIndices.map { playerIndex ->
             game.actions.types().forEach { actionType ->
                 val actionsCount = actionType.availableActions(playerIndex, null).asSequence().take(1000).count()
@@ -83,7 +83,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
         }
     }
 
-    private fun stepByStepActionable(game: GameImpl<T>, playerIndex: Int, moveType: String, scanner: Scanner): Actionable<T, Any>? {
+    private fun stepByStepActionable(game: Game<T>, playerIndex: Int, moveType: String, scanner: Scanner): Actionable<T, Any>? {
         val reqHandler = ActionListRequestHandler(null)
 
         val chosen = mutableListOf<Any>()
@@ -144,7 +144,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
         }
     }
 
-    fun showView(game: GameImpl<T>) {
+    fun showView(game: Game<T>) {
         println()
         val currentPlayer = game.view(0)["currentPlayer"] as Int?
         display(0, "Game:", game.view(currentPlayer ?: 0))

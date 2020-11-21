@@ -2,7 +2,7 @@ package net.zomis.games.server2.ais
 
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
-import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.dsl.impl.Game
 import net.zomis.games.impl.TTQuixoController
 import net.zomis.games.impl.ttt.TTT3D
 import net.zomis.games.impl.ttt.TTT3DPiece
@@ -27,7 +27,7 @@ data class AlphaBetaAIFactory<S: Any>(
     val namePrefix: String,
     val maxLevel: Int,
     val useSpeedModes: Boolean,
-    val heuristic: (GameImpl<S>, Int) -> Double
+    val heuristic: (Game<S>, Int) -> Double
 ) {
     fun aiName(level: Int, speedMode: AlphaBetaSpeedMode)
         = "#AI_${this.namePrefix}_" + this.gameType + "_" + level + speedMode.nameSuffix
@@ -91,7 +91,7 @@ class ServerAlphaBetaAIs(private val aiRepository: AIRepository) {
         } / 10.0 // Divide by 10 to work with lower numbers
     }
 
-    fun <T: Any> model(modelHeuristic: (game: T, myIndex: Int) -> Double): (GameImpl<T>, Int) -> Double =
+    fun <T: Any> model(modelHeuristic: (game: T, myIndex: Int) -> Double): (Game<T>, Int) -> Double =
             { gameImpl, index -> modelHeuristic(gameImpl.model, index) }
 
     fun setup(events: EventSystem) {

@@ -12,7 +12,7 @@ import ai.djl.training.optimizer.Optimizer
 import ai.djl.training.optimizer.learningrate.LearningRateTracker
 import ai.djl.translate.Translator
 import ai.djl.translate.TranslatorContext
-import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
 import java.util.Scanner
 import kotlin.random.Random
@@ -139,7 +139,7 @@ class DJLReinforcement {
         }
     }
 
-    fun <T: Any> stateToFloats(state: GameImpl<T>): FloatArray {
+    fun <T: Any> stateToFloats(state: Game<T>): FloatArray {
         return when (val model = state.model) {
             is HelloWorldGame.HelloWorldModel -> model.values.map { if (it) 1f else 0f }.toFloatArray()
             is GridWorldGame.GridWorldModel -> GridWorldGame.stateMapper(model)
@@ -185,12 +185,12 @@ class DJLReinforcement {
         return seriesAwards
     }
 
-    private fun <T: Any> GameImpl<T>.performActionObserveReward(moveIndex: Int): Float {
+    private fun <T: Any> Game<T>.performActionObserveReward(moveIndex: Int): Float {
         val playerIndex = 0
         val move = this.actions.types()
             .sortedBy { it.name }.flatMap { it.availableActions(playerIndex, null) }[moveIndex]
         this.actions.type(move.actionType)!!.perform(playerIndex, move.parameter)
-        return this.eliminationCallback.eliminations().find { it.playerIndex == playerIndex }?.winResult?.result?.toFloat()?.times(100) ?: -0.01f
+        return this.eliminations.eliminations().find { it.playerIndex == playerIndex }?.winResult?.result?.toFloat()?.times(100) ?: -0.01f
     }
 
 }

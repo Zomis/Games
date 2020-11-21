@@ -1,6 +1,6 @@
 package net.zomis.games.dsl
 
-import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.dsl.impl.Game
 
 private class PostReplayCallback<T : Any>(private val replayActionCount: Int, private val postReplayMoveCallback: GameplayCallbacks<T>): GameplayCallbacks<T>() {
     override fun onPreMove(actionIndex: Int, action: Actionable<T, Any>, setStateCallback: (GameSituationState) -> Unit) {
@@ -38,7 +38,7 @@ class Replay<T : Any>(
     private val entryPoint = GamesImpl.game(gameSpec)
     lateinit var gameReplayable: GameReplayableImpl<T>
     private var position: Int = 0
-    val game: GameImpl<T> get() = gameReplayable.game
+    val game: Game<T> get() = gameReplayable.game
 
     fun gotoPosition(newPosition: Int): Replay<T> {
         if (newPosition < this.position) {

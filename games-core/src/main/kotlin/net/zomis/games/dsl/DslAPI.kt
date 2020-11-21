@@ -50,7 +50,7 @@ interface GameDsl<T : Any> {
     fun <C : Any> setup(configClass: KClass<C>, modelDsl: GameModelDsl<T, C>)
     fun setup(modelDsl: GameModelDsl<T, Unit>)
     fun view(viewDsl: GameViewDsl<T>)
-    @Deprecated("use actionRules instead")
+    @Deprecated("use actionRules instead", ReplaceWith("actionRules(actionRulesDsl)"))
     fun rules(actionRulesDsl: GameActionRulesDsl<T>) { actionRules(actionRulesDsl) }
     fun testCase(players: Int, testDsl: GameTestDsl<T>)
     fun actionRules(actionRulesDsl: GameActionRulesDsl<T>)

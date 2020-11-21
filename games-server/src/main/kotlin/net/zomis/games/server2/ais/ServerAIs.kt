@@ -3,7 +3,7 @@ package net.zomis.games.server2.ais
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.Actionable
-import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.dsl.impl.Game
 import net.zomis.games.server2.games.GameTypeRegisterEvent
 import net.zomis.games.server2.games.PlayerGameMoveRequest
 import net.zomis.games.server2.games.ServerGame
@@ -15,7 +15,7 @@ class ServerAIs(private val aiRepository: AIRepository, private val dslGameTypes
 
     fun isDSLGameType(gameType: String) = dslGameTypes.contains(gameType)
 
-    fun <T: Any> randomActionable(game: GameImpl<T>, playerIndex: Int): Actionable<T, Any>? {
+    fun <T: Any> randomActionable(game: Game<T>, playerIndex: Int): Actionable<T, Any>? {
         val actionTypes = game.actions.types()
         val actions = actionTypes.flatMap {actionType ->
             actionType.availableActions(playerIndex, null)

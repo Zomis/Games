@@ -76,14 +76,14 @@ class GameReplayableImpl<T : Any>(
     }
 
     fun perform(action: Actionable<T, Any>) {
-        if (game.eliminationCallback.eliminationFor(action.playerIndex) != null) {
+        if (game.eliminations.eliminationFor(action.playerIndex) != null) {
             throw IllegalArgumentException("Player ${action.playerIndex} is already eliminated.")
         }
         game.stateKeeper.clear()
         gameplayCallbacks.onPreMove(this.actionIndex, action) {
             if (it != null) state.setState(it)
         }
-        val eliminatedBefore = game.eliminationCallback.eliminations()
+        val eliminatedBefore = game.eliminations.eliminations()
         val actionImpl = game.actions.type(action.actionType)!!
         actionImpl.perform(action)
 
@@ -93,7 +93,7 @@ class GameReplayableImpl<T : Any>(
         )
         gameplayCallbacks.onMove(actionIndex, action, actionReplay)
         gameplayCallbacks.onLog(game.stateKeeper.logs())
-        val newlyEliminated = game.eliminationCallback.eliminations() - eliminatedBefore
+        val newlyEliminated = game.eliminations.eliminations() - eliminatedBefore
         newlyEliminated.forEach { gameplayCallbacks.onElimination(it) }
 
         this.actionIndex++

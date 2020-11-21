@@ -6,9 +6,9 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
     val stateKeeper = StateKeeper()
     val setup = entryPoint.setup()
     var config: Any = setup.getDefaultConfig()
-    var gameImpl: GameImpl<T>? = null
+    var gameImpl: Game<T>? = null
 
-    private fun initializedGame(): GameImpl<T> {
+    private fun initializedGame(): Game<T> {
         if (gameImpl == null) {
             stateKeeper.replayMode = true
             gameImpl = entryPoint.setup().createGameWithState(playerCount, config, stateKeeper)
