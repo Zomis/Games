@@ -23,7 +23,7 @@ object Combinatorics {
 
     fun nPr(n: Int, r: Int): Double {
         var result = 1.0
-        for (i in n downTo n - r + 1) result = result * i
+        for (i in n downTo n - r + 1) result *= i
         return result
     }
 

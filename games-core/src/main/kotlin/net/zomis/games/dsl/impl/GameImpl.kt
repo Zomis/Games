@@ -45,16 +45,26 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
 
 }
 
+interface Game<T: Any> {
+    val playerCount: Int
+    val config: Any
+    val eliminations: PlayerEliminations
+    val model: T
+    val stateKeeper: StateKeeper
+    val actions: Actions<T>
+}
+
 class GameImpl<T : Any>(
     private val setupContext: GameDslContext<T>,
     override val playerCount: Int,
     override val config: Any,
-    val stateKeeper: StateKeeper
-): GameFactoryScope<Any>, GameEventsExecutor {
+    override val stateKeeper: StateKeeper
+): Game<T>, GameFactoryScope<Any>, GameEventsExecutor {
 
     val playerIndices = 0 until playerCount
     override val eliminationCallback = PlayerEliminations(playerCount)
-    val model = setupContext.model.factory(this, config)
+    override val eliminations: PlayerEliminations get() = eliminationCallback
+    override val model = setupContext.model.factory(this, config)
     private val replayState = ReplayState(stateKeeper, eliminationCallback)
     private val rules = GameActionRulesContext(model, replayState, eliminationCallback)
     init {
@@ -63,7 +73,7 @@ class GameImpl<T : Any>(
         setupContext.rulesDsl?.invoke(rules)
         rules.gameStart()
     }
-    val actions = ActionsImpl(model, rules, replayState)
+    override val actions = ActionsImpl(model, rules, replayState)
 
     fun copy(copier: (source: T, destination: T) -> Unit): GameImpl<T> {
         val copy = GameImpl(setupContext, playerCount, config, stateKeeper)

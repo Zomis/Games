@@ -78,25 +78,35 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
         get() = actionType.parameterType
 }
 
+interface Actions<T: Any> {
+    val actionTypes: Set<String>
+    fun types(): Set<ActionTypeImplEntry<T, Any>>
+    operator fun get(actionType: String): ActionTypeImplEntry<T, Any>?
+    fun <A: Any> type(actionType: ActionType<T, A>): ActionTypeImplEntry<T, A>
+    fun type(actionType: String): ActionTypeImplEntry<T, Any>?
+    fun <P : Any> type(actionType: String, clazz: KClass<P>): ActionTypeImplEntry<T, P>?
+    fun allActionInfo(playerIndex: Int, previouslySelected: List<Any>): ActionInfoByKey
+}
+
 class ActionsImpl<T : Any>(
     private val model: T,
     private val rules: GameActionRulesContext<T>,
     private val replayState: ReplayState
-) {
+): Actions<T> {
 
-    val actionTypes: Set<String> get() = rules.actionTypes()
+    override val actionTypes: Set<String> get() = rules.actionTypes()
 
-    fun types(): Set<ActionTypeImplEntry<T, Any>> {
+    override fun types(): Set<ActionTypeImplEntry<T, Any>> {
         return actionTypes.map { type(it)!! }.toSet()
     }
 
-    operator fun get(actionType: String): ActionTypeImplEntry<T, Any>? {
+    override operator fun get(actionType: String): ActionTypeImplEntry<T, Any>? {
         return type(actionType)
     }
 
-    fun <A: Any> type(actionType: ActionType<T, A>) = rules.actionType(actionType.name) as ActionTypeImplEntry<T, A>
-    fun type(actionType: String): ActionTypeImplEntry<T, Any>? = rules.actionType(actionType)
-    fun <P : Any> type(actionType: String, clazz: KClass<P>): ActionTypeImplEntry<T, P>? {
+    override fun <A: Any> type(actionType: ActionType<T, A>) = rules.actionType(actionType.name) as ActionTypeImplEntry<T, A>
+    override fun type(actionType: String): ActionTypeImplEntry<T, Any>? = rules.actionType(actionType)
+    override fun <P : Any> type(actionType: String, clazz: KClass<P>): ActionTypeImplEntry<T, P>? {
         val entry = this.type(actionType)
         if (entry != null) {
             if (entry.actionType.parameterType != clazz) {
@@ -107,7 +117,7 @@ class ActionsImpl<T : Any>(
         return null
     }
 
-    fun allActionInfo(playerIndex: Int, previouslySelected: List<Any>): ActionInfoByKey {
+    override fun allActionInfo(playerIndex: Int, previouslySelected: List<Any>): ActionInfoByKey {
         return types().fold(ActionInfoByKey(emptyMap())) { acc, next ->
             acc + next.actionInfoKeys(playerIndex, previouslySelected)
         }
