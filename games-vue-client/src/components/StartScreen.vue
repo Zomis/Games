@@ -1,19 +1,6 @@
 <template>
   <v-container fluid>
-    <v-row>
-      <v-col cols="1">
-        <v-checkbox
-          v-model="hideAIUsers"
-          label="Hide AI Users"
-          @change="toggleAIUsers()"
-        />
-      </v-col>
-      <v-col
-        cols="11"
-        sm="6"
-        md="2"
-      />
-    </v-row>
+    <LobbyOptions />
     <v-row>
       <v-col
         v-for="(users, gameType) in lobby"
@@ -78,7 +65,7 @@
 <script>
 import Socket from "@/socket";
 import LobbyGameType from "@/components/lobby/LobbyGameType";
-
+import LobbyOptions from "@/components/lobby/LobbyOptions"
 import { mapState } from "vuex";
 import supportedGames from "@/supportedGames";
 
@@ -88,11 +75,11 @@ export default {
     return {
       gameList: [],
       unfinishedGames: [],
-      hideAIUsers: false
     };
   },
   components: {
     LobbyGameType,
+    LobbyOptions,
     ...supportedGames.components()
   },
   mounted() {
@@ -123,9 +110,6 @@ export default {
     },
     resumeGame(gameType, gameId) {
       this.$router.push(`/games/${gameType}/${gameId}`)
-    },
-    toggleAIUsers() {
-      this.$store.commit("lobby/toggleAIUsers", this.hideAIUsers);
     },
   },
   created() {
