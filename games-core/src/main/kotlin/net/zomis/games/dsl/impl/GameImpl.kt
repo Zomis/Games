@@ -45,6 +45,9 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
 
 }
 
+@DslMarker
+annotation class GameMarker
+
 interface Game<T: Any> {
     val playerCount: Int
     val playerIndices: IntRange get() = 0 until playerCount
@@ -106,5 +109,5 @@ class GameImpl<T : Any>(
     }
 
     override val events: GameEventsExecutor get() = this
-    override fun fire(executor: GameEvents<*>, event: Any?) = this.rules.fire(executor, event)
+    override fun <E> fire(executor: GameEvents<E>, event: E) = this.rules.fire(executor, event)
 }

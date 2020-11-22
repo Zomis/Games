@@ -82,10 +82,14 @@ interface Actions<T: Any> {
     val actionTypes: Set<String>
     fun types(): Set<ActionTypeImplEntry<T, Any>>
     operator fun get(actionType: String): ActionTypeImplEntry<T, Any>?
-    fun <A: Any> type(actionType: ActionType<T, A>): ActionTypeImplEntry<T, A>
+    fun <A: Any> type(actionType: ActionType<T, A>): ActionTypeImplEntry<T, A>?
     fun type(actionType: String): ActionTypeImplEntry<T, Any>?
     fun <P : Any> type(actionType: String, clazz: KClass<P>): ActionTypeImplEntry<T, P>?
-    fun allActionInfo(playerIndex: Int, previouslySelected: List<Any>): ActionInfoByKey
+    fun allActionInfo(playerIndex: Int, previouslySelected: List<Any>): ActionInfoByKey {
+        return types().fold(ActionInfoByKey(emptyMap())) { acc, next ->
+            acc + next.actionInfoKeys(playerIndex, previouslySelected)
+        }
+    }
 }
 
 class ActionsImpl<T : Any>(
@@ -115,12 +119,6 @@ class ActionsImpl<T : Any>(
             return this.type(actionType) as ActionTypeImplEntry<T, P>
         }
         return null
-    }
-
-    override fun allActionInfo(playerIndex: Int, previouslySelected: List<Any>): ActionInfoByKey {
-        return types().fold(ActionInfoByKey(emptyMap())) { acc, next ->
-            acc + next.actionInfoKeys(playerIndex, previouslySelected)
-        }
     }
 
 }

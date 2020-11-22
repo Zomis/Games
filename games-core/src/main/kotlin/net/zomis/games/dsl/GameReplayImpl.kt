@@ -68,11 +68,11 @@ class GameReplayableImpl<T : Any>(
     }
 
     fun <A: Any> action(playerIndex: Int, actionType: ActionType<T, A>, parameter: A) {
-        perform(game.actions.type(actionType).createAction(playerIndex, parameter) as Actionable<T, Any>)
+        perform(game.actions.type(actionType)!!.createAction(playerIndex, parameter) as Actionable<T, Any>)
     }
 
     fun <A: Any> actionSerialized(playerIndex: Int, actionType: ActionType<T, A>, serialized: Any) {
-        perform(game.actions.type(actionType).createActionFromSerialized(playerIndex, serialized) as Actionable<T, Any>)
+        perform(game.actions.type(actionType)!!.createActionFromSerialized(playerIndex, serialized) as Actionable<T, Any>)
     }
 
     fun perform(action: Actionable<T, Any>) {

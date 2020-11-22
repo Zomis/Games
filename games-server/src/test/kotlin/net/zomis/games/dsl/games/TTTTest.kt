@@ -3,8 +3,7 @@ package net.zomis.games.dsl.games
 import net.zomis.games.WinResult
 import net.zomis.games.common.Point
 import net.zomis.games.dsl.GameAsserts
-import net.zomis.games.dsl.GameTest
-import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.impl.ttt.DslTTT
 import net.zomis.tttultimate.games.TTController
@@ -15,7 +14,7 @@ import org.junit.jupiter.api.Test
 class TTTTest {
 
     val dsl = DslTTT.game
-    lateinit var game: GameImpl<TTController>
+    lateinit var game: Game<TTController>
     lateinit var test: GameAsserts<TTController>
 
     @BeforeEach
@@ -36,16 +35,16 @@ class TTTTest {
         test.performActionSerialized(1, play, Point(2, 0))
         test.performActionSerialized(0, play, Point(2, 2))
         test.performActionSerialized(1, play, Point(1, 2))
-        Assertions.assertEquals(2, game.eliminationCallback.remainingPlayers().size)
+        Assertions.assertEquals(2, game.eliminations.remainingPlayers().size)
         // Game situation, next move will result in draw:
         //      100
         //      001
         //      _11
         test.performActionSerialized(0, play, Point(0, 2))
-        Assertions.assertEquals(0, game.eliminationCallback.remainingPlayers().size)
-        Assertions.assertEquals(2, game.eliminationCallback.eliminations().size)
-        Assertions.assertTrue(game.eliminationCallback.eliminations().all { it.winResult == WinResult.DRAW }) {
-            game.eliminationCallback.eliminations().toString()
+        Assertions.assertEquals(0, game.eliminations.remainingPlayers().size)
+        Assertions.assertEquals(2, game.eliminations.eliminations().size)
+        Assertions.assertTrue(game.eliminations.eliminations().all { it.winResult == WinResult.DRAW }) {
+            game.eliminations.eliminations().toString()
         }
     }
 

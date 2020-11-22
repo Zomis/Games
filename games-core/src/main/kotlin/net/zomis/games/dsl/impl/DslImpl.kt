@@ -3,6 +3,7 @@ package net.zomis.games.dsl.impl
 import net.zomis.games.PlayerEliminations
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
+import net.zomis.games.dsl.flow.GameFlowImpl
 import kotlin.reflect.KClass
 
 class GameModelContext<T, C> : GameModel<T, C> {
@@ -217,6 +218,8 @@ class GameDslContext<T : Any> : GameDsl<T> {
     lateinit var modelDsl: GameModelDsl<T, Any>
     var viewDsl: GameViewDsl<T>? = null
     var rulesDsl: GameRulesDsl<T>? = null
+    var flowRulesDsl: GameFlowRulesDsl<T>? = null
+    var flowDsl: GameFlowDsl<T>? = null
     var actionRulesDsl: GameActionRulesDsl<T>? = null
     val testCases: MutableList<GameTestCaseContext<T>> = mutableListOf()
 
@@ -245,6 +248,22 @@ class GameDslContext<T : Any> : GameDsl<T> {
 
     override fun gameRules(rulesDsl: GameRulesDsl<T>) {
         this.rulesDsl = rulesDsl
+    }
+
+    override fun gameFlow(flowDsl: GameFlowDsl<T>) {
+        this.flowDsl = flowDsl
+    }
+
+    fun createGame(playerCount: Int, config: Any, stateKeeper: StateKeeper): Game<T> {
+        return if (this.flowDsl == null) {
+            GameImpl(this, playerCount, config, stateKeeper)
+        } else {
+            GameFlowImpl(this, playerCount, config, stateKeeper)
+        }
+    }
+
+    override fun gameFlowRules(flowRulesDsl: GameFlowRulesDsl<T>) {
+        this.flowRulesDsl = flowRulesDsl
     }
 
 }

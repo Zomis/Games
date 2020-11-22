@@ -30,6 +30,7 @@ data class PlayerElimination(val playerIndex: Int, val winResult: WinResult, val
 class PlayerEliminations(override val playerCount: Int): PlayerEliminationCallback {
 
     private val eliminations = mutableListOf<PlayerElimination>()
+    var callback: (PlayerElimination) -> Unit = {}
 
     override fun remainingPlayers(): List<Int> {
         return (0 until playerCount).filter {
@@ -75,6 +76,7 @@ class PlayerEliminations(override val playerCount: Int): PlayerEliminationCallba
             throw IllegalArgumentException("Elimination position ${elimination.position} must be less than or equal to playerCount $playerCount")
         }
         this.eliminations.add(elimination)
+        callback(elimination)
     }
 
     override fun eliminateRemaining(winResult: WinResult) {
@@ -82,7 +84,7 @@ class PlayerEliminations(override val playerCount: Int): PlayerEliminationCallba
         val newEliminations = remainingPlayers().map {
             PlayerElimination(it, winResult, position)
         }
-        eliminations.addAll(newEliminations)
+        for (elimination in newEliminations) eliminate(elimination)
     }
 
     override fun <T> eliminateBy(playersAndScores: List<Pair<Int, T>>, comparator: Comparator<T>) {
@@ -115,7 +117,6 @@ class PlayerEliminations(override val playerCount: Int): PlayerEliminationCallba
     }
 
     fun isGameOver(): Boolean {
-//        return this.remainingPlayers().isEmpty()
         return this.eliminations.map { it.playerIndex }.distinct().size == playerCount
     }
 

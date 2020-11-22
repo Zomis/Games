@@ -3,7 +3,7 @@ package net.zomis.games.server2.ais
 import com.fasterxml.jackson.databind.ObjectMapper
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
-import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.dsl.impl.Game
 import net.zomis.games.server2.*
 import net.zomis.games.server2.games.GameStartedEvent
 import net.zomis.games.server2.games.ServerGame
@@ -83,7 +83,7 @@ class ServerAI(val gameType: String, val name: String, val perform: ServerGameAI
 
 }
 
-fun PlayerGameMoveRequest.serialize(gameImpl: GameImpl<*>): PlayerGameMoveRequest {
+fun PlayerGameMoveRequest.serialize(gameImpl: Game<*>): PlayerGameMoveRequest {
     if (this.serialized) return this
     val serializedMove = gameImpl.actions.type(this.moveType)!!
             .actionType.serialize(this.move)

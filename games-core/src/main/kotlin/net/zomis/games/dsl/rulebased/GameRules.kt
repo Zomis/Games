@@ -3,24 +3,30 @@ package net.zomis.games.dsl.rulebased
 import net.zomis.games.PlayerEliminations
 import net.zomis.games.common.GameEvents
 import net.zomis.games.dsl.*
+import net.zomis.games.dsl.impl.GameMarker
 
+@GameMarker
 interface GameRules<T : Any> {
     fun rule(name: String, rule: GameRule<T>.() -> Any?): GameRule<T>
 }
 
+@GameMarker
 interface GameRuleScope<T : Any> {
     val game: T
     val eliminations: PlayerEliminations
     val replayable: ReplayableScope
 }
+
 interface GameRuleEventScope<T: Any, E>: GameRuleScope<T> {
     val event: E
 }
 
+@GameMarker
 interface GameRuleForEach<T : Any, E> {
     fun effect(effect: GameRuleScope<T>.(E) -> Unit)
 }
 
+@GameMarker
 interface GameRule<T : Any> {
     fun appliesWhen(condition: GameRuleScope<T>.() -> Boolean)
     fun effect(effect: GameRuleScope<T>.() -> Unit)

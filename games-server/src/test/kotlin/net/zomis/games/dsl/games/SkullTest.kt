@@ -1,8 +1,7 @@
 package net.zomis.games.dsl.games
 
 import net.zomis.games.dsl.GameAsserts
-import net.zomis.games.dsl.GameTest
-import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.impl.SkullCard
 import net.zomis.games.impl.SkullGame
@@ -14,7 +13,7 @@ import org.junit.jupiter.api.Test
 class SkullTest {
 
     val dsl = SkullGame.game
-    lateinit var game: GameImpl<SkullGameModel>
+    lateinit var game: Game<SkullGameModel>
     lateinit var test: GameAsserts<SkullGameModel>
 
     @BeforeEach

@@ -202,7 +202,7 @@ class DslRandomPlayTest {
             client.takeUntilJson { it.getText("type") == "GameEnded" }
         }
 
-        val eliminations = gameImpl.eliminationCallback.eliminations()
+        val eliminations = gameImpl.eliminations.eliminations()
         assert(eliminations.size == clients.size)
 
         clients.forEach { it.close() }

@@ -2,7 +2,7 @@ package net.zomis.games.dsl.impl
 
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.LogActionScope
-import net.zomis.games.dsl.SecretLogging
+import net.zomis.games.dsl.LogSecretActionScope
 
 data class LogPartPlayer(val playerIndex: PlayerIndex): LogPart {
     override val type: String = "player"
@@ -34,7 +34,7 @@ class LogActionContext<T : Any, A : Any>(
     override val game: T,
     override val playerIndex: PlayerIndex,
     override val action: A
-): LogActionScope<T, A>, SecretLogging<T, A>, ActionLogEntry {
+): LogActionScope<T, A>, LogSecretActionScope<T, A>, ActionLogEntry {
 
     var counter: Int = 0
     val parts = mutableListOf<LogPart>()

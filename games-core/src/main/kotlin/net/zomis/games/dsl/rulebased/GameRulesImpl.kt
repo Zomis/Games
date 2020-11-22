@@ -147,11 +147,11 @@ class GameRuleImpl<T: Any>(
         return gameRuleEvents
     }
 
-    fun fire(context: GameRuleContext<T>, executor: GameEvents<Any?>, event: Any?) {
+    fun <E> fire(context: GameRuleContext<T>, executor: GameEvents<E>, event: E) {
         if (this.isActive(context)) {
             eventListeners.forEach {listenerImpl ->
-                val impl = listenerImpl as GameRuleEventListenerImpl<T, Any?>
-                listenerImpl.fire(context, executor, event)
+                val impl = listenerImpl as GameRuleEventListenerImpl<T, Any>
+                listenerImpl.fire(context, executor as GameEvents<Any>, event as Any)
             }
         }
     }

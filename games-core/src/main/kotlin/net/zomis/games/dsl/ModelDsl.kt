@@ -4,7 +4,7 @@ import net.zomis.games.PlayerEliminationCallback
 import net.zomis.games.common.GameEvents
 
 interface GameEventsExecutor {
-    fun fire(executor: GameEvents<*>, event: Any?)
+    fun <E> fire(executor: GameEvents<E>, event: E)
 }
 
 interface GameFactoryScope<C> {

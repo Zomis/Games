@@ -1,6 +1,6 @@
 package net.zomis.games.dsl
 
-import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.server2.ServerGames
 import org.junit.jupiter.api.Assertions
@@ -16,7 +16,7 @@ object TestGame {
 
 }
 
-class GameAsserts<T : Any>(val game: GameImpl<T>) {
+class GameAsserts<T : Any>(val game: Game<T>) {
 
     fun expectPossibleOptions(playerIndex: Int, actionType: String, expected: Int, vararg chosen: Any) {
         val actionInfo = game.actions.type(actionType)!!.actionInfoKeys(playerIndex, chosen.toList())

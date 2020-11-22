@@ -112,7 +112,7 @@ class GameActionRulesContext<T : Any>(
         )
     }
 
-    override fun fire(executor: GameEvents<*>, event: Any?) {
+    override fun <E> fire(executor: GameEvents<E>, event: E) {
         this.gameRules.forEach { it.fire(ruleContext, executor as GameEvents<Any?>, event) }
     }
 
@@ -154,7 +154,7 @@ class ActionRuleContext<T : Any, A : Any>(
     override fun log(logging: LogActionScope<T, A>.() -> String) {
         logs.add(LogActionContext(game, action.playerIndex, action.parameter).log(logging))
     }
-    override fun logSecret(player: PlayerIndex, logging: LogActionScope<T, A>.() -> String): SecretLogging<T, A> {
+    override fun logSecret(player: PlayerIndex, logging: LogActionScope<T, A>.() -> String): LogSecretActionScope<T, A> {
         val context = LogActionContext(game, player, action.parameter).secretLog(player, logging)
         logs.add(context)
         return context
