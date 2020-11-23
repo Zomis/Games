@@ -31,8 +31,41 @@ class GameFlowActionContextPerform<T: Any, A: Any>: GameFlowActionContext<T, A>(
     }
 }
 
-class GameFlowActionContextOptions<T: Any, A: Any>(private val context: ActionRuleContext<T, A>): GameFlowActionContext<T, A>() {
-    // options and choose
+class GameFlowActionContextOptions<T: Any, A: Any>(
+    private val context: ActionOptionsContext<T>
+): GameFlowActionContext<T, A>() {
+    private var preconditions = true
+    override fun precondition(rule: ActionOptionsScope<T>.() -> Boolean) {
+        preconditions = preconditions && rule.invoke(context)
+    }
+
+    override fun choose(options: ActionChoicesStartScope<T, A>.() -> Unit) {
+        super.choose(options)
+    }
+
+    override fun options(rule: ActionOptionsScope<T>.() -> Iterable<A>) {
+        super.options(rule)
+    }
+
+    fun actionInfoKeys(actionDsl: GameFlowActionScope<T, A>.() -> Unit) {
+//        xxxxxx See CoupRules for how to restructure
+        /*if (!checkPreconditions(context)) {
+            return emptyList()
+        }
+        val evaluator = this.availableActionsEvaluator
+        return if (this.choices == null) {
+            if (evaluator == null) {
+                require(actionType.parameterType == Unit::class) {
+                    "Action type ${actionType.name} with parameter ${actionType.parameterType} needs to specify a list of allowed parameters"
+                }
+                listOf(createAction(playerIndex, Unit as A)).filter { actionAllowed(it) }.map(this::actionInfoKey)
+            } else evaluator(context).map { createAction(playerIndex, it) }.filter { this.actionAllowed(it) }.map(this::actionInfoKey)
+        } else {
+            require(this.availableActionsEvaluator == null) { "An action must have only one rule for either choices or options" }
+            val complex = RulesActionTypeComplex(context, actionType, this.choices!!)
+            return complex.availableActionKeys(previouslySelected)
+        }*/
+    }
 }
 
 open class GameFlowActionContext<T: Any, A: Any>: GameFlowActionScope<T, A> {
@@ -44,7 +77,7 @@ open class GameFlowActionContext<T: Any, A: Any>: GameFlowActionScope<T, A> {
     override fun choose(options: ActionChoicesStartScope<T, A>.() -> Unit) {}
 }
 
-private class GameFlowLogicAction<T: Any, A: Any>(
+class GameFlowLogicAction<T: Any, A: Any>(
     private val game: T,
     override val actionType: ActionType<T, A>,
     private val actionDsl: GameFlowActionScope<T, A>.() -> Unit,
@@ -89,6 +122,13 @@ private class GameFlowLogicAction<T: Any, A: Any>(
     override fun createAction(playerIndex: Int, parameter: A): Actionable<T, A>
         = Action(game, playerIndex, actionType.name, parameter)
 
+    override fun actionInfoKeys(playerIndex: Int, previouslySelected: List<Any>): List<ActionInfoKey> {
+        val actionOptionsContext = ActionOptionsContext(game, actionType.name, playerIndex, eliminations, replayable)
+        val flowOptionsContext = GameFlowActionContextOptions<T, A>(actionOptionsContext)
+        flowOptionsContext.actionInfoKeys(actionDsl)
+        TODO()
+    }
+
 }
 
 class GameFlowActionsImpl<T: Any>(
@@ -99,6 +139,7 @@ class GameFlowActionsImpl<T: Any>(
 ) : Actions<T> {
 
     private val actions = mutableListOf<ActionTypeImplEntry<T, Any>>()
+    private val actionDsls = mutableMapOf<String, List<Any>>()
     fun clear() { this.actions.clear() }
 
     fun <A: Any> add(actionType: ActionType<T, A>, actionDsl: GameFlowActionScope<T, A>.() -> Unit) {

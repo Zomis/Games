@@ -3,6 +3,7 @@ package net.zomis.games.dsl.impl
 import net.zomis.games.PlayerEliminations
 import net.zomis.games.common.mergeWith
 import net.zomis.games.dsl.*
+import net.zomis.games.dsl.flow.GameFlowLogicAction
 import kotlin.reflect.KClass
 
 interface GameLogicActionType<T : Any, P : Any> {
@@ -12,6 +13,7 @@ interface GameLogicActionType<T : Any, P : Any> {
     fun replayAction(action: Actionable<T, P>, state: Map<String, Any>?)
     fun performAction(action: Actionable<T, P>)
     fun createAction(playerIndex: Int, parameter: P): Actionable<T, P>
+    fun actionInfoKeys(playerIndex: Int, previouslySelected: List<Any>): List<ActionInfoKey>
 }
 
 data class ActionInfo<T: Any, A: Any>(val actionType: ActionType<T, A>, val parameter: A?, val nextStep: Any?)
@@ -67,9 +69,7 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
         = ActionOptionsContext(model, this.actionType.name, playerIndex, eliminations, replayState)
 
     fun actionInfoKeys(playerIndex: Int, previouslySelected: List<Any>): ActionInfoByKey {
-        val ruleContext = impl as GameActionRuleContext<T, P>?
-            ?: throw UnsupportedOperationException("Impl class ${impl::class} not supported for actionType ${actionType.name}")
-        return ActionInfoByKey(ruleContext.actionInfoKeys(playerIndex, previouslySelected).groupBy { it.serialized })
+        return ActionInfoByKey(impl.actionInfoKeys(playerIndex, previouslySelected).groupBy { it.serialized })
     }
 
     val name: String

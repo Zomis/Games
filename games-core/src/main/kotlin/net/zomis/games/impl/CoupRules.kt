@@ -280,6 +280,32 @@ object CoupRuleBased {
                 }
             }
             rule("coup action") {
+//                xxxx
+                // actions: List options -> Requires -> Perform
+                // Options: There should only be one total of options and choose.
+                // Options: Loop through all rules, check for action statement, 1) check preconditions 2) check options/choose
+                // Options - Choose: Resolve and return while checking
+                // View - Available Options: view("thing") { mapOf(...) + actionable(player.hand.card(it)) } <-- object equals check
+                // Actions - Requires: Loop through all rules, check for action statement, check apply-for-action / requires
+                // Actions - Perform: Loop through all rules, check for action statement, check apply-for-action / run perform
+                // TODO: rules.action(perform).applyTo { parameter.action == CoupActionType.COUP }.cost(7) { parameter.player.coins }
+                /*
+                rule("coup") {
+                    rule("costs money") {
+                        val cost = 7
+                        action(perform).filtered({ parameter.action == CoupActionType.COUP }) {
+                            requires { action.parameter.player.coins >= cost }
+                            perform { action.parameter.player.coins -= cost }
+                        }
+                    }
+                    rule("must perform coup") {
+                        appliesWhen { game.currentPlayer.coins >= 10 }
+                        action(perform) {
+                            requires { parameter.action == CoupActionType.COUP }
+                        }
+                    }
+                }
+                */
                 action(perform) {
                     appliesForActions { action.parameter.action == CoupActionType.COUP }
                     rule("requires money") {

@@ -254,7 +254,7 @@ class GameActionRuleContext<T : Any, A : Any>(
     override fun createAction(playerIndex: Int, parameter: A): Action<T, A>
         = Action(model, playerIndex, actionType.name, parameter)
 
-    fun actionInfoKeys(playerIndex: Int, previouslySelected: List<Any>): List<ActionInfoKey> {
+    override fun actionInfoKeys(playerIndex: Int, previouslySelected: List<Any>): List<ActionInfoKey> {
         val context = ActionOptionsContext(model, actionType.name, playerIndex, eliminations, replayable)
         if (!checkPreconditions(context)) {
             return emptyList()
