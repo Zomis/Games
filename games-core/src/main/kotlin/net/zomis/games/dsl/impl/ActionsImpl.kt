@@ -3,7 +3,6 @@ package net.zomis.games.dsl.impl
 import net.zomis.games.PlayerEliminations
 import net.zomis.games.common.mergeWith
 import net.zomis.games.dsl.*
-import net.zomis.games.dsl.flow.GameFlowLogicAction
 import kotlin.reflect.KClass
 
 interface GameLogicActionType<T : Any, P : Any> {
@@ -52,6 +51,8 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
 
         val parameter = actionType.deserialize(actionOptionsContext, serialized)
         return if (parameter == null) {
+            // If there is serialization but no deserialization is specified,
+            // then check all available actions and match against those that serializes to the same value
             val actions = availableActions(actionOptionsContext.playerIndex, null).filter { action2 ->
                 actionType.serialize(action2.parameter) == serialized
             }

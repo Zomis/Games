@@ -56,25 +56,37 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
         action: Actionable<T, Any>
     ) {
         GlobalScope.launch {
-            events.execute(PreMoveEvent(moveRequest.game, moveRequest.player, action.actionType, action.parameter))
-            gameFlow.actionsInput.send(action)
-            for (feedback in gameFlow.feedbackOutput) {
-                when (feedback) {
-                    is GameFlowContext.Steps.GameEnd -> events.execute(GameEndedEvent(moveRequest.game))
-                    is GameFlowContext.Steps.Elimination -> events.execute(
-                        PlayerEliminatedEvent(moveRequest.game, feedback.elimination.playerIndex,
-                            feedback.elimination.winResult, feedback.elimination.position
-                        ))
-                    is GameFlowContext.Steps.Log -> sendLogs(moveRequest.game, feedback.log)
-                    is GameFlowContext.Steps.ActionPerformed -> events.execute(
-                        MoveEvent(moveRequest.game, moveRequest.player, action.actionType, action.parameter)
-                    )
-                    is GameFlowContext.Steps.AwaitInput -> return@launch
-                    is GameFlowContext.Steps.RuleExecution -> logger.debug { "Rule Execution: $feedback" }
-                    is GameFlowContext.Steps.IllegalAction -> logger.error { "Illegal action in feedback: $feedback" }
-                    else -> {
-                        logger.error(IllegalArgumentException("Unsupported feedback: $feedback"))
-                    }
+            try {
+                events.execute(PreMoveEvent(moveRequest.game, moveRequest.player, action.actionType, action.parameter))
+                println("sending actionsInput to ${gameFlow.actionsInput}")
+                gameFlow.actionsInput.send(action)
+                println("Action sent, awaiting feedback")
+                handleFeedbacks(gameFlow, events, moveRequest.game)
+            } catch (e: Exception) {
+                logger.error(e) { "Error in DSL System Coroutine: $moveRequest $gameFlow $action" }
+            }
+        }
+    }
+
+    private suspend fun handleFeedbacks(gameFlow: GameFlowImpl<T>, events: EventSystem, game: ServerGame) {
+        for (feedback in gameFlow.feedbackReceiver) {
+            println("Feedback received: $feedback")
+            when (feedback) {
+                is GameFlowContext.Steps.GameEnd -> events.execute(GameEndedEvent(game))
+                is GameFlowContext.Steps.Elimination -> events.execute(
+                    PlayerEliminatedEvent(game, feedback.elimination.playerIndex,
+                        feedback.elimination.winResult, feedback.elimination.position
+                    ))
+                is GameFlowContext.Steps.Log -> sendLogs(game, feedback.log)
+                is GameFlowContext.Steps.ActionPerformed -> events.execute(
+                    MoveEvent(game, feedback.playerIndex, feedback.actionType, feedback.parameter)
+                )
+                is GameFlowContext.Steps.AwaitInput -> return
+                is GameFlowContext.Steps.RuleExecution -> logger.debug { "Rule Execution: $feedback" }
+                is GameFlowContext.Steps.IllegalAction -> logger.error { "Illegal action in feedback: $feedback" }
+                is GameFlowContext.Steps.NextView -> {} // TODO: Not implemented yet, should pause a bit and then continue
+                else -> {
+                    logger.error(IllegalArgumentException("Unsupported feedback: $feedback"))
                 }
             }
         }
@@ -145,6 +157,10 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                 serverGameListener(it.game),
                 appropriateReplayListener
             ) as GameReplayableImpl<Any>
+            val game = it.game.obj!!.game
+            if (game is GameFlowImpl) {
+                runBlocking { handleFeedbacks(game as GameFlowImpl<T>, events, it.game) }
+            }
         })
         events.listen("DslGameSystem $gameTypeName Move", PlayerGameMoveRequest::class, {
             it.game.gameType.type == gameTypeName

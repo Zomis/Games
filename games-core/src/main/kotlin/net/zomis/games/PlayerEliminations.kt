@@ -4,6 +4,7 @@ import net.zomis.best
 
 interface PlayerEliminationCallback {
     val playerCount: Int
+    val playerIndices: IntRange get() = 0 until playerCount
     fun remainingPlayers(): List<Int>
     fun eliminations(): List<PlayerElimination>
     fun nextPlayer(currentPlayer: Int): Int?
@@ -23,6 +24,7 @@ interface PlayerEliminationCallback {
     }
 
     fun eliminationFor(playerIndex: Int): PlayerElimination? = eliminations().find { it.playerIndex == playerIndex }
+    fun isAlive(playerIndex: Int) = eliminationFor(playerIndex) == null
 }
 
 data class PlayerElimination(val playerIndex: Int, val winResult: WinResult, val position: Int)

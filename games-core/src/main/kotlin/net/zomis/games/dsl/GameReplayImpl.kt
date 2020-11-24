@@ -1,6 +1,7 @@
 package net.zomis.games.dsl
 
 import net.zomis.games.PlayerElimination
+import net.zomis.games.dsl.flow.GameFlowImpl
 import net.zomis.games.dsl.impl.*
 
 /*
@@ -76,6 +77,9 @@ class GameReplayableImpl<T : Any>(
     }
 
     fun perform(action: Actionable<T, Any>) {
+        if (game is GameFlowImpl<T>) {
+            TODO("use suspend fun and send input and listen for output. Would use runBlocking but N/A in common")
+        }
         if (game.eliminations.eliminationFor(action.playerIndex) != null) {
             throw IllegalArgumentException("Player ${action.playerIndex} is already eliminated.")
         }

@@ -30,7 +30,8 @@ object DslUR {
                 step("roll") {
                     require(game.isRollTime())
                     addView(this)
-                    yieldAction(game.currentPlayer, roll) {
+                    yieldAction(roll) {
+                        precondition { playerIndex == game.currentPlayer }
                         perform {
                             val roll = replayable.int("roll") { game.randomRoll() }
                             if (game.canMove(roll)) {
@@ -45,7 +46,8 @@ object DslUR {
                 if (game.isMoveTime) {
                     step("move") {
                         addView(this)
-                        yieldAction(game.currentPlayer, move) {
+                        yieldAction(move) {
+                            precondition { playerIndex == game.currentPlayer }
                             options { 0 until RoyalGameOfUr.EXIT }
                             requires { game.canMove(game.currentPlayer, action.parameter, game.roll) }
                             perform { game.move(game.currentPlayer, action.parameter, game.roll) }

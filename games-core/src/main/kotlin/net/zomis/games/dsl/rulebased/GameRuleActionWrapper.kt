@@ -7,6 +7,7 @@ import net.zomis.games.dsl.GameActionRule
 import net.zomis.games.dsl.impl.ActionOptionsContext
 import net.zomis.games.dsl.impl.ActionRuleContext
 import net.zomis.games.dsl.impl.GameRuleContext
+import net.zomis.games.dsl.impl.ReplayState
 
 class GameRuleActionWrapper<T: Any, A: Any>(
     private val action: GameActionRule<T, A>,
@@ -16,7 +17,7 @@ class GameRuleActionWrapper<T: Any, A: Any>(
     private var appliesForActions: (ActionRuleScope<T, A>.() -> Boolean)? = null
 
     private fun appliesTo(action: ActionRuleScope<T, A>): Boolean {
-        val ruleScope = GameRuleContext(action.game, action.eliminations, action.replayable)
+        val ruleScope = GameRuleContext(action.game, action.eliminations, action.replayable as ReplayState)
         if (!parentRule.isActive(ruleScope)) return false
 
         if (this.appliesForActions != null) {

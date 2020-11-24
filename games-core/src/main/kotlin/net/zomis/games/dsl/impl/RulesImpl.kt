@@ -10,7 +10,7 @@ import kotlin.reflect.KClass
 class GameRuleContext<T: Any>(
     override val game: T,
     override val eliminations: PlayerEliminations,
-    override val replayable: ReplayableScope
+    override val replayable: ReplayState
 ): GameRuleScope<T>
 
 class GameActionRulesContext<T : Any>(
@@ -138,25 +138,25 @@ class ActionOptionsContext<T : Any>(
     override val playerIndex: Int,
     override val eliminations: PlayerEliminations,
     override val replayable: ReplayableScope
-) : ActionOptionsScope<T>, GameRuleScope<T>
+) : ActionOptionsScope<T>, GameRuleScope<T> {
+    fun <A: Any> createAction(parameter: A): Actionable<T, A> = Action(game, playerIndex, actionType, parameter)
+}
 
 class ActionRuleContext<T : Any, A : Any>(
     override val game: T,
     override val action: Actionable<T, A>,
     override val eliminations: PlayerEliminations,
-    override val replayable: ReplayableScope
+    override val replayable: ReplayState
 ): ActionRuleScope<T, A>, GameRuleScope<T> {
-    internal val logs = mutableListOf<ActionLogEntry>()
-
     override val playerIndex: Int get() = action.playerIndex
     override val actionType: String get() = action.actionType
 
     override fun log(logging: LogActionScope<T, A>.() -> String) {
-        logs.add(LogActionContext(game, action.playerIndex, action.parameter).log(logging))
+        replayable.stateKeeper.log(LogActionContext(game, action.playerIndex, action.parameter).log(logging))
     }
     override fun logSecret(player: PlayerIndex, logging: LogActionScope<T, A>.() -> String): LogSecretActionScope<T, A> {
         val context = LogActionContext(game, player, action.parameter).secretLog(player, logging)
-        logs.add(context)
+        replayable.stateKeeper.log(context)
         return context
     }
 }
@@ -248,7 +248,6 @@ class GameActionRuleContext<T : Any, A : Any>(
         this.effects.forEach { it.invoke(context) }
         this.after.forEach { it.invoke(context) }
         this.globalRules.after.forEach { it.invoke(context as ActionRuleScope<T, Any>) }
-        replayable.stateKeeper.addLogs(context.logs)
     }
 
     override fun createAction(playerIndex: Int, parameter: A): Action<T, A>

@@ -171,8 +171,10 @@ class StateKeeper {
     }
 
     fun logs(): List<ActionLogEntry> = logEntries.toList()
-    fun addLogs(logs: MutableList<ActionLogEntry>) {
-        logEntries.addAll(logs)
+    fun clearLogs() { logEntries.clear() }
+
+    fun log(log: ActionLogEntry) {
+        logEntries.add(log)
     }
 }
 class ReplayState(val stateKeeper: StateKeeper, override val playerEliminations: PlayerEliminations): EffectScope, ReplayableScope {

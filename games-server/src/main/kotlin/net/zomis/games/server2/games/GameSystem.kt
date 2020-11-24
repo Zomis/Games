@@ -278,9 +278,6 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>, private val callback:
 }
 
 fun MoveEvent.moveMessage(): Map<String, Any?> {
-    val serverGame = this.game
-    val gameImpl = serverGame.obj!!.game
-    val actionType = gameImpl.actions.type(this.moveType)!!.actionType
     return this.game.toJson("GameMove")
         .plus("player" to this.player)
         .plus("moveType" to this.moveType)

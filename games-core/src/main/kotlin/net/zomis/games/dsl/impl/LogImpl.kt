@@ -89,4 +89,6 @@ class LogActionContext<T : Any, A : Any>(
         return this
     }
 
+    override fun toString(): String = "LogContext[private $secretEntry public $publicEntry]"
+
 }

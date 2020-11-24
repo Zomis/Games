@@ -17,7 +17,7 @@ class RoyalGameOfUrFlowTest {
         runBlocking {
             Assertions.assertEquals(1, model.piecesCopy[0].count { it == 0 })
 
-            var output = gameFlowImpl.feedbackOutput.receive()
+            var output = gameFlowImpl.feedbackReceiver.receive()
             Assertions.assertTrue(output is GameFlowContext.Steps.AwaitInput)
 
             val view = gameFlowImpl.view(0)
@@ -28,10 +28,10 @@ class RoyalGameOfUrFlowTest {
                 val currentPlayer = model.currentPlayer
                 gameFlowImpl.actionsInput.send(gameFlowImpl.actions.type(DslUR.roll)!!.createAction(0, Unit))
                 println("awaiting output")
-                output = gameFlowImpl.feedbackOutput.receive()
+                output = gameFlowImpl.feedbackReceiver.receive()
                 println("output1 $output")
                 Assertions.assertTrue(output is GameFlowContext.Steps.ActionPerformed)
-                output = gameFlowImpl.feedbackOutput.receive()
+                output = gameFlowImpl.feedbackReceiver.receive()
                 println("output2 $output")
                 Assertions.assertTrue(output is GameFlowContext.Steps.AwaitInput)
                 println(gameFlowImpl.view(0))
@@ -41,19 +41,19 @@ class RoyalGameOfUrFlowTest {
                     gameFlowImpl.actionsInput.send(gameFlowImpl.actions.type(DslUR.move)!!
                         .createAction(0, model.piecesCopy[model.currentPlayer][0]))
                     println("output...")
-                    output = gameFlowImpl.feedbackOutput.receive()
+                    output = gameFlowImpl.feedbackReceiver.receive()
                     Assertions.assertTrue(output is GameFlowContext.Steps.ActionPerformed)
                     println("output3 $output")
-                    output = gameFlowImpl.feedbackOutput.receive()
+                    output = gameFlowImpl.feedbackReceiver.receive()
                     println("output4 $output")
                     if (output is GameFlowContext.Steps.RuleExecution) {
-                        output = gameFlowImpl.feedbackOutput.receive()
+                        output = gameFlowImpl.feedbackReceiver.receive()
                         Assertions.assertTrue(output is GameFlowContext.Steps.Elimination)
                         println("output5 $output")
-                        output = gameFlowImpl.feedbackOutput.receive()
+                        output = gameFlowImpl.feedbackReceiver.receive()
                         Assertions.assertTrue(output is GameFlowContext.Steps.Elimination)
                         println("output6 $output")
-                        output = gameFlowImpl.feedbackOutput.receive()
+                        output = gameFlowImpl.feedbackReceiver.receive()
                         Assertions.assertTrue(output is GameFlowContext.Steps.GameEnd)
                         println("output7 $output")
                     } else {
