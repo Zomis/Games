@@ -19,7 +19,7 @@ class GameRulePresetsImpl<T: Any>(private val context: GameFlowRulesContext<T>):
 
     override fun singleWinner(winner: GameRuleScope<T>.() -> Int?) {
         context.rule("declare winner") {
-            appliesWhen { winner(this) != null }
+            appliesWhen { winner(this) != null && !eliminations.isGameOver() }
             effect { eliminations.singleWinner(winner(this)!!) }
         }
     }

@@ -18,18 +18,17 @@ object DslUR {
         }
         gameFlowRules {
             rules.players.singleWinner { game.winner.takeIf { game.isFinished } }
-        }
-        fun addView(scope: GameFlowStepScope<RoyalGameOfUr>) {
-            scope.yieldView("currentPlayer") { game.currentPlayer }
-            scope.yieldView("lastRoll") { game.lastRoll }
-            scope.yieldView("roll") { game.roll }
-            scope.yieldView("pieces") { game.piecesCopy.map { it.toList() }.toList() }
+            beforeReturnRule("view") {
+                view("currentPlayer") { game.currentPlayer }
+                view("lastRoll") { game.lastRoll }
+                view("roll") { game.roll }
+                view("pieces") { game.piecesCopy.map { it.toList() }.toList() }
+            }
         }
         gameFlow {
             loop {
                 step("roll") {
                     require(game.isRollTime())
-                    addView(this)
                     yieldAction(roll) {
                         precondition { playerIndex == game.currentPlayer }
                         perform {
@@ -45,7 +44,6 @@ object DslUR {
                 }
                 if (game.isMoveTime) {
                     step("move") {
-                        addView(this)
                         yieldAction(move) {
                             precondition { playerIndex == game.currentPlayer }
                             options { 0 until RoyalGameOfUr.EXIT }
