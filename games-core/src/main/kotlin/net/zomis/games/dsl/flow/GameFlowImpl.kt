@@ -17,7 +17,7 @@ class GameFlowImpl<T: Any>(
     override val playerCount: Int,
     override val config: Any,
     override val stateKeeper: StateKeeper
-): Game<T>, GameFactoryScope<Any>, GameEventsExecutor {
+): Game<T>, GameFactoryScope<Any>, GameEventsExecutor, GameFlowRuleCallbacks<T> {
     private val mainScope = MainScope()
     val views = mutableListOf<Pair<String, ViewScope<T>.() -> Any?>>()
     private val feedbackOutput = Channel<Any>()
@@ -46,6 +46,7 @@ class GameFlowImpl<T: Any>(
                 val dsl = setupContext.flowDsl!!
                 val flowContext = GameFlowContext(this, game, "root")
                 dsl.invoke(flowContext)
+                game.runRules(GameFlowRulesState.BEFORE_RETURN)
                 sendFeedbacks()
                 println("GameFlow Coroutine MainScope done for $game")
             } catch (e: Exception) {
@@ -126,14 +127,13 @@ class GameFlowImpl<T: Any>(
 
     private fun runRules(state: GameFlowRulesState) {
         val ruleContext = GameRuleContext(model, eliminations, replayable)
-        setupContext.flowRulesDsl?.invoke(GameFlowRulesContext(ruleContext, state, null) { feedbacks.add(it) })
+        setupContext.flowRulesDsl?.invoke(GameFlowRulesContext(ruleContext, state, null, this))
     }
 
     override fun <E> fire(executor: GameEvents<E>, event: E) {
         val ruleContext = GameRuleContext(model, eliminations, replayable)
         val context = GameFlowRulesContext(ruleContext, GameFlowRulesState.FIRE_EVENT,
-        executor as GameEvents<*> to event as Any
-        ) { feedbacks.add(it) }
+        executor as GameEvents<*> to event as Any, this)
         context.fire(executor, event)
     }
 
@@ -141,6 +141,12 @@ class GameFlowImpl<T: Any>(
         this.views.clear()
         this.actions.clear()
     }
+
+    override fun view(key: String, value: ViewScope<T>.() -> Any?) {
+        views.add(key to value)
+    }
+
+    override val feedback: (GameFlowContext.Steps.FlowStep) -> Unit = { feedbacks.add(it) }
 
     // current possible actions, cleared and re-filled after every step
     // a coroutine to keep the game running. Cancellable?
@@ -221,7 +227,7 @@ interface GameFlowStepScope<T: Any> {
     val game: T
     val eliminations: PlayerEliminationCallback
     val replayable: ReplayableScope
-    fun <A: Any> yieldAction(action: ActionType<T, A>, actionDsl: GameFlowActionScope<T, A>.() -> Unit)
+    fun <A: Any> yieldAction(action: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>)
     fun yieldView(key: String, value: ViewScope<T>.() -> Any?)
 }
 @GameMarker

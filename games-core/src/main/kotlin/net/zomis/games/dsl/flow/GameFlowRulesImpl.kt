@@ -1,6 +1,10 @@
 package net.zomis.games.dsl.flow
 
 import net.zomis.games.common.GameEvents
+import net.zomis.games.dsl.ActionType
+import net.zomis.games.dsl.LogScope
+import net.zomis.games.dsl.LogSecretScope
+import net.zomis.games.dsl.ViewScope
 import net.zomis.games.dsl.flow.rules.GameRulePresets
 import net.zomis.games.dsl.flow.rules.GameRulePresetsImpl
 import net.zomis.games.dsl.impl.GameMarker
@@ -18,6 +22,13 @@ interface GameFlowRule<T : Any> {
 
     fun rule(name: String, rule: GameFlowRule<T>.() -> Any?)
     fun <E> onEvent(gameEvents: GameRuleScope<T>.() -> GameEvents<E>): GameRuleEvents<T, E>
+
+    fun view(key: String, value: ViewScope<T>.() -> Any?)
+//    fun <A: Any> action(actionType: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>)
+//    suspend fun loop(function: suspend GameFlowScope<T>.() -> Unit)
+//    suspend fun step(name: String, step: suspend GameFlowStepScope<T>.() -> Unit)
+//    suspend fun log(logging: LogScope<T>.() -> String)
+//    suspend fun logSecret(playerIndex: Int, logging: LogScope<T>.() -> String): LogSecretScope<T>
 }
 
 @GameMarker
@@ -33,7 +44,7 @@ class GameFlowRulesContext<T: Any>(
     val context: GameRuleContext<T>,
     val state: GameFlowRulesState,
     val event: Pair<GameEvents<*>, Any>?,
-    val feedback: (GameFlowContext.Steps.FlowStep) -> Unit
+    val callbacks: GameFlowRuleCallbacks<T>
 ): GameFlowRules<T> {
     override val rules = GameRulePresetsImpl(this)
     override fun afterActionRule(name: String, rule: GameFlowRule<T>.() -> Any?) {
@@ -53,13 +64,7 @@ class GameFlowRulesContext<T: Any>(
     }
 
     private fun runRule(name: String, rule: GameFlowRule<T>.() -> Any?) {
-        val activeCheck = GameFlowRuleContextActiveCheck(context)
-        rule.invoke(activeCheck)
-        if (!activeCheck.result) return
-
-        feedback.invoke(GameFlowContext.Steps.RuleExecution(name, Unit))
-        val execution = GameFlowRuleContextExecution(context)
-        rule.invoke(execution)
+        GameFlowRuleContextRun(context, callbacks).runRule(name, rule)
     }
 
     fun <E> fire(executor: GameEvents<E>, event: E) {
@@ -76,11 +81,31 @@ open class GameFlowRuleContext<T: Any>: GameFlowRule<T> {
             override fun effect(effect: GameRuleScope<T>.(E) -> Unit) {}
         }
     }
-    override fun rule(name: String, rule: GameFlowRule<T>.() -> Any?) { TODO("nested rules not implemented yet") }
+    override fun rule(name: String, rule: GameFlowRule<T>.() -> Any?) {}
     override fun <E> onEvent(gameEvents: GameRuleScope<T>.() -> GameEvents<E>): GameRuleEvents<T, E> {
         return object : GameRuleEvents<T, E> {
             override fun perform(perform: GameRuleEventScope<T, E>.() -> Unit) {}
         }
+    }
+    override fun view(key: String, value: ViewScope<T>.() -> Any?) {}
+}
+interface GameFlowRuleCallbacks<T: Any> {
+    fun view(key: String, value: ViewScope<T>.() -> Any?)
+    val feedback: (GameFlowContext.Steps.FlowStep) -> Unit
+}
+
+class GameFlowRuleContextRun<T: Any>(
+    private val context: GameRuleContext<T>,
+    private val callbacks: GameFlowRuleCallbacks<T>
+) {
+    fun runRule(name: String, rule: GameFlowRule<T>.() -> Any?) {
+        val activeCheck = GameFlowRuleContextActiveCheck(context)
+        rule.invoke(activeCheck)
+        if (!activeCheck.result) return
+
+        callbacks.feedback.invoke(GameFlowContext.Steps.RuleExecution(name, Unit))
+        val execution = GameFlowRuleContextExecution(context, callbacks)
+        rule.invoke(execution)
     }
 }
 
@@ -94,7 +119,8 @@ class GameFlowRuleContextActiveCheck<T: Any>(
     }
 }
 class GameFlowRuleContextExecution<T: Any>(
-    private val context: GameRuleContext<T>
+    private val context: GameRuleContext<T>,
+    private val callbacks: GameFlowRuleCallbacks<T>
 ): GameFlowRuleContext<T>() {
 
     class GameRuleForEachImpl<T: Any, E>(val context: GameRuleContext<T>, val list: Iterable<E>): GameRuleForEach<T, E> {
@@ -111,7 +137,11 @@ class GameFlowRuleContextExecution<T: Any>(
     }
 
     override fun rule(name: String, rule: GameFlowRule<T>.() -> Any?) {
-        TODO()
+        GameFlowRuleContextRun(context, callbacks).runRule(name, rule)
+    }
+
+    override fun view(key: String, value: ViewScope<T>.() -> Any?) {
+        callbacks.view(key, value)
     }
 
     override fun <E> onEvent(gameEvents: GameRuleScope<T>.() -> GameEvents<E>): GameRuleEvents<T, E> {
