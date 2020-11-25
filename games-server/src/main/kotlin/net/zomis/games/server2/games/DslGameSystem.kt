@@ -79,7 +79,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                     ))
                 is GameFlowContext.Steps.Log -> sendLogs(game, feedback.log)
                 is GameFlowContext.Steps.ActionPerformed<*> -> events.execute(
-                    MoveEvent(game, feedback.playerIndex, feedback.actionImpl.name, feedback.parameter)
+                    MoveEvent(game, feedback.playerIndex, feedback.actionImpl.actionType, feedback.parameter)
                 )
                 is GameFlowContext.Steps.AwaitInput -> return
                 is GameFlowContext.Steps.RuleExecution -> logger.debug { "Rule Execution: $feedback" }
@@ -112,7 +112,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
         }
         val recentEliminations = controller.eliminations.eliminations().minus(beforeMoveEliminated)
 
-        events.execute(MoveEvent(moveRequest.game, moveRequest.player, action.actionType, action.parameter))
+        events.execute(MoveEvent(moveRequest.game, moveRequest.player, actionType.actionType, action.parameter))
         for (elimination in recentEliminations) {
             events.execute(PlayerEliminatedEvent(moveRequest.game, elimination.playerIndex,
                     elimination.winResult, elimination.position))

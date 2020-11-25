@@ -12,8 +12,9 @@ import net.zomis.common.convertToDBFormat
 import net.zomis.core.events.EventSystem
 import net.zomis.core.events.ListenerPriority
 import net.zomis.games.Features
+import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.GameSpec
-import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.server2.*
 import net.zomis.games.server2.ais.ServerAIProvider
@@ -147,22 +148,21 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         }
     }
 
-    fun addMove(move: MoveEvent) {
+    fun addMove(move: MoveEvent<*, *>) {
         val epochMilli = Instant.now().toEpochMilli()
         val serverGame = move.game
         move.game.lastMove = epochMilli
         val moveIndex = serverGame.nextMoveIndex()
 
-        val gameImpl = serverGame.obj!!.game
-        val actionType = gameImpl.actions.type(move.moveType)!!.actionType
-        val dbMove = actionType.serialize(move.move)
+        val actionType = move.actionType as ActionType<Any, Any>
+        val dbMove = actionType.serialize(move.parameter)
 
         val moveData = convertToDBFormat(dbMove)
         val state: Any? = gameRandomnessState(serverGame)
         val updates = mutableListOf(
             AttributeUpdate(Fields.MOVE_TIME.fieldName).put(epochMilli),
             AttributeUpdate(Fields.MOVE_PLAYER_INDEX.fieldName).put(move.player),
-            AttributeUpdate(Fields.MOVE_TYPE.fieldName).put(move.moveType)
+            AttributeUpdate(Fields.MOVE_TYPE.fieldName).put(move.actionType.name)
         )
         if (moveData != null) {
             updates += AttributeUpdate(Fields.MOVE.fieldName).put(moveData)
@@ -177,7 +177,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
     }
 
     private fun gameRandomnessState(serverGame: ServerGame): Any? {
-        val game = serverGame.obj!!.game as GameImpl<*>
+        val game = serverGame.obj!!.game as Game<*>
         val lastMoveState = game.stateKeeper.lastMoveState()
         if (lastMoveState.isNotEmpty()) {
             return convertToDBFormat(lastMoveState)

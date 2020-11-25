@@ -7,6 +7,7 @@ import net.zomis.core.events.ListenerPriority
 import net.zomis.games.Features
 import net.zomis.games.WinResult
 import net.zomis.games.common.PlayerIndex
+import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.GameReplayableImpl
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.GamesImpl
@@ -157,7 +158,7 @@ class GameTypeRegisterEvent(spec: GameSpec<*>) {
 }
 
 data class PreMoveEvent(val game: ServerGame, val player: Int, val moveType: String, val move: Any)
-data class MoveEvent(val game: ServerGame, val player: Int, val moveType: String, val move: Any)
+data class MoveEvent<T: Any, A: Any>(val game: ServerGame, val player: Int, val actionType: ActionType<T, A>, val parameter: A)
 data class GameStartedEvent(val game: ServerGame)
 data class GameEndedEvent(val game: ServerGame)
 data class PlayerEliminatedEvent(val game: ServerGame, val player: Int, val winner: WinResult, val position: Int)
@@ -277,10 +278,10 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>, private val callback:
     }
 }
 
-fun MoveEvent.moveMessage(): Map<String, Any?> {
+fun MoveEvent<*, *>.moveMessage(): Map<String, Any?> {
     return this.game.toJson("GameMove")
         .plus("player" to this.player)
-        .plus("moveType" to this.moveType)
+        .plus("moveType" to this.actionType.name)
 }
 
 fun PlayerEliminatedEvent.eliminatedMessage(): Map<String, Any?> {
