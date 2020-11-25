@@ -1,6 +1,7 @@
 package net.zomis.games.dsl
 
 import net.zomis.games.WinResult
+import net.zomis.games.dsl.flow.runBlocking
 import net.zomis.games.dsl.impl.*
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -47,7 +48,7 @@ class ActionLogTest {
     @Test
     fun test() {
         val entry = GamesImpl.game(spec)
-        val play = entry.replayable(2, null, entry.inMemoryReplay())
+        val play = entry.replayable(2, null, entry.inMemoryReplay()).runBlocking()
         play.action(0, change, 2)
         play.action(0, change, 3)
         play.action(1, change, -2)

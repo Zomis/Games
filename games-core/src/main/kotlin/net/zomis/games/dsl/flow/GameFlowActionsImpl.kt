@@ -74,6 +74,8 @@ class GameFlowActionsImpl<T: Any>(
         val delegator = GameFlowLogicActionDelegator(gameRuleContext, existing.actionType, feedback) { dsls }
         if (delegator.actionAllowed(action)) {
             clearer.invoke()
+        } else {
+            logger.error { "Action not allowed: $action" }
         }
         delegator.performAction(action)
     }

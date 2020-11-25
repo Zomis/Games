@@ -18,16 +18,16 @@ class GameFlowImpl<T: Any>(
     override val config: Any,
     override val stateKeeper: StateKeeper
 ): Game<T>, GameFactoryScope<Any>, GameEventsExecutor, GameFlowRuleCallbacks<T> {
+    private var lastAction: GameFlowContext.Steps.ActionPerformed<T>? = null
     private val mainScope = MainScope()
     val views = mutableListOf<Pair<String, ViewScope<T>.() -> Any?>>()
-    private val feedbackOutput = Channel<Any>()
-    val feedbackReceiver: ReceiveChannel<Any> get() = feedbackOutput
+    private val feedbackOutput = Channel<GameFlowContext.Steps.FlowStep>()
+    val feedbackReceiver: ReceiveChannel<GameFlowContext.Steps.FlowStep> get() = feedbackOutput
     private val feedbacks = mutableListOf<GameFlowContext.Steps.FlowStep>()
 
     override val eliminations: PlayerEliminations = PlayerEliminations(playerCount).also {
         it.callback = { elimination ->
             feedbacks.add(GameFlowContext.Steps.Elimination(elimination))
-            if (it.isGameOver()) feedbacks.add(GameFlowContext.Steps.GameEnd)
         }
     }
     override val model: T = setupContext.model.factory(this, config)
@@ -46,8 +46,8 @@ class GameFlowImpl<T: Any>(
                 val dsl = setupContext.flowDsl!!
                 val flowContext = GameFlowContext(this, game, "root")
                 dsl.invoke(flowContext)
-                game.runRules(GameFlowRulesState.BEFORE_RETURN)
-                sendFeedbacks()
+                actionDone()
+                sendFeedback(GameFlowContext.Steps.GameEnd)
                 println("GameFlow Coroutine MainScope done for $game")
             } catch (e: Exception) {
                 KLoggers.logger(game).error(e) { "Error in Coroutine for game $game" }
@@ -90,8 +90,7 @@ class GameFlowImpl<T: Any>(
     }
 
     suspend fun nextAction() {
-        runRules(GameFlowRulesState.BEFORE_RETURN)
-        sendFeedbacks()
+        this.actionDone()
         println("GameFlow Coroutine awaiting actionsInput in $actionsInput")
         if (anyPlayerHasAction()) {
             sendFeedback(GameFlowContext.Steps.AwaitInput)
@@ -102,14 +101,21 @@ class GameFlowImpl<T: Any>(
             val typeEntry = actions.type(action.actionType)
             if (typeEntry == null) {
                 sendFeedback(GameFlowContext.Steps.IllegalAction(action.actionType, action.playerIndex, action.parameter))
+                // TODO: Shouldn't this start over and listen for more inputs?
                 return
             }
             actions.clearAndPerform(action as Actionable<T, Any>) { this.clear() }
-            sendFeedback(GameFlowContext.Steps.ActionPerformed(action.actionType, action.playerIndex, action.parameter))
+            this.lastAction = GameFlowContext.Steps.ActionPerformed(typeEntry, action.playerIndex, action.parameter)
         } else {
             sendFeedback(GameFlowContext.Steps.NextView)
         }
         runRules(GameFlowRulesState.AFTER_ACTIONS)
+    }
+
+    private suspend fun actionDone() {
+        runRules(GameFlowRulesState.BEFORE_RETURN)
+        sendFeedbacks()
+        lastAction?.also { sendFeedback(it) }
     }
 
     private fun anyPlayerHasAction(): Boolean {
@@ -138,11 +144,13 @@ class GameFlowImpl<T: Any>(
     }
 
     private fun clear() {
+        println("GameFlow Clear views and actions")
         this.views.clear()
         this.actions.clear()
     }
 
     override fun view(key: String, value: ViewScope<T>.() -> Any?) {
+        println("GameFlow Add view $key")
         views.add(key to value)
     }
 
@@ -172,7 +180,7 @@ class GameFlowContext<T: Any>(
         interface FlowStep
         object GameEnd: FlowStep
         data class Elimination(val elimination: PlayerElimination): FlowStep
-        data class ActionPerformed(val actionType: String, val playerIndex: Int, val parameter: Any): FlowStep
+        data class ActionPerformed<T: Any>(val actionImpl: ActionTypeImplEntry<T, Any>, val playerIndex: Int, val parameter: Any): FlowStep
         data class IllegalAction(val actionType: String, val playerIndex: Int, val parameter: Any): FlowStep
         data class Log(val log: ActionLogEntry): FlowStep
         data class RuleExecution(val ruleName: String, val values: Any): FlowStep
@@ -201,7 +209,7 @@ class GameFlowContext<T: Any>(
         flow.actions.add(action, actionDsl)
     }
 
-    override fun yieldView(key: String, value: ViewScope<T>.() -> Any?) { flow.views.add(key to value) }
+    override fun yieldView(key: String, value: ViewScope<T>.() -> Any?) { flow.view(key, value) }
 
     override suspend fun log(logging: LogScope<T>.() -> String) {
         TODO("Logging outside of an action is not yet implemented")

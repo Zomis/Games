@@ -1,6 +1,7 @@
 package net.zomis.games.dsl
 
 import net.zomis.games.PlayerElimination
+import net.zomis.games.dsl.flow.GameFlowContext
 import net.zomis.games.dsl.flow.GameFlowImpl
 import net.zomis.games.dsl.impl.*
 
@@ -49,13 +50,21 @@ class GameReplayableImpl<T : Any>(
     var actionIndex: Int = 0
         private set
 
-    fun playThrough(function: () -> Actionable<T, Any>) {
+    suspend fun playThrough(function: () -> Actionable<T, Any>) {
+        if (game is GameFlowImpl) {
+            for (feedback in game.feedbackReceiver) {
+                println("GameReplayImpl Playthrough begin: $feedback")
+                if (feedback is GameFlowContext.Steps.AwaitInput) {
+                    break
+                }
+            }
+        }
         while (!game.isGameOver()) {
             perform(function())
         }
     }
 
-    fun playThroughWithControllers(dynamicControllers: (Int) -> GameController<T>) {
+    suspend fun playThroughWithControllers(dynamicControllers: (Int) -> GameController<T>) {
         val contexts = game.playerIndices.map { GameControllerContext(game, it) }
         while (!game.isGameOver()) {
             contexts.forEach { context ->
@@ -68,21 +77,49 @@ class GameReplayableImpl<T : Any>(
         }
     }
 
-    fun <A: Any> action(playerIndex: Int, actionType: ActionType<T, A>, parameter: A) {
+    suspend fun <A: Any> action(playerIndex: Int, actionType: ActionType<T, A>, parameter: A) {
         perform(game.actions.type(actionType)!!.createAction(playerIndex, parameter) as Actionable<T, Any>)
     }
 
-    fun <A: Any> actionSerialized(playerIndex: Int, actionType: ActionType<T, A>, serialized: Any) {
+    suspend fun <A: Any> actionSerialized(playerIndex: Int, actionType: ActionType<T, A>, serialized: Any) {
         perform(game.actions.type(actionType)!!.createActionFromSerialized(playerIndex, serialized) as Actionable<T, Any>)
     }
 
-    fun perform(action: Actionable<T, Any>) {
-        if (game is GameFlowImpl<T>) {
-            TODO("use suspend fun and send input and listen for output. Would use runBlocking but N/A in common")
-        }
+    suspend fun perform(action: Actionable<T, Any>) {
         if (game.eliminations.eliminationFor(action.playerIndex) != null) {
             throw IllegalArgumentException("Player ${action.playerIndex} is already eliminated.")
         }
+        if (game is GameFlowImpl<T>) {
+            this.performGameFlow(action)
+        } else {
+            this.performDirect(action)
+        }
+    }
+
+    private suspend fun performGameFlow(action: Actionable<T, Any>) {
+        val gameFlow = game as GameFlowImpl<T>
+        println("GameReplayImpl Send Action: $action")
+        gameFlow.actionsInput.send(action)
+        for (feedback in gameFlow.feedbackReceiver) {
+            println("GameReplayImpl Feedback: $feedback")
+            when (feedback) {
+                is GameFlowContext.Steps.NextView -> {}
+                is GameFlowContext.Steps.Elimination -> gameplayCallbacks.onElimination(feedback.elimination)
+                is GameFlowContext.Steps.Log -> gameplayCallbacks.onLog(listOf(feedback.log))
+                is GameFlowContext.Steps.ActionPerformed<*> -> {
+                    val actionReplay = ActionReplay(action.actionType, action.playerIndex,
+                        feedback.actionImpl.actionType.serialize(action.parameter), game.stateKeeper.lastMoveState()
+                    )
+                    gameplayCallbacks.onMove(actionIndex, action, actionReplay)
+                    this.actionIndex++
+                }
+                is GameFlowContext.Steps.AwaitInput -> return
+                else -> {}
+            }
+        }
+    }
+
+    private fun performDirect(action: Actionable<T, Any>) {
         game.stateKeeper.clear()
         gameplayCallbacks.onPreMove(this.actionIndex, action) {
             if (it != null) state.setState(it)
@@ -93,7 +130,7 @@ class GameReplayableImpl<T : Any>(
 
         // Collect state and logs. Perform callbacks.
         val actionReplay = ActionReplay(action.actionType, action.playerIndex,
-             actionImpl.actionType.serialize(action.parameter), game.stateKeeper.lastMoveState()
+            actionImpl.actionType.serialize(action.parameter), game.stateKeeper.lastMoveState()
         )
         gameplayCallbacks.onMove(actionIndex, action, actionReplay)
         gameplayCallbacks.onLog(game.stateKeeper.logs())

@@ -1,5 +1,6 @@
 package net.zomis.games.dsl
 
+import kotlinx.coroutines.runBlocking
 import net.zomis.common.convertToDBFormat
 import net.zomis.games.common.Point
 import net.zomis.games.dsl.impl.*
@@ -21,14 +22,16 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
 
         val replay = entryPoint.inMemoryReplay()
         val replayable = entryPoint.replayable(playerCount, config, replay)
-        replayable.playThrough {
-            this.showView(replayable.game)
-            inputRepeat { this.queryInput(replayable.game, scanner) }
-        }
-        val savedReplay = entryPoint.replay(replay.data()).goToEnd()
-        listOf<Int?>(null).plus(replayable.game.playerIndices).forEach {
-            val match = replayable.game.view(it) == savedReplay.game.view(it)
-            println("Replay for player $it verification: $match")
+        runBlocking {
+            replayable.playThrough {
+                showView(replayable.game)
+                inputRepeat { queryInput(replayable.game, scanner) }
+            }
+            val savedReplay = entryPoint.replay(replay.data()).goToEnd()
+            listOf<Int?>(null).plus(replayable.game.playerIndices).forEach {
+                val match = replayable.game.view(it) == savedReplay.game.view(it)
+                println("Replay for player $it verification: $match")
+            }
         }
     }
 

@@ -78,8 +78,8 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                         feedback.elimination.winResult, feedback.elimination.position
                     ))
                 is GameFlowContext.Steps.Log -> sendLogs(game, feedback.log)
-                is GameFlowContext.Steps.ActionPerformed -> events.execute(
-                    MoveEvent(game, feedback.playerIndex, feedback.actionType, feedback.parameter)
+                is GameFlowContext.Steps.ActionPerformed<*> -> events.execute(
+                    MoveEvent(game, feedback.playerIndex, feedback.actionImpl.name, feedback.parameter)
                 )
                 is GameFlowContext.Steps.AwaitInput -> return
                 is GameFlowContext.Steps.RuleExecution -> logger.debug { "Rule Execution: $feedback" }

@@ -32,15 +32,15 @@ class Replay<T : Any>(
     val alwaysCallback: GameplayCallbacks<T>
 ) {
 
-    fun goToStart(): Replay<T> = this.gotoPosition(0)
-    fun goToEnd(): Replay<T> = this.gotoPosition(replayData.actions.size)
+    suspend fun goToStart(): Replay<T> = this.gotoPosition(0)
+    suspend fun goToEnd(): Replay<T> = this.gotoPosition(replayData.actions.size)
 
     private val entryPoint = GamesImpl.game(gameSpec)
     lateinit var gameReplayable: GameReplayableImpl<T>
     private var position: Int = 0
     val game: Game<T> get() = gameReplayable.game
 
-    fun gotoPosition(newPosition: Int): Replay<T> {
+    suspend fun gotoPosition(newPosition: Int): Replay<T> {
         if (newPosition < this.position) {
             restart()
         }
@@ -50,7 +50,7 @@ class Replay<T : Any>(
         return this
     }
 
-    private fun stepForward() {
+    private suspend fun stepForward() {
         val action = replayData.actions[this.position]
         try {
             val actionable = gameReplayable.game.actions.type(action.actionType)!!
