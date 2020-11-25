@@ -14,7 +14,7 @@
         <v-row>
           {{ view.code }}
         </v-row>
-        <v-row>
+        <v-row v-if="actions.available['giveClue']">
           <v-textarea
             v-model="clues"
             solo
@@ -22,7 +22,7 @@
             label="Write your clues here, one clue per line"
           />
         </v-row>
-        <v-row>
+        <v-row v-if="actions.available['guessCode']">
           <v-text-field
             v-model="guess"
             :rules="[v => v.length === 3]"
@@ -39,6 +39,22 @@
             Guess
           </v-btn>
         </v-row>
+      </v-col>
+      <v-col cols="4">
+          <v-row>
+            <v-textarea
+                solo
+                rows="5"
+                :value="view.teams[view.yourTeam].chat"
+            />
+          </v-row>
+          <v-row>
+            <v-text-field
+                v-model="chatMessage"
+                label="Send a message to your team"
+                @keyup.native.enter="sendChat"
+            />
+          </v-row>
       </v-col>
     </v-row>
 
@@ -94,11 +110,15 @@ export default {
     },
     data() {
         return {
+            chatMessage: "",
             clues: "",
             guess: ""
         }
     },
     methods: {
+        sendChat() {
+            this.actions.actionParameter('chat', this.chatMessage)
+        },
         giveClues() {
             this.actions.actionParameter('giveClue', this.clues)
         },

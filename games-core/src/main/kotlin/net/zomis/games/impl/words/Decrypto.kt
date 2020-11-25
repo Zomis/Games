@@ -47,6 +47,7 @@ object Decrypto {
     data class Guess(val guess: List<Int>)
 
     val factory = GamesApi.gameCreator(Model::class)
+    val chat = factory.action("chat", String::class)
     val giveClue = factory.action("giveClue", Clues::class).serialization({ it.clues.joinToString("\n") }) {
         Clues(it.split("\n"))
     }
@@ -81,11 +82,21 @@ object Decrypto {
                     eliminations.eliminateRemaining(WinResult.WIN)
                 }
             }
+            beforeReturnRule("chat action") {
+                action(chat) {
+                    precondition { playerIndex != game.currentTeam.clueGiverPlayer }
+                    options { listOf("") }
+                    perform {
+                        game.teamFor(playerIndex)!!.chat += "$playerIndex: ${action.parameter}\n"
+                    }
+                }
+            }
             beforeReturnRule("view") {
                 view("currentTeam") { game.currentTeamIndex }
                 view("words") {
                     game.teamFor(viewer)?.words ?: emptyList<String>()
                 }
+                view("yourTeam") { game.teamFor(viewer)?.teamNumber }
                 view("teams") {
                     // Clues and guesses are public information for both teams
                     game.teams.map { team ->
@@ -118,7 +129,7 @@ object Decrypto {
                                 game.opponentTeam.interceptionHistory.add(CluesAndGuess(game.currentCode, action.parameter, null))
                             }
                         }
-                    }
+                    }.loopUntil { action?.actionType == giveClue.name }
                     var intercepted: Boolean = false
                     if (game.roundNumber() > 0) {
                         step("team ${team.teamNumber} - opponents guess code") {
@@ -137,7 +148,7 @@ object Decrypto {
                                     }
                                 }
                             }
-                        }
+                        }.loopUntil { action?.actionType == guessCode.name }
                     }
                     if (!intercepted) {
                         step("team ${team.teamNumber} - guess own code") {
@@ -154,7 +165,7 @@ object Decrypto {
                                     game.currentCode = replayable.ints("code") { randomCode() }
                                 }
                             }
-                        }
+                        }.loopUntil { action?.actionType == guessCode.name }
                     }
                     game.currentTeam.clueGiverIndex++
                 }

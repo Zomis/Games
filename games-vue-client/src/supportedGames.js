@@ -103,6 +103,7 @@ const supportedGames = {
     "Decrypto": {
         dsl: true,
         actions: {
+            chat: () => "chat",
             guessCode: () => "guessCode",
             giveClue: () => "giveClue"
         },

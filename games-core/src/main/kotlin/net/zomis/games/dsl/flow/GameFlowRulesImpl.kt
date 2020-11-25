@@ -1,10 +1,7 @@
 package net.zomis.games.dsl.flow
 
 import net.zomis.games.common.GameEvents
-import net.zomis.games.dsl.ActionType
-import net.zomis.games.dsl.LogScope
-import net.zomis.games.dsl.LogSecretScope
-import net.zomis.games.dsl.ViewScope
+import net.zomis.games.dsl.*
 import net.zomis.games.dsl.flow.rules.GameRulePresets
 import net.zomis.games.dsl.flow.rules.GameRulePresetsImpl
 import net.zomis.games.dsl.impl.GameMarker
@@ -24,7 +21,7 @@ interface GameFlowRule<T : Any> {
     fun <E> onEvent(gameEvents: GameRuleScope<T>.() -> GameEvents<E>): GameRuleEvents<T, E>
 
     fun view(key: String, value: ViewScope<T>.() -> Any?)
-//    fun <A: Any> action(actionType: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>)
+    fun <A: Any> action(actionType: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>)
 //    suspend fun loop(function: suspend GameFlowScope<T>.() -> Unit)
 //    suspend fun step(name: String, step: suspend GameFlowStepScope<T>.() -> Unit)
 //    suspend fun log(logging: LogScope<T>.() -> String)
@@ -88,10 +85,12 @@ open class GameFlowRuleContext<T: Any>: GameFlowRule<T> {
         }
     }
     override fun view(key: String, value: ViewScope<T>.() -> Any?) {}
+    override fun <A : Any> action(actionType: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>) {}
 }
 interface GameFlowRuleCallbacks<T: Any> {
     fun view(key: String, value: ViewScope<T>.() -> Any?)
     val feedback: (GameFlowContext.Steps.FlowStep) -> Unit
+    fun <A : Any> action(action: ActionType<T, A>, actionDsl: GameFlowActionScope<T, A>.() -> Unit)
 }
 
 class GameFlowRuleContextRun<T: Any>(
@@ -142,6 +141,10 @@ class GameFlowRuleContextExecution<T: Any>(
 
     override fun view(key: String, value: ViewScope<T>.() -> Any?) {
         callbacks.view(key, value)
+    }
+
+    override fun <A : Any> action(actionType: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>) {
+        callbacks.action(actionType, actionDsl)
     }
 
     override fun <E> onEvent(gameEvents: GameRuleScope<T>.() -> GameEvents<E>): GameRuleEvents<T, E> {

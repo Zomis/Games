@@ -106,6 +106,7 @@ class GameReplayableImpl<T : Any>(
                 is GameFlowContext.Steps.NextView -> {}
                 is GameFlowContext.Steps.Elimination -> gameplayCallbacks.onElimination(feedback.elimination)
                 is GameFlowContext.Steps.Log -> gameplayCallbacks.onLog(listOf(feedback.log))
+                is GameFlowContext.Steps.GameSetup -> gameplayCallbacks.startedState(feedback.playerCount, feedback.config, feedback.state)
                 is GameFlowContext.Steps.ActionPerformed<*> -> {
                     val actionReplay = ActionReplay(action.actionType, action.playerIndex,
                         feedback.actionImpl.actionType.serialize(action.parameter), game.stateKeeper.lastMoveState()

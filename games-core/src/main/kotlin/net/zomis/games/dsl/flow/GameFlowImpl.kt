@@ -45,7 +45,8 @@ class GameFlowImpl<T: Any>(
             try {
                 val dsl = setupContext.flowDsl!!
                 val flowContext = GameFlowContext(this, game, "root")
-                setupContext.model.onStart(replayable, model) // TODO: Save in database somewhere, somehow?
+                setupContext.model.onStart(replayable, model)
+                sendFeedback(GameFlowContext.Steps.GameSetup(playerCount, config, replayable.stateKeeper.lastMoveState()))
                 dsl.invoke(flowContext)
                 actionDone()
                 sendFeedback(GameFlowContext.Steps.GameEnd)
@@ -160,6 +161,9 @@ class GameFlowImpl<T: Any>(
     }
 
     override val feedback: (GameFlowContext.Steps.FlowStep) -> Unit = { feedbacks.add(it) }
+    override fun <A : Any> action(action: ActionType<T, A>, actionDsl: GameFlowActionScope<T, A>.() -> Unit) {
+        actions.add(action, actionDsl)
+    }
 
     // current possible actions, cleared and re-filled after every step
     // a coroutine to keep the game running. Cancellable?
@@ -189,6 +193,7 @@ class GameFlowContext<T: Any>(
         data class IllegalAction(val actionType: String, val playerIndex: Int, val parameter: Any): FlowStep
         data class Log(val log: ActionLogEntry): FlowStep
         data class RuleExecution(val ruleName: String, val values: Any): FlowStep
+        data class GameSetup(val playerCount: Int, val config: Any, val state: Map<String, Any>): FlowStep
         object AwaitInput: FlowStep
         object NextView : FlowStep
     }
@@ -199,15 +204,10 @@ class GameFlowContext<T: Any>(
         }
     }
 
-    override suspend fun step(name: String, step: suspend GameFlowStepScope<T>.() -> Unit): Actionable<T, Any>? {
-        if (flow.isGameOver()) return null
-        println("GameFlow Coroutine step $name")
-        val child = GameFlowContext(coroutineScope, flow, "${this.name}/$name")
-        step.invoke(child)
-        println("GameFlow Coroutine step sendFeedbacks")
-        flow.sendFeedbacks()
-        println("GameFlow Coroutine step send AwaitInput")
-        return flow.nextAction()
+    override suspend fun step(name: String, step: suspend GameFlowStepScope<T>.() -> Unit): GameFlowStep<T> {
+        val impl = GameFlowStepImpl(flow, coroutineScope, "${this.name}/$name", step)
+        impl.runDsl()
+        return impl
     }
 
     override fun <A : Any> yieldAction(action: ActionType<T, A>, actionDsl: GameFlowActionScope<T, A>.() -> Unit) {
@@ -247,7 +247,12 @@ interface GameFlowStepScope<T: Any> {
 interface GameFlowScope<T: Any> {
     val game: T
     suspend fun loop(function: suspend GameFlowScope<T>.() -> Unit)
-    suspend fun step(name: String, step: suspend GameFlowStepScope<T>.() -> Unit): Actionable<T, Any>?
+    suspend fun step(name: String, step: suspend GameFlowStepScope<T>.() -> Unit): GameFlowStep<T>
     suspend fun log(logging: LogScope<T>.() -> String)
     suspend fun logSecret(player: PlayerIndex, logging: LogScope<T>.() -> String): LogSecretScope<T>
+}
+
+interface GameFlowStep<T: Any> {
+    val action: Actionable<T, Any>?
+    suspend fun loopUntil(function: GameFlowStep<T>.() -> Boolean)
 }
