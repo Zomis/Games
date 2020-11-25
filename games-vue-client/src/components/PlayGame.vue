@@ -64,6 +64,9 @@ export default {
     highlight(highlight) {
       this.$store.dispatch("DslGameState/highlight", { gameInfo: this.gameInfo, highlights: highlight });
     },
+    actionParameter(actionType, serializedParameter) {
+      this.$store.dispatch("DslGameState/action", { gameInfo: this.gameInfo, name: actionType, data: serializedParameter });
+    },
     action(_, data) {
       let action = this.actionsAvailable[data]
       console.log("ACTION CHOICE", data, action)
@@ -112,6 +115,7 @@ export default {
         perform: this.action,
         performChosen: this.performChosenAction,
         available: this.actionsAvailable,
+        actionParameter: this.actionParameter,
         actionTypes: this.actionTypes,
         clear: this.clearActions,
         resetTo: this.resetActionsTo

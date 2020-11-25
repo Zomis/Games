@@ -15,6 +15,7 @@ import HanabiConfig from "@/components/games/hanabi/HanabiConfig";
 import Splendor from "@/components/games/splendor/Splendor";
 //import TreeViewGame from "@/components/games/TreeViewGame";
 import SetGame from "@/components/games/set/SetGame";
+import Decrypto from "@/components/games/words/Decrypto";
 import Skull from "@/components/games/skull/Skull";
 import DSLTTT from "@/components/games/DSLTTT";
 import TTT3D from "@/components/games/TTT3D";
@@ -98,6 +99,14 @@ const supportedGames = {
             move: (i) => `${i}`
         },
         component: RoyalGameOfUR,
+    },
+    "Decrypto": {
+        dsl: true,
+        actions: {
+            guessCode: () => "guessCode",
+            giveClue: () => "giveClue"
+        },
+        component: Decrypto
     },
     "Coup": {
         dsl: true,

@@ -4,10 +4,12 @@ import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.impl.*
 import net.zomis.games.impl.ttt.*
+import net.zomis.games.impl.words.Decrypto
 
 object ServerGames {
 
     val games = listOf(
+        Decrypto.game,
         CoupRuleBased.game,
         SetGame.game,
         ResistanceAvalonGame.game,

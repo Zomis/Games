@@ -45,6 +45,7 @@ class GameFlowImpl<T: Any>(
             try {
                 val dsl = setupContext.flowDsl!!
                 val flowContext = GameFlowContext(this, game, "root")
+                setupContext.model.onStart(replayable, model) // TODO: Save in database somewhere, somehow?
                 dsl.invoke(flowContext)
                 actionDone()
                 sendFeedback(GameFlowContext.Steps.GameEnd)
@@ -89,27 +90,31 @@ class GameFlowImpl<T: Any>(
         TODO("Not yet implemented")
     }
 
-    suspend fun nextAction() {
+    suspend fun nextAction(): Actionable<T, Any>? {
         this.actionDone()
-        println("GameFlow Coroutine awaiting actionsInput in $actionsInput")
         if (anyPlayerHasAction()) {
-            sendFeedback(GameFlowContext.Steps.AwaitInput)
-            val action = actionsInput.receive()
-            println("GameFlow Coroutine Action Received: $action")
-            replayable.stateKeeper.clear()
-            require(action is Actionable<*, *>)
-            val typeEntry = actions.type(action.actionType)
-            if (typeEntry == null) {
-                sendFeedback(GameFlowContext.Steps.IllegalAction(action.actionType, action.playerIndex, action.parameter))
-                // TODO: Shouldn't this start over and listen for more inputs?
-                return
+            while (true) {
+                sendFeedback(GameFlowContext.Steps.AwaitInput)
+                val action = actionsInput.receive()
+                println("GameFlow Coroutine Action Received: $action")
+                replayable.stateKeeper.clear()
+                require(action is Actionable<*, *>)
+                val typeEntry = actions.type(action.actionType)
+                if (typeEntry == null) {
+                    sendFeedback(GameFlowContext.Steps.IllegalAction(action.actionType, action.playerIndex, action.parameter))
+                    continue
+                }
+                actions.clearAndPerform(action as Actionable<T, Any>) { this.clear() }
+                this.lastAction = GameFlowContext.Steps.ActionPerformed(typeEntry, action.playerIndex, action.parameter)
+                runRules(GameFlowRulesState.AFTER_ACTIONS)
+                return action
             }
-            actions.clearAndPerform(action as Actionable<T, Any>) { this.clear() }
-            this.lastAction = GameFlowContext.Steps.ActionPerformed(typeEntry, action.playerIndex, action.parameter)
         } else {
+            println("GameFlow Coroutine No Available Actions")
             sendFeedback(GameFlowContext.Steps.NextView)
+            runRules(GameFlowRulesState.AFTER_ACTIONS)
+            return null
         }
-        runRules(GameFlowRulesState.AFTER_ACTIONS)
     }
 
     private suspend fun actionDone() {
@@ -194,15 +199,15 @@ class GameFlowContext<T: Any>(
         }
     }
 
-    override suspend fun step(name: String, step: suspend GameFlowStepScope<T>.() -> Unit) {
-        if (flow.isGameOver()) return
+    override suspend fun step(name: String, step: suspend GameFlowStepScope<T>.() -> Unit): Actionable<T, Any>? {
+        if (flow.isGameOver()) return null
         println("GameFlow Coroutine step $name")
         val child = GameFlowContext(coroutineScope, flow, "${this.name}/$name")
         step.invoke(child)
         println("GameFlow Coroutine step sendFeedbacks")
         flow.sendFeedbacks()
         println("GameFlow Coroutine step send AwaitInput")
-        flow.nextAction()
+        return flow.nextAction()
     }
 
     override fun <A : Any> yieldAction(action: ActionType<T, A>, actionDsl: GameFlowActionScope<T, A>.() -> Unit) {
@@ -242,7 +247,7 @@ interface GameFlowStepScope<T: Any> {
 interface GameFlowScope<T: Any> {
     val game: T
     suspend fun loop(function: suspend GameFlowScope<T>.() -> Unit)
-    suspend fun step(name: String, step: suspend GameFlowStepScope<T>.() -> Unit)
+    suspend fun step(name: String, step: suspend GameFlowStepScope<T>.() -> Unit): Actionable<T, Any>?
     suspend fun log(logging: LogScope<T>.() -> String)
     suspend fun logSecret(player: PlayerIndex, logging: LogScope<T>.() -> String): LogSecretScope<T>
 }

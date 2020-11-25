@@ -14,7 +14,7 @@
             <PlayerProfile
               show-name
               :context="context"
-              :playerIndex="playerIndex"
+              :player-index="playerIndex"
             />
           </v-card-title>
           <v-card-text>
