@@ -12,7 +12,7 @@ class GameFlowStepImpl<T: Any>(
 
     override var action: Actionable<T, Any>? = null
     override suspend fun loopUntil(function: GameFlowStep<T>.() -> Boolean) {
-        while (!function()) {
+        while (!gameFlow.isGameOver() && !function()) {
             runDsl()
         }
     }

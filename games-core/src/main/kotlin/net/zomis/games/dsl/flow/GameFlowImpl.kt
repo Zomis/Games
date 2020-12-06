@@ -93,6 +93,9 @@ class GameFlowImpl<T: Any>(
 
     suspend fun nextAction(): Actionable<T, Any>? {
         this.actionDone()
+        if (isGameOver()) {
+            return null
+        }
         if (anyPlayerHasAction()) {
             while (true) {
                 sendFeedback(GameFlowContext.Steps.AwaitInput)
