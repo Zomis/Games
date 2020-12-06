@@ -14,8 +14,10 @@ import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.impl.SetAction
 import net.zomis.games.impl.SetGame
 import net.zomis.games.impl.SetGameModel
+import net.zomis.games.impl.words.Decrypto
 import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.ais.ServerAIs
+import net.zomis.games.server2.ais.gamescorers.DecryptoScorers
 import net.zomis.games.server2.ais.gamescorers.SplendorScorers
 import net.zomis.games.server2.ais.serialize
 import net.zomis.games.server2.clients.WSClient
@@ -63,7 +65,8 @@ class DslRandomPlayTest {
     companion object {
         @JvmStatic
         fun serverGames(): List<Arguments> {
-            return ServerGames.games.values.sortedBy { it.name }.map {
+            return ServerGames.games.values.sortedBy { it.name }
+            .map {
                 val entryPoint = GamesImpl.game(it)
                 val playerCount = entryPoint.setup().playersCount
                 val randomCount = playerCount.random()
@@ -84,6 +87,7 @@ class DslRandomPlayTest {
     }
 
     val playingMap = mapOf<KClass<*>, GameController<*>>(
+        Decrypto.Model::class to { ctx -> DecryptoScorers.noChat.createController().invoke(ctx as GameControllerScope<Decrypto.Model>) },
         SetGameModel::class to { context: GameControllerScope<*> -> randomSetMove(context as GameControllerScope<SetGameModel>) },
         SplendorGame::class to { ctx -> SplendorScorers.aiBuyFirst.createController().invoke(ctx as GameControllerScope<SplendorGame>) }
     )
@@ -179,7 +183,7 @@ class DslRandomPlayTest {
                 val view = clients[0].expectJsonObject { it.getText("type") == "GameView" }
                 throw IllegalStateException("Game is not over but no actions available after $actionCounter actions. Is the game a draw? View is $view")
             }
-            val request = actions.first()
+            val request = actions.random() // If multiple players wants to perform an action, just do one of them
             val playerSocket = clients[playerIds.indexOf(game.players[request.player].playerId!!.toString())]
             val moveString = jacksonObjectMapper().writeValueAsString(request.move)
             playerSocket.send("""{ "route": "games/$dslGame/1/move", "playerIndex": ${request.player}, "moveType": "${request.moveType}", "move": $moveString }""")
