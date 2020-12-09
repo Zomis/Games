@@ -358,6 +358,16 @@ object CoupRuleBased {
                     }
                 }
             }
+            rule("eliminated players can't counteract") {
+                appliesWhen {
+                    if (game.stack.peek() !is CoupAwaitCountering) return@appliesWhen false
+                    val task = game.stack.peek() as CoupAwaitCountering
+                    task.possibleCounters.map { game.players[it] }.all { !it.isAlive() }
+                }
+                effect {
+                    game.stack.pop()
+                }
+            }
             rule("approve needs one applicable rule active") {
                 action(approve) {
                     precondition {
@@ -486,6 +496,24 @@ object CoupRuleBased {
             expectEquals(1, game.currentPlayerIndex)
             expectEquals(2, game.players[0].coins)
             expectEquals(listOf(CoupCharacter.ASSASSIN), game.players[0].influence.cards)
+        }
+        testCase(players = 3) {
+            state("start-0", listOf("CAPTAIN", "ASSASSIN"))
+            state("start-1", listOf("CONTESSA", "ASSASSIN"))
+            state("start-2", listOf("DUKE", "DUKE"))
+            game.players[2].influence.cards.removeAt(0)
+            expectEquals(2, game.players[0].coins)
+            action(0, perform, CoupAction(game.players[0], CoupActionType.STEAL, game.players[2]))
+            // Steal from a player having 1 influence left, that player then challenges action, loses influence and can't choose to counteract or approve
+            action(2, challenge, Unit)
+            state("replacement", listOf("AMBASSADOR"))
+            action(0, reveal, Unit)
+            action(2, loseInfluence, CoupCharacter.DUKE)
+            expectTrue(game.players[2].influence.size == 0)
+            check(game.stack.isEmpty()) { game.stack.asList().toString() }
+            expectTrue(game.stack.isEmpty())
+            expectEquals(4, game.players[0].coins)
+            expectEquals(1, game.currentPlayerIndex)
         }
         testCase(players = 6) {
             game.players[2].influence.cards.removeAt(0)
