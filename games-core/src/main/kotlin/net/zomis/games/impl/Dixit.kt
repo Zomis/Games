@@ -34,6 +34,7 @@ object Dixit {
         val cards = CardZone<String>()
         var placedCard: String? = null
         var vote: ActionVote? = null
+        override fun toString(): String = "($playerIndex: $points points, $cards, placed $placedCard, voted for $vote)"
     }
     class Model(val playerCount: Int, val config: Config) {
         fun startingCards(): Int = 6
@@ -64,7 +65,11 @@ object Dixit {
         gameFlow {
             loop {
                 for (player in game.players) {
-                    storytellPhase(this, player)
+                    // TODO: Check eliminations instead, or just stop executing the coroutine in common flow-code?
+                    if (game.players.any { it.points >= 30 }) return@loop
+                    game.story = null
+                    game.storyteller = game.players[player.playerIndex]
+                    storytellPhase(this)
                     placecardPhase(this)
                     game.board.cards.shuffle()
                     votePhase(this)
@@ -107,10 +112,8 @@ object Dixit {
         }
     }
 
-    private suspend fun storytellPhase(gameFlow: GameFlowScope<Model>, player: Player) {
+    private suspend fun storytellPhase(gameFlow: GameFlowScope<Model>) {
         gameFlow.apply {
-            game.story = null
-            game.storyteller = gameFlow.game.players[player.playerIndex]
             game.phase = "tell story"
             step("tell story") {
                 yieldAction(story) {
