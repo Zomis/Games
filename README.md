@@ -49,9 +49,8 @@ OR
 
 ### Running the client locally:
 
-    ./gradlew :games-js:assemble # this compiles Kotlin code to JavaScript
     cd games-vue-client
-    npm run serve
+    npm install && npm run serve
 
 ## Adding a new game
 
