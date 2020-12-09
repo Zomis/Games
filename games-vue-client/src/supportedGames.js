@@ -26,6 +26,7 @@ import Splendor from "@/components/games/splendor/Splendor";
 //import TreeViewGame from "@/components/games/TreeViewGame";
 import SetGame from "@/components/games/set/SetGame";
 import Decrypto from "@/components/games/words/Decrypto";
+import Dixit from "@/components/games/Dixit";
 import Skull from "@/components/games/skull/Skull";
 import DSLTTT from "@/components/games/DSLTTT";
 import TTT3D from "@/components/games/TTT3D";
@@ -87,6 +88,15 @@ function recursiveAvalon(teamMember) {
 }
 
 const supportedGames = {
+    "Dixit": {
+        dsl: true,
+        actions: {
+            story: () => "story",
+            place: () => "place",
+            vote: (card) => `vote-${card}`,
+        },
+        component: Dixit
+    },
     "Avalon": {
         dsl: dsl(g => g.net.zomis.games.impl.ResistanceAvalonGame.game),
         actions: {

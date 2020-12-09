@@ -85,7 +85,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                 is GameFlowContext.Steps.GameSetup -> { /* SuperTable also listens for GameStartedEvent with higher priority */ }
                 is GameFlowContext.Steps.RuleExecution -> logger.debug { "Rule Execution: $feedback" }
                 is GameFlowContext.Steps.IllegalAction -> logger.error { "Illegal action in feedback: $feedback" }
-                is GameFlowContext.Steps.NextView -> {} // TODO: Not implemented yet, should pause a bit and then continue
+                is GameFlowContext.Steps.NextView -> logger.debug { "NextView: $feedback" } // TODO: Not implemented yet, should pause a bit and then continue
                 else -> {
                     logger.error(IllegalArgumentException("Unsupported feedback: $feedback"))
                 }
