@@ -1,10 +1,8 @@
 import net.zomis.games.api.GamesApi
 import net.zomis.games.cards.CardZone
 import net.zomis.games.common.isObserver
-import net.zomis.games.common.toSingleList
 import net.zomis.games.common.withLeadingZeros
 import net.zomis.games.dsl.Replayable
-import kotlin.math.min
 
 object Dixit {
 
@@ -12,14 +10,21 @@ object Dixit {
     fun createCards(cardSet: String): List<String> = cardSets.get(cardSet)?.let {count ->
         (1..count).map { it.withLeadingZeros(3) }
     } ?: throw IllegalArgumentException("No cardSet with name: $cardSet")
+    val factory = GamesApi.gameCreator(Model::class)
+    val story = factory.action("story", ActionStory::class).serialization({ it.toStateString() }) {text ->
+        ActionStory(text.substringBefore(':'), text.substringAfter(':'))
+    }
+    val place = factory.action("place", ActionPlaceCard::class).serializer { it.toStateString() }
+    val vote = factory.action("vote", ActionVote::class).serializer { it.toStateString() }
+
     class Config(val cardSet: String)
-    class Story(val card: String, val clue: String): Replayable {
+    class ActionStory(val card: String, val clue: String): Replayable {
         override fun toStateString(): String = "$card:$clue"
     }
-    class PlaceCard(val card: String): Replayable {
+    class ActionPlaceCard(val card: String): Replayable {
         override fun toStateString(): String = "$card:null"
     }
-    class Vote(val first: String, val second: String?): Replayable {
+    class ActionVote(val first: String, val second: String?): Replayable {
         override fun toStateString(): String = "$first:$second"
         fun asList(): List<String> = listOfNotNull(first, second)
     }
@@ -27,25 +32,19 @@ object Dixit {
         var points: Int = 0
         val cards = CardZone<String>()
         var placedCard: String? = null
-        var vote: Vote? = null
+        var vote: ActionVote? = null
     }
     class Model(val playerCount: Int, val config: Config) {
         fun startingCards(): Int = 6
         var phase: String = "setup"
         val players = (0 until playerCount).map { Player(it) }
-        var story: Story? = null
+        var story: ActionStory? = null
         var storyteller: Player = players[0]
         val everyoneButStoryteller get() = players.minus(storyteller)
         val board = CardZone<String>()
         val deck = CardZone<String>()
         val trash = CardZone<String>()
     }
-    val factory = GamesApi.gameCreator(Model::class)
-    val story = factory.action("story", Story::class).serialization({ it.toStateString() }) {text ->
-        Story(text.substringBefore(':'), text.substringAfter(':'))
-    }
-    val place = factory.action("place", PlaceCard::class).serializer { it.toStateString() }
-    val vote = factory.action("vote", Vote::class).serializer { it.toStateString() }
 
     val game = factory.game("Dixit") {
         setup(Config::class) {
@@ -72,7 +71,7 @@ object Dixit {
                             precondition { playerIndex == game.storyteller.playerIndex }
                             options {
                                 check(game.storyteller.cards.size > 0)
-                                game.storyteller.cards.cards.map { Story(it, "random") }
+                                game.storyteller.cards.cards.map { ActionStory(it, "random") }
                             }
                             requires {
                                 game.storyteller.cards.cards.contains(action.parameter.card)
@@ -89,7 +88,7 @@ object Dixit {
                     step("place cards") {
                         yieldAction(place) {
                             precondition { game.players[playerIndex].placedCard == null }
-                            options { game.players[playerIndex].cards.cards.map { PlaceCard(it) } }
+                            options { game.players[playerIndex].cards.cards.map { ActionPlaceCard(it) } }
                             requires { game.players[playerIndex].cards.cards.contains(action.parameter.card) }
                             perform {
                                 game.players[playerIndex].cards.card(action.parameter.card).moveTo(game.board)
@@ -105,7 +104,7 @@ object Dixit {
                         yieldAction(vote) {
                             precondition { game.players[playerIndex].vote == null }
                             options {
-                                game.board.cards.minus(game.players[playerIndex].placedCard!!).map { Vote(it, null) }
+                                game.board.cards.minus(game.players[playerIndex].placedCard!!).map { ActionVote(it, null) }
                             }
                             requires {
                                 // May not vote for your own card
