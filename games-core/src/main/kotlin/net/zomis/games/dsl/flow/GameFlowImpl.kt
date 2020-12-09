@@ -18,6 +18,7 @@ class GameFlowImpl<T: Any>(
     override val config: Any,
     override val stateKeeper: StateKeeper
 ): Game<T>, GameFactoryScope<Any>, GameEventsExecutor, GameFlowRuleCallbacks<T> {
+    private val logger = KLoggers.logger(this)
     private var lastAction: GameFlowContext.Steps.ActionPerformed<T>? = null
     private val mainScope = MainScope()
     val views = mutableListOf<Pair<String, ViewScope<T>.() -> Any?>>()
@@ -82,7 +83,7 @@ class GameFlowImpl<T: Any>(
 
     override fun view(playerIndex: PlayerIndex): Map<String, Any?> {
         val duplicates = views.map { it.first }.groupingBy { it }.eachCount().filter { it.value > 1 }
-        require(duplicates.isEmpty()) { "Multiple keys detected in view of: $duplicates" }
+        if (duplicates.isEmpty()) logger.warn {  "Multiple keys detected in view of: $duplicates" }
         val viewContext = GameViewContext(model, eliminations, playerIndex)
         return this.views.associate { it.first to it.second(viewContext) }
     }
@@ -92,11 +93,12 @@ class GameFlowImpl<T: Any>(
     }
 
     suspend fun nextAction(): Actionable<T, Any>? {
-        this.actionDone()
         if (isGameOver()) {
+            this.actionDone()
             return null
         }
         if (anyPlayerHasAction()) {
+            this.actionDone()
             while (true) {
                 sendFeedback(GameFlowContext.Steps.AwaitInput)
                 val action = actionsInput.receive()

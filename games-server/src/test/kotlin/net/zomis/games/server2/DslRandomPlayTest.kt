@@ -180,14 +180,13 @@ class DslRandomPlayTest {
             }.map { it.serialize(gameImpl) }
             if (actions.isEmpty()) {
                 clients[0].sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
-                val view = clients[0].expectJsonObject { it.getText("type") == "GameView" }
+                val view = clients[0].takeUntilJson { it.getText("type") == "GameView" }
                 throw IllegalStateException("Game is not over but no actions available after $actionCounter actions. Is the game a draw? View is $view")
             }
             val request = actions.random() // If multiple players wants to perform an action, just do one of them
             val playerSocket = clients[playerIds.indexOf(game.players[request.player].playerId!!.toString())]
             val moveString = jacksonObjectMapper().writeValueAsString(request.move)
             playerSocket.send("""{ "route": "games/$dslGame/1/move", "playerIndex": ${request.player}, "moveType": "${request.moveType}", "move": $moveString }""")
-            // TODO: Also add checks for "ActionLog" messages?
             clients.forEach {client ->
                 client.takeUntilJson { it.getTextOrDefault("type", "") == "GameMove" }
             }
