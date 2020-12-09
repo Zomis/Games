@@ -36,4 +36,49 @@ object Combinatorics {
         }
         return start
     }
+
+    fun specificCombination(elements: Int, size: Int, combinationNumber: Double): IntArray {
+        require(combinationNumber > 0) { "Combination must be positive" }
+        require(!(elements < 0 || size < 0)) { "Elements and size cannot be negative" }
+        val result = IntArray(size)
+        var resultIndex = 0
+        var nextNumber = 0
+        var combination = combinationNumber
+        var remainingSize = size
+        var remainingElements = elements
+        while (remainingSize > 0) {
+            val ncr = nCr(remainingElements - 1, remainingSize - 1)
+            require(ncr > 0) { "Combination out of range: $combinationNumber with $elements elements and size $size" }
+            if (combination.compareTo(ncr) <= 0) {
+                result[resultIndex] = nextNumber
+                remainingSize--
+                resultIndex++
+            } else {
+                combination -= ncr
+            }
+            remainingElements--
+            nextNumber++
+        }
+        return result
+    }
+
+    fun specificPermutation(elements: Int, combinationNumber: Int): IntArray {
+        require(elements >= 1)
+        require(combinationNumber >= 0) { "combination number must be >= 0" }
+        val factorial = nPr(elements, elements)
+        require(combinationNumber < factorial) { "combination number must be < factorial(elements) ($factorial)" }
+        val result = IntArray(elements)
+        var remainingCombinationNumber = combinationNumber
+        val numbers = (0 until elements).toMutableList()
+        for (i in 0 until elements) {
+            val elementsRemaining = elements - i
+            val div = remainingCombinationNumber / elementsRemaining
+            val mod = remainingCombinationNumber % elementsRemaining
+            result[i] = numbers[mod]
+            numbers.removeAt(mod)
+            remainingCombinationNumber = div
+        }
+        return result
+    }
+
 }

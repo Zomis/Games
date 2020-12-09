@@ -431,9 +431,3 @@ object DungeonMayhemDsl {
         }
     }
 }
-/*
-Problems:
-- Tracing what's happening (effects and why actions are - not - allowed)
-  - name each rule and log it?
-  - Also send to frontend?
-*/
