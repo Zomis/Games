@@ -3,6 +3,7 @@ import net.zomis.games.cards.CardZone
 import net.zomis.games.common.isObserver
 import net.zomis.games.common.withLeadingZeros
 import net.zomis.games.dsl.Replayable
+import net.zomis.games.dsl.flow.GameFlowScope
 
 object Dixit {
 
@@ -63,96 +64,12 @@ object Dixit {
         gameFlow {
             loop {
                 for (player in game.players) {
-                    game.story = null
-                    game.storyteller = game.players[player.playerIndex]
-                    game.phase = "tell story"
-                    step("tell story") {
-                        yieldAction(story) {
-                            precondition { playerIndex == game.storyteller.playerIndex }
-                            options {
-                                check(game.storyteller.cards.size > 0)
-                                game.storyteller.cards.cards.map { ActionStory(it, "random") }
-                            }
-                            requires {
-                                game.storyteller.cards.cards.contains(action.parameter.card)
-                            }
-                            requires { action.parameter.clue.isNotBlank() }
-                            perform {
-                                game.story = action.parameter
-                                game.storyteller.cards.card(action.parameter.card).moveTo(game.board)
-                                game.storyteller.placedCard = action.parameter.card
-                            }
-                        }
-                    }
-                    game.phase = "place cards"
-                    step("place cards") {
-                        yieldAction(place) {
-                            precondition { game.players[playerIndex].placedCard == null }
-                            options { game.players[playerIndex].cards.cards.map { ActionPlaceCard(it) } }
-                            requires { game.players[playerIndex].cards.cards.contains(action.parameter.card) }
-                            perform {
-                                game.players[playerIndex].cards.card(action.parameter.card).moveTo(game.board)
-                                game.players[playerIndex].placedCard = action.parameter.card
-                            }
-                        }
-                    }.loopUntil { game.players.all { it.placedCard != null } }
-
+                    storytellPhase(this, player)
+                    placecardPhase(this)
                     game.board.cards.shuffle()
-
-                    game.phase = "vote for cards"
-                    step("vote for cards") {
-                        yieldAction(vote) {
-                            precondition { game.players[playerIndex].vote == null }
-                            options {
-                                game.board.cards.minus(game.players[playerIndex].placedCard!!).map { ActionVote(it, null) }
-                            }
-                            requires {
-                                // May not vote for your own card
-                                game.players[playerIndex].placedCard !in action.parameter.asList()
-                            }
-                            perform { game.players[playerIndex].vote = action.parameter }
-                        }
-                    }.loopUntil { game.everyoneButStoryteller.all { it.vote != null } }
-
-                    game.phase = "scoring 1"
-                    step("correct answers") {
-                        val correct = game.everyoneButStoryteller.filter {
-                            it.vote!!.asList().contains(game.storyteller.placedCard!!)
-                        }
-                        if (correct.isEmpty() || correct.size == game.playerCount) {
-                            // Everyone except storyteller gets two points
-                            game.everyoneButStoryteller.forEach { it.points += 2 }
-                        } else {
-                            // Everyone who guessed correctly gets three points
-                            correct.forEach { it.points += 3 }
-                        }
-                    }
-
-                    game.phase = "scoring 2"
-                    step("bonus points") {
-                        game.everyoneButStoryteller.associateWith {scoringPlayer ->
-                            val votesForPlayer = game.everyoneButStoryteller.count {
-                                scoringPlayer.placedCard in it.vote!!.asList()
-                            }
-                            votesForPlayer.coerceAtMost(3)
-                        }.forEach {
-                            it.key.points += it.value
-                        }
-                    }
-
-                    game.phase = "prepare next round"
-                    step("prepare next round") {
-                        game.board.asSequence().forEach { it.moveTo(game.trash) }
-                        game.players.forEach {
-                            it.vote = null
-                            it.placedCard = null
-                        }
-                        if (game.deck.size < game.playerCount) {
-                            game.trash.asSequence().forEach { it.moveTo(game.deck) }
-                        }
-                        val replacementCards = game.deck.random(replayable, game.playerCount, "replacement-cards") { it }
-                        game.deck.deal(replacementCards.map { it.card }.toList(), game.players.map { it.cards })
-                    }
+                    votePhase(this)
+                    scoringPhase(this)
+                    cleanupPhase(this)
                 }
             }
         }
@@ -186,6 +103,116 @@ object Dixit {
                 effect {
                     eliminations.eliminateBy(game.players.map { it.playerIndex to it.points }, compareBy { it })
                 }
+            }
+        }
+    }
+
+    private suspend fun storytellPhase(gameFlow: GameFlowScope<Model>, player: Player) {
+        gameFlow.apply {
+            game.story = null
+            game.storyteller = gameFlow.game.players[player.playerIndex]
+            game.phase = "tell story"
+            step("tell story") {
+                yieldAction(story) {
+                    precondition { playerIndex == game.storyteller.playerIndex }
+                    options {
+                        check(game.storyteller.cards.size > 0)
+                        game.storyteller.cards.cards.map { ActionStory(it, "random") }
+                    }
+                    requires {
+                        game.storyteller.cards.cards.contains(action.parameter.card)
+                    }
+                    requires { action.parameter.clue.isNotBlank() }
+                    perform {
+                        game.story = action.parameter
+                        game.storyteller.cards.card(action.parameter.card).moveTo(game.board)
+                        game.storyteller.placedCard = action.parameter.card
+                    }
+                }
+            }
+        }
+    }
+
+    private suspend fun placecardPhase(gameFlow: GameFlowScope<Model>) {
+        gameFlow.apply {
+            game.phase = "place cards"
+            step("place cards") {
+                yieldAction(place) {
+                    precondition { game.players[playerIndex].placedCard == null }
+                    options { game.players[playerIndex].cards.cards.map { ActionPlaceCard(it) } }
+                    requires { game.players[playerIndex].cards.cards.contains(action.parameter.card) }
+                    perform {
+                        game.players[playerIndex].cards.card(action.parameter.card).moveTo(game.board)
+                        game.players[playerIndex].placedCard = action.parameter.card
+                    }
+                }
+            }.loopUntil { game.players.all { it.placedCard != null } }
+        }
+    }
+
+    private suspend fun votePhase(gameFlow: GameFlowScope<Model>) {
+        gameFlow.apply {
+            game.phase = "vote for cards"
+            step("vote for cards") {
+                yieldAction(vote) {
+                    precondition { game.players[playerIndex].vote == null }
+                    options {
+                        game.board.cards.minus(game.players[playerIndex].placedCard!!).map { ActionVote(it, null) }
+                    }
+                    requires {
+                        // May not vote for your own card
+                        game.players[playerIndex].placedCard !in action.parameter.asList()
+                    }
+                    perform { game.players[playerIndex].vote = action.parameter }
+                }
+            }.loopUntil { game.everyoneButStoryteller.all { it.vote != null } }
+        }
+    }
+
+    private suspend fun scoringPhase(gameFlow: GameFlowScope<Model>) {
+        gameFlow.apply {
+            game.phase = "scoring 1"
+            step("correct answers") {
+                val correct = game.everyoneButStoryteller.filter {
+                    it.vote!!.asList().contains(game.storyteller.placedCard!!)
+                }
+                if (correct.isEmpty() || correct.size == game.playerCount) {
+                    // Everyone except storyteller gets two points
+                    game.everyoneButStoryteller.forEach { it.points += 2 }
+                } else {
+                    // Everyone who guessed correctly gets three points
+                    correct.forEach { it.points += 3 }
+                }
+            }
+
+            game.phase = "scoring 2"
+            step("bonus points") {
+                game.everyoneButStoryteller.associateWith {scoringPlayer ->
+                    val votesForPlayer = game.everyoneButStoryteller.count {
+                        scoringPlayer.placedCard in it.vote!!.asList()
+                    }
+                    votesForPlayer.coerceAtMost(3)
+                }.forEach {
+                    it.key.points += it.value
+                }
+            }
+        }
+    }
+
+    private suspend fun cleanupPhase(gameFlow: GameFlowScope<Model>) {
+        gameFlow.apply {
+            game.phase = "prepare next round"
+            step("prepare next round") {
+                game.board.asSequence().forEach { it.moveTo(game.trash) }
+                game.players.forEach {
+                    it.vote = null
+                    it.placedCard = null
+                }
+                if (game.deck.size < game.playerCount) {
+                    game.trash.asSequence().forEach { it.moveTo(game.deck) }
+                }
+                val replacementCards = game.deck.random(replayable, game.playerCount, "replacement-cards") { it }
+                game.deck.deal(replacementCards.map { it.card }.toList(), game.players.map { it.cards })
             }
         }
     }
