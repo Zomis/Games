@@ -7,7 +7,7 @@ import net.zomis.games.dsl.flow.GameFlowScope
 
 object Dixit {
 
-    val cardSets = mapOf("dixit-cards-01" to 100)
+    val cardSets = mapOf("dixit-cards-01" to 100, "dixit-cards-real" to 84)
     fun createCards(cardSet: String): List<String> = cardSets.get(cardSet)?.let {count ->
         (1..count).map { it.withLeadingZeros(3) }
     } ?: throw IllegalArgumentException("No cardSet with name: $cardSet")
@@ -51,7 +51,7 @@ object Dixit {
     val game = factory.game("Dixit") {
         setup(Config::class) {
             players(3..12)
-            defaultConfig { Config("dixit-cards-01") }
+            defaultConfig { Config("dixit-cards-real") }
             init {
                 Model(playerCount, config)
             }
