@@ -9,6 +9,20 @@ class AlchemistsModel(playerCount: Int, val config: Config) {
 
     data class Hero(val requests: List<AlchemistsPotion>)
     data class Config(val master: Boolean)
+    enum class ActionUnit { CUBE, ASSOCIATE }
+    enum class ActionType {
+        FORAGE,
+        TRANSMUTE,
+        CUSTODIAN,
+        SELL_POTION,
+        BUY_ARTIFACT,
+        DEBUNK_THEORY,
+        MAKE_THEORY,
+        TEST_STUDENT,
+        TEST_SELF,
+        EXHIBIT,
+        ;
+    }
     enum class FavorType(val count: Int) {
         ASSISTANT(4),
         HERBALIST(4),
@@ -22,7 +36,22 @@ class AlchemistsModel(playerCount: Int, val config: Config) {
     }
 
     class Player(val playerIndex: Int) {
+        val favors = CardZone<FavorType>()
         val ingredients = CardZone<Alchemists.Ingredient>()
+    }
+
+    fun draftingRule(
+        vararg counts: Int,
+        specialCondition: ActionDrafting.SpacePlacementScope<ActionType, ActionUnit>.() -> Boolean
+    ): SpacePlacementRule<ActionType, ActionUnit> {
+        // TODO: Use the counts parameter
+        return {
+            if (!specialCondition(this)) ActionDrafting.PlacementResult.REJECTED
+            else {
+                val ok = space.placementsByPlayer(playerIndex).count() <= if (playerCount == 4) 2 else 3
+                if (ok) ActionDrafting.PlacementResult.ACCEPTED else ActionDrafting.PlacementResult.REJECTED
+            }
+        }
     }
 
     var firstPlayer: Int = 0
@@ -33,6 +62,25 @@ class AlchemistsModel(playerCount: Int, val config: Config) {
     val favorDeck = CardZone<FavorType>()
     val players = (0 until playerCount).map { Player(it) }
     val playerCount: Int get() = players.size
+
+    private val forageSpaces = if (playerCount == 4) intArrayOf(1, 1) else intArrayOf(1, 1, 1)
+    private val exhibitSpaces = if (playerCount == 4) intArrayOf(1, 1, 1) else intArrayOf(1, 1, 1, 1)
+    private val allow: ActionDrafting.SpacePlacementScope<ActionType, ActionUnit>.() -> Boolean = { true }
+    val actionPlacements = ActionDrafting.Drafting(listOf(
+        ActionDrafting.Space(ActionType.FORAGE, draftingRule(*forageSpaces, specialCondition = allow)),
+        ActionDrafting.Space(ActionType.TRANSMUTE, draftingRule(1, 2, specialCondition = allow)),
+        ActionDrafting.Space(ActionType.CUSTODIAN, draftingRule(1, 1, 1, 1, specialCondition = {
+            players[playerIndex].favors.cards.count { it == FavorType.CUSTODIAN } >= space.placementsByPlayer(playerIndex).size
+        })),
+        ActionDrafting.Space(ActionType.SELL_POTION, draftingRule(2, specialCondition = { round > 1 })),
+        ActionDrafting.Space(ActionType.BUY_ARTIFACT, draftingRule(1, 2, specialCondition = allow)),
+        ActionDrafting.Space(ActionType.DEBUNK_THEORY, draftingRule(1, 1, specialCondition = allow)),
+        ActionDrafting.Space(ActionType.MAKE_THEORY, draftingRule(1, 2, specialCondition = allow)),
+        ActionDrafting.Space(ActionType.TEST_STUDENT, draftingRule(1, 1, specialCondition = { round < 6 })),
+        ActionDrafting.Space(ActionType.TEST_SELF, draftingRule(1, 1, specialCondition = { round < 6 })),
+        ActionDrafting.Space(ActionType.EXHIBIT, draftingRule(*exhibitSpaces, specialCondition = { round == 6 }))
+    ))
+    var round: Int = 1
 
 }
 
