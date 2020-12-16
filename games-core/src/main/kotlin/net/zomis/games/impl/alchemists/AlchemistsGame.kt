@@ -3,6 +3,7 @@ package net.zomis.games.impl.alchemists
 import net.zomis.games.api.GamesApi
 import net.zomis.games.cards.CardZone
 import net.zomis.games.common.next
+import net.zomis.games.impl.alchemists.artifacts.*
 import kotlin.random.Random
 
 class AlchemistsModel(playerCount: Int, val config: Config) {
@@ -23,6 +24,7 @@ class AlchemistsModel(playerCount: Int, val config: Config) {
         EXHIBIT,
         ;
     }
+
     enum class FavorType(val count: Int) {
         ASSISTANT(4),
         HERBALIST(4),
@@ -35,14 +37,41 @@ class AlchemistsModel(playerCount: Int, val config: Config) {
         ;
     }
 
+    fun artifacts(): List<Artifact> {
+        return listOf(
+                AltarOfGold,
+                AmuletOfRhetoric,
+                BootsOfSpeed,
+                BronzeCup,
+                CrystalCabinet,
+                DiscountCard,
+                FeatherInCap,
+                HypnoticAmulet,
+                MagicMirror,
+                MagicMortar,
+                Periscope,
+                PrintingPress,
+                RobeOfRespect,
+                SealOfAuthority,
+                SilverChalice,
+                ThinkingCap,
+                WisdomIdol,
+                WitchsTrunk
+        )
+    }
+
+    fun selectArtifacts(artifacts: List<Artifact>): List<Artifact> {
+        return artifacts.groupBy { it.level }.map { it.value.shuffled().take(3) }.flatten()
+    }
+
     class Player(val playerIndex: Int) {
         val favors = CardZone<FavorType>()
         val ingredients = CardZone<Alchemists.Ingredient>()
     }
 
     fun draftingRule(
-        vararg counts: Int,
-        specialCondition: ActionDrafting.SpacePlacementScope<ActionType, ActionUnit>.() -> Boolean
+            vararg counts: Int,
+            specialCondition: ActionDrafting.SpacePlacementScope<ActionType, ActionUnit>.() -> Boolean
     ): SpacePlacementRule<ActionType, ActionUnit> {
         // TODO: Use the counts parameter
         return {
@@ -57,6 +86,7 @@ class AlchemistsModel(playerCount: Int, val config: Config) {
     var firstPlayer: Int = 0
     lateinit var solution: Alchemists.AlchemistsSolution
     val heroes = CardZone<Hero>()
+    val artifacts = CardZone<Artifact>()
     val ingredientDeck = CardZone<Alchemists.Ingredient>()
     val ingredientDiscard = CardZone<Alchemists.Ingredient>()
     val favorDeck = CardZone<FavorType>()
@@ -67,18 +97,18 @@ class AlchemistsModel(playerCount: Int, val config: Config) {
     private val exhibitSpaces = if (playerCount == 4) intArrayOf(1, 1, 1) else intArrayOf(1, 1, 1, 1)
     private val allow: ActionDrafting.SpacePlacementScope<ActionType, ActionUnit>.() -> Boolean = { true }
     val actionPlacements = ActionDrafting.Drafting(listOf(
-        ActionDrafting.Space(ActionType.FORAGE, draftingRule(*forageSpaces, specialCondition = allow)),
-        ActionDrafting.Space(ActionType.TRANSMUTE, draftingRule(1, 2, specialCondition = allow)),
-        ActionDrafting.Space(ActionType.CUSTODIAN, draftingRule(1, 1, 1, 1, specialCondition = {
-            players[playerIndex].favors.cards.count { it == FavorType.CUSTODIAN } >= space.placementsByPlayer(playerIndex).size
-        })),
-        ActionDrafting.Space(ActionType.SELL_POTION, draftingRule(2, specialCondition = { round > 1 })),
-        ActionDrafting.Space(ActionType.BUY_ARTIFACT, draftingRule(1, 2, specialCondition = allow)),
-        ActionDrafting.Space(ActionType.DEBUNK_THEORY, draftingRule(1, 1, specialCondition = allow)),
-        ActionDrafting.Space(ActionType.MAKE_THEORY, draftingRule(1, 2, specialCondition = allow)),
-        ActionDrafting.Space(ActionType.TEST_STUDENT, draftingRule(1, 1, specialCondition = { round < 6 })),
-        ActionDrafting.Space(ActionType.TEST_SELF, draftingRule(1, 1, specialCondition = { round < 6 })),
-        ActionDrafting.Space(ActionType.EXHIBIT, draftingRule(*exhibitSpaces, specialCondition = { round == 6 }))
+            ActionDrafting.Space(ActionType.FORAGE, draftingRule(*forageSpaces, specialCondition = allow)),
+            ActionDrafting.Space(ActionType.TRANSMUTE, draftingRule(1, 2, specialCondition = allow)),
+            ActionDrafting.Space(ActionType.CUSTODIAN, draftingRule(1, 1, 1, 1, specialCondition = {
+                players[playerIndex].favors.cards.count { it == FavorType.CUSTODIAN } >= space.placementsByPlayer(playerIndex).size
+            })),
+            ActionDrafting.Space(ActionType.SELL_POTION, draftingRule(2, specialCondition = { round > 1 })),
+            ActionDrafting.Space(ActionType.BUY_ARTIFACT, draftingRule(1, 2, specialCondition = allow)),
+            ActionDrafting.Space(ActionType.DEBUNK_THEORY, draftingRule(1, 1, specialCondition = allow)),
+            ActionDrafting.Space(ActionType.MAKE_THEORY, draftingRule(1, 2, specialCondition = allow)),
+            ActionDrafting.Space(ActionType.TEST_STUDENT, draftingRule(1, 1, specialCondition = { round < 6 })),
+            ActionDrafting.Space(ActionType.TEST_SELF, draftingRule(1, 1, specialCondition = { round < 6 })),
+            ActionDrafting.Space(ActionType.EXHIBIT, draftingRule(*exhibitSpaces, specialCondition = { round == 6 }))
     ))
     var round: Int = 1
 
@@ -104,24 +134,29 @@ object AlchemistsGame {
                 game.solution = Alchemists.AlchemistsSolution(solution.withIndex().associate { ingredients[it.index] to it.value })
 
                 // Setup favors
-                AlchemistsModel.FavorType.values().forEach {favor ->
+                AlchemistsModel.FavorType.values().forEach { favor ->
                     repeat(favor.count) {
                         game.favorDeck.cards.add(favor)
                     }
                 }
 
                 // Setup ingredients
-                Alchemists.Ingredient.values().forEach {ingredient ->
+                Alchemists.Ingredient.values().forEach { ingredient ->
                     repeat(8) {
                         game.ingredientDeck.cards.add(ingredient)
                     }
                 }
                 val startingIngredients = if (game.config.master) 2 else 3
                 val startingPlayerIngredients = game.ingredientDeck.random(this, startingIngredients * game.players.size, "ingredients") { it.name }
-                    .map { it.card }.toList()
+                        .map { it.card }.toList()
                 game.ingredientDeck.deal(startingPlayerIngredients, game.players.map { it.ingredients })
 
                 // TODO: Setup artifacts
+                game.artifacts.cards.addAll(
+                        this.strings("artifacts") { game.selectArtifacts(game.artifacts()).map { it.name } }
+                                .map { name -> game.artifacts().first { it.name == name } }
+                )
+
                 game.firstPlayer = this.int("startingPlayer") { Random.Default.nextInt(game.players.size) }
 
                 // Setup Heroes
@@ -134,10 +169,7 @@ object AlchemistsGame {
                 game.heroes.random(this, 5, "heroes") { it.requests.map { req -> req.textRepresentation }.joinToString("") }
             }
         }
-        gameFlow {
-        }
-        gameFlowRules {
-
-        }
+        gameFlow {}
+        gameFlowRules {}
     }
 }

@@ -1,4 +1,4 @@
-package net.zomis.games.impl.alchemists.Artifacts
+package net.zomis.games.impl.alchemists.artifacts
 
 object SealOfAuthority : Artifact {
     override val name: String
