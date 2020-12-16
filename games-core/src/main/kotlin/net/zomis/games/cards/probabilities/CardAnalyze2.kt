@@ -1,6 +1,7 @@
 package net.zomis.games.cards.probabilities
 
 import net.zomis.games.cards.CardZone
+import kotlin.math.floor
 import kotlin.math.min
 
 typealias CardPredicate<T> = (T) -> Boolean
@@ -86,6 +87,33 @@ class CardAnalyzeSolution<T>(val assignments: List<ZoneGroupAssignment<T>>) {
         return result
     }
 
+    fun getSpecificCombination(solution: Double): Map<CardZone<T>, List<T>> {
+        // 8 zone assignments, each with a+a+a+a+a+a+a+a = 1
+        var remainingCombinations = solution
+        val result = mutableMapOf<CardZone<T>, List<T>>()
+
+        val groups = this.assignments.map { it.group }.distinct()
+        if (groups.size != 1) {
+            throw UnsupportedOperationException("getting specific combination only supports one unique group at the moment")
+        }
+        val remainingCards = groups.single().cards.toMutableList()
+        for (assignment in assignments) {
+
+            val thisAssignmentTotalCombinations = Combinatorics.nCr(assignment.group.cards.size, assignment.count)
+            val thisAssignmentCombination = remainingCombinations % thisAssignmentTotalCombinations
+            remainingCombinations = floor(remainingCombinations / thisAssignmentTotalCombinations)
+
+            val originalCards = assignment.group.cards.toList()
+            val cards = Combinatorics.specificCombination(assignment.group.cards.size, assignment.count, thisAssignmentCombination + 1).map {
+                originalCards[it]
+            }
+//            groups.getValue(assignment.group).removeAll(cards)
+            result[assignment.zone] = cards
+        }
+        return result
+        // a+a+a+a=2, b+b+b=2  ---> 6 * 3 --> divide by 6 for the first, then mod by 6
+    }
+
     val combinations = assignments.groupBy { it.group.cards }.entries.fold(1.0) { acc, nextGroup ->
         val groupSize = nextGroup.key.size
         var positioned = 0
@@ -119,6 +147,20 @@ class CardAnalyzeSolutions<T>(val solutions: List<CardAnalyzeSolution<T>>) {
             dbl[i] = dbl[i] / totalCombinations
         }
         return dbl
+    }
+
+    fun getSpecificCombination(solution: Double): Map<CardZone<T>, List<T>> {
+        require(solution >= 0 && solution < totalCombinations) { "solution must be an integer between 0 and total ($totalCombinations)" }
+        check(solutions.isNotEmpty()) { "There are no solutions." }
+
+        val iterator = solutions.iterator()
+        var theSolution = iterator.next()
+        var solutionsRemaining = solution
+        while (solutionsRemaining > theSolution.combinations) {
+            solutionsRemaining -= theSolution.combinations
+            theSolution = iterator.next()
+        }
+        return theSolution.getSpecificCombination(solutionsRemaining)
     }
 
 }
@@ -162,8 +204,7 @@ class CardsAnalyze2<T> {
     }
 
     fun createCardGroups(): Map<Set<ZoneRuleDef<T>>, CardGroup2<T>> {
-        return cards.groupBy {
-            card -> rules.filter { it.predicate(card) }.toSet()
+        return cards.groupBy { card -> rules.filter { it.predicate(card) }.toSet()
         }.mapValues { CardGroup2(it.value.toSet(), it.value.size) }
     }
 
@@ -316,7 +357,7 @@ class ProgressAnalyze<T>(
 
         return sequence {
             for (assignmentValue in 0..maxAssignment) {
-                val assignments2 = findAutoAssignments(autoAssignments.groups.toSet(),simplifiedRules + ZoneRule2(rule.zone, assignmentValue, setOf(smallestGroup)))
+                val assignments2 = findAutoAssignments(autoAssignments.groups.toSet(), simplifiedRules + ZoneRule2(rule.zone, assignmentValue, setOf(smallestGroup)))
                 if (assignments2 == null) {
                     continue
                 }
