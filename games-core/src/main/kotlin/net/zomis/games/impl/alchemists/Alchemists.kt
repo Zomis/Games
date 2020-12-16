@@ -44,7 +44,8 @@ data class AlchemistsPotion(val color: AlchemistsColor?, val sign: AlchemistsSig
         }
     }
     val blocked = color == null && sign == null
-    override fun toString(): String = if (blocked) "NO" else color.toString() + sign.toString()
+    val textRepresentation = if (blocked) "NO" else color.toString() + sign.toString()
+    override fun toString(): String = textRepresentation
 }
 class AlchemistsChemical(vararg properties: Pair<AlchemistsColor, AlchemistsProperty>) {
 
@@ -81,7 +82,8 @@ class AlchemistsChemical(vararg properties: Pair<AlchemistsColor, AlchemistsProp
     }
     override fun hashCode(): Int = properties.hashCode()
 
-    override fun toString(): String = listOf(red.toString('r'), green.toString('g'), blue.toString('b')).joinToString("/")
+    val representation = listOf(red.toString('r'), green.toString('g'), blue.toString('b')).joinToString("/")
+    override fun toString(): String = representation
 }
 object Alchemists {
 
