@@ -57,7 +57,7 @@ class AlchemistsModel(playerCount: Int, val config: Config) {
         ;
     }
 
-    fun artifacts(): List<Artifact> {
+    fun allArtifacts(): List<Artifact> {
         return listOf(
                 AltarOfGold,
                 AmuletOfRhetoric,
@@ -183,8 +183,8 @@ object AlchemistsGame {
 
                 // TODO: Setup artifacts
                 game.artifacts.cards.addAll(
-                        this.strings("artifacts") { game.selectArtifacts(game.artifacts()).map { it.name } }
-                                .map { name -> game.artifacts().first { it.name == name } }
+                        this.strings("artifacts") { game.selectArtifacts(game.allArtifacts()).map { it.name } }
+                                .map { name -> game.allArtifacts().first { it.name == name } }
                 )
 
                 game.firstPlayer = this.int("startingPlayer") { Random.Default.nextInt(game.players.size) }
