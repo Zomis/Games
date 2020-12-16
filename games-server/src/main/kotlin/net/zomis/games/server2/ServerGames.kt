@@ -3,12 +3,14 @@ package net.zomis.games.server2
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.impl.*
+import net.zomis.games.impl.alchemists.AlchemistsGame
 import net.zomis.games.impl.ttt.*
 import net.zomis.games.impl.words.Decrypto
 
 object ServerGames {
 
     val games = listOf(
+        AlchemistsGame.game,
         Dixit.game,
         Decrypto.game,
         CoupRuleBased.game,
