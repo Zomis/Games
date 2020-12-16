@@ -12,9 +12,6 @@ enum class AlchemistsColor(private val char: Char) {
     val plus: AlchemistsPotion = AlchemistsPotion(this, AlchemistsSign.POSITIVE)
     val negative: AlchemistsPotion = AlchemistsPotion(this, AlchemistsSign.NEGATIVE)
     val minus = negative
-    fun plus(): AlchemistsPotion = AlchemistsPotion(this, AlchemistsSign.POSITIVE)
-    fun minus(): AlchemistsPotion = AlchemistsPotion(this, AlchemistsSign.NEGATIVE)
-
 }
 enum class AlchemistsSign(private val char: Char) {
     POSITIVE('+'), NEGATIVE('-');
