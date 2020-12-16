@@ -1,14 +1,14 @@
 package net.zomis.games.impl.alchemists.Artifacts
 
-object PrintingPress : Artifact {
+object ThinkingCap : Artifact {
     override val name: String
-        get() = "Printing Press"
+        get() = "Thinking Cap"
     override val description: String
-        get() = "You do not pay 1 gold to the bank when you publish or endorse a theory."
+        get() = "Immediate effect: Test up to two separate pairs of ingredients in you hand. Do not discard them."
     override val level: Int
-        get() = 1
+        get() = 2
     override val cost: Int
         get() = 4
     override val victoryPoints: Int
-        get() = 2
+        get() = 1
 }

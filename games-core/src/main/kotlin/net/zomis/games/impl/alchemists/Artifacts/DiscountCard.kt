@@ -9,6 +9,6 @@ object DiscountCard : Artifact {
         get() = 1
     override val cost: Int
         get() = 3
-    override val points: Int
+    override val victoryPoints: Int
         get() = 1
 }

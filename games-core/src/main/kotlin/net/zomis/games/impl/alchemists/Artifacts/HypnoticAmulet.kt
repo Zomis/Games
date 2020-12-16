@@ -1,12 +1,12 @@
 package net.zomis.games.impl.alchemists.Artifacts
 
-object Periscope : Artifact {
+object HypnoticAmulet : Artifact {
     override val name: String
-        get() = "Periscope"
+        get() = "Hypnotic Amulet"
     override val description: String
-        get() = "Immediately after a colleague sells or tests a potion, you may look at one of the ingredients. Choose It randomly. Limit once per round."
+        get() = "Immediate effect: Draw 4 favor cards."
     override val level: Int
-        get() = 1
+        get() = 2
     override val cost: Int
         get() = 3
     override val victoryPoints: Int

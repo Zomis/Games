@@ -6,6 +6,6 @@ interface Artifact {
     val description: String
     val level: Int
     val cost: Int
-    val points: Int
+    val victoryPoints: Int
 
 }

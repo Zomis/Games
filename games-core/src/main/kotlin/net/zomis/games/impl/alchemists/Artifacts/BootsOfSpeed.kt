@@ -9,6 +9,6 @@ object BootsOfSpeed : Artifact {
         get() = 1
     override val cost: Int
         get() = 4
-    override val points: Int
+    override val victoryPoints: Int
         get() = 2
 }

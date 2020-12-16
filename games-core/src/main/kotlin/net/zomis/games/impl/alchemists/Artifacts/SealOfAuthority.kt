@@ -1,14 +1,14 @@
 package net.zomis.games.impl.alchemists.Artifacts
 
-object PrintingPress : Artifact {
+object SealOfAuthority : Artifact {
     override val name: String
-        get() = "Printing Press"
+        get() = "Seal of Authority"
     override val description: String
-        get() = "You do not pay 1 gold to the bank when you publish or endorse a theory."
+        get() = "When you publish or endorse a theory, gain 2 additional points of reputation."
     override val level: Int
-        get() = 1
+        get() = 2
     override val cost: Int
         get() = 4
     override val victoryPoints: Int
-        get() = 2
+        get() = 0
 }
