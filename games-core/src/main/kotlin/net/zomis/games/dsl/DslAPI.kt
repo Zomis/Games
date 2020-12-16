@@ -26,7 +26,7 @@ data class Action<T : Any, A : Any>(
 class GameSpec<T : Any>(val name: String, val dsl: GameDsl<T>.() -> Unit) {
     operator fun invoke(context: GameDsl<T>) = dsl(context)
 }
-typealias GameTestDsl<T> = GameTest<T>.() -> Unit
+typealias GameTestDsl<T> = suspend GameTest<T>.() -> Unit
 typealias GameModelDsl<T, C> = GameModel<T, C>.() -> Unit
 typealias GameViewDsl<T> = GameView<T>.() -> Unit
 typealias GameActionRulesDsl<T> = GameActionRules<T>.() -> Unit

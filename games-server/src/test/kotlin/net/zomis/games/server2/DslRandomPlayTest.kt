@@ -2,6 +2,7 @@ package net.zomis.games.server2
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
+import kotlinx.coroutines.runBlocking
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.GameEntryPoint
@@ -96,7 +97,9 @@ class DslRandomPlayTest {
     @MethodSource("serverGames")
     fun dsl(gameType: GameEntryPoint<Any>, playerCount: Int) {
         val dslGame = gameType.gameType
-        gameType.runTests()
+        runBlocking {
+            gameType.runTests()
+        }
 
         val clients = (1..playerCount).map { WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket")) }
         clients.forEach { it.connectBlocking() }
