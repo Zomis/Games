@@ -86,8 +86,13 @@ class AlchemistsModel(playerCount: Int, val config: Config) {
 
     class Player(val playerIndex: Int) {
         var gold: Int = 0
+        var reputation: Int = 0
         val favors = CardZone<FavorType>()
         val ingredients = CardZone<Alchemists.Ingredient>()
+
+        fun victoryPoints(): Int {
+            return reputation
+        }
     }
 
     fun draftingRule(
@@ -189,7 +194,10 @@ object AlchemistsGame {
 
                 game.firstPlayer = this.int("startingPlayer") { Random.Default.nextInt(game.players.size) }
 
-                game.players.forEach { it.gold = 2 }
+                game.players.forEach {
+                    it.gold = 2
+                    it.reputation = 10
+                }
 
                 // Setup Heroes
                 game.heroes.cards.add(AlchemistsModel.Hero(listOf(Alchemists.red.plus, Alchemists.green.plus, Alchemists.blue.plus)))
@@ -214,6 +222,9 @@ object AlchemistsGame {
                 }
                 endRound(this)
                 game.firstPlayer = game.firstPlayer.next(game.playerCount)
+            }
+            step("eliminations") {
+                eliminations.eliminateBy(game.players.map { it.playerIndex to it.victoryPoints() }, compareBy { it })
             }
         }
         gameFlowRules {
