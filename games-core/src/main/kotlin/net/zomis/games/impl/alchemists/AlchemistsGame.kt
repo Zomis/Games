@@ -4,12 +4,32 @@ import net.zomis.games.api.GamesApi
 import net.zomis.games.cards.CardZone
 import net.zomis.games.common.next
 import net.zomis.games.impl.alchemists.artifacts.*
+import net.zomis.games.dsl.flow.GameFlowScope
 import kotlin.random.Random
 
 class AlchemistsModel(playerCount: Int, val config: Config) {
 
     data class Hero(val requests: List<AlchemistsPotion>)
-    data class Config(val master: Boolean)
+    data class Config(val master: Boolean) {
+
+        fun turnOrders(playerCount: Int): List<TurnOrder> {
+            return sequence<TurnOrder> {
+                yield(TurnOrder(1, 0, 0))
+                yield(TurnOrder(0, 0, 0))
+                yield(TurnOrder(0, 0, 1))
+                yield(TurnOrder(0, 0, 2))
+                yield(TurnOrder(0, 1, 1))
+                yield(TurnOrder(0, 2, 0))
+                if (playerCount == 4) {
+                    yield(TurnOrder(0, 0, 3))
+                }
+                if (playerCount >= 3) {
+                    yield(TurnOrder(0, 1, 2))
+                }
+                yield(TurnOrder(0, 1, 1, false))
+            }.toList()
+        }
+    }
     enum class ActionUnit { CUBE, ASSOCIATE }
     enum class ActionType {
         FORAGE,
@@ -37,7 +57,7 @@ class AlchemistsModel(playerCount: Int, val config: Config) {
         ;
     }
 
-    fun artifacts(): List<Artifact> {
+    fun allArtifacts(): List<Artifact> {
         return listOf(
                 AltarOfGold,
                 AmuletOfRhetoric,
@@ -65,8 +85,14 @@ class AlchemistsModel(playerCount: Int, val config: Config) {
     }
 
     class Player(val playerIndex: Int) {
+        var gold: Int = 0
+        var reputation: Int = 0
         val favors = CardZone<FavorType>()
         val ingredients = CardZone<Alchemists.Ingredient>()
+
+        fun victoryPoints(): Int {
+            return reputation
+        }
     }
 
     fun draftingRule(
@@ -75,10 +101,9 @@ class AlchemistsModel(playerCount: Int, val config: Config) {
     ): SpacePlacementRule<ActionType, ActionUnit> {
         // TODO: Use the counts parameter
         return {
-            if (!specialCondition(this)) ActionDrafting.PlacementResult.REJECTED
+            if (!specialCondition(this)) false
             else {
-                val ok = space.placementsByPlayer(playerIndex).count() <= if (playerCount == 4) 2 else 3
-                if (ok) ActionDrafting.PlacementResult.ACCEPTED else ActionDrafting.PlacementResult.REJECTED
+                space.placementsByPlayer(playerIndex).count() <= if (playerCount == 4) 2 else 3
             }
         }
     }
@@ -112,11 +137,21 @@ class AlchemistsModel(playerCount: Int, val config: Config) {
     ))
     var round: Int = 1
 
+    data class TurnOrder(val goldCost: Int, val favors: Int, val ingredients: Int, val choosable: Boolean = true)
+    private val turnOrderPlacementRule: SpacePlacementRule<TurnOrder, Unit> = {
+        if (players[playerIndex].gold < zone.goldCost) false
+        else zone.choosable
+    }
+    val turnOrderPlacements = ActionDrafting.Drafting(config.turnOrders(playerCount).map { ActionDrafting.Space(it, turnOrderPlacementRule) })
+
 }
 
 object AlchemistsGame {
 
     val factory = GamesApi.gameCreator(AlchemistsModel::class)
+    val turnOrder = factory.action("turnOrder", AlchemistsModel.TurnOrder::class)
+
+    class AlchemistsActionChoice(val playerIndex: Int, val assistants: Int, val placements: List<ActionDrafting.Placement<AlchemistsModel.ActionType, Boolean>>)
 
     val game = factory.game("Alchemists") {
         setup(AlchemistsModel.Config::class) {
@@ -153,11 +188,16 @@ object AlchemistsGame {
 
                 // TODO: Setup artifacts
                 game.artifacts.cards.addAll(
-                        this.strings("artifacts") { game.selectArtifacts(game.artifacts()).map { it.name } }
-                                .map { name -> game.artifacts().first { it.name == name } }
+                        this.strings("artifacts") { game.selectArtifacts(game.allArtifacts()).map { it.name } }
+                                .map { name -> game.allArtifacts().first { it.name == name } }
                 )
 
                 game.firstPlayer = this.int("startingPlayer") { Random.Default.nextInt(game.players.size) }
+
+                game.players.forEach {
+                    it.gold = 2
+                    it.reputation = 10
+                }
 
                 // Setup Heroes
                 game.heroes.cards.add(AlchemistsModel.Hero(listOf(Alchemists.red.plus, Alchemists.green.plus, Alchemists.blue.plus)))
@@ -169,7 +209,68 @@ object AlchemistsGame {
                 game.heroes.random(this, 5, "heroes") { it.requests.map { req -> req.textRepresentation }.joinToString("") }
             }
         }
-        gameFlow {}
-        gameFlowRules {}
+        gameFlow {
+            for (round in 1..6) {
+                game.round = round
+                chooseTurnOrderPhase(this)
+                chooseActionsPhase(this)
+                for (actions in game.actionPlacements.spaces) {
+                    if (actions.zone == AlchemistsModel.ActionType.SELL_POTION) {
+                        chooseDiscountPhase(this, actions) // Required for selling to hero, if multiple players are selling
+                    }
+                    performActionPhase(this, actions)
+                }
+                endRound(this)
+                game.firstPlayer = game.firstPlayer.next(game.playerCount)
+            }
+            step("eliminations") {
+                eliminations.eliminateBy(game.players.map { it.playerIndex to it.victoryPoints() }, compareBy { it })
+            }
+        }
+        gameFlowRules {
+
+        }
+        AlchemistsTests.tests(this)
+    }
+
+    private suspend fun endRound(flow: GameFlowScope<AlchemistsModel>) {
+        when (flow.game.round) {
+            3 -> {}
+            5 -> {}
+            else -> {}
+        }
+    }
+
+    private suspend fun performActionPhase(flow: GameFlowScope<AlchemistsModel>, actions: ActionDrafting.Space<AlchemistsModel.ActionType, AlchemistsModel.ActionUnit>) {
+
+    }
+
+    private suspend fun chooseDiscountPhase(flow: GameFlowScope<AlchemistsModel>, actions: ActionDrafting.Space<AlchemistsModel.ActionType, AlchemistsModel.ActionUnit>) {
+
+    }
+
+    private suspend fun chooseActionsPhase(flow: GameFlowScope<AlchemistsModel>) {
+
+    }
+
+    private suspend fun chooseTurnOrderPhase(flow: GameFlowScope<AlchemistsModel>) {
+        val firstPlayer = flow.game.firstPlayer
+        for (i in (firstPlayer until firstPlayer + flow.game.playerCount)) {
+            val playerIndex = i % flow.game.playerCount
+            flow.step("Choose turn order - $playerIndex") {
+                yieldAction(turnOrder) {
+                    precondition { this.playerIndex == playerIndex }
+                    options {
+                        game.turnOrderPlacements.zoneOptions(this.playerIndex, listOf(Unit)).map { it.space.zone }
+                    }
+                    requires {
+                        game.turnOrderPlacements.allowed(action.playerIndex, action.parameter, Unit)
+                    }
+                    perform {
+                        game.turnOrderPlacements.makePlacement(action.playerIndex, action.parameter, Unit)
+                    }
+                }
+            }
+        }
     }
 }

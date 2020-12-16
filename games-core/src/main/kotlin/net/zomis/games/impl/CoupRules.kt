@@ -478,6 +478,7 @@ object CoupRuleBased {
         testCase(players = 3) {
             config(CoupConfig(gainMoneyOnSuccessfulChallenge = 1))
             state("start-0", listOf("CONTESSA", "ASSASSIN"))
+            initializeGame()
             action(0, perform, CoupAction(game.players[0], CoupActionType.TAX))
             action(1, challenge, Unit)
             action(0, loseInfluence, CoupCharacter.CONTESSA)
@@ -489,6 +490,7 @@ object CoupRuleBased {
         }
         testCase(players = 3) {
             state("start-0", listOf("CONTESSA", "ASSASSIN"))
+            initializeGame()
             action(0, perform, CoupAction(game.players[0], CoupActionType.STEAL, game.players[1]))
             action(1, challenge, Unit)
             action(0, loseInfluence, CoupCharacter.CONTESSA)
@@ -501,6 +503,7 @@ object CoupRuleBased {
             state("start-0", listOf("CAPTAIN", "ASSASSIN"))
             state("start-1", listOf("CONTESSA", "ASSASSIN"))
             state("start-2", listOf("DUKE", "DUKE"))
+            initializeGame()
             game.players[2].influence.cards.removeAt(0)
             expectEquals(2, game.players[0].coins)
             action(0, perform, CoupAction(game.players[0], CoupActionType.STEAL, game.players[2]))
@@ -516,6 +519,7 @@ object CoupRuleBased {
             expectEquals(1, game.currentPlayerIndex)
         }
         testCase(players = 6) {
+            initializeGame()
             game.players[2].influence.cards.removeAt(0)
             game.players[1].influence.cards.clear()
             game.players[0].coins = 200
@@ -529,6 +533,7 @@ object CoupRuleBased {
             state("start-0", listOf("CONTESSA", "ASSASSIN"))
             state("start-1", listOf("CONTESSA", "ASSASSIN"))
             state("start-2", listOf("DUKE", "DUKE"))
+            initializeGame()
             actionNotAllowed(1, counter, CoupCharacter.DUKE) // Not time to counter yet
             action(0, perform, CoupAction(game.players[0], CoupActionType.FOREIGN_AID, null))
             action(1, counter, CoupCharacter.DUKE)
@@ -556,6 +561,7 @@ object CoupRuleBased {
             state("start-0", listOf("CAPTAIN", "ASSASSIN"))
             state("start-1", listOf("AMBASSADOR", "DUKE"))
             state("start-2", listOf("CONTESSA", "CONTESSA"))
+            initializeGame()
             expectTrue(game.stack.isEmpty())
 
             actionNotAllowed(0, approve, Unit)

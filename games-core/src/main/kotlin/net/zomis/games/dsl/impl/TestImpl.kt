@@ -1,6 +1,8 @@
 package net.zomis.games.dsl.impl
 
 import net.zomis.games.dsl.*
+import net.zomis.games.dsl.flow.GameFlowContext
+import net.zomis.games.dsl.flow.GameFlowImpl
 
 class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount: Int): GameTest<T> {
     val stateKeeper = StateKeeper()
@@ -8,26 +10,48 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
     var config: Any = setup.getDefaultConfig()
     var gameImpl: Game<T>? = null
 
-    private fun initializedGame(): Game<T> {
+    private suspend fun initializedGame(): Game<T> {
         if (gameImpl == null) {
             stateKeeper.replayMode = true
             gameImpl = entryPoint.setup().createGameWithState(playerCount, config, stateKeeper)
+            awaitReady()
         }
         return gameImpl!!
     }
 
+    private suspend fun awaitReady() {
+        val impl = gameImpl
+        if (impl is GameFlowImpl) {
+            while (true) {
+                val feedback = impl.feedbackReceiver.receive()
+                println("Test received $feedback")
+                if (feedback is GameFlowContext.Steps.AwaitInput) break
+            }
+        }
+    }
+
+    override suspend fun initializeGame(): T = initializedGame().model
+
     override val game: T
-        get() = initializedGame().model
+        get() = if (gameImpl == null) throw IllegalStateException("call `initializeGame()` before trying to access game") else gameImpl!!.model
 
     override fun state(key: String, value: Any) {
         stateKeeper.save(key, value)
     }
 
-    override fun <A : Any> action(playerIndex: Int, actionType: ActionType<T, A>, parameter: A) {
-        val actionImpl = initializedGame().actions[actionType.name]
-        requireNotNull(actionImpl) { "No such action name: ${actionType.name}" }
-        val action = actionImpl.createAction(playerIndex, parameter)
-        actionImpl.perform(action)
+    override suspend fun <A : Any> action(playerIndex: Int, actionType: ActionType<T, A>, parameter: A) {
+        val impl = gameImpl
+        if (impl is GameFlowImpl) {
+            val actionImpl = initializedGame().actions[actionType.name]
+            requireNotNull(actionImpl) { "No such action name: ${actionType.name}" }
+            impl.actionsInput.send(actionImpl.createAction(playerIndex, parameter))
+            awaitReady()
+        } else {
+            val actionImpl = initializedGame().actions[actionType.name]
+            requireNotNull(actionImpl) { "No such action name: ${actionType.name}" }
+            val action = actionImpl.createAction(playerIndex, parameter)
+            actionImpl.perform(action)
+        }
     }
 
     override fun expectEquals(expected: Any, actual: Any) {
@@ -36,7 +60,7 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
         }
     }
 
-    override fun branches(branches: GameTestBranches<T>.() -> Unit) {
+    override suspend fun branches(branches: GameTestBranches<T>.() -> Unit) {
         TODO("Not yet implemented")
     }
 
@@ -46,14 +70,14 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
         }
     }
 
-    override fun <A : Any> actionNotAllowed(playerIndex: Int, actionType: ActionType<T, A>, parameter: A) {
+    override suspend fun <A : Any> actionNotAllowed(playerIndex: Int, actionType: ActionType<T, A>, parameter: A) {
         val actionImpl = initializedGame().actions[actionType.name]
         requireNotNull(actionImpl) { "No such action name: ${actionType.name}" }
         val actionable = actionImpl.createAction(playerIndex, parameter)
         require(!actionImpl.isAllowed(actionable)) { "Action is allowed when it shouldn't be: $playerIndex $actionable" }
     }
 
-    override fun expectNoActions(playerIndex: Int) {
+    override suspend fun expectNoActions(playerIndex: Int) {
         for (actionType in initializedGame().actions.types()) {
             val actions = actionType.availableActions(playerIndex, null).take(5)
             if (actions.isNotEmpty()) {
@@ -70,7 +94,7 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
 
 class GameTestCaseContext<T: Any>(val players: Int, val testContext: GameTestDsl<T>) {
 
-    fun runTests(entryPoint: GameEntryPoint<T>) {
+    suspend fun runTests(entryPoint: GameEntryPoint<T>) {
         val context = GameTestContext(entryPoint, players)
         testContext.invoke(context)
     }

@@ -7,11 +7,12 @@ interface GameTestBranches<T: Any> {
 interface GameTest<T: Any> {
     val game: T
     fun state(key: String, value: Any)
-    fun <A: Any> action(playerIndex: Int, actionType: ActionType<T, A>, parameter: A)
+    suspend fun <A: Any> action(playerIndex: Int, actionType: ActionType<T, A>, parameter: A)
     fun expectEquals(expected: Any, actual: Any)
     fun expectTrue(condition: Boolean)
-    fun branches(branches: GameTestBranches<T>.() -> Unit)
-    fun <A: Any> actionNotAllowed(playerIndex: Int, actionType: ActionType<T, A>, parameter: A)
-    fun expectNoActions(playerIndex: Int)
+    suspend fun branches(branches: GameTestBranches<T>.() -> Unit)
+    suspend fun <A: Any> actionNotAllowed(playerIndex: Int, actionType: ActionType<T, A>, parameter: A)
+    suspend fun expectNoActions(playerIndex: Int)
     fun config(config: Any)
+    suspend fun initializeGame(): T
 }
