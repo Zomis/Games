@@ -113,6 +113,7 @@ export default {
             if (this.actions.available.story) {
                 if (this.story.length > 0) {
                     this.actions.actionParameter('story', card + ":" + this.story)
+                    this.story = "";
                 }
             } else if (this.actions.available.place) {
                 this.actions.actionParameter('place', card + ":null")
