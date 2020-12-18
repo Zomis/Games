@@ -185,6 +185,9 @@ object Dixit {
                 } else {
                     // Everyone who guessed correctly gets three points
                     correct.forEach { it.points += 3 }
+
+                    // Storyteller gets three points
+                    game.storyteller.points += 3
                 }
             }
 
