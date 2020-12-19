@@ -75,7 +75,7 @@ class GameImpl<T : Any>(
     private val replayState = ReplayState(stateKeeper, eliminationCallback)
     private val rules = GameActionRulesContext(model, replayState, eliminationCallback)
     init {
-        setupContext.model.onStart(replayState, model)
+        setupContext.model.onStart(GameStartContext(model, replayState))
         setupContext.actionRulesDsl?.invoke(rules)
         setupContext.rulesDsl?.invoke(rules)
         rules.gameStart()

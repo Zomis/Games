@@ -6,11 +6,11 @@ import net.zomis.games.dsl.*
 import net.zomis.games.dsl.flow.GameFlowImpl
 import kotlin.reflect.KClass
 
-class GameModelContext<T, C> : GameModel<T, C> {
+class GameModelContext<T: Any, C> : GameModel<T, C> {
     var playerCount: IntRange = 2..2
     lateinit var factory: GameFactoryScope<C>.(C?) -> T
     lateinit var config: () -> C
-    var onStart: ReplayableScope.(T) -> Unit = {}
+    var onStart: GameStartScope<T>.() -> Unit = {}
 
     override fun players(playerCount: IntRange) {
         this.playerCount = playerCount
@@ -28,7 +28,7 @@ class GameModelContext<T, C> : GameModel<T, C> {
         this.factory = factory
     }
 
-    override fun onStart(effect: ReplayableScope.(T) -> Unit) {
+    override fun onStart(effect: GameStartScope<T>.() -> Unit) {
         this.onStart = effect
     }
 }

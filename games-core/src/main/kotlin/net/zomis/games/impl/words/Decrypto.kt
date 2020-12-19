@@ -58,13 +58,13 @@ object Decrypto {
         setup {
             players(4..16)
             init { Model(playerCount) }
-            onStart {game ->
-                val words = DecryptoWords.words.chooseXY(this, "words", 4, 4)
+            onStart {
+                val words = DecryptoWords.words.chooseXY(replayable, "words", 4, 4)
                 game.teamA.words.addAll(words.first)
                 game.teamB.words.addAll(words.second)
 
                 // each team's encryptor should get a code to give some thinking time
-                game.currentCode = this.ints("code") { randomCode() }
+                game.currentCode = replayable.ints("code") { randomCode() }
             }
         }
         gameFlowRules {
@@ -119,6 +119,7 @@ object Decrypto {
         gameFlow {
             loop {
                 for (team in game.teams) {
+                    // TODO: Refactor this code and extract phases into methods
                     game.currentTeamIndex = team.teamNumber
                     step("team ${team.teamNumber} - giveClue") {
                         yieldAction(giveClue) {

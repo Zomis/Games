@@ -46,7 +46,7 @@ class GameFlowImpl<T: Any>(
             try {
                 val dsl = setupContext.flowDsl!!
                 val flowContext = GameFlowContext(this, game, "root")
-                setupContext.model.onStart(replayable, model)
+                setupContext.model.onStart(GameStartContext(model, replayable))
                 sendFeedback(GameFlowContext.Steps.GameSetup(playerCount, config, replayable.stateKeeper.lastMoveState()))
                 dsl.invoke(flowContext)
                 actionDone()
