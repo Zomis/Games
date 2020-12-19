@@ -251,6 +251,7 @@ interface GameFlowStepScope<T: Any> {
 @GameMarker
 interface GameFlowScope<T: Any> {
     val game: T
+    val eliminations: PlayerEliminationCallback
     suspend fun loop(function: suspend GameFlowScope<T>.() -> Unit)
     suspend fun step(name: String, step: suspend GameFlowStepScope<T>.() -> Unit): GameFlowStep<T>
     suspend fun log(logging: LogScope<T>.() -> String)

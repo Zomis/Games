@@ -68,8 +68,7 @@ object Dixit {
         gameFlow {
             loop {
                 for (player in game.players) {
-                    // TODO: Check eliminations instead, or just stop executing the coroutine in common flow-code?
-                    if (game.players.any { it.points >= 30 }) return@loop
+                    if (eliminations.isGameOver()) return@loop
                     game.story = null
                     game.storyteller = game.players[player.playerIndex]
                     storytellPhase(this)
