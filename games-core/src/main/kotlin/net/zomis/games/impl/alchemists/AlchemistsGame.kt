@@ -160,8 +160,7 @@ object AlchemistsGame {
             init { AlchemistsModel(playerCount, config) }
             onStart {
                 // Setup solution
-                val game = it
-                val solutionStrings = this.strings("solution") {
+                val solutionStrings = replayable.strings("solution") {
                     Alchemists.alchemyValues.shuffled().map { it.representation }
                 }
                 val solution = solutionStrings.map { str -> Alchemists.alchemyValues.first { it.representation == str } }
@@ -182,17 +181,17 @@ object AlchemistsGame {
                     }
                 }
                 val startingIngredients = if (game.config.master) 2 else 3
-                val startingPlayerIngredients = game.ingredientDeck.random(this, startingIngredients * game.players.size, "ingredients") { it.name }
+                val startingPlayerIngredients = game.ingredientDeck.random(replayable, startingIngredients * game.players.size, "ingredients") { it.name }
                         .map { it.card }.toList()
                 game.ingredientDeck.deal(startingPlayerIngredients, game.players.map { it.ingredients })
 
                 // TODO: Setup artifacts
                 game.artifacts.cards.addAll(
-                        this.strings("artifacts") { game.selectArtifacts(game.allArtifacts()).map { it.name } }
+                        replayable.strings("artifacts") { game.selectArtifacts(game.allArtifacts()).map { it.name } }
                                 .map { name -> game.allArtifacts().first { it.name == name } }
                 )
 
-                game.firstPlayer = this.int("startingPlayer") { Random.Default.nextInt(game.players.size) }
+                game.firstPlayer = replayable.int("startingPlayer") { Random.Default.nextInt(game.players.size) }
 
                 game.players.forEach {
                     it.gold = 2
@@ -206,7 +205,7 @@ object AlchemistsGame {
                 game.heroes.cards.add(AlchemistsModel.Hero(listOf(Alchemists.red.plus, Alchemists.green.minus, Alchemists.blue.minus)))
                 game.heroes.cards.add(AlchemistsModel.Hero(listOf(Alchemists.red.plus, Alchemists.green.plus, Alchemists.blue.minus)))
                 game.heroes.cards.add(AlchemistsModel.Hero(listOf(Alchemists.red.minus, Alchemists.green.plus, Alchemists.blue.plus)))
-                game.heroes.random(this, 5, "heroes") { it.requests.map { req -> req.textRepresentation }.joinToString("") }
+                game.heroes.random(replayable, 5, "heroes") { it.requests.map { req -> req.textRepresentation }.joinToString("") }
             }
         }
         gameFlow {
