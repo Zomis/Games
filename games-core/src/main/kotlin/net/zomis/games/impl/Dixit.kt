@@ -41,6 +41,7 @@ object Dixit {
     }
     class Model(val playerCount: Int, val config: Config) {
         fun startingCards(): Int = 6
+        var lastRoundAnswer: String? = null
         var cardSet: CardSet = cardSets.first { it.cardSetName == config.cardSet }
         var phase: String = "setup"
         val players = (0 until playerCount).map { Player(it) }
@@ -92,6 +93,7 @@ object Dixit {
                     if (viewer.isObserver()) return@view emptyList<String>()
                     game.players[viewer!!].cards.cards
                 }
+                view("lastAnswer") { game.lastRoundAnswer }
                 view("board") {
                     game.board.cards.takeIf { it.size == game.playerCount } ?: emptyList<String>()
                 }
@@ -183,12 +185,18 @@ object Dixit {
                 }
                 if (correct.isEmpty() || correct.size == game.everyoneButStoryteller.size) {
                     // Everyone except storyteller gets two points
+                    val countString = if (correct.isEmpty()) "no one" else "everyone"
+                    log { "$countString got it right, everyone except ${player(game.storyteller.playerIndex)} gets 2 points" }
                     game.everyoneButStoryteller.forEach { it.points += 2 }
                 } else {
                     // Everyone who guessed correctly gets three points
-                    correct.forEach { it.points += 3 }
+                    log { "Players guessing correctly: ${players(correct.map { it.playerIndex })}. 3 points each" }
+                    correct.forEach {
+                        it.points += 3
+                    }
 
                     // Storyteller gets three points
+                    log { "${correct.size} players got it right, ${player(game.storyteller.playerIndex)} gets 3 points" }
                     game.storyteller.points += 3
                 }
             }
@@ -196,13 +204,19 @@ object Dixit {
             game.phase = "scoring 2"
             step("bonus points") {
                 game.everyoneButStoryteller.associateWith {scoringPlayer ->
-                    val votesForPlayer = game.everyoneButStoryteller.count {
-                        scoringPlayer.placedCard in it.vote!!.asList()
+                    game.everyoneButStoryteller.filter {votedFor ->
+                        scoringPlayer.placedCard in votedFor.vote!!.asList()
                     }
-                    votesForPlayer.coerceAtMost(3)
-                }.forEach {
-                    it.key.points += it.value
+                }.forEach {votesFor ->
+                    val points = votesFor.value.count().coerceAtMost(3)
+                    log { "${players(votesFor.value.map { it.playerIndex })} voted for ${player(votesFor.key.playerIndex)} giving them $points points" }
+                    votesFor.key.points += points
                 }
+            }
+
+            game.phase = "reveal correct answer"
+            step("correct answer") {
+                game.lastRoundAnswer = game.story!!.card
             }
         }
     }

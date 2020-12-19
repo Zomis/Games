@@ -57,7 +57,7 @@
                       v-for="card in view.board"
                       :key="card"
                       class="animate"
-                      :src="`https://zomis-games-cdn.s3.eu-central-1.amazonaws.com/games/dixit/${view.config.cardSet}/${card}.jpg`"
+                      :src="`https://zomis-games-cdn.s3.eu-central-1.amazonaws.com/games/dixit/${view.config.cardSet}/${card}`"
                       @click="vote(card)"
                     />
                   </CardZone>
@@ -87,6 +87,19 @@
                     @click="chosenCard(card)"
                   />
                 </CardZone>
+              </v-card-text>
+          </v-card>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col>
+          <v-card>
+              <v-card-title>Last round's correct answer</v-card-title>
+              <v-card-text>
+                <v-img
+                  class="animate"
+                  :src="`https://zomis-games-cdn.s3.eu-central-1.amazonaws.com/games/dixit/${view.config.cardSet}/${view.lastAnswer}`"
+                />
               </v-card-text>
           </v-card>
       </v-col>
