@@ -25,6 +25,7 @@ interface PlayerEliminationCallback {
 
     fun eliminationFor(playerIndex: Int): PlayerElimination? = eliminations().find { it.playerIndex == playerIndex }
     fun isAlive(playerIndex: Int) = eliminationFor(playerIndex) == null
+    fun isGameOver(): Boolean
 }
 
 data class PlayerElimination(val playerIndex: Int, val winResult: WinResult, val position: Int)
@@ -118,7 +119,7 @@ class PlayerEliminations(override val playerCount: Int): PlayerEliminationCallba
         return remaining.firstOrNull { it > currentPlayer } ?: remaining.firstOrNull()
     }
 
-    fun isGameOver(): Boolean {
+    override fun isGameOver(): Boolean {
         return this.eliminations.map { it.playerIndex }.distinct().size == playerCount
     }
 
