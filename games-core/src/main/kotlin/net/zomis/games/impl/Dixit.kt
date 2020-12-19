@@ -179,7 +179,7 @@ object Dixit {
                 val correct = game.everyoneButStoryteller.filter {
                     it.vote!!.asList().contains(game.storyteller.placedCard!!)
                 }
-                if (correct.isEmpty() || correct.size == game.playerCount) {
+                if (correct.isEmpty() || correct.size == game.everyoneButStoryteller.size) {
                     // Everyone except storyteller gets two points
                     game.everyoneButStoryteller.forEach { it.points += 2 }
                 } else {
