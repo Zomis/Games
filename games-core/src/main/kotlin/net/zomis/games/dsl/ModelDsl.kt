@@ -13,11 +13,10 @@ interface GameFactoryScope<C> {
     val playerCount: Int
     val config: C
 }
-interface GameModel<T, C> {
+interface GameModel<T: Any, C> {
     fun players(playerCount: IntRange)
     fun playersFixed(playerCount: Int)
     fun defaultConfig(creator: () -> C)
     fun init(factory: GameFactoryScope<C>.(C?) -> T)
-    @Deprecated("use actionRules or gameRules instead and put game setup logic there")
-    fun onStart(effect: ReplayableScope.(T) -> Unit)
+    fun onStart(effect: GameStartScope<T>.() -> Unit)
 }

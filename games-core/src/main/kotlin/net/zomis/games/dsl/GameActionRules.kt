@@ -29,6 +29,7 @@ interface LogScope<T : Any> {
     val game: T
     fun obj(value: Any): String
     fun player(value: PlayerIndex): String
+    fun players(playerIndices: Iterable<Int>): String
     fun viewLink(text: String, type: String, view: Any): String
     fun highlight(values: List<Any>)
 }

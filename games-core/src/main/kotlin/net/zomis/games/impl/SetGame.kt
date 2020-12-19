@@ -179,10 +179,10 @@ object SetGame {
                 SetGameModel(config, this.playerCount)
             }
             onStart {
-                val states = this.strings("cards") { it.deck.top(12).map { c -> c.toStateString() } }
-                val cards = it.deck.findStates(states) { c -> c.toStateString() }
-                it.deck.deal(cards, listOf(it.board))
-                setCheck(it, this)
+                val states = replayable.strings("cards") { game.deck.top(12).map { c -> c.toStateString() } }
+                val cards = game.deck.findStates(states) { c -> c.toStateString() }
+                game.deck.deal(cards, listOf(game.board))
+                setCheck(game, replayable)
             }
         }
         rules {

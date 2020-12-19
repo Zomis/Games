@@ -7,10 +7,13 @@ import net.zomis.games.dsl.flow.GameFlowScope
 
 object Dixit {
 
-    val cardSets = mapOf("dixit-cards-01" to 100, "dixit-cards-real" to 84)
-    fun createCards(cardSet: String): List<String> = cardSets.get(cardSet)?.let {count ->
-        (1..count).map { it.withLeadingZeros(3) }
-    } ?: throw IllegalArgumentException("No cardSet with name: $cardSet")
+    class CardSet(val cardSetName: String, val count: Int, val filename: (Int) -> String) {
+        fun createCards(): List<String> = (1..count).map { filename(it) }
+    }
+    val cardSets = listOf(
+        CardSet("dixit-cards-01", 100) { it.withLeadingZeros(3) + ".jpg" },
+        CardSet("dixit-cards-real", 84) { it.withLeadingZeros(3) + ".png" }
+    )
     val factory = GamesApi.gameCreator(Model::class)
     val story = factory.action("story", ActionStory::class).serialization({ it.toStateString() }) {text ->
         ActionStory(text.substringBefore(':'), text.substringAfter(':'))
@@ -38,6 +41,8 @@ object Dixit {
     }
     class Model(val playerCount: Int, val config: Config) {
         fun startingCards(): Int = 6
+        var lastRoundAnswer: String? = null
+        var cardSet: CardSet = cardSets.first { it.cardSetName == config.cardSet }
         var phase: String = "setup"
         val players = (0 until playerCount).map { Player(it) }
         var story: ActionStory? = null
@@ -56,17 +61,15 @@ object Dixit {
                 Model(playerCount, config)
             }
             onStart {
-                val game = it
-                game.deck.cards.addAll(createCards(it.config.cardSet))
-                val cards = game.deck.random(this, game.startingCards() * game.playerCount, "cards") { c -> c }
+                game.deck.cards.addAll(game.cardSet.createCards())
+                val cards = game.deck.random(replayable, game.startingCards() * game.playerCount, "cards") { c -> c }
                 game.deck.deal(cards.map { c -> c.card }.toList(), game.players.map { player -> player.cards })
             }
         }
         gameFlow {
             loop {
                 for (player in game.players) {
-                    // TODO: Check eliminations instead, or just stop executing the coroutine in common flow-code?
-                    if (game.players.any { it.points >= 30 }) return@loop
+                    if (eliminations.isGameOver()) return@loop
                     game.story = null
                     game.storyteller = game.players[player.playerIndex]
                     storytellPhase(this)
@@ -82,7 +85,7 @@ object Dixit {
             beforeReturnRule("view") {
                 view("phase") { game.phase }
                 view("config") {
-                    mapOf("cardSet" to game.config.cardSet)
+                    mapOf("cardSet" to game.cardSet.cardSetName)
                 }
                 view("story") { game.story?.clue }
                 view("storyteller") { game.storyteller.playerIndex }
@@ -90,6 +93,7 @@ object Dixit {
                     if (viewer.isObserver()) return@view emptyList<String>()
                     game.players[viewer!!].cards.cards
                 }
+                view("lastAnswer") { game.lastRoundAnswer }
                 view("board") {
                     game.board.cards.takeIf { it.size == game.playerCount } ?: emptyList<String>()
                 }
@@ -179,14 +183,23 @@ object Dixit {
                 val correct = game.everyoneButStoryteller.filter {
                     it.vote!!.asList().contains(game.storyteller.placedCard!!)
                 }
-                if (correct.isEmpty() || correct.size == game.playerCount) {
+                if (correct.isEmpty() || correct.size == game.everyoneButStoryteller.size) {
                     // Everyone except storyteller gets two points
+                    val countString = if (correct.isEmpty()) "no one" else "everyone"
+                    log { "$countString got it right, everyone except ${player(game.storyteller.playerIndex)} gets 2 points" }
                     game.everyoneButStoryteller.forEach { it.points += 2 }
                 } else {
                     // Everyone who guessed correctly gets three points
                     correct.forEach { it.points += 3 }
 
                     // Storyteller gets three points
+                    log { "Players guessing correctly: ${players(correct.map { it.playerIndex })}. 3 points each" }
+                    correct.forEach {
+                        it.points += 3
+                    }
+
+                    // Storyteller gets three points
+                    log { "${correct.size} players got it right, ${player(game.storyteller.playerIndex)} gets 3 points" }
                     game.storyteller.points += 3
                 }
             }
@@ -194,13 +207,19 @@ object Dixit {
             game.phase = "scoring 2"
             step("bonus points") {
                 game.everyoneButStoryteller.associateWith {scoringPlayer ->
-                    val votesForPlayer = game.everyoneButStoryteller.count {
-                        scoringPlayer.placedCard in it.vote!!.asList()
+                    game.everyoneButStoryteller.filter {votedFor ->
+                        scoringPlayer.placedCard in votedFor.vote!!.asList()
                     }
-                    votesForPlayer.coerceAtMost(3)
-                }.forEach {
-                    it.key.points += it.value
+                }.forEach {votesFor ->
+                    val points = votesFor.value.count().coerceAtMost(3)
+                    log { "${players(votesFor.value.map { it.playerIndex })} voted for ${player(votesFor.key.playerIndex)} giving them $points points" }
+                    votesFor.key.points += points
                 }
+            }
+
+            game.phase = "reveal correct answer"
+            step("correct answer") {
+                game.lastRoundAnswer = game.story!!.card
             }
         }
     }
