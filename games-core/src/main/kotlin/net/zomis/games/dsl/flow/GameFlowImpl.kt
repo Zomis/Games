@@ -188,7 +188,7 @@ class GameFlowContext<T: Any>(
 ): GameFlowScope<T>, GameFlowStepScope<T> {
     override val game: T get() = flow.model
     override val eliminations: PlayerEliminationCallback get() = flow.eliminations
-    override val replayable: ReplayableScope get() = flow.replayable
+    override val replayable: ReplayState get() = flow.replayable
 
     object Steps {
         interface FlowStep
@@ -222,11 +222,13 @@ class GameFlowContext<T: Any>(
     override fun yieldView(key: String, value: ViewScope<T>.() -> Any?) { flow.view(key, value) }
 
     override suspend fun log(logging: LogScope<T>.() -> String) {
-        TODO("Logging outside of an action is not yet implemented")
+        replayable.stateKeeper.log(LogContext(game, null).log(logging))
     }
 
     override suspend fun logSecret(player: PlayerIndex, logging: LogScope<T>.() -> String): LogSecretScope<T> {
-        TODO("Logging outside of an action is not yet implemented")
+        val context = LogContext(game, player).secretLog(player, logging)
+        replayable.stateKeeper.log(context)
+        return context
     }
 }
 
@@ -247,6 +249,8 @@ interface GameFlowStepScope<T: Any> {
     val replayable: ReplayableScope
     fun <A: Any> yieldAction(action: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>)
     fun yieldView(key: String, value: ViewScope<T>.() -> Any?)
+    suspend fun log(logging: LogScope<T>.() -> String)
+    suspend fun logSecret(player: PlayerIndex, logging: LogScope<T>.() -> String): LogSecretScope<T>
 }
 @GameMarker
 interface GameFlowScope<T: Any> {
