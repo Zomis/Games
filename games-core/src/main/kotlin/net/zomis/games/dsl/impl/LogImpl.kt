@@ -66,6 +66,9 @@ class LogActionContext<T : Any, A : Any>(
     }
 
     override val player: String get() = this.player(playerIndex)
+    override fun players(playerIndices: Iterable<Int>): String {
+        return playerIndices.joinToString("") { player(it) }
+    }
 
     override fun obj(value: Any): String = part { LogPartHighlight(value) }
     override fun player(value: PlayerIndex): String = part { LogPartPlayer(value) }
