@@ -83,7 +83,7 @@
                     v-for="card in view.hand"
                     :key="card"
                     class="animate"
-                    :src="`https://zomis-games-cdn.s3.eu-central-1.amazonaws.com/games/dixit/${view.config.cardSet}/${card}.jpg`"
+                    :src="`https://zomis-games-cdn.s3.eu-central-1.amazonaws.com/games/dixit/${view.config.cardSet}/${card}`"
                     @click="chosenCard(card)"
                   />
                 </CardZone>
