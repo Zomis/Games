@@ -36,6 +36,8 @@ data class AlchemistsProperty(val sign: AlchemistsSign, val size: AlchemistsSize
     val big = size == AlchemistsSize.BIG
     val positive = sign == AlchemistsSign.POSITIVE
     val negative = sign == AlchemistsSign.NEGATIVE
+    val plus = positive
+    val minus = negative
 }
 data class AlchemistsPotion(val color: AlchemistsColor?, val sign: AlchemistsSign?) {
     init {
