@@ -6,11 +6,7 @@ import net.zomis.bestBy
 import net.zomis.common.pmap
 import net.zomis.games.ais.AlphaBeta
 import net.zomis.games.common.Point
-import net.zomis.tttultimate.TTFactories
-import net.zomis.tttultimate.TTPlayer
-import net.zomis.tttultimate.TTWinCondition
-import net.zomis.tttultimate.Winnable
-import net.zomis.tttultimate.games.*
+import net.zomis.games.impl.ttt.ultimate.*
 
 object TTConnect4AlphaBeta {
 

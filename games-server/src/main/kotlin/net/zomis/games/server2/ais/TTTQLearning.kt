@@ -12,9 +12,9 @@ import net.zomis.games.common.PlayerIndex
 import net.zomis.games.common.Point
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.impl.ttt.index
+import net.zomis.games.impl.ttt.ultimate.TTController
+import net.zomis.games.impl.ttt.ultimate.TTPlayer
 import net.zomis.games.server2.games.*
-import net.zomis.tttultimate.TTPlayer
-import net.zomis.tttultimate.games.TTController
 
 class TTTQLearn(val games: GameSystem) {
     val gameType = "DSL-TTT"

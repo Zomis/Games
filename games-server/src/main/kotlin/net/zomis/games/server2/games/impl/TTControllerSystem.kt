@@ -1,7 +1,7 @@
 package net.zomis.games.server2.games.impl
 
 import net.zomis.games.WinResult
-import net.zomis.tttultimate.TTPlayer
+import net.zomis.games.impl.ttt.ultimate.TTPlayer
 
 fun TTPlayer.playerIndex(): Int {
     if (this == TTPlayer.X) return 0

@@ -4,10 +4,10 @@ import net.zomis.games.Map2DPoint
 import net.zomis.games.Map2DX
 import net.zomis.games.PlayerEliminationCallback
 import net.zomis.games.WinResult
+import net.zomis.games.common.Direction8
 import net.zomis.games.common.Point
 import net.zomis.games.common.PointMove
 import net.zomis.games.dsl.*
-import net.zomis.tttultimate.Direction8
 import kotlin.math.abs
 import kotlin.math.max
 
