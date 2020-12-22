@@ -1,8 +1,6 @@
 package net.zomis.games.server2.ais.gamescorers
-
+/*
 import klog.KLoggers
-import net.zomis.fight.ext.FightCollectors
-import net.zomis.fight.ext.WinResult
 import net.zomis.games.dsl.Action
 import net.zomis.games.dsl.Actionable
 import net.zomis.games.scorers.ScorerController
@@ -78,3 +76,4 @@ class URScorerMonteCarlo(private val fights: Int, private val ai: ScorerControll
     }
 
 }
+*/

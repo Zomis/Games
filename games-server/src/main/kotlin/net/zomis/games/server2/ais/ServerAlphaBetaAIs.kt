@@ -6,14 +6,10 @@ import net.zomis.games.dsl.impl.Game
 import net.zomis.games.impl.TTQuixoController
 import net.zomis.games.impl.ttt.TTT3D
 import net.zomis.games.impl.ttt.TTT3DPiece
+import net.zomis.games.impl.ttt.ultimate.*
+import net.zomis.games.server2.games.impl.toWinResult
 import net.zomis.games.server2.games.GameTypeRegisterEvent
 import net.zomis.games.server2.games.impl.TTConnect4AlphaBeta
-import net.zomis.games.server2.games.impl.toWinResult
-import net.zomis.tttultimate.TTBase
-import net.zomis.tttultimate.TTPlayer
-import net.zomis.tttultimate.TTWinCondition
-import net.zomis.tttultimate.games.TTClassicControllerWithGravity
-import net.zomis.tttultimate.games.TTController
 
 enum class AlphaBetaSpeedMode(val nameSuffix: String, val depthRemainingBonus: Double) {
     NORMAL("", 0.0),
