@@ -31,9 +31,6 @@ repositories {
     maven {
         url "http://www.zomis.net/maven"
     }
-    maven {
-        url "http://stats.zomis.net/maven/snapshots"
-    }
     maven { url 'https://jitpack.io' } // KLogging
 }
 
@@ -66,9 +63,6 @@ dependencies {
     compile "com.github.lewik.klog:klog-jvm:$kotlin_version"
     compile "io.javalin:javalin:2.8.0"
     compile "com.github.kittinunf.fuel:fuel:2.3.0"
-    compile "net.zomis:uttt-jvm:0.4.3"
-    compile "net.zomis:fights:0.3.0-SNAPSHOT"
-    compile 'net.zomis:scorers:0.3.0-SNAPSHOT'
     compile group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: '1.11.879'
     compile group: 'org.postgresql', name: 'postgresql', version: '42.2.14'
     compile 'com.zaxxer:HikariCP:3.4.5'
