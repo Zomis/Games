@@ -79,9 +79,9 @@ object SkullGame {
 
     val bet = factory.action("bet", Int::class)
     val pass = factory.action("pass", Unit::class)
-    val choose = factory.action("choose", SkullPlayer::class).serialization(Int::class, { it.index }, { game.players[it] })
+    val choose = factory.action("choose", SkullPlayer::class).serialization({ it.index }, { game.players[it] })
     val chooseNextPlayer = factory.action("chooseNextPlayer", SkullPlayer::class)
-        .serialization(Int::class, { it.index }, { game.players[it] })
+        .serialization({ it.index }, { game.players[it] })
     val discard = factory.action("discard", SkullCard::class)
     val play = factory.action("play", SkullCard::class)
     val game = factory.game("Skull") {

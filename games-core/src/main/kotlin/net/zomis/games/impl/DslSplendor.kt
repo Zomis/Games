@@ -226,10 +226,10 @@ object DslSplendor {
 
     val factory = GameCreator(SplendorGame::class)
 
-    val buy = factory.action("buy", SplendorCard::class).serializer(String::class) { it.toStateString() }
-    val buyReserved = factory.action("buyReserved", SplendorCard::class).serializer(String::class) { it.toStateString() }
+    val buy = factory.action("buy", SplendorCard::class).serializer { it.toStateString() }
+    val buyReserved = factory.action("buyReserved", SplendorCard::class).serializer { it.toStateString() }
     val takeMoney = factory.action("takeMoney", MoneyChoice::class)
-    val reserve = factory.action("reserve", SplendorCard::class).serializer(String::class) { it.toStateString() }
+    val reserve = factory.action("reserve", SplendorCard::class).serializer { it.toStateString() }
     val discardMoney = factory.action("discardMoney", MoneyType::class)
     val splendorGame = factory.game("Splendor") {
         setup(SplendorConfig::class) {

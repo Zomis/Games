@@ -74,21 +74,11 @@ class GameActionCreator<T : Any, A : Any, S : Any>(
     override fun deserialize(scope: ActionOptionsScope<T>, serialized: Any): A? = deserializer?.invoke(scope, serialized as S)
 
     inline fun <reified S2: Any> serialization(noinline serializer: (A) -> S2, noinline deserializer: ActionOptionsScope<T>.(S2) -> A): GameActionCreator<T, A, S2> {
-        return this.serialization(S2::class, serializer, deserializer)
-    }
-
-    @Deprecated("Use reified version instead")
-    fun <S2: Any> serialization(clazz: KClass<S2>, serializer: (A) -> S2, deserializer: ActionOptionsScope<T>.(S2) -> A): GameActionCreator<T, A, S2> {
-        return GameActionCreator(name, parameterType, clazz, serializer, deserializer)
+        return GameActionCreator(name, parameterType, S2::class, serializer, deserializer)
     }
 
     inline fun <reified S2: Any> serializer(noinline serializer: (A) -> S2): GameActionCreator<T, A, S2> {
-        return this.serializer(S2::class, serializer)
-    }
-
-    @Deprecated("Use reified version instead")
-    fun <S2: Any> serializer(clazz: KClass<S2>, serializer: (A) -> S2): GameActionCreator<T, A, S2> {
-        return GameActionCreator(name, parameterType, clazz, serializer, null)
+        return GameActionCreator(name, parameterType, S2::class, serializer, null)
     }
 
 }

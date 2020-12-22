@@ -128,14 +128,14 @@ data class ResistanceAvalonTeamChoiceSerialized(val mission: Int, val team: List
 object ResistanceAvalonGame {
 
     val factory = GameCreator(ResistanceAvalon::class)
-    val chooseTeam = factory.action("teamChoice", ResistanceAvalonTeamChoice::class).serializer(ResistanceAvalonTeamChoiceSerialized::class) {
+    val chooseTeam = factory.action("teamChoice", ResistanceAvalonTeamChoice::class).serializer {
         ResistanceAvalonTeamChoiceSerialized(it.mission.missionNumber, it.team.map { pl -> pl.index })
     }
     val vote = factory.action("vote", Boolean::class)
     val performMission = factory.action("performMission", Boolean::class)
 
-    val assassinate = factory.action("assassinate", ResistanceAvalonPlayer::class).serializer(Int::class) { it.index }
-    val useLadyOfTheLake = factory.action("useLadyOfTheLake", ResistanceAvalonPlayer::class).serializer(Int::class) { it.index }
+    val assassinate = factory.action("assassinate", ResistanceAvalonPlayer::class).serializer { it.index }
+    val useLadyOfTheLake = factory.action("useLadyOfTheLake", ResistanceAvalonPlayer::class).serializer { it.index }
 
     val game = factory.game("Avalon") {
         setup(ResistanceAvalonConfig::class) {
