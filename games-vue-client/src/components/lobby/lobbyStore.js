@@ -60,11 +60,12 @@ const lobbyStore = {
         throw "Unknown action: " + e.action;
       }
     },
-    toggleAIUsers(state, hidden) {
-      state.lobby = Object.entries(state.lobby).reduce((acc, [gameType, players]) => {
+    setLobbyUsersWithOptions(state, { data, hideAIUsers }) {
+      const newData = data || state.lobby;
+      state.lobby = Object.entries(newData).reduce((acc, [gameType, players]) => {
         const updatedPlayers = Object.values(players).map((player) => {
           if (player.name.includes('#AI_')) {
-            return { ...player, hidden: !!hidden };
+            return { ...player, hidden: hideAIUsers };
           }
           return player;
         });
@@ -92,7 +93,12 @@ const lobbyStore = {
     },
     onSocketMessage(context, data) {
       if (data.type == "Lobby") {
-        context.commit("setLobbyUsers", data.users);
+        const { hideAIUsers } = localStorage;
+        if (hideAIUsers) {
+          context.commit("setLobbyUsersWithOptions", { data: data.users, hideAIUsers: hideAIUsers === 'true' });
+        } else {
+          context.commit("setLobbyUsers", data.users);
+        }
       }
       if (data.type === "LobbyChange") {
         context.commit("changeLobby", data);
