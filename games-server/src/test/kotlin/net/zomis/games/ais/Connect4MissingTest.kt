@@ -1,10 +1,9 @@
 package net.zomis.games.ais
 
-import net.zomis.games.server2.games.impl.TTAlphaBeta
+import net.zomis.games.impl.ttt.ultimate.TTPlayer
+import net.zomis.games.impl.ttt.ultimate.TTWinCondition
+import net.zomis.games.impl.ttt.ultimate.Winnable
 import net.zomis.games.server2.games.impl.TTConnect4AlphaBeta
-import net.zomis.tttultimate.TTPlayer
-import net.zomis.tttultimate.TTWinCondition
-import net.zomis.tttultimate.Winnable
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
