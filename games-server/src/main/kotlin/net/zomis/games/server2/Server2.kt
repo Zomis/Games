@@ -112,6 +112,7 @@ class Server2(val events: EventSystem) {
     fun start(config: ServerConfig): Server2 {
         val javalin = JavalinFactory.javalin(config)
             .enableCorsForOrigin("http://localhost:8080", "https://games.zomis.net")
+        javalin.get("/ping") { ctx -> ctx.result("pong") }
         logger.info("Configuring Javalin at port ${config.webSocketPort} (SSL ${config.webSocketPortSSL})")
 
         Runtime.getRuntime().addShutdownHook(Thread { events.execute(ShutdownEvent("runtime shutdown hook")) })
