@@ -8,6 +8,9 @@
     "start": "npm run serve",
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
+    "awsBuild": "vue-cli-service build --mode aws",
+    "awsDeployPush": "aws deploy push --application-name server2 --description \"Server2 frontend\" --ignore-hidden-files --s3-location s3://zomis/codedeploy-server2-fe.zip --source .codedeploy/",
+    "awsDeployPerform": "aws deploy create-deployment --application-name server2 --deployment-group-name server2-frontend --file-exists-behavior OVERWRITE --s3-location bucket=zomis,key=codedeploy-server2-fe.zip,bundleType=zip",
     "test:unit": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint"
   },
@@ -35,6 +38,7 @@
     "@vue/cli-plugin-unit-mocha": "^4.4.1",
     "@vue/cli-service": "^4.4.1",
     "@vue/test-utils": "^1.0.3",
+    "git-describe": "^4.0.4",
     "babel-eslint": "^10.1.0",
     "chai": "^4.2.0",
     "eslint": "^6.8.0",

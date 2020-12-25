@@ -3,7 +3,7 @@ package net.zomis.games.dsl
 import net.zomis.games.common.Point
 import net.zomis.games.common.PointMove
 import net.zomis.games.impl.TTQuixoController
-import net.zomis.tttultimate.TTPlayer
+import net.zomis.games.impl.ttt.ultimate.TTPlayer
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 

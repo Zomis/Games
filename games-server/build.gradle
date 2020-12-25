@@ -82,3 +82,23 @@ clean {
     delete "$rootDir/documentation/INVITES.md"
     delete "$rootDir/documentation/LOGIN_AND_LOBBY.md"
 }
+
+task deployAws {
+    dependsOn "assembleShadowDist"
+    // gradlew :games-server:assembleShadowDist :games-server:deployAws --info
+    doLast {
+        copy {
+            from '.codedeploy/'
+            into 'build/libs'
+        }
+        exec {
+            workingDir 'build/libs'
+            commandLine 'aws', 'deploy', 'push', '--application-name', 'server2', '--description', "This is a revision for server2",
+                    '--ignore-hidden-files', '--s3-location', 's3://zomis/codedeploy-server2.zip', '--source', '.'
+        }
+        exec {
+            workingDir 'build/libs'
+            commandLine 'aws', 'deploy', 'create-deployment', '--application-name', 'server2', '--deployment-group-name', 'server2-backend', '--file-exists-behavior', 'OVERWRITE', '--s3-location', 'bucket=zomis,key=codedeploy-server2.zip,bundleType=zip'
+        }
+    }
+}

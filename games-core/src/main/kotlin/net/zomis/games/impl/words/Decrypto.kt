@@ -124,7 +124,7 @@ object Decrypto {
                     step("team ${team.teamNumber} - giveClue") {
                         yieldAction(giveClue) {
                             precondition { playerIndex == team.clueGiverPlayer }
-                            options { listOf(Clues(listOf())) }
+                            options { listOf(Clues(listOf("random", "random", "random"))) }
                             perform {
                                 game.currentTeam.communicationHistory.add(CluesAndGuess(game.currentCode, action.parameter, null))
                                 game.opponentTeam.interceptionHistory.add(CluesAndGuess(game.currentCode, action.parameter, null))
@@ -135,7 +135,7 @@ object Decrypto {
                     if (game.roundNumber() > 0) {
                         step("team ${team.teamNumber} - opponents guess code") {
                             yieldAction(guessCode) {
-                                options { listOf(Guess(listOf())) }
+                                options { listOf(Guess(listOf(1, 2, 3))) }
                                 precondition { playerIndex in game.opponentTeam.teamMembers }
                                 perform {
                                     val item = game.opponentTeam.interceptionHistory.last()
@@ -154,7 +154,7 @@ object Decrypto {
                     if (!intercepted) {
                         step("team ${team.teamNumber} - guess own code") {
                             yieldAction(guessCode) {
-                                options { listOf(Guess(listOf())) }
+                                options { listOf(Guess(listOf(1, 2, 3))) }
                                 precondition { playerIndex in game.currentTeam.teamMembers }
                                 precondition { playerIndex != game.currentTeam.clueGiverPlayer }
                                 perform {

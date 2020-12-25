@@ -1,0 +1,14 @@
+version: 0.0
+os: linux
+files:
+  - source: /dist
+    destination: /home/ec2-user/games-vue-client
+hooks:
+  ApplicationStart:
+    - location: start_client.sh
+      timeout: 300
+      runas: ec2-user
+  ApplicationStop:
+    - location: stop_client.sh
+      timeout: 300
+      runas: ec2-user
