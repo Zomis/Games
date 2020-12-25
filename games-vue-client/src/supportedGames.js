@@ -1,7 +1,7 @@
 let useGameJs = false
 let gamejs = undefined
-if (useGameJs) {
-    gamejs = require("../../games-js/web/games-js");
+if (useGameJs) { // TODO: This condition doesn't quite work, it's required anyway during build process
+    // gamejs = require("../../games-js/web/games-js");
     if (typeof gamejs["games-js"] !== "undefined") {
         // This is needed when doing a production build, but is not used for `npm run dev` locally.
         gamejs = gamejs["games-js"];
