@@ -222,7 +222,7 @@ object Main {
                     .trim().split(" ").toTypedArray()
                 cmd.parse(*fileArgs)
             } else {
-                logger.info("Using config from command line")
+                logger.info("${configFile.name} not found, using config from command line")
                 cmd.parse(*args)
             }
         } catch (e: ParameterException) {
@@ -231,6 +231,11 @@ object Main {
             System.exit(1)
         }
 
-        Server2(EventSystem()).start(config)
+        try {
+            Server2(EventSystem()).start(config)
+        } catch (e: Exception) {
+            logger.error(e) { "Unable to start server" }
+            System.exit(2)
+        }
     }
 }
