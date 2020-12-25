@@ -98,7 +98,7 @@ task deployAws {
         }
         exec {
             workingDir 'build/libs'
-            commandLine 'aws', 'deploy', 'create-deployment', '--application-name', 'server2', '--deployment-group-name', 'server2', '--file-exists-behavior', 'OVERWRITE', '--s3-location', 'bucket=zomis,key=codedeploy-server2.zip,bundleType=zip'
+            commandLine 'aws', 'deploy', 'create-deployment', '--application-name', 'server2', '--deployment-group-name', 'server2-backend', '--file-exists-behavior', 'OVERWRITE', '--s3-location', 'bucket=zomis,key=codedeploy-server2.zip,bundleType=zip'
         }
     }
 }

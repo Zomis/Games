@@ -10,7 +10,7 @@
     "build": "vue-cli-service build",
     "awsBuild": "vue-cli-service build --mode aws",
     "awsDeployPush": "aws deploy push --application-name server2 --description \"Server2 frontend\" --ignore-hidden-files --s3-location s3://zomis/codedeploy-server2-fe.zip --source .codedeploy/",
-    "awsDeployPerform": "aws deploy create-deployment --application-name server2 --deployment-group-name server2 --file-exists-behavior OVERWRITE --s3-location bucket=zomis,key=codedeploy-server2-fe.zip,bundleType=zip",
+    "awsDeployPerform": "aws deploy create-deployment --application-name server2 --deployment-group-name server2-frontend --file-exists-behavior OVERWRITE --s3-location bucket=zomis,key=codedeploy-server2-fe.zip,bundleType=zip",
     "test:unit": "vue-cli-service test:unit",
     "lint": "vue-cli-service lint"
   },
