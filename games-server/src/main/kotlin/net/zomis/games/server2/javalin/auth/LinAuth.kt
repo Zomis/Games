@@ -43,7 +43,7 @@ class LinAuth(val javalin: Javalin, val githubConfig: OAuthConfig, val googleCon
                 post("/auth/google") {
                     googleHandler(it, googleConfig)
                 }
-                post("/auth/ping") {
+                get("/auth/ping") {
                     it.result("auth pong")
                 }
             }
