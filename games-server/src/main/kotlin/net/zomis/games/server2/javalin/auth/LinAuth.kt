@@ -52,14 +52,15 @@ class LinAuth(val javalin: Javalin, val githubConfig: OAuthConfig, val googleCon
         val request: String = context.body()
         try {
             val tree = mapper.readTree(request)
-            val result = Fuel.post("https://accounts.google.com/o/oauth2/token", listOf(
+            val parameters = listOf(
                 "client_id" to clientAndSecret.clientId,
                 "client_secret" to clientAndSecret.clientSecret,
                 "code" to tree.get("code").asText(),
                 "redirect_uri" to tree.get("redirectUri").asText(),
-                "grant_type" to "authorization_code")
-            ).responseString()
-            logger.debug("Google Auth: {}", result.third)
+                "grant_type" to "authorization_code"
+            )
+            val fuel = Fuel.post("https://accounts.google.com/o/oauth2/token", parameters)
+            val result = fuel.responseString()
             context.contentType("application/json").result(result.third.get())
         } catch (e: Exception) {
             context.status(500)
