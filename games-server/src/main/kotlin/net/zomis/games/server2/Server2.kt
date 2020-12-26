@@ -79,6 +79,8 @@ class ServerConfig {
     fun useSecureWebsockets(): Boolean {
         return certificatePath != null
     }
+
+    fun useOAuth(): Boolean = this.githubClient.isNotEmpty() || this.googleClientId.isNotEmpty()
 }
 
 /*
@@ -142,7 +144,7 @@ class Server2(val events: EventSystem) {
             this.messageRouter.handle(it.data["route"].asText(), it)
         }
         val executor = Executors.newScheduledThreadPool(2)
-        if (config.githubClient.isNotEmpty()) {
+        if (config.useOAuth()) {
             LinAuth(javalin, config.githubConfig(), config.googleConfig()).register()
         }
         val aiRepository = AIRepository()
