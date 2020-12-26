@@ -9,8 +9,6 @@ import io.javalin.Javalin
 import io.javalin.json.JavalinJackson
 import net.zomis.games.server2.OAuthConfig
 import org.slf4j.LoggerFactory
-import java.io.IOException
-import java.util.Properties
 
 data class GithubAuthRequest(val clientId: String, val redirectUri: String, val code: String, val state: String?)
 
@@ -63,7 +61,7 @@ class LinAuth(val javalin: Javalin, val githubConfig: OAuthConfig, val googleCon
             ).responseString()
             logger.debug("Google Auth: {}", result.third)
             context.contentType("application/json").result(result.third.get())
-        } catch (e: IOException) {
+        } catch (e: Exception) {
             context.status(500)
             logger.error("Authentication Failure for $request", e)
         }
