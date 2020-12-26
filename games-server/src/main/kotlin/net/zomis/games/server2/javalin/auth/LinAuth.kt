@@ -20,9 +20,6 @@ class LinAuth(val javalin: Javalin, val githubConfig: OAuthConfig, val googleCon
     private val mapper = jacksonObjectMapper()
 
     fun register() {
-        val secretProperties = Properties()
-        val resource = this.javaClass.classLoader.getResourceAsStream("secrets.properties")
-        secretProperties.load(resource)
         logger.info("LinAuth starting")
 
         JavalinJackson.configure(mapper)
