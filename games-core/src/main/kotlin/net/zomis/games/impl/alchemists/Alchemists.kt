@@ -86,6 +86,12 @@ class AlchemistsChemical(vararg properties: Pair<AlchemistsColor, AlchemistsProp
 
     val representation = listOf(red.toString('r'), green.toString('g'), blue.toString('b')).joinToString("/")
     override fun toString(): String = representation
+
+    fun hasRepresentation(s: String): Boolean {
+        val possibles = Alchemists.alchemyValues.map { it.representation }
+        if (s !in possibles) throw IllegalArgumentException("No such possible representation: $s. Possibles are $possibles")
+        return this.representation == s
+    }
 }
 object Alchemists {
 
