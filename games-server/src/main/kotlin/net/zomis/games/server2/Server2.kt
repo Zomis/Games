@@ -50,6 +50,9 @@ class ServerConfig {
     @Parameter(names = ["-db"], description = "Use database")
     var database = false
 
+    @Parameter(names = ["-statsDB"], description = "Use statistics database (requires database as well)")
+    var statsDB = false
+
     @Parameter(names = arrayOf("-wsPortSSL"), description = "Port for websockets and API with SSL (only used if certificate options are set)")
     var webSocketPortSSL = 0
 
@@ -148,7 +151,9 @@ class Server2(val events: EventSystem) {
             this.dbIntegration = dbIntegration
             features.add(dbIntegration::register)
             LinReplay(aiRepository, dbIntegration).setup(javalin)
-            LinStats(StatsDB(dbIntegration.superTable)).setup(events, javalin)
+            if (config.statsDB) {
+                LinStats(StatsDB(dbIntegration.superTable)).setup(events, javalin)
+            }
         }
         val authCallback = AuthorizationCallback { dbIntegration?.superTable?.cookieAuth(it) }
         messageRouter.route("auth", AuthorizationSystem(events, authCallback).router)
