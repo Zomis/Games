@@ -74,6 +74,9 @@ class ServerConfig {
     @Parameter(names = ["-googleClientSecret"], description = "Google OAuth Client Secret")
     var googleClientSecret: String = ""
 
+    @Parameter(names = ["-clients"], description = "Client URLs, can take multiple values separated by semicolon ';'")
+    var clientURLs = "http://localhost:8080;https://games.zomis.net"
+
     var idGenerator: GameIdGenerator = { UUID.randomUUID().toString() }
 
     fun useSecureWebsockets(): Boolean {
@@ -116,7 +119,7 @@ class Server2(val events: EventSystem) {
 
     fun start(config: ServerConfig): Server2 {
         val javalin = JavalinFactory.javalin(config)
-            .enableCorsForOrigin("http://localhost:8080", "https://games.zomis.net")
+            .enableCorsForOrigin(*config.clientURLs.split(';').toTypedArray())
         javalin.get("/ping") { ctx -> ctx.result("pong") }
         logger.info("Configuring Javalin at port ${config.webSocketPort} (SSL ${config.webSocketPortSSL})")
 
