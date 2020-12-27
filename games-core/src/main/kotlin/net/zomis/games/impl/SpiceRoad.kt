@@ -25,7 +25,7 @@ object SpiceRoadDsl {
                 SpiceRoadGameModel(this.playerCount)
             }
         }
-        this.rules {
+        this.actionRules {
             this.gameStart {
                 game.actionDeck.random(this.replayable, 6, "DealActionCards") { it.toStateString() }.forEach { it.moveTo(game.visibleActionCards) }
                 game.pointsDeck.random(this.replayable, 5, "DealPointCards") { it.toStateString() }.forEach { it.moveTo(game.visiblePointCards) }
@@ -36,9 +36,9 @@ object SpiceRoadDsl {
             this.view("actionCards") { game.visibleActionCards.cards.map(SpiceRoadGameModel.ActionCard::toViewable) }
             this.view("pointCards") { game.visiblePointCards.cards.map(SpiceRoadGameModel.PointCard::toViewable) }
             this.view("coins") {
-                var coins = mutableMapOf<String, Int>()
-                if (game.goldCoins.isNotEmpty()) coins.put("gold", game.goldCoins.size)
-                if (game.silverCoins.isNotEmpty()) coins.put("silver", game.silverCoins.size)
+                val coins = mutableMapOf<String, Int>()
+                if (game.goldCoins.isNotEmpty()) coins["gold"] = game.goldCoins.size
+                if (game.silverCoins.isNotEmpty()) coins["silver"] = game.silverCoins.size
                 coins
             }
             this.action(claim).requires { game.currentPlayer.caravan.has(this.action.parameter.cost) }
@@ -124,8 +124,7 @@ object SpiceRoadDsl {
                     rec(this, context.game.currentPlayer.caravan, context.game.visibleActionCards.card(card).index)
                 }
             }
-            this.action(discard).forceUntil { game.currentPlayer.caravan.count <= 10 }
-            this.action(discard).precondition { game.currentPlayer.caravan.count > 10 }
+            this.action(discard).forceWhen { game.currentPlayer.caravan.count > 10 }
             this.action(discard).options { game.currentPlayer.caravan.spice.keys }
             this.action(discard).effect {
                 game.currentPlayer.caravan -= this.action.parameter.toCaravan()
@@ -224,7 +223,7 @@ class SpiceRoadGameModel(val playerCount: Int) {
         YELLOW('Y'), RED('R'), GREEN('G'), BROWN('B');
 
         operator fun plus(upgrade: Int): Spice {
-            return Spice.values()[minOf(this.ordinal + upgrade, Spice.BROWN.ordinal)]
+            return values()[minOf(this.ordinal + upgrade, BROWN.ordinal)]
         }
 
         fun toCaravan(count: Int = 1): Caravan {
