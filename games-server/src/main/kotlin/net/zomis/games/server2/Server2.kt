@@ -50,6 +50,9 @@ class ServerConfig {
     @Parameter(names = ["-db"], description = "Use database")
     var database = false
 
+    @Parameter(names = ["-statsDB"], description = "Use statistics database (requires database as well)")
+    var statsDB = false
+
     @Parameter(names = arrayOf("-wsPortSSL"), description = "Port for websockets and API with SSL (only used if certificate options are set)")
     var webSocketPortSSL = 0
 
@@ -71,11 +74,16 @@ class ServerConfig {
     @Parameter(names = ["-googleClientSecret"], description = "Google OAuth Client Secret")
     var googleClientSecret: String = ""
 
+    @Parameter(names = ["-clients"], description = "Client URLs, can take multiple values separated by semicolon ';'")
+    var clientURLs = "http://localhost:8080;https://games.zomis.net"
+
     var idGenerator: GameIdGenerator = { UUID.randomUUID().toString() }
 
     fun useSecureWebsockets(): Boolean {
         return certificatePath != null
     }
+
+    fun useOAuth(): Boolean = this.githubClient.isNotEmpty() || this.googleClientId.isNotEmpty()
 }
 
 /*
@@ -111,7 +119,7 @@ class Server2(val events: EventSystem) {
 
     fun start(config: ServerConfig): Server2 {
         val javalin = JavalinFactory.javalin(config)
-            .enableCorsForOrigin("http://localhost:8080", "https://games.zomis.net")
+            .enableCorsForOrigin(*config.clientURLs.split(';').toTypedArray())
         javalin.get("/ping") { ctx -> ctx.result("pong") }
         logger.info("Configuring Javalin at port ${config.webSocketPort} (SSL ${config.webSocketPortSSL})")
 
@@ -139,7 +147,7 @@ class Server2(val events: EventSystem) {
             this.messageRouter.handle(it.data["route"].asText(), it)
         }
         val executor = Executors.newScheduledThreadPool(2)
-        if (config.githubClient.isNotEmpty()) {
+        if (config.useOAuth()) {
             LinAuth(javalin, config.githubConfig(), config.googleConfig()).register()
         }
         val aiRepository = AIRepository()
@@ -148,7 +156,9 @@ class Server2(val events: EventSystem) {
             this.dbIntegration = dbIntegration
             features.add(dbIntegration::register)
             LinReplay(aiRepository, dbIntegration).setup(javalin)
-            LinStats(StatsDB(dbIntegration.superTable)).setup(events, javalin)
+            if (config.statsDB) {
+                LinStats(StatsDB(dbIntegration.superTable)).setup(events, javalin)
+            }
         }
         val authCallback = AuthorizationCallback { dbIntegration?.superTable?.cookieAuth(it) }
         messageRouter.route("auth", AuthorizationSystem(events, authCallback).router)

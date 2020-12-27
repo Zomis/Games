@@ -9,8 +9,6 @@ import io.javalin.Javalin
 import io.javalin.json.JavalinJackson
 import net.zomis.games.server2.OAuthConfig
 import org.slf4j.LoggerFactory
-import java.io.IOException
-import java.util.Properties
 
 data class GithubAuthRequest(val clientId: String, val redirectUri: String, val code: String, val state: String?)
 
@@ -20,9 +18,6 @@ class LinAuth(val javalin: Javalin, val githubConfig: OAuthConfig, val googleCon
     private val mapper = jacksonObjectMapper()
 
     fun register() {
-        val secretProperties = Properties()
-        val resource = this.javaClass.classLoader.getResourceAsStream("secrets.properties")
-        secretProperties.load(resource)
         logger.info("LinAuth starting")
 
         JavalinJackson.configure(mapper)
@@ -46,6 +41,9 @@ class LinAuth(val javalin: Javalin, val githubConfig: OAuthConfig, val googleCon
                 post("/auth/google") {
                     googleHandler(it, googleConfig)
                 }
+                get("/auth/ping") {
+                    it.result("auth pong")
+                }
             }
         logger.info("LinAuth started: $app")
     }
@@ -54,16 +52,17 @@ class LinAuth(val javalin: Javalin, val githubConfig: OAuthConfig, val googleCon
         val request: String = context.body()
         try {
             val tree = mapper.readTree(request)
-            val result = Fuel.post("https://accounts.google.com/o/oauth2/token", listOf(
+            val parameters = listOf(
                 "client_id" to clientAndSecret.clientId,
                 "client_secret" to clientAndSecret.clientSecret,
                 "code" to tree.get("code").asText(),
                 "redirect_uri" to tree.get("redirectUri").asText(),
-                "grant_type" to "authorization_code")
-            ).responseString()
-            logger.debug("Google Auth: {}", result.third)
+                "grant_type" to "authorization_code"
+            )
+            val fuel = Fuel.post("https://accounts.google.com/o/oauth2/token", parameters)
+            val result = fuel.responseString()
             context.contentType("application/json").result(result.third.get())
-        } catch (e: IOException) {
+        } catch (e: Exception) {
             context.status(500)
             logger.error("Authentication Failure for $request", e)
         }
