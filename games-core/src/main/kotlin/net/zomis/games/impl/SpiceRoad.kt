@@ -11,13 +11,13 @@ object SpiceRoadDsl {
     data class AcquireParameter(val card: SpiceRoadGameModel.ActionCard, val payArray: List<SpiceRoadGameModel.Spice>)
 
     val factory = GameCreator(SpiceRoadGameModel::class)
-    val play = factory.action("play", PlayParameter::class).serializer(String::class) { "Play Card " + it.card.toStateString() + " Remove " + it.remove.toStateString() + " Add " + it.add.toStateString() }
-    val claim = factory.action("claim", SpiceRoadGameModel.PointCard::class).serializer(String::class) { "Claim " + it.toStateString()}
+    val play = factory.action("play", PlayParameter::class).serializer { "Play Card " + it.card.toStateString() + " Remove " + it.remove.toStateString() + " Add " + it.add.toStateString() }
+    val claim = factory.action("claim", SpiceRoadGameModel.PointCard::class).serializer { "Claim " + it.toStateString()}
     val rest = factory.action("rest", Unit::class)
-    val acquire = factory.action("acquire", AcquireParameter::class).serializer(String::class) {
+    val acquire = factory.action("acquire", AcquireParameter::class).serializer {
         "Acquire Card " + it.card.toStateString() + " PayArray " + it.payArray.joinToString("") { x -> x.char.toString() }
     }
-    val discard = factory.action("discard", SpiceRoadGameModel.Spice::class).serializer(String::class){"Discard " + it.char}
+    val discard = factory.action("discard", SpiceRoadGameModel.Spice::class).serializer {"Discard " + it.char}
     val game = factory.game("Spice Road") {
         this.setup {
             this.players(2..5)
