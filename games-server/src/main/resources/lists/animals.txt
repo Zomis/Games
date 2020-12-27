@@ -166,7 +166,6 @@ Myna
 Narwhal
 Newt
 Nightingale
-Nine-bandedArmadillo
 Octopus
 Okapi
 Opossum

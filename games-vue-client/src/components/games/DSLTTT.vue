@@ -1,17 +1,28 @@
 <template>
   <div class="game-dsl-ttt game-piece-color-change">
-    <GameHead v-if="context" :context="context" />
-    <Map2D :width="width" :height="height" :grid="view.board" :clickHandler="onClick" :actionable="actions.available"
-      :pieceExists="e => e.owner !== null">
+    <GameHead
+      v-if="context"
+      :context="context"
+    />
+    <Map2D
+      :width="width"
+      :height="height"
+      :grid="view.board"
+      :click-handler="onClick"
+      :actionable="actions.available"
+      :piece-exists="e => e.owner !== null"
+    >
       <template v-slot:default="slotProps">
-        <UrPiece v-if="slotProps.tile.tile.owner !== null"
+        <UrPiece
+          v-if="slotProps.tile.tile.owner !== null"
           :key="slotProps.key"
-          :mouseover="doNothing" :mouseleave="doNothing"
+          :mouseover="doNothing"
+          :mouseleave="doNothing"
           :class="'piece-' + slotProps.tile.tile.owner"
           :onclick="pieceClick"
           :actionable="actions.available[`${slotProps.tile.x},${slotProps.tile.y}`]"
-          :piece="slotProps.tile">
-        </UrPiece>
+          :piece="slotProps.tile"
+        />
       </template>
     </Map2D>
   </div>

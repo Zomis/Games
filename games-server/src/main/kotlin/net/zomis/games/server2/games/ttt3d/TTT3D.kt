@@ -3,15 +3,13 @@ package net.zomis.games.server2.games.ttt3d
 import kotlinx.coroutines.*
 import net.zomis.bestBy
 import net.zomis.common.pmap
-import net.zomis.fight.ext.WinResult
-import net.zomis.fights.Fights
 import net.zomis.games.ais.AlphaBeta
-import net.zomis.games.impl.ttt.TTT3D
-import net.zomis.games.impl.ttt.TTT3DAI
-import net.zomis.games.impl.ttt.TTT3DPiece
-import net.zomis.games.impl.ttt.TTT3DPoint
-import net.zomis.scorers.*
-import net.zomis.scorers.FieldScore
+import net.zomis.games.dsl.GamesImpl
+import net.zomis.games.dsl.impl.Game
+import net.zomis.games.dsl.impl.GameControllerContext
+import net.zomis.games.impl.ttt.*
+import net.zomis.games.scorers.ScorerController
+import net.zomis.games.scorers.ScorerScope
 import java.util.Scanner
 import kotlin.streams.toList
 
@@ -33,29 +31,12 @@ fun loadMap(text: String): TTT3D {
     return game
 }
 
-class TTT3DScorer {
-
-    fun canScore(state: ScoreParams<TTT3D>, field: TTT3DPoint): Boolean {
-        return state.param.canPlayAt(field)
-    }
-
-    fun fieldsToScoreInGame(state: TTT3D): Sequence<TTT3DPoint> {
-        return state.pieces.flatten().flatMap { it.toList() }.filter {
-            state.canPlayAt(it)
-        }.asSequence()
-    }
-
-    fun getFieldsToScore(state: TTT3D): MutableCollection<TTT3DPoint> {
-        return fieldsToScoreInGame(state).toMutableList()
-    }
-
-}
-
 class TTT3DIO {
-    val scorerStrategy = TTT3DScorer()
-    val scorers = Scorers(scorerStrategy::getFieldsToScore, scorerStrategy::canScore)
-    val scorerWant = NamedScorer<TTT3D, TTT3DPoint>("want") { params, point ->
-        params.param.winConditions.filter { it.contains(point) }.filter { it.canWin(params.param.currentPlayer) }.map {
+    val scoreFactory = GamesImpl.game(TTT3DGame.game).scorers()
+    val scorerWant = scoreFactory.action(TTT3DGame.playAction) {
+        val point = action.game.position(action.parameter)
+        action.game.winConditions.filter { it.contains(point) }
+            .filter { it.canWin(action.game.currentPlayer) }.map {
             when (it.emptySpaces()) {
                 1 -> 100.0
                 2 -> 1.0
@@ -64,8 +45,10 @@ class TTT3DIO {
             }
         }.sum()
     }
-    val scorerSabotage = NamedScorer<TTT3D, TTT3DPoint>("sabotage") { params, point ->
-        params.param.winConditions.filter { it.contains(point) }.filter { it.canWin(params.param.currentPlayer.opponent()) }.map {
+    val scorerSabotage = scoreFactory.action(TTT3DGame.playAction) {
+        val point = action.game.position(action.parameter)
+        action.game.winConditions.filter { it.contains(point) }
+            .filter { it.canWin(action.game.currentPlayer.opponent()) }.map {
             when (it.emptySpaces()) {
                 1 -> 50.0
                 2 -> 1.0
@@ -74,22 +57,23 @@ class TTT3DIO {
             }
         }.sum()
     }
-    val alerts = NamedScorer<TTT3D, TTT3DPoint>("alerts") { params, point ->
-        val block = scorerSabotage.scoring(params, point) > 30
-        val doNotPlace = nextLevelReveal.scoring(params, point) < -30
-        val i = block.let { if (it) 30 else 0 } + doNotPlace.let { if (it) -40 else 0 }
-        return@NamedScorer i.toDouble()
+    val alerts = scoreFactory.action(TTT3DGame.playAction) {
+        val block = scorerSabotage.score(this as ScorerScope<TTT3D, Any>)!! > 30.0
+        val doNotPlace = nextLevelReveal.score(this as ScorerScope<TTT3D, Any>)!! < -30.0
+        val i = block.let { if (it) 30 else 0 } + (if (doNotPlace) -40 else 0)
+        i.toDouble()
     }
     // Trap scorer: Extra points for creating traps -- if you force opponent to play somewhere that will give you the win
     // Field importance scorer: If you can create a win condition that will cause a trap (field is important for you)
     // Trigger Trap scorer: Extra points if you only need 1 piece to win on BOTH of the levels above point.
-    val nextLevelReveal = NamedScorer<TTT3D, TTT3DPoint>("nextReveal") { params, point ->
-        if (point.z == RANGE.endInclusive) {
-            return@NamedScorer 0.0
+    val nextLevelReveal = scoreFactory.action(TTT3DGame.playAction) {
+        val point = action.game.position(action.parameter)!!
+        if (point.z == RANGE.last) {
+            return@action 0.0
         }
-        params.param.winConditions.filter { it.contains(params.param.pieces[point.y][point.x][point.z + 1]) }
+        action.game.winConditions.filter { it.contains(action.game.pieces[point.y][point.x][point.z + 1]) }
                 .filter { !it.contains(point) }
-                .filter { it.canWin(params.param.currentPlayer.opponent()) }.map { it.emptySpaces() }.map {
+                .filter { it.canWin(action.game.currentPlayer.opponent()) }.map { it.emptySpaces() }.map {
                     when (it) {
                         1 -> -50.0
                         2 -> -1.0
@@ -124,20 +108,18 @@ class TTT3DIO {
         println()
     }
 
-    val factory = scorers.config()
-            .withScorer(scorerWant)
-            .withScorer(scorerSabotage)
-            .withScorer(nextLevelReveal)
-
-    fun printScores(game: TTT3D, factory: ScorersConfig<TTT3D, TTT3DPoint>) {
+    val factory = scoreFactory.ai("#AI_Test", scorerWant, scorerSabotage, nextLevelReveal)
+/*
+    fun printScores(game: Game<TTT3D>, factory: ScorerController<TTT3D>) {
         val scoreDetailsToString: (Pair<String, Double>) -> String = { score ->
             val format = "%.4f"
             "${score.first}: ${format.format(score.second)}"
         }
+        val model = game.model
 
-        val scores = factory.producer(game).score()
-        val maxLength: Int = scores.fieldScores.values.flatMap {
-            it.scores.map { score -> scoreDetailsToString(score.key to score.value).length + 2 }
+        val scores = factory.score(GameControllerContext(game, model.currentPlayer.playerIndex))
+        val maxLength: Int = scores.flatMap {
+            it.firstscores.map { score -> scoreDetailsToString(score.key to score.value).length + 2 }
         }.max() ?: 0
 
         val rowSeperator = "-".repeat((RANGE.last + 1) * (RANGE.last + 4) + 1)
@@ -165,7 +147,8 @@ class TTT3DIO {
         }
         println()
     }
-
+*/
+    /*
     fun playVsAI(game: TTT3D, ai: NamedAI, human: TTT3DPiece) {
         val scanner = Scanner(System.`in`)
 
@@ -183,7 +166,7 @@ class TTT3DIO {
         print(game)
         println(game.findWinner())
     }
-
+*/
     private fun makeMove(game: TTT3D, move: Pair<Int, Int>) {
         val x = move.first
         val y = move.second
@@ -209,7 +192,7 @@ class TTT3DIO {
 
     fun alphaBeta(game: TTT3D, depth: Int, depthRemainingBonus: Double = 0.0): TTT3DPoint {
         val actions: (TTT3D) -> List<TTT3DPoint> = lambda@{ state ->
-            val allFields = scorerStrategy.fieldsToScoreInGame(state).toList()
+            val allFields = game.pieces.flatten().flatMap { it.toList() }.filter { game.canPlayAt(it) }
             val canWin = allFields.filter { canWin(state, it) }
             if (canWin.isNotEmpty()) {
                 return@lambda canWin
@@ -258,15 +241,16 @@ class TTT3DIO {
         return move.first
     }
 
-    fun scorerAlphaBeta(options: List<Pair<TTT3DPoint, Double>>) = NamedScorer<TTT3D, TTT3DPoint>("alphaBeta") { params, point ->
+    fun scorerAlphaBeta(options: List<Pair<TTT3DPoint, Double>>) = scoreFactory.action(TTT3DGame.playAction) {
+        val point = action.game.position(action.parameter)
         val foundValue = options.find { it.first == point }?.second
         if (foundValue == null) {
             println("WARNING: No such point found: $point in $options")
-            return@NamedScorer -420.0
+            return@action -420.0
         }
-        return@NamedScorer foundValue
+        foundValue
     }
-
+/*
     fun aiPlay(game: TTT3D): Pair<Int, Int> {
         this.printScores(game, this.factory)
 
@@ -279,7 +263,8 @@ class TTT3DIO {
         val randomBestField = best.random()
         return randomBestField.x to randomBestField.y
     }
-
+*/
+    /*
     private fun requestInput(game: TTT3D, scanner: Scanner): Pair<Int, Int> {
         val alertConfig = scorers.config().withScorer(this.alerts)
         this.printScores(game, alertConfig)
@@ -290,7 +275,7 @@ class TTT3DIO {
         val y = scanner.nextInt()
         return x to y
     }
-
+*/
     data class MoveData(val floorsCount: List<Int>)
     data class GameData(val ais: List<Any>, val winner: Any)
     data class NamedAI(val name: String, val ai: TTT3DAI) {
@@ -298,7 +283,7 @@ class TTT3DIO {
             return name
         }
     }
-
+/*
     fun fight() {
         val fightResult = Fights()
             .between(NamedAI("Scorer", scorerAI(factory)), alphaBetaAI(3), alphaBetaAI(4),
@@ -322,16 +307,9 @@ class TTT3DIO {
 //            .index("player")
 //            .dataFinish(moveCount)
     }
-
+*/
     fun alphaBetaAI(depth: Int): NamedAI {
         return NamedAI("AlphaBeta $depth") { alphaBetaPlay(it, depth) }
-    }
-
-    private fun scorerAI(factory: ScorersConfig<TTT3D, TTT3DPoint>): TTT3DAI {
-        return lambda@{
-            val position = factory.producer(it).score().best().random()
-            return@lambda position.x to position.y
-        }
     }
 
     fun aiVs(game: TTT3D, playerX: NamedAI, playerO: NamedAI) {
@@ -382,6 +360,6 @@ fun main(args: Array<String>) {
     val io = TTT3DIO()
     val game = TTT3D()
 //    io.aiVs(game, io.alphaBetaAI(3), io.alphaBetaAI(2))
-    io.playVsAI(game, io.alphaBetaAI(5), randomTTT3DPiece())
+//    io.playVsAI(game, io.alphaBetaAI(5), randomTTT3DPiece())
 //    io.fight()
 }

@@ -93,6 +93,7 @@ class CardZone<T>(internal val cards: MutableList<T> = mutableListOf()) {
     }
 
     fun random(replayable: ReplayableScope, count: Int, stateKey: String, matcher: (T) -> String): Sequence<Card<T>> {
+        require(count <= this.size) { "Requesting more cards $count than what exists in zone $size" }
         val state = replayable.strings(stateKey) {
             this.cards.shuffled().take(count).map(matcher)
         }

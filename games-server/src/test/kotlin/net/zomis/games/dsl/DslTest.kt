@@ -1,12 +1,12 @@
 package net.zomis.games.dsl
 
 import net.zomis.games.common.Point
-import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.impl.ttt.DslTTT
 import net.zomis.games.impl.ttt.TTOptions
-import net.zomis.tttultimate.TTPlayer
-import net.zomis.tttultimate.games.TTController
+import net.zomis.games.impl.ttt.ultimate.TTController
+import net.zomis.games.impl.ttt.ultimate.TTPlayer
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
@@ -19,7 +19,7 @@ class DslTest {
         Assertions.assertEquals(TTOptions::class, setup.configClass())
     }
 
-    private fun createGame(): GameImpl<TTController> {
+    private fun createGame(): Game<TTController> {
         val setup = GameSetupImpl(DslTTT.game)
         val game = setup.createGame(2, TTOptions(3, 3, 3))
         Assertions.assertNotNull(game)
@@ -83,7 +83,7 @@ class DslTest {
             actionType.perform(action)
             counter++
         }
-        Assertions.assertEquals(2, game.eliminationCallback.eliminations().distinctBy { it.playerIndex }.size)
+        Assertions.assertEquals(2, game.eliminations.eliminations().distinctBy { it.playerIndex }.size)
     }
 
 }

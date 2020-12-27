@@ -1,40 +1,52 @@
 <template>
-    <v-col :cols="cols" class="player-in-game-info">
-        <template v-if="displayStyle === 'avatars' || displayStyle === 'vs'">
-            <v-tooltip bottom>
-                <template v-slot:activator="{ on }">
-                    <v-avatar :size="48" v-on="on" :class="[winResultClass, eliminatedOpacityClass]">
-                        <img
-                            :src="player.picture"
-                            :alt="player.name" />
-                    </v-avatar>
-                </template>
-                <span>{{ tooltip }}</span>
-            </v-tooltip>
+  <v-col
+    :cols="cols"
+    class="player-in-game-info"
+  >
+    <template v-if="displayStyle === 'avatars' || displayStyle === 'vs'">
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on }">
+          <v-avatar
+            :size="48"
+            :class="[winResultClass, eliminatedOpacityClass]"
+            v-on="on"
+          >
+            <img
+              :src="player.picture"
+              :alt="player.name"
+            >
+          </v-avatar>
         </template>
-        <template v-if="displayStyle == 'vs'">
-            <span>&nbsp;{{ player.name }}</span>
-            <span v-if="elim">({{ elimResult }})</span>
-        </template>
-        <template v-if="displayStyle == 'table'">
-            <v-row no-gutters>
-                <v-col cols="6">
-                    <v-avatar :size="48" :class="[winResultClass, eliminatedOpacityClass]">
-                        <img
-                            :src="player.picture"
-                            :alt="player.name" />
-                    </v-avatar>
-                    <span>{{ player.name }}</span>
-                </v-col>
-                <v-col cols="3">
-                    {{ elimResult }}
-                </v-col>
-                <v-col cols="3">
-                    {{ elimPosition }}
-                </v-col>
-            </v-row>
-        </template>
-    </v-col>
+        <span>{{ tooltip }}</span>
+      </v-tooltip>
+    </template>
+    <template v-if="displayStyle == 'vs'">
+      <span>&nbsp;{{ player.name }}</span>
+      <span v-if="elim">({{ elimResult }})</span>
+    </template>
+    <template v-if="displayStyle == 'table'">
+      <v-row no-gutters>
+        <v-col cols="6">
+          <v-avatar
+            :size="48"
+            :class="[winResultClass, eliminatedOpacityClass]"
+          >
+            <img
+              :src="player.picture"
+              :alt="player.name"
+            >
+          </v-avatar>
+          <span>{{ player.name }}</span>
+        </v-col>
+        <v-col cols="3">
+          {{ elimResult }}
+        </v-col>
+        <v-col cols="3">
+          {{ elimPosition }}
+        </v-col>
+      </v-row>
+    </template>
+  </v-col>
 </template>
 <script>
 function winResultValue(winResult) {

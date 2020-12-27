@@ -276,7 +276,7 @@ object DungeonMayhemDsl {
     val factory = GameCreator(DungeonMayhem::class)
 
     val play = factory.action("play", DungeonMayhemCard::class)
-        .serialization(String::class, { it.name }, { key -> game.currentPlayer.hand.cards.first { it.name == key } })
+        .serialization({ it.name }, { key -> game.currentPlayer.hand.cards.first { it.name == key } })
     val target = factory.action("target", DungeonMayhemTarget::class)
     val game = factory.game("Dungeon Mayhem") {
         setup(DungeonMayhemConfig::class) {
@@ -343,6 +343,7 @@ object DungeonMayhemDsl {
                     "health" to it.health,
                     "deck" to it.deck.size,
                     "hand" to if (viewer == it.index) it.hand.view() else it.hand.size,
+                    "protected" to it.protected,
                     "discard" to it.discard.view(),
                     "played" to it.played.view(),
                     "shields" to it.shields.view()
@@ -386,7 +387,9 @@ object DungeonMayhemDsl {
                 log {
                     val target = when {
                         action.discardedCard != null -> playerTarget.discard[action.discardedCard!!].card.let { viewLink(it.name, "card", it.view()) }
-                        action.shieldCard != null -> playerTarget.shields[action.shieldCard!!].card.card.let { viewLink(it.name, "card", it.view()) }
+                        action.shieldCard != null -> playerTarget.shields[action.shieldCard!!].card.card.let {
+                            player(playerTarget.index) + " " + viewLink(it.name, "card", it.view())
+                        }
                         else -> player(playerTarget.index)
                     }
                     "$player targets $target with ${count}x ${symbol.symbol.name}"
@@ -428,9 +431,3 @@ object DungeonMayhemDsl {
         }
     }
 }
-/*
-Problems:
-- Tracing what's happening (effects and why actions are - not - allowed)
-  - name each rule and log it?
-  - Also send to frontend?
-*/

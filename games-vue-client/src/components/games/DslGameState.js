@@ -161,7 +161,15 @@ const gameStore = {
         context.commit("updateActions", data);
       }
       if (data.type === "GameInfo" || data.type === "GameMove") {
-        context.commit("resetActions", { gameInfo: data })
+        let supportedGame = supportedGames.games[data.gameType]
+        if (supportedGame.resetActions === false) {
+          let gameInfo = context.state.games[data.gameId].gameInfo;
+          if (data.type !== "GameMove" || data.player === gameInfo.yourIndex) {
+            context.commit("resetActions", { gameInfo: data })
+          }
+        } else {
+          context.commit("resetActions", { gameInfo: data })
+        }
         context.dispatch('requestView', data)
         context.dispatch('requestActions', { gameInfo: data })
       }

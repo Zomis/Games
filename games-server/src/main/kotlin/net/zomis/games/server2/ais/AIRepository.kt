@@ -1,12 +1,12 @@
 package net.zomis.games.server2.ais
 
 import net.zomis.core.events.EventSystem
-import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.dsl.impl.Game
 import net.zomis.games.scorers.ScorerController
 import net.zomis.games.server2.games.PlayerGameMoveRequest
 import net.zomis.games.server2.games.ServerGame
 
-typealias ServerGameAI = (game: ServerGame, playerIndex: Int) -> List<PlayerGameMoveRequest>
+typealias ServerGameAI = (game: ServerGame, playerIndex: Int) -> PlayerGameMoveRequest?
 
 class AIRepository {
 
@@ -51,7 +51,7 @@ class AIRepository {
         }
     }
 
-    fun analyze(gameType: String, game: GameImpl<Any>, aiName: String, playerIndex: Int): AIAnalyzeResult? {
+    fun analyze(gameType: String, game: Game<Any>, aiName: String, playerIndex: Int): AIAnalyzeResult? {
         // Find AI in all AI types
         val gameTypeRepo = repositoryForGameType<Any>(gameType)
         val scoring = gameTypeRepo.scoringAIs[aiName]

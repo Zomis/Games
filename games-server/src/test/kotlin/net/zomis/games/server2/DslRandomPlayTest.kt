@@ -4,6 +4,8 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.Actionable
+import net.zomis.games.dsl.GameEntryPoint
+import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.impl.SplendorGame
 import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.dsl.impl.GameControllerContext
@@ -12,8 +14,10 @@ import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.impl.SetAction
 import net.zomis.games.impl.SetGame
 import net.zomis.games.impl.SetGameModel
+import net.zomis.games.impl.words.Decrypto
 import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.ais.ServerAIs
+import net.zomis.games.server2.ais.gamescorers.DecryptoScorers
 import net.zomis.games.server2.ais.gamescorers.SplendorScorers
 import net.zomis.games.server2.ais.serialize
 import net.zomis.games.server2.clients.WSClient
@@ -61,7 +65,14 @@ class DslRandomPlayTest {
     companion object {
         @JvmStatic
         fun serverGames(): List<Arguments> {
-            return ServerGames.games.keys.sorted().map { Arguments.of(it) }
+            return ServerGames.games.values.sortedBy { it.name }
+            .map {
+                val entryPoint = GamesImpl.game(it)
+                val playerCount = entryPoint.setup().playersCount
+                val randomCount = playerCount.random()
+
+                Arguments.of(entryPoint, randomCount)
+            }
         }
     }
 
@@ -76,16 +87,18 @@ class DslRandomPlayTest {
     }
 
     val playingMap = mapOf<KClass<*>, GameController<*>>(
+        Decrypto.Model::class to { ctx -> DecryptoScorers.noChat.createController().invoke(ctx as GameControllerScope<Decrypto.Model>) },
         SetGameModel::class to { context: GameControllerScope<*> -> randomSetMove(context as GameControllerScope<SetGameModel>) },
         SplendorGame::class to { ctx -> SplendorScorers.aiBuyFirst.createController().invoke(ctx as GameControllerScope<SplendorGame>) }
     )
 
-    @ParameterizedTest(name = "Random play {0}")
+    @ParameterizedTest(name = "Random play {0} with {1} players")
     @MethodSource("serverGames")
-    fun dsl(dslGame: String) {
-        val playerCount = ServerGames.setup(dslGame)!!.playersCount
-        val randomCount = playerCount.random()
-        val clients = (1..randomCount).map { WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket")) }
+    fun dsl(gameType: GameEntryPoint<Any>, playerCount: Int) {
+        val dslGame = gameType.gameType
+        gameType.runTests()
+
+        val clients = (1..playerCount).map { WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket")) }
         clients.forEach { it.connectBlocking() }
 
         val playerIds = clients.map {client ->
@@ -137,7 +150,7 @@ class DslRandomPlayTest {
 
         // Find game
         val game = server!!.gameSystem.getGameType(dslGame)!!.runningGames["1"]!!
-        val gameImpl = game.obj as GameImpl<*>
+        val gameImpl = game.obj!!.game
         val players = game.players.mapIndexed { index, client ->
             index to clients[playerIds.indexOf(client.playerId!!.toString())]
         }
@@ -162,19 +175,18 @@ class DslRandomPlayTest {
                         PlayerGameMoveRequest(game, playerIndex, it.actionType, serialized, true)
                     }
                 } else {
-                    serverAIs.randomAction(game, playerIndex).firstOrNull()
+                    serverAIs.randomAction(game, playerIndex)
                 }
             }.map { it.serialize(gameImpl) }
             if (actions.isEmpty()) {
                 clients[0].sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
-                val view = clients[0].expectJsonObject { it.getText("type") == "GameView" }
-                throw IllegalStateException("Game is not over but no actions available. Is the game a draw? View is $view")
+                val view = clients[0].takeUntilJson { it.getText("type") == "GameView" }
+                throw IllegalStateException("Game is not over but no actions available after $actionCounter actions. Is the game a draw? View is $view")
             }
-            val request = actions.first()
+            val request = actions.random() // If multiple players wants to perform an action, just do one of them
             val playerSocket = clients[playerIds.indexOf(game.players[request.player].playerId!!.toString())]
             val moveString = jacksonObjectMapper().writeValueAsString(request.move)
             playerSocket.send("""{ "route": "games/$dslGame/1/move", "playerIndex": ${request.player}, "moveType": "${request.moveType}", "move": $moveString }""")
-            // TODO: Also add checks for "ActionLog" messages?
             clients.forEach {client ->
                 client.takeUntilJson { it.getTextOrDefault("type", "") == "GameMove" }
             }
@@ -193,7 +205,7 @@ class DslRandomPlayTest {
             client.takeUntilJson { it.getText("type") == "GameEnded" }
         }
 
-        val eliminations = gameImpl.eliminationCallback.eliminations()
+        val eliminations = gameImpl.eliminations.eliminations()
         assert(eliminations.size == clients.size)
 
         clients.forEach { it.close() }

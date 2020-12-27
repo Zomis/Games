@@ -48,9 +48,9 @@ class DslGameTest {
         p2.connectBlocking()
 
         p1.send("""{ "route": "auth/guest" }""")
-        val playerId1 = p1.expectJsonObject { it.getText("type") == "Auth" }.get("playerId").asText()
+        p1.expectJsonObject { it.getText("type") == "Auth" }.get("playerId").asText()
         p2.send("""{ "route": "auth/guest" }""")
-        val playerId2 = p2.expectJsonObject { it.getText("type") == "Auth" }.get("playerId").asText()
+        p2.expectJsonObject { it.getText("type") == "Auth" }.get("playerId").asText()
 
         p1.send("""{ "route": "lobby/join", "gameTypes": ["$dslGame"], "maxGames": 1 }""")
         Thread.sleep(100)

@@ -1,19 +1,39 @@
 <template>
-  <Scene @complete="initialized" v-model="scene" v-if="view.board"> <!-- @pointer$="onPointer" -->
-<!--    <HemisphericLight emissive="#00FF00"></HemisphericLight>-->
+  <Scene
+    v-if="view.board"
+    v-model="scene"
+    @complete="initialized"
+  >
+    <!-- @pointer$="onPointer" -->
+    <!--    <HemisphericLight emissive="#00FF00"></HemisphericLight>-->
     <HemisphericLight diffuse="#fff" />
-    <Camera type="arcRotate"></Camera>
+    <Camera type="arcRotate" />
     <template v-for="y in indices">
       <template v-for="x in indices">
-        <Cylinder :key="`${y},${x},cylinder`" :position="[positions[y], 0, positions[x]]" :scaling="cylinderScaling">
-          <Material diffuse="#505050" :metallic="0" :roughness="1"> </Material>
+        <Cylinder
+          :key="`${y},${x},cylinder`"
+          :position="[positions[y], 0, positions[x]]"
+          :scaling="cylinderScaling"
+        >
+          <Material
+            diffuse="#505050"
+            :metallic="0"
+            :roughness="1"
+          />
         </Cylinder>
-        <Sphere v-for="(color, z) in colors[y][x]" :position="[positions[y], positions[z], positions[x]]"
-         :scaling="pieceScaling"
-         :key="`${y},${x},${z}`"
-         :name="`box_${y}_${x}_${z}`"><!-- @onPointerOver="pointerOver" -->
-          <Material :diffuse="color" :roughness="1" :metallic="0.5">
-          </Material>
+        <Sphere
+          v-for="(color, z) in colors[y][x]"
+          :key="`${y},${x},${z}`"
+          :position="[positions[y], positions[z], positions[x]]"
+          :scaling="pieceScaling"
+          :name="`box_${y}_${x}_${z}`"
+        >
+          <!-- @onPointerOver="pointerOver" -->
+          <Material
+            :diffuse="color"
+            :roughness="1"
+            :metallic="0.5"
+          />
         </Sphere>
       </template>
     </template>

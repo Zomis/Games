@@ -162,7 +162,6 @@ late
 long
 modern
 old
-old-fashioned
 prehistoric
 quick
 rapid

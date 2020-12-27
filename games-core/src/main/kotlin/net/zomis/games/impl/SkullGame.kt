@@ -64,6 +64,8 @@ class SkullGameModel(val config: SkullGameConfig, playerCount: Int): Viewable {
     override fun toView(viewer: PlayerIndex): Any? {
         return mapOf(
             "currentPlayer" to currentPlayerIndex,
+            "cardsTotal" to players.sumBy { it.played.size + it.chosen.size },
+            "cardsChosenRemaining" to currentBet() - players.sumBy { it.chosen.size },
             "players" to players.map { it.toView(viewer) },
             "you" to viewer?.let { players[viewer].let { pl -> mapOf("hand" to pl.hand.cards.map { it.name }, "board" to pl.played.cards.map { it.name }) } }
         )
@@ -77,9 +79,9 @@ object SkullGame {
 
     val bet = factory.action("bet", Int::class)
     val pass = factory.action("pass", Unit::class)
-    val choose = factory.action("choose", SkullPlayer::class).serialization(Int::class, { it.index }, { game.players[it] })
+    val choose = factory.action("choose", SkullPlayer::class).serialization({ it.index }, { game.players[it] })
     val chooseNextPlayer = factory.action("chooseNextPlayer", SkullPlayer::class)
-        .serialization(Int::class, { it.index }, { game.players[it] })
+        .serialization({ it.index }, { game.players[it] })
     val discard = factory.action("discard", SkullCard::class)
     val play = factory.action("play", SkullCard::class)
     val game = factory.game("Skull") {
@@ -135,7 +137,7 @@ object SkullGame {
                 log { "${this.player} choose ${player(action.index)} and revealed $chosenCard" }
             }
             action(choose).requires { action.parameter == game.currentPlayer || game.currentPlayer.played.cards.isEmpty() }
-            action(choose).requires { game.currentPlayer.bet > 0 && !game.currentPlayer.pass && game.players.count { !it.pass } == 1 }
+            action(choose).precondition { game.currentPlayer.bet > 0 && !game.currentPlayer.pass && game.players.count { !it.pass } == 1 }
             action(choose).requires { action.parameter.played.cards.isNotEmpty() }
             action(choose).options { game.players.filter { it.played.cards.isNotEmpty() } }
             action(choose).after {

@@ -4,6 +4,7 @@ import net.zomis.best
 
 interface PlayerEliminationCallback {
     val playerCount: Int
+    val playerIndices: IntRange get() = 0 until playerCount
     fun remainingPlayers(): List<Int>
     fun eliminations(): List<PlayerElimination>
     fun nextPlayer(currentPlayer: Int): Int?
@@ -21,6 +22,10 @@ interface PlayerEliminationCallback {
         this.result(playerIndex, WinResult.WIN)
         this.eliminateRemaining(WinResult.LOSS)
     }
+
+    fun eliminationFor(playerIndex: Int): PlayerElimination? = eliminations().find { it.playerIndex == playerIndex }
+    fun isAlive(playerIndex: Int) = eliminationFor(playerIndex) == null
+    fun isGameOver(): Boolean
 }
 
 data class PlayerElimination(val playerIndex: Int, val winResult: WinResult, val position: Int)
@@ -28,6 +33,7 @@ data class PlayerElimination(val playerIndex: Int, val winResult: WinResult, val
 class PlayerEliminations(override val playerCount: Int): PlayerEliminationCallback {
 
     private val eliminations = mutableListOf<PlayerElimination>()
+    var callback: (PlayerElimination) -> Unit = {}
 
     override fun remainingPlayers(): List<Int> {
         return (0 until playerCount).filter {
@@ -73,6 +79,7 @@ class PlayerEliminations(override val playerCount: Int): PlayerEliminationCallba
             throw IllegalArgumentException("Elimination position ${elimination.position} must be less than or equal to playerCount $playerCount")
         }
         this.eliminations.add(elimination)
+        callback(elimination)
     }
 
     override fun eliminateRemaining(winResult: WinResult) {
@@ -80,7 +87,7 @@ class PlayerEliminations(override val playerCount: Int): PlayerEliminationCallba
         val newEliminations = remainingPlayers().map {
             PlayerElimination(it, winResult, position)
         }
-        eliminations.addAll(newEliminations)
+        for (elimination in newEliminations) eliminate(elimination)
     }
 
     override fun <T> eliminateBy(playersAndScores: List<Pair<Int, T>>, comparator: Comparator<T>) {
@@ -112,8 +119,7 @@ class PlayerEliminations(override val playerCount: Int): PlayerEliminationCallba
         return remaining.firstOrNull { it > currentPlayer } ?: remaining.firstOrNull()
     }
 
-    fun isGameOver(): Boolean {
-//        return this.remainingPlayers().isEmpty()
+    override fun isGameOver(): Boolean {
         return this.eliminations.map { it.playerIndex }.distinct().size == playerCount
     }
 

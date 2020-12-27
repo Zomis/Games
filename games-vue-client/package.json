@@ -5,10 +5,14 @@
   "description": "Vue-Client for Server2",
   "author": "Simon Forsberg <zomis2k@hotmail.com>",
   "scripts": {
+    "start": "npm run serve",
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint",
-    "test:unit": "vue-cli-service test:unit"
+    "awsBuild": "vue-cli-service build --mode aws",
+    "awsDeployPush": "aws deploy push --application-name server2 --description \"Server2 frontend\" --ignore-hidden-files --s3-location s3://zomis/codedeploy-server2-fe.zip --source .codedeploy/",
+    "awsDeployPerform": "aws deploy create-deployment --application-name server2 --deployment-group-name server2-frontend --file-exists-behavior OVERWRITE --s3-location bucket=zomis,key=codedeploy-server2-fe.zip,bundleType=zip",
+    "test:unit": "vue-cli-service test:unit",
+    "lint": "vue-cli-service lint"
   },
   "dependencies": {
     "@babylonjs/core": "^4.1.0",
@@ -23,20 +27,22 @@
     "vue-authenticate": "^1.4.1",
     "vue-axios": "^2.1.5",
     "vue-babylonjs": "^1.0.0-beta.7",
+    "vue-cookie-law": "^1.13.3",
     "vue-router": "^3.3.2",
     "vuetify": "^2.2.30",
     "vuex": "^3.4.0"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^4.4.1",
-    "@vue/cli-plugin-eslint": "^4.4.1",
+    "@vue/cli-plugin-eslint": "^4.5.8",
     "@vue/cli-plugin-unit-mocha": "^4.4.1",
     "@vue/cli-service": "^4.4.1",
     "@vue/test-utils": "^1.0.3",
-    "babel-eslint": "^10.0.3",
+    "git-describe": "^4.0.4",
+    "babel-eslint": "^10.1.0",
     "chai": "^4.2.0",
     "eslint": "^6.8.0",
-    "eslint-plugin-vue": "^6.0.1",
+    "eslint-plugin-vue": "^6.2.2",
     "sass": "^1.26.7",
     "sass-loader": "^8.0.2",
     "vue-cli-plugin-vuetify": "^2.0.5",

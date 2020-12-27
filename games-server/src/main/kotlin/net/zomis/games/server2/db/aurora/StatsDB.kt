@@ -7,12 +7,8 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import klog.KLoggers
 import net.zomis.games.server2.db.*
-import net.zomis.games.server2.games.GameCallback
-import net.zomis.games.server2.games.GameSystem
-import net.zomis.games.server2.invites.ClientList
 import java.time.Instant
 import java.util.UUID
-import kotlin.math.max
 
 data class StatsPlayerInGame(val playerId: String, val result: Double, val resultPosition: Int)
 data class StatsTag(val tagId: String, val tagParameter: Long)
@@ -55,7 +51,7 @@ $tagJoins
 ORDER BY gameid ASC, "PlayerIndex" ASC
             """.trimIndent()
             val stmt = conn.prepareStatement(sql)
-            players.forEachIndexed { index, playerId -> stmt.setString(index + 1, playerId) }
+            players.forEachIndexed { index, playerId -> stmt.setObject(index + 1, UUID.fromString(playerId)) }
             tags.forEachIndexed { index, tagId -> stmt.setString(index + 1 + players.size, tagId) }
 
             logger.info { "Executing $sql with parameters $players and $tags" }
@@ -87,12 +83,16 @@ ORDER BY gameid ASC, "PlayerIndex" ASC
         val gameIds = this.fetchNewlyFinishedGameIds().also { println("${it.size} games in DynamoDB") }.map {
             SuperTable.Prefix.GAME.extract(it)
         }
-        gameIds.minus(existingGameIds).asSequence().map { superTable.getGameSummary(SuperTable.Prefix.GAME.sk(it)) }
-            .filterNotNull()
-            .filter { it.gameState == GameState.PUBLIC.value }
-            .forEach {
-                this.insert(it)
+        for (gameId in gameIds.minus(existingGameIds)) {
+            try {
+                val summary = superTable.getGameSummary(SuperTable.Prefix.GAME.sk(gameId)) ?: continue
+                if (summary.gameState == GameState.PUBLIC.value) {
+                    insert(summary)
+                }
+            } catch (e: Exception) {
+                logger.error(e) { "Unable to insert gameId $gameId to statistics" }
             }
+        }
     }
 
     private fun fetchExistingStatsGames(): List<String> {

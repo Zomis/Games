@@ -1,14 +1,27 @@
 <template>
   <div class="server-selection">
     <h2>Choose server</h2>
-    <v-select :items="serverOptions" item-text="name" item-value="url" v-model="chosenServer">
-    </v-select>
+    <v-select
+      v-model="chosenServer"
+      :items="serverOptions"
+      item-text="name"
+      item-value="url"
+    />
 
-    <AuthChoice :server="serverInfo" :onAuthenticated="onAuthenticated" :autoLogin="!logout" />
+    <AuthChoice
+      :server="serverInfo"
+      :on-authenticated="onAuthenticated"
+      :auto-login="!logout"
+    />
 
-    <p>The server "zomis" should be up and running always.<br />
-      If you want to start a local server, <a href="https://github.com/Zomis/Server2">clone my project on GitHub</a>.<br />
-      You can also <router-link to="/local">play games locally without connecting to the server (but this is boring, don't do this)</router-link>
+    <h3><a href="https://discord.gg/GfXFUvc">Join us on Discord!</a></h3>
+
+    <p>
+      The server "zomis" should be up and running always.<br>
+      If you want to start a local server, <a href="https://github.com/Zomis/Server2">clone my project on GitHub</a>.<br>
+      You can also <router-link to="/local">
+        play games locally without connecting to the server (but this is boring, don't do this)
+      </router-link>
     </p>
   </div>
 </template>

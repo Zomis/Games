@@ -32,7 +32,7 @@ class LinReplay(private val aiRepository: AIRepository, private val dbIntegratio
                 val gameId = ctx.pathParam("gameid")
                 log(ctx, "get queryable AIs for $gameId")
                 val dbGame = caffeine.get(gameId)!!
-                ctx.json(aiRepository.queryableAIs(dbGame.summary.gameType)!!)
+                ctx.json(aiRepository.queryableAIs(dbGame.summary.gameType))
                 // Get queryable AIs
             }
             get("/games/:gameid/analyze/:ai/:position/:playerindex") {ctx ->
@@ -40,8 +40,9 @@ class LinReplay(private val aiRepository: AIRepository, private val dbIntegratio
                 val playerIndex = ctx.pathParam("playerindex").toInt()
                 val ai = ctx.pathParam("ai")
                 val position = ctx.pathParam("position").toInt()
+                val ignoreCache = ctx.queryParam("ignoreCache") == "true"
                 log(ctx, "analyze $gameId $position using $ai")
-                val dbGame = caffeine.get(gameId)!!
+                val dbGame = if (ignoreCache) fetchGame(gameId) else caffeine.get(gameId)!!
                 val game = dbGame.at(position)
                 ctx.json(aiRepository.analyze(dbGame.summary.gameType, game, ai, playerIndex)!!)
             }

@@ -3,7 +3,7 @@ package net.zomis.games.server2.ais
 import com.fasterxml.jackson.databind.ObjectMapper
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
-import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.dsl.impl.Game
 import net.zomis.games.server2.*
 import net.zomis.games.server2.games.GameStartedEvent
 import net.zomis.games.server2.games.ServerGame
@@ -13,7 +13,7 @@ import java.util.UUID
 import java.util.concurrent.Executors
 
 data class AIMoveRequest(val client: Client, val game: ServerGame)
-data class DelayedAIMoves(val moves: List<PlayerGameMoveRequest>)
+data class DelayedAIMoves(val move: PlayerGameMoveRequest)
 
 val ServerAIProvider = "server-ai"
 
@@ -53,16 +53,16 @@ class ServerAI(val gameType: String, val name: String, val perform: ServerGameAI
         })
         events.listen("ai move $name", AIMoveRequest::class, {it.client == client}, {event ->
             val game = event.game
-            val playerIndex = event.game.players.indices.filter { game.verifyPlayerIndex(client, it) }
-            if (playerIndex.isEmpty()) {
+            val playerIndices = event.game.players.indices.filter { game.verifyPlayerIndex(client, it) }
+            if (playerIndices.isEmpty()) {
                 return@listen
             }
             executor.submit {
                 try {
-                    val aiMoves = playerIndex.map {
+                    val aiMoves = playerIndices.map {
                         perform.invoke(game, it)
                     }
-                    aiMoves.filter { it.isNotEmpty() }.forEach {singleAIMoves ->
+                    aiMoves.filterNotNull().forEach {singleAIMoves ->
                         events.execute(DelayedAIMoves(singleAIMoves))
                     }
                 } catch (e: Exception) {
@@ -83,7 +83,7 @@ class ServerAI(val gameType: String, val name: String, val perform: ServerGameAI
 
 }
 
-fun PlayerGameMoveRequest.serialize(gameImpl: GameImpl<*>): PlayerGameMoveRequest {
+fun PlayerGameMoveRequest.serialize(gameImpl: Game<*>): PlayerGameMoveRequest {
     if (this.serialized) return this
     val serializedMove = gameImpl.actions.type(this.moveType)!!
             .actionType.serialize(this.move)

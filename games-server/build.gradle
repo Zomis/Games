@@ -1,5 +1,7 @@
 buildscript {
     ext.kotlin_version = "1.3.61"
+    ext.jupiter_version = "5.7.0"
+    ext.jackson_version = "2.11.3"
 
     repositories {
         mavenCentral()
@@ -29,9 +31,6 @@ repositories {
     maven {
         url "http://www.zomis.net/maven"
     }
-    maven {
-        url "http://stats.zomis.net/maven/snapshots"
-    }
     maven { url 'https://jitpack.io' } // KLogging
 }
 
@@ -50,23 +49,21 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-compiler-embeddable:$kotlin_version"
     compile "org.jetbrains.kotlin:kotlin-script-util:$kotlin_version"
     expectedBy project(":games-core")
+    compile "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.8"
 
-    compile group: 'commons-codec', name: 'commons-codec', version: '1.14'
-    compile "com.fasterxml.jackson.core:jackson-core:2.11.1"
-    compile "com.fasterxml.jackson.core:jackson-annotations:2.11.1"
-    compile "com.fasterxml.jackson.core:jackson-databind:2.11.1"
-    compile "com.fasterxml.jackson.module:jackson-module-kotlin:2.11.1"
-    compile 'com.beust:jcommander:1.78'
+    compile group: 'commons-codec', name: 'commons-codec', version: '1.15'
+    compile "com.fasterxml.jackson.core:jackson-core:$jackson_version"
+    compile "com.fasterxml.jackson.core:jackson-annotations:$jackson_version"
+    compile "com.fasterxml.jackson.core:jackson-databind:$jackson_version"
+    compile "com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version"
+    compile 'com.beust:jcommander:1.80'
     compile "org.java-websocket:Java-WebSocket:1.5.1"
     compile "log4j:log4j:1.2.17"
     compile 'org.slf4j:slf4j-log4j12:1.7.30'
     compile "com.github.lewik.klog:klog-jvm:$kotlin_version"
     compile "io.javalin:javalin:2.8.0"
-    compile "com.github.kittinunf.fuel:fuel:2.2.3"
-    compile "net.zomis:uttt-jvm:0.4.3"
-    compile "net.zomis:fights:0.3.0-SNAPSHOT"
-    compile 'net.zomis:scorers:0.3.0-SNAPSHOT'
-    compile group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: '1.11.816'
+    compile "com.github.kittinunf.fuel:fuel:2.3.0"
+    compile group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: '1.11.879'
     compile group: 'org.postgresql', name: 'postgresql', version: '42.2.14'
     compile 'com.zaxxer:HikariCP:3.4.5'
     compile 'com.github.ben-manes.caffeine:caffeine:2.8.5'
@@ -75,12 +72,33 @@ dependencies {
     runtime group: 'ai.djl.mxnet', name: 'mxnet-engine', version: '0.3.0'
     runtime group: 'ai.djl.mxnet', name: 'mxnet-native-auto', version: '1.6.0'
 
-    testCompile "org.junit.jupiter:junit-jupiter-api:5.6.2"
-    testCompile "org.junit.jupiter:junit-jupiter-params:5.6.2"
-    testRuntime "org.junit.jupiter:junit-jupiter-engine:5.6.2"
+    testCompile "org.junit.jupiter:junit-jupiter-api:$jupiter_version"
+    testCompile "org.junit.jupiter:junit-jupiter-params:$jupiter_version"
+    testRuntime "org.junit.jupiter:junit-jupiter-engine:$jupiter_version"
+    testCompile group: 'org.jetbrains.kotlinx', name: 'kotlinx-coroutines-test', version: '1.3.8'
 }
 
 clean {
     delete "$rootDir/documentation/INVITES.md"
     delete "$rootDir/documentation/LOGIN_AND_LOBBY.md"
+}
+
+task deployAws {
+    dependsOn "assembleShadowDist"
+    // gradlew :games-server:assembleShadowDist :games-server:deployAws --info
+    doLast {
+        copy {
+            from '.codedeploy/'
+            into 'build/libs'
+        }
+        exec {
+            workingDir 'build/libs'
+            commandLine 'aws', 'deploy', 'push', '--application-name', 'server2', '--description', "This is a revision for server2",
+                    '--ignore-hidden-files', '--s3-location', 's3://zomis/codedeploy-server2.zip', '--source', '.'
+        }
+        exec {
+            workingDir 'build/libs'
+            commandLine 'aws', 'deploy', 'create-deployment', '--application-name', 'server2', '--deployment-group-name', 'server2-backend', '--file-exists-behavior', 'OVERWRITE', '--s3-location', 'bucket=zomis,key=codedeploy-server2.zip,bundleType=zip'
+        }
+    }
 }

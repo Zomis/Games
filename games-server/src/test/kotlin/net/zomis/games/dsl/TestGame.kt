@@ -1,22 +1,22 @@
 package net.zomis.games.dsl
 
-import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.server2.ServerGames
 import org.junit.jupiter.api.Assertions
 
 object TestGame {
 
-    fun <E : Any> create(name: String, config: Any? = null): GameTest<E> {
+    fun <E : Any> create(name: String, config: Any? = null): GameAsserts<E> {
         val dsl = ServerGames.games[name] as GameSpec<E>
         val setup = GameSetupImpl(dsl)
         val impl = setup.createGame(2, config ?: setup.getDefaultConfig())
-        return GameTest(impl)
+        return GameAsserts(impl)
     }
 
 }
 
-class GameTest<T : Any>(val game: GameImpl<T>) {
+class GameAsserts<T : Any>(val game: Game<T>) {
 
     fun expectPossibleOptions(playerIndex: Int, actionType: String, expected: Int, vararg chosen: Any) {
         val actionInfo = game.actions.type(actionType)!!.actionInfoKeys(playerIndex, chosen.toList())

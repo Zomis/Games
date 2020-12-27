@@ -1,6 +1,9 @@
 <template>
   <div class="invite-by-url">
-    <AuthChoice :server="server" :onAuthenticated="onAuthenticated" />
+    <AuthChoice
+      :server="server"
+      :on-authenticated="onAuthenticated"
+    />
 
     <Invites />
   </div>

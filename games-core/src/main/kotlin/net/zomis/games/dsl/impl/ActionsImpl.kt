@@ -1,5 +1,6 @@
 package net.zomis.games.dsl.impl
 
+import net.zomis.games.PlayerEliminations
 import net.zomis.games.common.mergeWith
 import net.zomis.games.dsl.*
 import kotlin.reflect.KClass
@@ -11,6 +12,7 @@ interface GameLogicActionType<T : Any, P : Any> {
     fun replayAction(action: Actionable<T, P>, state: Map<String, Any>?)
     fun performAction(action: Actionable<T, P>)
     fun createAction(playerIndex: Int, parameter: P): Actionable<T, P>
+    fun actionInfoKeys(playerIndex: Int, previouslySelected: List<Any>): List<ActionInfoKey>
 }
 
 data class ActionInfo<T: Any, A: Any>(val actionType: ActionType<T, A>, val parameter: A?, val nextStep: Any?)
@@ -26,6 +28,7 @@ data class ActionSampleSize(val sampleSizes: List<Int>) {
 
 class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
     private val replayState: ReplayState,
+    private val eliminations: PlayerEliminations,
     val actionType: ActionType<T, P>,
     private val impl: GameLogicActionType<T, P>
 ) {
@@ -35,7 +38,6 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
         impl.replayAction(action, state)
     }
     fun perform(action: Actionable<T, P>) {
-        replayState.stateKeeper.clear()
         impl.performAction(action)
     }
     fun createAction(playerIndex: Int, parameter: P): Actionable<T, P> = impl.createAction(playerIndex, parameter)
@@ -49,11 +51,14 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
 
         val parameter = actionType.deserialize(actionOptionsContext, serialized)
         return if (parameter == null) {
+            // If there is serialization but no deserialization is specified,
+            // then check all available actions and match against those that serializes to the same value
             val actions = availableActions(actionOptionsContext.playerIndex, null).filter { action2 ->
                 actionType.serialize(action2.parameter) == serialized
             }.distinct()
             if (actions.size != 1) {
-                throw IllegalStateException("Actions available: ${actions.size} for player $playerIndex move $serialized")
+                throw IllegalStateException("Actions available: ${actions.size} for player $playerIndex " +
+                        "move ${this.actionType.name} $serialized")
             }
             actions.single()
         } else {
@@ -62,12 +67,10 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
     }
 
     fun actionOptionsContext(playerIndex: Int): ActionOptionsContext<T>
-        = ActionOptionsContext(model, this.actionType.name, playerIndex)
+        = ActionOptionsContext(model, this.actionType.name, playerIndex, eliminations, replayState)
 
     fun actionInfoKeys(playerIndex: Int, previouslySelected: List<Any>): ActionInfoByKey {
-        val ruleContext = impl as GameActionRuleContext<T, P>?
-            ?: throw UnsupportedOperationException("Impl class ${impl::class} not supported for actionType ${actionType.name}")
-        return ActionInfoByKey(ruleContext.actionInfoKeys(playerIndex, previouslySelected).groupBy { it.serialized })
+        return ActionInfoByKey(impl.actionInfoKeys(playerIndex, previouslySelected).groupBy { it.serialized })
     }
 
     val name: String
@@ -76,25 +79,39 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
         get() = actionType.parameterType
 }
 
+interface Actions<T: Any> {
+    val actionTypes: Set<String>
+    fun types(): Set<ActionTypeImplEntry<T, Any>>
+    operator fun get(actionType: String): ActionTypeImplEntry<T, Any>?
+    fun <A: Any> type(actionType: ActionType<T, A>): ActionTypeImplEntry<T, A>?
+    fun type(actionType: String): ActionTypeImplEntry<T, Any>?
+    fun <P : Any> type(actionType: String, clazz: KClass<P>): ActionTypeImplEntry<T, P>?
+    fun allActionInfo(playerIndex: Int, previouslySelected: List<Any>): ActionInfoByKey {
+        return types().fold(ActionInfoByKey(emptyMap())) { acc, next ->
+            acc + next.actionInfoKeys(playerIndex, previouslySelected)
+        }
+    }
+}
+
 class ActionsImpl<T : Any>(
     private val model: T,
-    private val rules: GameRulesContext<T>,
+    private val rules: GameActionRulesContext<T>,
     private val replayState: ReplayState
-) {
+): Actions<T> {
 
-    val actionTypes: Set<String> get() = rules.actionTypes()
+    override val actionTypes: Set<String> get() = rules.actionTypes()
 
-    fun types(): Set<ActionTypeImplEntry<T, Any>> {
+    override fun types(): Set<ActionTypeImplEntry<T, Any>> {
         return actionTypes.map { type(it)!! }.toSet()
     }
 
-    operator fun get(actionType: String): ActionTypeImplEntry<T, Any>? {
+    override operator fun get(actionType: String): ActionTypeImplEntry<T, Any>? {
         return type(actionType)
     }
 
-    fun <A: Any> type(actionType: ActionType<T, A>) = rules.actionType(actionType.name) as ActionTypeImplEntry<T, A>
-    fun type(actionType: String): ActionTypeImplEntry<T, Any>? = rules.actionType(actionType)
-    fun <P : Any> type(actionType: String, clazz: KClass<P>): ActionTypeImplEntry<T, P>? {
+    override fun <A: Any> type(actionType: ActionType<T, A>) = rules.actionType(actionType.name) as ActionTypeImplEntry<T, A>
+    override fun type(actionType: String): ActionTypeImplEntry<T, Any>? = rules.actionType(actionType)
+    override fun <P : Any> type(actionType: String, clazz: KClass<P>): ActionTypeImplEntry<T, P>? {
         val entry = this.type(actionType)
         if (entry != null) {
             if (entry.actionType.parameterType != clazz) {
@@ -103,12 +120,6 @@ class ActionsImpl<T : Any>(
             return this.type(actionType) as ActionTypeImplEntry<T, P>
         }
         return null
-    }
-
-    fun allActionInfo(playerIndex: Int, previouslySelected: List<Any>): ActionInfoByKey {
-        return types().fold(ActionInfoByKey(emptyMap())) { acc, next ->
-            acc + next.actionInfoKeys(playerIndex, previouslySelected)
-        }
     }
 
 }

@@ -6,7 +6,7 @@ import kotlin.random.Random
 
 interface QStore<S> {
     fun getOrDefault(key: S, defaultValue: Double): Double
-    fun put(ket: S, value: Double)
+    fun put(key: S, value: Double)
     fun size(): Long
 }
 

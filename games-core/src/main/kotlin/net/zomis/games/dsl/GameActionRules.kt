@@ -5,7 +5,7 @@ import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.impl.ActionOptionsContext
 import kotlin.reflect.KClass
 
-interface GameRules<T : Any> {
+interface GameActionRules<T : Any> {
     val allActions: GameAllActionsRule<T>
     fun <A : Any> action(actionType: ActionType<T, A>): GameActionRule<T, A>
     fun <A : Any> action(actionType: ActionType<T, A>, ruleSpec: GameActionSpecificationScope<T, A>.() -> Unit)
@@ -19,17 +19,23 @@ interface GameStartScope<T : Any> {
     val replayable: ReplayableScope
 }
 
-interface SecretLogging<T : Any, A : Any> {
+interface LogSecretScope<T : Any> {
+    fun publicLog(logging: LogScope<T>.() -> String)
+}
+interface LogSecretActionScope<T : Any, A : Any> {
     fun publicLog(logging: LogActionScope<T, A>.() -> String)
 }
-interface LogActionScope<T : Any, A : Any> {
+interface LogScope<T : Any> {
     val game: T
-    val player: String
-    val action: A
     fun obj(value: Any): String
     fun player(value: PlayerIndex): String
+    fun players(playerIndices: Iterable<Int>): String
     fun viewLink(text: String, type: String, view: Any): String
     fun highlight(values: List<Any>)
+}
+interface LogActionScope<T : Any, A : Any>: LogScope<T> {
+    val player: String
+    val action: A
 }
 interface ActionRuleScope<T : Any, A : Any> : GameUtils, ActionOptionsScope<T> {
     override val game: T
@@ -39,7 +45,7 @@ interface ActionRuleScope<T : Any, A : Any> : GameUtils, ActionOptionsScope<T> {
     override val playerEliminations: PlayerEliminations
         get() = eliminations
     fun log(logging: LogActionScope<T, A>.() -> String)
-    fun logSecret(player: PlayerIndex, logging: LogActionScope<T, A>.() -> String): SecretLogging<T, A>
+    fun logSecret(player: PlayerIndex, logging: LogActionScope<T, A>.() -> String): LogSecretActionScope<T, A>
 }
 interface ActionOptionsScope<T : Any> {
     val game: T

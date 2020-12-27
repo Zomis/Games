@@ -22,18 +22,18 @@ object URScorers {
             ),
             scorers.ai("#AI_KnockoutAndFlower",
                 knockout.weight(5), gotoFlower.weight(2)
-            ),
-            scorers.ai("#AI_MonteCarlo",
-                monteCarloScorer(monteCarloProvider(1000, monteCarloSimulatingAI()))
             )
+/*            scorers.ai("#AI_MonteCarlo",
+                monteCarloScorer(monteCarloProvider(1000, monteCarloSimulatingAI()))
+            )*/
         )
-
+/*
     fun monteCarloProvider(fights: Int, simulatingAI: ScorerController<RoyalGameOfUr>) = scorers.provider { ctx ->
         println("Invoking MonteCarloProvider for $fights fights")
         val monteCarloAI = URScorerMonteCarlo(fights, simulatingAI)
         monteCarloAI.positionToMove(ctx.model)
     }
-
+*/
     fun monteCarloScorer(provider: ScorerAnalyzeProvider<RoyalGameOfUr, Int>) = scorers.actionConditional(DslUR.move) {
         val best = require(provider)!!
         best == action.parameter

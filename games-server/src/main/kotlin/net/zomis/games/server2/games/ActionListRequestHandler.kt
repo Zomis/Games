@@ -3,10 +3,8 @@ package net.zomis.games.server2.games
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
-import net.zomis.games.dsl.impl.ActionInfo
 import net.zomis.games.dsl.impl.ActionInfoByKey
-import net.zomis.games.dsl.impl.ActionTypeImplEntry
-import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.dsl.impl.Game
 import net.zomis.games.server2.Client
 import net.zomis.games.server2.ClientJsonMessage
 import net.zomis.games.server2.getTextOrDefault
@@ -17,7 +15,7 @@ class ActionListRequestHandler(private val game: ServerGame?) {
     private val logger = KLoggers.logger(this)
     private val mapper = jacksonObjectMapper()
 
-    fun <T: Any> availableActionsMessage(obj: GameImpl<T>, playerIndex: Int, moveType: String?, chosen: List<Any>?): FrontendActionInfo {
+    fun <T: Any> availableActionsMessage(obj: Game<T>, playerIndex: Int, moveType: String?, chosen: List<Any>?): FrontendActionInfo {
         return if (moveType != null) {
             val actionType = obj.actions.type(moveType)!!
             val actionInfo = actionType.actionInfoKeys(playerIndex, chosen ?: emptyList())
@@ -40,16 +38,12 @@ class ActionListRequestHandler(private val game: ServerGame?) {
             "gameType" to game.gameType.type,
             "gameId" to game.gameId,
             "playerIndex" to actionParams.playerIndex,
-            "actions" to actionParams.actions.keys.keys
+            "actions" to if (game.obj!!.game.isGameOver()) emptyMap<String, Any>() else actionParams.actions.keys.keys
         ))
     }
 
     private fun actionParams(message: ClientJsonMessage): ActionList {
-        if (game!!.obj !is GameImpl<*>) {
-            throw IllegalArgumentException("Game ${game.gameId} of type ${game.gameType.type} is not a valid DSL game")
-        }
-
-        val obj = game.obj as GameImpl<Any>
+        val obj = game!!.obj!!.game
         val playerIndex = message.data.getTextOrDefault("playerIndex", "-1").toInt()
         if (!game.verifyPlayerIndex(message.client, playerIndex)) {
             throw IllegalArgumentException("Client ${message.client} does not have index $playerIndex in Game ${game.gameId} of type ${game.gameType.type}")

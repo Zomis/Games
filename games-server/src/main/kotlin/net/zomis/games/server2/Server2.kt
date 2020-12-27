@@ -50,6 +50,9 @@ class ServerConfig {
     @Parameter(names = ["-db"], description = "Use database")
     var database = false
 
+    @Parameter(names = ["-statsDB"], description = "Use statistics database (requires database as well)")
+    var statsDB = false
+
     @Parameter(names = arrayOf("-wsPortSSL"), description = "Port for websockets and API with SSL (only used if certificate options are set)")
     var webSocketPortSSL = 0
 
@@ -71,11 +74,16 @@ class ServerConfig {
     @Parameter(names = ["-googleClientSecret"], description = "Google OAuth Client Secret")
     var googleClientSecret: String = ""
 
+    @Parameter(names = ["-clients"], description = "Client URLs, can take multiple values separated by semicolon ';'")
+    var clientURLs = "http://localhost:8080;https://games.zomis.net"
+
     var idGenerator: GameIdGenerator = { UUID.randomUUID().toString() }
 
     fun useSecureWebsockets(): Boolean {
         return certificatePath != null
     }
+
+    fun useOAuth(): Boolean = this.githubClient.isNotEmpty() || this.googleClientId.isNotEmpty()
 }
 
 /*
@@ -111,7 +119,8 @@ class Server2(val events: EventSystem) {
 
     fun start(config: ServerConfig): Server2 {
         val javalin = JavalinFactory.javalin(config)
-            .enableCorsForOrigin("http://localhost:8080", "https://games.zomis.net")
+            .enableCorsForOrigin(*config.clientURLs.split(';').toTypedArray())
+        javalin.get("/ping") { ctx -> ctx.result("pong") }
         logger.info("Configuring Javalin at port ${config.webSocketPort} (SSL ${config.webSocketPortSSL})")
 
         Runtime.getRuntime().addShutdownHook(Thread { events.execute(ShutdownEvent("runtime shutdown hook")) })
@@ -124,9 +133,12 @@ class Server2(val events: EventSystem) {
             events.execute(ClientJsonMessage(it.client, mapper.readTree(it.message)))
         })
 
-        features.add { feat, ev -> gameSystem.setup(feat, ev, config.idGenerator) }
+        features.add { feat, ev -> gameSystem.setup(feat, ev, config.idGenerator) { dbIntegration } }
 
-        dslGames.forEach { (name, spec) -> events.with(DslGameSystem(name, spec as GameSpec<Any>)::setup) }
+        dslGames.values.forEach { spec ->
+            val dslGameSystem = DslGameSystem(spec as GameSpec<Any>) { dbIntegration }
+            events.with(dslGameSystem::setup)
+        }
 
         features.add(SimpleMatchMakingSystem()::setup)
         events.with(ServerConsole()::register)
@@ -135,7 +147,7 @@ class Server2(val events: EventSystem) {
             this.messageRouter.handle(it.data["route"].asText(), it)
         }
         val executor = Executors.newScheduledThreadPool(2)
-        if (config.githubClient.isNotEmpty()) {
+        if (config.useOAuth()) {
             LinAuth(javalin, config.githubConfig(), config.googleConfig()).register()
         }
         val aiRepository = AIRepository()
@@ -144,7 +156,9 @@ class Server2(val events: EventSystem) {
             this.dbIntegration = dbIntegration
             features.add(dbIntegration::register)
             LinReplay(aiRepository, dbIntegration).setup(javalin)
-            LinStats(StatsDB(dbIntegration.superTable)).setup(events, javalin)
+            if (config.statsDB) {
+                LinStats(StatsDB(dbIntegration.superTable)).setup(events, javalin)
+            }
         }
         val authCallback = AuthorizationCallback { dbIntegration?.superTable?.cookieAuth(it) }
         messageRouter.route("auth", AuthorizationSystem(events, authCallback).router)
@@ -218,7 +232,7 @@ object Main {
                     .trim().split(" ").toTypedArray()
                 cmd.parse(*fileArgs)
             } else {
-                logger.info("Using config from command line")
+                logger.info("${configFile.name} not found, using config from command line")
                 cmd.parse(*args)
             }
         } catch (e: ParameterException) {
@@ -227,6 +241,11 @@ object Main {
             System.exit(1)
         }
 
-        Server2(EventSystem()).start(config)
+        try {
+            Server2(EventSystem()).start(config)
+        } catch (e: Exception) {
+            logger.error(e) { "Unable to start server" }
+            System.exit(2)
+        }
     }
 }

@@ -1,7 +1,18 @@
 <template>
   <div :class="['game', 'player-' + currentPlayer]">
-    <component :is="viewComponent" :view="view" :actions="actions" :players="gameInfo.players" :context="context" />
-    <v-btn @click="cancelAction()" :disabled="actionChoice === null">Reset Action</v-btn>
+    <component
+      :is="viewComponent"
+      :view="view"
+      :actions="actions"
+      :players="gameInfo.players"
+      :context="context"
+    />
+    <v-btn
+      :disabled="actionChoice === null"
+      @click="cancelAction()"
+    >
+      Reset Action
+    </v-btn>
   </div>
 </template>
 <script>

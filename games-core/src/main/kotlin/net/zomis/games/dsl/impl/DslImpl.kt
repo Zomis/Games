@@ -3,13 +3,14 @@ package net.zomis.games.dsl.impl
 import net.zomis.games.PlayerEliminations
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
+import net.zomis.games.dsl.flow.GameFlowImpl
 import kotlin.reflect.KClass
 
-class GameModelContext<T, C> : GameModel<T, C> {
+class GameModelContext<T: Any, C> : GameModel<T, C> {
     var playerCount: IntRange = 2..2
     lateinit var factory: GameFactoryScope<C>.(C?) -> T
     lateinit var config: () -> C
-    var onStart: ReplayableScope.(T) -> Unit = {}
+    var onStart: GameStartScope<T>.() -> Unit = {}
 
     override fun players(playerCount: IntRange) {
         this.playerCount = playerCount
@@ -27,7 +28,7 @@ class GameModelContext<T, C> : GameModel<T, C> {
         this.factory = factory
     }
 
-    override fun onStart(effect: ReplayableScope.(T) -> Unit) {
+    override fun onStart(effect: GameStartScope<T>.() -> Unit) {
         this.onStart = effect
     }
 }
@@ -140,11 +141,12 @@ class GameViewContext<T : Any>(
 }
 
 class StateKeeper {
+    // A single action needs to have multiple keys, so we can't use callback directly.
     private val currentAction = mutableMapOf<String, Any>()
     private val logEntries = mutableListOf<ActionLogEntry>()
     var replayMode = false
 
-    fun lastMoveState(): Map<String, Any?> = currentAction.toMap()
+    fun lastMoveState(): Map<String, Any> = currentAction.toMap()
     fun clear() {
         currentAction.clear()
         replayMode = false
@@ -169,8 +171,10 @@ class StateKeeper {
     }
 
     fun logs(): List<ActionLogEntry> = logEntries.toList()
-    fun addLogs(logs: MutableList<ActionLogEntry>) {
-        logEntries.addAll(logs)
+    fun clearLogs() { logEntries.clear() }
+
+    fun log(log: ActionLogEntry) {
+        logEntries.add(log)
     }
 }
 class ReplayState(val stateKeeper: StateKeeper, override val playerEliminations: PlayerEliminations): EffectScope, ReplayableScope {
@@ -216,6 +220,10 @@ class GameDslContext<T : Any> : GameDsl<T> {
     lateinit var modelDsl: GameModelDsl<T, Any>
     var viewDsl: GameViewDsl<T>? = null
     var rulesDsl: GameRulesDsl<T>? = null
+    var flowRulesDsl: GameFlowRulesDsl<T>? = null
+    var flowDsl: GameFlowDsl<T>? = null
+    var actionRulesDsl: GameActionRulesDsl<T>? = null
+    val testCases: MutableList<GameTestCaseContext<T>> = mutableListOf()
 
     val model = GameModelContext<T, Any>()
 
@@ -232,7 +240,32 @@ class GameDslContext<T : Any> : GameDsl<T> {
         this.viewDsl = viewDsl
     }
 
-    override fun rules(rulesDsl: GameRulesDsl<T>) {
+    override fun actionRules(actionRulesDsl: GameActionRulesDsl<T>) {
+        this.actionRulesDsl = actionRulesDsl
+    }
+
+    override fun testCase(players: Int, testDsl: GameTestDsl<T>) {
+        this.testCases.add(GameTestCaseContext(players, testDsl))
+    }
+
+    override fun gameRules(rulesDsl: GameRulesDsl<T>) {
         this.rulesDsl = rulesDsl
     }
+
+    override fun gameFlow(flowDsl: GameFlowDsl<T>) {
+        this.flowDsl = flowDsl
+    }
+
+    fun createGame(playerCount: Int, config: Any, stateKeeper: StateKeeper): Game<T> {
+        return if (this.flowDsl == null) {
+            GameImpl(this, playerCount, config, stateKeeper)
+        } else {
+            GameFlowImpl(this, playerCount, config, stateKeeper)
+        }
+    }
+
+    override fun gameFlowRules(flowRulesDsl: GameFlowRulesDsl<T>) {
+        this.flowRulesDsl = flowRulesDsl
+    }
+
 }

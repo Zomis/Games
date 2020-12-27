@@ -2,18 +2,14 @@ package net.zomis.games.server2.ais
 
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
-import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.dsl.impl.Game
 import net.zomis.games.impl.TTQuixoController
 import net.zomis.games.impl.ttt.TTT3D
 import net.zomis.games.impl.ttt.TTT3DPiece
+import net.zomis.games.impl.ttt.ultimate.*
+import net.zomis.games.server2.games.impl.toWinResult
 import net.zomis.games.server2.games.GameTypeRegisterEvent
 import net.zomis.games.server2.games.impl.TTConnect4AlphaBeta
-import net.zomis.games.server2.games.impl.toWinResult
-import net.zomis.tttultimate.TTBase
-import net.zomis.tttultimate.TTPlayer
-import net.zomis.tttultimate.TTWinCondition
-import net.zomis.tttultimate.games.TTClassicControllerWithGravity
-import net.zomis.tttultimate.games.TTController
 
 enum class AlphaBetaSpeedMode(val nameSuffix: String, val depthRemainingBonus: Double) {
     NORMAL("", 0.0),
@@ -27,7 +23,7 @@ data class AlphaBetaAIFactory<S: Any>(
     val namePrefix: String,
     val maxLevel: Int,
     val useSpeedModes: Boolean,
-    val heuristic: (GameImpl<S>, Int) -> Double
+    val heuristic: (Game<S>, Int) -> Double
 ) {
     fun aiName(level: Int, speedMode: AlphaBetaSpeedMode)
         = "#AI_${this.namePrefix}_" + this.gameType + "_" + level + speedMode.nameSuffix
@@ -57,15 +53,14 @@ class ServerAlphaBetaAIs(private val aiRepository: AIRepository) {
     fun heuristicTTT3D(game: TTT3D, myIndex: Int): Double {
         val me = if (myIndex == 0) TTT3DPiece.X else TTT3DPiece.O
         val opp = me.opponent()
-        var result = 0.0
-        if (game.findWinner() != null) {
-            result = if (game.findWinner() == me) 100.0 else -100.0
+        var result = if (game.findWinner() != null) {
+            if (game.findWinner() == me) 100.0 else -100.0
         } else {
             val myWins = game.winConditions.filter { it.canWin(me) }.groupBy { it.emptySpaces() }.mapValues { it.value.size }
             val opWins = game.winConditions.filter { it.canWin(opp) }.groupBy { it.emptySpaces() }.mapValues { it.value.size }
             val positive = (myWins[1]?:0) * 4 + (myWins[2]?:0) * 2 + (myWins[3]?:0) * 0.1
             val negative = (opWins[1]?:0) * 4 + (opWins[2]?:0) * 2 + (opWins[3]?:0) * 0.1
-            result = positive - negative
+            positive - negative
         }
         return result
     }
@@ -92,7 +87,7 @@ class ServerAlphaBetaAIs(private val aiRepository: AIRepository) {
         } / 10.0 // Divide by 10 to work with lower numbers
     }
 
-    fun <T: Any> model(modelHeuristic: (game: T, myIndex: Int) -> Double): (GameImpl<T>, Int) -> Double =
+    fun <T: Any> model(modelHeuristic: (game: T, myIndex: Int) -> Double): (Game<T>, Int) -> Double =
             { gameImpl, index -> modelHeuristic(gameImpl.model, index) }
 
     fun setup(events: EventSystem) {

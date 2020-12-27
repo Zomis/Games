@@ -9,7 +9,7 @@ object TTT3DGame {
     val factory = GameCreator(TTT3D::class)
     val playAction = factory.action("play", Point::class)
     val SIZE = 4
-    val game = factory.game("TTT3D") {
+    val game = factory.game("DSL-TTT3D") {
         val grid = gridSpec<Array<TTT3DPoint>> {
             size(SIZE, SIZE)
             getter { x, y -> model.pieces[y][x] }

@@ -1,8 +1,8 @@
 package net.zomis.games.server2.ais.gamescorers
 
+import net.zomis.games.common.Direction8
 import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.impl.ArtaxGame
-import net.zomis.tttultimate.Direction8
 
 object ArtaxScorers {
 

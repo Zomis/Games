@@ -1,30 +1,51 @@
 <template>
-    <div>
-        <v-card class="floatie" v-show="showRight">
-            <v-card-text>
-                <v-text-field v-model="aiName" label="AI Name" />
-                <v-text-field v-model="playerIndex" label="Player Index" />
+  <div>
+    <v-card
+      v-show="showRight"
+      class="floatie"
+    >
+      <v-card-text>
+        <v-text-field
+          v-model="aiName"
+          label="AI Name"
+        />
+        <v-text-field
+          v-model="playerIndex"
+          label="Player Index"
+        />
 
-                <div>
-                    <p>Heuristic: {{ heuristic }}</p>
-                </div>
-            </v-card-text>
+        <div>
+          <p>Heuristic: {{ heuristic }}</p>
+        </div>
+      </v-card-text>
 
-            <v-list class="transparent">
-                <v-list-item v-for="(action, index) in actionsEvaluated" :key="index">
-                    <v-list-item-title>{{ action.parameter }}</v-list-item-title>
+      <v-list class="transparent">
+        <v-list-item
+          v-for="(action, index) in actionsEvaluated"
+          :key="index"
+        >
+          <v-list-item-title>{{ action.parameter }}</v-list-item-title>
 
-                    <v-list-item-subtitle class="text-right">
-                        {{ action.score }}
-                    </v-list-item-subtitle>
-                </v-list-item>
-            </v-list>
-            <v-card-actions>
-                <v-btn @click="updateActions()" />
-            </v-card-actions>
-        </v-card>
-        <v-btn fixed small bottom right color="pink" fab dark @click="showRight = !showRight" />
-    </div>
+          <v-list-item-subtitle class="text-right">
+            {{ action.score }}
+          </v-list-item-subtitle>
+        </v-list-item>
+      </v-list>
+      <v-card-actions>
+        <v-btn @click="updateActions()" />
+      </v-card-actions>
+    </v-card>
+    <v-btn
+      fixed
+      small
+      bottom
+      right
+      color="pink"
+      fab
+      dark
+      @click="showRight = !showRight"
+    />
+  </div>
 </template>
 <script>
 import axios from "axios";

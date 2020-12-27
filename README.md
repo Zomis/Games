@@ -1,5 +1,7 @@
 # Zomis' Games
 
+[Join us on Discord!](https://discord.gg/GfXFUvc)
+
 One of the goals with this project is to easily create implementations of several turn-based multiplayer games, both logic and GUI.
 
 This project is a flexible server meant for games. The main idea is to re-use a lot of things between games, so that you don't have to implement these things for every game:
@@ -47,9 +49,8 @@ OR
 
 ### Running the client locally:
 
-    ./gradlew :games-js:assemble # this compiles Kotlin code to JavaScript
     cd games-vue-client
-    npm run serve
+    npm install && npm run serve
 
 ## Adding a new game
 

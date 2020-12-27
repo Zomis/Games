@@ -3,13 +3,10 @@ package net.zomis.games.impl.ttt
 import net.zomis.games.WinResult
 import net.zomis.games.common.Point
 import net.zomis.games.dsl.GameCreator
-import net.zomis.games.dsl.GameRulesDsl
+import net.zomis.games.dsl.GameActionRulesDsl
 import net.zomis.games.dsl.GameViewDsl
 import net.zomis.games.dsl.GridDsl
-import net.zomis.tttultimate.TTBase
-import net.zomis.tttultimate.TTFactories
-import net.zomis.tttultimate.TTPlayer
-import net.zomis.tttultimate.games.*
+import net.zomis.games.impl.ttt.ultimate.*
 
 data class TTOptions(val m: Int, val n: Int, val k: Int)
 fun TTPlayer.index(): Int {
@@ -24,7 +21,7 @@ fun TTPlayer.index(): Int {
 
 object DslTTT {
     val factory = GameCreator(TTController::class)
-    val playAction = factory.action("play", TTBase::class).serialization(Point::class, { Point(it.globalX, it.globalY) }, {
+    val playAction = factory.action("play", TTBase::class).serialization({ Point(it.globalX, it.globalY) }, {
         game.game.getSmallestTile(it.x, it.y)!!
     })
     val game = factory.game("DSL-TTT") {
@@ -113,7 +110,7 @@ object DslTTT {
         }
     }
 
-    private fun ttRules(): GameRulesDsl<TTController> = {
+    private fun ttRules(): GameActionRulesDsl<TTController> = {
         allActions.precondition { playerIndex == game.currentPlayer.index() }
         action(playAction) {
             options { allSmallest(game.game).asIterable() }

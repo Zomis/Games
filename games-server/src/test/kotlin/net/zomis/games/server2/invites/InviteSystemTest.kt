@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
+import net.zomis.games.example.TestGames
 import net.zomis.games.server2.ClientJsonMessage
 import net.zomis.games.server2.ClientLoginEvent
 import net.zomis.games.server2.MessageRouter
@@ -79,8 +80,8 @@ class InviteSystemTest {
     @Test
     fun fullInvite() {
         events.with(LobbySystem(features)::setup) // We need to lookup player by name
-        events.execute(GameTypeRegisterEvent("TestGameType"))
-        events.execute(GameTypeRegisterEvent("OtherGameType"))
+        events.execute(GameTypeRegisterEvent(TestGames.testGameType))
+        events.execute(GameTypeRegisterEvent(TestGames.otherGameType))
         host = FakeClient().apply { updateInfo("TestClientA", UUID.fromString("00000000-0000-0000-0000-000000000000")) }
         invitee = FakeClient().apply { updateInfo("TestClientB", UUID.fromString("11111111-1111-1111-1111-111111111111")) }
 
@@ -121,7 +122,7 @@ class InviteSystemTest {
 
     @Test
     fun inviteAccepted() {
-        events.execute(GameTypeRegisterEvent("MyGame"))
+        events.execute(GameTypeRegisterEvent(TestGames.gameType("MyGame")))
         events.execute(ClientLoginEvent(host, host.name!!, host.name!!, "tests", "token"))
         events.execute(ClientLoginEvent(invitee, invitee.name!!, invitee.name!!, "tests", "token2"))
         expect.event(events to GameStartedEvent::class).condition { true }
@@ -145,7 +146,7 @@ class InviteSystemTest {
 
     @Test
     fun inviteDeclined() {
-        events.execute(GameTypeRegisterEvent("MyGame"))
+        events.execute(GameTypeRegisterEvent(TestGames.gameType("MyGame")))
         val invite = system.createInvite("MyGame", "inv-1", inviteOptions, host, listOf(invitee))
         Assertions.assertEquals("""{"type":"Invite","host":"Host","game":"MyGame","inviteId":"inv-1"}""", invitee.nextMessage())
 

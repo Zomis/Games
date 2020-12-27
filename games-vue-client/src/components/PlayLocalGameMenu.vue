@@ -1,13 +1,27 @@
 <template>
-  <v-container fluid class="game-menu">
+  <v-container
+    fluid
+    class="game-menu"
+  >
     <v-row>
-      <v-col cols="12" md="6" lg="4" v-for="gameType in availableGames" :key="gameType">
+      <v-col
+        v-for="gameType in availableGames"
+        :key="gameType"
+        cols="12"
+        md="6"
+        lg="4"
+      >
         <v-card class="games">
-          <v-toolbar color="cyan" dark>
+          <v-toolbar
+            color="cyan"
+            dark
+          >
             <v-toolbar-title>{{ displayNames[gameType] }}</v-toolbar-title>
-            <v-spacer></v-spacer>
+            <v-spacer />
             <router-link :to="'/local/' + gameType">
-              <v-btn rounded>Play</v-btn>
+              <v-btn rounded>
+                Play
+              </v-btn>
             </router-link>
           </v-toolbar>
         </v-card>

@@ -1,18 +1,31 @@
 <template>
   <v-container fluid>
     <v-row>
-      <v-col v-for="colorData in view.colors" :key="'colors-' + colorData.color">
+      <v-col
+        v-for="colorData in view.colors"
+        :key="'colors-' + colorData.color"
+      >
         <v-card>
           <v-card-title>{{ colorData.color }}</v-card-title>
           <v-card-text>
             <CardZone>
-              <HanabiCard v-for="card in colorData.board" class="animate" :key="card.id" :card="card" :highlight="actions.highlights[card.id]" />
+              <HanabiCard
+                v-for="card in colorData.board"
+                :key="card.id"
+                class="animate"
+                :card="card"
+                :highlight="actions.highlights[card.id]"
+              />
             </CardZone>
             <v-divider />
             <v-row>Discard</v-row>
             <CardZone>
-              <div v-for="card in colorData.discard" class="discarded-card animate ma-1" :key="card.id"
-                  :class="{ ['color-' + card.color]: true, highlight: actions.highlights[card.id], failHighlight: actions.highlights[card.id + '-fail'] }">
+              <div
+                v-for="card in colorData.discard"
+                :key="card.id"
+                class="discarded-card animate ma-1"
+                :class="{ ['color-' + card.color]: true, highlight: actions.highlights[card.id], failHighlight: actions.highlights[card.id + '-fail'] }"
+              >
                 <span>{{ card.value }}</span>
               </div>
             </CardZone>
@@ -22,14 +35,33 @@
     </v-row>
 
     <v-row justify="center">
-      <v-col md="auto" v-for="player in otherPlayers" :key="'player-' + player.index" class="animate-all">
-        <v-card :class="{ 'current-player': view.currentPlayer == player.index }" class="animate-all">
+      <v-col
+        v-for="player in otherPlayers"
+        :key="'player-' + player.index"
+        md="auto"
+        class="animate-all"
+      >
+        <v-card
+          :class="{ 'current-player': view.currentPlayer == player.index }"
+          class="animate-all"
+        >
           <v-card-title>
-            <PlayerProfile :player="players[player.index]" :size="32" show-name />
+            <PlayerProfile
+              :player="players[player.index]"
+              :size="32"
+              show-name
+            />
           </v-card-title>
           <v-card-text>
             <CardZone>
-              <HanabiCard v-for="card in player.cards" class="list-complete-item animate" :key="card.id" :card="card" doubleView="true" :highlight="actions.highlights[card.id]" />
+              <HanabiCard
+                v-for="card in player.cards"
+                :key="card.id"
+                class="list-complete-item animate"
+                :card="card"
+                double-view="true"
+                :highlight="actions.highlights[card.id]"
+              />
             </CardZone>
             <!--
             <transition-group name="list-complete" tag="div" :duration="20000" :class="['card-zone', 'animation-list-complete']">
@@ -38,15 +70,29 @@
             -->
           </v-card-text>
           <v-card-actions>
-            <v-menu v-model="showMenu[player.index]" offset-y bottom z-index="100" :close-on-content-click="false">
+            <v-menu
+              v-model="showMenu[player.index]"
+              offset-y
+              bottom
+              z-index="100"
+              :close-on-content-click="false"
+            >
               <template v-slot:activator="{ on }">
-                <v-btn @click="clue(player.index)" :disabled="!myTurn || view.clues <= 0" v-on="on">
+                <v-btn
+                  :disabled="!myTurn || view.clues <= 0"
+                  @click="clue(player.index)"
+                  v-on="on"
+                >
                   Give clue
                 </v-btn>
               </template>
-              <v-btn v-for="(act, actIndex) in clueOptions" :key="actIndex"
-                   :class="[actIndex.includes('color-') ? actIndex : '']" @click="actions.perform('GiveClue', 'giveclue-' + actIndex)">
-                 {{ actIndex }}
+              <v-btn
+                v-for="(act, actIndex) in clueOptions"
+                :key="actIndex"
+                :class="[actIndex.includes('color-') ? actIndex : '']"
+                @click="actions.perform('GiveClue', 'giveclue-' + actIndex)"
+              >
+                {{ actIndex }}
               </v-btn>
             </v-menu>
           </v-card-actions>
@@ -58,39 +104,89 @@
       <!-- Buttons on each card: Discard, Play -->
       <v-col>
         <span>Clues</span>
-        <transition name="number-transition" mode="out-in"><p :key="view.clues">{{ view.clues }}</p></transition>
+        <transition
+          name="number-transition"
+          mode="out-in"
+        >
+          <p :key="view.clues">
+            {{ view.clues }}
+          </p>
+        </transition>
       </v-col>
       <v-col>
         <span>Fails</span>
-        <transition name="number-transition" mode="out-in"><p :key="view.fails">{{ view.fails }} / {{ view.maxFails }}</p></transition>
+        <transition
+          name="number-transition"
+          mode="out-in"
+        >
+          <p :key="view.fails">
+            {{ view.fails }} / {{ view.maxFails }}
+          </p>
+        </transition>
       </v-col>
       <v-col>
         <span>Cards Left</span>
-        <transition name="number-transition" mode="out-in"><p :key="view.cardsLeft">{{ view.cardsLeft }}</p></transition>
+        <transition
+          name="number-transition"
+          mode="out-in"
+        >
+          <p :key="view.cardsLeft">
+            {{ view.cardsLeft }}
+          </p>
+        </transition>
       </v-col>
       <v-col>
         <span>Score</span>
-        <transition name="number-transition" mode="out-in"><p :key="view.score">{{ view.score }}</p></transition>
+        <transition
+          name="number-transition"
+          mode="out-in"
+        >
+          <p :key="view.score">
+            {{ view.score }}
+          </p>
+        </transition>
+        <span>{{ view.scoreDescription }}</span>
       </v-col>
     </v-row>
 
-    <v-row justify="center" class="translate-animation-wrapper" v-if="view.hand">
+    <v-row
+      v-if="view.hand"
+      justify="center"
+      class="translate-animation-wrapper"
+    >
       <transition name="translate-animation">
-      <v-card :key="view.hand.index" class="animate-all player-hand" :class="{ 'current-player': view.currentPlayer == view.hand.index }">
-        <v-card-title>
-          <PlayerProfile :player="players[view.hand.index]" :size="32" show-name post-fix="(You)" />
-        </v-card-title>
-        <v-card-text>
-          <CardZone>
-            <HanabiCard v-for="(card, cardIndex) in view.hand.cards" class="animate" :key="card.id" :card="card" :action="myTurn ? btnActions : false" :index="cardIndex" :highlight="actions.highlights[card.id]" />
-          </CardZone>
-        </v-card-text>
-      </v-card>
+        <v-card
+          :key="view.hand.index"
+          class="animate-all player-hand"
+          :class="{ 'current-player': view.currentPlayer == view.hand.index }"
+        >
+          <v-card-title>
+            <PlayerProfile
+              :player="players[view.hand.index]"
+              :size="32"
+              show-name
+              post-fix="(You)"
+            />
+          </v-card-title>
+          <v-card-text>
+            <CardZone>
+              <HanabiCard
+                v-for="(card, cardIndex) in view.hand.cards"
+                :key="card.id"
+                class="animate"
+                :card="card"
+                :action="myTurn ? btnActions : false"
+                :index="cardIndex"
+                :highlight="actions.highlights[card.id]"
+              />
+            </CardZone>
+          </v-card-text>
+        </v-card>
       </transition>
     </v-row>
 
     <v-snackbar v-model="snackbar">
-      {{snackbarText}}
+      {{ snackbarText }}
     </v-snackbar>
   </v-container>
 </template>

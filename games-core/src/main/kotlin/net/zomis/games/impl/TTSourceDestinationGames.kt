@@ -1,15 +1,15 @@
 package net.zomis.games.impl
 
 import net.zomis.games.WinResult
+import net.zomis.games.common.Direction8
 import net.zomis.games.common.Point
 import net.zomis.games.common.PointMove
 import net.zomis.games.dsl.*
 import net.zomis.games.impl.ttt.TTOptions
 import net.zomis.games.impl.ttt.index
-import net.zomis.tttultimate.Direction8
-import net.zomis.tttultimate.TTBase
-import net.zomis.tttultimate.TTFactories
-import net.zomis.tttultimate.TTPlayer
+import net.zomis.games.impl.ttt.ultimate.TTBase
+import net.zomis.games.impl.ttt.ultimate.TTFactories
+import net.zomis.games.impl.ttt.ultimate.TTPlayer
 
 abstract class TTControllerSourceDestination(val board: TTBase) {
     var currentPlayer: TTPlayer = TTPlayer.X
@@ -111,7 +111,7 @@ object TTSourceDestinationGames {
         view(ttView(grid))
     }
 
-    private fun ttRules(): GameRules<TTControllerSourceDestination>.() -> Unit = {
+    private fun ttRules(): GameActionRules<TTControllerSourceDestination>.() -> Unit = {
         allActions.precondition { playerIndex == game.currentPlayer.index() }
         action(moveAction) {
             choose {

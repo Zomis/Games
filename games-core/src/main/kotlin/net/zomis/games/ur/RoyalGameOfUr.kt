@@ -9,10 +9,10 @@ Fxxx  Fx
 */
 class RoyalGameOfUr {
 
-    constructor() {
+    constructor(piecesPerPlayer: Int = 7) {
         this.currentPlayer = 0
         this.roll = NOT_ROLLED
-        this.pieces = Array(2) { IntArray(7) }
+        this.pieces = Array(2) { IntArray(piecesPerPlayer) }
     }
 
     constructor(currentPlayer: Int, roll: Int, pieces: Array<IntArray>) {

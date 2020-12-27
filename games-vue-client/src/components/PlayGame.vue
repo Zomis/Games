@@ -1,10 +1,27 @@
 <template>
   <div class="game">
-    <component v-if="view" :is="viewComponent" :view="view" :actions="actions" :players="players" :context="context" />
-    <v-btn v-if="!isObserver" @click="clearActions()" :disabled="actionChoice === null">Reset Action</v-btn>
-    <ActionLog :logEntries="actionLogEntries" :onHighlight="highlight" :context="context" />
+    <component
+      :is="viewComponent"
+      v-if="view"
+      :view="view"
+      :actions="actions"
+      :players="players"
+      :context="context"
+    />
+    <v-btn
+      v-if="!isObserver"
+      :disabled="actionChoice === null"
+      @click="clearActions()"
+    >
+      Reset Action
+    </v-btn>
+    <ActionLog
+      :log-entries="actionLogEntries"
+      :on-highlight="highlight"
+      :context="context"
+    />
     <v-snackbar v-model="snackbar">
-      {{snackbarText}}
+      {{ snackbarText }}
     </v-snackbar>
   </div>
 </template>
@@ -46,6 +63,9 @@ export default {
     },
     highlight(highlight) {
       this.$store.dispatch("DslGameState/highlight", { gameInfo: this.gameInfo, highlights: highlight });
+    },
+    actionParameter(actionType, serializedParameter) {
+      this.$store.dispatch("DslGameState/action", { gameInfo: this.gameInfo, name: actionType, data: serializedParameter });
     },
     action(_, data) {
       let action = this.actionsAvailable[data]
@@ -95,6 +115,7 @@ export default {
         perform: this.action,
         performChosen: this.performChosenAction,
         available: this.actionsAvailable,
+        actionParameter: this.actionParameter,
         actionTypes: this.actionTypes,
         clear: this.clearActions,
         resetTo: this.resetActionsTo

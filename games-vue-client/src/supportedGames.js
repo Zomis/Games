@@ -1,7 +1,17 @@
-let gamejs = require("../../games-js/web/games-js");
-if (typeof gamejs["games-js"] !== "undefined") {
-  // This is needed when doing a production build, but is not used for `npm run dev` locally.
-  gamejs = gamejs["games-js"];
+let useGameJs = false
+let gamejs = undefined
+if (useGameJs) { // TODO: This condition doesn't quite work, it's required anyway during build process
+    // gamejs = require("../../games-js/web/games-js");
+    if (typeof gamejs["games-js"] !== "undefined") {
+        // This is needed when doing a production build, but is not used for `npm run dev` locally.
+        gamejs = gamejs["games-js"];
+    }
+}
+function dsl(lookup) {
+    if (gamejs) {
+        return lookup(gamejs)
+    }
+    return true
 }
 
 import PlayGame from "@/components/PlayGame";
@@ -9,10 +19,14 @@ import PlayGame from "@/components/PlayGame";
 import RoyalGameOfUR from "@/components/RoyalGameOfUR";
 import DungeonMayhem from "@/components/games/dungeon-mayhem/DungeonMayhem"
 import UTTT from "@/components/games/UTTT";
+import Coup from "@/components/games/Coup";
 import Hanabi from "@/components/games/Hanabi";
 import HanabiConfig from "@/components/games/hanabi/HanabiConfig";
 import Splendor from "@/components/games/splendor/Splendor";
-import TreeViewGame from "@/components/games/TreeViewGame";
+//import TreeViewGame from "@/components/games/TreeViewGame";
+import SetGame from "@/components/games/set/SetGame";
+import Decrypto from "@/components/games/words/Decrypto";
+import Dixit from "@/components/games/Dixit";
 import Skull from "@/components/games/skull/Skull";
 import DSLTTT from "@/components/games/DSLTTT";
 import TTT3D from "@/components/games/TTT3D";
@@ -93,8 +107,17 @@ function upgradeSpice(spice) {
 
 
 const supportedGames = {
+    "Dixit": {
+        dsl: true,
+        actions: {
+            story: () => "story",
+            place: () => "place",
+            vote: (card) => `vote-${card}`,
+        },
+        component: Dixit
+    },
     "Avalon": {
-        dsl: gamejs.net.zomis.games.impl.ResistanceAvalonGame.game,
+        dsl: dsl(g => g.net.zomis.games.impl.ResistanceAvalonGame.game),
         actions: {
             teamChoice: (missionNumber) => ({
                 key: 'mission-' + missionNumber,
@@ -109,15 +132,40 @@ const supportedGames = {
     },
     "DSL-UR": {
         displayName: "Royal Game of UR",
-        dsl: gamejs.net.zomis.games.impl.DslUR.gameUR,
+        dsl: dsl(g => g.net.zomis.games.impl.DslUR.gameUR),
         actions: {
             roll: () => "roll",
             move: (i) => `${i}`
         },
         component: RoyalGameOfUR,
     },
+    "Decrypto": {
+        dsl: true,
+        actions: {
+            chat: () => "chat",
+            guessCode: () => "guessCode",
+            giveClue: () => "giveClue"
+        },
+        component: Decrypto
+    },
+    "Coup": {
+        dsl: true,
+        actions: {
+            lose: (card) => `${card}`,
+            reveal: () => "reveal",
+            challenge: () => "challenge",
+            accept: () => "accept",
+            perform: (action) => ({
+                key: 'action-' + action,
+                next: (target) => `players/${target}`
+            }),
+            counteract: (counteract) => `counteract-${counteract}`,
+            putBack: (card) => `${card}`
+        },
+        component: Coup
+    },
     "Hanabi": {
-        dsl: gamejs.net.zomis.games.impl.HanabiGame.game,
+        dsl: dsl(g => g.net.zomis.games.impl.HanabiGame.game),
         configComponent: HanabiConfig,
         actions: {
             Play: (index) => "play-" + index,
@@ -137,12 +185,13 @@ const supportedGames = {
     },
     "Set": {
         dsl: true,
-        enabled: false,
+        enabled: true,
+        resetActions: false,
         actions: setActions,
-        component: TreeViewGame,
+        component: SetGame,
     },
     "Splendor": {
-        dsl: gamejs.net.zomis.games.impl.DslSplendor.splendorGame,
+        dsl: dsl(g => g.net.zomis.games.impl.DslSplendor.splendorGame),
         enabled: true,
         actions: splendorActions,
         component: Splendor,
@@ -170,18 +219,18 @@ const supportedGames = {
     },
     "DSL-Connect4": {
         displayName: "Connect Four",
-        dsl: gamejs.net.zomis.games.impl.ttt.DslTTT.gameConnect4,
+        dsl: dsl(g => g.net.zomis.games.impl.ttt.DslTTT.gameConnect4),
         actions: tttActions,
         component: DSLTTT,
     },
     "Quixo": {
         displayName: "Quixo",
-        dsl: gamejs.net.zomis.games.impl.TTSourceDestinationGames.gameQuixo,
+        dsl: dsl(g => g.net.zomis.games.impl.TTSourceDestinationGames.gameQuixo),
         actions: tttMoveActions,
         component: DSLTTT,
     },
     "Skull": {
-        dsl: gamejs.net.zomis.games.impl.SkullGame.game,
+        dsl: dsl(g => g.net.zomis.games.impl.SkullGame.game),
         actions: {
             play: (index) => "hand-" + index,
             bet: (index) => "bet-" + index,
@@ -194,7 +243,7 @@ const supportedGames = {
     },
     "LiarsDice": {
         displayName: "Liar's Dice",
-        dsl: gamejs.net.zomis.games.impl.LiarsDiceGame.game,
+        dsl: dsl(g => g.net.zomis.games.impl.LiarsDiceGame.game),
         actions: {
             bet: (amount) => ({
                 key: 'amount-' + amount,
@@ -206,7 +255,7 @@ const supportedGames = {
         component: LiarsDice
     },
     "Dungeon Mayhem": {
-        dsl: gamejs.net.zomis.games.impl.DungeonMayhemDsl.game,
+        dsl: dsl(g => g.net.zomis.games.impl.DungeonMayhemDsl.game),
         actions: {
             play: (index) => "play-" + index,
             target: (target) => "target:player-" + target.player + ';shield-' + target.shieldCard + ';discarded-' + target.discardedCard
@@ -217,31 +266,31 @@ const supportedGames = {
         component: DungeonMayhem
     },
     "Artax": {
-        dsl: gamejs.net.zomis.games.impl.ArtaxGame.gameArtax,
+        dsl: dsl(g => g.net.zomis.games.impl.ArtaxGame.gameArtax),
         actions: tttMoveActions,
         component: DSLTTT,
     },
     "DSL-Reversi": {
         displayName: "Reversi",
-        dsl: gamejs.net.zomis.games.impl.ttt.DslTTT.gameReversi,
+        dsl: dsl(g => g.net.zomis.games.impl.ttt.DslTTT.gameReversi),
         actions: tttActions,
         component: DSLTTT,
     },
     "DSL-TTT3D": {
         displayName: "3D Tic-Tac-Toe / Connect Four",
-        dsl: gamejs.net.zomis.games.impl.ttt.TTT3DGame.game,
+        dsl: dsl(g => g.net.zomis.games.impl.ttt.TTT3DGame.game),
         actions: tttActions,
         component: TTT3D,
     },
     "DSL-UTTT": {
         displayName: "Tic-Tac-Toe Ultimate",
-        dsl: gamejs.net.zomis.games.impl.ttt.DslTTT.gameUTTT,
+        dsl: dsl(g => g.net.zomis.games.impl.ttt.DslTTT.gameUTTT),
         actions: tttActions,
         component: UTTT,
     },
     "DSL-TTT": {
         displayName: "Tic-Tac-Toe",
-        dsl: gamejs.net.zomis.games.impl.ttt.DslTTT.game,
+        dsl: dsl(g => g.net.zomis.games.impl.ttt.DslTTT.game),
         actions: tttActions,
         component: DSLTTT,
     }
@@ -256,6 +305,9 @@ export default {
     displayName(gameType) {
         let game = supportedGames[gameType]
         return game && game.displayName ? game.displayName : gameType
+    },
+    enabledGamesTextValue() {
+        return this.enabledGameKeys().map(gameType => ({ text: this.displayName(gameType), value: `type/${gameType}`}))
     },
     storeModules() {
         let modules = {}

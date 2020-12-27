@@ -47,7 +47,7 @@ class InfiniteActionsTest {
     @Test
     fun limitedEvaluation() {
         val game = GamesImpl.game(game).setup().createGame(1, Unit)
-        val result = game.actions.type(combine)
+        val result = game.actions.type(combine)!!
             .availableActions(0, ActionSampleSize(listOf(2, 2, 2, 2)))
             .toList()
 

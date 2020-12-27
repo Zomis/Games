@@ -39,7 +39,7 @@ object GridWorldGame {
         val goals: Int, val fails: Int, val blocks: Int
     )
     val factory = GameCreator(GridWorldModel::class)
-    val gridWorldMove = factory.action("move", Direction4::class).serializer(Int::class) { it.order() }
+    val gridWorldMove = factory.action("move", Direction4::class).serializer { it.order() }
     val game = factory.game("GridWorld") {
         setup(GridWorldConfig::class) {
             players(1..1)
