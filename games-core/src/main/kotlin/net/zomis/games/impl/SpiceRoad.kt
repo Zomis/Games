@@ -170,7 +170,16 @@ class SpiceRoadGameModel(val playerCount: Int) {
         var spiceOnMe = Caravan()
         fun toStateString(): String = "$upgrade $gain ${trade?.first}->${trade?.second}"
 
-        fun toViewable(): Map<String, Any?> = mapOf("upgrade" to upgrade, "gain" to gain?.toViewable(), "trade" to if (trade == null) null else mapOf("give" to trade.first.toViewable(), "get" to trade.second.toViewable()), "bonusSpice" to spiceOnMe.toViewable())
+        fun toViewable(): Map<String, Any?> = mapOf(
+            "upgrade" to upgrade,
+            "gain" to gain?.toViewable(),
+            "trade" to if (trade == null) null else mapOf(
+                "give" to trade.first.toViewable(),
+                "get" to trade.second.toViewable()
+            ),
+            "id" to toStateString(),
+            "bonusSpice" to spiceOnMe.toViewable()
+        )
 
         fun addSpice(spice: Spice?) {
             if (spice != null) {
@@ -188,7 +197,7 @@ class SpiceRoadGameModel(val playerCount: Int) {
     class PointCard(val points: Int, val cost: Caravan) {
         fun toStateString(): String = "$points $cost"
 
-        fun toViewable(): Map<String, Any> = mapOf("points" to points, "cost" to cost.toViewable())
+        fun toViewable(): Map<String, Any> = mapOf("points" to points, "cost" to cost.toViewable(), "id" to toStateString())
     }
 
     class Coin(val points: Int)
