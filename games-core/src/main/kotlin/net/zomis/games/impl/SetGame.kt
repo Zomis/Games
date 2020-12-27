@@ -148,6 +148,21 @@ data class SetGameModel(val config: SetConfig, val playersCount: Int) {
     fun setCardsResult(cards: List<SetPiece>): SetCardsResult = SetCardsResult(cards)
 }
 object SetGame {
+    fun convertToPiece(line: String): SetPiece {
+        val values = line.split(" ").toSet()
+        val counts = arrayOf("1", "2", "3").toSet()
+        val shapes = arrayOf("ellipse", "squiggly", "diamond").toSet()
+        val fillings = arrayOf("filled", "clear", "striped").toSet()
+        val colors = arrayOf("green", "red", "purple").toSet()
+
+        val count = values.intersect(counts).first().toInt()
+        val shape = values.intersect(shapes).first()
+        val filling = values.intersect(fillings).first()
+        val color = values.intersect(colors).first()
+
+        return SetPiece(count, shape, filling, color)
+    }
+
     fun setCheck(game: SetGameModel, replayableScope: ReplayableScope): Boolean {
         val additionalCardsIncrement = 3
 
