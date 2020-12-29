@@ -1,4 +1,4 @@
-package net.zomis.games.server2.djl
+package net.zomis.games.server2.djl.impls
 
 import net.zomis.games.Map2DX
 import net.zomis.games.PlayerEliminationCallback
@@ -17,10 +17,20 @@ object GridWorldGame {
         ;
     }
     data class GridWorldModel(val eliminations: PlayerEliminationCallback, val map: Map2DX<GridWorldTile>) {
+        private var moveCount = 0
+
         fun move(parameter: Direction4) {
+            moveCount++
+            if (moveCount > 100) {
+                eliminations.eliminateRemaining(WinResult.LOSS)
+                return
+            }
             val player = map.all().find { it.value == GridWorldTile.PLAYER }!!
             val delta = parameter.delta()
             val newTile = map.point(player.x + delta.x, player.y + delta.y).rangeCheck(map)
+            if (newTile == null) {
+                println("Warning: Moving out of bounds ${player.pos()} $delta")
+            }
             val value = newTile?.value ?: GridWorldTile.BLOCK
             if (value == GridWorldTile.GOAL) {
                 eliminations.result(0, WinResult.WIN)
@@ -32,6 +42,15 @@ object GridWorldGame {
                 player.value = GridWorldTile.EMPTY
                 newTile!!.value = GridWorldTile.PLAYER
             }
+        }
+        fun playerPosition() = map.all().find { it.value == GridWorldTile.PLAYER }!!
+        fun allowedMoves(): List<Direction4> {
+            val player = playerPosition().pos()
+            return Direction4.values().filter { map.point(player + it.delta()).inRange(map) }
+        }
+
+        fun moveAllowed(parameter: Direction4): Boolean {
+            return map.point(playerPosition().pos() + parameter.delta()).inRange(map)
         }
     }
     data class GridWorldConfig(
@@ -46,15 +65,14 @@ object GridWorldGame {
             defaultConfig { GridWorldConfig(3, 2, 42L, 1, 3, 2) }
             init { GridWorldModel(eliminationCallback, generateMap(config)) }
         }
-        rules {
+        actionRules {
             action(gridWorldMove) {
                 options { Direction4.values().asIterable() }
+                requires { game.moveAllowed(action.parameter) }
                 effect { game.move(action.parameter) }
             }
-        }
-        view {
-            this.value("board") {game ->
-                game.map.all().map { it.value.ch }
+            view("board") {
+                game.map.rows.map { it.joinToString("") { c -> c.toString() } }
             }
         }
     }

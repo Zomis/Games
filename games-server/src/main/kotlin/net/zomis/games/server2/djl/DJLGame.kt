@@ -13,11 +13,15 @@ import net.zomis.games.dsl.impl.Game
 
 interface DJLHandler<T: Any, S> {
     fun createGame(): GameReplayableImpl<T>
-    fun moveToAction(game: Game<T>, move: Int): Actionable<T, Any>
+    fun moveToAction(game: Game<T>, move: Int): Actionable<T, out Any>
 
     fun createSnapshot(t: Game<T>): S
     fun observation(snapshot: S, manager: NDManager): NDList
     fun actionSpace(snapshot: S, manager: NDManager): ActionSpace
+    fun reward(pre: S, game: Game<T>, action: Actionable<T, out Any>, post: S): Float {
+        val elimination = game.eliminations.eliminations().find { it.playerIndex == action.playerIndex }
+        return elimination?.winResult?.result?.toFloat() ?: 0f
+    }
 }
 class DJLGame<T: Any, S: Any>(
     val handler: DJLHandler<T, S>,
@@ -51,12 +55,11 @@ class DJLGame<T: Any, S: Any>(
 
         val pre = handler.createSnapshot(game.game)
         runBlocking {
-            game.perform(actionable)
+            game.perform(actionable as Actionable<T, Any>)
         }
         this.state = handler.createSnapshot(game.game)
 
-        val elimination = game.game.eliminations.eliminations().find { it.playerIndex == actionable.playerIndex }
-        val reward = elimination?.winResult?.result?.toFloat() ?: 0f
+        val reward = handler.reward(pre, game.game, actionable, this.state)
         val step = Step(manager.newSubManager(), handler, pre, this.state, action, reward, game.game.isGameOver())
 
         if (training) {

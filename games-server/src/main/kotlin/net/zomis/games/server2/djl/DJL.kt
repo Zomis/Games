@@ -23,33 +23,39 @@ import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.ConsoleController
 import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.dsl.impl.GameControllerScope
+import net.zomis.games.server2.djl.impls.GridWorldHandler
+import net.zomis.games.server2.djl.impls.HelloWorldHandler
 import net.zomis.games.server2.djl.impls.TTTHandler
 import java.util.Scanner
 import java.util.function.Consumer
 
+interface DJLFactory<T: Any, S> {
+    fun shapes(config: Any, batchSize: Int): Array<Shape>
+    fun handler(config: Any): DJLHandler<T, S>
+    fun createBlock(): Block
+}
 class DJL {
 
     private val logger = KLoggers.logger(this)
 
-    class MySavedState(val tiles: IntArray, val turn: Int)
-
-    fun train(): TrainingResult {
+    fun train(factory: DJLFactory<out Any, out Any>): TrainingResult {
         val rewardDiscount = 0.9f
-        val epochs = 5
+        val epochs = 20
         val gamesPerEpoch = 128
         val batchSize = 32
         val validationGamesPerEpoch = 1
         check(batchSize > 0)
+        val gameConfig = Unit
 
-        val game = DJLGame(TTTHandler.handler, NDManager.newBaseManager(), LruReplayBuffer(batchSize, 1024))
-        val block: Block = TTTHandler.createBlock()
+        val game = DJLGame(factory.handler(gameConfig), NDManager.newBaseManager(), LruReplayBuffer(batchSize, 1024))
+        val block: Block = factory.createBlock()
 
         Model.newInstance("tic-tac-toe").use { model ->
             model.block = block
 
             val config = setupTrainingConfig()
             model.newTrainer(config).use { trainer ->
-                trainer.initialize(Shape(batchSize.toLong(), 9L), Shape(batchSize.toLong()), Shape(batchSize.toLong()))
+                trainer.initialize(*factory.shapes(gameConfig, batchSize))
                 trainer.notifyListeners { listener: TrainingListener -> listener.onTrainingBegin(trainer) }
 
                 // Constructs the agent to train and play with
@@ -63,10 +69,11 @@ class DJL {
                 var validationWinRate = 0f
                 val trainWinRate = 0f
                 logger.info { "Running $epochs epochs with $gamesPerEpoch games per epoch" }
-                for (i in 0 until epochs) {
+                for (epoch in 1..epochs) {
                     var trainingWins = 0
                     var trainingOtherWins = 0
                     var trainingDraws = 0
+                    var total = 0f
                     for (j in 0 until gamesPerEpoch) {
                         val result: Float = game.runEnvironment(agent, true)
                         val batchSteps: Array<RlEnv.Step> = game.batch
@@ -83,9 +90,10 @@ class DJL {
                         if (result == 0f) {
                             trainingDraws++
                         }
+                        total += result
                     }
                     val gamesCount = gamesPerEpoch.toFloat()
-                    logger.info { "Training wins: ${trainingWins / gamesCount} / ${trainingDraws / gamesCount} / ${trainingOtherWins / gamesCount}" }
+                    logger.info { "Training epoch $epoch/$epochs: ${trainingWins / gamesCount} / ${trainingDraws / gamesCount} / ${trainingOtherWins / gamesCount}. Total $total" }
                     trainer.notifyListeners(Consumer { listener: TrainingListener -> listener.onEpoch(trainer) })
 
                     // Counts win rate after playing {validationGamesPerEpoch} games
@@ -123,7 +131,7 @@ class DJL {
             val actionable = game.handler.moveToAction(game.getGame(), action.singletonOrThrow().getInt())
             if (actionable.playerIndex != context.playerIndex) return null
             println("Agent is making action $actionable and has now $totalReward")
-            return actionable
+            return actionable as Actionable<T, Any>
         }
     }
 
@@ -150,5 +158,5 @@ class DJL {
 }
 
 fun main() {
-    DJL().train()
+    DJL().train(GridWorldHandler)
 }

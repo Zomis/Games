@@ -6,6 +6,7 @@ import ai.djl.ndarray.NDArrays
 import ai.djl.ndarray.NDList
 import ai.djl.ndarray.NDManager
 import ai.djl.ndarray.types.DataType
+import ai.djl.ndarray.types.Shape
 import ai.djl.nn.Block
 import ai.djl.nn.SequentialBlock
 import net.zomis.games.dsl.Actionable
@@ -15,12 +16,14 @@ import net.zomis.games.dsl.impl.Game
 import net.zomis.games.impl.ttt.DslTTT
 import net.zomis.games.impl.ttt.ultimate.TTController
 import net.zomis.games.impl.ttt.ultimate.TTPlayer
-import net.zomis.games.server2.djl.DJL
+import net.zomis.games.server2.djl.DJLFactory
 import net.zomis.games.server2.djl.DJLHandler
 import net.zomis.games.server2.games.impl.playerIndex
 
-object TTTHandler {
-    fun createBlock(): Block {
+object TTTHandler: DJLFactory<TTController, TTTHandler.TTSavedState> {
+
+    override fun shapes(config: Any, batchSize: Int): Array<Shape> = arrayOf(Shape(batchSize.toLong(), 9L), Shape(batchSize.toLong()), Shape(batchSize.toLong()))
+    override fun createBlock(): Block {
         return SequentialBlock().add { arrays: NDList ->
             val board = arrays[0] // Shape(N, 9)
             val turn = arrays[1].reshape(-1, 1) // Shape(N, 1)
@@ -31,8 +34,11 @@ object TTTHandler {
             NDList(combined.toType(DataType.FLOAT32, true))
         }.add(Mlp(11, 1, intArrayOf(20, 10)))
     }
+    class TTSavedState(val tiles: IntArray, val turn: Int)
 
-    object handler: DJLHandler<TTController, DJL.MySavedState> {
+    override fun handler(config: Any): DJLHandler<TTController, TTSavedState> = Handler
+
+    object Handler: DJLHandler<TTController, TTSavedState> {
         private fun playerIndex(player: TTPlayer): Int {
             return when (player) {
                 TTPlayer.NONE -> 0
@@ -42,11 +48,11 @@ object TTTHandler {
             }
         }
 
-        override fun observation(snapshot: DJL.MySavedState, manager: NDManager): NDList {
+        override fun observation(snapshot: TTSavedState, manager: NDManager): NDList {
             return NDList(manager.create(snapshot.tiles), manager.create(snapshot.turn))
         }
 
-        override fun actionSpace(snapshot: DJL.MySavedState, manager: NDManager): ActionSpace {
+        override fun actionSpace(snapshot: TTSavedState, manager: NDManager): ActionSpace {
             val actions = ActionSpace()
             snapshot.tiles.withIndex().filter { it.value == 0 }.forEach { actions.add(NDList(manager.create(it.index))) }
             return actions
@@ -61,8 +67,8 @@ object TTTHandler {
             return game.actions.type(DslTTT.playAction.name)!!.createAction(game.model.currentPlayer.playerIndex(), target)
         }
 
-        override fun createSnapshot(t: Game<TTController>): DJL.MySavedState {
-            return DJL.MySavedState(t.model.game.subs().map { playerIndex(it.wonBy) }.toIntArray(), t.model.currentPlayer.playerIndex())
+        override fun createSnapshot(t: Game<TTController>): TTSavedState {
+            return TTSavedState(t.model.game.subs().map { playerIndex(it.wonBy) }.toIntArray(), t.model.currentPlayer.playerIndex())
         }
     }
 }
