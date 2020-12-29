@@ -68,8 +68,8 @@ class GameReplayableImpl<T : Any>(
         val contexts = game.playerIndices.map { GameControllerContext(game, it) }
         while (!game.isGameOver()) {
             contexts.forEach { context ->
-                val controller = dynamicControllers(context.playerIndex)
-                val controllerResult = controller(context)
+                val controller = dynamicControllers.invoke(context.playerIndex)
+                val controllerResult = controller.invoke(context)
                 if (controllerResult != null) {
                     perform(controllerResult)
                 }
