@@ -72,7 +72,7 @@ object GridWorldGame {
                 effect { game.move(action.parameter) }
             }
             view("board") {
-                game.map.rows.map { it.joinToString("") { c -> c.toString() } }
+                game.map.rows.map { it.joinToString("") { c -> c.ch.toString() } }
             }
         }
     }
