@@ -148,6 +148,8 @@ interface Map2DPoint<T> {
     val y: Int
     var value: T
     fun rangeCheck(map: Map2DX<T>): Map2DPoint<T>?
+    fun inRange(map: Map2DX<T>): Boolean
+    fun pos(): Point = Point(x, y)
 }
 class Map2DPointImpl<T>(
     override val x: Int, override val y: Int,
@@ -159,7 +161,11 @@ class Map2DPointImpl<T>(
         set(value) { setter(x, y, value) }
 
     override fun rangeCheck(map: Map2DX<T>): Map2DPoint<T>? {
-        return this.takeUnless { x < 0 || x >= map.sizeX || y < 0 || y >= map.sizeY }
+        return this.takeIf { inRange(map) }
+    }
+
+    override fun inRange(map: Map2DX<T>): Boolean {
+        return x >= 0 && x < map.sizeX && y >= 0 && y < map.sizeY
     }
 }
 class Map2DX<T>(val sizeX: Int, val sizeY: Int, val factory: (x: Int, y: Int) -> T) {
@@ -169,6 +175,7 @@ class Map2DX<T>(val sizeX: Int, val sizeY: Int, val factory: (x: Int, y: Int) ->
             factory(x, y)
         }.toMutableList()
     }.toMutableList()
+    val rows: List<List<T>> get() = grid.map { it.toList() }
 
     fun set(x: Int, y: Int, value: T) {
         grid[y][x] = value
