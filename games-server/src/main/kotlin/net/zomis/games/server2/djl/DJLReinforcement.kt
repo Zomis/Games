@@ -9,14 +9,13 @@ import ai.djl.training.dataset.ArrayDataset
 import ai.djl.training.initializer.XavierInitializer
 import ai.djl.training.loss.Loss
 import ai.djl.training.optimizer.Optimizer
-import ai.djl.training.optimizer.learningrate.LearningRateTracker
 import ai.djl.translate.Translator
 import ai.djl.translate.TranslatorContext
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
 import java.util.Scanner
 import kotlin.random.Random
-
+/*
 class DJLReinforcement {
 
     class LearningExperience(
@@ -211,3 +210,4 @@ fun main() {
 
 
 // Choose action using random weighted (check min and max for negativity, use diffs?) Use sigmoid?
+*/

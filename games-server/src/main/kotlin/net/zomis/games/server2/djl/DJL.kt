@@ -1,108 +1,154 @@
 package net.zomis.games.server2.djl
 
 import ai.djl.Model
-import ai.djl.basicmodelzoo.basic.Mlp
-import ai.djl.metric.Metrics
-import ai.djl.ndarray.NDList
+import ai.djl.modality.rl.LruReplayBuffer
+import ai.djl.modality.rl.agent.EpsilonGreedy
+import ai.djl.modality.rl.agent.QAgent
+import ai.djl.modality.rl.agent.RlAgent
+import ai.djl.modality.rl.env.RlEnv
 import ai.djl.ndarray.NDManager
-import ai.djl.ndarray.types.DataType
 import ai.djl.ndarray.types.Shape
+import ai.djl.nn.Block
 import ai.djl.training.DefaultTrainingConfig
-import ai.djl.training.Trainer
-import ai.djl.training.dataset.ArrayDataset
-import ai.djl.training.dataset.Dataset
-import ai.djl.training.evaluator.Accuracy
+import ai.djl.training.TrainingConfig
+import ai.djl.training.TrainingResult
+import ai.djl.training.listener.TrainingListener
 import ai.djl.training.loss.Loss
-import ai.djl.translate.Translator
-import ai.djl.translate.TranslatorContext
+import ai.djl.training.optimizer.Adam
+import ai.djl.training.tracker.LinearTracker
+import ai.djl.training.tracker.Tracker
 import klog.KLoggers
-import java.util.*
+import kotlinx.coroutines.runBlocking
+import net.zomis.games.dsl.Actionable
+import net.zomis.games.dsl.ConsoleController
+import net.zomis.games.dsl.impl.GameController
+import net.zomis.games.dsl.impl.GameControllerScope
+import net.zomis.games.server2.djl.impls.TTTHandler
+import java.util.Scanner
+import java.util.function.Consumer
 
 class DJL {
 
     private val logger = KLoggers.logger(this)
 
-    fun fitModel(trainer: Trainer, trainingSet: Dataset, epochs: Int) {
-        repeat(epochs) {
-            logger.info { "Epoch $it" }
-            trainer.iterateDataset(trainingSet).forEach {batch ->
-                batch.use {
-                    trainer.trainBatch(it)
-                    trainer.step()
-                }
-            }
-            trainer.endEpoch()
-        }
-    }
+    class MySavedState(val tiles: IntArray, val turn: Int)
 
-    class MyTranslator : Translator<FloatArray, FloatArray> {
-        override fun processOutput(ctx: TranslatorContext, list: NDList): FloatArray {
-            return list[0].toFloatArray()
-        }
+    fun train(): TrainingResult {
+        val rewardDiscount = 0.9f
+        val epochs = 5
+        val gamesPerEpoch = 128
+        val batchSize = 32
+        val validationGamesPerEpoch = 1
+        check(batchSize > 0)
 
-        override fun processInput(ctx: TranslatorContext, input: FloatArray): NDList {
-            return NDList(ctx.ndManager.create(floatArrayOf(*input)))
-        }
-    }
+        val game = DJLGame(TTTHandler.handler, NDManager.newBaseManager(), LruReplayBuffer(batchSize, 1024))
+        val block: Block = TTTHandler.createBlock()
 
-    fun start() {
-        val block = Mlp(2, 2, intArrayOf(2))
-
-        Model.newInstance().use {model ->
+        Model.newInstance("tic-tac-toe").use { model ->
             model.block = block
 
-            val manager = NDManager.newBaseManager()
-            val inputs = manager.create(arrayOf(
-                floatArrayOf(0f, 0f),
-                floatArrayOf(0f, 1f),
-                floatArrayOf(1f, 0f),
-                floatArrayOf(1f, 1f)
-            )).toType(DataType.FLOAT32, false)
-    //        val outputs = manager.create(floatArrayOf(0f, 0f, 0f, 1f)).toType(DataType.FLOAT32, false)
-            val outputs = manager.create(arrayOf(
-                floatArrayOf(1f, 0f),
-                floatArrayOf(1f, 0f),
-                floatArrayOf(1f, 0f),
-                floatArrayOf(0f, 1f)
-            )).toType(DataType.FLOAT32, false)
+            val config = setupTrainingConfig()
+            model.newTrainer(config).use { trainer ->
+                trainer.initialize(Shape(batchSize.toLong(), 9L), Shape(batchSize.toLong()), Shape(batchSize.toLong()))
+                trainer.notifyListeners { listener: TrainingListener -> listener.onTrainingBegin(trainer) }
 
-            val trainingSet = ArrayDataset.Builder().setData(inputs)
-                    .setSampling(1, true)
-                    .optLabels(outputs).build()
-//            model.newPredictor(MyTranslator()).predict(floatArrayOf(0.5f, 0f)).let { println(it) }
+                // Constructs the agent to train and play with
+                var agent: RlAgent = QAgent(trainer, rewardDiscount)
+                val exploreRate: Tracker = LinearTracker.Builder()
+                        .setBaseValue(0.9f)
+                        .optSlope(-.9f / (epochs * gamesPerEpoch * 7))
+                        .optMinValue(0.01f)
+                        .build()
+                agent = EpsilonGreedy(agent, exploreRate)
+                var validationWinRate = 0f
+                val trainWinRate = 0f
+                logger.info { "Running $epochs epochs with $gamesPerEpoch games per epoch" }
+                for (i in 0 until epochs) {
+                    var trainingWins = 0
+                    var trainingOtherWins = 0
+                    var trainingDraws = 0
+                    for (j in 0 until gamesPerEpoch) {
+                        val result: Float = game.runEnvironment(agent, true)
+                        val batchSteps: Array<RlEnv.Step> = game.batch
+                        agent.trainBatch(batchSteps)
+                        trainer.step()
 
-            val trainingConfig = DefaultTrainingConfig(
-//                    Loss.softmaxCrossEntropyLoss("SoftmaxCrossEntropyLoss", 1f, -1, false, false)
-                Loss.l2Loss()
-            ).addEvaluator(Accuracy()).setBatchSize(2)
+                        // Record if the game was won
+                        if (result > 0) {
+                            trainingWins++
+                        }
+                        if (result < 0) {
+                            trainingOtherWins++
+                        }
+                        if (result == 0f) {
+                            trainingDraws++
+                        }
+                    }
+                    val gamesCount = gamesPerEpoch.toFloat()
+                    logger.info { "Training wins: ${trainingWins / gamesCount} / ${trainingDraws / gamesCount} / ${trainingOtherWins / gamesCount}" }
+                    trainer.notifyListeners(Consumer { listener: TrainingListener -> listener.onEpoch(trainer) })
 
-            model.newTrainer(trainingConfig).use {trainer ->
-                trainer.metrics = Metrics()
-
-                val inputShape = Shape(2, 2)
-                trainer.initialize(inputShape)
-                fitModel(trainer, trainingSet, 100)
-
-                val metrics = trainer.metrics
-                println(metrics)
-            }
-            val sc = Scanner(System.`in`)
-            val predictor = model.newPredictor(MyTranslator())
-            while (true) {
-                repeat(5) {
-                    val a = Math.random().toFloat()
-                    val b = Math.random().toFloat()
-                    val result = predictor.predict(floatArrayOf(a, b))
-                    println("$a, $b --> ${result!!.contentToString()}")
+                    // Counts win rate after playing {validationGamesPerEpoch} games
+                    var validationWins = 0
+                    for (j in 0 until validationGamesPerEpoch) {
+                        val result: Float = game.runEnvironment(agent, false)
+                        if (result > 0) {
+                            validationWins++
+                        }
+                    }
+                    validationWinRate = validationWins.toFloat() / validationGamesPerEpoch
+                    logger.info { "Validation wins: $validationWinRate" }
                 }
-                sc.nextLine()
+                trainer.notifyListeners(Consumer { listener: TrainingListener -> listener.onTrainingEnd(trainer) })
+                val trainingResult: TrainingResult = trainer.trainingResult
+                trainingResult.evaluations["validate_winRate"] = validationWinRate
+                trainingResult.evaluations["train_winRate"] = trainWinRate
+
+//                model.save(File("ttt-reinforcement.djl").toPath(), "tic-tac-toe")
+                playGame(game, agent)
+                return trainingResult
             }
         }
 
+    }
+
+    private class DJLController<T: Any>(val game: DJLGame<T, *>, val agent: RlAgent): GameController<T> {
+        private var totalReward = 0f
+
+        override fun invoke(context: GameControllerScope<T>): Actionable<T, Any>? {
+            game.updateState()
+            val action = agent.chooseAction(game, false)
+//            val step: RlEnv.Step = game.step(action, false) // TODO: game.step actually *performs* the action, separate this.
+//            totalReward += step.reward.getFloat()
+            val actionable = game.handler.moveToAction(game.getGame(), action.singletonOrThrow().getInt())
+            if (actionable.playerIndex != context.playerIndex) return null
+            println("Agent is making action $actionable and has now $totalReward")
+            return actionable
+        }
+    }
+
+    private fun <T: Any, S: Any> playGame(game: DJLGame<T, S>, agent: RlAgent) {
+        val learningController = DJLController(game, agent)
+        val scanner = Scanner(System.`in`)
+        val humanController = ConsoleController<T>().humanController(scanner)
+        runBlocking {
+            game.reset()
+            game.replayable.playThroughWithControllers {
+                if (it == 0) humanController
+                else learningController
+            }
+        }
+        scanner.close()
+    }
+
+    private fun setupTrainingConfig(): TrainingConfig {
+        return DefaultTrainingConfig(Loss.l2Loss())
+                .addTrainingListeners(*TrainingListener.Defaults.basic())
+                .optOptimizer(Adam.builder().optLearningRateTracker(Tracker.fixed(0.0001f)).build())
     }
 
 }
 
 fun main() {
-    DJL().start()
+    DJL().train()
 }

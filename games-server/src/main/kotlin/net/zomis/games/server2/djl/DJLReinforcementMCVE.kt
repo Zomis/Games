@@ -9,12 +9,11 @@ import ai.djl.training.dataset.ArrayDataset
 import ai.djl.training.initializer.XavierInitializer
 import ai.djl.training.loss.Loss
 import ai.djl.training.optimizer.Optimizer
-import ai.djl.training.optimizer.learningrate.LearningRateTracker
 import ai.djl.translate.Translator
 import ai.djl.translate.TranslatorContext
 import java.util.Scanner
 import kotlin.random.Random
-
+/*
 class DJLReinforcementMCVE {
 
     class HelloWorldExperience(
@@ -38,16 +37,6 @@ class DJLReinforcementMCVE {
 
         fun isDone(): Boolean {
             return values.all { it }
-        }
-    }
-
-    class HelloWorldNoTranslation : Translator<BooleanArray, FloatArray> {
-        override fun processOutput(ctx: TranslatorContext, list: NDList): FloatArray {
-            return list[0].toFloatArray()
-        }
-
-        override fun processInput(ctx: TranslatorContext, input: BooleanArray): NDList {
-            return NDList(ctx.ndManager.create(input.toFloatArray()))
         }
     }
 
@@ -93,6 +82,7 @@ class DJLReinforcementMCVE {
                        nextState: BooleanArray, gameOver: Boolean) {
             experiences.add(HelloWorldExperience(state, moveIndex, reward, nextState, gameOver))
         }
+
         fun train() {
             val batchSize = agentParameters.batchSize
             val batch = experiences.withIndex().shuffled().take(batchSize).also {
@@ -186,3 +176,4 @@ private fun BooleanArray.toFloatArray(): FloatArray {
 fun main() {
     DJLReinforcementMCVE().run()
 }
+*/
