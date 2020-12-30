@@ -96,13 +96,13 @@ function paySpice(spice) {
 }
 
 function upgradeSpice(spice) {
-    return {
-        key: 'upgrade-' + spice,
-        next: (amount) => ({
-            key: 'times-' + amount,
-            next: upgradeSpice
-        })
-    }
+  return {
+    key: spice,
+    next: (amount) => ({
+      key: amount,
+      next: upgradeSpice
+    })
+  }
 }
 
 
@@ -204,16 +204,16 @@ const supportedGames = {
         dsl: true,
         actions: {
             play: (card) => ({
-                key: "play-" + card,
+                key: card,
                 next: upgradeSpice
             }),
             rest: () => "rest",
-            claim: (card) => "claim-" + card,
+            claim: (card) => card,
             acquire: (card) => ({
-                key: 'acquire-' + card,
-                next:paySpice
+                key: card,
+                next: paySpice
             }),
-            discard: (spice) => "discard-" + spice
+            discard: (spice) => spice
         },
         component: SpiceRoad
     },

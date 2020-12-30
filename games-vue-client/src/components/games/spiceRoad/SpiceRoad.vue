@@ -6,7 +6,7 @@
       </v-col>
       <v-col>
         <CardZone
-          class="row spiceroad-action-cards"
+          class="row spiceroad-point-cards"
         >
           <v-col
             v-for="card in view.pointCards"
@@ -14,6 +14,7 @@
             class="list-complete-item"
           >
             <SpiceRoadCard
+              action="claim"
               :key="card.id"
               :card="card"
               :actions="actions"
@@ -36,6 +37,7 @@
             class="list-complete-item"
           >
             <SpiceRoadCard
+              action="acquire"
               :key="card.id"
               :card="card"
               :actions="actions"
@@ -44,14 +46,22 @@
         </CardZone>
       </v-col>
     </v-row>
+    <v-row>
+      <v-col>
+        <v-btn v-for="(item, index) in choicesAvailable" :key="index" @click="makeChoice(item)">
+          {{ item }}
+        </v-btn>
+      </v-col>
+    </v-row>
     <v-row
       v-for="player in view.players"
       :key="player.index"
     >
+      <v-col>
       <v-card>
         <v-card-text>
           <v-row>
-      <v-col>
+      <v-col cols="2">
         <v-row>
           <v-col>
             <PlayerProfile
@@ -68,20 +78,28 @@
         </v-row>
         <v-row>
           <v-col>
+            {{ player.pointCards }} point cards
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col>
             <Actionable
               button
-              :action-type="['pass']"
+              :action-type="['rest']"
               :actions="actions"
             >
-              Pass
+              Rest
             </Actionable>
+            <v-btn @click="performChosen" :disabled="!actions || !actions.chosen">
+              Done
+            </v-btn>
           </v-col>
         </v-row>
       </v-col>
-      <v-col>
+      <v-col cols="1">
         <SpiceRoadResources :caravan="player.caravan" />
       </v-col>
-      <v-col>
+      <v-col cols="9">
         <CardZone
           class="row spiceroad-action-cards"
         >
@@ -91,6 +109,7 @@
             class="list-complete-item"
           >
             <SpiceRoadCard
+              action="play"
               :key="card.id"
               :card="card"
               :actions="actions"
@@ -119,6 +138,7 @@
       </v-row>
       </v-card-text>
     </v-card>
+      </v-col>
     </v-row>
     <v-row>
       <v-col
@@ -140,11 +160,25 @@ import SpiceRoadResources from "./SpiceRoadResources"
 import SpiceRoadCard from "./SpiceRoadCard"
 
 export default {
-    name: "SpiceRoad",
-    props: ["view", "actions", "context"],
-    components: {
-        PlayerProfile, Actionable, CardZone, SpiceRoadResources, SpiceRoadCard
+  name: "SpiceRoad",
+  props: ["view", "actions", "context"],
+  methods: {
+    performChosen() {
+      this.actions.performChosen()
     },
+    makeChoice(item) {
+      this.actions.perform("", item)
+    }
+  },
+  components: {
+      PlayerProfile, Actionable, CardZone, SpiceRoadResources, SpiceRoadCard
+  },
+  computed: {
+    choicesAvailable() {
+      if (!this.actions || !this.actions.available) return [];
+      return Object.keys(this.actions.available).filter(e => e.indexOf(" ") < 0 || e.indexOf("Discard") === 0);
+    }
+  }
 }
 </script>
 <style>

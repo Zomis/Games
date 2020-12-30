@@ -1,5 +1,5 @@
 <template>
-  <v-card>
+  <v-card :class="[actionableClass]" @click="click">
     <v-card-title />
     <v-card-text>
       <div v-if="card.points">
@@ -36,33 +36,52 @@
 import SpiceRoadResources from "./SpiceRoadResources"
 
 export default {
-    name: "SpiceRoadCard",
-    props: ["card", "actions", "context"],
-    components: { SpiceRoadResources }
+  name: "SpiceRoadCard",
+  props: ["card", "actions", "context", "action"],
+  components: { SpiceRoadResources },
+  methods: {
+    click() {
+      this.actions.perform('ignored', this.card.id);
+    }
+  },
+  computed: {
+    actionableClass() {
+      if (!this.actions) return "no-actions";
+      if (this.actions.available[this.card.id]) {
+        return "actionable"
+      }
+      return "not-actionable"
+    }
+  }
 }
 </script>
 <style>
-:root{
-    --spiceRoad-yellow: #ffd166;
-    --spiceRoad-red: #ef476f;
-    --spiceRoad-green: #06D6A0;
-    --spiceRoad-brown: #a5701e;
-    --spiceRoad-silver: #b2b9c7;
-    --spiceRoad-gold: #eea12c;
+.actionable {
+  border-style: solid;
+  border-color: cyan !important;
+}
+
+:root {
+  --spiceRoad-yellow: #ffd166;
+  --spiceRoad-red: #ef476f;
+  --spiceRoad-green: #06D6A0;
+  --spiceRoad-brown: #a5701e;
+  --spiceRoad-silver: #b2b9c7;
+  --spiceRoad-gold: #eea12c;
 }
 
 .coin-gold,
 .coin-silver {
-    padding: 9px 14px;
-    border-style: solid;
-    border-width: thin;
-    border-color: black !important;
-    border-radius: 100%;
+  padding: 9px 14px;
+  border-style: solid;
+  border-width: thin;
+  border-color: black !important;
+  border-radius: 100%;
 }
 .coin-gold {
-    background-color: var(--spiceRoad-gold) !important;
+  background-color: var(--spiceRoad-gold) !important;
 }
 .coin-silver {
-    background-color: var(--spiceRoad-silver) !important;
+  background-color: var(--spiceRoad-silver) !important;
 }
 </style>

@@ -11,8 +11,10 @@ object SpiceRoadDsl {
     data class AcquireParameter(val card: SpiceRoadGameModel.ActionCard, val payArray: List<SpiceRoadGameModel.Spice>)
 
     val factory = GameCreator(SpiceRoadGameModel::class)
-    val play = factory.action("play", PlayParameter::class).serializer { "Play Card " + it.card.toStateString() + " Remove " + it.remove.toStateString() + " Add " + it.add.toStateString() }
-    val claim = factory.action("claim", SpiceRoadGameModel.PointCard::class).serializer { "Claim " + it.toStateString()}
+    val play = factory.action("play", PlayParameter::class).serializer {
+        "Play Card " + it.card.toStateString() + " Remove " + it.remove.toStateString() + " Add " + it.add.toStateString()
+    }
+    val claim = factory.action("claim", SpiceRoadGameModel.PointCard::class).serializer { it.toStateString() }
     val rest = factory.action("rest", Unit::class)
     val acquire = factory.action("acquire", AcquireParameter::class).serializer {
         "Acquire Card " + it.card.toStateString() + " PayArray " + it.payArray.joinToString("") { x -> x.char.toString() }
@@ -65,7 +67,7 @@ object SpiceRoadDsl {
                 game.currentPlayer.hand.card(this.action.parameter.card).moveTo(game.currentPlayer.discard)
             }
             this.action(play).choose {
-                options({ game.currentPlayer.hand.cards }) { card ->
+                optionsWithIds({ game.currentPlayer.hand.cards.map { it.toStateString() to it } }) { card ->
                     when {
                         card.gain != null -> parameter(PlayParameter(card, SpiceRoadGameModel.Caravan(), card.gain))
                         card.upgrade != null -> {
@@ -107,7 +109,10 @@ object SpiceRoadDsl {
                 }
             }
             this.action(acquire).choose {
-                options({ game.visibleActionCards.cards.filterIndexed { index, _ -> index <= game.currentPlayer.caravan.count } }) { card ->
+                optionsWithIds({
+                    game.visibleActionCards.cards.filterIndexed { index, _ -> index <= game.currentPlayer.caravan.count }
+                        .map { it.toStateString() to it }
+                }) { card ->
                     fun rec(scope: ActionChoicesNextScope<SpiceRoadGameModel, AcquireParameter>,
                             remaining: SpiceRoadGameModel.Caravan,
                             leftToPay: Int,
@@ -223,6 +228,7 @@ class SpiceRoadGameModel(val playerCount: Int) {
                     "discard" to discard.cards.map { it.toViewable() },
                     "hand" to hand.cards.map { it.toViewable() },
                     "points" to points,
+                    "pointCards" to pointCards,
                     "index" to index
             )
         }
