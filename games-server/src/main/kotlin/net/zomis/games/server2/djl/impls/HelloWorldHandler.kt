@@ -29,7 +29,7 @@ object HelloWorldHandler: DJLFactory<HelloWorldGame.Model, HelloWorldHandler.Hel
             // Concatenate to a combined vector of Shape(N, 6)
             val combined = NDArrays.concat(NDList(board, points, action), 1)
             NDList(combined.toType(DataType.FLOAT32, true))
-        }.add(Mlp(6, 1, intArrayOf(8, 4)))
+        }.add(Mlp(6, 1, intArrayOf(6)))
     }
 
     override fun handler(config: Any) = Handler

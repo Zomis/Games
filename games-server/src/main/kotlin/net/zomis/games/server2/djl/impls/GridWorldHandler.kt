@@ -42,7 +42,7 @@ object GridWorldHandler: DJLFactory<GridWorldGame.GridWorldModel, GridWorldHandl
             }
 
             override fun observation(snapshot: SavedState, manager: NDManager): NDList {
-                return NDList(manager.create(snapshot.map.toIntArray()))
+                return NDList(manager.create(snapshot.map.map { if (it == GridWorldGame.GridWorldTile.PLAYER.ordinal) 1 else 0 }.toIntArray()))
             }
 
             override fun actionSpace(snapshot: SavedState, manager: NDManager): ActionSpace {
@@ -62,7 +62,7 @@ object GridWorldHandler: DJLFactory<GridWorldGame.GridWorldModel, GridWorldHandl
             // Concatenate to a combined vector of Shape(N, 7)
             val combined = NDArrays.concat(NDList(board, action), 1)
             NDList(combined.toType(DataType.FLOAT32, true))
-        }.add(Mlp(7, 1, intArrayOf(8, 4)))
+        }.add(Mlp(7, 1, intArrayOf(7)))
     }
 
 }
