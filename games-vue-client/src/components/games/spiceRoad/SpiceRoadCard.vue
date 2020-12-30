@@ -2,20 +2,43 @@
   <v-card>
     <v-card-title />
     <v-card-text>
+      <div v-if="card.points">
+        {{ card.points }}
+        <spice-road-resources :caravan="card.cost" />
+      </div>
       <div v-if="card.trade">
-        <v-icon
-          color="green"
+        <v-row>
+          <v-col>
+            <spice-road-resources :caravan="card.trade.give" />
+            <v-icon color="gray">mdi-bank-transfer-out</v-icon>
+            <spice-road-resources :caravan="card.trade.get" />
+          </v-col>
+        </v-row>
+      </div>
+      <div v-if="card.upgrade">
+        <v-icon v-for="i in card.upgrade" :key="i"
+          color="gray"
         >
-          mdi-cube
+          mdi-arrow-up-bold-circle
         </v-icon>
+      </div>
+      <div v-if="card.gain">
+        <spice-road-resources :caravan="card.gain" />
+      </div>
+      <div v-if="card.bonusSpice">
+        <v-icon>mdi-plus</v-icon>
+        <spice-road-resources :caravan="card.bonusSpice" />
       </div>
     </v-card-text>
   </v-card>
 </template>
 <script>
+import SpiceRoadResources from "./SpiceRoadResources"
+
 export default {
     name: "SpiceRoadCard",
-    props: ["card", "actions", "context"]
+    props: ["card", "actions", "context"],
+    components: { SpiceRoadResources }
 }
 </script>
 <style>

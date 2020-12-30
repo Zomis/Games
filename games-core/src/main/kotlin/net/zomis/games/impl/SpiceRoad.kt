@@ -178,7 +178,7 @@ class SpiceRoadGameModel(val playerCount: Int) {
                 "get" to trade.second.toViewable()
             ),
             "id" to toStateString(),
-            "bonusSpice" to spiceOnMe.toViewable()
+            "bonusSpice" to if (spiceOnMe.count == 0) null else spiceOnMe.toViewable()
         )
 
         fun addSpice(spice: Spice?) {

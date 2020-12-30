@@ -5,7 +5,21 @@
         <v-card><v-card-title>{{ view.pointsDeck }}</v-card-title></v-card>
       </v-col>
       <v-col>
-        {{ view.pointCards }}
+        <CardZone
+          class="row spiceroad-action-cards"
+        >
+          <v-col
+            v-for="card in view.pointCards"
+            :key="card.id"
+            class="list-complete-item"
+          >
+            <SpiceRoadCard
+              :key="card.id"
+              :card="card"
+              :actions="actions"
+            />
+          </v-col>
+        </CardZone>
       </v-col>
     </v-row>
     <v-row>
@@ -28,9 +42,6 @@
             />
           </v-col>
         </CardZone>
-      </v-col>
-      <v-col>
-        {{ view.actionCards }}
       </v-col>
     </v-row>
     <v-row
@@ -71,10 +82,39 @@
         <SpiceRoadResources :caravan="player.caravan" />
       </v-col>
       <v-col>
-        <CardZone /><!-- player.hand -->
+        <CardZone
+          class="row spiceroad-action-cards"
+        >
+          <v-col
+            v-for="card in player.hand"
+            :key="card.id"
+            class="list-complete-item"
+          >
+            <SpiceRoadCard
+              :key="card.id"
+              :card="card"
+              :actions="actions"
+            />
+          </v-col>
+        </CardZone>
       </v-col>
       <v-col>
-        <CardZone /><!-- player.discard -->
+        <CardZone
+          class="row spiceroad-action-cards"
+          :style="{ opacity: 0.5 }"
+        >
+          <v-col
+            v-for="card in player.discard"
+            :key="card.id"
+            class="list-complete-item"
+          >
+            <SpiceRoadCard
+              :key="card.id"
+              :card="card"
+              :actions="actions"
+            />
+          </v-col>
+        </CardZone>
       </v-col>
       </v-row>
       </v-card-text>
