@@ -6,13 +6,26 @@
         :key="resource"
       >
         <v-col>
-          <v-icon v-for="i in amount" :key="resource + '-' + i" :color="colors[resource]">mdi-cube</v-icon>
+          <v-icon
+            v-for="i in amount"
+            :key="resource + '-' + i"
+            :color="colors[resource]"
+          >
+            mdi-cube
+          </v-icon>
         </v-col>
       </v-row>
     </template>
     <template v-else>
-      <span v-for="(amount, resource) in caravan" :key="resource">
-        <v-icon v-for="i in amount" :key="resource + '-' + i" :color="colors[resource]">mdi-cube</v-icon>
+      <span
+        v-for="(amount, resource) in caravan"
+        :key="resource"
+      >
+        <v-icon
+          v-for="i in amount"
+          :key="resource + '-' + i"
+          :color="colors[resource]"
+        >mdi-cube</v-icon>
       </span>
     </template>
   </div>
