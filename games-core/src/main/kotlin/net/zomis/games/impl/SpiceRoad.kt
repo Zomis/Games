@@ -58,12 +58,10 @@ object SpiceRoadDsl {
                     }
                     game.goldCoins.remove(coin)
                     game.silverCoins.remove(coin)
+                    if (coin != null) game.currentPlayer.coins.add(coin)
 
-                    game.currentPlayer.points += coin?.points ?: 0
                     game.currentPlayer.caravan -= this.action.parameter.cost
-                    game.currentPlayer.points += this.action.parameter.points
-                    game.currentPlayer.pointCards++
-                    game.visiblePointCards.card(this.action.parameter).remove()
+                    game.visiblePointCards.card(this.action.parameter).moveTo(game.currentPlayer.pointCards)
                     if (game.pointsDeck.size > 0) {
                         game.pointsDeck.random(this.replayable, 1, "NewPointCard") { it.toStateString() }.forEach { it.moveTo(game.visiblePointCards) }
                     }
@@ -162,8 +160,8 @@ object SpiceRoadDsl {
             allActions.precondition { game.currentPlayer.index == playerIndex }
             allActions.after {
                 val gameEnd = when (game.playerCount) {
-                    1, 2, 3 -> game.players.any{ player -> player.pointCards == 6 }
-                    else -> game.currentPlayer.pointCards == 5
+                    1, 2, 3 -> game.players.any { player -> player.pointCards.size >= 6 }
+                    else -> game.currentPlayer.pointCards.size >= 5
                 }
                 if (gameEnd && game.currentPlayerIndex == game.playerCount - 1) {
                    this.eliminations.eliminateBy(game.players.mapIndexed { index, player -> index to player }, compareBy({ it.points }, { +it.index }))
@@ -251,8 +249,11 @@ class SpiceRoadGameModel(val playerCount: Int) {
                 ActionCard(2, null, null),
                 ActionCard(null, Spice.YELLOW.toCaravan(2), null))
         )
-        var points = 0
-        var pointCards = 0
+        val pointCards = CardZone<PointCard>()
+        val coins = mutableListOf<Coin>()
+        val points: Int get() = pointCards.cards.sumBy { it.points } +
+                coins.sumBy { it.points } +
+                caravan.spice.filter { it.key > Spice.YELLOW }.values.sum()
 
         fun toViewable(): Map<String, Any?> {
             return mapOf(
@@ -260,7 +261,7 @@ class SpiceRoadGameModel(val playerCount: Int) {
                     "discard" to discard.cards.map { it.toViewable() },
                     "hand" to hand.cards.map { it.toViewable() },
                     "points" to points,
-                    "pointCards" to pointCards,
+                    "pointCards" to pointCards.size,
                     "index" to index
             )
         }
