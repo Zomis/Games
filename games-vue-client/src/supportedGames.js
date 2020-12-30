@@ -32,6 +32,7 @@ import DSLTTT from "@/components/games/DSLTTT";
 import TTT3D from "@/components/games/TTT3D";
 import LiarsDice from "@/components/games/LiarsDice";
 import Avalon from "@/components/games/Avalon";
+import SpiceRoad from "@/components/games/spiceRoad/SpiceRoad";
 
 // ViewTypes for ActionLog
 import SplendorCard from "@/components/games/splendor/SplendorCard"
@@ -86,6 +87,24 @@ function recursiveAvalon(teamMember) {
         next: recursiveAvalon
     }
 }
+
+function paySpice(spice) {
+    return {
+        key: 'pay-' + spice,
+        next: paySpice
+    }
+}
+
+function upgradeSpice(spice) {
+  return {
+    key: spice,
+    next: (amount) => ({
+      key: amount,
+      next: upgradeSpice
+    })
+  }
+}
+
 
 const supportedGames = {
     "Dixit": {
@@ -180,6 +199,23 @@ const supportedGames = {
             card: { component: SplendorCard, binds: (v) => ({ card: v }) },
             noble: { component: SplendorNoble, binds: (v) => ({ noble: v }) },
         },
+    },
+    "Spice Road": {
+        dsl: true,
+        actions: {
+            play: (card) => ({
+                key: card,
+                next: upgradeSpice
+            }),
+            rest: () => "rest",
+            claim: (card) => card,
+            acquire: (card) => ({
+                key: card,
+                next: paySpice
+            }),
+            discard: (spice) => spice
+        },
+        component: SpiceRoad
     },
     "DSL-Connect4": {
         displayName: "Connect Four",

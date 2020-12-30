@@ -55,7 +55,7 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
             // then check all available actions and match against those that serializes to the same value
             val actions = availableActions(actionOptionsContext.playerIndex, null).filter { action2 ->
                 actionType.serialize(action2.parameter) == serialized
-            }
+            }.distinct()
             if (actions.size != 1) {
                 throw IllegalStateException("Actions available: ${actions.size} for player $playerIndex " +
                         "move ${this.actionType.name} $serialized")

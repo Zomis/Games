@@ -47,6 +47,10 @@ data class SplendorPlayer(val index: Int) {
 }
 
 data class SplendorCard(val level: Int, val discounts: Money, val costs: Money, val points: Int) {
+    // Possible to support multiple discounts on the same card. Because why not!
+    constructor(level: Int, discount: MoneyType, costs: Money, points: Int):
+            this(level, Money(discount to 1), costs, points)
+
     val id: String get() = toStateString()
 
     fun toStateString(): String {

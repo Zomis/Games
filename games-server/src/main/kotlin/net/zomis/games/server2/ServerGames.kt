@@ -11,6 +11,7 @@ object ServerGames {
 
     val games = listOf(
         AlchemistsGame.game,
+        SpiceRoadDsl.game,
         Dixit.game,
         Decrypto.game,
         CoupRuleBased.game,
