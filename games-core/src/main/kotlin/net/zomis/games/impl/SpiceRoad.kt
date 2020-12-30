@@ -46,6 +46,7 @@ object SpiceRoadDsl {
                     pointCard.toViewable() + coinMap
                 }
             }
+            view("round") { game.round }
             action(claim) {
                 requires { game.currentPlayer.caravan.has(this.action.parameter.cost) }
                 options { game.visiblePointCards.cards }
@@ -164,13 +165,14 @@ object SpiceRoadDsl {
                     1, 2, 3 -> game.players.any{ player -> player.pointCards == 6 }
                     else -> game.currentPlayer.pointCards == 5
                 }
-                if (gameEnd && game.currentPlayerIndex == game.playerCount-1) {
+                if (gameEnd && game.currentPlayerIndex == game.playerCount - 1) {
                    this.eliminations.eliminateBy(game.players.mapIndexed { index, player -> index to player }, compareBy({ it.points }, { +it.index }))
                 }
             }
             allActions.after {
                 if (game.players[playerIndex].caravan.count <= 10) {
                     game.currentPlayerIndex = game.currentPlayerIndex.next(game.playerCount)
+                    if (game.currentPlayerIndex == 0) game.round++
                 }
             }
         }
@@ -178,6 +180,8 @@ object SpiceRoadDsl {
 }
 
 class SpiceRoadGameModel(val playerCount: Int) {
+    var round: Int = 1
+
     //Turn: Action -> Caravan Limit (discard to hand size) (-> Game end trigger check)
     //Actions: acquire, claim, rest, play
     var turnsLeft = -1

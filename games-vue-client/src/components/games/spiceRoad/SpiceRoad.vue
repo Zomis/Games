@@ -48,6 +48,11 @@
     </v-row>
     <v-row>
       <v-col>
+        Round {{ view.round }}
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col>
         <v-btn
           v-for="(item, index) in choicesAvailable"
           :key="index"
