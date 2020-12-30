@@ -140,16 +140,6 @@
     </v-card>
       </v-col>
     </v-row>
-    <v-row>
-      <v-col
-        v-for="(amount, index) in view.coins"
-        :key="index"
-      >
-        <span :class="{['coin-' + index]: true}">
-          {{ amount }}
-        </span>
-      </v-col>
-    </v-row>
   </v-container>
 </template>
 <script>
@@ -182,7 +172,7 @@ export default {
 }
 </script>
 <style>
-:root{
+:root {
     --spiceRoad-yellow: #ffd166;
     --spiceRoad-red: #ef476f;
     --spiceRoad-green: #06D6A0;

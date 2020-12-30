@@ -3,8 +3,26 @@
     <v-card-title />
     <v-card-text>
       <div v-if="card.points">
-        {{ card.points }}
-        <spice-road-resources :caravan="card.cost" />
+        <v-row>
+          <v-col>
+            <span class="coin-silver" v-if="card.silverCoins">
+              {{ card.silverCoins }}
+            </span>
+            <span v-if="card.goldCoins" class="coin-gold">
+              {{ card.goldCoins }}
+            </span>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col>
+            {{ card.points }}
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col>
+            <spice-road-resources :caravan="card.cost" />
+          </v-col>
+        </v-row>
       </div>
       <div v-if="card.trade">
         <v-row>
