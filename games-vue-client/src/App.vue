@@ -2,7 +2,10 @@
   <v-app>
     <v-app-bar app>
       <router-link to="/">
-        <v-toolbar-title v-text="titlePrefix" />
+        <div
+          :alt="titlePrefix"
+          class="logo"
+        />
       </router-link>
       <span :style="{ 'margin-left': '5px' }">{{ titleAppend }}</span>
       <template v-if="yourPlayer.loggedIn">
@@ -107,5 +110,11 @@ export default {
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+}
+
+.logo {
+  background-image: url("assets/zomis-games.png");
+  width: 198px;
+  height: 38px;
 }
 </style>
