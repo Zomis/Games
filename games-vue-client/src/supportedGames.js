@@ -233,7 +233,7 @@ const supportedGames = {
         dsl: dsl(g => g.net.zomis.games.impl.SkullGame.game),
         actions: {
             play: (index) => "hand-" + index,
-            bet: (index) => "bet-" + index,
+            bet: (index) => "" + index,
             discard: (index) => "hand-" + index,
             pass: () => "pass",
             chooseNextPlayer: (index) => "choosePlayer-" + index,
