@@ -15,6 +15,9 @@ data class LogPartText(val text: String): LogPart {
 data class LogPartHighlight(val value: Any): LogPart {
     override val type: String = "highlight"
 }
+data class LogPartInline(val viewType: String, val data: Any): LogPart {
+    override val type: String = "inline"
+}
 data class LogPartLink(val text: String, val viewType: String, val value: Any): LogPart {
     override val type: String = "link"
 }
@@ -71,6 +74,7 @@ class LogContext<T : Any>(
     }
 
     override fun obj(value: Any): String = part { LogPartHighlight(value) }
+    override fun inline(type: String, data: Any): String = part { LogPartInline(type, data) }
     override fun player(value: PlayerIndex): String = part { LogPartPlayer(value) }
     override fun viewLink(text: String, type: String, view: Any): String = part { LogPartLink(text, type, view) }
     override fun highlight(values: List<Any>) {
@@ -126,6 +130,7 @@ class LogActionContext<T : Any, A : Any>(
 
     override fun toString(): String = "LogContext[private $secret public $public]"
     override fun obj(value: Any): String = logScope.obj(value)
+    override fun inline(type: String, data: Any): String = logScope.inline(type, data)
     override fun player(value: PlayerIndex): String = logScope.player(value)
     override fun players(playerIndices: Iterable<Int>): String = logScope.players(playerIndices)
     override fun viewLink(text: String, type: String, view: Any): String = logScope.viewLink(text, type, view)

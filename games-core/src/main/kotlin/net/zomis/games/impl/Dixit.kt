@@ -68,6 +68,7 @@ object Dixit {
         }
         gameFlow {
             loop {
+                var roundNumber = 1
                 for (player in game.players) {
                     if (eliminations.isGameOver()) return@loop
                     game.story = null
@@ -76,7 +77,7 @@ object Dixit {
                     placecardPhase(this)
                     game.board.cards.shuffle()
                     votePhase(this)
-                    scoringPhase(this)
+                    scoringPhase(this, roundNumber++)
                     cleanupPhase(this)
                 }
             }
@@ -176,7 +177,7 @@ object Dixit {
         }
     }
 
-    private suspend fun scoringPhase(gameFlow: GameFlowScope<Model>) {
+    private suspend fun scoringPhase(gameFlow: GameFlowScope<Model>, roundNumber: Int) {
         gameFlow.apply {
             game.phase = "scoring 1"
             step("correct answers") {
@@ -217,6 +218,24 @@ object Dixit {
             game.phase = "reveal correct answer"
             step("correct answer") {
                 game.lastRoundAnswer = game.story!!.card
+            }
+
+            game.phase = "reveal results"
+            step("results") {
+                log {
+                    inline("round", mapOf(
+                        "cardSet" to game.config.cardSet,
+                        "story" to game.story!!.clue,
+                        "number" to roundNumber,
+                        "cards" to game.players.map {player -> mapOf(
+                            "playerIndex" to player.playerIndex,
+                            "card" to player.placedCard,
+                            "storyteller" to (player == game.storyteller),
+                            "firstVotes" to game.players.filter { it.vote?.first == player.placedCard }.map { it.playerIndex },
+                            "secondVotes" to game.players.filter { it.vote?.second == player.placedCard }.map { it.playerIndex }
+                        )}
+                    ))
+                }
             }
         }
     }

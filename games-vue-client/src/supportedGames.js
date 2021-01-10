@@ -27,6 +27,7 @@ import Splendor from "@/components/games/splendor/Splendor";
 import SetGame from "@/components/games/set/SetGame";
 import Decrypto from "@/components/games/words/Decrypto";
 import Dixit from "@/components/games/Dixit";
+import DixitRound from "@/components/games/DixitRound";
 import Skull from "@/components/games/skull/Skull";
 import DSLTTT from "@/components/games/DSLTTT";
 import TTT3D from "@/components/games/TTT3D";
@@ -113,6 +114,9 @@ const supportedGames = {
             story: () => "story",
             place: () => "place",
             vote: (card) => `vote-${card}`,
+        },
+        viewTypes: {
+            round: { component: DixitRound, binds: (v) => ({ results: v }) }
         },
         component: Dixit
     },
