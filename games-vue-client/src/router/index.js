@@ -69,7 +69,7 @@ export default new Router({
     },
     {
       path: "/stats/games/:gameId/replay", // For backwards compatibility
-      name: "ReplayScreen",
+      name: "ReplayScreenOld",
       component: ReplayScreen,
       props: route => ({
         gameUUID: route.params.gameId
