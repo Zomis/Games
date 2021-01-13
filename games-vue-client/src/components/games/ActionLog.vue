@@ -31,6 +31,7 @@
 import supportedGames from "@/supportedGames"
 import PlayerProfile from "@/components/games/common/PlayerProfile"
 import LogEntryText from "@/components/action-log/LogEntryText"
+import LogEntryInline from "@/components/action-log/LogEntryInline"
 
 export default {
     name: "ActionLog",
@@ -55,6 +56,14 @@ export default {
                 player: {
                     component: PlayerProfile,
                     binds: (part) => ({ context: this.context, playerIndex: part.playerIndex })
+                },
+                inline: {
+                    component: LogEntryInline,
+                    binds: (part) => ({
+                        context: this.context,
+                        component: this.supportedGame.viewTypes[part.viewType].component,
+                        bindings: this.supportedGame.viewTypes[part.viewType].binds(part.data)
+                    })
                 },
                 text: {
                     component: LogEntryText,

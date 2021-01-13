@@ -68,6 +68,7 @@ object Dixit {
         }
         gameFlow {
             loop {
+                var roundNumber = 1
                 for (player in game.players) {
                     if (eliminations.isGameOver()) return@loop
                     game.story = null
@@ -76,7 +77,7 @@ object Dixit {
                     placecardPhase(this)
                     game.board.cards.shuffle()
                     votePhase(this)
-                    scoringPhase(this)
+                    scoringPhase(this, roundNumber++)
                     cleanupPhase(this)
                 }
             }
@@ -176,7 +177,7 @@ object Dixit {
         }
     }
 
-    private suspend fun scoringPhase(gameFlow: GameFlowScope<Model>) {
+    private suspend fun scoringPhase(gameFlow: GameFlowScope<Model>, roundNumber: Int) {
         gameFlow.apply {
             game.phase = "scoring 1"
             step("correct answers") {
@@ -185,21 +186,14 @@ object Dixit {
                 }
                 if (correct.isEmpty() || correct.size == game.everyoneButStoryteller.size) {
                     // Everyone except storyteller gets two points
-                    val countString = if (correct.isEmpty()) "no one" else "everyone"
-                    log { "$countString got it right, everyone except ${player(game.storyteller.playerIndex)} gets 2 points" }
                     game.everyoneButStoryteller.forEach { it.points += 2 }
                 } else {
                     // Everyone who guessed correctly gets three points
-                    correct.forEach { it.points += 3 }
-
-                    // Storyteller gets three points
-                    log { "Players guessing correctly: ${players(correct.map { it.playerIndex })}. 3 points each" }
                     correct.forEach {
                         it.points += 3
                     }
 
                     // Storyteller gets three points
-                    log { "${correct.size} players got it right, ${player(game.storyteller.playerIndex)} gets 3 points" }
                     game.storyteller.points += 3
                 }
             }
@@ -212,7 +206,6 @@ object Dixit {
                     }
                 }.forEach {votesFor ->
                     val points = votesFor.value.count().coerceAtMost(3)
-                    log { "${players(votesFor.value.map { it.playerIndex })} voted for ${player(votesFor.key.playerIndex)} giving them $points points" }
                     votesFor.key.points += points
                 }
             }
@@ -220,6 +213,24 @@ object Dixit {
             game.phase = "reveal correct answer"
             step("correct answer") {
                 game.lastRoundAnswer = game.story!!.card
+            }
+
+            game.phase = "reveal results"
+            step("results") {
+                log {
+                    inline("round", mapOf(
+                        "cardSet" to game.config.cardSet,
+                        "story" to game.story!!.clue,
+                        "number" to roundNumber,
+                        "cards" to game.players.map {player -> mapOf(
+                            "playerIndex" to player.playerIndex,
+                            "card" to player.placedCard,
+                            "storyteller" to (player == game.storyteller),
+                            "firstVotes" to game.players.filter { it.vote?.first == player.placedCard }.map { it.playerIndex },
+                            "secondVotes" to game.players.filter { it.vote?.second == player.placedCard }.map { it.playerIndex }
+                        )}
+                    ))
+                }
             }
         }
     }

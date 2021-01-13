@@ -32,29 +32,35 @@
           />
         </v-row>
         <v-row>
-          <v-btn @click="giveClues" :disabled="!actions.available['giveClue']">
+          <v-btn
+            :disabled="!actions.available['giveClue']"
+            @click="giveClues"
+          >
             Give Clues
           </v-btn>
-          <v-btn @click="performGuess" :disabled="!actions.available['guessCode']">
+          <v-btn
+            :disabled="!actions.available['guessCode']"
+            @click="performGuess"
+          >
             Guess
           </v-btn>
         </v-row>
       </v-col>
       <v-col cols="4">
-          <v-row>
-            <v-textarea
-                solo
-                rows="5"
-                :value="view.teams[view.yourTeam].chat"
-            />
-          </v-row>
-          <v-row>
-            <v-text-field
-                v-model="chatMessage"
-                label="Send a message to your team"
-                @keyup.native.enter="sendChat"
-            />
-          </v-row>
+        <v-row>
+          <v-textarea
+            solo
+            rows="5"
+            :value="view.teams[view.yourTeam].chat"
+          />
+        </v-row>
+        <v-row>
+          <v-text-field
+            v-model="chatMessage"
+            label="Send a message to your team"
+            @keyup.native.enter="sendChat"
+          />
+        </v-row>
       </v-col>
     </v-row>
 
@@ -74,7 +80,7 @@
               :key="player"
               :size="32"
               :context="context"
-              :playerIndex="player"
+              :player-index="player"
             />
           </v-card-title>
           <v-card-text>

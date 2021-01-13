@@ -2,15 +2,21 @@
   <v-card>
     <v-card-text>
       <v-row justify="start">
-        <v-col cols="3">
-          <PlayerProfile
-            :size="32"
-            show-name
-            :player="playerInfo"
-          />
-        </v-col>
-        <v-col cols="1">
-          <h1>{{ player.points }}</h1>
+        <v-col cols="4">
+          <v-row>
+            <v-col>
+              <PlayerProfile
+                :size="32"
+                show-name
+                :player="playerInfo"
+              />
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
+              <h1>{{ player.points }}</h1>
+            </v-col>
+          </v-row>
         </v-col>
         <v-col>
           <v-row

@@ -14,8 +14,8 @@
             class="list-complete-item"
           >
             <SpiceRoadCard
-              action="claim"
               :key="card.id"
+              action="claim"
               :card="card"
               :actions="actions"
             />
@@ -37,8 +37,8 @@
             class="list-complete-item"
           >
             <SpiceRoadCard
-              action="acquire"
               :key="card.id"
+              action="acquire"
               :card="card"
               :actions="actions"
             />
@@ -48,7 +48,16 @@
     </v-row>
     <v-row>
       <v-col>
-        <v-btn v-for="(item, index) in choicesAvailable" :key="index" @click="makeChoice(item)">
+        Round {{ view.round }}
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col>
+        <v-btn
+          v-for="(item, index) in choicesAvailable"
+          :key="index"
+          @click="makeChoice(item)"
+        >
           {{ item }}
         </v-btn>
       </v-col>
@@ -58,86 +67,89 @@
       :key="player.index"
     >
       <v-col>
-      <v-card>
-        <v-card-text>
-          <v-row>
-      <v-col cols="2">
-        <v-row>
-          <v-col>
-            <PlayerProfile
-              show-name
-              :context="context"
-              :player-index="player.index"
-            />
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col>
-            {{ player.points }} points
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col>
-            {{ player.pointCards }} point cards
-          </v-col>
-        </v-row>
-        <v-row>
-          <v-col>
-            <Actionable
-              button
-              :action-type="['rest']"
-              :actions="actions"
-            >
-              Rest
-            </Actionable>
-            <v-btn @click="performChosen" :disabled="!actions || !actions.chosen">
-              Done
-            </v-btn>
-          </v-col>
-        </v-row>
-      </v-col>
-      <v-col cols="1">
-        <SpiceRoadResources :caravan="player.caravan" />
-      </v-col>
-      <v-col cols="9">
-        <CardZone
-          class="row spiceroad-action-cards"
-        >
-          <v-col
-            v-for="card in player.hand"
-            :key="card.id"
-            class="list-complete-item"
-          >
-            <SpiceRoadCard
-              action="play"
-              :key="card.id"
-              :card="card"
-              :actions="actions"
-            />
-          </v-col>
-        </CardZone>
-      </v-col>
-      <v-col>
-        <CardZone
-          class="row spiceroad-action-cards"
-          :style="{ opacity: 0.5 }"
-        >
-          <v-col
-            v-for="card in player.discard"
-            :key="card.id"
-            class="list-complete-item"
-          >
-            <SpiceRoadCard
-              :key="card.id"
-              :card="card"
-              :actions="actions"
-            />
-          </v-col>
-        </CardZone>
-      </v-col>
-      </v-row>
-      </v-card-text>
-    </v-card>
+        <v-card>
+          <v-card-text>
+            <v-row>
+              <v-col cols="2">
+                <v-row>
+                  <v-col>
+                    <PlayerProfile
+                      show-name
+                      :context="context"
+                      :player-index="player.index"
+                    />
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <v-col>
+                    {{ player.points }} points
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <v-col>
+                    {{ player.pointCards }} point cards
+                  </v-col>
+                </v-row>
+                <v-row>
+                  <v-col>
+                    <Actionable
+                      button
+                      :action-type="['rest']"
+                      :actions="actions"
+                    >
+                      Rest
+                    </Actionable>
+                    <v-btn
+                      :disabled="!actions || !actions.chosen"
+                      @click="performChosen"
+                    >
+                      Done
+                    </v-btn>
+                  </v-col>
+                </v-row>
+              </v-col>
+              <v-col cols="1">
+                <SpiceRoadResources :caravan="player.caravan" />
+              </v-col>
+              <v-col cols="9">
+                <CardZone
+                  class="row spiceroad-action-cards"
+                >
+                  <v-col
+                    v-for="card in player.hand"
+                    :key="card.id"
+                    class="list-complete-item"
+                  >
+                    <SpiceRoadCard
+                      :key="card.id"
+                      action="play"
+                      :card="card"
+                      :actions="actions"
+                    />
+                  </v-col>
+                </CardZone>
+              </v-col>
+              <v-col>
+                <CardZone
+                  class="row spiceroad-action-cards"
+                  :style="{ opacity: 0.5 }"
+                >
+                  <v-col
+                    v-for="card in player.discard"
+                    :key="card.id"
+                    class="list-complete-item"
+                  >
+                    <SpiceRoadCard
+                      :key="card.id"
+                      :card="card"
+                      :actions="actions"
+                    />
+                  </v-col>
+                </CardZone>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
       </v-col>
     </v-row>
   </v-container>

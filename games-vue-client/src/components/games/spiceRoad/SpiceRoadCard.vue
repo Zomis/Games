@@ -1,14 +1,23 @@
 <template>
-  <v-card :class="[actionableClass]" @click="click">
+  <v-card
+    :class="[actionableClass]"
+    @click="click"
+  >
     <v-card-title />
     <v-card-text>
       <div v-if="card.points">
         <v-row>
           <v-col>
-            <span class="coin-silver" v-if="card.silverCoins">
+            <span
+              v-if="card.silverCoins"
+              class="coin-silver"
+            >
               {{ card.silverCoins }}
             </span>
-            <span v-if="card.goldCoins" class="coin-gold">
+            <span
+              v-if="card.goldCoins"
+              class="coin-gold"
+            >
               {{ card.goldCoins }}
             </span>
           </v-col>
@@ -28,13 +37,17 @@
         <v-row>
           <v-col>
             <spice-road-resources :caravan="card.trade.give" />
-            <v-icon color="gray">mdi-bank-transfer-out</v-icon>
+            <v-icon color="gray">
+              mdi-bank-transfer-out
+            </v-icon>
             <spice-road-resources :caravan="card.trade.get" />
           </v-col>
         </v-row>
       </div>
       <div v-if="card.upgrade">
-        <v-icon v-for="i in card.upgrade" :key="i"
+        <v-icon
+          v-for="i in card.upgrade"
+          :key="i"
           color="gray"
         >
           mdi-arrow-up-bold-circle

@@ -10,7 +10,7 @@
             <PlayerProfile
               :size="32"
               :context="context"
-              :playerIndex="playerIndex"
+              :player-index="playerIndex"
               show-name
             />
           </v-card-title>
@@ -18,90 +18,92 @@
             <span>
               {{ player.points }} points
             </span>
-              <v-icon v-if="player.placed"
-                color="green"
-              >
-                mdi-image
-              </v-icon>
-              <v-icon v-if="player.voted"
-                color="green"
-              >
-                mdi-check-circle
-              </v-icon>
+            <v-icon
+              v-if="player.placed"
+              color="green"
+            >
+              mdi-image
+            </v-icon>
+            <v-icon
+              v-if="player.voted"
+              color="green"
+            >
+              mdi-check-circle
+            </v-icon>
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
     <v-row>
-        <v-col>
-            <p>{{ view.phase }}</p>
-            <p>Storyteller</p>
-            <PlayerProfile
-              :size="32"
-              :context="context"
-              :playerIndex="view.storyteller"
-              show-name
-            />
-        </v-col>
+      <v-col>
+        <p>{{ view.phase }}</p>
+        <p>Storyteller</p>
+        <PlayerProfile
+          :size="32"
+          :context="context"
+          :player-index="view.storyteller"
+          show-name
+        />
+      </v-col>
     </v-row>
     <v-row v-if="view.story">
-        <v-col>
-            <v-card>
-                <v-card-title>
-                    Story
-                </v-card-title>
-                <v-card-text>
-                  <span style="font-style: italic">{{ view.story }}</span>
-                  <CardZone>
-                    <v-img
-                      v-for="card in view.board"
-                      :key="card"
-                      class="animate"
-                      :src="`https://zomis-games-cdn.s3.eu-central-1.amazonaws.com/games/dixit/${view.config.cardSet}/${card}`"
-                      @click="vote(card)"
-                    />
-                  </CardZone>
-                </v-card-text>
-            </v-card>
-        </v-col>
+      <v-col>
+        <v-card>
+          <v-card-title>
+            Story
+          </v-card-title>
+          <v-card-text>
+            <span style="font-style: italic">{{ view.story }}</span>
+            <CardZone>
+              <v-img
+                v-for="card in view.board"
+                :key="card"
+                class="animate"
+                :src="`https://zomis-games-cdn.s3.eu-central-1.amazonaws.com/games/dixit/${view.config.cardSet}/${card}`"
+                @click="vote(card)"
+              />
+            </CardZone>
+          </v-card-text>
+        </v-card>
+      </v-col>
     </v-row>
     <v-row v-if="actions.available.story">
-        <v-col>
-            <v-text-field
-                v-model="story"
-                label="Write your story and then click on a card in your hand below"
-            />
-        </v-col>
-    </v-row>
-    <v-row>
       <v-col>
-          <v-card>
-              <v-card-title>Your hand</v-card-title>
-              <v-card-text>
-                <CardZone>
-                  <v-img
-                    v-for="card in view.hand"
-                    :key="card"
-                    class="animate"
-                    :src="`https://zomis-games-cdn.s3.eu-central-1.amazonaws.com/games/dixit/${view.config.cardSet}/${card}`"
-                    @click="chosenCard(card)"
-                  />
-                </CardZone>
-              </v-card-text>
-          </v-card>
+        <v-text-field
+          v-model="story"
+          label="Write your story and then click on a card in your hand below"
+        />
       </v-col>
     </v-row>
     <v-row>
       <v-col>
-          <v-card>
-              <v-card-title>Last round's correct answer</v-card-title>
-              <v-card-text>
-                <v-img
-                  class="animate"
-                  :src="`https://zomis-games-cdn.s3.eu-central-1.amazonaws.com/games/dixit/${view.config.cardSet}/${view.lastAnswer}`"
-                />
-              </v-card-text>
-          </v-card>
+        <v-card>
+          <v-card-title>Your hand</v-card-title>
+          <v-card-text>
+            <CardZone>
+              <v-img
+                v-for="card in view.hand"
+                :key="card"
+                class="animate"
+                :src="`https://zomis-games-cdn.s3.eu-central-1.amazonaws.com/games/dixit/${view.config.cardSet}/${card}`"
+                @click="chosenCard(card)"
+              />
+            </CardZone>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col>
+        <v-card>
+          <v-card-title>Last round's correct answer</v-card-title>
+          <v-card-text>
+            <v-img
+              class="animate"
+              :src="`https://zomis-games-cdn.s3.eu-central-1.amazonaws.com/games/dixit/${view.config.cardSet}/${view.lastAnswer}`"
+            />
+          </v-card-text>
+        </v-card>
       </v-col>
     </v-row>
   </v-container>
