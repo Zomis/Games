@@ -144,6 +144,7 @@ const supportedGames = {
         component: RoyalGameOfUR,
     },
     "Decrypto": {
+        enabled: false,
         dsl: true,
         actions: {
             chat: () => "chat",
