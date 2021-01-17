@@ -129,10 +129,10 @@ class TTTQLearn(val games: GameSystem) {
         if (true) return // Disabled until a better framework for it is in place
         learn.randomMoveProbability = 0.0
 
-        val serverAI = ServerAI(gameType, "#AI_QLearn_$gameType") { game, index ->
-            val controller = game.obj!!.game
+        val serverAI = ServerAI(gameType, "#AI_QLearn_$gameType") {
+            val controller = serverGame.obj!!.game
             val model = controller.model as TTController
-            if (model.currentPlayer.index() != index) {
+            if (model.currentPlayer.index() != playerIndex) {
                 return@ServerAI null
             }
             if (model.isGameOver || isDraw(model)) {
@@ -148,7 +148,7 @@ class TTTQLearn(val games: GameSystem) {
             val x = action % model.game.sizeX
             val y = action / model.game.sizeX
             val point = Point(x, y)
-            return@ServerAI PlayerGameMoveRequest(game, index, "play", point, true)
+            return@ServerAI PlayerGameMoveRequest(client, serverGame, playerIndex, "play", point, true)
 
             /*
             Alternative approach of finding available actions to evaluate:

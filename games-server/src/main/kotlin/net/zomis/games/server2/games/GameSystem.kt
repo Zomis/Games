@@ -7,6 +7,7 @@ import net.zomis.core.events.ListenerPriority
 import net.zomis.games.Features
 import net.zomis.games.WinResult
 import net.zomis.games.common.PlayerIndex
+import net.zomis.games.common.isObserver
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.GameReplayableImpl
 import net.zomis.games.dsl.GameSpec
@@ -19,10 +20,7 @@ import net.zomis.games.server2.clients.FakeClient
 import net.zomis.games.server2.db.DBGame
 import net.zomis.games.server2.db.DBIntegration
 import net.zomis.games.server2.db.PlayerInGame
-import net.zomis.games.server2.invites.ClientList
-import net.zomis.games.server2.invites.InviteOptions
-import net.zomis.games.server2.invites.InviteTurnOrder
-import net.zomis.games.server2.invites.playerMessage
+import net.zomis.games.server2.invites.*
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
@@ -34,8 +32,20 @@ fun ServerGame.toJson(type: String): Map<String, Any?> {
         "gameId" to this.gameId
     )
 }
-fun ServerGame.map(type: String): Map<String, Any> {
-    return mapOf("type" to type, "gameType" to this.gameType.gameSpec.name, "gameId" to this.gameId)
+enum class ClientPlayerAccessType { NONE, READ, WRITE, ADMIN }
+data class ClientAccess(val gameAdmin: Boolean) {
+    val access: MutableMap<Int, ClientPlayerAccessType> = mutableMapOf()
+    fun index(playerIndex: PlayerIndex): ClientPlayerAccessType {
+        if (playerIndex.isObserver() || playerIndex!! < 0) return ClientPlayerAccessType.READ // Observer
+        return access[playerIndex] ?: ClientPlayerAccessType.NONE
+    }
+
+    fun addAccess(playerIndex: Int, access: ClientPlayerAccessType): ClientAccess {
+        this.access[playerIndex] = access
+        return this
+    }
+
+    override fun toString(): String = "Access:($gameAdmin, $access)"
 }
 
 class ServerGame(private val callback: GameCallback, val gameType: GameType, val gameId: String, val gameMeta: InviteOptions) {
@@ -44,6 +54,7 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
     private val actionListHandler = ActionListRequestHandler(this)
     val router = MessageRouter(this)
         .handler("view", this::view)
+        .handler("meta", this::meta)
         .handler("actionList", actionListHandler::sendActionList)
         .handler("action", this::actionRequest)
         .handler("move", this::moveRequest)
@@ -52,22 +63,20 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
     var gameOver: Boolean = false
     private val nextMoveIndex = AtomicInteger(0)
     val mutex = Mutex()
-    internal val players: MutableList<Client> = mutableListOf()
-    internal val observers: MutableSet<Client> = mutableSetOf()
+    internal val players: MutableMap<Client, ClientAccess> = mutableMapOf()
     var obj: GameReplayableImpl<Any>? = null
     var lastMove: Long = Instant.now().toEpochMilli()
 
     fun broadcast(message: (Client) -> Any) {
-        players.forEach { it.send(message.invoke(it)) }
-        observers.forEach { it.send(message.invoke(it)) }
+        players.keys.forEach { it.send(message.invoke(it)) }
     }
-
-    fun clientPlayerIndex(client: Client): PlayerIndex {
-        return players.indexOf(client).takeIf { it >= 0 }
-    }
-
-    fun verifyPlayerIndex(client: Client, playerIndex: Int): Boolean {
-        return players.getOrNull(playerIndex) == client
+    private val NO_ACCESS = ClientAccess(gameAdmin = false)
+    fun playerAccess(client: Client): ClientAccess = players.getOrDefault(client, NO_ACCESS)
+    fun requireAccess(client: Client, playerIndex: Int?, requiredAccess: ClientPlayerAccessType) {
+        val actual = playerAccess(client).index(playerIndex)
+        if (actual < requiredAccess) {
+            throw IllegalStateException("$this: Client $client playerIndex $playerIndex has $actual but required $requiredAccess, all accesses are $players")
+        }
     }
 
     fun nextMoveIndex(): Int = nextMoveIndex.getAndIncrement()
@@ -78,13 +87,28 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
         // Otherwise, set player as observer.
 
         val playerId = message.client.playerId!!
-        val index = players.indexOfFirst { it.playerId == playerId }
-        if (index >= 0) {
-            players[index] = message.client
-        } else {
-            observers.add(message.client)
-        }
+        val access = players.entries.find { it.key.playerId == playerId }?.value ?: ClientAccess(gameAdmin = false)
+        players[message.client] = access
         message.client.send(createGameInfoMessage(message.client))
+    }
+
+    fun meta(message: ClientJsonMessage) {
+        /*
+        Make it possible to:
+        - Switch which player is playing in game
+        - Add a user to a playerIndex, with either read or read-write permissions, or read-write-admin permissions
+        - Count observers also as users
+        - Read permissions: See available actions, see view, see
+        - Write permissions: Perform actions
+        - Admin permissions: Allow giving access to other users
+        - Log all meta-actions, show to all players
+
+        - GAME ADMIN: Reset game, set new playerCount
+        - GAME ADMIN: Add more players to game, start with: Set, Decrypto, Liar's Dice?, Skull?
+        - GAME ADMIN: Remove players from game, Avalon and Hanabi cannot be replaced by AI and needs special handling
+
+        - Requires either admin permission over the user or site-wide admin permission
+        */
     }
 
     private fun actionRequest(message: ClientJsonMessage) {
@@ -96,59 +120,64 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
     private fun moveRequest(message: ClientJsonMessage) {
         val moveType = message.data.get("moveType").asText()
         val move = message.data.get("move")
-        val playerIndex = if (message.data.has("playerIndex"))
-                message.data.get("playerIndex").asInt()
-            else clientPlayerIndex(message.client)!!
-        if (!verifyPlayerIndex(message.client, playerIndex)) {
-            throw IllegalArgumentException("Client ${message.client.name} does not have playerIndex $playerIndex")
-        }
-        callback.moveHandler(PlayerGameMoveRequest(this, playerIndex, moveType, move, true))
+        val playerIndex = message.data.get("playerIndex").asInt()
+        requireAccess(message.client, playerIndex, ClientPlayerAccessType.WRITE)
+        callback.moveHandler(PlayerGameMoveRequest(message.client, this, playerIndex, moveType, move, true))
     }
 
     private fun view(message: ClientJsonMessage) {
         val obj = this.obj!!.game
-        val viewer = message.client to this.clientPlayerIndex(message.client)
-        logger.info { "Sending view data for $gameId of type ${gameType.type} to $viewer" }
-        val view = obj.view(viewer.second)
+        val viewer = message.data.get("playerIndex").asInt().takeIf { it >= 0 }
+        requireAccess(message.client, viewer, ClientPlayerAccessType.READ)
+        logger.info { "Sending view data for $viewer in $gameId of type ${gameType.type} to ${message.client}" }
+        val view = obj.view(viewer)
         message.client.send(mapOf(
             "type" to "GameView",
             "gameType" to gameType.type,
             "gameId" to gameId,
-            "viewer" to viewer.second,
+            "viewer" to viewer,
             "view" to view
         ))
     }
 
     private fun viewRequest(message: ClientJsonMessage) {
-        val viewer = message.client to this.clientPlayerIndex(message.client)
-
-        val viewDetailsResult = this.obj!!.game.viewRequest(viewer.second,
+        val viewer = message.data.get("playerIndex").asInt().takeIf { it >= 0 }
+        requireAccess(message.client, viewer, ClientPlayerAccessType.READ)
+        val viewDetailsResult = this.obj!!.game.viewRequest(viewer,
               message.data.getTextOrDefault("viewRequest", ""), emptyMap())
 
         message.client.send(mapOf(
             "type" to "GameViewDetails",
             "gameType" to gameType.type,
             "gameId" to gameId,
-            "viewer" to viewer.second,
+            "viewer" to viewer,
             "details" to viewDetailsResult
         ))
     }
 
     fun sendGameStartedMessages() {
-        val players = this.players.asSequence().map { playerMessage(it) }.toList()
-        this.players.forEachIndexed { index, client ->
-            client.send(this.map("GameStarted").plus("yourIndex" to index).plus("players" to players))
+        this.players.keys.forEach {client ->
+            client.send(
+                this.toJson("GameStarted")
+                    .plus("access" to playerAccess(client).access)
+                    .plus("players" to playerList().map { it.toMap() })
+            )
         }
     }
 
-    private fun createGameInfoMessage(client: Client): Map<String, Any> {
-        val players = this.players.asSequence().map { playerMessage(it) }.toList()
-        return this.map("GameInfo").plus("yourIndex" to (this.clientPlayerIndex(client) ?: -1)).plus("players" to players)
+    fun playerList(): List<PlayerInfo> {
+        val playerIndices = this.players.flatMap { it.value.access.keys }.distinct().sorted()
+        return playerIndices.map { highestAccessTo(it)!! }.map { playerMessage(it) }.toList()
     }
 
-    fun gameSetup(): GameSetupImpl<Any> {
-        return ServerGames.setup(this.gameType.type)!!
+    fun highestAccessTo(playerIndex: Int): Client? = this.players.maxBy { it.value.index(playerIndex) }?.key
+
+    private fun createGameInfoMessage(client: Client): Map<String, Any?> {
+        return this.toJson("GameInfo")
+            .plus("access" to playerAccess(client).access).plus("players" to playerList())
     }
+
+    fun gameSetup(): GameSetupImpl<Any> = ServerGames.setup(this.gameType.type)!!
 
 }
 
@@ -163,13 +192,13 @@ data class GameStartedEvent(val game: ServerGame)
 data class GameEndedEvent(val game: ServerGame)
 data class PlayerEliminatedEvent(val game: ServerGame, val player: Int, val winner: WinResult, val position: Int)
 
-data class PlayerGameMoveRequest(val game: ServerGame, val player: Int, val moveType: String, val move: Any, val serialized: Boolean) {
+data class PlayerGameMoveRequest(val client: Client, val game: ServerGame, val player: Int, val moveType: String, val move: Any, val serialized: Boolean) {
     fun illegalMove(reason: String): IllegalMoveEvent {
-        return IllegalMoveEvent(game, player, moveType, move, reason)
+        return IllegalMoveEvent(client, game, player, moveType, move, reason)
     }
 }
 
-data class IllegalMoveEvent(val game: ServerGame, val player: Int, val moveType: String, val move: Any, val reason: String)
+data class IllegalMoveEvent(val client: Client, val game: ServerGame, val player: Int, val moveType: String, val move: Any, val reason: String)
 
 typealias GameIdGenerator = () -> String
 typealias GameTypeMap<T> = (String) -> T?
@@ -197,16 +226,17 @@ class GameType(private val callback: GameCallback, val gameSpec: GameSpec<Any>, 
         serverGame.obj = GamesImpl.game(gameSpec).replay(dbGame.replayData(), GamesServer.replayStorage.database(dbIntegration!!, gameId)).replayable()
         runningGames[serverGame.gameId] = serverGame
 
-        fun findOrCreatePlayers(playersInGame: List<PlayerInGame>): Collection<Client> {
-            return playersInGame.map {player ->
+        fun findOrCreatePlayers(playersInGame: List<PlayerInGame>): Map<Client, ClientAccess> {
+            return playersInGame.associate {player ->
                 val playerId = player.player!!.playerId
                 val name = player.player.name
                 val uuid = UUID.fromString(playerId)
-                gameClients()?.list()?.find { it.playerId.toString() == playerId }
+                val client = gameClients()?.list()?.find { it.playerId.toString() == playerId }
                     ?: FakeClient(uuid).also { it.updateInfo(name, uuid) }
+                client to ClientAccess(gameAdmin = false).addAccess(player.playerIndex, ClientPlayerAccessType.ADMIN)
             }
         }
-        serverGame.players.addAll(findOrCreatePlayers(dbGame.summary.playersInGame))
+        serverGame.players.putAll(findOrCreatePlayers(dbGame.summary.playersInGame))
         serverGame.sendGameStartedMessages()
         // Do NOT call GameStartedEvent as that will trigger database save
 
@@ -263,7 +293,7 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>, private val callback:
             }
         })
         events.listen("Send IllegalMove", IllegalMoveEvent::class, {true}, {event ->
-            event.game.players[event.player].send(
+            event.client.send(
                 event.game.toJson("IllegalMove").plus("player" to event.player).plus("reason" to event.reason)
             )
         })

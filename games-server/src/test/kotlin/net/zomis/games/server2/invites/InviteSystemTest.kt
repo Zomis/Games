@@ -108,7 +108,7 @@ class InviteSystemTest {
             val playersString = """${host.idName},${invitee.idName}"""
             receive(invitee, mapOf("type" to "InviteView"))
             receive(invitee, mapOf("type" to "InviteView"))
-            receive(invitee, """{"type":"GameStarted","gameType":"TestGameType","gameId":"1","yourIndex":1,"players":[$playersString]}""")
+            receive(invitee, """{"type":"GameStarted","gameType":"TestGameType","gameId":"1","access":{"1":"ADMIN"},"players":[$playersString]}""")
         }
 
         system.createInvite("TestGameType", "12345678-1234-1234-1234-123456789abc", inviteOptions, host, listOf(invitee))
@@ -138,10 +138,10 @@ class InviteSystemTest {
 
         val playersString = """${host.idName},${invitee.idName}"""
         stringMapExpect(host.nextMessage(), "type" to "InviteView")
-        Assertions.assertEquals("""{"type":"GameStarted","gameType":"MyGame","gameId":"1","yourIndex":0,"players":[$playersString]}""", host.nextMessage())
+        Assertions.assertEquals("""{"type":"GameStarted","gameType":"MyGame","gameId":"1","access":{"0":"ADMIN"},"players":[$playersString]}""", host.nextMessage())
         stringMapExpect(invitee.nextMessage(), "type" to "InviteView")
         stringMapExpect(invitee.nextMessage(), "type" to "InviteView")
-        Assertions.assertEquals("""{"type":"GameStarted","gameType":"MyGame","gameId":"1","yourIndex":1,"players":[$playersString]}""", invitee.nextMessage())
+        Assertions.assertEquals("""{"type":"GameStarted","gameType":"MyGame","gameId":"1","access":{"1":"ADMIN"},"players":[$playersString]}""", invitee.nextMessage())
     }
 
     @Test

@@ -26,9 +26,9 @@ fun URL.lines(): List<String> {
 }
 
 class AuthorizationCallback(
-    val cookieLookup: (String) -> PlayerInfo? = { null }
+    val cookieLookup: (String) -> PlayerDatabaseInfo? = { null }
 )
-data class PlayerInfo(val name: String, val playerId: PlayerId)
+data class PlayerDatabaseInfo(val name: String, val playerId: PlayerId)
 
 class AuthorizationSystem(private val events: EventSystem, private val callback: AuthorizationCallback = AuthorizationCallback()) {
     private val secureRandom: SecureRandom = SecureRandom()

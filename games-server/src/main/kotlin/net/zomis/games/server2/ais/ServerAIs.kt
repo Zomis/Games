@@ -4,6 +4,7 @@ import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.impl.Game
+import net.zomis.games.server2.Client
 import net.zomis.games.server2.games.GameTypeRegisterEvent
 import net.zomis.games.server2.games.PlayerGameMoveRequest
 import net.zomis.games.server2.games.ServerGame
@@ -26,11 +27,11 @@ class ServerAIs(private val aiRepository: AIRepository, private val dslGameTypes
         return actions.random()
     }
 
-    fun randomAction(game: ServerGame, index: Int): PlayerGameMoveRequest? {
+    fun randomAction(game: ServerGame, client: Client, index: Int): PlayerGameMoveRequest? {
         val controller = game.obj!!.game
         val actionable = randomActionable(controller, index)
         return actionable?.let {
-            PlayerGameMoveRequest(game, it.playerIndex, it.actionType, it.parameter, false)
+            PlayerGameMoveRequest(client, game, it.playerIndex, it.actionType, it.parameter, false)
         }
     }
 
@@ -49,8 +50,8 @@ class ServerAIs(private val aiRepository: AIRepository, private val dslGameTypes
                 // Do not add Random AI for Set game because of it playing continuously
                 return@listen
             }
-            ServerAI(event.gameType, "#AI_Random_" + event.gameType) { game, index ->
-                return@ServerAI randomAction(game, index)
+            ServerAI(event.gameType, "#AI_Random_" + event.gameType) {
+                return@ServerAI randomAction(serverGame, client, playerIndex)
             }.register(events)
         })
         ServerAlphaBetaAIs(aiRepository).setup(events)

@@ -6,14 +6,11 @@ import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.GameEntryPoint
 import net.zomis.games.dsl.GamesImpl
-import net.zomis.games.impl.SplendorGame
 import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.dsl.impl.GameControllerContext
 import net.zomis.games.dsl.impl.GameControllerScope
 import net.zomis.games.dsl.impl.GameImpl
-import net.zomis.games.impl.SetAction
-import net.zomis.games.impl.SetGame
-import net.zomis.games.impl.SetGameModel
+import net.zomis.games.impl.*
 import net.zomis.games.impl.words.Decrypto
 import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.ais.ServerAIs
@@ -24,6 +21,8 @@ import net.zomis.games.server2.clients.WSClient
 import net.zomis.games.server2.clients.getText
 import net.zomis.games.server2.games.PlayerGameMoveRequest
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -101,7 +100,7 @@ class DslRandomPlayTest {
         val clients = (1..playerCount).map { WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket")) }
         clients.forEach { it.connectBlocking() }
 
-        val playerIds = clients.map {client ->
+        val clientsById = clients.associateBy {client ->
             client.send("""{ "route": "auth/guest" }""")
             client.expectJsonObject { it.getText("type") == "Auth" }.get("playerId").asText()
         }
@@ -123,37 +122,46 @@ class DslRandomPlayTest {
 
         clients[0].send("""{ "route": "invites/start", "gameType": "$dslGame", "options": {}, "gameOptions": $configString }""")
         val inviteId = clients[0].expectJsonObject { it.getText("type") == "InviteView" }.getText("inviteId")
-        val remainingPlayers = playerIds.subList(1, playerIds.size)
+        val remainingPlayers = clientsById.filter { it.value != clients[0] }
 
-        val invitees = mapper.writeValueAsString(remainingPlayers)
+        val invitees = mapper.writeValueAsString(remainingPlayers.keys)
         clients[0].sendAndExpectResponse("""{ "route": "invites/$inviteId/send", "gameType": "$dslGame", "invite": $invitees }""")
 
         clients.subList(1, clients.size).forEach { client ->
-            client.sendAndExpectResponse("""{ "route": "invites/$inviteId/respond", "accepted": true }""")
-        }
-        clients.forEach { client ->
-            val json = client.takeUntilJson {
-                it.getText("type") == "InviteView" && it["players"].size() == clients.size
-            }
+            client.send("""{ "route": "invites/$inviteId/respond", "accepted": true }""")
+            client.takeUntilJson { it.getText("type") == "InviteView" }
         }
 
+        clients[0].takeUntilJson {
+            it.getText("type") == "InviteView" && it["players"].size() == clients.size
+        }
         clients[0].send("""{ "route": "invites/$inviteId/start" }""")
 
         clients.forEach {client ->
             client.takeUntilJson { it.getText("type") == "GameStarted" }
         }
 
-        clients.forEach {client ->
-            client.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
-            client.takeUntilJson { it.getText("type") == "GameView" }
-        }
-
         // Find game
         val game = server!!.gameSystem.getGameType(dslGame)!!.runningGames["1"]!!
         val gameImpl = game.obj!!.game
-        val players = game.players.mapIndexed { index, client ->
-            index to clients[playerIds.indexOf(client.playerId!!.toString())]
+        val players = game.playerList().mapIndexed { index, client ->
+            index to clientsById.getValue(client.playerId)
         }
+        val playerIdsByIndex = game.playerList().withIndex().associate { it.index to it.value.playerId }
+        Assertions.assertTrue(game.players.all { it.value.access.isNotEmpty() }) { "Player access is not correct: ${game.players}" }
+
+        logger.info { "clientsById: $clientsById" }
+        logger.info { "Server Players: ${game.players.map { it.key.playerId to it.value.access }}" }
+        logger.info { "Player List: ${game.playerList().map { it.playerId }}" }
+
+//        if (game.playerList().map { it.playerId } != playerIds) throw IllegalStateException("Mismatching lists")
+
+        playerIdsByIndex.forEach { (playerIndex, playerId) ->
+            val client = clientsById.getValue(playerId)
+            client.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view", "playerIndex": $playerIndex }""")
+            client.takeUntilJson { it.getText("type") == "GameView" }
+        }
+
         var actionCounter = 0
 
         while (!gameImpl.isGameOver()) {
@@ -162,7 +170,7 @@ class DslRandomPlayTest {
             }
             actionCounter++
             if (actionCounter % 10 == 0) {
-                clients[0].sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
+                clients[0].sendAndExpectResponse("""{ "route": "games/$dslGame/1/view", "playerIndex": -1 }""")
                 clients[0].takeUntilJson { it.getText("type") == "GameView" }
             }
             val actions: List<PlayerGameMoveRequest> = players.mapNotNull {playerClient ->
@@ -172,10 +180,10 @@ class DslRandomPlayTest {
                     val controllerContext = GameControllerContext(gameImpl, playerIndex)
                     moveHandler.invoke(controllerContext)?.let {
                         val serialized = gameImpl.actions.type(it.actionType)!!.actionType.serialize(it.parameter)
-                        PlayerGameMoveRequest(game, playerIndex, it.actionType, serialized, true)
+                        PlayerGameMoveRequest(game.highestAccessTo(playerIndex)!!, game, playerIndex, it.actionType, serialized, true)
                     }
                 } else {
-                    serverAIs.randomAction(game, playerIndex)
+                    serverAIs.randomAction(game, game.highestAccessTo(playerIndex)!!, playerIndex)
                 }
             }.map { it.serialize(gameImpl) }
             if (actions.isEmpty()) {
@@ -184,7 +192,7 @@ class DslRandomPlayTest {
                 throw IllegalStateException("Game is not over but no actions available after $actionCounter actions. Is the game a draw? View is $view")
             }
             val request = actions.random() // If multiple players wants to perform an action, just do one of them
-            val playerSocket = clients[playerIds.indexOf(game.players[request.player].playerId!!.toString())]
+            val playerSocket = clientsById.getValue(request.client.playerId.toString())
             val moveString = jacksonObjectMapper().writeValueAsString(request.move)
             playerSocket.send("""{ "route": "games/$dslGame/1/move", "playerIndex": ${request.player}, "moveType": "${request.moveType}", "move": $moveString }""")
             clients.forEach {client ->

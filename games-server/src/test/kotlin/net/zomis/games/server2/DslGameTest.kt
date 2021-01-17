@@ -62,24 +62,24 @@ class DslGameTest {
         p1.expectJsonObject { it.getText("type") == "LobbyChange" }
         p1.expectJsonObject {
             it.getText("type") == "GameStarted" && it.getText("gameType") == dslGame &&
-                    it.getInt("yourIndex") == 0
+                    it.get("access").get("0").asText() == "ADMIN"
         }
         p2.expectJsonObject {
             it.getText("type") == "GameStarted" && it.getText("gameType") == dslGame &&
-                    it.getInt("yourIndex") == 1
+                    it.get("access").get("1").asText() == "ADMIN"
         }
 
-        p1.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
+        p1.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view", "playerIndex": 0 }""")
         val viewResponse = p1.expectJsonObject { it.getText("type") == "GameView" }
         Assertions.assertEquals(3, viewResponse["view"]["board"].size())
         Assertions.assertEquals(3, viewResponse["view"]["board"][0].size())
         Assertions.assertEquals(3, viewResponse["view"]["board"][1].size())
         Assertions.assertEquals(3, viewResponse["view"]["board"][2].size())
-        p2.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
+        p2.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view", "playerIndex": 1 }""")
         p2.expectJsonObject { it.getText("type") == "GameView" }
 
         // Try to cheat - wrong player
-        p2.sendAndExpectResponse("""{ "route": "games/$dslGame/1/move", "moveType": "play", "move": { "x": 0, "y": 2 } }""")
+        p2.sendAndExpectResponse("""{ "route": "games/$dslGame/1/move", "moveType": "play", "move": { "x": 0, "y": 2 }, "playerIndex": 1 }""")
         p2.takeUntilJson { it.getText("type") == "IllegalMove" }
 
         sendAndExpect("play", p1, p2, listOf(
@@ -92,7 +92,7 @@ class DslGameTest {
         ))
 
         // Win the game
-        p1.sendAndExpectResponse("""{ "route": "games/$dslGame/1/move", "moveType": "play", "move": { "x": 1, "y": 2 } }""")
+        p1.sendAndExpectResponse("""{ "route": "games/$dslGame/1/move", "moveType": "play", "move": { "x": 1, "y": 2 }, "playerIndex": 0 }""")
         var obj = p1.takeUntilJson { it.getText("type") == "PlayerEliminated" }
         assert(obj.getText("gameType") == dslGame)
         assert(obj.getInt("player") == 0)
@@ -124,9 +124,10 @@ class DslGameTest {
     private fun sendAndExpect(moveType: String, p1: WSClient, p2: WSClient, pairs: List<Any>) {
         val mapper = jacksonObjectMapper()
         pairs.forEachIndexed { index, moveParameter ->
-            val cl = if (index % 2 == 0) p1 else p2
+            val playerIndex = index % 2
+            val cl = if (playerIndex == 0) p1 else p2
             val move = mapper.writeValueAsString(moveParameter)
-            cl.send("""{ "route": "games/$dslGame/1/move", "moveType": "$moveType", "move": $move }""")
+            cl.send("""{ "route": "games/$dslGame/1/move", "moveType": "$moveType", "move": $move, "playerIndex": $playerIndex }""")
             p1.expectJsonObject { true }
             p2.expectJsonObject { true }
         }

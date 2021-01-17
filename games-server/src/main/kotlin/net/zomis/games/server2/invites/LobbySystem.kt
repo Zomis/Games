@@ -25,13 +25,14 @@ class LobbyGameType {
     val clients = ClientList()
 }
 
-fun playerMessage(client: Client): Map<String, String> {
-    return mapOf(
-        "id" to client.playerId.toString(),
-        "name" to (client.name ?: "(UNKNOWN)"),
-        "picture" to (client.picture ?: "")
+data class PlayerInfo(val playerId: String, val name: String?, val picture: String?) {
+    fun toMap(): Map<String, String> = mapOf(
+        "id" to playerId,
+        "name" to (name ?: "(UNKNOWN)"),
+        "picture" to (picture ?: "")
     )
 }
+fun playerMessage(client: Client) = PlayerInfo(client.playerId.toString(), client.name, client.picture)
 
 /**
  * Responsible for informing who is waiting to play which game
@@ -81,7 +82,7 @@ class LobbySystem(private val features: Features) {
         })
 
         events.listen("Lobby mark player as in game", GameStartedEvent::class, { true }, { gameEvent ->
-            gameEvent.game.players.map { it.lobbyOptions }.forEach { it.currentGames.add(gameEvent.game) }
+            gameEvent.game.players.keys.map { it.lobbyOptions }.forEach { it.currentGames.add(gameEvent.game) }
         })
 
         events.listen("Disconnect Client remove ClientInterestingGames", ClientDisconnected::class, { true }, {
@@ -94,7 +95,7 @@ class LobbySystem(private val features: Features) {
         })
 
         events.listen("Lobby remove player from game", GameEndedEvent::class, { true }, { gameEvent ->
-            gameEvent.game.players.map { it.lobbyOptions }.forEach { it.currentGames.remove(gameEvent.game) }
+            gameEvent.game.players.keys.map { it.lobbyOptions }.forEach { it.currentGames.remove(gameEvent.game) }
         })
     }
     fun sendAvailableUsers(client: Client) {
@@ -108,7 +109,7 @@ class LobbySystem(private val features: Features) {
                     val cig = it.interestingGames
                     return@filter cig.maxGames > cig.currentGames.size
                 }.filter { it != client }.filter { it.name != null }
-                .map { playerMessage(it) }
+                .map { playerMessage(it).toMap() }
             }
         }
         client.send(mapOf("type" to "Lobby", "users" to resultingMap))
@@ -137,7 +138,7 @@ class LobbySystem(private val features: Features) {
     private fun disconnectedMessage(client: Client): Map<String, Any?> {
         return mapOf(
             "type" to "LobbyChange",
-            "player" to playerMessage(client),
+            "player" to playerMessage(client).toMap(),
             "action" to "left"
         )
     }
@@ -145,7 +146,7 @@ class LobbySystem(private val features: Features) {
     private fun newClientMessage(client: Client, interestingGameTypes: Set<String>): Map<String, Any?> {
         return mapOf(
             "type" to "LobbyChange",
-            "player" to playerMessage(client),
+            "player" to playerMessage(client).toMap(),
             "action" to "joined",
             "gameTypes" to interestingGameTypes
         )

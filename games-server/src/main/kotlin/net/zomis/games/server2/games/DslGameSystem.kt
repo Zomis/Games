@@ -185,12 +185,9 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
     private fun sendLogs(serverGame: ServerGame, log: ActionLogEntry) {
         val yourLog = logEntryMessage(serverGame, log.secret ?: log.public)
         val othersLog = logEntryMessage(serverGame, log.public)
-        serverGame.players.forEachIndexed { index, client ->
-            val msg = if (index == log.playerIndex) yourLog else othersLog
+        serverGame.players.forEach { (client, access) ->
+            val msg = if (access.index(log.playerIndex) >= ClientPlayerAccessType.READ) yourLog else othersLog
             msg?.let { client.send(it) }
-        }
-        if (othersLog != null) {
-            serverGame.observers.forEach { client -> othersLog.let { client.send(it) } }
         }
     }
 

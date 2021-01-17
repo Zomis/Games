@@ -3,6 +3,7 @@ package net.zomis.games.server2.invites
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
+import net.zomis.games.common.toSingleList
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.server2.*
@@ -238,8 +239,13 @@ class InviteSystem(
     private fun startInvite(invite: Invite) {
         logger.info { "Starting game for invite $invite" }
         val game = createGameCallback(invite.gameType, invite.inviteOptions)
-        game.players.add(invite.host)
-        game.players.addAll(invite.accepted)
+        val clientList = when (invite.inviteOptions.turnOrder) {
+            InviteTurnOrder.ORDERED -> invite.host.toSingleList().plus(invite.accepted)
+            InviteTurnOrder.SHUFFLED -> invite.accepted.plus(invite.host).shuffled()
+        }
+        clientList.forEachIndexed { index, client ->
+            game.players[client] = ClientAccess(gameAdmin = client == invite.host).addAccess(index, ClientPlayerAccessType.ADMIN)
+        }
         removeInvite(invite)
         startGameExecutor(GameStartedEvent(game))
     }

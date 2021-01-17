@@ -135,9 +135,8 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
 //        )
 
         // Add players in game
-        val playerIds = game.players
-            .map { it.playerId ?: throw IllegalStateException("Missing playerId for ${it.name}") }
-        val players = playerIds.withIndex().groupBy({ it.value }) { it.index }
+        val playerIndices = game.playerList()
+        val players = playerIndices.withIndex().groupBy({ it.value.playerId }) { it.index }
         players.forEach { (playerId, indexes) ->
             this.simpleUpdate(pkValue, Prefix.PLAYER.sk(playerId.toString()), epochMilli,
                 Fields.GAME_PLAYERS to indexes.map {
@@ -382,7 +381,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         }
     }
 
-    fun cookieAuth(cookie: String): PlayerInfo? {
+    fun cookieAuth(cookie: String): PlayerDatabaseInfo? {
         val time = System.currentTimeMillis()
         val earliestPreviousLoginTime = time - TimeUnit.DAYS.toMillis(30)
         logger.info { "Looking for cookie $cookie with earliest previous login time $earliestPreviousLoginTime" }
@@ -394,7 +393,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         val itemWithData = this.getItem(existing.getString(this.pk), existing.getString(this.sk)) ?: return null
         logger.info { itemWithData.asMap() }
         val playerId = Prefix.PLAYER.extract(itemWithData.getString(this.pk))
-        return PlayerInfo(itemWithData.getString(Fields.PLAYER_NAME.fieldName), UUID.fromString(playerId))
+        return PlayerDatabaseInfo(itemWithData.getString(Fields.PLAYER_NAME.fieldName), UUID.fromString(playerId))
     }
 
     private fun getItem(pkValue: String, skValue: String): Item? {

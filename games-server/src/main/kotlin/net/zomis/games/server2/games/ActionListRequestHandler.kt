@@ -32,6 +32,7 @@ class ActionListRequestHandler(private val game: ServerGame?) {
 
     private fun sendActionParams(client: Client, actionParams: ActionList) {
         val game = actionParams.game
+        game.requireAccess(client, actionParams.playerIndex, ClientPlayerAccessType.READ)
         logger.info { "Sending action list data for ${game.gameId} of type ${game.gameType.type} to ${actionParams.playerIndex}" }
         client.send(mapOf(
             "type" to "ActionList",
@@ -45,9 +46,7 @@ class ActionListRequestHandler(private val game: ServerGame?) {
     private fun actionParams(message: ClientJsonMessage): ActionList {
         val obj = game!!.obj!!.game
         val playerIndex = message.data.getTextOrDefault("playerIndex", "-1").toInt()
-        if (!game.verifyPlayerIndex(message.client, playerIndex)) {
-            throw IllegalArgumentException("Client ${message.client} does not have index $playerIndex in Game ${game.gameId} of type ${game.gameType.type}")
-        }
+        game.requireAccess(message.client, playerIndex, ClientPlayerAccessType.WRITE)
 
         val moveType = message.data.get("moveType")?.asText()
         val chosenJson = message.data.get("chosen") ?: emptyList<JsonNode>()
@@ -79,7 +78,7 @@ class ActionListRequestHandler(private val game: ServerGame?) {
         val action = if (message.data.has("perform") && message.data["perform"].asBoolean()) frontendActionInfo[0]
             else frontendActionInfo.singleOrNull()?.takeIf { it.isParameter }
         if (action != null) {
-            val actionRequest = PlayerGameMoveRequest(actionParams.game, actionParams.playerIndex,
+            val actionRequest = PlayerGameMoveRequest(message.client, actionParams.game, actionParams.playerIndex,
                 action.actionType, action.serialized, true)
             callback.moveHandler(actionRequest)
         } else {

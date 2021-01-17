@@ -17,12 +17,11 @@ class GameListSystem {
             val list = gameTypes.asSequence()
                     .flatMap { it.value.runningGames.values.asSequence() }
                     .map {game ->
-                        val playerNames = game.players.map { it.name ?: "(unknown)" }
-
+                        val players = game.playerList()
                         mapOf(
                             "gameType" to game.gameType.type,
                             "gameId" to game.gameId,
-                            "players" to playerNames
+                            "players" to players.map { it.name ?: "(unknown)" }
                         )
                     }.toMutableList()
             event.client.send(mapOf("type" to "GameList", "list" to list))
