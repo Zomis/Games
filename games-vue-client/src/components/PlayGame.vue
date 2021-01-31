@@ -100,8 +100,11 @@ export default {
       }
     },
     actionsAvailable(state) {
-      if (Object.keys(state).length && !this.whispered) {
-        this.audio.play()
+      const { playSoundOnPlayerTurn } = localStorage;
+
+      if (playSoundOnPlayerTurn === 'true' && Object.keys(state).length && !this.whispered) {
+        this.audio.volume = 0.2;
+        this.audio.play();
         this.whispered = true;
       }
     }
