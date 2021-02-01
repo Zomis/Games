@@ -77,7 +77,6 @@ export default {
         this.clearActions();
         return
       }
-      this.whispered = false;
       let name = action.actionType
       if (action.parameter) {
         // Perform direct
@@ -101,6 +100,10 @@ export default {
     },
     actionsAvailable(state) {
       const { playSoundOnPlayerTurn } = localStorage;
+
+      if (!Object.keys(state).length) {
+        this.whispered = false;
+      }
 
       if (playSoundOnPlayerTurn === 'true' && Object.keys(state).length && !this.whispered) {
         this.audio.volume = 0.2;
