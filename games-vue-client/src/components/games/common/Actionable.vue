@@ -30,19 +30,26 @@
         <span>{{ tooltip }}</span>
       </v-tooltip>
     </template>
-    <div v-if="useMenu">
-      <v-btn 
-        v-for="(item, index) in menuItems"
-        :key="index"
-        @click="actions.perform('', item)"
+    <v-row v-if="useMenu">
+      <v-col
+        v-for="item in menuItems"
+        :key="item"
+        class="pa-0"
       >
-        {{ item }}
-      </v-btn>
-    </div>
+        <ActionButton
+          :actions=actions
+          :item=item
+          :descriptions=desc
+        >
+        </ActionButton>
+      </v-col>
+    </v-row>
   </v-menu>
 </template>
+
 <script>
 import { VBtn } from 'vuetify/lib'
+import ActionButton from './ActionButton'
 
 export default {
     name: "Actionable",
@@ -60,11 +67,13 @@ export default {
     },
     data() {
         return {
-            showMenu: false
+            showMenu: false,
+            desc: {"ACTION-TAX": "desc"}
         }
     },
     components: {
-        VBtn
+        VBtn,
+        ActionButton
     },
     methods: {
         componentClick() {
