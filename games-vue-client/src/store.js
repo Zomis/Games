@@ -58,7 +58,7 @@ const store = new Vuex.Store({
           console.log(currentRoute)
           router.push({
             name: "ServerSelection",
-            params: { logout: true, redirect: { route: currentRoute, resolve: resolve } }
+            params: { logout: false, redirect: { route: currentRoute, resolve: resolve } }
           });
         })
       }
