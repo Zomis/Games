@@ -157,13 +157,17 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
     }
 
     fun sendGameStartedMessages() {
-        this.players.keys.forEach {client ->
-            client.send(
-                this.toJson("GameStarted")
-                    .plus("access" to playerAccess(client).access)
-                    .plus("players" to playerList().map { it.toMap() })
-            )
+        this.players.keys.forEach {
+            sendGameStartedMessage(it)
         }
+    }
+
+    fun sendGameStartedMessage(client: Client) {
+        client.send(
+            this.toJson("GameStarted")
+                .plus("access" to playerAccess(client).access)
+                .plus("players" to playerList().map { it.toMap() })
+        )
     }
 
     fun playerList(): List<PlayerInfo> {
