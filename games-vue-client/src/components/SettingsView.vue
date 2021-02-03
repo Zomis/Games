@@ -19,8 +19,6 @@
   </v-menu>
 </template>
 <script>
-import Socket from "../socket";
-
 export default {
   name: "SettingsView",
   data() {
@@ -48,9 +46,6 @@ export default {
     }
   },
   methods: {
-    testGame(gameType) {
-        Socket.route("testGames/game", { gameType: gameType })
-    },
     mute() {
       let previousVolume = this.volume;
       this.volume = this.volume === 0 ? this.previousVolume : 0;

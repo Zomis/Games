@@ -8,6 +8,12 @@
       <v-spacer />
       <v-btn
         rounded
+        @click="testGame(gameType)"
+      >
+        Try it
+      </v-btn>
+      <v-btn
+        rounded
         @click="createInvite(gameType)"
       >
         New Game
@@ -79,6 +85,9 @@ export default {
     name: "LobbyGameType",
     props: ["gameType", "users", "yourPlayer"],
     methods: {
+        testGame(gameType) {
+          Socket.route("testGames/game", { gameType: gameType })
+        },
         createInvite(gameType) {
             Socket.route("invites/prepare", { gameType: gameType })
         },
