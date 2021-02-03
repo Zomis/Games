@@ -11,7 +11,7 @@ import net.zomis.games.server2.games.*
 
 class InviteTools(
     val removeCallback: (Invite) -> Unit,
-    val createGameCallback: (Invite) -> Unit,
+    val createGameCallback: (Invite) -> ServerGame,
     val gameClients: GameTypeMap<ClientList>
 )
 enum class InviteTurnOrder { ORDERED, SHUFFLED }
@@ -92,10 +92,10 @@ data class Invite(
         this.startCheck()
     }
 
-    fun startCheck() {
+    fun startCheck(): ServerGame {
         if (cancelled) throw IllegalStateException("Invite is cancelled")
         if (playerCount() in playerRange) {
-            tools.createGameCallback(this)
+            return tools.createGameCallback(this)
         } else {
             throw IllegalStateException("Expecting $playerRange players but current is ${playerCount()}")
         }
@@ -236,7 +236,7 @@ class InviteSystem(
         this.createInvite(gameType, inviteId, options, message.client, targetClients)
     }
 
-    private fun startInvite(invite: Invite) {
+    private fun startInvite(invite: Invite): ServerGame {
         logger.info { "Starting game for invite $invite" }
         val game = createGameCallback(invite.gameType, invite.inviteOptions)
         val clientList = when (invite.inviteOptions.turnOrder) {
@@ -248,6 +248,7 @@ class InviteSystem(
         }
         removeInvite(invite)
         startGameExecutor(GameStartedEvent(game))
+        return game
     }
 
 }
