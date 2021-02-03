@@ -71,8 +71,10 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
     fun broadcast(message: (Client) -> Any) {
         players.keys.forEach { it.send(message.invoke(it)) }
     }
-    private val NO_ACCESS = ClientAccess(gameAdmin = false)
-    fun playerAccess(client: Client): ClientAccess = players.getOrDefault(client, NO_ACCESS)
+    fun playerAccess(client: Client): ClientAccess = players.getOrDefault(client, ClientAccess(gameAdmin = false))
+    fun addPlayer(client: Client): ClientAccess {
+        return players.getOrPut(client) { ClientAccess(gameAdmin = false) }
+    }
     fun requireAccess(client: Client, playerIndex: Int?, requiredAccess: ClientPlayerAccessType) {
         val actual = playerAccess(client).index(playerIndex)
         if (actual < requiredAccess) {
