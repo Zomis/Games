@@ -5,6 +5,7 @@
         <v-toolbar-title v-text="titlePrefix" />
       </router-link>
       <span :style="{ 'margin-left': '5px' }">{{ titleAppend }}</span>
+      <SettingsView />
       <template v-if="yourPlayer.loggedIn">
         <v-spacer />
         <span>Welcome, {{ yourPlayer.name }}</span>
@@ -71,11 +72,12 @@ import Socket from "./socket";
 import store from "./store";
 import { mapState } from "vuex";
 import CookieLaw from 'vue-cookie-law'
+import SettingsView from "@/components/SettingsView";
 
 export default {
   name: "App",
   store,
-  components: { CookieLaw },
+  components: { CookieLaw, SettingsView },
   methods: {
     logout() {
       Socket.disconnect();

@@ -4,6 +4,7 @@ import supportedGames from "@/supportedGames"
 import Socket from "@/socket";
 import lobbyStore from "./components/lobby/lobbyStore";
 import router from "@/router/index";
+import settingsStore from "./components/settings/settingsStore";
 
 // const debug = process.env.NODE_ENV !== "production";
 Vue.use(Vuex);
@@ -12,6 +13,7 @@ let titlePrefix = "Zomis' Games"
 const store = new Vuex.Store({
   modules: {
     lobby: lobbyStore,
+    settings: settingsStore,
     ...supportedGames.storeModules()
   },
   state: {
