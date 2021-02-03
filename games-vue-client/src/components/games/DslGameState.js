@@ -10,12 +10,18 @@ const gameStore = {
   },
   getters: {},
   mutations: {
+    switchPlayerIndex(state, data) {
+      let gameInfo = state.games[data.gameInfo.gameId].gameInfo;
+      gameInfo.activeIndex = data.activeIndex;
+    },
     createGame(state, data) {
+      let indexAccessList = Object.keys(data.access).map(e => parseInt(e, 10))
       Vue.set(state.games, data.gameId, {
         gameInfo: {
           gameType: data.gameType,
           gameId: data.gameId,
-          yourIndex: data.yourIndex,
+          access: data.access,
+          activeIndex: indexAccessList.length >= 1 ? indexAccessList[0] : -1,
           players: data.players
         },
         highlights: [],
@@ -78,9 +84,17 @@ const gameStore = {
   actions: {
     action(context, data) {
       Socket.route(`games/${data.gameInfo.gameType}/${data.gameInfo.gameId}/move`, {
+        playerIndex: data.gameInfo.activeIndex,
         moveType: data.name,
         move: data.data
       });
+    },
+    switchPlayerIndex(context, data) {
+      context.commit("switchPlayerIndex", data);
+      let gameInfo = context.state.games[data.gameInfo.gameId].gameInfo
+      context.commit("resetActions", { gameInfo: gameInfo })
+      context.dispatch('requestView', gameInfo)
+      context.dispatch('requestActions', { gameInfo: gameInfo })
     },
     nextAction(context, data) {
       let game = context.state.games[data.gameInfo.gameId];
@@ -92,7 +106,7 @@ const gameStore = {
       }
       let obj = {
         moveType: data.name,
-        playerIndex: data.gameInfo.yourIndex,
+        playerIndex: data.gameInfo.activeIndex,
         chosen: gameData.actionChoice.choices
       }
       Socket.route(`games/${data.gameInfo.gameType}/${data.gameInfo.gameId}/action`, obj);
@@ -102,14 +116,14 @@ const gameStore = {
       let gameData = game.gameData
       let obj = {
         moveType: gameData.actionChoice.actionName,
-        playerIndex: data.gameInfo.yourIndex,
+        playerIndex: data.gameInfo.activeIndex,
         chosen: gameData.actionChoice.choices,
         perform: true
       }
       Socket.route(`games/${data.gameInfo.gameType}/${data.gameInfo.gameId}/action`, obj);
     },
     requestView(context, data) {
-      Socket.route(`games/${data.gameType}/${data.gameId}/view`, {});
+      Socket.route(`games/${data.gameType}/${data.gameId}/view`, { playerIndex: data.activeIndex });
     },
     resetActionsTo(context, data) {
       context.commit("resetActions", { gameInfo: data.gameInfo });
@@ -126,7 +140,7 @@ const gameStore = {
       let game = context.state.games[data.gameInfo.gameId];
       let actionChoice = game.gameData.actionChoice
       let obj = {
-        playerIndex: game.gameInfo.yourIndex,
+        playerIndex: game.gameInfo.activeIndex,
         chosen: actionChoice !== null ? actionChoice.choices : []
       };
       if (obj.playerIndex < 0) {
@@ -164,13 +178,13 @@ const gameStore = {
         let supportedGame = supportedGames.games[data.gameType]
         if (supportedGame.resetActions === false) {
           let gameInfo = context.state.games[data.gameId].gameInfo;
-          if (data.type !== "GameMove" || data.player === gameInfo.yourIndex) {
+          if (data.type !== "GameMove" || data.player === gameInfo.activeIndex) {
             context.commit("resetActions", { gameInfo: data })
           }
         } else {
           context.commit("resetActions", { gameInfo: data })
         }
-        context.dispatch('requestView', data)
+        context.dispatch('requestView', context.state.games[data.gameId].gameInfo)
         context.dispatch('requestActions', { gameInfo: data })
       }
     }

@@ -7,16 +7,20 @@
     </template>
     <v-list>
       <v-slider
+        v-show="false"
         class="slider"
         v-model="volume"
         prepend-icon="mdi-volume-high"
         @click:prepend="mute"
       />
       <v-checkbox v-show="false" v-model="theme" value="dark" label="Dark mode" />
+      <v-btn @click="testGame('DSL-TTT')">Test game</v-btn>
     </v-list>
   </v-menu>
 </template>
 <script>
+import Socket from "../socket";
+
 export default {
   name: "SettingsView",
   data() {
@@ -44,6 +48,9 @@ export default {
     }
   },
   methods: {
+    testGame(gameType) {
+        Socket.route("testGames/game", { gameType: gameType })
+    },
     mute() {
       let previousVolume = this.volume;
       this.volume = this.volume === 0 ? this.previousVolume : 0;

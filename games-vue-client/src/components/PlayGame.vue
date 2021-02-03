@@ -8,12 +8,10 @@
       :players="players"
       :context="context"
     />
-    <v-btn
-      v-if="!isObserver"
-      :disabled="actionChoice === null"
-      @click="clearActions()"
+    <v-btn v-for="(_, playerIndex) in gameInfo.access" :key="'switch-player-' + playerIndex"
+      @click="switchPlayerIndex(playerIndex)"
     >
-      Reset Action
+      Reset (player {{ playerIndex }})
     </v-btn>
     <ActionLog
       :log-entries="actionLogEntries"
@@ -54,9 +52,8 @@ export default {
     })
   },
   methods: {
-    clearActions() {
-      this.$store.dispatch("DslGameState/requestView", this.gameInfo);
-      this.$store.dispatch("DslGameState/resetActions", { gameInfo: this.gameInfo });
+    switchPlayerIndex(playerIndex) {
+      this.$store.dispatch("DslGameState/switchPlayerIndex", { gameInfo: this.gameInfo, activeIndex: playerIndex });
     },
     performChosenAction() {
       this.$store.dispatch("DslGameState/performChosenAction", { gameInfo: this.gameInfo });
@@ -133,7 +130,7 @@ export default {
         players: this.players.map((p, idx) => ({ ...p, controllable: this.gameInfo.yourIndex === idx, elimination: this.eliminations.find(e => e.player == idx) })),
         gameType: this.gameInfo.gameType,
         gameId: this.gameInfo.gameId,
-        viewer: this.gameInfo.yourIndex,
+        viewer: this.gameInfo.activeIndex,
         scope: 'play'
       }
     },
