@@ -33,7 +33,7 @@ fun ServerGame.toJson(type: String): Map<String, Any?> {
     )
 }
 enum class ClientPlayerAccessType { NONE, READ, WRITE, ADMIN }
-data class ClientAccess(val gameAdmin: Boolean) {
+data class ClientAccess(var gameAdmin: Boolean) {
     val access: MutableMap<Int, ClientPlayerAccessType> = mutableMapOf()
     fun index(playerIndex: PlayerIndex): ClientPlayerAccessType {
         if (playerIndex.isObserver() || playerIndex!! < 0) return ClientPlayerAccessType.READ // Observer

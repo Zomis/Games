@@ -169,12 +169,15 @@ class Server2(val events: EventSystem) {
         features.add(TVSystem(lobbySystem::gameClients)::register)
         fun createGameCallback(gameType: String, options: InviteOptions): ServerGame
             = gameSystem.getGameType(gameType)!!.createGame(options)
-        messageRouter.route("invites", InviteSystem(
+
+        val inviteSystem =  InviteSystem(
             gameClients = lobbySystem::gameClients,
             createGameCallback = ::createGameCallback,
             startGameExecutor = { events.execute(it) },
             inviteIdGenerator = uuidGenerator
-        ).router)
+        )
+        messageRouter.route("invites", inviteSystem.router)
+        messageRouter.route("testGames", TestGamesRoute(inviteSystem).router)
 
         events.with { e -> ServerAIs(aiRepository, dslGames.keys.toSet()).register(e, executor) }
 

@@ -155,7 +155,7 @@ class InviteSystem(
     private val gameClients: GameTypeMap<ClientList>,
     private val createGameCallback: (gameType: String, options: InviteOptions) -> ServerGame,
     private val startGameExecutor: (GameStartedEvent) -> Unit,
-    private val inviteIdGenerator: () -> String
+    val inviteIdGenerator: () -> String
 ) {
 
     private val logger = KLoggers.logger(this)
@@ -244,7 +244,9 @@ class InviteSystem(
             InviteTurnOrder.SHUFFLED -> invite.accepted.plus(invite.host).shuffled()
         }
         clientList.forEachIndexed { index, client ->
-            game.players[client] = ClientAccess(gameAdmin = client == invite.host).addAccess(index, ClientPlayerAccessType.ADMIN)
+            val access = game.addPlayer(client)
+            access.gameAdmin = access.gameAdmin || client == invite.host
+            access.addAccess(index, ClientPlayerAccessType.ADMIN)
         }
         removeInvite(invite)
         startGameExecutor(GameStartedEvent(game))
