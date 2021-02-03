@@ -153,7 +153,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                 if (it.game.gameMeta.database && dbIntegration != null) GamesServer.replayStorage.database<T>(dbIntegration, it.game.gameId)
                 else GameplayCallbacks()
             it.game.obj = entryPoint.replayable(
-                it.game.players.size,
+                it.game.playerCount,
                 it.game.gameMeta.gameOptions ?: Unit,
                 serverGameListener(it.game),
                 appropriateReplayListener

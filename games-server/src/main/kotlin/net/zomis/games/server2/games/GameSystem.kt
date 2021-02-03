@@ -64,6 +64,7 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
     private val nextMoveIndex = AtomicInteger(0)
     val mutex = Mutex()
     internal val players: MutableMap<Client, ClientAccess> = mutableMapOf()
+    val playerCount: Int get() = players.values.flatMap { it.access.keys }.distinct().count()
     var obj: GameReplayableImpl<Any>? = null
     var lastMove: Long = Instant.now().toEpochMilli()
 
