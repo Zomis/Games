@@ -1,6 +1,7 @@
 package net.zomis.games.server2.games
 
 import com.github.benmanes.caffeine.cache.Caffeine
+import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.server2.ClientJsonMessage
 import net.zomis.games.server2.MessageRouter
 import net.zomis.games.server2.ServerGames
@@ -15,8 +16,12 @@ class TestGamesRoute(private val inviteSystem: InviteSystem) {
 
     val router = MessageRouter(this)
         .handler("game", this::game)
-    private val fakeHost = FakeClient().also {
-        it.updateInfo("FakeClient", UUID.fromString("00000000-0000-0000-0000-000000000000"))
+
+    private val maxPlayers = ServerGames.games.values.map { GamesImpl.game(it).setup().playersCount.max()!! }.max()!!
+    private val fakes = (0..maxPlayers).map {i ->
+        FakeClient().also {
+            it.updateInfo("Player$i", UUID.fromString("00000000-0000-0000-0000-${i.toStringLength(12)}"))
+        }
     }
 
     private val caffeine = Caffeine.newBuilder()
@@ -30,11 +35,11 @@ class TestGamesRoute(private val inviteSystem: InviteSystem) {
         val gameConfig = setup.getDefaultConfig()
         val invite = inviteSystem.createInvite(gameType, inviteSystem.inviteIdGenerator(),
             InviteOptions(false, InviteTurnOrder.ORDERED, 0, gameConfig, false),
-            fakeHost, emptyList()
+            fakes[0], emptyList()
         )
         val randomPlayerCount = invite.playerRange.random()
         for (i in 1 until randomPlayerCount) {
-            invite.accepted.add(fakeHost)
+            invite.accepted.add(fakes[i])
         }
         return invite.startCheck()
     }
@@ -54,4 +59,10 @@ class TestGamesRoute(private val inviteSystem: InviteSystem) {
         game.sendGameStartedMessage(message.client)
     }
 
+}
+
+private fun Int.toStringLength(i: Int): String {
+    var s = this.toString()
+    while (s.length < i) s = "0$s"
+    return s
 }
