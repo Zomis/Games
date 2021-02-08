@@ -1,6 +1,5 @@
 <template>
   <v-container fluid>
-    <LobbyOptions />
     <h3 v-if="invite">
       {{ invite.host.name }} is preparing a game of {{ invite.gameType }}
     </h3>
@@ -88,13 +87,12 @@
 <script>
 import { mapState } from "vuex"
 import InvitePlayer from "@/components/lobby/InvitePlayer"
-import LobbyOptions from "@/components/lobby/LobbyOptions"
 import Socket from "@/socket"
 
 export default {
     name: "InviteScreen",
     props: ["inviteId"],
-    components: { InvitePlayer, LobbyOptions },
+    components: { InvitePlayer },
     mounted() {
         console.log("InviteScreen mounted")
         if (this.users.length === 0 && Socket.isConnected()) {

@@ -1,6 +1,5 @@
 <template>
   <v-container fluid>
-    <LobbyOptions />
     <v-row>
       <v-col
         v-for="(users, gameType) in lobby"
@@ -65,7 +64,6 @@
 <script>
 import Socket from "@/socket";
 import LobbyGameType from "@/components/lobby/LobbyGameType";
-import LobbyOptions from "@/components/lobby/LobbyOptions"
 import { mapState } from "vuex";
 import supportedGames from "@/supportedGames";
 
@@ -79,7 +77,6 @@ export default {
   },
   components: {
     LobbyGameType,
-    LobbyOptions,
     ...supportedGames.components()
   },
   mounted() {

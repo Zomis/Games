@@ -41,7 +41,9 @@ export default {
       supportedGame: supportedGames.games[this.gameType],
       views: [],
       snackbar: false,
-      snackbarText: 'Welcome'
+      snackbarText: 'Welcome',
+      whispered: false,
+      audio: new Audio('https://actions.google.com/sounds/v1/cartoon/cartoon_cowbell.ogg')
     }
   },
   mounted() {
@@ -92,7 +94,21 @@ export default {
         this.snackbarText = 'The game is over';
         this.snackbar = true;
       }
+    },
+    actionsAvailable(state) {
+      const { playSoundOnPlayerTurn } = localStorage;
+      let actionsCount = Object.keys(state).length;
+      console.log("actionsAvailable update:", state, "playSound", playSoundOnPlayerTurn, "actionsCount", actionsCount);
+      if (!actionsCount) {
+        this.whispered = false;
+      }
+      if (playSoundOnPlayerTurn === 'true' && actionsCount && !this.whispered) {
+        this.audio.volume = 0.2;
+        this.audio.play();
+        this.whispered = true;
+      }
     }
+
   },
   computed: {
     viewComponent() {

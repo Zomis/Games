@@ -15,6 +15,14 @@
       />
       <v-checkbox v-show="false" v-model="theme" value="dark" label="Dark mode" />
       <v-btn @click="testGame('DSL-TTT')">Test game</v-btn>
+      <v-checkbox
+        v-model="hideAIUsers"
+        label="Hide AI Users"
+      />
+      <v-checkbox
+        v-model="playSoundOnPlayerTurn"
+        label="Pling on my turn"
+      />
     </v-list>
   </v-menu>
 </template>
@@ -28,6 +36,23 @@ export default {
     };
   },
   computed: {
+    hideAIUsers: {
+      get() {
+        return this.$store.state.settings.hideAIUsers;
+      },
+      set(value) {
+        this.$store.commit("settings/set", { key: "hideAIUsers", value: value ? "true" : "" });
+        this.$store.commit("lobby/setLobbyUsersWithOptions", { hideAIUsers: !!this.hideAIUsers });
+      }
+    },
+    playSoundOnPlayerTurn: {
+      get() {
+        return this.$store.state.settings.playSoundOnPlayerTurn;
+      },
+      set(value) {
+        this.$store.commit("settings/set", { key: "playSoundOnPlayerTurn", value: value ? "true" : "" });
+      }
+    },
     volume: {
       get() {
         return this.$store.state.settings.volume;
