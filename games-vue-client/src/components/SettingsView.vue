@@ -14,7 +14,6 @@
         @click:prepend="mute"
       />
       <v-checkbox v-show="false" v-model="theme" value="dark" label="Dark mode" />
-      <v-btn @click="testGame('DSL-TTT')">Test game</v-btn>
       <v-checkbox
         v-model="hideAIUsers"
         label="Hide AI Users"
