@@ -1,5 +1,10 @@
 <template>
   <div class="game">
+    <v-btn v-for="(_, playerIndex) in gameInfo.access" :key="'switch-player-' + playerIndex"
+      @click="switchPlayerIndex(playerIndex)"
+    >
+      Reset (player {{ playerIndex }})
+    </v-btn>
     <component
       :is="viewComponent"
       v-if="view"
@@ -8,11 +13,6 @@
       :players="players"
       :context="context"
     />
-    <v-btn v-for="(_, playerIndex) in gameInfo.access" :key="'switch-player-' + playerIndex"
-      @click="switchPlayerIndex(playerIndex)"
-    >
-      Reset (player {{ playerIndex }})
-    </v-btn>
     <ActionLog
       :log-entries="actionLogEntries"
       :on-highlight="highlight"
