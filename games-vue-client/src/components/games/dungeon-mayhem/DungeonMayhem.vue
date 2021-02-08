@@ -12,7 +12,7 @@
             :post-fix="'(' + player.character.className + ')'"
           />
           <p>
-            Health: {{ player.health }} <v-icon v-if="player.protected">
+            Health: {{ player.health }} <v-icon v-if="player.protected" color="#6a0dad">
               mdi-account-lock
             </v-icon>
           </p>
