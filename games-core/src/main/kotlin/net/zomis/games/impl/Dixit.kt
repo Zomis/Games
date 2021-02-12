@@ -67,8 +67,8 @@ object Dixit {
             }
         }
         gameFlow {
+            var roundNumber = 1
             loop {
-                var roundNumber = 1
                 for (player in game.players) {
                     if (eliminations.isGameOver()) return@loop
                     game.story = null
