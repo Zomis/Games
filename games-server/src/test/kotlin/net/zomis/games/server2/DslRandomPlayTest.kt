@@ -143,7 +143,8 @@ class DslRandomPlayTest {
 
         // Find game
         val game = server!!.gameSystem.getGameType(dslGame)!!.runningGames["1"]!!
-        val gameImpl = game.obj!!.game
+        val gameObj = game.obj ?: throw IllegalStateException("Game was not started correctly: ${gameType.gameType} with $playerCount players")
+        val gameImpl = gameObj.game
         val players = game.playerList().mapIndexed { index, client ->
             index to clientsById.getValue(client.playerId)
         }
