@@ -1,22 +1,36 @@
 package net.zomis.games.dsl
 
 import net.zomis.games.common.PlayerIndex
+import kotlin.reflect.KClass
 
 typealias ViewDsl2D<T, P> = GameView2D<T, P>.() -> Unit
 
 typealias GameViewOnRequestFunction<T> = GameViewOnRequestScope<T>.(request: Map<String, Any>) -> Any
-interface GameViewOnRequestScope<T>: ViewScope<T>
+interface GameViewOnRequestScope<T: Any>: ViewScope<T>
 
 interface Viewable {
     fun toView(viewer: PlayerIndex): Any?
 }
 
-interface ViewScope<T> {
+interface ViewScope<T: Any> {
+    fun actions(): ActionsView<T>
+    fun <A: Any> action(actionType: ActionType<T, A>): ActionView<T, A>
     val game: T
     val viewer: PlayerIndex
 }
 
-interface GameView<T> : ViewScope<T> {
+interface ActionView<T: Any, A: Any> {
+    fun anyAvailable(): Boolean
+    fun <E: Any> nextSteps(clazz: KClass<E>): List<E>
+    fun choose(next: Any): ActionView<T, A>
+    fun options(): List<A>
+}
+
+interface ActionsView<T: Any> {
+    fun <E: Any> nextSteps(clazz: KClass<E>): List<E>
+}
+
+interface GameView<T: Any> : ViewScope<T> {
     fun result(): Map<String, Any?>
     fun currentPlayer(function: (T) -> Int)
     fun <P> grid(name: String, grid: GridDsl<T, P>, view: ViewDsl2D<T, P>)
