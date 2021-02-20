@@ -240,7 +240,7 @@ interface GameFlowActionScope<T: Any, A: Any> {
     fun precondition(rule: ActionOptionsScope<T>.() -> Boolean)
     fun requires(rule: ActionRuleScope<T, A>.() -> Boolean)
     fun options(rule: ActionOptionsScope<T>.() -> Iterable<A>)
-    fun choose(options: ActionChoicesStartScope<T, A>.() -> Unit)
+    fun choose(options: ActionChoicesScope<T, A>.() -> Unit)
 }
 @GameMarker
 interface GameFlowStepScope<T: Any> {

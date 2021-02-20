@@ -5,6 +5,7 @@ import net.zomis.games.cards.CardZone
 import net.zomis.games.common.next
 import net.zomis.games.common.nextReversed
 import net.zomis.games.dsl.ActionChoicesNextScope
+import net.zomis.games.dsl.ActionChoicesScope
 import net.zomis.games.dsl.GameCreator
 import net.zomis.games.dsl.withIds
 import kotlin.random.Random
@@ -143,7 +144,7 @@ object ResistanceAvalonGame {
             defaultConfig { ResistanceAvalonConfig() }
             init { ResistanceAvalon(config, playerCount) }
         }
-        rules {
+        actionRules {
             gameStart {
                 val characters = CardZone(game.charactersUsed.toMutableList())
                 characters.random(replayable, game.playerCount, "characters") { it.name }.toList()
@@ -213,7 +214,7 @@ object ResistanceAvalonGame {
                         (if (game.config.chooseMission) remainingMissions else listOf(remainingMissions.first()))
                             .withIds { it.missionNumber.toString() }
                     }) {mission ->
-                        fun rec(scope: ActionChoicesNextScope<ResistanceAvalon, ResistanceAvalonTeamChoice>,
+                        fun rec(scope: ActionChoicesScope<ResistanceAvalon, ResistanceAvalonTeamChoice>,
                             chosen: List<ResistanceAvalonPlayer>,
                             required: Int
                         ) {

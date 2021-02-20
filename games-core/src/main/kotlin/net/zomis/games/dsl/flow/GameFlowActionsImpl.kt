@@ -14,7 +14,7 @@ open class GameFlowActionContext<T: Any, A: Any>: GameFlowActionScope<T, A> {
     override fun precondition(rule: ActionOptionsScope<T>.() -> Boolean) {}
     override fun requires(rule: ActionRuleScope<T, A>.() -> Boolean) {}
     override fun options(rule: ActionOptionsScope<T>.() -> Iterable<A>) {}
-    override fun choose(options: ActionChoicesStartScope<T, A>.() -> Unit) {}
+    override fun choose(options: ActionChoicesScope<T, A>.() -> Unit) {}
 }
 
 typealias GameFlowActionDsl<T, A> = GameFlowActionScope<T, A>.() -> Unit

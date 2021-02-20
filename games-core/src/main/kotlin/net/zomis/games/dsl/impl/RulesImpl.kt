@@ -174,7 +174,7 @@ class GameActionRuleContext<T : Any, A : Any>(
     val after = mutableListOf<ActionRuleScope<T, A>.() -> Unit>()
     val preconditions = mutableListOf<ActionOptionsScope<T>.() -> Boolean>()
     val allowed = mutableListOf<ActionRuleScope<T, A>.() -> Boolean>()
-    private var choices: (ActionChoicesStartScope<T, A>.() -> Unit)? = null
+    private var choices: (ActionChoicesScope<T, A>.() -> Unit)? = null
     private var availableActionsEvaluator: (ActionOptionsScope<T>.() -> Iterable<A>)? = null
 
     override fun after(rule: ActionRuleScope<T, A>.() -> Unit) { this.after.add(rule) }
@@ -186,7 +186,7 @@ class GameActionRuleContext<T : Any, A : Any>(
         this.availableActionsEvaluator = rule
     }
 
-    override fun choose(options: ActionChoicesStartScope<T, A>.() -> Unit) {
+    override fun choose(options: ActionChoicesScope<T, A>.() -> Unit) {
         require(choices == null) { "Choices can only be set once" }
         this.choices = options
     }
@@ -224,9 +224,8 @@ class GameActionRuleContext<T : Any, A : Any>(
             } else evaluator(context).map { createAction(playerIndex, it) }.filter { this.actionAllowed(it) }
         } else {
             require(this.availableActionsEvaluator == null) { "An action must have only one rule for either choices or options" }
-            val complex = RulesActionTypeComplex(context, actionType, this.choices!!)
-            val actions = complex.availableActions(sampleSize)
-            actions.toList().filter { actionAllowed(it) }
+            val complex = ActionComplexImpl(actionType, context, this.choices!!)
+            return complex.start().depthFirstActions(sampleSize).map { createAction(playerIndex, it.parameter) }.filter { actionAllowed(it) }.toList()
         }
     }
 
@@ -268,8 +267,8 @@ class GameActionRuleContext<T : Any, A : Any>(
             } else evaluator(context).map { createAction(playerIndex, it) }.filter { this.actionAllowed(it) }.map(this::actionInfoKey)
         } else {
             require(this.availableActionsEvaluator == null) { "An action must have only one rule for either choices or options" }
-            val complex = RulesActionTypeComplex(context, actionType, this.choices!!)
-            return complex.availableActionKeys(previouslySelected)
+            val complex = ActionComplexImpl(actionType, context, this.choices!!)
+            return complex.withChosen(previouslySelected).actionKeys()
         }
     }
 
@@ -283,6 +282,13 @@ class GameActionRuleContext<T : Any, A : Any>(
 
     override fun invoke(ruleSpec: GameActionSpecificationScope<T, A>.() -> Unit) {
         ruleSpec(this)
+    }
+
+    override fun withChosen(playerIndex: Int, chosen: List<Any>): ActionComplexChosenStep<T, A> {
+        require(this.choices != null)
+        require(this.availableActionsEvaluator == null)
+        val context = ActionOptionsContext(model, actionType.name, playerIndex, eliminations, replayable)
+        return ActionComplexImpl(actionType, context, this.choices!!).withChosen(chosen)
     }
 
 }

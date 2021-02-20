@@ -3,6 +3,7 @@ package net.zomis.games.dsl.actions
 import net.zomis.games.WinResult
 import net.zomis.games.api.GamesApi
 import net.zomis.games.dsl.ActionChoicesNextScope
+import net.zomis.games.dsl.ActionChoicesScope
 import net.zomis.games.dsl.ActionChoicesStartScope
 import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.impl.ActionSampleSize
@@ -19,11 +20,11 @@ class InfiniteActionsTest {
             playersFixed(1)
             init { MyList(mutableListOf()) }
         }
-        rules {
+        actionRules {
             action(combine) {
                 choose {
-                    fun recursive(scope: ActionChoicesStartScope<MyList, MyList>, list: List<Int>) {
-                        if (scope is ActionChoicesNextScope && list.isNotEmpty()) {
+                    fun recursive(scope: ActionChoicesScope<MyList, MyList>, list: List<Int>) {
+                        if (list.isNotEmpty()) {
                             scope.parameter(MyList(list.toMutableList()))
                         }
                         scope.options({ 1..10 }) { value ->
@@ -48,7 +49,7 @@ class InfiniteActionsTest {
     fun limitedEvaluation() {
         val game = GamesImpl.game(game).setup().createGame(1, Unit)
         val result = game.actions.type(combine)!!
-            .availableActions(0, ActionSampleSize(listOf(2, 2, 2, 2)))
+            .availableActions(0, ActionSampleSize(listOf(2, 2, 2, 2, 0)))
             .toList()
 
         Assertions.assertEquals(30, result.size)

@@ -5,6 +5,17 @@ import net.zomis.games.common.mergeWith
 import net.zomis.games.dsl.*
 import kotlin.reflect.KClass
 
+interface GameLogicActionTypeChosen<T: Any, P: Any> {
+    val actionType: ActionType<T, P>
+    val playerIndex: Int
+    val chosen: List<Any>
+    fun nextOptions(): Sequence<ActionNextChoice<T, P>>
+    fun parameters(): Sequence<ActionNextParameter<T, P>>
+    fun depthFirstActions(sampling: ActionSampleSize?): Sequence<ActionNextParameter<T, P>>
+    fun actionKeys(): List<ActionInfoKey>
+}
+interface ActionComplexChosenStep<T: Any, P: Any> : GameLogicActionTypeChosen<T, P>
+
 interface GameLogicActionType<T : Any, P : Any> {
     val actionType: ActionType<T, P>
     fun availableActions(playerIndex: Int, sampleSize: ActionSampleSize?): Iterable<Actionable<T, P>>
@@ -12,18 +23,28 @@ interface GameLogicActionType<T : Any, P : Any> {
     fun replayAction(action: Actionable<T, P>, state: Map<String, Any>?)
     fun performAction(action: Actionable<T, P>)
     fun createAction(playerIndex: Int, parameter: P): Actionable<T, P>
-    fun actionInfoKeys(playerIndex: Int, previouslySelected: List<Any>): List<ActionInfoKey>
+    fun actionInfoKeys(playerIndex: Int, previouslySelected: List<Any>): List<ActionInfoKey> = withChosen(playerIndex, previouslySelected).actionKeys()
+    fun withChosen(playerIndex: Int, chosen: List<Any>): ActionComplexChosenStep<T, P>
 }
 
+@Deprecated("Use an ActionComplexImpl-related class instead")
 data class ActionInfo<T: Any, A: Any>(val actionType: ActionType<T, A>, val parameter: A?, val nextStep: Any?)
+@Deprecated("Use an ActionComplexImpl-related class instead")
 data class ActionInfoKey(val serialized: Any, val actionType: String, val highlightKeys: List<Any>, val isParameter: Boolean)
+@Deprecated("Use an ActionComplexImpl-related class instead")
 data class ActionInfoByKey(val keys: Map<Any, List<ActionInfoKey>>) {
     operator fun plus(other: ActionInfoByKey): ActionInfoByKey {
         return ActionInfoByKey(keys.toMutableMap().mergeWith(other.keys) { a, b -> (a ?: emptyList()) + (b ?: emptyList()) })
     }
 }
 data class ActionSampleSize(val sampleSizes: List<Int>) {
-    fun nextSample(): Pair<Int, ActionSampleSize> = sampleSizes.first() to ActionSampleSize(sampleSizes.subList(1, sampleSizes.size))
+    fun nextSample(): Pair<Int, ActionSampleSize> {
+        if (sampleSizes.size == 1) {
+            // When there is only one left in the sample size, continue using that number for infinity
+            return sampleSizes.first() to ActionSampleSize(sampleSizes)
+        }
+        return sampleSizes.first() to ActionSampleSize(sampleSizes.subList(1, sampleSizes.size))
+    }
 }
 
 class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
