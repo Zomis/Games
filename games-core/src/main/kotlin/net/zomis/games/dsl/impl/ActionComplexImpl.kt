@@ -63,8 +63,8 @@ class ActionComplexBlockRun<T: Any, P: Any>(
         if (upcomingChoices.isNotEmpty()) {
             val nextChosenKey = upcomingChoices.first()
             val nextChosenList = upcomingChoices.subList(1, upcomingChoices.size)
-            val nextE = evaluated.singleOrNull { it.first == nextChosenKey }
-                ?: throw NoSuchElementException("Evaluated contains $evaluated and we're looking for it.first == $nextChosenKey")
+            val nextE = evaluated.singleOrNull { it.first == nextChosenKey || it.second == nextChosenKey }
+                ?: throw NoSuchElementException("Evaluated contains $evaluated and we're looking for it.first == $nextChosenKey (${nextChosenKey::class})")
 
             val nextScope = ActionComplexBlockRun(actionType, chosen + nextE.second, nextChosenList, context)
             next.invoke(nextScope, nextE.second)

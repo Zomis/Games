@@ -14,6 +14,7 @@ interface Viewable {
 
 interface ViewScope<T: Any> {
     fun actions(): ActionsView<T>
+    fun actionsChosen(): ActionsChosenView<T>
     fun <A: Any> action(actionType: ActionType<T, A>): ActionView<T, A>
     val game: T
     val viewer: PlayerIndex
@@ -29,6 +30,7 @@ interface ActionView<T: Any, A: Any> {
 interface ActionsView<T: Any> {
     fun <E: Any> nextSteps(clazz: KClass<E>): List<E>
 }
+interface ActionsChosenView<T: Any>: ActionsView<T>
 
 interface GameView<T: Any> : ViewScope<T> {
     fun result(): Map<String, Any?>

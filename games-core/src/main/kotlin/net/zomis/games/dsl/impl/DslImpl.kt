@@ -138,6 +138,7 @@ class GameViewContext<T : Any>(
 
             override fun <A : Any> action(actionType: ActionType<T, A>): ActionView<T, A> = outerThis.action(actionType)
             override fun actions(): ActionsView<T> = outerThis.actions()
+            override fun actionsChosen(): ActionsChosenView<T> = outerThis.actionsChosen()
         }
         return this.requestable[key]?.invoke(gameViewOnRequestScope, params)
     }
@@ -145,7 +146,8 @@ class GameViewContext<T : Any>(
     override fun <A : Any> action(actionType: ActionType<T, A>): ActionView<T, A>
         = ActionViewImpl(gameObj, actionType, PlayerViewer(playerIndex = viewer))
 
-    override fun actions(): ActionsView<T> = ActionsViewImpl(gameObj, PlayerViewer(playerIndex = viewer))
+    override fun actions(): ActionsView<T> = ActionsViewImpl(gameObj, PlayerViewer(playerIndex = viewer), false)
+    override fun actionsChosen(): ActionsChosenView<T> = ActionsViewImpl(gameObj, PlayerViewer(playerIndex = viewer), true)
 
 }
 

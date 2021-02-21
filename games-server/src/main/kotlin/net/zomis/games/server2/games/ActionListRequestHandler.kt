@@ -68,10 +68,11 @@ class ActionListRequestHandler(private val game: ServerGame?) {
             }
             chosen.add(parameter)
         }
+        obj.actions.choices.setChosen(playerIndex, moveType, chosen)
         return ActionList(playerIndex, game, availableActionsMessage(obj, playerIndex, moveType, chosen))
     }
 
-    fun actionRequest(message: ClientJsonMessage, callback: GameCallback) {
+    fun actionRequest(message: ClientJsonMessage, callback: GameCallback): Boolean {
         val actionParams = actionParams(message)
         val frontendActionInfo = actionParams.actions.keys.keys.values.flatten()
 
@@ -81,8 +82,10 @@ class ActionListRequestHandler(private val game: ServerGame?) {
             val actionRequest = PlayerGameMoveRequest(message.client, actionParams.game, actionParams.playerIndex,
                 action.actionType, action.serialized, true)
             callback.moveHandler(actionRequest)
+            return true
         } else {
             this.sendActionParams(message.client, actionParams)
+            return false
         }
     }
 

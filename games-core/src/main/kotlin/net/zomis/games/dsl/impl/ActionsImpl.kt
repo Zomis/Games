@@ -28,8 +28,6 @@ interface GameLogicActionType<T : Any, P : Any> {
 }
 
 @Deprecated("Use an ActionComplexImpl-related class instead")
-data class ActionInfo<T: Any, A: Any>(val actionType: ActionType<T, A>, val parameter: A?, val nextStep: Any?)
-@Deprecated("Use an ActionComplexImpl-related class instead")
 data class ActionInfoKey(val serialized: Any, val actionType: String, val highlightKeys: List<Any>, val isParameter: Boolean)
 @Deprecated("Use an ActionComplexImpl-related class instead")
 data class ActionInfoByKey(val keys: Map<Any, List<ActionInfoKey>>) {
@@ -94,6 +92,8 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
         return ActionInfoByKey(impl.actionInfoKeys(playerIndex, previouslySelected).groupBy { it.serialized })
     }
 
+    fun withChosen(playerIndex: Int, chosen: List<Any>) = impl.withChosen(playerIndex, chosen)
+
     val name: String
         get() = actionType.name
     val parameterClass: KClass<P>
@@ -112,6 +112,23 @@ interface Actions<T: Any> {
             acc + next.actionInfoKeys(playerIndex, previouslySelected)
         }
     }
+    val choices: ActionChoices
+}
+
+data class ActionPlayerChoice(val actionType: String, val chosen: List<Any>)
+class ActionChoices {
+    private val players = mutableMapOf<Int, ActionPlayerChoice>()
+
+    fun setChosen(playerIndex: Int, actionType: String?, chosen: MutableList<Any>) {
+        if (actionType != null) {
+            this.players[playerIndex] = ActionPlayerChoice(actionType, chosen)
+        } else {
+            this.players.remove(playerIndex)
+        }
+    }
+
+    fun getChosen(playerIndex: Int) = players[playerIndex]
+
 }
 
 class ActionsImpl<T : Any>(
@@ -119,6 +136,7 @@ class ActionsImpl<T : Any>(
     private val rules: GameActionRulesContext<T>,
     private val replayState: ReplayState
 ): Actions<T> {
+    override val choices = ActionChoices()
 
     override val actionTypes: Set<String> get() = rules.actionTypes()
 

@@ -115,8 +115,11 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
     }
 
     private fun actionRequest(message: ClientJsonMessage) {
-        // Does not matter if it's an incomplete action or not
-        this.actionListHandler.actionRequest(message, callback)
+        if (!this.actionListHandler.actionRequest(message, callback)) {
+            // If it's an incomplete action and only a choice step, broadcast view update
+            val actionStepMessage = this.toJson("UpdateView")
+            this.broadcast { actionStepMessage }
+        }
     }
 
     @Deprecated("Replace with action instead. This approach is only *required* for non-DSL games which no longer exists")

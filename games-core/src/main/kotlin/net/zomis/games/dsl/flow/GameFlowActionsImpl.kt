@@ -24,6 +24,7 @@ class GameFlowActionsImpl<T: Any>(
     private val eliminations: PlayerEliminations,
     private val replayable: ReplayState
 ) : Actions<T> {
+    override val choices = ActionChoices()
     private val logger = KLoggers.logger(this)
 
     private val actions = mutableListOf<ActionTypeImplEntry<T, Any>>()

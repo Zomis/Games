@@ -285,7 +285,7 @@ class GameActionRuleContext<T : Any, A : Any>(
     }
 
     override fun withChosen(playerIndex: Int, chosen: List<Any>): ActionComplexChosenStep<T, A> {
-        require(this.choices != null)
+        require(this.choices != null) { "Cannot use withChosen on non-complex action type: ${this.actionDefinition.name}" }
         require(this.availableActionsEvaluator == null)
         val context = ActionOptionsContext(model, actionType.name, playerIndex, eliminations, replayable)
         return ActionComplexImpl(actionType, context, this.choices!!).withChosen(chosen)
