@@ -55,6 +55,7 @@ object CoupRuleBased {
                     if (player.playerIndex != this.viewer) {
                         return@map mapOf(
                             "alive" to player.isAlive(),
+//                            "actionable" to actions.nextStep(CoupPlayer::class).available(player) { player.playerIndex }
                             "influenceCount" to player.influence.size,
                             "coins" to player.coins,
                             "previousInfluence" to player.previousInfluence.cards.map { it.name }
@@ -123,6 +124,30 @@ object CoupRuleBased {
         actionRules {
             allActions.precondition {
                 game.players[playerIndex].influence.size > 0
+            }
+            view("actions") {
+                if (viewer == null) return@view emptyMap<String, Any>()
+                CoupActionType.values().associate { action: CoupActionType ->
+                    action.name to mapOf(
+                        "name" to action.name,
+                        "claim" to action.claim,
+                        "blockable" to action.blockableBy,
+                        "allowed" to action(perform).choose(action).anyAvailable()
+                    )
+                }
+            }
+            view("buttons") {
+                if (viewer == null) return@view emptyMap<String, Any>()
+                mapOf(
+                    "targetablePlayers" to actionsChosen().nextSteps(CoupPlayer::class).map { it.playerIndex },
+                    "approve" to action(approve).anyAvailable(),
+                    "counter" to action(counter).options(),
+                    "challenge" to action(challenge).anyAvailable(),
+                    // CoupCharacters:
+                    "reveal" to action(reveal).anyAvailable(),
+                    "ambassadorPutBack" to action(ambassadorPutBack).options().map { it.name },
+                    "loseInfluence" to action(loseInfluence).options().map { it.name }
+                )
             }
         }
         gameRules {
