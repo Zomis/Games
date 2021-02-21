@@ -1,5 +1,5 @@
 <template>
-  <v-card v-show="logEntries.length > 0">
+  <v-card v-show="hasLogEntries">
     <v-card-title>
       <h2>{{ title }}</h2>
     </v-card-title>
@@ -48,6 +48,9 @@ export default {
         }
     },
     computed: {
+        hasLogEntries() {
+            return typeof this.logEntries !== 'undefined' && this.logEntries.length > 0
+        },
         supportedGame() {
             return supportedGames.games[this.context.gameType]
         },
