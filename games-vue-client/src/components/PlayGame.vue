@@ -135,15 +135,11 @@ export default {
       }
     },
     context() {
-      /* TODO:
-       Players + add controllable property (true/false) or controllable int *array*.
-        Also add eliminated property
-       Viewer - Int. (Make it changable in local or when controlling multiple players)
-       Scope/Context/View/yadayada: Replay/Game/Local/Lobby...
-       Eliminations.
-      */
+      // TODO: Add eliminated property for each player?
+      // Determine the access you have to each player (NONE / READ / WRITE / ADMIN)
+      let access = this.players.map((_, idx) => this.gameInfo.access[idx] || "NONE");
       return {
-        players: this.players.map((p, idx) => ({ ...p, controllable: this.gameInfo.yourIndex === idx, elimination: this.eliminations.find(e => e.player == idx) })),
+        players: this.players.map((p, idx) => ({ ...p, controllable: access[idx] === "WRITE" || access[idx] === "ADMIN", elimination: this.eliminations.find(e => e.player == idx) })),
         gameType: this.gameInfo.gameType,
         gameId: this.gameInfo.gameId,
         viewer: this.gameInfo.activeIndex,
