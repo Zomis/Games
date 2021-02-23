@@ -119,7 +119,7 @@ data class ActionPlayerChoice(val actionType: String, val chosen: List<Any>)
 class ActionChoices {
     private val players = mutableMapOf<Int, ActionPlayerChoice>()
 
-    fun setChosen(playerIndex: Int, actionType: String?, chosen: MutableList<Any>) {
+    fun setChosen(playerIndex: Int, actionType: String?, chosen: List<Any>) {
         if (actionType != null) {
             this.players[playerIndex] = ActionPlayerChoice(actionType, chosen)
         } else {

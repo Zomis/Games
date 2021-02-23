@@ -123,7 +123,12 @@ const gameStore = {
       Socket.route(`games/${data.gameInfo.gameType}/${data.gameInfo.gameId}/action`, obj);
     },
     requestView(context, data) {
-      Socket.route(`games/${data.gameType}/${data.gameId}/view`, { playerIndex: data.activeIndex });
+      let game = context.state.games[data.gameId];
+      Socket.route(`games/${data.gameType}/${data.gameId}/view`, {
+        playerIndex: data.activeIndex,
+        actionType: game.gameData.actionChoice != null ? game.gameData.actionChoice.actionName : null,
+        chosen: game.gameData.actionChoice != null ? game.gameData.actionChoice.choices : null
+      });
     },
     resetActionsTo(context, data) {
       context.commit("resetActions", { gameInfo: data.gameInfo });

@@ -18,7 +18,8 @@ class ActionsViewImpl<T: Any>(
     override fun <E : Any> nextSteps(clazz: KClass<E>): List<E> {
         if (viewer.playerIndex == null) return emptyList()
         val chosen = chosen() ?: return emptyList()
-        val next = game.actions[chosen.actionType]!!.withChosen(viewer.playerIndex, chosen.chosen).nextOptions()
+        val actionType = game.actions[chosen.actionType] ?: return emptyList()
+        val next = actionType.withChosen(viewer.playerIndex, chosen.chosen).nextOptions()
         return next.filter { clazz.isInstance(it.choiceValue) }.map { it.choiceValue }.toList() as List<E>
     }
 }
