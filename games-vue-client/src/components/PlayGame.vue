@@ -10,7 +10,6 @@
       v-if="view"
       :view="view"
       :actions="actions"
-      :players="players"
       :context="context"
     />
     <ActionLog
@@ -65,6 +64,9 @@ export default {
     },
     actionParameter(actionType, serializedParameter) {
       this.$store.dispatch("DslGameState/action", { gameInfo: this.gameInfo, name: actionType, data: serializedParameter });
+    },
+    actionStep(choice, actionType) {
+      this.$store.dispatch("DslGameState/nextAction", { gameInfo: this.gameInfo, name: actionType, action: choice });
     },
     action(_, data) {
       let action = this.actionsAvailable[data]
@@ -129,6 +131,7 @@ export default {
         performChosen: this.performChosenAction,
         available: this.actionsAvailable,
         actionParameter: this.actionParameter,
+        choose: this.actionStep,
         actionTypes: this.actionTypes,
         clear: this.clearActions,
         resetTo: this.resetActionsTo
