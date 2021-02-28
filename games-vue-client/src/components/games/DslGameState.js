@@ -66,6 +66,9 @@ const gameStore = {
     updateActions(state, data) {
       let game = state.games[data.gameId].gameData;
       let supportedGame = supportedGames.games[data.gameType]
+      if (!supportedGame.actions) {
+        return
+      }
       let actions = {}
       let actionTypes = []
       console.log("UPDATE ACTIONS DSLGAMESTATE", data.actions, supportedGame)
