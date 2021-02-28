@@ -60,7 +60,7 @@ object CoupRuleBased {
                     if (player.playerIndex != this.viewer) {
                         return@map mapOf(
                             "alive" to player.isAlive(),
-//                            "actionable" to actions.nextStep(CoupPlayer::class).available(player) { player.playerIndex }
+                            "actionable" to actionsChosen().nextSteps(CoupPlayer::class).any { it.playerIndex == player.playerIndex },
                             "influenceCount" to player.influence.size,
                             "coins" to player.coins,
                             "previousInfluence" to player.previousInfluence.cards.map { it.name }
@@ -128,6 +128,7 @@ object CoupRuleBased {
                 CoupActionType.values().associate { action: CoupActionType ->
                     action.name to mapOf(
                         "name" to action.name,
+                        "description" to action.description,
                         "claim" to action.claim,
                         "blockable" to action.blockableBy,
                         "allowed" to action(perform).choose(action).anyAvailable()
@@ -137,7 +138,6 @@ object CoupRuleBased {
             view("buttons") {
                 if (viewer == null) return@view emptyMap<String, Any>()
                 mapOf(
-                    "targetablePlayers" to actionsChosen().nextSteps(CoupPlayer::class).map { it.playerIndex },
                     "approve" to action(approve).anyAvailable(),
                     "counter" to action(counter).options(),
                     "challenge" to action(challenge).anyAvailable(),
