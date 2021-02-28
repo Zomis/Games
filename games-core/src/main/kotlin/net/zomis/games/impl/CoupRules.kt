@@ -49,8 +49,13 @@ object CoupRuleBased {
                 Coup(events, config, playerCount)
             }
         }
-        view {
-            value("players") { game ->
+        actionRules {
+            allActions.precondition {
+                game.players[playerIndex].influence.size > 0
+            }
+            view("currentPlayer") { game.currentPlayerIndex }
+            view("deck") { game.deck.size }
+            view("players") {
                 game.players.map {player ->
                     if (player.playerIndex != this.viewer) {
                         return@map mapOf(
@@ -69,9 +74,7 @@ object CoupRuleBased {
                     )
                 }
             }
-            value("currentPlayer") { it.currentPlayerIndex }
-            value("deck") { it.deck.size }
-            value("stack") {game ->
+            view("stack") {
                 game.stack.asList().map {task ->
                     // This is shown in an ActionLog-like format
                     fun playerPart(player: CoupPlayer?): Map<String, Any>? {
@@ -119,11 +122,6 @@ object CoupRuleBased {
                     }
                     mapOf("parts" to parts)
                 }
-            }
-        }
-        actionRules {
-            allActions.precondition {
-                game.players[playerIndex].influence.size > 0
             }
             view("actions") {
                 if (viewer == null) return@view emptyMap<String, Any>()
