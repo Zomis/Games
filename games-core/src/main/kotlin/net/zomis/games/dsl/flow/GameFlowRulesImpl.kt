@@ -6,19 +6,11 @@ import net.zomis.games.dsl.flow.rules.GameRulePresets
 import net.zomis.games.dsl.flow.rules.GameRulePresetsImpl
 import net.zomis.games.dsl.impl.GameMarker
 import net.zomis.games.dsl.impl.GameRuleContext
-import net.zomis.games.dsl.rulebased.GameRuleEventScope
-import net.zomis.games.dsl.rulebased.GameRuleEvents
-import net.zomis.games.dsl.rulebased.GameRuleForEach
-import net.zomis.games.dsl.rulebased.GameRuleScope
+import net.zomis.games.dsl.rulebased.*
 
 @GameMarker
-interface GameFlowRule<T : Any> {
-    fun appliesWhen(condition: GameRuleScope<T>.() -> Boolean)
-    fun effect(effect: GameRuleScope<T>.() -> Unit)
-    fun <E> applyForEach(list: GameRuleScope<T>.() -> Iterable<E>): GameRuleForEach<T, E>
-
+interface GameFlowRule<T : Any>: GameCommonRule<T> {
     fun rule(name: String, rule: GameFlowRule<T>.() -> Any?)
-    fun <E> onEvent(gameEvents: GameRuleScope<T>.() -> GameEvents<E>): GameRuleEvents<T, E>
 
     fun view(key: String, value: ViewScope<T>.() -> Any?)
     fun <A: Any> action(actionType: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>)

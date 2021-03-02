@@ -3,6 +3,9 @@ package net.zomis.games.impl
 import net.zomis.games.WinResult
 import net.zomis.games.api.GamesApi
 import net.zomis.games.common.next
+import net.zomis.games.common.rules.rules
+import net.zomis.games.dsl.GameDsl
+import net.zomis.games.dsl.rulebased.GameRules
 import kotlin.math.min
 
 class GameStack {
@@ -149,11 +152,7 @@ object CoupRuleBased {
             }
         }
         gameRules {
-            // TODO: rules.players.lastPlayerStanding()
-            rule("last player standing") {
-                appliesWhen { eliminations.remainingPlayers().size == 1 }
-                effect { eliminations.eliminateRemaining(WinResult.WIN) }
-            }
+            rules.players.lastPlayerStanding()
             rule("cancel lose influence") {
                 appliesWhen {
                     val peek = game.stack.peek()

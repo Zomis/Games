@@ -26,16 +26,19 @@ interface GameRuleForEach<T : Any, E> {
     fun effect(effect: GameRuleScope<T>.(E) -> Unit)
 }
 
-@GameMarker
-interface GameRule<T : Any> {
+interface GameCommonRule<T: Any> {
     fun appliesWhen(condition: GameRuleScope<T>.() -> Boolean)
     fun effect(effect: GameRuleScope<T>.() -> Unit)
     fun <E> applyForEach(list: GameRuleScope<T>.() -> Iterable<E>): GameRuleForEach<T, E>
+    fun <E> onEvent(gameEvents: GameRuleScope<T>.() -> GameEvents<E>): GameRuleEvents<T, E>
+}
+
+@GameMarker
+interface GameRule<T : Any>: GameCommonRule<T> {
     fun gameSetup(effect: GameRuleScope<T>.() -> Unit)
     fun <A: Any> action(actionType: ActionType<T, A>, actionRule: GameRuleAction<T, A>.() -> Unit)
 
     fun rule(name: String, rule: GameRule<T>.() -> Any?): GameRule<T>
-    fun <E> onEvent(gameEvents: GameRuleScope<T>.() -> GameEvents<E>): GameRuleEvents<T, E>
 }
 
 interface GameRuleEvents<T: Any, E> {
