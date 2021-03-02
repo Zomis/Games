@@ -1,3 +1,5 @@
+package net.zomis.games.impl
+
 import net.zomis.games.api.GamesApi
 import net.zomis.games.cards.CardZone
 import net.zomis.games.common.isObserver
