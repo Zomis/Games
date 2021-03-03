@@ -66,6 +66,9 @@ const gameStore = {
     updateActions(state, data) {
       let game = state.games[data.gameId].gameData;
       let supportedGame = supportedGames.games[data.gameType]
+      if (!supportedGame.actions) {
+        return
+      }
       let actions = {}
       let actionTypes = []
       console.log("UPDATE ACTIONS DSLGAMESTATE", data.actions, supportedGame)
@@ -123,7 +126,12 @@ const gameStore = {
       Socket.route(`games/${data.gameInfo.gameType}/${data.gameInfo.gameId}/action`, obj);
     },
     requestView(context, data) {
-      Socket.route(`games/${data.gameType}/${data.gameId}/view`, { playerIndex: data.activeIndex });
+      let game = context.state.games[data.gameId];
+      Socket.route(`games/${data.gameType}/${data.gameId}/view`, {
+        playerIndex: data.activeIndex,
+        actionType: game.gameData.actionChoice != null ? game.gameData.actionChoice.actionName : null,
+        chosen: game.gameData.actionChoice != null ? game.gameData.actionChoice.choices : null
+      });
     },
     resetActionsTo(context, data) {
       context.commit("resetActions", { gameInfo: data.gameInfo });
@@ -174,16 +182,26 @@ const gameStore = {
       if (data.type === "ActionList") {
         context.commit("updateActions", data);
       }
-      if (data.type === "GameInfo" || data.type === "GameMove") {
+      if (data.type === "UpdateView") {
+        context.dispatch('requestView', context.state.games[data.gameId].gameInfo)
+        context.dispatch('requestActions', { gameInfo: data })
+      }
+      if (data.type === "GameInfo") {
+        context.commit("resetActions", { gameInfo: data })
+        context.dispatch('requestView', context.state.games[data.gameId].gameInfo)
+        context.dispatch('requestActions', { gameInfo: data })
+      }
+      if (data.type === "GameMove") {
         let supportedGame = supportedGames.games[data.gameType]
         if (supportedGame.resetActions === false) {
           let gameInfo = context.state.games[data.gameId].gameInfo;
-          if (data.type !== "GameMove" || data.player === gameInfo.activeIndex) {
+          if (data.player === gameInfo.activeIndex) {
             context.commit("resetActions", { gameInfo: data })
           }
         } else {
           context.commit("resetActions", { gameInfo: data })
         }
+
         context.dispatch('requestView', context.state.games[data.gameId].gameInfo)
         context.dispatch('requestActions', { gameInfo: data })
       }

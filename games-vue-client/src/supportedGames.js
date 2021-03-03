@@ -155,18 +155,6 @@ const supportedGames = {
     },
     "Coup": {
         dsl: true,
-        actions: {
-            lose: (card) => `${card}`,
-            reveal: () => "reveal",
-            challenge: () => "challenge",
-            accept: () => "accept",
-            perform: (action) => ({
-                key: 'action-' + action,
-                next: (target) => `players/${target}`
-            }),
-            counteract: (counteract) => `counteract-${counteract}`,
-            putBack: (card) => `${card}`
-        },
         component: Coup
     },
     "Hanabi": {
@@ -354,6 +342,7 @@ export default {
     resolveActionKey(supportedGame, actionData, actionChoice) {
         let actionName = actionData.actionType
         let value = actionData.serialized
+        if (!supportedGame.actions) return value
         let actionKeys = supportedGame.actions[actionName]
         if (!actionKeys) {
             console.log("No actionKeys set for", actionName, "default to same as serialized value", value)

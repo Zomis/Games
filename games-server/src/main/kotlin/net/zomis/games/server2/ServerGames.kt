@@ -14,7 +14,6 @@ object ServerGames {
         Decrypto.game,
         CoupRuleBased.game,
         SetGame.game,
-        SpiceRoadDsl.game,
         ResistanceAvalonGame.game,
         LiarsDiceGame.game,
         DungeonMayhemDsl.game,

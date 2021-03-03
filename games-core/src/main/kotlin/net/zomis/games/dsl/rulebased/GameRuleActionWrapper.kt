@@ -1,9 +1,6 @@
 package net.zomis.games.dsl.rulebased
 
-import net.zomis.games.dsl.ActionChoicesStartScope
-import net.zomis.games.dsl.ActionOptionsScope
-import net.zomis.games.dsl.ActionRuleScope
-import net.zomis.games.dsl.GameActionRule
+import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.ActionOptionsContext
 import net.zomis.games.dsl.impl.ActionRuleContext
 import net.zomis.games.dsl.impl.GameRuleContext
@@ -64,7 +61,7 @@ class GameRuleActionWrapper<T: Any, A: Any>(
         }
     }
 
-    override fun choose(options: ActionChoicesStartScope<T, A>.() -> Unit) {
+    override fun choose(options: ActionChoicesScope<T, A>.() -> Unit) {
         action.choose {
             if (parentRule.isActive(this.context)) options.invoke(this)
         }

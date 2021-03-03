@@ -4,6 +4,7 @@ import net.zomis.games.common.Point
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameControllerScope
 import net.zomis.games.server2.games.ActionListRequestHandler
+import net.zomis.games.server2.games.JsonChoices
 import java.util.*
 
 class ConsoleController<T: Any> {
@@ -68,11 +69,9 @@ class ConsoleController<T: Any> {
     }
 
     private fun stepByStepActionable(game: Game<T>, playerIndex: Int, moveType: String, scanner: Scanner): Actionable<T, Any>? {
-        val reqHandler = ActionListRequestHandler(null)
-
         val chosen = mutableListOf<Any>()
         while (true) {
-            val act = reqHandler.availableActionsMessage(game, playerIndex, moveType, chosen).keys.keys
+            val act = JsonChoices.availableActionsMessage(game, playerIndex, moveType, chosen).keys.keys
 
             println("  " + act.size + " choices")
             val entryList = act.entries.toList()

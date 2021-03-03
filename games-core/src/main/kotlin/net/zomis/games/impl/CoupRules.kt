@@ -3,6 +3,9 @@ package net.zomis.games.impl
 import net.zomis.games.WinResult
 import net.zomis.games.api.GamesApi
 import net.zomis.games.common.next
+import net.zomis.games.common.rules.rules
+import net.zomis.games.dsl.GameDsl
+import net.zomis.games.dsl.rulebased.GameRules
 import kotlin.math.min
 
 class GameStack {
@@ -49,12 +52,18 @@ object CoupRuleBased {
                 Coup(events, config, playerCount)
             }
         }
-        view {
-            value("players") { game ->
+        actionRules {
+            allActions.precondition {
+                game.players[playerIndex].influence.size > 0
+            }
+            view("currentPlayer") { game.currentPlayerIndex }
+            view("deck") { game.deck.size }
+            view("players") {
                 game.players.map {player ->
                     if (player.playerIndex != this.viewer) {
                         return@map mapOf(
                             "alive" to player.isAlive(),
+                            "actionable" to actionsChosen().nextSteps(CoupPlayer::class).any { it.playerIndex == player.playerIndex },
                             "influenceCount" to player.influence.size,
                             "coins" to player.coins,
                             "previousInfluence" to player.previousInfluence.cards.map { it.name }
@@ -68,9 +77,7 @@ object CoupRuleBased {
                     )
                 }
             }
-            value("currentPlayer") { it.currentPlayerIndex }
-            value("deck") { it.deck.size }
-            value("stack") {game ->
+            view("stack") {
                 game.stack.asList().map {task ->
                     // This is shown in an ActionLog-like format
                     fun playerPart(player: CoupPlayer?): Map<String, Any>? {
@@ -119,18 +126,33 @@ object CoupRuleBased {
                     mapOf("parts" to parts)
                 }
             }
-        }
-        actionRules {
-            allActions.precondition {
-                game.players[playerIndex].influence.size > 0
+            view("actions") {
+                if (viewer == null) return@view emptyMap<String, Any>()
+                CoupActionType.values().associate { action: CoupActionType ->
+                    action.name to mapOf(
+                        "name" to action.name,
+                        "description" to action.description,
+                        "claim" to action.claim,
+                        "blockable" to action.blockableBy,
+                        "allowed" to action(perform).choose(action).anyAvailable()
+                    )
+                }
+            }
+            view("buttons") {
+                if (viewer == null) return@view emptyMap<String, Any>()
+                mapOf(
+                    "approve" to action(approve).anyAvailable(),
+                    "counter" to action(counter).options(),
+                    "challenge" to action(challenge).anyAvailable(),
+                    // CoupCharacters:
+                    "reveal" to action(reveal).anyAvailable(),
+                    "ambassadorPutBack" to action(ambassadorPutBack).options().map { it.name },
+                    "loseInfluence" to action(loseInfluence).options().map { it.name }
+                )
             }
         }
         gameRules {
-            // TODO: rules.players.lastPlayerStanding()
-            rule("last player standing") {
-                appliesWhen { eliminations.remainingPlayers().size == 1 }
-                effect { eliminations.eliminateRemaining(WinResult.WIN) }
-            }
+            rules.players.lastPlayerStanding()
             rule("cancel lose influence") {
                 appliesWhen {
                     val peek = game.stack.peek()

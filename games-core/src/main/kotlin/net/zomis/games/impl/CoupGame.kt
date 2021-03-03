@@ -15,14 +15,14 @@ enum class CoupCharacter {
     CAPTAIN,
     ;
 }
-enum class CoupActionType(val needsTarget: Boolean, val claim: CoupCharacter?, val blockableBy: List<CoupCharacter> = emptyList()) {
-    INCOME(false, null),
-    FOREIGN_AID(false, null, listOf(CoupCharacter.DUKE)),
-    COUP(true, null),
-    TAX(false, CoupCharacter.DUKE),
-    ASSASSINATE(true, CoupCharacter.ASSASSIN, listOf(CoupCharacter.CONTESSA)),
-    EXCHANGE(false, CoupCharacter.AMBASSADOR),
-    STEAL(true, CoupCharacter.CAPTAIN, listOf(CoupCharacter.CAPTAIN, CoupCharacter.AMBASSADOR)),
+enum class CoupActionType(val needsTarget: Boolean, val claim: CoupCharacter?, val description: String, val blockableBy: List<CoupCharacter> = emptyList()) {
+    INCOME(false, null, "Take 1 coin"),
+    FOREIGN_AID(false, null, "Take 2 coins", listOf(CoupCharacter.DUKE)),
+    COUP(true, null, "Pay 7 coins to launch a coup. Target a player to lose influence"),
+    TAX(false, CoupCharacter.DUKE, "Take 3 coins"),
+    ASSASSINATE(true, CoupCharacter.ASSASSIN, "Pay 3 coins to make a player lose influence", listOf(CoupCharacter.CONTESSA)),
+    EXCHANGE(false, CoupCharacter.AMBASSADOR, "Take two cards from the take, then put any two cards back"),
+    STEAL(true, CoupCharacter.CAPTAIN, "Take 2 coins from another player", listOf(CoupCharacter.CAPTAIN, CoupCharacter.AMBASSADOR)),
     ;
 }
 data class CoupPlayer(val playerIndex: Int) {

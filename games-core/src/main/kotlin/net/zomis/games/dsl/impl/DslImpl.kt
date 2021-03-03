@@ -80,11 +80,10 @@ class GameGridBuilder<T : Any, P>(override val model: T) : GameGrid<T, P>, GridS
 }
 
 class GameViewContext<T : Any>(
-    val model: T,
-    private val eliminations: PlayerEliminations,
+    private val gameObj: Game<T>,
     override val viewer: PlayerIndex
 ) : GameView<T> {
-    override val game: T = model
+    override val game: T = gameObj.model
     private val requestable = mutableMapOf<String, GameViewOnRequestFunction<T>>()
     private val viewResult: MutableMap<String, Any?> = mutableMapOf()
 
@@ -93,29 +92,29 @@ class GameViewContext<T : Any>(
     }
 
     override fun value(key: String, value: (T) -> Any?) {
-        this.viewResult[key] = value(model)
+        this.viewResult[key] = value(game)
     }
 
     override fun currentPlayer(function: (T) -> Int) {
-        viewResult["currentPlayer"] = function(model)
+        viewResult["currentPlayer"] = function(game)
     }
 
     override fun <P> grid(name: String, grid: GridDsl<T, P>, view: ViewDsl2D<T, P>) {
-        val gridSpec = GameGridBuilder<T, P>(model)
+        val gridSpec = GameGridBuilder<T, P>(game)
         gridSpec.apply(grid as GameGridBuilder<T, P>.() -> Unit)
-        val context = GameViewContext2D<T, P>(model)
+        val context = GameViewContext2D<T, P>(game)
         view(context)
-        viewResult[name] = (0 until gridSpec.sizeY(model)).map {y ->
-            (0 until gridSpec.sizeX(model)).map {x ->
-                val p = gridSpec.get(model, x, y)
+        viewResult[name] = (0 until gridSpec.sizeY(game)).map {y ->
+            (0 until gridSpec.sizeX(game)).map {x ->
+                val p = gridSpec.get(game, x, y)
                 context.view(p)
             }
         }
     }
 
     override fun eliminations() {
-        val eliminationsDone = eliminations.eliminations()
-        viewResult["eliminations"] = (0 until eliminations.playerCount).map {playerIndex ->
+        val eliminationsDone = gameObj.eliminations.eliminations()
+        viewResult["eliminations"] = (0 until gameObj.eliminations.playerCount).map {playerIndex ->
             val elimination = eliminationsDone.firstOrNull { it.playerIndex == playerIndex }
             if (elimination == null) {
                 mapOf("eliminated" to false)
@@ -130,14 +129,26 @@ class GameViewContext<T : Any>(
     }
 
     fun request(playerIndex: PlayerIndex, key: String, params: Map<String, Any>): Any? {
+        val outerThis = this
         val gameViewOnRequestScope = object: GameViewOnRequestScope<T> {
             override val game: T
-                get() = model
+                get() = gameObj.model
             override val viewer: PlayerIndex
                 get() = playerIndex
+
+            override fun <A : Any> action(actionType: ActionType<T, A>): ActionView<T, A> = outerThis.action(actionType)
+            override fun actions(): ActionsView<T> = outerThis.actions()
+            override fun actionsChosen(): ActionsChosenView<T> = outerThis.actionsChosen()
         }
         return this.requestable[key]?.invoke(gameViewOnRequestScope, params)
     }
+
+    override fun <A : Any> action(actionType: ActionType<T, A>): ActionView<T, A>
+        = ActionViewImpl(gameObj, actionType, PlayerViewer(playerIndex = viewer))
+
+    override fun actions(): ActionsView<T> = ActionsViewImpl(gameObj, PlayerViewer(playerIndex = viewer), false)
+    override fun actionsChosen(): ActionsChosenView<T> = ActionsViewImpl(gameObj, PlayerViewer(playerIndex = viewer), true)
+
 }
 
 class StateKeeper {

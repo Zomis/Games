@@ -101,22 +101,25 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
         - Switch which player is playing in game
         - Add a user to a playerIndex, with either read or read-write permissions, or read-write-admin permissions
         - Count observers also as users
-        - Read permissions: See available actions, see view, see
+        - Read permissions: See available actions, see view
         - Write permissions: Perform actions
         - Admin permissions: Allow giving access to other users
         - Log all meta-actions, show to all players
 
         - GAME ADMIN: Reset game, set new playerCount
         - GAME ADMIN: Add more players to game, start with: Set, Decrypto, Liar's Dice?, Skull?
-        - GAME ADMIN: Remove players from game, Avalon and Hanabi cannot be replaced by AI and needs special handling
+        - GAME ADMIN: Remove players from game, Avalon and Hanabi cannot be replaced by AI (well, it *could*...) and needs special handling
 
         - Requires either admin permission over the user or site-wide admin permission
         */
     }
 
     private fun actionRequest(message: ClientJsonMessage) {
-        // Does not matter if it's an incomplete action or not
-        this.actionListHandler.actionRequest(message, callback)
+        if (!this.actionListHandler.actionRequest(message, callback)) {
+            // If it's an incomplete action and only a choice step, broadcast view update
+            val actionStepMessage = this.toJson("UpdateView")
+            this.broadcast { actionStepMessage }
+        }
     }
 
     @Deprecated("Replace with action instead. This approach is only *required* for non-DSL games which no longer exists")
@@ -131,6 +134,13 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
     private fun view(message: ClientJsonMessage) {
         val obj = this.obj!!.game
         val viewer = message.data.get("playerIndex").asInt().takeIf { it >= 0 }
+
+        val chosenActionType = message.data.get("actionType")?.asText()
+        val chosen = JsonChoices.deserialize(obj, message.data.get("chosen"), viewer, chosenActionType)
+        if (viewer != null) {
+            obj.actions.choices.setChosen(viewer, chosenActionType, chosen)
+        }
+
         requireAccess(message.client, viewer, ClientPlayerAccessType.READ)
         logger.info { "Sending view data for $viewer in $gameId of type ${gameType.type} to ${message.client}" }
         val view = obj.view(viewer)
