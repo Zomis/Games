@@ -199,6 +199,7 @@ class DslRandomPlayTest {
                 throw IllegalStateException("Game is not over but no actions available after $actionCounter actions. Is the game a draw? View is $view")
             }
             val request = actions.random() // If multiple players wants to perform an action, just do one of them
+            logger.info { "Chosen action: $request out of the ${actions.size} player actions: $actions" }
             val playerSocket = clientsById.getValue(request.client.playerId.toString())
             val moveString = jacksonObjectMapper().writeValueAsString(request.move)
             playerSocket.send("""{ "route": "games/$dslGame/1/move", "playerIndex": ${request.player}, "moveType": "${request.moveType}", "move": $moveString }""")
