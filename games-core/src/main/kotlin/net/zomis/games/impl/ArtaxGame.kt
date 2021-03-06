@@ -121,7 +121,7 @@ object ArtaxGame {
             defaultConfig { Point(7, 7) }
             init { TTArtax(eliminationCallback, playerCount, config.x, config.y) }
         }
-        rules {
+        actionRules {
             action(moveAction) {
                 precondition { game.currentPlayer == playerIndex }
                 choose {

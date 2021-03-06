@@ -33,7 +33,7 @@ object NimGame {
                 Nim(this.config.piles.toMutableList(), this.playerCount, this.config.lastWins, this.config.maxPerTurn)
             }
         }
-        rules {
+        actionRules {
             action(nimAction) {
                 choose {
                     options({ game.piles.indices }) {pileIndex ->

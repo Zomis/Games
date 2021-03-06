@@ -92,7 +92,7 @@ object LiarsDiceGame {
             defaultConfig { LiarsDiceConfig() }
             init { LiarsDice(config, playerCount) }
         }
-        rules {
+        actionRules {
             gameStart {
                 newRound(game, replayable)
             }

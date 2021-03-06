@@ -18,7 +18,7 @@ object TTT3DGame {
             defaultConfig { Unit }
             init { TTT3D() }
         }
-        rules {
+        actionRules {
             allActions.precondition { playerIndex == game.currentPlayer.playerIndex }
             action(playAction) {
                 options { Grid2D(SIZE, SIZE).points().toList() }

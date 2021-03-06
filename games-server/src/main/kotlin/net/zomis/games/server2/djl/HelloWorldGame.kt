@@ -14,7 +14,7 @@ object HelloWorldGame {
             this.init { HelloWorldModel((0 until config).map { false }.toMutableList(), 0) }
             this.players(1..1)
         }
-        rules {
+        actionRules {
             action(playHelloWorldDJL) {
                 options { 0 until 4 }
                 effect {

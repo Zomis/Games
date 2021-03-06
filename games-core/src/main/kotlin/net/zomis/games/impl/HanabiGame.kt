@@ -196,7 +196,7 @@ object HanabiGame {
                 Hanabi(config, (0 until playerCount).map { HanabiPlayer(it) })
             }
         }
-        rules {
+        actionRules {
             gameStart {
                 // 5 cards for 2 or 3 players, otherwise 4 cards.
                 val playerCount = game.players.size

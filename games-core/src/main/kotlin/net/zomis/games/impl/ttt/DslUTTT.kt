@@ -37,7 +37,7 @@ object DslTTT {
                 TTClassicController(TTFactories().classicMNK(conf!!.m, conf.n, conf.k))
             }
         }
-        rules(ttRules())
+        actionRules(ttRules())
         view(ttView(grid))
     }
 
@@ -54,7 +54,7 @@ object DslTTT {
                 TTClassicControllerWithGravity(TTFactories().classicMNK(conf!!.m, conf.n, conf.k))
             }
         }
-        rules(ttRules())
+        actionRules(ttRules())
         view(ttView(grid))
     }
 
@@ -67,7 +67,7 @@ object DslTTT {
                 TTUltimateController(TTFactories().ultimateMNK(conf!!.m, conf.n, conf.k))
             }
         }
-        rules(ttRules())
+        actionRules(ttRules())
         view {
             currentPlayer { it.currentPlayer.index() }
             value("boards") {e ->
@@ -99,7 +99,7 @@ object DslTTT {
             defaultConfig { Unit }
             init { TTOthello(8) }
         }
-        rules(ttRules())
+        actionRules(ttRules())
         view(ttView(grid))
     }
 

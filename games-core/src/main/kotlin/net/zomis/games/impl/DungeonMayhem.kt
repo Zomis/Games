@@ -285,7 +285,7 @@ object DungeonMayhemDsl {
             init { DungeonMayhem(playerCount, config) }
         }
 
-        rules {
+        actionRules {
             allActions.precondition { playerIndex == game.currentPlayerIndex }
             view("currentPlayer") { game.currentPlayerIndex }
             val newTurnDrawCard = trigger(Unit::class).effect {
