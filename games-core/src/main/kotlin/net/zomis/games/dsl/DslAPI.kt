@@ -58,6 +58,7 @@ interface GameDsl<T : Any> {
     fun rules(actionRulesDsl: GameActionRulesDsl<T>) { actionRules(actionRulesDsl) }
     fun testCase(players: Int, testDsl: GameTestDsl<T>)
     fun actionRules(actionRulesDsl: GameActionRulesDsl<T>)
+    @Deprecated("game should be migrated to gameFlow")
     fun gameRules(rulesDsl: GameRulesDsl<T>)
     fun gameFlow(flowDsl: GameFlowDsl<T>)
     fun gameFlowRules(flowRulesDsl: GameFlowRulesDsl<T>)
