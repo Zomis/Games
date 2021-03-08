@@ -47,7 +47,7 @@
         >
           <v-card-title>
             <PlayerProfile
-              :player="players[player.index]"
+              :player="context.players[player.index]"
               :size="32"
               show-name
             />
@@ -162,7 +162,7 @@
         >
           <v-card-title>
             <PlayerProfile
-              :player="players[view.hand.index]"
+              :player="context.players[view.hand.index]"
               :size="32"
               show-name
               post-fix="(You)"
@@ -198,7 +198,7 @@ import HanabiCard from "./HanabiCard"
 
 export default {
   name: "Hanabi",
-  props: ["view", "actions", "players"],
+  props: ["view", "actions", "context"],
   components: {
       CardZone,
       PlayerProfile,

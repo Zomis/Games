@@ -7,7 +7,7 @@
       >
         <v-card :class="{ ['color-' + player.character.color ]: true, currentPlayer: playerIndex == view.currentPlayer }">
           <PlayerProfile
-            :player="players[playerIndex]"
+            :player="context.players[playerIndex]"
             show-name
             :post-fix="'(' + player.character.className + ')'"
           />
@@ -149,7 +149,7 @@ import dungeonMayhemSymbols from "./dungeonMayhemSymbols"
 
 export default {
     name: "DungeonMayhem",
-    props: ["view", "actions", "players"],
+    props: ["view", "actions", "context"],
     components: {
         PlayerProfile,
         Actionable,
