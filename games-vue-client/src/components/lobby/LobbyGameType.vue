@@ -1,5 +1,5 @@
 <template>
-  <v-card class="game-type">
+  <v-card class="game-type" :class="gameTypeCssName">
     <v-toolbar
       color="cyan"
       dark
@@ -96,6 +96,9 @@ export default {
         }
     },
     computed: {
+        gameTypeCssName() {
+            return 'game-' + this.gameType.toLowerCase().replace(" ", "-");
+        },
         activeGames() {
             return this.$store.getters.activeGames.filter(game => game.gameInfo.gameType === this.gameType);
         },
