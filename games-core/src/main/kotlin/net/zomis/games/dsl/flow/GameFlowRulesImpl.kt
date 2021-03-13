@@ -35,6 +35,9 @@ class GameFlowRulesContext<T: Any>(
     val event: Pair<GameEvents<*>, Any>?,
     val callbacks: GameFlowRuleCallbacks<T>
 ): GameFlowRules<T> {
+    private val eventsMap: MutableMap<GameEvents<Any>, MutableList<GameRuleEventScope<T, Any>.() -> Unit>>
+        = mutableMapOf()
+
     override val rules = GameRulePresetsImpl(this)
     override fun afterActionRule(name: String, rule: GameFlowRule<T>.() -> Any?) {
         if (state == GameFlowRulesState.AFTER_ACTIONS) {
@@ -53,11 +56,16 @@ class GameFlowRulesContext<T: Any>(
     }
 
     private fun runRule(name: String, rule: GameFlowRule<T>.() -> Any?) {
-        GameFlowRuleContextRun(context, callbacks).runRule(name, rule)
+        GameFlowRuleContextRun(context, callbacks, eventsMap).runRule(name, rule)
     }
 
     fun <E> fire(executor: GameEvents<E>, event: E) {
-        TODO("firing events not implemented yet in GameFlow")
+        // Loop through all rules related to this executor and fire them
+        val listeners = eventsMap.getOrElse(executor as GameEvents<Any>) { mutableListOf() }
+        val eventContext = GameRuleEventContext(context, event) as GameRuleEventContext<T, Any>
+        listeners.forEach {
+            it.invoke(eventContext)
+        }
     }
 
 }
@@ -87,7 +95,8 @@ interface GameFlowRuleCallbacks<T: Any> {
 
 class GameFlowRuleContextRun<T: Any>(
     private val context: GameRuleContext<T>,
-    private val callbacks: GameFlowRuleCallbacks<T>
+    private val callbacks: GameFlowRuleCallbacks<T>,
+    private val eventsMap: MutableMap<GameEvents<Any>, MutableList<GameRuleEventScope<T, Any>.() -> Unit>>
 ) {
     fun runRule(name: String, rule: GameFlowRule<T>.() -> Any?) {
         val activeCheck = GameFlowRuleContextActiveCheck(context)
@@ -95,7 +104,7 @@ class GameFlowRuleContextRun<T: Any>(
         if (!activeCheck.result) return
 
         callbacks.feedback.invoke(GameFlowContext.Steps.RuleExecution(name, Unit))
-        val execution = GameFlowRuleContextExecution(context, callbacks)
+        val execution = GameFlowRuleContextExecution(context, callbacks, eventsMap)
         rule.invoke(execution)
     }
 }
@@ -111,7 +120,8 @@ class GameFlowRuleContextActiveCheck<T: Any>(
 }
 class GameFlowRuleContextExecution<T: Any>(
     private val context: GameRuleContext<T>,
-    private val callbacks: GameFlowRuleCallbacks<T>
+    private val callbacks: GameFlowRuleCallbacks<T>,
+    private val eventsMap: MutableMap<GameEvents<Any>, MutableList<GameRuleEventScope<T, Any>.() -> Unit>>
 ): GameFlowRuleContext<T>() {
 
     class GameRuleForEachImpl<T: Any, E>(val context: GameRuleContext<T>, val list: Iterable<E>): GameRuleForEach<T, E> {
@@ -128,7 +138,7 @@ class GameFlowRuleContextExecution<T: Any>(
     }
 
     override fun rule(name: String, rule: GameFlowRule<T>.() -> Any?) {
-        GameFlowRuleContextRun(context, callbacks).runRule(name, rule)
+        GameFlowRuleContextRun(context, callbacks, eventsMap).runRule(name, rule)
     }
 
     override fun view(key: String, value: ViewScope<T>.() -> Any?) {
@@ -140,7 +150,12 @@ class GameFlowRuleContextExecution<T: Any>(
     }
 
     override fun <E> onEvent(gameEvents: GameRuleScope<T>.() -> GameEvents<E>): GameRuleEvents<T, E> {
-        TODO()
+        return object : GameRuleEvents<T, E> {
+            override fun perform(perform: GameRuleEventScope<T, E>.() -> Unit) {
+                val events = gameEvents.invoke(context) as GameEvents<Any>
+                eventsMap.getOrPut(events) { mutableListOf() }.add(perform as GameRuleEventScope<T, Any>.() -> Unit)
+            }
+        }
     }
 
 }

@@ -151,6 +151,7 @@ class GameFlowImpl<T: Any>(
         val ruleContext = GameRuleContext(model, eliminations, replayable)
         val context = GameFlowRulesContext(ruleContext, GameFlowRulesState.FIRE_EVENT,
         executor as GameEvents<*> to event as Any, this)
+        setupContext.flowRulesDsl?.invoke(context)
         context.fire(executor, event)
     }
 
