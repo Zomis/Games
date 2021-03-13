@@ -268,6 +268,12 @@ class GameDslContext<T : Any> : GameDsl<T> {
     }
 
     fun createGame(playerCount: Int, config: Any, stateKeeper: StateKeeper): Game<T> {
+        val flowDslNull = this.flowDsl == null
+        val flowRulesNull = this.flowRulesDsl == null
+        if (listOf(flowDslNull, flowRulesNull).distinct().size > 1) {
+            throw IllegalStateException("when using one of gameFlow and gameFlowRules, the others must be used too")
+        }
+
         return if (this.flowDsl == null) {
             GameImpl(this, playerCount, config, stateKeeper)
         } else {
