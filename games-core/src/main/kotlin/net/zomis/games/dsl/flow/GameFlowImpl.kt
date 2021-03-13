@@ -31,11 +31,11 @@ class GameFlowImpl<T: Any>(
             feedbacks.add(GameFlowContext.Steps.Elimination(elimination))
         }
     }
+    override val events: GameEventsExecutor = this
+    override val eliminationCallback: PlayerEliminationCallback = eliminations
     override val model: T = setupContext.model.factory(this, config)
     val replayable = ReplayState(stateKeeper, eliminations)
     override val actions = GameFlowActionsImpl({ feedbacks.add(it) }, model, eliminations, replayable)
-    override val events: GameEventsExecutor = this
-    override val eliminationCallback: PlayerEliminationCallback = eliminations
 
     val actionsInput: Channel<Any> = Channel()
     val job: Job
