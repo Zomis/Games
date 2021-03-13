@@ -21,7 +21,7 @@ enum class CoupActionType(val needsTarget: Boolean, val claim: CoupCharacter?, v
     COUP(true, null, "Pay 7 coins to launch a coup. Target a player to lose influence"),
     TAX(false, CoupCharacter.DUKE, "Take 3 coins"),
     ASSASSINATE(true, CoupCharacter.ASSASSIN, "Pay 3 coins to make a player lose influence", listOf(CoupCharacter.CONTESSA)),
-    EXCHANGE(false, CoupCharacter.AMBASSADOR, "Take two cards from the take, then put any two cards back"),
+    EXCHANGE(false, CoupCharacter.AMBASSADOR, "Take two cards from the deck, then put any two cards back"),
     STEAL(true, CoupCharacter.CAPTAIN, "Take 2 coins from another player", listOf(CoupCharacter.CAPTAIN, CoupCharacter.AMBASSADOR)),
     ;
 }
