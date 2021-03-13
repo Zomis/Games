@@ -132,18 +132,25 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
     }
 
     private fun view(message: ClientJsonMessage) {
-        val obj = this.obj!!.game
+        val obj = this.obj
+        if (obj == null) {
+            logger.warn { "${message.client} Requesting view before obj is initialized on $this" }
+            // message.client.sendErrorMessage("Game not initialized")
+            return
+        }
+
+        val game = obj.game
         val viewer = message.data.get("playerIndex").asInt().takeIf { it >= 0 }
 
         val chosenActionType = message.data.get("actionType")?.asText()
-        val chosen = JsonChoices.deserialize(obj, message.data.get("chosen"), viewer, chosenActionType)
+        val chosen = JsonChoices.deserialize(game, message.data.get("chosen"), viewer, chosenActionType)
         if (viewer != null) {
-            obj.actions.choices.setChosen(viewer, chosenActionType, chosen)
+            game.actions.choices.setChosen(viewer, chosenActionType, chosen)
         }
 
         requireAccess(message.client, viewer, ClientPlayerAccessType.READ)
         logger.info { "Sending view data for $viewer in $gameId of type ${gameType.type} to ${message.client}" }
-        val view = obj.view(viewer)
+        val view = game.view(viewer)
         message.client.send(mapOf(
             "type" to "GameView",
             "gameType" to gameType.type,
