@@ -67,11 +67,16 @@ class GameFlowLogicActionAvailable<T: Any, A: Any>(
 
         val context = GameFlowActionContextOptions<T, A>()
         actionDsls().forEach { it.invoke(context) }
-        return if (context.optionsRule != null) {
-            context.optionsRule!!.invoke(createOptionsContext(playerIndex))
-        } else {
-            ActionComplexImpl(actionType, createOptionsContext(playerIndex), context.choicesRule!!).start()
-                    .depthFirstActions(sampleSize).map { it.parameter }.asIterable()
+        return when {
+            context.optionsRule != null -> context.optionsRule!!.invoke(createOptionsContext(playerIndex))
+            context.choicesRule != null -> {
+                ActionComplexImpl(actionType, createOptionsContext(playerIndex), context.choicesRule!!).start()
+                        .depthFirstActions(sampleSize).map { it.parameter }.asIterable()
+            }
+            else -> {
+                logger.warn { "Action '${actionType.name}' has neither optionsRule or choicesRule set" }
+                emptyList()
+            }
         }
     }
 
@@ -91,15 +96,22 @@ class GameFlowLogicActionAvailable<T: Any, A: Any>(
 
         val context = GameFlowActionContextOptions<T, A>()
         actionDsls().forEach { it.invoke(context) }
-        return if (context.optionsRule != null) {
-            val optionsContext = createOptionsContext(playerIndex)
-            context.optionsRule!!.invoke(optionsContext)
-                .map { optionsContext.createAction(it) }
-                .filter { actionAllowed(it) }
-                .map { ActionInfoKey(actionType.serialize(it.parameter), actionType.name, emptyList(), true) }
-        } else {
-            ActionComplexImpl(actionType, createOptionsContext(playerIndex), context.choicesRule!!)
-                .withChosen(previouslySelected).actionKeys()
+        return when {
+            context.optionsRule != null -> {
+                val optionsContext = createOptionsContext(playerIndex)
+                context.optionsRule!!.invoke(optionsContext)
+                        .map { optionsContext.createAction(it) }
+                        .filter { actionAllowed(it) }
+                        .map { ActionInfoKey(actionType.serialize(it.parameter), actionType.name, emptyList(), true) }
+            }
+            context.choicesRule != null -> {
+                ActionComplexImpl(actionType, createOptionsContext(playerIndex), context.choicesRule!!)
+                        .withChosen(previouslySelected).actionKeys()
+            }
+            else -> {
+                logger.warn { "Action '${actionType.name}' has neither optionsRule or choicesRule set" }
+                emptyList()
+            }
         }
     }
 
