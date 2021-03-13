@@ -37,7 +37,7 @@ class GameEntryPoint<T : Any>(private val gameSpec: GameSpec<T>) {
     }
     fun inMemoryReplay() = InMemoryReplayCallbacks<T>(gameSpec.name)
 
-    fun runTests() {
+    suspend fun runTests() {
         setup().context.testCases.forEach {
             it.runTests(this)
         }

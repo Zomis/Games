@@ -2,6 +2,7 @@ package net.zomis.games.server2
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
+import kotlinx.coroutines.runBlocking
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.GameEntryPoint
@@ -9,7 +10,6 @@ import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.dsl.impl.GameControllerContext
 import net.zomis.games.dsl.impl.GameControllerScope
-import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.impl.*
 import net.zomis.games.impl.words.Decrypto
 import net.zomis.games.server2.ais.AIRepository
@@ -22,7 +22,6 @@ import net.zomis.games.server2.clients.getText
 import net.zomis.games.server2.games.PlayerGameMoveRequest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -95,7 +94,9 @@ class DslRandomPlayTest {
     @MethodSource("serverGames")
     fun dsl(gameType: GameEntryPoint<Any>, playerCount: Int) {
         val dslGame = gameType.gameType
-        gameType.runTests()
+        runBlocking {
+            gameType.runTests()
+        }
 
         val clients = (1..playerCount).map { WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket")) }
         clients.forEach { it.connectBlocking() }
