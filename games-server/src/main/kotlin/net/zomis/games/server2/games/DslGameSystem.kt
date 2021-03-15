@@ -81,7 +81,12 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                 is GameFlowContext.Steps.ActionPerformed<*> -> events.execute(
                     MoveEvent(game, feedback.playerIndex, feedback.actionImpl.actionType, feedback.parameter, feedback.replayState)
                 )
-                is GameFlowContext.Steps.AwaitInput -> return
+                is GameFlowContext.Steps.AwaitInput -> {
+                    if (gameFlow.eliminations.isGameOver()) {
+                        throw IllegalStateException("Game is over but AwaitInput was sent")
+                    }
+                    return
+                }
                 is GameFlowContext.Steps.GameSetup -> { /* SuperTable also listens for GameStartedEvent with higher priority */ }
                 is GameFlowContext.Steps.RuleExecution -> logger.debug { "Rule Execution: $feedback" }
                 is GameFlowContext.Steps.IllegalAction -> logger.error { "Illegal action in feedback: $feedback" }
