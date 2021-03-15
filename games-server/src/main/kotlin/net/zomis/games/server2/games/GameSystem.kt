@@ -211,8 +211,15 @@ class GameTypeRegisterEvent(spec: GameSpec<*>) {
 }
 
 data class PreMoveEvent(val game: ServerGame, val player: Int, val moveType: String, val move: Any)
-data class MoveEvent<T: Any, A: Any>(val game: ServerGame, val player: Int, val actionType: ActionType<T, A>, val parameter: A)
+data class MoveEvent<T: Any, A: Any>(
+    val game: ServerGame,
+    val player: Int,
+    val actionType: ActionType<T, A>,
+    val parameter: A,
+    val replayState: Map<String, Any>
+)
 data class GameStartedEvent(val game: ServerGame)
+data class GameInitializedEvent(val game: ServerGame, val replayState: Map<String, Any>)
 data class GameEndedEvent(val game: ServerGame)
 data class PlayerEliminatedEvent(val game: ServerGame, val player: Int, val winner: WinResult, val position: Int)
 

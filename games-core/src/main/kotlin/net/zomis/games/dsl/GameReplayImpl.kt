@@ -109,7 +109,7 @@ class GameReplayableImpl<T : Any>(
                 is GameFlowContext.Steps.GameSetup -> gameplayCallbacks.startedState(feedback.playerCount, feedback.config, feedback.state)
                 is GameFlowContext.Steps.ActionPerformed<*> -> {
                     val actionReplay = ActionReplay(action.actionType, action.playerIndex,
-                        feedback.actionImpl.actionType.serialize(action.parameter), game.stateKeeper.lastMoveState()
+                        feedback.actionImpl.actionType.serialize(action.parameter), feedback.replayState
                     )
                     gameplayCallbacks.onMove(actionIndex, action, actionReplay)
                     this.actionIndex++

@@ -44,8 +44,8 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         events.listen("Load unfinished games", StartupEvent::class, {true}, {
             features.addData(UnfinishedGames(this.listUnfinished().toMutableSet()))
         })
-        events.listen("save game in Database", ListenerPriority.LATER, GameStartedEvent::class, { dbEnabled(it.game) }, {
-            event -> this.createGame(event.game)
+        events.listen("save game in Database", ListenerPriority.LATER, GameInitializedEvent::class, { dbEnabled(it.game) }, {
+            event -> this.createGame(event.game, event.replayState)
         })
         events.listen("save game move in Database", MoveEvent::class, { dbEnabled(it.game) }, {event ->
             this.addMove(event)
@@ -108,11 +108,11 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         ;
     }
 
-    fun createGame(game: ServerGame) {
+    fun createGame(game: ServerGame, replayState: Map<String, Any>) {
         val pkValue = Prefix.GAME.sk(game.gameId)
 
         // Don't use data here because PK and SK is the same, this doesn't need to be in GSI-1
-        val state: Any? = gameRandomnessState(game)
+        val state: Any? = gameRandomnessState(replayState)
         var updates = listOf(
             AttributeUpdate(Fields.GAME_TYPE.fieldName).put(game.gameType.type),
             AttributeUpdate(Fields.GAME_TIME_STARTED.fieldName).put(Instant.now().epochSecond)
@@ -157,7 +157,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         val dbMove = actionType.serialize(move.parameter)
 
         val moveData = convertToDBFormat(dbMove)
-        val state: Any? = gameRandomnessState(serverGame)
+        val state: Any? = gameRandomnessState(move.replayState)
         val updates = mutableListOf(
             AttributeUpdate(Fields.MOVE_TIME.fieldName).put(epochMilli),
             AttributeUpdate(Fields.MOVE_PLAYER_INDEX.fieldName).put(move.player),
@@ -175,9 +175,8 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         this.update("Add Move $move", update)
     }
 
-    private fun gameRandomnessState(serverGame: ServerGame): Any? {
-        val game = serverGame.obj!!.game as Game<*>
-        val lastMoveState = game.stateKeeper.lastMoveState()
+    private fun gameRandomnessState(state: Map<String, Any>): Any? {
+        val lastMoveState = state
         if (lastMoveState.isNotEmpty()) {
             return convertToDBFormat(lastMoveState)
         }
