@@ -27,6 +27,7 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
 
     override fun state(key: String, value: Any) {
         stateKeeper.save(key, value)
+        stateKeeper.replayMode = true
     }
 
     override suspend fun <A : Any> action(playerIndex: Int, actionType: ActionType<T, A>, parameter: A) {
