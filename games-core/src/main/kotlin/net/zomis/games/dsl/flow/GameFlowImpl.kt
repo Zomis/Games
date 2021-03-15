@@ -48,6 +48,8 @@ class GameFlowImpl<T: Any>(
                 val flowContext = GameFlowContext(this, game, "root")
                 setupContext.model.onStart(GameStartContext(model, replayable))
                 sendFeedback(GameFlowContext.Steps.GameSetup(playerCount, config, replayable.stateKeeper.lastMoveState()))
+                println("Clearing statekeeper after setup ${replayable.stateKeeper}")
+                replayable.stateKeeper.clear()
                 dsl.invoke(flowContext)
                 actionDone()
                 sendFeedback(GameFlowContext.Steps.GameEnd)
