@@ -102,6 +102,9 @@ class GameFlowImpl<T: Any>(
         if (anyPlayerHasAction()) {
             this.actionDone()
             while (true) {
+                if (isGameOver()) {
+                    return null
+                }
                 sendFeedback(GameFlowContext.Steps.AwaitInput)
                 val action = actionsInput.receive()
                 println("GameFlow Coroutine Action Received: $action")
