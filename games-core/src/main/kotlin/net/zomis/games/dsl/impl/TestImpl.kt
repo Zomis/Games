@@ -31,10 +31,10 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
 
     override suspend fun <A : Any> action(playerIndex: Int, actionType: ActionType<T, A>, parameter: A) {
         initialize()
-        val actionImpl = initializedGame().actions[actionType.name]
-        requireNotNull(actionImpl) { "No such action name: ${actionType.name}" }
-        val action = actionImpl.createAction(playerIndex, parameter)
         val game = initializedGame()
+        val actionImpl = game.actions[actionType.name]
+        requireNotNull(actionImpl) { "No such action name: ${actionType.name}, available actions are ${game.actions.actionTypes}" }
+        val action = actionImpl.createAction(playerIndex, parameter)
         if (!actionImpl.isAllowed(action)) {
             throw IllegalStateException("Action is not allowed: $action")
         }
@@ -60,13 +60,13 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
     private suspend fun flowForward() {
         val game = initializedGame()
         if (game is GameFlowImpl<*>) {
-            println("Test flow forward, awaiting feedback")
+            println("Test flow forward, awaiting feedback ${game.stateKeeper.lastMoveState()}")
             do {
                 val output = game.feedbackReceiver.receive()
                 forwards++
                 println("Test flow forward $forwards: $output")
             } while (output !is GameFlowContext.Steps.GameEnd && output !is GameFlowContext.Steps.AwaitInput)
-            println("Test flow forwarded")
+            println("Test flow forwarded ${game.stateKeeper.lastMoveState()}")
         } else {
             forwards++
         }
