@@ -3,10 +3,8 @@ package net.zomis.games.impl.words
 import net.zomis.games.WinResult
 import net.zomis.games.api.GamesApi
 import net.zomis.games.common.PlayerIndex
-import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.Viewable
 import net.zomis.games.impl.words.wordlists.DecryptoWords
-import kotlin.random.Random
 
 object Decrypto {
 
