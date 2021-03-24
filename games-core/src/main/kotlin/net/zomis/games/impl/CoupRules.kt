@@ -285,30 +285,6 @@ object CoupRuleBased {
                     }
                 }
             }
-            afterActionRule("choose actions") {
-                // stack is: CoupAction(type, target, claim?)
-                // after consensus possible stack: CoupAction(ASSASSINATE...), CHALLENGE
-                // challenge marked as success/failure
-                // possible stack: CoupAction(ASSASSINATE...), CHALLENGE, COUNTERACT
-
-                appliesWhen { game.stack.isEmpty() }
-                action(perform) {
-                    precondition { game.currentPlayerIndex == playerIndex }
-                    choose {
-                        optionsWithIds({ CoupActionType.values().asIterable().map { it.name to it } }) {type ->
-                            val player = context.game.players[context.playerIndex]
-                            if (type.needsTarget) {
-                                optionsWithIds({ game.players.minus(player).filter { it.isAlive() }
-                                        .map { it.playerIndex.toString() to it } }) {target ->
-                                    parameter(CoupAction(player, type, target))
-                                }
-                            } else {
-                                parameter(CoupAction(player, type, null))
-                            }
-                        }
-                    }
-                }
-            }
             afterActionRule("coup action") {
                 // actions: List options -> Requires -> Perform
                 // Options: There should only be one total of options and choose.
@@ -436,6 +412,30 @@ object CoupRuleBased {
                     // TODO: Allow logs and log that action is performed
                 }
             }
+            afterActionRule("choose actions") {
+                // stack is: CoupAction(type, target, claim?)
+                // after consensus possible stack: CoupAction(ASSASSINATE...), CHALLENGE
+                // challenge marked as success/failure
+                // possible stack: CoupAction(ASSASSINATE...), CHALLENGE, COUNTERACT
+
+                appliesWhen { game.stack.isEmpty() }
+                action(perform) {
+                    precondition { game.currentPlayerIndex == playerIndex }
+                    choose {
+                        optionsWithIds({ CoupActionType.values().asIterable().map { it.name to it } }) {type ->
+                            val player = context.game.players[context.playerIndex]
+                            if (type.needsTarget) {
+                                optionsWithIds({ game.players.minus(player).filter { it.isAlive() }
+                                        .map { it.playerIndex.toString() to it } }) {target ->
+                                    parameter(CoupAction(player, type, target))
+                                }
+                            } else {
+                                parameter(CoupAction(player, type, null))
+                            }
+                        }
+                    }
+                }
+            }
             afterActionRule("respond to claims") {
                 // TODO: Some kind of concensus approach. Allow people to change their minds? "Lock-in"?
                 // Preferably auto-accept somehow
@@ -477,6 +477,20 @@ object CoupRuleBased {
             expectEquals(3, game.players[0].coins)
             expectEquals(1, game.currentPlayerIndex)
             expectTrue(game.stack.isEmpty())
+        }
+        testCase(players = 3) {
+            // Take income, then next player uses assassin
+            initialize()
+            game.players[1].coins = 3
+            expectEquals(2, game.players[0].coins)
+            action(0, perform, CoupAction(game.players[0], CoupActionType.INCOME))
+            expectEquals(3, game.players[0].coins)
+            expectEquals(3, game.players[1].coins)
+
+            expectEquals(1, game.currentPlayerIndex)
+            expectTrue(game.stack.isEmpty())
+            action(1, perform, CoupAction(game.players[1], CoupActionType.ASSASSINATE, game.players[0]))
+            expectEquals(0, game.players[1].coins)
         }
         testCase(players = 3) {
             // Assassinate, successful block with contessa
