@@ -182,7 +182,12 @@ object CoupRuleBased {
             }
             rule("skip eliminated players") {
                 appliesWhen { !eliminations.remainingPlayers().contains(game.currentPlayerIndex) }
-                effect { game.currentPlayerIndex = game.currentPlayerIndex.next(eliminations.playerCount) }
+                effect {
+                    // TODO: This should be `appliesWhile` or something, or try to execute (some) rules multiple times
+                    while (!eliminations.remainingPlayers().contains(game.currentPlayerIndex)) {
+                        game.currentPlayerIndex = game.currentPlayerIndex.next(eliminations.playerCount)
+                    }
+                }
             }
             rule("await countering: no more counters") {
                 appliesWhen {
@@ -491,6 +496,17 @@ object CoupRuleBased {
             expectTrue(game.stack.isEmpty())
             action(1, perform, CoupAction(game.players[1], CoupActionType.ASSASSINATE, game.players[0]))
             expectEquals(0, game.players[1].coins)
+        }
+        testCase(players = 6) {
+            // Eliminate multiple players, make sure that currentPlayer skips multiple turns
+            initialize()
+            for (i in 2..5) {
+                game.players[i].influence.moveAllTo(game.players[i].previousInfluence)
+            }
+            action(0, perform, CoupAction(game.players[0], CoupActionType.INCOME))
+            action(1, perform, CoupAction(game.players[1], CoupActionType.INCOME))
+            expectEquals(0, game.currentPlayerIndex)
+            expectTrue(game.stack.isEmpty())
         }
         testCase(players = 3) {
             // Assassinate, successful block with contessa
