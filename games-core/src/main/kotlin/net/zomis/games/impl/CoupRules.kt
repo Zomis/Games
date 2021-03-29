@@ -181,7 +181,7 @@ object CoupRuleBased {
                 }
             }
             rule("skip eliminated players") {
-                appliesWhen { !eliminations.remainingPlayers().contains(game.currentPlayerIndex) }
+                appliesWhen { !eliminations.isGameOver() && !eliminations.remainingPlayers().contains(game.currentPlayerIndex) }
                 effect {
                     // TODO: This should be `appliesWhile` or something, or try to execute (some) rules multiple times
                     while (!eliminations.remainingPlayers().contains(game.currentPlayerIndex)) {
