@@ -4,6 +4,6 @@ context('Game List', () => {
     })
 
     it('should have a list of games', () => {
-        cy.get('.game-type').should('have.length', 18);
+        cy.get('.game-type').should('be.gt', 10);
     })
 })
