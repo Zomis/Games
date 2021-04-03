@@ -17,7 +17,7 @@
       <v-card-text>
         <v-row>
           <v-col cols="12">
-            <v-list light>
+            <v-list>
               <template v-for="(player, index) in users">
                 <v-divider
                   v-if="index > 0"
