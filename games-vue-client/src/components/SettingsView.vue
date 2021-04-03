@@ -1,19 +1,33 @@
 <template>
-  <v-menu transition="slide-y-transition" offset-y>
+  <v-menu
+    transition="slide-y-transition"
+    offset-y
+  >
     <template v-slot:activator="{ on }">
-      <v-btn v-on="on" text>
-        <v-icon color="black">mdi-cog</v-icon>
+      <v-btn
+        text
+        v-on="on"
+      >
+        <v-icon color="black">
+          mdi-cog
+        </v-icon>
       </v-btn>
     </template>
     <v-list>
       <v-slider
         v-show="false"
-        class="slider"
         v-model="volume"
+        class="slider"
         prepend-icon="mdi-volume-high"
         @click:prepend="mute"
       />
-      <v-checkbox v-show="false" v-model="theme" value="dark" label="Dark mode" />
+      <v-checkbox
+        v-show="true"
+        v-model="theme"
+        value="dark"
+        label="Dark mode"
+        prepend-icon="mdi-theme-light-dark"
+      />
       <v-checkbox
         v-model="hideAIUsers"
         label="Hide AI Users"
@@ -31,7 +45,7 @@ export default {
   data() {
     let volume = parseInt(localStorage.volume || "42", 10);
     return {
-      previousVolume: volume
+      previousVolume: volume,
     };
   },
   computed: {
@@ -40,17 +54,25 @@ export default {
         return this.$store.state.settings.hideAIUsers;
       },
       set(value) {
-        this.$store.commit("settings/set", { key: "hideAIUsers", value: value ? "true" : "" });
-        this.$store.commit("lobby/setLobbyUsersWithOptions", { hideAIUsers: !!this.hideAIUsers });
-      }
+        this.$store.commit("settings/set", {
+          key: "hideAIUsers",
+          value: value ? "true" : "",
+        });
+        this.$store.commit("lobby/setLobbyUsersWithOptions", {
+          hideAIUsers: !!this.hideAIUsers,
+        });
+      },
     },
     playSoundOnPlayerTurn: {
       get() {
         return this.$store.state.settings.playSoundOnPlayerTurn;
       },
       set(value) {
-        this.$store.commit("settings/set", { key: "playSoundOnPlayerTurn", value: value ? "true" : "" });
-      }
+        this.$store.commit("settings/set", {
+          key: "playSoundOnPlayerTurn",
+          value: value ? "true" : "",
+        });
+      },
     },
     volume: {
       get() {
@@ -58,7 +80,7 @@ export default {
       },
       set(value) {
         this.$store.commit("settings/setVolume", value);
-      }
+      },
     },
     theme: {
       get() {
@@ -66,16 +88,17 @@ export default {
       },
       set(value) {
         this.$store.commit("settings/setTheme", value);
-      }
-    }
+        this.$vuetify.theme.dark = !this.$vuetify.theme.dark;
+      },
+    },
   },
   methods: {
     mute() {
       let previousVolume = this.volume;
       this.volume = this.volume === 0 ? this.previousVolume : 0;
       this.previousVolume = previousVolume;
-    }
-  }
+    },
+  },
 };
 </script>
 <style scoped>

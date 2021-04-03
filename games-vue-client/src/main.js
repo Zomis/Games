@@ -17,5 +17,9 @@ new Vue({
   router,
   components: { App },
   vuetify,
-  template: "<App/>"
+  template: "<App/>",
+  mounted() {
+      const { theme } = localStorage;
+      this.$vuetify.theme.dark = theme === "dark";
+  },
 });
