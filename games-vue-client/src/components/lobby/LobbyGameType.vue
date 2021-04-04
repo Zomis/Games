@@ -1,5 +1,8 @@
 <template>
-  <v-card class="game-type" :class="gameTypeCssName">
+  <v-card
+    class="game-type"
+    :class="gameTypeCssName"
+  >
     <v-toolbar
       color="cyan"
       dark
@@ -22,7 +25,7 @@
     <v-card-title>
       Users
     </v-card-title>
-    <v-list light>
+    <v-list>
       <template v-for="(player, index) in users">
         <v-divider
           v-if="index > 0"
