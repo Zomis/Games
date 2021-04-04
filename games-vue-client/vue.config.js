@@ -4,11 +4,11 @@ if (isAWS) {
   process.env.VUE_APP_BUILD_TIME = new Date().toISOString()
   process.env.VUE_APP_BUILD_NUMBER = 0
   process.env.VUE_APP_GIT_COMMIT = gitDescribeSync().hash
-  process.env.VUE_APP_GIT_BRANCH = "master"
+  process.env.VUE_APP_GIT_BRANCH = "main"
 }
 
 let branch = process.env.VUE_APP_GIT_BRANCH;
-if (branch === "master") {
+if (branch === "main") {
   branch = "";
 }
 if (process.env.NODE_ENV === "development") {
