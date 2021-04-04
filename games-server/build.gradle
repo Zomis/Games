@@ -56,7 +56,7 @@ dependencies {
     compile "com.fasterxml.jackson.core:jackson-annotations:$jackson_version"
     compile "com.fasterxml.jackson.core:jackson-databind:$jackson_version"
     compile "com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version"
-    compile 'com.beust:jcommander:1.80'
+    compile 'com.beust:jcommander:1.81'
     compile "org.java-websocket:Java-WebSocket:1.5.1"
     compile "log4j:log4j:1.2.17"
     compile 'org.slf4j:slf4j-log4j12:1.7.30'
