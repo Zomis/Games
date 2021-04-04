@@ -21,8 +21,6 @@
       </template>
       <v-spacer />
       <v-toolbar-items>
-        <span v-if="!connection.connected">Disconnected</span>
-        <span v-if="connection.connected">{{ connection.name }}</span>
         <v-btn
           text
           to="/"
@@ -53,16 +51,21 @@
         </div>
       </cookie-law>
       <span>
-        &copy; 2018-2020 Zomis' Games
-        - <a
+        <i>&copy; 2018-2020 Zomis' Games</i>
+        | <a
           href="https://github.com/Zomis/Games"
           target="_blank"
         >GitHub</a>
-        - <a
+        | <a
           href="https://discord.gg/GfXFUvc"
           target="_blank"
         >Discord</a>
       </span>
+      <v-spacer />
+      <v-toolbar-items>
+        <span v-if="!connection.connected">Disconnected</span>
+        <span v-if="connection.connected">{{ connection.name }}</span>
+      </v-toolbar-items>
     </v-footer>
   </v-app>
 </template>
@@ -109,5 +112,13 @@ export default {
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+}
+
+footer {
+  font-size: 14px;
+}
+
+footer i {
+  font-size: 12px;
 }
 </style>

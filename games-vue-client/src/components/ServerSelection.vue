@@ -1,12 +1,6 @@
 <template>
   <div class="server-selection">
-    <h2>Choose server</h2>
-    <v-select
-      v-model="chosenServer"
-      :items="serverOptions"
-      item-text="name"
-      item-value="url"
-    />
+    <h2>Welcome to Zomis Games!</h2>
 
     <AuthChoice
       :server="serverInfo"
@@ -29,7 +23,6 @@
 <script>
 import Socket from "../socket";
 import AuthChoice from "./AuthChoice";
-
 const serverOptions = [
   {
     url: "wss://games.zomis.net:42638/websocket",
@@ -47,12 +40,12 @@ export default {
   data() {
     return {
       serverOptions: serverOptions,
-      chosenServer: serverOptions[0].url
     };
   },
   computed: {
     serverInfo() {
-      return this.serverOptions.find(s => s.url === this.chosenServer);
+      const query = this.$route.query.server;
+      return this.serverOptions.find(s => s.name === query) || this.serverOptions[0];
     }
   },
   components: { AuthChoice },
