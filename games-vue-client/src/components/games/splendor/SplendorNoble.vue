@@ -88,6 +88,10 @@ export default {
 .resource-BLACK {
     background-color: var(--splendor-black) !important;
 }
+.resource-WHITE {
+    background-color: var(--splendor-white) !important;
+}
+
 .resource-RED,
 .resource-BLUE,
 .resource-BLACK {
