@@ -13,7 +13,7 @@ buildscript {
 }
 
 plugins {
-    id "com.github.johnrengelman.shadow" version "5.0.0"
+    id "com.github.johnrengelman.shadow" version "5.2.0"
 }
 
 apply plugin: 'application'
