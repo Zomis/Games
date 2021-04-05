@@ -1,5 +1,8 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 plugins {
     kotlin("multiplatform") version "1.4.32"
+    id("com.github.johnrengelman.shadow") version "5.1.0"
 }
 
 group = "net.zomis"
@@ -96,4 +99,19 @@ kotlin {
         }
     }
 
+}
+
+tasks {
+    val shadowCreate by creating(ShadowJar::class) {
+        manifest {
+            attributes["Main-Class"] = "net.zomis.games.server2.Main"
+        }
+        archiveClassifier.set("all")
+        from(kotlin.jvm().compilations.getByName("main").output)
+        configurations =
+            mutableListOf(kotlin.jvm().compilations.getByName("main").compileDependencyFiles as Configuration)
+    }
+    val build by existing {
+        dependsOn(shadowCreate)
+    }
 }
