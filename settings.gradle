@@ -1,4 +1,1 @@
 rootProject.name = 'games'
-include 'games-core'
-include 'games-js'
-include 'games-server'
