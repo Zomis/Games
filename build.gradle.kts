@@ -10,8 +10,16 @@ repositories {
     maven("https://jitpack.io") // KLogging
 }
 
+val jacksonVersion = "2.12.2"
+val jupiterVersion = "5.7.1"
+
 kotlin {
     jvm {
+        val main by compilations.getting {
+            kotlinOptions {
+                jvmTarget = "11"
+            }
+        }
         withJava()
     }
     js {
@@ -26,6 +34,8 @@ kotlin {
             resources.srcDir("games-core/src/main/resources")
             dependencies {
                 implementation(kotlin("stdlib-common"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3")
+//                implementation("com.github.lewik.klog:klog-metadata:2.0.2")
             }
         }
         val commonTest by getting {
@@ -37,13 +47,52 @@ kotlin {
         val jvmMain by getting {
             kotlin.srcDir("games-server/src/main/kotlin")
             resources.srcDir("games-server/src/main/resources")
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.4.3")
+                implementation("com.github.lewik.klog:klog-jvm:2.0.2")
+                implementation(kotlin("reflect"))
+                implementation(kotlin("script-runtime"))
+                implementation(kotlin("compiler-embeddable"))
+                implementation(kotlin("script-util"))
+
+                implementation("com.fasterxml.jackson.core:jackson-core:$jacksonVersion")
+                implementation("com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion")
+                implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
+                implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
+
+                implementation("com.beust:jcommander:1.81")
+                implementation("org.java-websocket:Java-WebSocket:1.5.1")
+                implementation("log4j:log4j:1.2.17")
+                implementation("org.slf4j:slf4j-log4j12:1.7.30")
+                implementation("io.javalin:javalin:2.8.0")
+                implementation("com.github.kittinunf.fuel:fuel:2.3.1")
+                implementation("com.amazonaws:aws-java-sdk-dynamodb:1.11.991")
+                implementation("org.postgresql:postgresql:42.2.19")
+                implementation("com.zaxxer:HikariCP:3.4.5")
+                implementation("com.github.ben-manes.caffeine:caffeine:2.9.0")
+
+                implementation("ai.djl:api:0.3.0")
+                implementation("ai.djl:model-zoo:0.3.0")
+                runtimeOnly("ai.djl.mxnet:mxnet-engine:0.3.0")
+                runtimeOnly("ai.djl.mxnet:mxnet-native-auto:1.6.0")
+            }
         }
         val jvmTest by getting {
             kotlin.srcDir("games-server/src/test/kotlin")
             resources.srcDir("games-server/src/test/resources")
+            dependencies {
+                implementation("org.junit.jupiter:junit-jupiter-api:$jupiterVersion")
+                implementation("org.junit.jupiter:junit-jupiter-params:$jupiterVersion")
+                runtimeOnly("org.junit.jupiter:junit-jupiter-engine:$jupiterVersion")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.4.3")
+            }
         }
         val jsMain by getting {
             kotlin.srcDir("games-js/src/main/kotlin")
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:1.4.3")
+                implementation("com.github.lewik.klog:klog-js:2.0.2")
+            }
         }
     }
 
