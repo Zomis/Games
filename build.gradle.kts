@@ -64,7 +64,7 @@ kotlin {
                 implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
 
                 implementation("com.beust:jcommander:1.81")
-                implementation("org.java-websocket:Java-WebSocket:1.5.1")
+                implementation("org.java-websocket:Java-WebSocket:1.5.2")
                 implementation("log4j:log4j:1.2.17")
                 implementation("org.slf4j:slf4j-log4j12:1.7.30")
                 implementation("io.javalin:javalin:2.8.0")
