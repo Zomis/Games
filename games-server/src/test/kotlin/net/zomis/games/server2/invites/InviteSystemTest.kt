@@ -8,7 +8,6 @@ import net.zomis.games.example.TestGames
 import net.zomis.games.server2.ClientJsonMessage
 import net.zomis.games.server2.ClientLoginEvent
 import net.zomis.games.server2.MessageRouter
-import net.zomis.games.server2.doctools.DocEventSystem
 import net.zomis.games.server2.doctools.DocWriter
 import net.zomis.games.server2.doctools.EventsExpect
 import net.zomis.games.server2.clients.FakeClient
@@ -40,8 +39,6 @@ class InviteSystemTest {
     @JvmField
     val expect: EventsExpect = EventsExpect()
 
-    @RegisterExtension
-    @JvmField
     val docWriter: DocWriter = testDocWriter("INVITES")
 
     private val idGenerator: GameIdGenerator = { "1" }
@@ -50,7 +47,7 @@ class InviteSystemTest {
 
     @BeforeEach
     fun before() {
-        events = DocEventSystem(docWriter)
+        events = EventSystem()
         features = Features(events)
 
         val lobbySystem = LobbySystem(features)
