@@ -114,4 +114,9 @@ tasks {
     val build by existing {
         dependsOn(shadowCreate)
     }
+
+    withType<Test> {
+        useJUnitPlatform()
+    }
+
 }
