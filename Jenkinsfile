@@ -25,14 +25,14 @@ pipeline {
             steps {
                 sh 'cp /home/zomis/jenkins/server2-secrets.properties games-server/src/main/resources/secrets.properties'
                 sh 'cp /home/zomis/jenkins/server2-startup.conf server2.conf.docker'
-                sh './gradlew clean test :games-server:assemble :games-js:assemble'
+                sh './gradlew clean test shadowCreate'
                 script {
                     def gitChanges = sh(script: 'git diff-index HEAD', returnStatus: true)
                     if (gitChanges) {
                         error("There are git changes after build")
                     }
                 }
-                sh 'cp games-js/.eslintrc.js games-js/web/'
+                // sh 'cp games-js/.eslintrc.js games-js/web/'
                 dir('games-vue-client') {
                     sh 'npm install && npm run build'
                 }
