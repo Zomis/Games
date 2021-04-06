@@ -18,7 +18,7 @@ val jupiterVersion = "5.7.1"
 
 kotlin {
     jvm {
-        val main by compilations.getting {
+        compilations.all {
             kotlinOptions {
                 jvmTarget = "11"
             }
