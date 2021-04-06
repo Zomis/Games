@@ -54,9 +54,9 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.4.3")
                 implementation("com.github.lewik.klog:klog-jvm:2.0.2")
                 implementation(kotlin("reflect"))
-                implementation(kotlin("script-runtime"))
-                implementation(kotlin("compiler-embeddable"))
-                implementation(kotlin("script-util"))
+
+                implementation(kotlin("scripting-compiler-embeddable"))
+                implementation(kotlin("scripting-jsr223"))
 
                 implementation("com.fasterxml.jackson.core:jackson-core:$jacksonVersion")
                 implementation("com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion")

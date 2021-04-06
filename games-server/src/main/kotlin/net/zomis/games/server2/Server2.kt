@@ -181,8 +181,12 @@ class Server2(val events: EventSystem) {
 
         events.with { e -> ServerAIs(aiRepository, dslGames.keys.toSet()).register(e, executor) }
 
-        val engine = ScriptEngineManager().getEngineByExtension("kts")!!
+        val engine = ScriptEngineManager().getEngineByExtension("kts")
         events.listen("Kotlin script", ConsoleEvent::class, {it.input.startsWith("kt ")}, {
+            if (engine == null) {
+                println("No Kotlin script engine available")
+                return@listen
+            }
             val result = engine.eval(it.input.substring("kt ".length))
             println(result)
         })
