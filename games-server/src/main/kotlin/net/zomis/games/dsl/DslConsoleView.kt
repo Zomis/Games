@@ -38,7 +38,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
 
 }
 
-fun main(args: Array<String>) {
+fun main() {
     val scanner = Scanner(System.`in`)
     val gameTypeList = ServerGames.games.map { it.key }.sorted()
     gameTypeList.forEachIndexed { index, gameType ->
