@@ -29,7 +29,7 @@ pipeline {
             steps {
                 sh 'cp /home/zomis/jenkins/server2-secrets.properties games-server/src/main/resources/secrets.properties'
                 sh 'cp /home/zomis/jenkins/server2-startup.conf server2.conf.docker'
-                sh './gradlew clean test shadowCreate'
+                sh './gradlew clean test shadowCreate --info'
                 script {
                     def gitChanges = sh(script: 'git diff-index HEAD', returnStatus: true)
                     if (gitChanges) {
