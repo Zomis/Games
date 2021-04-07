@@ -92,7 +92,7 @@ pipeline {
 
     post {
         always {
-            junit allowEmptyResults: true, testResults: '**/build/test-results/junit-platform/TEST-*.xml'
+            junit allowEmptyResults: true, testResults: 'build/test-results/jvmTest/TEST-*.xml'
         }
         success {
             zpost(0)
