@@ -6,6 +6,10 @@ import net.zomis.jenkins.Duga
 pipeline {
     agent any
 
+    tools {
+        jdk 'Java11'
+    }
+
     stages {
         stage('Environment Vars') {
             steps {
