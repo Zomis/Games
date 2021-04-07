@@ -46,9 +46,10 @@ class AuthorizationSystem(private val events: EventSystem, private val callback:
 
     private fun handleGuest(message: ClientJsonMessage) {
         val client = message.client
-        val cookie = message.data["token"].asText()
+        var cookie = message.data["token"].asText()
         if (cookie.startsWith("cookie:")) {
-            val playerInfo = callback.cookieLookup(cookie.substringAfterLast("cookie:"))
+            cookie = cookie.substringAfterLast("cookie:")
+            val playerInfo = callback.cookieLookup(cookie)
             if (playerInfo == null) {
                 // No need to log client information as client is not logged in
                 logger.info("Invalid cookie was sent: $cookie")
