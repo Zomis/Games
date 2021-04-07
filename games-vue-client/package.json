@@ -40,7 +40,7 @@
     "@vue/test-utils": "1.0.3",
     "git-describe": "4.0.4",
     "babel-eslint": "10.1.0",
-    "chai": "4.2.0",
+    "chai": "4.3.4",
     "eslint": "6.8.0",
     "eslint-plugin-vue": "6.2.2",
     "sass": "1.26.7",
