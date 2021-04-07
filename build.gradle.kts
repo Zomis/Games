@@ -119,4 +119,9 @@ tasks {
         useJUnitPlatform()
     }
 
+    withType<Delete> {
+        delete("/documentation/INVITES.md")
+        delete("/documentation/LOGIN_AND_LOBBY.md")
+    }
+
 }
