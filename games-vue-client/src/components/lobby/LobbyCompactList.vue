@@ -21,28 +21,34 @@
             />
           </td>
           <td>
-            <v-text-field
+            <v-select
               v-model="playTime"
-              type="number"
+              :items="playTimeOptions"
               label="Play Time"
+              clearable
             />
           </td>
-          <td />
+          <td class="actions-description">
+            <div>
+              <span>Try it</span>
+              <span>Play game</span>
+            </div>
+          </td>
         </tr>
       </template>
       <template v-slot:[`item.actions`]="{ item }">
-        <v-btn
-          rounded
+        <v-icon
+          title="Try it"
           @click="testGame(item.gameType)"
         >
-          Try it
-        </v-btn>
-        <v-btn
-          rounded
+          mdi-movie-star
+        </v-icon>
+        <v-icon
+          title="New game"
           @click="createInvite(item.gameType)"
         >
-          New Game
-        </v-btn>
+          mdi-play-circle
+        </v-icon>
       </template>
     </v-data-table>
   </v-container>
@@ -59,6 +65,7 @@ export default {
     return {
       amountOfPlayers: '',
       playTime: '',
+      playTimeOptions: ['15', '30', '45', '60'],
       headers: [
         { 
           text: 'Game',
@@ -119,13 +126,22 @@ export default {
       Socket.route("invites/prepare", { gameType: gameType })
     },
   },
-  computed: {
-  },
   created() {
-    // if (!Socket.isConnected()) {
-    //   this.$router.push("/login");
-    //   return;
-    // }
+    if (!Socket.isConnected()) {
+      this.$router.push("/login");
+      return;
+    }
   },
 }
 </script>
+<style>
+.v-data-table-header .text-start:last-child {
+  text-align: center !important;
+}
+
+.actions-description div,
+.v-data-table__wrapper tbody .text-start:last-child {
+  justify-content: space-evenly;
+  display: flex;
+}
+</style>
