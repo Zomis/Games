@@ -45,11 +45,18 @@ export default {
   computed: {
     serverInfo() {
       const query = this.$route.query.server;
-      return this.serverOptions.find(s => s.name === query) || this.serverOptions[0];
+      const chosenServer = query || localStorage.chosenServer;
+
+      return this.serverOptions.find(s => s.name === chosenServer) || this.serverOptions[0];
     }
   },
   components: { AuthChoice },
   mounted() {
+    const query = this.$route.query.server;
+    if (query) {
+      localStorage.chosenServer = query;
+    }
+
     console.log("Mounted Redirect is:", this.redirect)
     if (Socket.isConnected()) {
       this.$router.push("/");
