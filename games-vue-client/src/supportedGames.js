@@ -118,7 +118,9 @@ const supportedGames = {
         viewTypes: {
             round: { component: DixitRound, binds: (v) => ({ results: v }) }
         },
-        component: Dixit
+        component: Dixit,
+        playTime: '30',
+        amountOfPlayers: '3-12',
     },
     "Avalon": {
         dsl: dsl(g => g.net.zomis.games.impl.ResistanceAvalonGame.game),
@@ -133,6 +135,8 @@ const supportedGames = {
             useLadyOfTheLake: (targetPlayer) => "players/" + targetPlayer
         },
         component: Avalon,
+        playTime: '30',
+        amountOfPlayers: '5-10',
     },
     "DSL-UR": {
         displayName: "Royal Game of UR",
@@ -142,6 +146,8 @@ const supportedGames = {
             move: (i) => `${i}`
         },
         component: RoyalGameOfUR,
+        playTime: '30',
+        amountOfPlayers: '2',
     },
     "Decrypto": {
         enabled: false,
@@ -151,11 +157,15 @@ const supportedGames = {
             guessCode: () => "guessCode",
             giveClue: () => "giveClue"
         },
-        component: Decrypto
+        component: Decrypto,
+        playTime: '15-45',
+        amountOfPlayers: '3-8',
     },
     "Coup": {
         dsl: true,
-        component: Coup
+        component: Coup,
+        playTime: '15',
+        amountOfPlayers: '2-6',
     },
     "Hanabi": {
         dsl: dsl(g => g.net.zomis.games.impl.HanabiGame.game),
@@ -175,6 +185,8 @@ const supportedGames = {
             card: { component: HanabiCard, binds: (v) => ({ card: v, doubleView: true }) }
         },
         component: Hanabi,
+        playTime: '25',
+        amountOfPlayers: '2-5',
     },
     "Set": {
         dsl: true,
@@ -182,6 +194,8 @@ const supportedGames = {
         resetActions: false,
         actions: setActions,
         component: SetGame,
+        playTime: '30',
+        amountOfPlayers: '1-20',
     },
     "Splendor": {
         dsl: dsl(g => g.net.zomis.games.impl.DslSplendor.splendorGame),
@@ -192,6 +206,8 @@ const supportedGames = {
             card: { component: SplendorCard, binds: (v) => ({ card: v }) },
             noble: { component: SplendorNoble, binds: (v) => ({ noble: v }) },
         },
+        playTime: '30',
+        amountOfPlayers: '2-4',
     },
     "Spice Road": {
         dsl: true,
@@ -208,7 +224,9 @@ const supportedGames = {
             }),
             discard: (spice) => spice
         },
-        component: SpiceRoad
+        component: SpiceRoad,
+        playTime: '30-45',
+        amountOfPlayers: '2-5',
     },
     "DSL-Connect4": {
         displayName: "Connect Four",
@@ -232,7 +250,9 @@ const supportedGames = {
             chooseNextPlayer: (index) => "choosePlayer-" + index,
             choose: (index) => "choose-" + index
         },
-        component: Skull
+        component: Skull,
+        playTime: '15-45',
+        amountOfPlayers: '2-6',
     },
     "LiarsDice": {
         displayName: "Liar's Dice",
@@ -245,7 +265,9 @@ const supportedGames = {
             liar: () => "liar",
             spotOn: () => "spotOn"
         },
-        component: LiarsDice
+        component: LiarsDice,
+        playTime: '15-30',
+        amountOfPlayers: '2-20',
     },
     "Dungeon Mayhem": {
         dsl: dsl(g => g.net.zomis.games.impl.DungeonMayhemDsl.game),
@@ -256,7 +278,9 @@ const supportedGames = {
         viewTypes: {
             card: { component: DungeonMayhemCard, binds: (v) => ({ card: v, actions: { available: {} } }) }
         },
-        component: DungeonMayhem
+        component: DungeonMayhem,
+        playTime: '10',
+        amountOfPlayers: '2-4',
     },
     "Artax": {
         dsl: dsl(g => g.net.zomis.games.impl.ArtaxGame.gameArtax),

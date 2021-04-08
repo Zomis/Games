@@ -5,6 +5,7 @@ import TestScreen from "@/components/TestScreen";
 import PlayLocalGame from "@/components/PlayLocalGame";
 import PlayLocalGameMenu from "@/components/PlayLocalGameMenu";
 import StatsScreen from "@/components/stats/StatsScreen";
+import LobbyCompactList from "@/components/lobby/LobbyCompactList";
 import TVScreen from "@/components/TVScreen";
 import ServerSelection from "@/components/ServerSelection";
 import InviteScreen from "@/components/invites/InviteScreen";
@@ -83,6 +84,11 @@ export default new Router({
         players: route.query.players,
         tags: route.query.tags
       })
+    },
+    {
+      path: "/compact",
+      name: "LobbyCompactList",
+      component: LobbyCompactList,
     },
     {
       path: "/local",
