@@ -136,7 +136,10 @@ class DslRandomPlayTest {
         clients[0].takeUntilJson {
             it.getText("type") == "InviteView" && it["players"].size() == clients.size
         }
-        clients[0].send("""{ "route": "invites/$inviteId/start" }""")
+        if (playerCount < gameType.setup().playersCount.maxOrNull()!!) {
+            // Only start game manually if needed. If it's maximum players, game will autostart
+            clients[0].send("""{ "route": "invites/$inviteId/start" }""")
+        }
 
         clients.forEach {client ->
             client.takeUntilJson { it.getText("type") == "GameStarted" }
