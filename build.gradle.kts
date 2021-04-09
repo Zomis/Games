@@ -55,8 +55,14 @@ kotlin {
                 implementation("com.github.lewik.klog:klog-jvm:2.0.2")
                 implementation(kotlin("reflect"))
 
+                // For Kotlin scripting inside a shadow jar (some of these dependencies may be removed)
+                implementation(kotlin("compiler-embeddable"))
                 implementation(kotlin("scripting-compiler-embeddable"))
+                implementation(kotlin("scripting-compiler-impl-embeddable"))
                 implementation(kotlin("scripting-jsr223"))
+                implementation(kotlin("scripting-common"))
+                implementation(kotlin("script-runtime"))
+                implementation(kotlin("script-util"))
 
                 implementation("com.fasterxml.jackson.core:jackson-core:$jacksonVersion")
                 implementation("com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion")

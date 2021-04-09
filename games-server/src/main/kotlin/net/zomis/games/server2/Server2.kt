@@ -24,10 +24,10 @@ import net.zomis.games.server2.javalin.auth.JavalinFactory
 import net.zomis.games.server2.javalin.auth.LinAuth
 import net.zomis.games.server2.ws.Server2WS
 import net.zomis.games.server2.ws.WebsocketMessageHandler
+import org.jetbrains.kotlin.script.jsr223.KotlinJsr223JvmLocalScriptEngineFactory
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.Executors
-import javax.script.ScriptEngineManager
 
 fun JsonNode.getTextOrDefault(fieldName: String, default: String): String {
     return if (this.hasNonNull(fieldName)) this.get(fieldName).asText() else default
@@ -181,13 +181,14 @@ class Server2(val events: EventSystem) {
 
         events.with { e -> ServerAIs(aiRepository, dslGames.keys.toSet()).register(e, executor) }
 
-        val engine = ScriptEngineManager().getEngineByExtension("kts")
+        val kotlinScriptEngineFactory = KotlinJsr223JvmLocalScriptEngineFactory()
         events.listen("Kotlin script", ConsoleEvent::class, {it.input.startsWith("kt ")}, {
-            if (engine == null) {
-                println("No Kotlin script engine available")
-                return@listen
+            val jarFile = "games-1.0-SNAPSHOT-all.jar"
+            if (File(jarFile).exists()) {
+                System.setProperty("kotlin.script.classpath", jarFile)
             }
-            val result = engine.eval(it.input.substring("kt ".length))
+            val script = it.input.substring("kt ".length)
+            val result = kotlinScriptEngineFactory.scriptEngine.eval(script)
             println(result)
         })
         events.with(TTTQLearn(gameSystem)::setup)
