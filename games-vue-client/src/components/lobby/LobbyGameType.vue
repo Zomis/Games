@@ -21,6 +21,12 @@
       >
         New Game
       </v-btn>
+      <v-btn
+        rounded
+        @click="joinChat(gameType)"
+      >
+        Chat
+      </v-btn>
     </v-toolbar>
     <v-card-title>
       Users
@@ -96,7 +102,10 @@ export default {
         },
         invite(gameType, playerId) {
             Socket.route("invites/invite", { gameType: gameType, invite: [playerId] });
-        }
+        },
+        joinChat(gameType) {
+          this.$store.dispatch("chat/join", { chat: { chatId: gameType } });
+        },
     },
     computed: {
         gameTypeCssName() {

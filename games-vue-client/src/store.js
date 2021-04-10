@@ -3,6 +3,7 @@ import Vuex from "vuex";
 import supportedGames from "@/supportedGames"
 import Socket from "@/socket";
 import lobbyStore from "./components/lobby/lobbyStore";
+import chatStore from "./components/chat/chatStore";
 import router from "@/router/index";
 import settingsStore from "./components/settings/settingsStore";
 
@@ -13,6 +14,7 @@ let titlePrefix = "Zomis' Games"
 const store = new Vuex.Store({
   modules: {
     lobby: lobbyStore,
+    chat: chatStore,
     settings: settingsStore,
     ...supportedGames.storeModules()
   },
@@ -96,6 +98,9 @@ const store = new Vuex.Store({
       }
       if (data.type.startsWith("Invite") || data.type.startsWith("Lobby") || data.type === 'GameStarted') {
         context.dispatch("lobby/onSocketMessage", data);
+      }
+      if (data.type === "Chat") {
+        context.dispatch("chat/onSocketMessage", data);
       }
       if (data.gameType) {
         let game = supportedGames.games[data.gameType]

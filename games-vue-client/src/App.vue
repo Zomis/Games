@@ -38,6 +38,7 @@
     <v-content>
       <router-view :key="$route.path" />
     </v-content>
+    <Chat />
     <v-footer
       fixed
       app
@@ -76,11 +77,12 @@ import store from "./store";
 import { mapState } from "vuex";
 import CookieLaw from 'vue-cookie-law'
 import SettingsView from "@/components/SettingsView";
+import Chat from "@/components/chat/Chat";
 
 export default {
   name: "App",
   store,
-  components: { CookieLaw, SettingsView },
+  components: { CookieLaw, SettingsView, Chat },
   methods: {
     logout() {
       Socket.disconnect();
