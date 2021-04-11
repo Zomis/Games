@@ -2,15 +2,17 @@
   <div>
     <v-card
       v-if="display"
+      :key="componentKey"
       width="256"
       class="chat"
     >
       <v-chip-group
-        v-for="chat in chats"
-        :key="chat.chatId"
-        class="active-chat"
+        active-class="active-chat"
+        column
       >
         <v-chip
+          v-for="chat in chats"
+          :key="chat.chatId"
           close
           close-icon="mdi-close"
           @click:close="leaveChat(chat.chatId)"
@@ -32,12 +34,15 @@
         </v-col>
       </v-card-title>
 
-      <v-card-text class="message-body">
-        <div class="card">
-          <div class="card-body">
+      <v-card-text>
+        <div class="messages">
+          <div
+            ref="container"
+            class="messages-body"
+          >
             <div
               v-for="message in currentChat.messages"
-              :key="message.message"
+              :key="message.message + message.from + message.date"
             >
               <span class="from">{{ message.from }}</span>
               <span class="message">
@@ -47,13 +52,21 @@
           </div>
         </div>
 
-        <input
+        <v-textarea
           v-model="newMessage"
-          type="text"
-        >
-        <v-btn @click="sendMessage">
-          Send
-        </v-btn>
+          label="Message"
+          rows="2"
+          counter
+          maxlength="100"
+          dense
+          full-width
+          autofocus
+          no-resize
+          hint="Please be respectful"
+          append-outer-icon="mdi-send"
+          @click:append-outer="sendMessage"
+          @keyup.enter="sendMessage"
+        />
       </v-card-text>
     </v-card>
     <v-btn
@@ -77,30 +90,41 @@ export default {
       currentChat: {},
       newMessage: '',
       messages: [],
+      componentKey: 0,
     };
   },
   methods: {
+    // forceRerender() {
+    //   this.componentKey += 1;
+    // },
+    scrollToEnd () {
+      var content = this.$refs.container;
+      content.scrollTop = content.scrollHeight;
+    },
     toggleDisplay() {
       this.display = !this.display;
     },
     sendMessage() {
-      this.$store.dispatch("chat/message", { chat: { chatId: this.currentChat.chatId, message: this.newMessage } });
+      if (this.newMessage.trim().length > 0) {
+        this.$store.dispatch("chat/message", { chat: { chatId: this.currentChat.chatId, message: this.newMessage.trim() } });
+        this.scrollToEnd();
+      }
+      this.newMessage = '';
     },
     activeChat(chatId) {
-      this.currentChat = this.chats.find(c => c.chatId === chatId);
+      this.currentChat = this.chats[chatId];
     },
     leaveChat(chatId) {
       this.$store.dispatch("chat/leave", { chat: { chatId } });
     }
   },
   mounted() {
-    this.currentChat = this.chats[0];
+    this.currentChat = this.chats.server;
+    this.scrollToEnd();
   },
   computed: {
-    chats: {
-      get() {
-        return this.$store.state.chat.chats;
-      },
+    chats() {
+      return this.$store.state.chat.chats;
     },
   },
 }
@@ -117,37 +141,43 @@ export default {
   right: 20px;
   
   border-top-left-radius: 4px;
+  border-bottom-left-radius: 0;
   border-top-right-radius: 4px;
+  border-bottom-right-radius: 0;
   border-top: 1px solid black;
   border-left: 1px solid black;
   border-right: 1px solid black;
 }
 
-h3 {
+.chat .v-card__title {
+  padding: 2px;
+}
+.chat .v-card__text {
+  padding-right: 0;
+  padding-bottom: 0;
+  padding-left: 2px;
+}
+.chat .active-chat {
+  font-weight: bold;
+}
+.chat h3 {
   font-size: 30px;
   text-align: center;
 }
-
-.message {
+.chat .message {
   font-size: 14px;
 }
-.from {
+.chat .from {
   color: teal;
   font-weight: bold;
 }
-.message-body input {
-  width: 80%;
-  border-radius: 4px;
-  border: 1px solid rgb(156, 156, 156);
-  height: 6vh;
-  padding: 2px;
-}
-.card {
-  width: 100%;
+.chat .messages {
+  display: flex;
   height: 40vh;
 }
-.card-body {
-  min-height: 40vh;
+.chat .messages-body {
+  flex-direction: column;
+  width: 100%;
   overflow-y: scroll;
 }
 </style>

@@ -104,7 +104,7 @@ export default {
             Socket.route("invites/invite", { gameType: gameType, invite: [playerId] });
         },
         joinChat(gameType) {
-          this.$store.dispatch("chat/join", { chat: { chatId: gameType } });
+          this.$store.dispatch("chat/join", { chat: { chatId: `game-${gameType}` } });
         },
     },
     computed: {
