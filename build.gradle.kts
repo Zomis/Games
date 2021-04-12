@@ -13,7 +13,7 @@ repositories {
     maven("https://jitpack.io") // KLogging
 }
 
-val jacksonVersion = "2.12.2"
+val jacksonVersion = "2.12.3"
 val jupiterVersion = "5.7.1"
 
 kotlin {
