@@ -1,3 +1,5 @@
+import Vue from "vue";
+
 import Socket from "@/socket";
 
 const chatStore = {
@@ -6,49 +8,10 @@ const chatStore = {
     chats: {
       'server': {
         chatId: 'server',
-        users: [
-          { "playerId": "431", "name": "RandomCat79" },
-          { "playerId": "123", "name": "Zomis" }
-        ],
-        messages: [
-          { message: 'Hello', from: "RandomCat79", date: Date.now() },
-          { message: 'Hello there!', from: "Zomis", date: Date.now() },
-        ],
+        chatName: 'server',
+        users: [],
+        messages: [],
       },
-      'game-UR': {
-        chatId: 'game-UR',
-        users: [
-          { "playerId": "431", "name": "RandomCat79" },
-          { "playerId": "123", "name": "Zomis" },
-          { "playerId": "444", "name": "Urmakaren" },
-        ],
-        messages: [
-          { message: 'Hello UR', from: "RandomCat79", date: Date.now() },
-          { message: 'Hello you!', from: "Urmakaren", date: Date.now() },
-        ],
-      },
-      'game-Dixit': {
-        chatId: 'game-Dixit',
-        users: [
-          { "playerId": "123456", "name": "JKR" },
-          { "playerId": "123", "name": "Zomis" },
-        ],
-        messages: [
-          { message: 'Hello Zomis', from: "JKR", date: Date.now() },
-          { message: 'Hello you!', from: "Zomis", date: Date.now() },
-          { message: 'Hello you2!', from: "Zomis", date: Date.now() },
-          { message: 'Hello you3!', from: "Zomis", date: Date.now() },
-          { message: 'Hello you4!', from: "Zomis", date: Date.now() },
-          { message: 'Hello you5!', from: "Zomis", date: Date.now() },
-          { message: 'Hello you6!', from: "Zomis", date: Date.now() },
-          { message: 'Hello you7!', from: "Zomis", date: Date.now() },
-          { message: 'Hello you8!', from: "Zomis", date: Date.now() },
-          { message: 'Hello you9!', from: "Zomis", date: Date.now() },
-          { message: 'Hello you10!', from: "Zomis", date: Date.now() },
-          { message: 'Hello you11!', from: "Zomis", date: Date.now() },
-          { message: 'Hello you12!', from: "Zomis", date: Date.now() },
-        ],
-      }
     }
   },
   getters: {
@@ -57,11 +20,16 @@ const chatStore = {
   mutations: {
     addChat(state, data) {
       const { chatId, users } = data;
-      state.chats[chatId] = { chatId, users }
+      Vue.set(state.chats, chatId, {
+        chatId,
+        chatName: chatId.replace("game-", ""),
+        users,
+        messages: [],
+      });
     },
     removeChat(state, data) {
       const { chatId } = data;
-      delete state.chats[chatId];
+      Vue.delete(state.chats, chatId);
     },
     addUserToChat(state, data) {
       const { chatId, user } = data;

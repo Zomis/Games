@@ -2,7 +2,6 @@
   <div>
     <v-card
       v-if="display"
-      :key="componentKey"
       width="256"
       class="chat"
     >
@@ -18,14 +17,14 @@
           @click:close="leaveChat(chat.chatId)"
           @click="activeChat(chat.chatId)"
         >
-          {{ chat.chatId }}
+          {{ chat.chatName }}
         </v-chip>
       </v-chip-group>
       
       <v-divider />
 
       <v-card-title>
-        <span class="title font-weight-light">Chat {{ currentChat.chatId }}</span>
+        <span class="title font-weight-light">Chat {{ currentChat.chatName }}</span>
 
         <v-col class="text-right">
           <v-icon @click="toggleDisplay">
@@ -81,6 +80,8 @@
   </div>
 </template>
 <script>
+import { mapState } from "vuex"
+
 export default {
   name: "Chat",
   props: [],
@@ -90,13 +91,9 @@ export default {
       currentChat: {},
       newMessage: '',
       messages: [],
-      componentKey: 0,
     };
   },
   methods: {
-    // forceRerender() {
-    //   this.componentKey += 1;
-    // },
     scrollToEnd () {
       var content = this.$refs.container;
       content.scrollTop = content.scrollHeight;
@@ -120,12 +117,13 @@ export default {
   },
   mounted() {
     this.currentChat = this.chats.server;
-    this.scrollToEnd();
   },
   computed: {
-    chats() {
-      return this.$store.state.chat.chats;
-    },
+    ...mapState("chat", {
+      chats(state) {
+        return state.chats;
+      },
+    }),
   },
 }
 </script>
