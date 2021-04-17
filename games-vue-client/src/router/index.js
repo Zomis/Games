@@ -15,7 +15,6 @@ import axios from "axios";
 import Clipboard from "v-clipboard";
 import supportedGames from "../supportedGames";
 import ReplayScreen from "@/components/replays/GameReplay"
-import md5 from "md5"
 
 Vue.use(VueAxios, axios);
 let authConfig = {
@@ -99,7 +98,6 @@ export default new Router({
       name: "InvitePrepare",
       component: InviteCreateNew,
       props: route => {
-        console.log(route)
         return {
           gameType: route.params.gameType,
           defaultConfig: route.params.defaultConfig
