@@ -78,7 +78,7 @@ kotlin {
                 implementation("com.amazonaws:aws-java-sdk-dynamodb:1.11.1000")
                 implementation("org.postgresql:postgresql:42.2.19")
                 implementation("com.zaxxer:HikariCP:3.4.5")
-                implementation("com.github.ben-manes.caffeine:caffeine:2.9.0")
+                implementation("com.github.ben-manes.caffeine:caffeine:2.9.1")
 
                 implementation("ai.djl:api:0.3.0")
                 implementation("ai.djl:model-zoo:0.3.0")
