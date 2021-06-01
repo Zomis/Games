@@ -6,12 +6,18 @@ import net.zomis.jenkins.Duga
 pipeline {
     agent any
 
+    options {
+        timeout(time: 1, unit: 'HOURS')
+    }
     tools {
         jdk 'Java11'
     }
 
     stages {
         stage('Environment Vars') {
+            options {
+                timeout(time: 5, unit: 'MINUTES')
+            }
             steps {
                 script {
                     sh 'rm -f .env.local'
@@ -26,6 +32,9 @@ pipeline {
             }
         }
         stage('Build') {
+            options {
+                timeout(time: 30, unit: 'MINUTES')
+            }
             steps {
                 sh 'cp /home/zomis/jenkins/server2-secrets.properties games-server/src/main/resources/secrets.properties'
                 sh 'cp /home/zomis/jenkins/server2-startup.conf server2.conf.docker'
@@ -46,6 +55,9 @@ pipeline {
         stage('Docker Image') {
             when {
                 branch 'main'
+            }
+            options {
+                timeout(time: 30, unit: 'MINUTES')
             }
             steps {
                 script {
