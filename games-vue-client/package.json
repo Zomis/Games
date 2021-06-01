@@ -23,22 +23,22 @@
     "md5": "2.3.0",
     "npm-check-updates": "6.0.1",
     "v-clipboard": "2.2.3",
-    "vue": "2.6.11",
+    "vue": "2.6.13",
     "vue-authenticate": "1.4.1",
     "vue-axios": "2.1.5",
     "vue-babylonjs": "1.0.0-beta.7",
     "vue-cookie-law": "1.13.3",
-    "vue-router": "3.3.2",
+    "vue-router": "3.5.1",
     "vuetify": "2.4.9",
-    "vuex": "3.4.0"
+    "vuex": "3.6.2"
   },
   "devDependencies": {
     "@percy/cypress": "2.3.4",
-    "@vue/cli-plugin-babel": "4.4.1",
-    "@vue/cli-plugin-eslint": "4.5.8",
-    "@vue/cli-plugin-unit-mocha": "4.4.1",
-    "@vue/cli-service": "4.4.1",
-    "@vue/test-utils": "1.0.3",
+    "@vue/cli-plugin-babel": "4.5.13",
+    "@vue/cli-plugin-eslint": "4.5.13",
+    "@vue/cli-plugin-unit-mocha": "4.5.13",
+    "@vue/cli-service": "4.5.13",
+    "@vue/test-utils": "1.2.0",
     "git-describe": "4.0.4",
     "babel-eslint": "10.1.0",
     "chai": "4.3.4",
@@ -47,7 +47,7 @@
     "sass": "1.32.8",
     "sass-loader": "8.0.2",
     "vue-cli-plugin-vuetify": "2.3.1",
-    "vue-template-compiler": "2.6.11",
+    "vue-template-compiler": "2.6.13",
     "vuetify-loader": "1.7.2"
   }
 }
