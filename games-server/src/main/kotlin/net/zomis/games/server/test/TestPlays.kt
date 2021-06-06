@@ -221,6 +221,8 @@ object PlayTests {
             }
         } while (nextStep != null)
 
+        val input = PlayTestInput(scanner, replayable)
+
         ConsoleView<Any>().showView(replayable.game)
         println("Choose:")
         println("R. Perform random action")
@@ -279,7 +281,18 @@ object PlayTests {
                 }
             }
             "a" -> {
-                TODO()
+                val playerIndex = input.playerIndex()
+                val type = input.fromList(PlayTestActionAssertionType.values().toList())
+
+                when (type) {
+                    PlayTestActionAssertionType.ALLOWED -> TODO()
+                    PlayTestActionAssertionType.NOT_ALLOWED -> TODO()
+                    PlayTestActionAssertionType.COUNT -> {
+                        val actionType = input.fromList(replayable.game.actions.types().toList().map { it.name }, "Choose action type")
+                        val count = input.number("Expected count:")
+                        PlayTestStepAssertActions(playerIndex, type, actionType = actionType, parameter = count)
+                    }
+                }
             }
             "e" -> {
                 println("Current eliminations are:")

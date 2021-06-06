@@ -1,8 +1,10 @@
 package net.zomis.games.server.test
 
 import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import net.zomis.games.PlayerElimination
 import net.zomis.games.WinResult
+import net.zomis.games.common.toSingleList
 import net.zomis.games.dsl.ConsoleView
 import net.zomis.games.dsl.DslConsoleView
 import net.zomis.games.dsl.GameReplayableImpl
@@ -74,19 +76,50 @@ data class PlayTestStepAssertView @JsonCreator constructor(
 
 }
 
-class PlayTestStepAssertActions @JsonCreator constructor(
+data class PlayTestStepAssertActions @JsonCreator constructor(
     val playerIndex: Int,
     val assertionType: PlayTestActionAssertionType,
-    val chosen: List<Any>,
-    val actionType: String?,
-    val parameter: Any?
+    val chosen: List<Any>? = null,
+    val actionType: String? = null,
+    val parameter: Any? = null
 ) : PlayTestStep("assertActions") {
     fun assert(replayable: GameReplayableImpl<Any>) {
-        TODO("Not yet implemented")
+        println("Asserting $this")
+        when (assertionType) {
+            PlayTestActionAssertionType.ALLOWED -> {
+                assertAllowed(replayable, true)
+            }
+            PlayTestActionAssertionType.NOT_ALLOWED -> {
+                assertAllowed(replayable, false)
+            }
+            PlayTestActionAssertionType.COUNT -> {
+                val actionEntries = if (actionType == null) replayable.game.actions.types().toList() else replayable.game.actions.type(actionType)!!.toSingleList()
+                val actual = actionEntries.sumBy { entry -> entry.availableActions(playerIndex, null).count() }
+                if (actual != parameter) {
+                    throw PlayTestException("Mismatching actions. Expected $parameter allowed actions for player $playerIndex but was $actual")
+                }
+            }
+            else -> TODO()
+        }
+    }
+
+    private fun assertAllowed(replayable: GameReplayableImpl<Any>, expected: Boolean) {
+        val actionTypeEntry = replayable.game.actions.type(actionType!!)
+        if (!expected && actionTypeEntry == null) return
+        if (actionTypeEntry == null) {
+            throw IllegalStateException("No such action type: $actionType")
+        }
+        val mapper = jacksonObjectMapper()
+        val actionParameterSerialized = mapper.convertValue(parameter, actionTypeEntry.actionType.serializedType.java)
+        val actionable = actionTypeEntry.createActionFromSerialized(playerIndex, actionParameterSerialized)
+        val actual = actionTypeEntry.isAllowed(actionable)
+        if (expected != actual) {
+            throw PlayTestException("Mismatching action allowed: Expected $expected but was $actual for action $actionable")
+        }
     }
 }
 
-class PlayTestStepAssertElimination @JsonCreator constructor(
+data class PlayTestStepAssertElimination @JsonCreator constructor(
     val assertionType: PlayTestEliminationAssertionType,
     val playerIndex: Int? = null,
     val remainingPlayers: Int? = null,
