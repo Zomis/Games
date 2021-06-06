@@ -47,6 +47,7 @@ class ConsoleController<T: Any> {
                 val y = scanner.nextLine().toInt()
                 actionLogic.createActionFromSerialized(playerIndex.toInt(), Point(x, y))
             }
+            Unit::class -> actionLogic.createActionFromSerialized(playerIndex.toInt(), Unit)
             else -> {
                 stepByStepActionable(game, playerIndex.toInt(), actionType, scanner)
             }
