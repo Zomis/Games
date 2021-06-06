@@ -1,6 +1,7 @@
 package net.zomis.games.dsl
 
 import net.zomis.games.PlayerEliminations
+import net.zomis.games.api.Games
 import net.zomis.games.dsl.flow.GameFlowRules
 import net.zomis.games.dsl.flow.GameFlowScope
 import net.zomis.games.dsl.rulebased.GameRules
@@ -89,6 +90,7 @@ class GameCreator<T : Any>(val modelClass: KClass<T>) {
     fun <A: Any> action(name: String, parameterType: KClass<A>): GameActionCreator<T, A, A>
         = GameActionCreator(name, parameterType, parameterType, {it}, {it})
     fun singleAction(name: String) = this.action(name, Unit::class)
+    val components = Games.components
 }
 
 interface ActionType<T : Any, A : Any> {
