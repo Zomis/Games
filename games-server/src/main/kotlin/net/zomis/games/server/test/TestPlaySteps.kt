@@ -32,7 +32,7 @@ class PlayTestException(message: String): Exception(message)
 
 sealed class PlayTestStep(val type: String)
 
-class PlayTestStepPerform(val playerIndex: Int, val actionType: String, val action: Any) : PlayTestStep("perform")
+class PlayTestStepPerform(val playerIndex: Int, val actionType: String, val action: Any, val state: Map<String, Any>) : PlayTestStep("perform")
 data class PlayTestStepAssertView @JsonCreator constructor(
     val playerIndex: Int,
     val assertionType: PlayTestViewAssertionType,

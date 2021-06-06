@@ -1,5 +1,6 @@
 package net.zomis.games.server.test
 
+import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ArrayNode
@@ -78,6 +79,22 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
         }
     }
 
+    fun replayState(state: Map<String, Any>) {
+        val steps = node.get("steps") as ArrayNode
+        val node = steps[nextStep - 1] as ObjectNode
+        val oldState = if (node.has("state")) node.get("state") as ObjectNode else null
+        if (oldState != null && oldState.size() > 0) {
+            val expected = mapper.convertValue(node.get("state"), object : TypeReference<Map<String, Any>>() {})
+            if (expected != state) {
+                throw PlayTestException("Mismatching state: Already saved $expected but new state was $state")
+            }
+            return
+        }
+        node.set<ObjectNode>("state", mapper.convertValue(state, JsonNode::class.java))
+        modified = true
+        save()
+    }
+
     fun nextStep(replayable: GameReplayableImpl<Any>): PlayTestStep? {
         if (node.get("steps") == null) {
             node.set<ObjectNode>("steps", ArrayNode(mapper.nodeFactory))
@@ -99,7 +116,8 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
                 val actionType = replayable.game.actions.type(actionTypeName)!!
                 val actionParameterSerialized = mapper.convertValue(actionParameterAny, actionType.actionType.serializedType.java)
                 val actionable = actionType.createActionFromSerialized(node["playerIndex"].asInt(), actionParameterSerialized)
-                PlayTestStepPerform(actionable.playerIndex, actionable.actionType, actionable.parameter)
+                val state = if (node.has("state")) mapper.convertValue(node["state"], object : TypeReference<Map<String, Any>>() {}) else emptyMap()
+                PlayTestStepPerform(actionable.playerIndex, actionable.actionType, actionable.parameter, state)
             }
             "assertView" -> mapper.convertValue(node, PlayTestStepAssertView::class.java)
             "assertEliminations" -> mapper.convertValue(node, PlayTestStepAssertElimination::class.java)
@@ -111,6 +129,9 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
     fun handleStep(step: PlayTestStep, replayable: GameReplayableImpl<Any>) {
         when (step) {
             is PlayTestStepPerform -> {
+                if (step.state.isNotEmpty()) {
+                    replayable.state.setState(step.state)
+                }
                 val actionType = replayable.game.actions.type(step.actionType) ?: throw IllegalStateException("Action ${step.type} does not exist")
                 val actionable = actionType.createAction(step.playerIndex, step.action)
                 runBlocking {
@@ -118,6 +139,7 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
                         replayable.game.actionsInput.send(actionable)
                     } else {
                         replayable.perform(actionable)
+                        println("LAST MOVE STATE: " + replayable.state.lastMoveState())
                     }
                 }
             }
@@ -180,6 +202,9 @@ object PlayTests {
                     if (a is GameFlowContext.Steps.NextView) {
                         if (nextViews++ > 10) throw IllegalStateException("Too many next views")
                     }
+                    if (a is GameFlowContext.Steps.ActionPerformed<*>) {
+                        tree.replayState(a.replayState)
+                    }
                     if (a is GameFlowContext.Steps.AwaitInput) {
                         nextViews = 0
                         println("--- Await Input")
@@ -241,7 +266,7 @@ object PlayTests {
                     it.inputRepeat { it.queryInput(replayable.game, scanner) }
                 }
                 val serialized = replayable.game.actions.type(action.actionType)!!.actionType.serialize(action.parameter)
-                PlayTestStepPerform(action.playerIndex, action.actionType, serialized)
+                PlayTestStepPerform(action.playerIndex, action.actionType, serialized, emptyMap()) // state is filled in later
             }
             "v" -> {
                 println("Enter player index")
