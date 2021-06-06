@@ -218,7 +218,6 @@ export default {
     },
     canMove(from) {
       console.log("Can move from", from)
-//            this.view.pieces[this.view.currentPlayer][ + this.view.roll
       return true
     },
     mouseover(piece) {

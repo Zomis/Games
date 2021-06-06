@@ -26,6 +26,7 @@ interface PlayerEliminationCallback {
     fun eliminationFor(playerIndex: Int): PlayerElimination? = eliminations().find { it.playerIndex == playerIndex }
     fun isAlive(playerIndex: Int) = eliminationFor(playerIndex) == null
     fun isGameOver(): Boolean
+    fun isEliminated(playerIndex: Int): Boolean = !isAlive(playerIndex)
 }
 
 data class PlayerElimination(val playerIndex: Int, val winResult: WinResult, val position: Int)
