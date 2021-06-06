@@ -91,6 +91,7 @@ class GameFlowLogicActionAvailable<T: Any, A: Any>(
         return context.result
     }
 
+    @Deprecated("to be removed")
     fun actionInfoKeys(playerIndex: Int, previouslySelected: List<Any>): List<ActionInfoKey> {
         if (!checkPreconditions(playerIndex)) return emptyList()
 

@@ -88,6 +88,7 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
     fun actionOptionsContext(playerIndex: Int): ActionOptionsContext<T>
         = ActionOptionsContext(model, this.actionType.name, playerIndex, eliminations, replayState)
 
+    @Deprecated("to be removed")
     fun actionInfoKeys(playerIndex: Int, previouslySelected: List<Any>): ActionInfoByKey {
         return ActionInfoByKey(impl.actionInfoKeys(playerIndex, previouslySelected).groupBy { it.serialized })
     }
