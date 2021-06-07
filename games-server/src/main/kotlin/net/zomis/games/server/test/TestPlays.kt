@@ -256,7 +256,14 @@ object PlayTests {
         println("A. Assert actions")
         println("E. Assert eliminations")
         println("X/Q. Exit/Quit")
-        val step = when (scanner.nextLine().toLowerCase()) {
+        val choice: String
+        try {
+            choice = scanner.nextLine()
+        } catch (e: NoSuchElementException) {
+            println("No line from scanner, exiting")
+            return
+        }
+        val step = when (choice.toLowerCase()) {
             "x", "q" -> return
             "r" -> {
                 TODO()
