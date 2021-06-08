@@ -208,10 +208,10 @@ object PlayTests {
                     if (a is GameFlowContext.Steps.AwaitInput) {
                         nextViews = 0
                         println("--- Await Input")
-                        nextSteps(tree, replayable, s)
+                        nextSteps(tree, replayable, s) || break
                     }
                     if (a is GameFlowContext.Steps.GameEnd) {
-                        nextSteps(tree, replayable, s)
+                        nextSteps(tree, replayable, s) || break
                         break
                     }
                 }
@@ -234,15 +234,15 @@ object PlayTests {
         return current
     }
 
-    private fun nextSteps(tree: TestPlayRoot, replayable: GameReplayableImpl<Any>, scanner: Scanner) {
+    private fun nextSteps(tree: TestPlayRoot, replayable: GameReplayableImpl<Any>, scanner: Scanner): Boolean {
         do {
             val nextStep = tree.nextStep(replayable)
             println("Performing saved step")
             if (nextStep is PlayTestStepPerform) {
-                return
+                return true
             }
             if (nextStep is PlayTestStepAssertElimination && replayable.game.isGameOver()) {
-                return
+                return true
             }
         } while (nextStep != null)
 
@@ -261,10 +261,10 @@ object PlayTests {
             choice = scanner.nextLine()
         } catch (e: NoSuchElementException) {
             println("No line from scanner, exiting")
-            return
+            return false
         }
         val step = when (choice.toLowerCase()) {
-            "x", "q" -> return
+            "x", "q" -> return false
             "r" -> {
                 TODO()
             }
@@ -378,8 +378,9 @@ object PlayTests {
         tree.nextStep(replayable)
 
         if (step !is PlayTestStepPerform) {
-            nextSteps(tree, replayable, scanner)
+            return nextSteps(tree, replayable, scanner)
         }
+        return true
     }
 
 }
