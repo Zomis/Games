@@ -13,7 +13,8 @@
       },
       "level" : 2
     },
-    "type" : "perform"
+    "type" : "perform",
+    "state" : { }
   }, {
     "playerIndex" : 0,
     "assertionType" : "EQUALS",
@@ -45,7 +46,8 @@
       },
       "level" : 2
     },
-    "type" : "perform"
+    "type" : "perform",
+    "state" : { }
   }, {
     "assertionType" : "REMAINING_PLAYERS",
     "playerIndex" : null,
@@ -63,7 +65,8 @@
       },
       "level" : 3
     },
-    "type" : "perform"
+    "type" : "perform",
+    "state" : { }
   }, {
     "playerIndex" : 1,
     "actionType" : "play",
@@ -74,7 +77,8 @@
       },
       "level" : 3
     },
-    "type" : "perform"
+    "type" : "perform",
+    "state" : { }
   }, {
     "playerIndex" : 0,
     "actionType" : "play",
@@ -85,7 +89,8 @@
       },
       "level" : 3
     },
-    "type" : "perform"
+    "type" : "perform",
+    "state" : { }
   }, {
     "playerIndex" : 1,
     "actionType" : "play",
@@ -96,7 +101,8 @@
       },
       "level" : 2
     },
-    "type" : "perform"
+    "type" : "perform",
+    "state" : { }
   }, {
     "playerIndex" : 0,
     "actionType" : "play",
@@ -107,7 +113,8 @@
       },
       "level" : 2
     },
-    "type" : "perform"
+    "type" : "perform",
+    "state" : { }
   }, {
     "assertionType" : "REMAINING_PLAYERS",
     "playerIndex" : null,
