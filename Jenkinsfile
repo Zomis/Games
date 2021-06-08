@@ -31,9 +31,9 @@ pipeline {
                 }
             }
         }
-        stage('Build') {
+        stage('Build Server') {
             options {
-                timeout(time: 30, unit: 'MINUTES')
+                timeout(time: 15, unit: 'MINUTES')
             }
             steps {
                 sh 'cp /home/zomis/jenkins/server2-secrets.properties games-server/src/main/resources/secrets.properties'
@@ -45,6 +45,13 @@ pipeline {
                         error("There are git changes after build")
                     }
                 }
+            }
+        }
+        stage('Build Client') {
+            options {
+                timeout(time: 15, unit: 'MINUTES')
+            }
+            steps {
                 // sh 'cp games-js/.eslintrc.js games-js/web/'
                 dir('games-vue-client') {
                     sh 'npm install && npm run build'
@@ -57,7 +64,7 @@ pipeline {
                 branch 'main'
             }
             options {
-                timeout(time: 30, unit: 'MINUTES')
+                timeout(time: 5, unit: 'MINUTES')
             }
             steps {
                 script {
