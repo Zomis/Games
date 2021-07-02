@@ -1,5 +1,6 @@
 package net.zomis.games.dsl.impl
 
+import net.zomis.games.dsl.ActionPlayerChoice
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.ActionView
 import net.zomis.games.dsl.ActionsChosenView

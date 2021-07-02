@@ -116,7 +116,6 @@ interface Actions<T: Any> {
     val choices: ActionChoices
 }
 
-data class ActionPlayerChoice(val actionType: String, val chosen: List<Any>)
 class ActionChoices {
     private val players = mutableMapOf<Int, ActionPlayerChoice>()
 
