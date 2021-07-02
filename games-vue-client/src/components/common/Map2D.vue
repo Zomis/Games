@@ -46,6 +46,7 @@ export default {
   methods: {
     doNothing() {},
     onClick(data) {
+      console.log("Map2D Click", data);
       if (this.clickHandler) {
         this.clickHandler(data.x, data.y)
       }

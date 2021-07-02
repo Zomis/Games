@@ -69,6 +69,7 @@ object TTTUpgrade {
                         mapOf("player" to tile.player.name, "level" to tile.level)
                     }
                 }
+                view("chosen") { this.actionsChosen().chosen()?.chosen?.firstOrNull() }
                 view("currentPlayer") { game.currentPlayer.index() }
                 view("players") {
                     game.players

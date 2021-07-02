@@ -30,7 +30,10 @@ interface ActionView<T: Any, A: Any> {
 interface ActionsView<T: Any> {
     fun <E: Any> nextSteps(clazz: KClass<E>): List<E>
 }
-interface ActionsChosenView<T: Any>: ActionsView<T>
+data class ActionPlayerChoice(val actionType: String, val chosen: List<Any>)
+interface ActionsChosenView<T: Any>: ActionsView<T> {
+    fun chosen(): ActionPlayerChoice?
+}
 
 interface GameView<T: Any> : ViewScope<T> {
     fun result(): Map<String, Any?>

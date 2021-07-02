@@ -22,6 +22,7 @@ import UTTT from "@/components/games/UTTT";
 import Coup from "@/components/games/Coup";
 import Hanabi from "@/components/games/Hanabi";
 import HanabiConfig from "@/components/games/hanabi/HanabiConfig";
+import TTTUpgrade from "@/components/games/TTTUpgrade";
 import Splendor from "@/components/games/splendor/Splendor";
 //import TreeViewGame from "@/components/games/TreeViewGame";
 import SetGame from "@/components/games/set/SetGame";
@@ -121,6 +122,13 @@ const supportedGames = {
         component: Dixit,
         playTime: '30',
         amountOfPlayers: '3-12',
+    },
+    "TTTUpgrade": {
+        dsl: true,
+        component: TTTUpgrade,
+        actions: {
+            play: null
+        }
     },
     "Avalon": {
         dsl: dsl(g => g.net.zomis.games.impl.ResistanceAvalonGame.game),

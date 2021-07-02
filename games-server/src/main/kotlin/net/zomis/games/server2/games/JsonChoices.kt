@@ -12,7 +12,7 @@ object JsonChoices {
 
     fun <T: Any> availableActionsMessage(obj: Game<T>, playerIndex: Int, moveType: String?, chosen: List<Any>?): FrontendActionInfo {
         return if (moveType != null) {
-            val actionType = obj.actions.type(moveType)!!
+            val actionType = obj.actions.type(moveType) ?: throw IllegalArgumentException("actionType not available: $moveType")
             val actionInfo = actionType.actionInfoKeys(playerIndex, chosen ?: emptyList())
             FrontendActionInfo(actionInfo)
         } else {

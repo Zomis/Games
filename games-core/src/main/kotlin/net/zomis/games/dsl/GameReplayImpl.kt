@@ -103,6 +103,7 @@ class GameReplayableImpl<T : Any>(
         for (feedback in gameFlow.feedbackReceiver) {
             println("GameReplayImpl Feedback: $feedback")
             when (feedback) {
+                // is GameEnd is not needed because feedbackReceiver will stop
                 is GameFlowContext.Steps.NextView -> {}
                 is GameFlowContext.Steps.Elimination -> gameplayCallbacks.onElimination(feedback.elimination)
                 is GameFlowContext.Steps.Log -> gameplayCallbacks.onLog(listOf(feedback.log))

@@ -11,7 +11,7 @@ class ActionsViewImpl<T: Any>(
     private val viewer: PlayerViewer,
     private val useChosen: Boolean
 ) : ActionsView<T>, ActionsChosenView<T> {
-    private fun chosen(): ActionPlayerChoice? {
+    override fun chosen(): ActionPlayerChoice? {
         return if (useChosen) game.actions.choices.getChosen(viewer.playerIndex!!) else null
     }
 

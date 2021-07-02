@@ -1,5 +1,5 @@
 <template>
-  <div class="player-profile">
+  <div class="player-profile" :class="{ highlight: highlight }">
     <v-tooltip bottom>
       <template v-slot:activator="{ on }">
         <v-avatar
@@ -28,6 +28,7 @@ export default {
         player: { type: Object, default: null },
         showName: { type: Boolean, default: false },
         size: { type: Number, default: 32 },
+        highlight: { type: Boolean, default: false },
         postFix: { type: String, default: "" }
     },
     computed: {
@@ -55,6 +56,9 @@ export default {
 </script>
 <style scoped>
 div.player-profile {
-    display: inline;
+  display: inline;
+}
+div.player-profile.highlight {
+  border: 3px solid cyan;
 }
 </style>
