@@ -42,6 +42,7 @@ class LogContext<T : Any>(
 
     var counter: Int = 0
     val parts = mutableListOf<LogPart>()
+    @Deprecated("to be removed")
     val highlights = mutableListOf<Any>()
     override val public: LogEntry? get() = publicEntry
     override val secret: LogEntry? get() = secretEntry

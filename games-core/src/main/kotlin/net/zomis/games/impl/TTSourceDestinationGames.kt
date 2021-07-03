@@ -138,6 +138,7 @@ object TTSourceDestinationGames {
                 }
             }
         }
+        view("actionName") { moveAction.name }
     }
 
     private fun ttView(grid: GridDsl<TTControllerSourceDestination, TTBase>): GameViewDsl<TTControllerSourceDestination> = {

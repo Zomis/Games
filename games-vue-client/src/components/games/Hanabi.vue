@@ -14,7 +14,7 @@
                 :key="card.id"
                 class="animate"
                 :card="card"
-                :highlight="actions.highlights[card.id]"
+                :highlight="view.lastAction[card.id] === 'play'"
               />
             </CardZone>
             <v-divider />
@@ -24,7 +24,7 @@
                 v-for="card in colorData.discard"
                 :key="card.id"
                 class="discarded-card animate ma-1"
-                :class="{ ['color-' + card.color]: true, highlight: actions.highlights[card.id], failHighlight: actions.highlights[card.id + '-fail'] }"
+                :class="{ ['color-' + card.color]: true, highlight: view.lastAction[card.id] === 'discard', failHighlight: view.lastAction[card.id] === 'fail' }"
               >
                 <span>{{ card.value }}</span>
               </div>
@@ -60,14 +60,9 @@
                 class="list-complete-item animate"
                 :card="card"
                 double-view="true"
-                :highlight="actions.highlights[card.id] || highlights[card.id]"
+                :highlight="view.lastAction[card.id] === 'clue' || highlights[card.id]"
               />
             </CardZone>
-            <!--
-            <transition-group name="list-complete" tag="div" :duration="20000" :class="['card-zone', 'animation-list-complete']">
-              <HanabiCard v-for="card in player.cards" :key="card.id" :card="card" class="animate" doubleView="true" />
-            </transition-group>
-            -->
           </v-card-text>
           <v-card-actions>
             <v-menu
@@ -179,7 +174,7 @@
                 :card="card"
                 :action="myTurn ? btnActions : false"
                 :index="cardIndex"
-                :highlight="actions.highlights[card.id]"
+                :highlight="view.lastAction[card.id] === 'clue'"
               />
             </CardZone>
           </v-card-text>

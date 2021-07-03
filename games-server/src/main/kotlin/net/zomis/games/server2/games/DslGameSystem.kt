@@ -204,7 +204,6 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
             "gameType" to serverGame.gameType.type,
             "gameId" to serverGame.gameId,
             "private" to entry.private,
-            "highlights" to entry.highlights.associateWith { true },
             "parts" to entry.parts
         )
     }
