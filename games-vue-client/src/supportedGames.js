@@ -267,7 +267,7 @@ const supportedGames = {
         dsl: dsl(g => g.net.zomis.games.impl.LiarsDiceGame.game),
         actions: {
             bet: (amount) => ({
-                key: 'amount-' + amount,
+                key: amount + ' x ?\'s',
                 next: (face) => `bet ${amount}x ${face}'s`
             }),
             liar: () => "liar",
