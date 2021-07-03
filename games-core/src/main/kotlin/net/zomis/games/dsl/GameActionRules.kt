@@ -31,7 +31,6 @@ interface LogScope<T : Any> {
     fun player(value: PlayerIndex): String
     fun players(playerIndices: Iterable<Int>): String
     fun viewLink(text: String, type: String, view: Any): String
-    fun highlight(values: List<Any>)
     fun inline(type: String, data: Any): String
 }
 interface LogActionScope<T : Any, A : Any>: LogScope<T> {

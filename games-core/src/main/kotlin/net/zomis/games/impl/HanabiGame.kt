@@ -214,7 +214,6 @@ object HanabiGame {
                 val card = game.current.cards[action.parameter];
                 moveCard(replayable, game, card, game.colorData(card.card).discard)
                 log {
-                    highlight(listOf(card.card.id))
                     "$player discarded ${viewLink(card.card.toStateString(), "card", card.card.known(true))}"
                 }
                 game.lastAffectedCards = mapOf(card.card.id to "discard")
@@ -229,12 +228,10 @@ object HanabiGame {
                 playCardTo(card, playArea, game, this)
                 if (playArea != null) {
                     log {
-                        highlight(listOf(card.card.id))
                         "$player played ${viewLink(card.card.toStateString(), "card", card.card.known(true))}"
                     }
                 } else {
                     log {
-                        highlight(listOf(card.card.id.toString() + "-fail"))
                         "$player tried to play ${viewLink(card.card.toStateString(), "card", card.card.known(true))} but failed"
                     }
                 }
@@ -247,7 +244,6 @@ object HanabiGame {
                 val playArea = game.playAreaFor(playCard.card).takeIf { playCard.card.color == action.parameter.color }
                 playCardTo(playCard, playArea, game, this)
                 log {
-                    highlight(listOf(playCard.card.id))
                     "$player played ${viewLink(playCard.card.toStateString(), "card", playCard.card.known(true))} as ${action.color}"
                 }
                 game.lastAffectedCards = mapOf(playCard.card.id to if (playArea != null) "play" else "fail")
@@ -269,10 +265,8 @@ object HanabiGame {
                     .filter { it.matches(action.parameter) }
                 val actionPerformer = action.playerIndex
                 logSecret(action.parameter.player) {
-                    highlight(cards.map { it.id })
                     "${player(actionPerformer)} gave clue to ${player(action.player)}: ${cards.size}x ${action.text()}"
                 }.publicLog {
-                    highlight(cards.map { it.id })
                     "${player(actionPerformer)} gave clue to ${player(action.player)}: ${cards.size}x ${action.text()} - ${cards.filter { it.matches(action) }.joinToString(", ") {
                         viewLink(it.toStateString(), "card", it.known(true))
                     }}"
