@@ -115,7 +115,6 @@ export default {
                 perform: () => {},
                 highlights: {},
                 available: {},
-                actionTypes: [],
                 clear: () => {},
                 resetTo: () => {}
             },

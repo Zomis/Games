@@ -30,7 +30,6 @@ const gameStore = {
           eliminations: [],
           view: {},
           actionChoice: null, // actionName, choices
-          actionTypes: [],
           actions: {}
         }
       });
@@ -70,17 +69,14 @@ const gameStore = {
         return
       }
       let actions = {}
-      let actionTypes = []
       console.log("UPDATE ACTIONS DSLGAMESTATE", data.actions, supportedGame)
       Object.keys(data.actions).forEach(actionKey => {
         let actionDataList = data.actions[actionKey]
         actionDataList.forEach(actionData => {
           actions[supportedGames.resolveActionKey(supportedGame, actionData, game.actionChoice)] = actionData
-          actionTypes.push(actionData.actionType);
         })
       });
       console.log("UPDATE ACTIONS RESULT", actions)
-      game.actionTypes = actionTypes;
       game.actions = actions;
     }
   },

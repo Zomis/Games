@@ -132,7 +132,6 @@ export default {
         available: this.actionsAvailable,
         actionParameter: this.actionParameter,
         choose: this.actionStep,
-        actionTypes: this.actionTypes,
         clear: this.clearActions,
         resetTo: this.resetActionsTo
       }
@@ -180,10 +179,6 @@ export default {
       players(state) {
         if (!state.games[this.gameId]) { return [] }
         return state.games[this.gameInfo.gameId].gameInfo.players;
-      },
-      actionTypes(state) {
-        if (!state.games[this.gameId]) { return [] }
-        return state.games[this.gameInfo.gameId].gameData.actionTypes;
       },
       actionsAvailable(state) {
         if (!state.games[this.gameId]) { return {} }
