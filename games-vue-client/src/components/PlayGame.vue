@@ -54,7 +54,7 @@ export default {
   },
   methods: {
     switchPlayerIndex(playerIndex) {
-      this.$store.dispatch("DslGameState/switchPlayerIndex", { gameInfo: this.gameInfo, activeIndex: playerIndex });
+      this.$store.dispatch("DslGameState/switchPlayerIndex", { gameInfo: this.gameInfo, activeIndex: parseInt(playerIndex, 10) });
     },
     performChosenAction() {
       this.$store.dispatch("DslGameState/performChosenAction", { gameInfo: this.gameInfo });
