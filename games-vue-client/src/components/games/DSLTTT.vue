@@ -46,11 +46,8 @@ export default {
       console.log("IGNORED PIECECLICK", data)
     },
     onClick(x, y) {
-      if (this.actions.actionTypes.includes('play')) {
-        this.actions.perform("play", `${x},${y}`);
-      } else {
-        this.actions.perform("move", `${x},${y}`);
-      }
+      let actionName = this.view.actionName
+      this.actions.perform(actionName, `${x},${y}`);
     }
   },
   computed: {

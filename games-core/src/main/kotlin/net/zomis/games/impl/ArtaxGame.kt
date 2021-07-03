@@ -139,6 +139,7 @@ object ArtaxGame {
                     game.perform(game.board.point(action.parameter.source), game.board.point(action.parameter.destination))
                 }
             }
+            view("actionName") { moveAction.name }
         }
         view {
             eliminations()

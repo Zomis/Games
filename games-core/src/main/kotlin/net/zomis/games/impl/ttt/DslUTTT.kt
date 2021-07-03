@@ -122,6 +122,7 @@ object DslTTT {
             else if (game.isGameOver && game.wonBy == TTPlayer.BLOCKED) eliminations.eliminateRemaining(WinResult.DRAW)
             else if (!isPlacesLeft(game.game)) eliminations.eliminateRemaining(WinResult.DRAW)
         }
+        view("actionName") { playAction.name }
     }
 
     private fun allSmallest(base: TTBase): Sequence<TTBase> {

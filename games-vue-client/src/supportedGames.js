@@ -125,10 +125,7 @@ const supportedGames = {
     },
     "TTTUpgrade": {
         dsl: true,
-        component: TTTUpgrade,
-        actions: {
-            play: null
-        }
+        component: TTTUpgrade
     },
     "Avalon": {
         dsl: dsl(g => g.net.zomis.games.impl.ResistanceAvalonGame.game),
