@@ -60,7 +60,7 @@
                 class="list-complete-item animate"
                 :card="card"
                 double-view="true"
-                :highlight="actions.highlights[card.id]"
+                :highlight="actions.highlights[card.id] || highlights[card.id]"
               />
             </CardZone>
             <!--
@@ -87,10 +87,12 @@
                 </v-btn>
               </template>
               <v-btn
-                v-for="(act, actIndex) in clueOptions"
+                v-for="(act, actIndex) in view.actions.clueOptions"
                 :key="actIndex"
-                :class="[actIndex.includes('color-') ? actIndex : '']"
-                @click="actions.perform('GiveClue', 'giveclue-' + actIndex)"
+                :class="{ ['color-' + actIndex]: view.actions.colors }"
+                @mouseover="highlightCards(act)"
+                @mouseleave="highlightCards([])"
+                @click="actions.choose(actIndex, 'GiveClue')"
               >
                 {{ actIndex }}
               </v-btn>
@@ -208,6 +210,14 @@ export default {
     clue(index) {
       this.actions.resetTo("GiveClue", index);
     },
+    highlightCards(cards) {
+      let highlights = {};
+      cards.forEach(c => {
+        highlights[c] = true;
+      });
+      this.highlights = highlights;
+      console.log("highlight", cards, highlights);
+    },
     btnActions(action, index) {
       this.actions.perform(action, index);
     }
@@ -224,6 +234,7 @@ export default {
   },
   data() {
     return {
+      highlights: [],
       showMenu: [false, false, false, false, false], // One for each player
       snackbar: false,
       snackbarText: 'Last round'

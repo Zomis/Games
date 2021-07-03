@@ -296,9 +296,28 @@ object HanabiGame {
                     eliminations.eliminateRemaining(WinResult.DRAW)
                 }
             }
+
+            view("currentPlayer") { game.currentPlayer }
+            view("actions") {
+                val chosen = actionsChosen().chosen()
+                if (chosen?.actionType == giveClue.name) {
+                    val chosenPlayer = chosen.chosen.first() as Int
+                    val playerCards = game.players[chosenPlayer].cards
+                    val modes = actionsChosen().nextSteps(String::class)
+                    if (modes.isNotEmpty()) return@view mapOf("clueOptions" to modes.associateWith { emptyList<Int>() })
+                    val clues =
+                        actionsChosen().nextSteps(HanabiColor::class).map { HanabiClue(chosenPlayer, it, null) } +
+                        actionsChosen().nextSteps(Int::class).map { HanabiClue(chosenPlayer, null, it) }
+                    return@view mapOf(
+                        "colors" to actionsChosen().nextSteps(HanabiColor::class).isNotEmpty(),
+                        "clueOptions" to clues.associate { clue ->
+                        (clue.color ?: clue.value) to playerCards.cards.filter { card -> card.matches(clue) }.map { it.id }
+                    })
+                }
+                mapOf("clueOptions" to emptyList<Unit>())
+            }
         }
         view {
-            currentPlayer { it.currentPlayer }
             value("others") {
                 it.players.map { player ->
                     val cards = player.cards.map { card ->
