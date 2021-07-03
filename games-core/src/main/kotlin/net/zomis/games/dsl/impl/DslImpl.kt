@@ -219,6 +219,17 @@ class ReplayState(val stateKeeper: StateKeeper, override val playerEliminations:
     override fun string(key: String, default: () -> String): String = replayable(key, default)
     override fun strings(key: String, default: () -> List<String>): List<String> = replayable(key, default)
     override fun list(key: String, default: () -> List<Map<String, Any>>): List<Map<String, Any>> = replayable(key, default)
+    override fun <E> randomFromList(key: String, list: List<E>, count: Int, stringMapper: (E) -> String): List<E> {
+        val strings = strings(key) { list.shuffled().take(count).map(stringMapper) }.toMutableList()
+        val result = mutableListOf<E>()
+        while (strings.isNotEmpty()) {
+            val item = list.first { stringMapper(it) == strings.last() }
+            result.add(item)
+            strings.removeLast()
+        }
+        if (result.size != count) throw IllegalStateException("Size mismatch: Was ${result.size} but expected $count")
+        return result
+    }
 
 }
 

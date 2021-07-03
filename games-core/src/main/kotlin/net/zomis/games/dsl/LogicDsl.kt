@@ -14,6 +14,7 @@ interface ReplayableScope {
     fun string(key: String, default: () -> String): String
     fun strings(key: String, default: () -> List<String>): List<String>
     fun list(key: String, default: () -> List<Map<String, Any>>): List<Map<String, Any>>
+    fun <E> randomFromList(key: String, list: List<E>, count: Int, stringMapper: (E) -> String): List<E>
 }
 
 interface EffectScope : GameUtils {
