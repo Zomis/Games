@@ -60,6 +60,7 @@ export default {
       this.$store.dispatch("DslGameState/performChosenAction", { gameInfo: this.gameInfo });
     },
     highlight(highlight) {
+      console.log("highlight!!", highlight);
       this.$store.dispatch("DslGameState/highlight", { gameInfo: this.gameInfo, highlights: highlight });
     },
     actionParameter(actionType, serializedParameter) {
@@ -72,8 +73,9 @@ export default {
       let action = this.actionsAvailable[data]
       console.log("ACTION CHOICE", data, action)
       if (action === undefined) {
+        alert("Action undefined. Possibly a bug.");
         console.log("NO ACTION FOR", data)
-        this.clearActions();
+        //this.clearActions();
         return
       }
       let name = action.actionType
