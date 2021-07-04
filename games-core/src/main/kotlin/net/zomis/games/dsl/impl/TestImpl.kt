@@ -11,24 +11,12 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
     var gameImpl: Game<T>? = null
     var forwards = 0
 
-    private suspend fun initializedGame(): Game<T> {
+    private fun initializedGame(): Game<T> {
         if (gameImpl == null) {
             stateKeeper.replayMode = true
             gameImpl = entryPoint.setup().createGameWithState(playerCount, config, stateKeeper)
-            awaitReady()
         }
         return gameImpl!!
-    }
-
-    private suspend fun awaitReady() {
-        val impl = gameImpl
-        if (impl is GameFlowImpl) {
-            while (true) {
-                val feedback = impl.feedbackReceiver.receive()
-                println("Test received $feedback")
-                if (feedback is GameFlowContext.Steps.AwaitInput) break
-            }
-        }
     }
 
     override suspend fun initializeGame(): T = initializedGame().model
@@ -93,7 +81,7 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
         }
     }
 
-    override suspend fun branches(branches: GameTestBranches<T>.() -> Unit) {
+    override fun branches(branches: GameTestBranches<T>.() -> Unit) {
         TODO("Not yet implemented")
     }
 
