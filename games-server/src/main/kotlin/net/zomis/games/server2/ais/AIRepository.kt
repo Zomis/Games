@@ -3,10 +3,21 @@ package net.zomis.games.server2.ais
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.scorers.ScorerController
+import net.zomis.games.server2.Client
 import net.zomis.games.server2.games.PlayerGameMoveRequest
 import net.zomis.games.server2.games.ServerGame
 
-typealias ServerGameAI = (game: ServerGame, playerIndex: Int) -> PlayerGameMoveRequest?
+interface ServerGameAIScope {
+    val serverGame: ServerGame
+    val playerIndex: Int
+    val client: Client
+}
+class ServerGameAIContext(
+    override val serverGame: ServerGame,
+    override val playerIndex: Int,
+    override val client: Client
+): ServerGameAIScope
+typealias ServerGameAI = ServerGameAIScope.() -> PlayerGameMoveRequest?
 
 class AIRepository {
 

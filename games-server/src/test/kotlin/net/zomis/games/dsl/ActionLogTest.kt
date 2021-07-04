@@ -16,7 +16,7 @@ class ActionLogTest {
         setup {
             init { LogTestGame(0) }
         }
-        rules {
+        actionRules {
             action(change) {
                 options { -3..3 }
                 effect {

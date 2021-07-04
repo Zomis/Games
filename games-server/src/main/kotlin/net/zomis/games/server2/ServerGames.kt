@@ -1,5 +1,6 @@
 package net.zomis.games.server2
 
+import net.zomis.games.dsl.GameEntryPoint
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.impl.*
@@ -11,6 +12,7 @@ object ServerGames {
 
     val games = listOf(
         AlchemistsGame.game,
+        TTTUpgrade.game,
         SpiceRoadDsl.game,
         Dixit.game,
         Decrypto.game,
@@ -35,6 +37,11 @@ object ServerGames {
     fun setup(gameType: String): GameSetupImpl<Any>? {
         val spec = games[gameType] as GameSpec<Any>? ?: return null
         return GameSetupImpl(spec)
+    }
+
+    fun entrypoint(gameType: String): GameEntryPoint<Any>? {
+        val spec = games[gameType] as GameSpec<Any>? ?: return null
+        return GameEntryPoint(spec)
     }
 
 }

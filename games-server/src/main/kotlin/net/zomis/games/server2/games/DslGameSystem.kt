@@ -14,8 +14,8 @@ import net.zomis.games.dsl.impl.*
 import net.zomis.games.server.GamesServer
 import net.zomis.games.server2.StartupEvent
 import net.zomis.games.server2.db.DBIntegration
-import java.lang.IllegalStateException
 import java.lang.UnsupportedOperationException
+import kotlin.IllegalStateException
 import kotlin.reflect.full.cast
 
 class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: () -> DBIntegration?) {
@@ -79,9 +79,14 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                     ))
                 is GameFlowContext.Steps.Log -> sendLogs(game, feedback.log)
                 is GameFlowContext.Steps.ActionPerformed<*> -> events.execute(
-                    MoveEvent(game, feedback.playerIndex, feedback.actionImpl.actionType, feedback.parameter)
+                    MoveEvent(game, feedback.playerIndex, feedback.actionImpl.actionType, feedback.parameter, feedback.replayState)
                 )
-                is GameFlowContext.Steps.AwaitInput -> return
+                is GameFlowContext.Steps.AwaitInput -> {
+                    if (gameFlow.eliminations.isGameOver()) {
+                        throw IllegalStateException("Game is over but AwaitInput was sent")
+                    }
+                    return
+                }
                 is GameFlowContext.Steps.GameSetup -> { /* SuperTable also listens for GameStartedEvent with higher priority */ }
                 is GameFlowContext.Steps.RuleExecution -> logger.debug { "Rule Execution: $feedback" }
                 is GameFlowContext.Steps.IllegalAction -> logger.error { "Illegal action in feedback: $feedback" }
@@ -113,7 +118,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
         }
         val recentEliminations = controller.eliminations.eliminations().minus(beforeMoveEliminated)
 
-        events.execute(MoveEvent(moveRequest.game, moveRequest.player, actionType.actionType, action.parameter))
+        events.execute(MoveEvent(moveRequest.game, moveRequest.player, actionType.actionType, action.parameter, controller.stateKeeper.lastMoveState()))
         for (elimination in recentEliminations) {
             events.execute(PlayerEliminatedEvent(moveRequest.game, elimination.playerIndex,
                     elimination.winResult, elimination.position))
@@ -153,7 +158,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                 if (it.game.gameMeta.database && dbIntegration != null) GamesServer.replayStorage.database<T>(dbIntegration, it.game.gameId)
                 else GameplayCallbacks()
             it.game.obj = entryPoint.replayable(
-                it.game.players.size,
+                it.game.playerCount,
                 it.game.gameMeta.gameOptions ?: Unit,
                 serverGameListener(it.game),
                 appropriateReplayListener
@@ -162,6 +167,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
             if (game is GameFlowImpl) {
                 runBlocking { handleFeedbacks(game as GameFlowImpl<T>, events, it.game) }
             }
+            events.execute(GameInitializedEvent(it.game, game.stateKeeper.lastMoveState()))
         })
         events.listen("DslGameSystem $gameTypeName Move", PlayerGameMoveRequest::class, {
             it.game.gameType.type == gameTypeName
@@ -185,12 +191,9 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
     private fun sendLogs(serverGame: ServerGame, log: ActionLogEntry) {
         val yourLog = logEntryMessage(serverGame, log.secret ?: log.public)
         val othersLog = logEntryMessage(serverGame, log.public)
-        serverGame.players.forEachIndexed { index, client ->
-            val msg = if (index == log.playerIndex) yourLog else othersLog
+        serverGame.players.forEach { (client, access) ->
+            val msg = if (access.index(log.playerIndex) >= ClientPlayerAccessType.READ) yourLog else othersLog
             msg?.let { client.send(it) }
-        }
-        if (othersLog != null) {
-            serverGame.observers.forEach { client -> othersLog.let { client.send(it) } }
         }
     }
 
@@ -201,7 +204,6 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
             "gameType" to serverGame.gameType.type,
             "gameId" to serverGame.gameId,
             "private" to entry.private,
-            "highlights" to entry.highlights.associateWith { true },
             "parts" to entry.parts
         )
     }

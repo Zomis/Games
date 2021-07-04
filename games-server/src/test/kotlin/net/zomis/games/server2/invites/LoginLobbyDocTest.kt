@@ -1,24 +1,21 @@
 package net.zomis.games.server2.invites
 
+import net.zomis.core.events.EventSystem
 import net.zomis.games.example.TestGames
 import net.zomis.games.server2.*
 import net.zomis.games.server2.clients.FakeClient
-import net.zomis.games.server2.doctools.DocEventSystem
 import net.zomis.games.server2.doctools.DocWriter
 import net.zomis.games.server2.games.GameTypeRegisterEvent
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.RegisterExtension
 import java.util.UUID
 
 class LoginLobbyDocTest {
 
-    @RegisterExtension
-    @JvmField
     val docWriter: DocWriter = testDocWriter("LOGIN_AND_LOBBY")
 
     @Test
     fun document() {
-        val events = DocEventSystem(docWriter)
+        val events = EventSystem()
         val server2 = Server2(events)
         server2.start(testServerConfig())
         events.execute(GameTypeRegisterEvent(TestGames.testGameType))

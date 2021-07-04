@@ -8,7 +8,6 @@ import net.zomis.games.example.TestGames
 import net.zomis.games.server2.ClientJsonMessage
 import net.zomis.games.server2.ClientLoginEvent
 import net.zomis.games.server2.MessageRouter
-import net.zomis.games.server2.doctools.DocEventSystem
 import net.zomis.games.server2.doctools.DocWriter
 import net.zomis.games.server2.doctools.EventsExpect
 import net.zomis.games.server2.clients.FakeClient
@@ -40,8 +39,6 @@ class InviteSystemTest {
     @JvmField
     val expect: EventsExpect = EventsExpect()
 
-    @RegisterExtension
-    @JvmField
     val docWriter: DocWriter = testDocWriter("INVITES")
 
     private val idGenerator: GameIdGenerator = { "1" }
@@ -50,7 +47,7 @@ class InviteSystemTest {
 
     @BeforeEach
     fun before() {
-        events = DocEventSystem(docWriter)
+        events = EventSystem()
         features = Features(events)
 
         val lobbySystem = LobbySystem(features)
@@ -108,7 +105,7 @@ class InviteSystemTest {
             val playersString = """${host.idName},${invitee.idName}"""
             receive(invitee, mapOf("type" to "InviteView"))
             receive(invitee, mapOf("type" to "InviteView"))
-            receive(invitee, """{"type":"GameStarted","gameType":"TestGameType","gameId":"1","yourIndex":1,"players":[$playersString]}""")
+            receive(invitee, """{"type":"GameStarted","gameType":"TestGameType","gameId":"1","access":{"1":"ADMIN"},"players":[$playersString]}""")
         }
 
         system.createInvite("TestGameType", "12345678-1234-1234-1234-123456789abc", inviteOptions, host, listOf(invitee))
@@ -138,10 +135,10 @@ class InviteSystemTest {
 
         val playersString = """${host.idName},${invitee.idName}"""
         stringMapExpect(host.nextMessage(), "type" to "InviteView")
-        Assertions.assertEquals("""{"type":"GameStarted","gameType":"MyGame","gameId":"1","yourIndex":0,"players":[$playersString]}""", host.nextMessage())
+        Assertions.assertEquals("""{"type":"GameStarted","gameType":"MyGame","gameId":"1","access":{"0":"ADMIN"},"players":[$playersString]}""", host.nextMessage())
         stringMapExpect(invitee.nextMessage(), "type" to "InviteView")
         stringMapExpect(invitee.nextMessage(), "type" to "InviteView")
-        Assertions.assertEquals("""{"type":"GameStarted","gameType":"MyGame","gameId":"1","yourIndex":1,"players":[$playersString]}""", invitee.nextMessage())
+        Assertions.assertEquals("""{"type":"GameStarted","gameType":"MyGame","gameId":"1","access":{"1":"ADMIN"},"players":[$playersString]}""", invitee.nextMessage())
     }
 
     @Test

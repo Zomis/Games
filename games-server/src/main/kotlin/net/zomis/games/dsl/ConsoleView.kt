@@ -5,10 +5,10 @@ import net.zomis.games.dsl.impl.Game
 
 class ConsoleView<T: Any> {
 
-    fun showView(game: Game<T>) {
+    fun showView(game: Game<T>, playerIndex: Int? = null) {
         println()
         val currentPlayer = game.view(0)["currentPlayer"] as Int?
-        display(0, "Game:", game.view(currentPlayer ?: 0))
+        display(0, "Game:", game.view(playerIndex ?: currentPlayer ?: 0))
     }
 
     fun display(indentation: Int, name: String, data: Any?) {

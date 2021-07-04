@@ -46,7 +46,7 @@ object GridWorldGame {
             defaultConfig { GridWorldConfig(3, 2, 42L, 1, 3, 2) }
             init { GridWorldModel(eliminationCallback, generateMap(config)) }
         }
-        rules {
+        actionRules {
             action(gridWorldMove) {
                 options { Direction4.values().asIterable() }
                 effect { game.move(action.parameter) }

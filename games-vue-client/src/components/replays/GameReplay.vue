@@ -115,7 +115,6 @@ export default {
                 perform: () => {},
                 highlights: {},
                 available: {},
-                actionTypes: [],
                 clear: () => {},
                 resetTo: () => {}
             },
@@ -209,7 +208,7 @@ export default {
                 gameType: this.replay.gameType,
                 players: sortedPlayersInGame.map(pig => pig.player),
                 gameId: this.gameUUID,
-                yourIndex: -1
+                activeIndex: -1
             }
         }
     }

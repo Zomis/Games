@@ -14,7 +14,7 @@ open class GameFlowActionContext<T: Any, A: Any>: GameFlowActionScope<T, A> {
     override fun precondition(rule: ActionOptionsScope<T>.() -> Boolean) {}
     override fun requires(rule: ActionRuleScope<T, A>.() -> Boolean) {}
     override fun options(rule: ActionOptionsScope<T>.() -> Iterable<A>) {}
-    override fun choose(options: ActionChoicesStartScope<T, A>.() -> Unit) {}
+    override fun choose(options: ActionChoicesScope<T, A>.() -> Unit) {}
 }
 
 typealias GameFlowActionDsl<T, A> = GameFlowActionScope<T, A>.() -> Unit
@@ -24,6 +24,7 @@ class GameFlowActionsImpl<T: Any>(
     private val eliminations: PlayerEliminations,
     private val replayable: ReplayState
 ) : Actions<T> {
+    override val choices = ActionChoices()
     private val logger = KLoggers.logger(this)
 
     private val actions = mutableListOf<ActionTypeImplEntry<T, Any>>()

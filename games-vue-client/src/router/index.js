@@ -2,9 +2,8 @@ import Vue from "vue";
 import Router from "vue-router";
 import StartScreen from "@/components/StartScreen";
 import TestScreen from "@/components/TestScreen";
-import PlayLocalGame from "@/components/PlayLocalGame";
-import PlayLocalGameMenu from "@/components/PlayLocalGameMenu";
 import StatsScreen from "@/components/stats/StatsScreen";
+import LobbyCompactList from "@/components/lobby/LobbyCompactList";
 import TVScreen from "@/components/TVScreen";
 import ServerSelection from "@/components/ServerSelection";
 import InviteScreen from "@/components/invites/InviteScreen";
@@ -16,7 +15,6 @@ import axios from "axios";
 import Clipboard from "v-clipboard";
 import supportedGames from "../supportedGames";
 import ReplayScreen from "@/components/replays/GameReplay"
-import md5 from "md5"
 
 Vue.use(VueAxios, axios);
 let authConfig = {
@@ -69,7 +67,7 @@ export default new Router({
     },
     {
       path: "/stats/games/:gameId/replay", // For backwards compatibility
-      name: "ReplayScreen",
+      name: "ReplayScreenOld",
       component: ReplayScreen,
       props: route => ({
         gameUUID: route.params.gameId
@@ -85,39 +83,9 @@ export default new Router({
       })
     },
     {
-      path: "/local",
-      name: "LocalPlayMenu",
-      component: PlayLocalGameMenu,
-      props: route => ({
-        gameInfo: { gameType: route.query.gameType },
-        showRules: true
-      })
-    },
-    {
-      path: "/local/:gameType",
-      name: "LocalPlay",
-      component: PlayLocalGame,
-      props: route => {
-        let playerCount = 2;
-        let game = supportedGames.games[route.params.gameType];
-        if (game.dsl && game.dsl !== true) {
-          let setup = new supportedGames.gamejs.net.zomis.games.dsl.impl.GameSetupImpl(game.dsl)
-          let min = setup.playersCount.first
-          let max = setup.playersCount.last
-          playerCount = min + Math.floor(Math.random() * (max - min + 1));
-          console.log(`Random from ${min} to ${max} = ${playerCount}`)
-        }
-        let players = new Array(playerCount).fill(0).map((_, index) => index).map(i => ({
-          index: i,
-          id: `local:00000000-0000-0000-0000-00000000000` + i.toString(16),
-          name: "Player " + (i + 1),
-          picture: `https://www.gravatar.com/avatar/${md5(i)}?s=128&d=identicon`
-        }));
-        return {
-          gameInfo: { gameType: route.params.gameType, players: players },
-          showRules: true
-        }
-      }
+      path: "/compact",
+      name: "LobbyCompactList",
+      component: LobbyCompactList,
     },
     {
       path: "/tv",
@@ -130,7 +98,6 @@ export default new Router({
       name: "InvitePrepare",
       component: InviteCreateNew,
       props: route => {
-        console.log(route)
         return {
           gameType: route.params.gameType,
           defaultConfig: route.params.defaultConfig

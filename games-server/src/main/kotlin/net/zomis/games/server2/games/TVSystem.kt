@@ -103,7 +103,7 @@ class TVSystem(private val gameClients: GameTypeMap<ClientList>) {
             "type" to "TVGame",
             "gameType" to nextGame.gameType.type,
             "gameId" to nextGame.gameId,
-            "players" to nextGame.players.map { it.name },
+            "players" to nextGame.playerList(),
             "yourIndex" to -40
         )
         client.send(message)

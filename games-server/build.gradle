@@ -1,7 +1,8 @@
 buildscript {
-    ext.kotlin_version = "1.3.61"
-    ext.jupiter_version = "5.7.0"
-    ext.jackson_version = "2.11.3"
+    ext.kotlin_version = "1.4.32"
+    ext.jupiter_version = "5.7.1"
+    ext.jackson_version = "2.12.3"
+    ext.klog_version = '2.0.2'
 
     repositories {
         mavenCentral()
@@ -13,7 +14,7 @@ buildscript {
 }
 
 plugins {
-    id "com.github.johnrengelman.shadow" version "5.0.0"
+    id "com.github.johnrengelman.shadow" version "5.2.0"
 }
 
 apply plugin: 'application'
@@ -49,24 +50,24 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-compiler-embeddable:$kotlin_version"
     compile "org.jetbrains.kotlin:kotlin-script-util:$kotlin_version"
     expectedBy project(":games-core")
-    compile "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.8"
+    compile "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.4.3"
 
     compile group: 'commons-codec', name: 'commons-codec', version: '1.15'
     compile "com.fasterxml.jackson.core:jackson-core:$jackson_version"
     compile "com.fasterxml.jackson.core:jackson-annotations:$jackson_version"
     compile "com.fasterxml.jackson.core:jackson-databind:$jackson_version"
     compile "com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version"
-    compile 'com.beust:jcommander:1.80'
-    compile "org.java-websocket:Java-WebSocket:1.5.1"
+    compile 'com.beust:jcommander:1.81'
+    compile "org.java-websocket:Java-WebSocket:1.5.2"
     compile "log4j:log4j:1.2.17"
     compile 'org.slf4j:slf4j-log4j12:1.7.30'
-    compile "com.github.lewik.klog:klog-jvm:$kotlin_version"
+    compile "com.github.lewik.klog:klog-jvm:$klog_version"
     compile "io.javalin:javalin:2.8.0"
-    compile "com.github.kittinunf.fuel:fuel:2.3.0"
-    compile group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: '1.11.879'
-    compile group: 'org.postgresql', name: 'postgresql', version: '42.2.14'
+    compile "com.github.kittinunf.fuel:fuel:2.3.1"
+    compile group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: '1.11.1031'
+    compile group: 'org.postgresql', name: 'postgresql', version: '42.2.20'
     compile 'com.zaxxer:HikariCP:3.4.5'
-    compile 'com.github.ben-manes.caffeine:caffeine:2.8.5'
+    compile 'com.github.ben-manes.caffeine:caffeine:2.9.1'
     compile group: 'ai.djl', name: 'api', version: '0.3.0'
     compile group: 'ai.djl', name: 'model-zoo', version: '0.3.0'
     runtime group: 'ai.djl.mxnet', name: 'mxnet-engine', version: '0.3.0'
@@ -75,7 +76,7 @@ dependencies {
     testCompile "org.junit.jupiter:junit-jupiter-api:$jupiter_version"
     testCompile "org.junit.jupiter:junit-jupiter-params:$jupiter_version"
     testRuntime "org.junit.jupiter:junit-jupiter-engine:$jupiter_version"
-    testCompile group: 'org.jetbrains.kotlinx', name: 'kotlinx-coroutines-test', version: '1.3.8'
+    testCompile group: 'org.jetbrains.kotlinx', name: 'kotlinx-coroutines-test', version: '1.4.3'
 }
 
 clean {

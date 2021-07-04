@@ -22,67 +22,23 @@ private class GameFlowActionContextRequires<T: Any, A: Any>(private val context:
         result = result && rule.invoke(context)
     }
 }
-private class GameFlowActionContextOptions<T: Any, A: Any>(
-    private val context: ActionOptionsContext<T>,
-    private val actionType: ActionType<T, A>,
-    private val sampleSize: ActionSampleSize?
-): GameFlowActionContext<T, A>() {
-    private var iterable: Iterable<A>? = null
-    init {
-        if (actionType.serializedType == Unit::class) {
-            iterable = listOf(Unit as A)
-        }
-    }
-    override fun options(rule: ActionOptionsScope<T>.() -> Iterable<A>) {
-        check(this.iterable == null) { "options and/or choices can only be defined once" }
-        this.iterable = rule.invoke(context)
-    }
+private class GameFlowActionContextOptions<T: Any, A: Any>(): GameFlowActionContext<T, A>() {
+    var choicesRule: (ActionChoicesScope<T, A>.() -> Unit)? = null
+    var optionsRule: (ActionOptionsScope<T>.() -> Iterable<A>)? = null
 
-    override fun choose(options: ActionChoicesStartScope<T, A>.() -> Unit) {
-        check(this.iterable == null) { "options and/or choices can only be defined once" }
-        val complex = RulesActionTypeComplex(context, actionType, options)
-        val actions = complex.availableActions(sampleSize).map { it.parameter }
-        this.iterable = actions.toList()
-    }
-
-    fun iterable(): Iterable<A> = iterable ?: emptyList()
-}
-
-private class GameFlowActionContextKeys<T: Any, A: Any>(
-    private val context: ActionOptionsContext<T>,
-    private val actionType: ActionType<T, A>,
-    private val previouslySelected: List<Any>,
-    private val allowedCheck: (Actionable<T, A>) -> Boolean
-): GameFlowActionContext<T, A>() {
-    private var initialized: Boolean = false
     private fun initialize() {
-        require(!initialized) { "options and/or choices can only be defined once" }
-        initialized = true
+        check(this.optionsRule == null) { "options and/or choices can only be defined once" }
+        check(this.choicesRule == null) { "options and/or choices can only be defined once" }
     }
-
-    private fun actionInfoKey(actionable: Actionable<T, A>)
-        = ActionInfoKey(actionType.serialize(actionable.parameter), actionType.name, emptyList(), true)
-    val actionInfoKeys = mutableListOf<ActionInfoKey>()
-    init {
-        if (actionType.serializedType == Unit::class) {
-            actionInfoKeys.add(ActionInfoKey(Unit, actionType.name, emptyList(), true))
-        }
-    }
-
     override fun options(rule: ActionOptionsScope<T>.() -> Iterable<A>) {
         initialize()
-        actionInfoKeys.addAll(rule.invoke(context)
-            .map { context.createAction(it) }
-            .filter { allowedCheck(it) }
-            .map(this::actionInfoKey))
+        this.optionsRule = rule
     }
 
-    override fun choose(options: ActionChoicesStartScope<T, A>.() -> Unit) {
+    override fun choose(options: ActionChoicesScope<T, A>.() -> Unit) {
         initialize()
-        val complex = RulesActionTypeComplex(context, actionType, options)
-        actionInfoKeys.addAll(complex.availableActionKeys(previouslySelected))
+        this.choicesRule = options
     }
-
 }
 
 class GameFlowLogicActionAvailable<T: Any, A: Any>(
@@ -105,10 +61,23 @@ class GameFlowLogicActionAvailable<T: Any, A: Any>(
 
     fun availableActions(playerIndex: Int, sampleSize: ActionSampleSize?): Iterable<A> {
         if (!checkPreconditions(playerIndex)) return emptyList()
+        if (actionType.serializedType == Unit::class) {
+            return listOf(Unit as A)
+        }
 
-        val context = GameFlowActionContextOptions(createOptionsContext(playerIndex), actionType, sampleSize)
+        val context = GameFlowActionContextOptions<T, A>()
         actionDsls().forEach { it.invoke(context) }
-        return context.iterable()
+        return when {
+            context.optionsRule != null -> context.optionsRule!!.invoke(createOptionsContext(playerIndex))
+            context.choicesRule != null -> {
+                ActionComplexImpl(actionType, createOptionsContext(playerIndex), context.choicesRule!!).start()
+                        .depthFirstActions(sampleSize).map { it.parameter }.asIterable()
+            }
+            else -> {
+                logger.warn { "Action '${actionType.name}' has neither optionsRule or choicesRule set" }
+                emptyList()
+            }
+        }
     }
 
     fun actionAllowed(action: Actionable<T, A>): Boolean {
@@ -122,12 +91,42 @@ class GameFlowLogicActionAvailable<T: Any, A: Any>(
         return context.result
     }
 
+    @Deprecated("to be removed")
     fun actionInfoKeys(playerIndex: Int, previouslySelected: List<Any>): List<ActionInfoKey> {
         if (!checkPreconditions(playerIndex)) return emptyList()
 
-        val context = GameFlowActionContextKeys(createOptionsContext(playerIndex), actionType, previouslySelected, this::actionAllowed)
+        val context = GameFlowActionContextOptions<T, A>()
         actionDsls().forEach { it.invoke(context) }
-        return context.actionInfoKeys
+        return when {
+            context.optionsRule != null -> {
+                val optionsContext = createOptionsContext(playerIndex)
+                context.optionsRule!!.invoke(optionsContext)
+                        .map { optionsContext.createAction(it) }
+                        .filter { actionAllowed(it) }
+                        .map { ActionInfoKey(actionType.serialize(it.parameter), actionType.name, emptyList(), true) }
+            }
+            context.choicesRule != null -> {
+                ActionComplexImpl(actionType, createOptionsContext(playerIndex), context.choicesRule!!)
+                        .withChosen(previouslySelected).actionKeys()
+            }
+            else -> {
+                logger.warn { "Action '${actionType.name}' has neither optionsRule or choicesRule set" }
+                emptyList()
+            }
+        }
+    }
+
+    fun withChosen(playerIndex: Int, chosen: List<Any>): ActionComplexChosenStep<T, A> {
+        if (!checkPreconditions(playerIndex)) {
+            return ActionComplexChosenStepEmpty(actionType, playerIndex, chosen)
+        }
+
+        val context = GameFlowActionContextOptions<T, A>()
+        actionDsls().forEach { it.invoke(context) }
+        if (context.optionsRule != null) {
+            throw IllegalStateException("Cannot use withChosen on non-complex actionType ${actionType.name}")
+        }
+        return ActionComplexImpl(actionType, createOptionsContext(playerIndex), context.choicesRule!!).withChosen(chosen)
     }
 
 }

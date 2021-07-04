@@ -101,6 +101,7 @@ data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
     var currentPlayer: Int = 0
     var turnsLeft = -1
     val current: HanabiPlayer get() = players[currentPlayer]
+    var lastAffectedCards: Map<Int, String> = emptyMap()
 
     val deck = CardZone(config.createCards().shuffled().toMutableList()).also { it.cards.forEachIndexed { index, hanabiCard -> hanabiCard.id = index } }
 
@@ -196,7 +197,7 @@ object HanabiGame {
                 Hanabi(config, (0 until playerCount).map { HanabiPlayer(it) })
             }
         }
-        rules {
+        actionRules {
             gameStart {
                 // 5 cards for 2 or 3 players, otherwise 4 cards.
                 val playerCount = game.players.size
@@ -210,11 +211,12 @@ object HanabiGame {
             action(discard).options { game.current.cards.indices }
             action(discard).requires { game.clueTokens < game.config.maxClueTokens }
             action(discard).effect {
-                val card = game.current.cards[action.parameter]; moveCard(replayable, game, card, game.colorData(card.card).discard)
+                val card = game.current.cards[action.parameter];
+                moveCard(replayable, game, card, game.colorData(card.card).discard)
                 log {
-                    highlight(listOf(card.card.id))
                     "$player discarded ${viewLink(card.card.toStateString(), "card", card.card.known(true))}"
                 }
+                game.lastAffectedCards = mapOf(card.card.id to "discard")
             }
             action(discard).effect { game.increaseClueTokens() }
 
@@ -226,15 +228,14 @@ object HanabiGame {
                 playCardTo(card, playArea, game, this)
                 if (playArea != null) {
                     log {
-                        highlight(listOf(card.card.id))
                         "$player played ${viewLink(card.card.toStateString(), "card", card.card.known(true))}"
                     }
                 } else {
                     log {
-                        highlight(listOf(card.card.id.toString() + "-fail"))
                         "$player tried to play ${viewLink(card.card.toStateString(), "card", card.card.known(true))} but failed"
                     }
                 }
+                game.lastAffectedCards = mapOf(card.card.id to if (playArea != null) "play" else "fail")
             }
 
             action(playNamed).precondition { game.config.namePlayingCard }
@@ -243,9 +244,9 @@ object HanabiGame {
                 val playArea = game.playAreaFor(playCard.card).takeIf { playCard.card.color == action.parameter.color }
                 playCardTo(playCard, playArea, game, this)
                 log {
-                    highlight(listOf(playCard.card.id))
                     "$player played ${viewLink(playCard.card.toStateString(), "card", playCard.card.known(true))} as ${action.color}"
                 }
+                game.lastAffectedCards = mapOf(playCard.card.id to if (playArea != null) "play" else "fail")
             }
             action(playNamed).choose {
                 options({ game.current.cards.indices.toList() }) {cardIndex ->
@@ -264,15 +265,14 @@ object HanabiGame {
                     .filter { it.matches(action.parameter) }
                 val actionPerformer = action.playerIndex
                 logSecret(action.parameter.player) {
-                    highlight(cards.map { it.id })
                     "${player(actionPerformer)} gave clue to ${player(action.player)}: ${cards.size}x ${action.text()}"
                 }.publicLog {
-                    highlight(cards.map { it.id })
                     "${player(actionPerformer)} gave clue to ${player(action.player)}: ${cards.size}x ${action.text()} - ${cards.filter { it.matches(action) }.joinToString(", ") {
                         viewLink(it.toStateString(), "card", it.known(true))
                     }}"
                 }
                 game.reveal(action.parameter)
+                game.lastAffectedCards = cards.associate { it.id to "clue" }
             }
             action(giveClue).choose {
                 options({ game.players.indices.toList().minus(game.currentPlayer) }) {player ->
@@ -296,9 +296,29 @@ object HanabiGame {
                     eliminations.eliminateRemaining(WinResult.DRAW)
                 }
             }
+
+            view("currentPlayer") { game.currentPlayer }
+            view("actions") {
+                val chosen = actionsChosen().chosen()
+                if (chosen?.actionType == giveClue.name) {
+                    val chosenPlayer = chosen.chosen.first() as Int
+                    val playerCards = game.players[chosenPlayer].cards
+                    val modes = actionsChosen().nextSteps(String::class)
+                    if (modes.isNotEmpty()) return@view mapOf("clueOptions" to modes.associateWith { emptyList<Int>() })
+                    val clues =
+                        actionsChosen().nextSteps(HanabiColor::class).map { HanabiClue(chosenPlayer, it, null) } +
+                        actionsChosen().nextSteps(Int::class).map { HanabiClue(chosenPlayer, null, it) }
+                    return@view mapOf(
+                        "colors" to actionsChosen().nextSteps(HanabiColor::class).isNotEmpty(),
+                        "clueOptions" to clues.associate { clue ->
+                        (clue.color ?: clue.value) to playerCards.cards.filter { card -> card.matches(clue) }.map { it.id }
+                    })
+                }
+                mapOf("clueOptions" to emptyList<Unit>())
+            }
+            view("lastAction") { game.lastAffectedCards }
         }
         view {
-            currentPlayer { it.currentPlayer }
             value("others") {
                 it.players.map { player ->
                     val cards = player.cards.map { card ->

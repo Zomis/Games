@@ -3,6 +3,7 @@ package net.zomis.games.server2.invites
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
+import net.zomis.games.common.toSingleList
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.server2.*
@@ -10,7 +11,7 @@ import net.zomis.games.server2.games.*
 
 class InviteTools(
     val removeCallback: (Invite) -> Unit,
-    val createGameCallback: (Invite) -> Unit,
+    val createGameCallback: (Invite) -> ServerGame,
     val gameClients: GameTypeMap<ClientList>
 )
 enum class InviteTurnOrder { ORDERED, SHUFFLED }
@@ -91,10 +92,10 @@ data class Invite(
         this.startCheck()
     }
 
-    fun startCheck() {
+    fun startCheck(): ServerGame {
         if (cancelled) throw IllegalStateException("Invite is cancelled")
         if (playerCount() in playerRange) {
-            tools.createGameCallback(this)
+            return tools.createGameCallback(this)
         } else {
             throw IllegalStateException("Expecting $playerRange players but current is ${playerCount()}")
         }
@@ -154,7 +155,7 @@ class InviteSystem(
     private val gameClients: GameTypeMap<ClientList>,
     private val createGameCallback: (gameType: String, options: InviteOptions) -> ServerGame,
     private val startGameExecutor: (GameStartedEvent) -> Unit,
-    private val inviteIdGenerator: () -> String
+    val inviteIdGenerator: () -> String
 ) {
 
     private val logger = KLoggers.logger(this)
@@ -235,13 +236,21 @@ class InviteSystem(
         this.createInvite(gameType, inviteId, options, message.client, targetClients)
     }
 
-    private fun startInvite(invite: Invite) {
+    private fun startInvite(invite: Invite): ServerGame {
         logger.info { "Starting game for invite $invite" }
         val game = createGameCallback(invite.gameType, invite.inviteOptions)
-        game.players.add(invite.host)
-        game.players.addAll(invite.accepted)
+        val clientList = when (invite.inviteOptions.turnOrder) {
+            InviteTurnOrder.ORDERED -> invite.host.toSingleList().plus(invite.accepted)
+            InviteTurnOrder.SHUFFLED -> invite.accepted.plus(invite.host).shuffled()
+        }
+        clientList.forEachIndexed { index, client ->
+            val access = game.addPlayer(client)
+            access.gameAdmin = access.gameAdmin || client == invite.host
+            access.addAccess(index, ClientPlayerAccessType.ADMIN)
+        }
         removeInvite(invite)
         startGameExecutor(GameStartedEvent(game))
+        return game
     }
 
 }

@@ -16,6 +16,15 @@ enum class Direction4(val deltaX: Int, val deltaY: Int) {
         }
     }
 
+    fun opposite(): Direction4 = this.rotateClockwise().rotateClockwise()
+
+    fun rotateClockwise(): Direction4 = when (this) {
+        UP -> RIGHT
+        RIGHT -> DOWN
+        DOWN -> LEFT
+        LEFT -> UP
+    }
+
     fun delta(): Point = Point(deltaX, deltaY)
 }
 
@@ -31,4 +40,26 @@ enum class Direction8 constructor(val deltaX: Int, val deltaY: Int) {
     ;
 
     fun delta(): Point = Point(deltaX, deltaY)
+
+    fun rotateClockwise() = when (this) {
+        W -> NW
+        NW -> N
+        N -> NE
+        NE -> E
+        E -> SE
+        SE -> S
+        S -> SW
+        SW -> W
+    }
+
+    fun opposite(): Direction8 = when (this) {
+        W -> E
+        E -> W
+        NW -> SE
+        SE -> NW
+        N -> S
+        S -> N
+        NE -> SW
+        SW -> NE
+    }
 }

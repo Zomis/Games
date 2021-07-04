@@ -31,11 +31,11 @@ class GameFlowImpl<T: Any>(
             feedbacks.add(GameFlowContext.Steps.Elimination(elimination))
         }
     }
+    override val events: GameEventsExecutor = this
+    override val eliminationCallback: PlayerEliminationCallback = eliminations
     override val model: T = setupContext.model.factory(this, config)
     val replayable = ReplayState(stateKeeper, eliminations)
     override val actions = GameFlowActionsImpl({ feedbacks.add(it) }, model, eliminations, replayable)
-    override val events: GameEventsExecutor = this
-    override val eliminationCallback: PlayerEliminationCallback = eliminations
 
     val actionsInput: Channel<Any> = Channel()
     val job: Job
@@ -48,6 +48,8 @@ class GameFlowImpl<T: Any>(
                 val flowContext = GameFlowContext(this, game, "root")
                 setupContext.model.onStart(GameStartContext(model, replayable))
                 sendFeedback(GameFlowContext.Steps.GameSetup(playerCount, config, replayable.stateKeeper.lastMoveState()))
+                println("Clearing statekeeper after setup ${replayable.stateKeeper}")
+                replayable.stateKeeper.clear()
                 dsl.invoke(flowContext)
                 actionDone()
                 sendFeedback(GameFlowContext.Steps.GameEnd)
@@ -84,7 +86,7 @@ class GameFlowImpl<T: Any>(
     override fun view(playerIndex: PlayerIndex): Map<String, Any?> {
         val duplicates = views.map { it.first }.groupingBy { it }.eachCount().filter { it.value > 1 }
         if (duplicates.isEmpty()) logger.warn {  "Multiple keys detected in view of: $duplicates" }
-        val viewContext = GameViewContext(model, eliminations, playerIndex)
+        val viewContext = GameViewContext(this, playerIndex)
         return this.views.associate { it.first to it.second(viewContext) }
     }
 
@@ -100,10 +102,12 @@ class GameFlowImpl<T: Any>(
         if (anyPlayerHasAction()) {
             this.actionDone()
             while (true) {
+                if (isGameOver()) {
+                    return null
+                }
                 sendFeedback(GameFlowContext.Steps.AwaitInput)
                 val action = actionsInput.receive()
                 println("GameFlow Coroutine Action Received: $action")
-                replayable.stateKeeper.clear()
                 require(action is Actionable<*, *>)
                 val typeEntry = actions.type(action.actionType)
                 if (typeEntry == null) {
@@ -111,8 +115,9 @@ class GameFlowImpl<T: Any>(
                     continue
                 }
                 actions.clearAndPerform(action as Actionable<T, Any>) { this.clear() }
-                this.lastAction = GameFlowContext.Steps.ActionPerformed(typeEntry, action.playerIndex, action.parameter)
+                this.lastAction = GameFlowContext.Steps.ActionPerformed(typeEntry, action.playerIndex, action.parameter, replayable.stateKeeper.lastMoveState())
                 runRules(GameFlowRulesState.AFTER_ACTIONS)
+                replayable.stateKeeper.clear()
                 return action
             }
         } else {
@@ -151,6 +156,7 @@ class GameFlowImpl<T: Any>(
         val ruleContext = GameRuleContext(model, eliminations, replayable)
         val context = GameFlowRulesContext(ruleContext, GameFlowRulesState.FIRE_EVENT,
         executor as GameEvents<*> to event as Any, this)
+        setupContext.flowRulesDsl?.invoke(context)
         context.fire(executor, event)
     }
 
@@ -194,7 +200,12 @@ class GameFlowContext<T: Any>(
         interface FlowStep
         object GameEnd: FlowStep
         data class Elimination(val elimination: PlayerElimination): FlowStep
-        data class ActionPerformed<T: Any>(val actionImpl: ActionTypeImplEntry<T, Any>, val playerIndex: Int, val parameter: Any): FlowStep
+        data class ActionPerformed<T: Any>(
+            val actionImpl: ActionTypeImplEntry<T, Any>,
+            val playerIndex: Int,
+            val parameter: Any,
+            val replayState: Map<String,  Any>
+        ): FlowStep
         data class IllegalAction(val actionType: String, val playerIndex: Int, val parameter: Any): FlowStep
         data class Log(val log: ActionLogEntry): FlowStep
         data class RuleExecution(val ruleName: String, val values: Any): FlowStep
@@ -240,7 +251,7 @@ interface GameFlowActionScope<T: Any, A: Any> {
     fun precondition(rule: ActionOptionsScope<T>.() -> Boolean)
     fun requires(rule: ActionRuleScope<T, A>.() -> Boolean)
     fun options(rule: ActionOptionsScope<T>.() -> Iterable<A>)
-    fun choose(options: ActionChoicesStartScope<T, A>.() -> Unit)
+    fun choose(options: ActionChoicesScope<T, A>.() -> Unit)
 }
 @GameMarker
 interface GameFlowStepScope<T: Any> {

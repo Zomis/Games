@@ -40,7 +40,7 @@ TestClientB will receive:
 
 TestClientB will receive:
 
-    {"type":"GameStarted","gameType":"TestGameType","gameId":"1","yourIndex":1,"players":[{"id":"00000000-0000-0000-0000-000000000000","name":"TestClientA","picture":"https://www.gravatar.com/avatar/9f89c84a559f573636a47ff8daed0d33?s=128&d=identicon"},{"id":"11111111-1111-1111-1111-111111111111","name":"TestClientB","picture":"https://www.gravatar.com/avatar/38c6cbd28bf165070d070980dd1fb595?s=128&d=identicon"}]}
+    {"type":"GameStarted","gameType":"TestGameType","gameId":"1","access":{"1":"ADMIN"},"players":[{"id":"00000000-0000-0000-0000-000000000000","name":"TestClientA","picture":"https://www.gravatar.com/avatar/9f89c84a559f573636a47ff8daed0d33?s=128&d=identicon"},{"id":"11111111-1111-1111-1111-111111111111","name":"TestClientB","picture":"https://www.gravatar.com/avatar/38c6cbd28bf165070d070980dd1fb595?s=128&d=identicon"}]}
 
 ### Declining an invite
 

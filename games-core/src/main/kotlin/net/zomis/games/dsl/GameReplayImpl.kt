@@ -103,13 +103,14 @@ class GameReplayableImpl<T : Any>(
         for (feedback in gameFlow.feedbackReceiver) {
             println("GameReplayImpl Feedback: $feedback")
             when (feedback) {
+                // is GameEnd is not needed because feedbackReceiver will stop
                 is GameFlowContext.Steps.NextView -> {}
                 is GameFlowContext.Steps.Elimination -> gameplayCallbacks.onElimination(feedback.elimination)
                 is GameFlowContext.Steps.Log -> gameplayCallbacks.onLog(listOf(feedback.log))
                 is GameFlowContext.Steps.GameSetup -> gameplayCallbacks.startedState(feedback.playerCount, feedback.config, feedback.state)
                 is GameFlowContext.Steps.ActionPerformed<*> -> {
                     val actionReplay = ActionReplay(action.actionType, action.playerIndex,
-                        feedback.actionImpl.actionType.serialize(action.parameter), game.stateKeeper.lastMoveState()
+                        feedback.actionImpl.actionType.serialize(action.parameter), feedback.replayState
                     )
                     gameplayCallbacks.onMove(actionIndex, action, actionReplay)
                     this.actionIndex++

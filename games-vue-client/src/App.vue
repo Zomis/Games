@@ -5,6 +5,7 @@
         <v-toolbar-title v-text="titlePrefix" />
       </router-link>
       <span :style="{ 'margin-left': '5px' }">{{ titleAppend }}</span>
+      <SettingsView />
       <template v-if="yourPlayer.loggedIn">
         <v-spacer />
         <span>Welcome, {{ yourPlayer.name }}</span>
@@ -20,8 +21,6 @@
       </template>
       <v-spacer />
       <v-toolbar-items>
-        <span v-if="!connection.connected">Disconnected</span>
-        <span v-if="connection.connected">{{ connection.name }}</span>
         <v-btn
           text
           to="/"
@@ -52,16 +51,21 @@
         </div>
       </cookie-law>
       <span>
-        &copy; 2018-2020 Zomis' Games
-        - <a
+        <i>&copy; 2018-2020 Zomis' Games</i>
+        | <a
           href="https://github.com/Zomis/Games"
           target="_blank"
         >GitHub</a>
-        - <a
+        | <a
           href="https://discord.gg/GfXFUvc"
           target="_blank"
         >Discord</a>
       </span>
+      <v-spacer />
+      <v-toolbar-items>
+        <span v-if="!connection.connected">Disconnected</span>
+        <span v-if="connection.connected">{{ connection.name }}</span>
+      </v-toolbar-items>
     </v-footer>
   </v-app>
 </template>
@@ -71,11 +75,12 @@ import Socket from "./socket";
 import store from "./store";
 import { mapState } from "vuex";
 import CookieLaw from 'vue-cookie-law'
+import SettingsView from "@/components/SettingsView";
 
 export default {
   name: "App",
   store,
-  components: { CookieLaw },
+  components: { CookieLaw, SettingsView },
   methods: {
     logout() {
       Socket.disconnect();
@@ -107,5 +112,13 @@ export default {
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+}
+
+footer {
+  font-size: 14px;
+}
+
+footer i {
+  font-size: 12px;
 }
 </style>

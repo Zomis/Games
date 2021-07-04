@@ -107,7 +107,7 @@ object TTSourceDestinationGames {
             defaultConfig { TTOptions(5, 5, 5) }
             init { conf -> TTQuixoController(TTFactories().classicMNK(conf!!.m, conf.n, conf.k)) }
         }
-        rules(ttRules())
+        actionRules(ttRules())
         view(ttView(grid))
     }
 
@@ -138,6 +138,7 @@ object TTSourceDestinationGames {
                 }
             }
         }
+        view("actionName") { moveAction.name }
     }
 
     private fun ttView(grid: GridDsl<TTControllerSourceDestination, TTBase>): GameViewDsl<TTControllerSourceDestination> = {

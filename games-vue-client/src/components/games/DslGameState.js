@@ -10,12 +10,18 @@ const gameStore = {
   },
   getters: {},
   mutations: {
+    switchPlayerIndex(state, data) {
+      let gameInfo = state.games[data.gameInfo.gameId].gameInfo;
+      gameInfo.activeIndex = data.activeIndex;
+    },
     createGame(state, data) {
+      let indexAccessList = Object.keys(data.access).map(e => parseInt(e, 10))
       Vue.set(state.games, data.gameId, {
         gameInfo: {
           gameType: data.gameType,
           gameId: data.gameId,
-          yourIndex: data.yourIndex,
+          access: data.access,
+          activeIndex: indexAccessList.length >= 1 ? indexAccessList[0] : -1,
           players: data.players
         },
         highlights: [],
@@ -24,7 +30,6 @@ const gameStore = {
           eliminations: [],
           view: {},
           actionChoice: null, // actionName, choices
-          actionTypes: [],
           actions: {}
         }
       });
@@ -60,27 +65,35 @@ const gameStore = {
     updateActions(state, data) {
       let game = state.games[data.gameId].gameData;
       let supportedGame = supportedGames.games[data.gameType]
+      if (!supportedGame.actions) {
+        return
+      }
       let actions = {}
-      let actionTypes = []
       console.log("UPDATE ACTIONS DSLGAMESTATE", data.actions, supportedGame)
       Object.keys(data.actions).forEach(actionKey => {
         let actionDataList = data.actions[actionKey]
         actionDataList.forEach(actionData => {
           actions[supportedGames.resolveActionKey(supportedGame, actionData, game.actionChoice)] = actionData
-          actionTypes.push(actionData.actionType);
         })
       });
       console.log("UPDATE ACTIONS RESULT", actions)
-      game.actionTypes = actionTypes;
       game.actions = actions;
     }
   },
   actions: {
     action(context, data) {
       Socket.route(`games/${data.gameInfo.gameType}/${data.gameInfo.gameId}/move`, {
+        playerIndex: data.gameInfo.activeIndex,
         moveType: data.name,
         move: data.data
       });
+    },
+    switchPlayerIndex(context, data) {
+      context.commit("switchPlayerIndex", data);
+      let gameInfo = context.state.games[data.gameInfo.gameId].gameInfo
+      context.commit("resetActions", { gameInfo: gameInfo })
+      context.dispatch('requestView', gameInfo)
+      context.dispatch('requestActions', { gameInfo: gameInfo })
     },
     nextAction(context, data) {
       let game = context.state.games[data.gameInfo.gameId];
@@ -92,7 +105,7 @@ const gameStore = {
       }
       let obj = {
         moveType: data.name,
-        playerIndex: data.gameInfo.yourIndex,
+        playerIndex: data.gameInfo.activeIndex,
         chosen: gameData.actionChoice.choices
       }
       Socket.route(`games/${data.gameInfo.gameType}/${data.gameInfo.gameId}/action`, obj);
@@ -102,14 +115,19 @@ const gameStore = {
       let gameData = game.gameData
       let obj = {
         moveType: gameData.actionChoice.actionName,
-        playerIndex: data.gameInfo.yourIndex,
+        playerIndex: data.gameInfo.activeIndex,
         chosen: gameData.actionChoice.choices,
         perform: true
       }
       Socket.route(`games/${data.gameInfo.gameType}/${data.gameInfo.gameId}/action`, obj);
     },
     requestView(context, data) {
-      Socket.route(`games/${data.gameType}/${data.gameId}/view`, {});
+      let game = context.state.games[data.gameId];
+      Socket.route(`games/${data.gameType}/${data.gameId}/view`, {
+        playerIndex: data.activeIndex,
+        actionType: game.gameData.actionChoice != null ? game.gameData.actionChoice.actionName : null,
+        chosen: game.gameData.actionChoice != null ? game.gameData.actionChoice.choices : null
+      });
     },
     resetActionsTo(context, data) {
       context.commit("resetActions", { gameInfo: data.gameInfo });
@@ -126,7 +144,7 @@ const gameStore = {
       let game = context.state.games[data.gameInfo.gameId];
       let actionChoice = game.gameData.actionChoice
       let obj = {
-        playerIndex: game.gameInfo.yourIndex,
+        playerIndex: game.gameInfo.activeIndex,
         chosen: actionChoice !== null ? actionChoice.choices : []
       };
       if (obj.playerIndex < 0) {
@@ -160,17 +178,27 @@ const gameStore = {
       if (data.type === "ActionList") {
         context.commit("updateActions", data);
       }
-      if (data.type === "GameInfo" || data.type === "GameMove") {
+      if (data.type === "UpdateView") {
+        context.dispatch('requestView', context.state.games[data.gameId].gameInfo)
+        context.dispatch('requestActions', { gameInfo: data })
+      }
+      if (data.type === "GameInfo") {
+        context.commit("resetActions", { gameInfo: data })
+        context.dispatch('requestView', context.state.games[data.gameId].gameInfo)
+        context.dispatch('requestActions', { gameInfo: data })
+      }
+      if (data.type === "GameMove") {
         let supportedGame = supportedGames.games[data.gameType]
         if (supportedGame.resetActions === false) {
           let gameInfo = context.state.games[data.gameId].gameInfo;
-          if (data.type !== "GameMove" || data.player === gameInfo.yourIndex) {
+          if (data.player === gameInfo.activeIndex) {
             context.commit("resetActions", { gameInfo: data })
           }
         } else {
           context.commit("resetActions", { gameInfo: data })
         }
-        context.dispatch('requestView', data)
+
+        context.dispatch('requestView', context.state.games[data.gameId].gameInfo)
         context.dispatch('requestActions', { gameInfo: data })
       }
     }

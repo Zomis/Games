@@ -31,7 +31,6 @@ interface LogScope<T : Any> {
     fun player(value: PlayerIndex): String
     fun players(playerIndices: Iterable<Int>): String
     fun viewLink(text: String, type: String, view: Any): String
-    fun highlight(values: List<Any>)
     fun inline(type: String, data: Any): String
 }
 interface LogActionScope<T : Any, A : Any>: LogScope<T> {
@@ -68,16 +67,25 @@ interface GameActionSpecificationScope<T : Any, A : Any> {
     fun forceWhen(rule: ActionOptionsScope<T>.() -> Boolean)
     @Deprecated("prefer forceWhen")
     fun forceUntil(rule: ActionOptionsScope<T>.() -> Boolean)
-    fun choose(options: ActionChoicesStartScope<T, A>.() -> Unit)
+    fun choose(options: ActionChoicesScope<T, A>.() -> Unit)
 }
 
 interface GameActionRule<T : Any, A : Any> : GameActionSpecificationScope<T, A> {
     operator fun invoke(ruleSpec: GameActionSpecificationScope<T, A>.() -> Unit)
 }
 
+interface ActionChoicesScope<T : Any, P : Any> {
+    fun parameter(parameter: P)
+    val context: ActionOptionsContext<T>
+    fun <E : Any> options(options: ActionOptionsScope<T>.() -> Iterable<E>, next: ActionChoicesScope<T, P>.(E) -> Unit)
+    fun <E : Any> optionsWithIds(options: ActionOptionsScope<T>.() -> Iterable<Pair<String, E>>, next: ActionChoicesScope<T, P>.(E) -> Unit)
+}
+
+@Deprecated("use ActionChoicesScope instead")
 interface ActionChoicesNextScope<T : Any, A : Any> : ActionChoicesStartScope<T, A> {
     fun parameter(action: A)
 }
+@Deprecated("use ActionChoicesScope instead")
 interface ActionChoicesStartScope<T : Any, A : Any> {
     val context: ActionOptionsContext<T>
     fun <E : Any> options(options: ActionOptionsScope<T>.() -> Iterable<E>, next: ActionChoicesNextScope<T, A>.(E) -> Unit)

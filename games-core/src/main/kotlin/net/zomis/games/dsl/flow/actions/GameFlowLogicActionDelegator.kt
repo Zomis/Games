@@ -50,4 +50,8 @@ class GameFlowLogicActionDelegator<T: Any, A: Any>(
         return true
     }
 
+    override fun withChosen(playerIndex: Int, chosen: List<Any>): ActionComplexChosenStep<T, A> {
+        return available.withChosen(playerIndex, chosen)
+    }
+
 }

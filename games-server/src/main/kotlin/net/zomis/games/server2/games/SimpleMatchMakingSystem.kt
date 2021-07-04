@@ -32,7 +32,8 @@ class SimpleMatchMakingSystem {
                     val gameOptions = ServerGames.setup(gameType)!!.getDefaultConfig()
                     val inviteOptions = InviteOptions(false, InviteTurnOrder.ORDERED, -1, gameOptions, true)
                     val game = gameTypes[gameType]!!.createGame(inviteOptions)
-                    game.players.addAll(listOf(opponent, it.client))
+                    game.players[opponent] = ClientAccess(gameAdmin = false).addAccess(0, ClientPlayerAccessType.ADMIN)
+                    game.players[it.client] = ClientAccess(gameAdmin = false).addAccess(1, ClientPlayerAccessType.ADMIN)
                     events.execute(GameStartedEvent(game))
                     waiting.remove(gameType)
                 } else {

@@ -23,7 +23,7 @@ data class LogPartLink(val text: String, val viewType: String, val value: Any): 
 }
 
 interface LogPart { val type: String }
-data class LogEntry(val parts: List<LogPart>, val highlights: List<Any>, val private: Boolean)
+data class LogEntry(val parts: List<LogPart>, val private: Boolean)
 interface ActionLogEntry {
     val playerIndex: PlayerIndex
     val secret: LogEntry?
@@ -42,7 +42,6 @@ class LogContext<T : Any>(
 
     var counter: Int = 0
     val parts = mutableListOf<LogPart>()
-    val highlights = mutableListOf<Any>()
     override val public: LogEntry? get() = publicEntry
     override val secret: LogEntry? get() = secretEntry
     var secretEntry: LogEntry? = null
@@ -66,7 +65,7 @@ class LogContext<T : Any>(
             textToParse = textToParse.substringAfter("}}")
         }
         if (textToParse.isNotEmpty()) parts.add(LogPartText(textToParse))
-        return LogEntry(parts.toList(), highlights.toList(), secret)
+        return LogEntry(parts.toList(), secret)
     }
 
     override fun players(playerIndices: Iterable<Int>): String {
@@ -77,19 +76,14 @@ class LogContext<T : Any>(
     override fun inline(type: String, data: Any): String = part { LogPartInline(type, data) }
     override fun player(value: PlayerIndex): String = part { LogPartPlayer(value) }
     override fun viewLink(text: String, type: String, view: Any): String = part { LogPartLink(text, type, view) }
-    override fun highlight(values: List<Any>) {
-        highlights.addAll(values)
-    }
     override fun publicLog(logging: LogScope<T>.() -> String) { log(logging) }
 
     fun log(logging: LogScope<T>.() -> String): ActionLogEntry {
-        highlights.clear()
         publicEntry = postProcess(logging(this), false)
         return this
     }
 
     fun secretLog(secretPlayer: PlayerIndex, logging: LogScope<T>.() -> String): LogContext<T> {
-        highlights.clear()
         if (this.playerIndex == secretPlayer) {
             secretEntry = postProcess(logging(this), true)
         }
@@ -112,13 +106,11 @@ class LogActionContext<T : Any, A : Any>(
     override fun publicLog(logging: LogActionScope<T, A>.() -> String) { log(logging) }
 
     fun log(logging: LogActionScope<T, A>.() -> String): ActionLogEntry {
-        logScope.highlights.clear()
         logScope.publicEntry = logScope.postProcess(logging(this), false)
         return this
     }
 
     fun secretLog(secretPlayer: PlayerIndex, logging: LogActionScope<T, A>.() -> String): LogActionContext<T, A> {
-        logScope.highlights.clear()
         if (this.playerIndex == secretPlayer) {
             logScope.secretEntry = logScope.postProcess(logging(this), true)
         }
@@ -134,6 +126,5 @@ class LogActionContext<T : Any, A : Any>(
     override fun player(value: PlayerIndex): String = logScope.player(value)
     override fun players(playerIndices: Iterable<Int>): String = logScope.players(playerIndices)
     override fun viewLink(text: String, type: String, view: Any): String = logScope.viewLink(text, type, view)
-    override fun highlight(values: List<Any>) = logScope.highlight(values)
 
 }

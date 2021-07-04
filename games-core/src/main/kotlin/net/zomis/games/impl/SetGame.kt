@@ -200,7 +200,7 @@ object SetGame {
                 setCheck(game, replayable)
             }
         }
-        rules {
+        actionRules {
             action(callSet) {
                 choose {
                     options({ game.board.map { c -> c.toStateString() } }) {first ->

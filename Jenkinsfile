@@ -6,8 +6,18 @@ import net.zomis.jenkins.Duga
 pipeline {
     agent any
 
+    options {
+        timeout(time: 1, unit: 'HOURS')
+    }
+    tools {
+        jdk 'Java11'
+    }
+
     stages {
         stage('Environment Vars') {
+            options {
+                timeout(time: 5, unit: 'MINUTES')
+            }
             steps {
                 script {
                     sh 'rm -f .env.local'
@@ -21,33 +31,45 @@ pipeline {
                 }
             }
         }
-        stage('Build') {
+        stage('Build Server') {
+            options {
+                timeout(time: 15, unit: 'MINUTES')
+            }
             steps {
                 sh 'cp /home/zomis/jenkins/server2-secrets.properties games-server/src/main/resources/secrets.properties'
                 sh 'cp /home/zomis/jenkins/server2-startup.conf server2.conf.docker'
-                sh './gradlew clean test :games-server:assemble :games-js:assemble'
+                sh './gradlew clean test shadowCreate --info'
                 script {
                     def gitChanges = sh(script: 'git diff-index HEAD', returnStatus: true)
                     if (gitChanges) {
                         error("There are git changes after build")
                     }
                 }
-                sh 'cp games-js/.eslintrc.js games-js/web/'
+            }
+        }
+        stage('Build Client') {
+            options {
+                timeout(time: 15, unit: 'MINUTES')
+            }
+            steps {
+                // sh 'cp games-js/.eslintrc.js games-js/web/'
                 dir('games-vue-client') {
                     sh 'npm install && npm run build'
                 }
             }
         }
 
-        stage('Docker Image') {
+        stage('Deploy') {
             when {
-                branch 'master'
+                branch 'main'
+            }
+            options {
+                timeout(time: 5, unit: 'MINUTES')
             }
             steps {
                 script {
                     // Stop running containers
                     sh 'docker ps -q --filter name="games_server" | xargs -r docker stop'
-                    sh 'docker ps -q --filter name="games_client" | xargs -r docker stop'
 
                     // Deploy server
                     sh 'docker build . -t gamesserver2'
@@ -73,22 +95,14 @@ pipeline {
                     // Deploy client
                     sh 'rm -rf /home/zomis/docker-volumes/games-vue-client'
                     sh 'cp -r $(pwd)/games-vue-client/dist /home/zomis/docker-volumes/games-vue-client'
-                    sh 'docker run -d --rm --name games_client -v /home/zomis/docker-volumes/games-vue-client:/usr/share/nginx/html:ro -p 42637:80 nginx'
                 }
             }
         }
-
-/*
-                withSonarQubeEnv('My SonarQube Server') {
-                    // requires SonarQube Scanner for Maven 3.2+
-                    sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.2:sonar'
-                }
-*/
     }
 
     post {
         always {
-            junit allowEmptyResults: true, testResults: '**/build/test-results/junit-platform/TEST-*.xml'
+            junit allowEmptyResults: true, testResults: 'build/test-results/jvmTest/TEST-*.xml'
         }
         success {
             zpost(0)

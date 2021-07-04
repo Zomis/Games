@@ -7,12 +7,12 @@
       >
         <v-card :class="{ ['color-' + player.character.color ]: true, currentPlayer: playerIndex == view.currentPlayer }">
           <PlayerProfile
-            :player="players[playerIndex]"
+            :player="context.players[playerIndex]"
             show-name
             :post-fix="'(' + player.character.className + ')'"
           />
           <p>
-            Health: {{ player.health }} <v-icon v-if="player.protected">
+            Health: {{ player.health }} <v-icon v-if="player.protected" color="#6a0dad">
               mdi-account-lock
             </v-icon>
           </p>
@@ -149,7 +149,7 @@ import dungeonMayhemSymbols from "./dungeonMayhemSymbols"
 
 export default {
     name: "DungeonMayhem",
-    props: ["view", "actions", "players"],
+    props: ["view", "actions", "context"],
     components: {
         PlayerProfile,
         Actionable,

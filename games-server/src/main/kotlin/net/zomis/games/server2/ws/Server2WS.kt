@@ -45,7 +45,7 @@ class Server2WS(private val javalin: Javalin, private val handler: WebsocketMess
             logger.info("Message from $client connection $conn: $message")
             handler.incomingMessage(client, message!!)
         } catch (e: Exception) {
-            logger.warn(e) { "Error handling $message" }
+            logger.warn(e) { "Error handling $message from $client" }
             // events.execute(IllegalClientRequest(client, "Error occurred when processing message"))
         }
     }

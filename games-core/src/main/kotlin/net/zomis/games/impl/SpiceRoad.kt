@@ -85,7 +85,7 @@ object SpiceRoadDsl {
                         when {
                             card.gain != null -> parameter(PlayParameter(card, SpiceRoadGameModel.Caravan(), card.gain))
                             card.upgrade != null -> {
-                                fun rec(scope: ActionChoicesNextScope<SpiceRoadGameModel, PlayParameter>,
+                                fun rec(scope: ActionChoicesScope<SpiceRoadGameModel, PlayParameter>,
                                         remaining: SpiceRoadGameModel.Caravan,
                                         upgrades: Int,
                                         remove: SpiceRoadGameModel.Caravan = SpiceRoadGameModel.Caravan(),
@@ -132,7 +132,7 @@ object SpiceRoadDsl {
                         game.visibleActionCards.cards.filterIndexed { index, _ -> index <= game.currentPlayer.caravan.count }
                                 .map { it.toStateString() to it }
                     }) { card ->
-                        fun rec(scope: ActionChoicesNextScope<SpiceRoadGameModel, AcquireParameter>,
+                        fun rec(scope: ActionChoicesScope<SpiceRoadGameModel, AcquireParameter>,
                                 remaining: SpiceRoadGameModel.Caravan,
                                 leftToPay: Int,
                                 payList: List<SpiceRoadGameModel.Spice> = emptyList()

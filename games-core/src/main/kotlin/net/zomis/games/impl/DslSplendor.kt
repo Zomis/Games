@@ -250,7 +250,7 @@ object DslSplendor {
                 SplendorGame(config, eliminationCallback)
             }
         }
-        rules {
+        actionRules {
             gameStart {
                 val dealCards = (1..3).map { level -> game.deck.first(4) { card -> card.level == level } }.flatten()
                 val cardStates = replayable.strings("cards") {

@@ -161,6 +161,8 @@ class Map2DPointImpl<T>(
     override fun rangeCheck(map: Map2DX<T>): Map2DPoint<T>? {
         return this.takeUnless { x < 0 || x >= map.sizeX || y < 0 || y >= map.sizeY }
     }
+
+    override fun toString(): String = "Map2DPointImpl($x, $y)"
 }
 class Map2DX<T>(val sizeX: Int, val sizeY: Int, val factory: (x: Int, y: Int) -> T) {
 
@@ -175,6 +177,9 @@ class Map2DX<T>(val sizeX: Int, val sizeY: Int, val factory: (x: Int, y: Int) ->
     }
 
     fun get(x: Int, y: Int): T = grid[y][x]
+    fun getOrNull(x: Int, y: Int): T? {
+        return if (x in 0 until sizeX && y in 0 until sizeY) get(x, y) else null
+    }
 
     fun point(x: Int, y: Int): Map2DPoint<T> {
         return Map2DPointImpl(x, y, this::get, this::set)
@@ -203,6 +208,85 @@ class Map2DX<T>(val sizeX: Int, val sizeY: Int, val factory: (x: Int, y: Int) ->
 
     override fun toString(): String {
         return "Map2D(grid=$grid)"
+    }
+
+    class GridLine<T>(val items: List<T>) {
+        fun <R> hasConsecutive(k: Int, mapping: (T) -> R?): R? {
+            var result: R? = null
+            var consecutive = 0
+
+            for (item in items) {
+                val current = mapping(item)
+                if (current == result) {
+                    consecutive++
+                } else {
+                    consecutive = 1
+                    result = current
+                }
+
+                if (consecutive >= k && result != null) {
+                    return result
+                }
+            }
+            return null
+        }
+    }
+    fun mnkLines(includeDiagonals: Boolean): Sequence<GridLine<T>> {
+        // val points = if (includeDiagonals) Direction8.values().map { it.delta() } else Direction4.values().map { it.delta() }
+
+        fun loopAdd(board: Map2DX<T>, xxStart: Int, yyStart: Int, dx: Int, dy: Int): List<T> {
+            var xx = xxStart
+            var yy = yyStart
+            val items = mutableListOf<T>()
+
+            var tile: T?
+            do {
+                tile = board.getOrNull(xx, yy)
+                xx += dx
+                yy += dy
+                if (tile != null) {
+                    items.add(tile)
+                }
+            } while (tile != null)
+
+            return items
+        }
+
+        return sequence {
+            // columns
+            for (xx in 0 until sizeX) {
+                yield(GridLine(loopAdd(this@Map2DX, xx, 0, 0, 1)))
+            }
+
+            // Scan rows for a winner
+            for (yy in 0 until sizeY) {
+                yield(GridLine(loopAdd(this@Map2DX, 0, yy, 1, 0)))
+            }
+
+            if (!includeDiagonals) {
+                return@sequence
+            }
+
+            // Scan diagonals for a winner: Bottom-right
+            for (yy in 0 until sizeY) {
+                yield(GridLine(loopAdd(this@Map2DX, 0, yy, 1, 1)))
+            }
+            for (xx in 1 until sizeX) {
+                yield(GridLine(loopAdd(this@Map2DX, xx, 0, 1, 1)))
+            }
+
+            // Scan diagonals for a winner: Bottom-left
+            for (xx in 0 until sizeX) {
+                yield(GridLine(loopAdd(this@Map2DX, xx, 0, -1, 1)))
+            }
+            for (yy in 1 until sizeY) {
+                yield(GridLine(loopAdd(this@Map2DX, this@Map2DX.sizeX - 1, yy, -1, 1)))
+            }
+        }
+    }
+
+    fun view(viewFunction: (T) -> Any): Any {
+        return this.grid.map { row -> row.map(viewFunction) }
     }
 
 }

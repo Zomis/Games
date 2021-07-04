@@ -1,11 +1,20 @@
 <template>
-  <v-card class="game-type">
+  <v-card
+    class="game-type"
+    :class="gameTypeCssName"
+  >
     <v-toolbar
       color="cyan"
       dark
     >
       <v-toolbar-title>{{ displayName }}</v-toolbar-title>
       <v-spacer />
+      <v-btn
+        rounded
+        @click="testGame(gameType)"
+      >
+        Try it
+      </v-btn>
       <v-btn
         rounded
         @click="createInvite(gameType)"
@@ -16,7 +25,7 @@
     <v-card-title>
       Users
     </v-card-title>
-    <v-list light>
+    <v-list>
       <template v-for="(player, index) in users">
         <v-divider
           v-if="index > 0"
@@ -79,6 +88,9 @@ export default {
     name: "LobbyGameType",
     props: ["gameType", "users", "yourPlayer"],
     methods: {
+        testGame(gameType) {
+          Socket.route("testGames/game", { gameType: gameType })
+        },
         createInvite(gameType) {
             Socket.route("invites/prepare", { gameType: gameType })
         },
@@ -87,6 +99,9 @@ export default {
         }
     },
     computed: {
+        gameTypeCssName() {
+            return 'game-' + this.gameType.toLowerCase().replace(" ", "-");
+        },
         activeGames() {
             return this.$store.getters.activeGames.filter(game => game.gameInfo.gameType === this.gameType);
         },

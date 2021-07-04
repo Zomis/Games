@@ -1,5 +1,6 @@
 buildscript {
-    ext.kotlin_version = '1.3.61'
+    ext.kotlin_version = '1.4.32'
+    ext.klog_version = '2.0.2'
 
     repositories {
         mavenCentral()
@@ -27,8 +28,8 @@ dependencies {
     testCompile "org.jetbrains.kotlin:kotlin-test-js:$kotlin_version"
     expectedBy project(':games-core')
 
-    compile "com.github.lewik.klog:klog-js:$kotlin_version"
-    compile "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:1.3.8"
+    compile "com.github.lewik.klog:klog-js:$klog_version"
+    compile "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:1.4.3"
 }
 
 compileKotlin2Js {

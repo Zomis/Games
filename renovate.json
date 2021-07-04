@@ -1,0 +1,46 @@
+{
+  "extends": [
+    "config:base"
+  ],
+  "packageRules": [
+    {
+      "packagePatterns": [
+        "*"
+      ],
+      "updateTypes": [
+        "major"
+      ],
+      "groupName": "dependencies: MAJOR"
+    },
+    {
+      "packagePatterns": [
+        "^ai.djl"
+      ],
+      "groupName": "djl"
+    },
+    {
+      "packagePatterns": [
+        "^com.fasterxml.jackson"
+      ],
+      "groupName": "jackson"
+    },
+    {
+      "packagePatterns": [
+        "^com.github.lewik.klog"
+      ],
+      "groupName": "klog"
+    },
+    {
+      "packagePatterns": [
+        "^org.jetbrains.kotlin"
+      ],
+      "groupName": "kotlin"
+    },
+    {
+      "packagePatterns": [
+        "^org.junit.jupiter"
+      ],
+      "groupName": "JUnit Jupiter"
+    }
+  ]
+}

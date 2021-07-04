@@ -194,7 +194,7 @@ export default {
     doNothing() {},
     placeNew() { // playerIndex parameter
       if (this.canPlaceNew) {
-        this.actions.perform("move", 0);
+        this.actions.actionParameter("move", 0);
       }
     },
     onClick(piece) {
@@ -205,10 +205,10 @@ export default {
         return;
       }
       console.log("OnClick in URView: " + piece.x + ", " + piece.y);
-      this.actions.perform("move", `${piece.position}`);
+      this.actions.actionParameter("move", piece.position);
     },
     onDoRoll() {
-      this.actions.perform("roll", "roll");
+      this.actions.actionParameter("roll", null);
     },
     onPlaceNewHighlight(playerIndex) {
       if (playerIndex !== this.view.currentPlayer) {
@@ -218,7 +218,6 @@ export default {
     },
     canMove(from) {
       console.log("Can move from", from)
-//            this.view.pieces[this.view.currentPlayer][ + this.view.roll
       return true
     },
     mouseover(piece) {

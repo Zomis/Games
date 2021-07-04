@@ -6,7 +6,6 @@ import net.zomis.games.dsl.GameSpec
 import net.zomis.games.example.TestGames
 import net.zomis.games.server2.Client
 import net.zomis.games.server2.ClientDisconnected
-import net.zomis.games.server2.doctools.DocEventSystem
 import net.zomis.games.server2.doctools.DocWriter
 import net.zomis.games.server2.clients.FakeClient
 import net.zomis.games.server2.games.*
@@ -14,7 +13,6 @@ import net.zomis.games.server2.testDocWriter
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.RegisterExtension
 import java.util.UUID
 
 val Client.idName get() = """{"id":"${this.playerId}","name":"${this.name}","picture":"${this.picture}"}"""
@@ -30,13 +28,11 @@ class LobbySystemTest {
     private lateinit var lobby: LobbySystem
     private val idGenerator: GameIdGenerator = { "1" }
 
-    @RegisterExtension
-    @JvmField
     val docWriter: DocWriter = testDocWriter()
 
     @BeforeEach
     fun setup() {
-        events = DocEventSystem(docWriter)
+        events = EventSystem()
         features = Features(events)
         lobby = LobbySystem(features)
         val gameSystem = GameSystem(lobby::gameClients, GameCallback({null}) {})
@@ -91,8 +87,8 @@ class LobbySystemTest {
         )
         val inviteOptions = InviteOptions(false, InviteTurnOrder.ORDERED, -1, Unit, false)
         val game = ServerGame(callback, GameType(callback, TestGames.gameTypeA as GameSpec<Any>, {null}, events, idGenerator, null), idGenerator(), inviteOptions)
-        game.players.add(clientAB2)
-        game.players.add(clientA1)
+        game.players[clientAB2] = ClientAccess(gameAdmin = false).addAccess(0, ClientPlayerAccessType.ADMIN)
+        game.players[clientA1] = ClientAccess(gameAdmin = false).addAccess(1, ClientPlayerAccessType.ADMIN)
         events.execute(GameStartedEvent(game))
 
         events.apply {

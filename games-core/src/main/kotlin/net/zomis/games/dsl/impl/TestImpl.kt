@@ -9,6 +9,7 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
     val setup = entryPoint.setup()
     var config: Any = setup.getDefaultConfig()
     var gameImpl: Game<T>? = null
+    var forwards = 0
 
     private suspend fun initializedGame(): Game<T> {
         if (gameImpl == null) {
@@ -33,24 +34,56 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
     override suspend fun initializeGame(): T = initializedGame().model
 
     override val game: T
-        get() = if (gameImpl == null) throw IllegalStateException("call `initializeGame()` before trying to access game") else gameImpl!!.model
+        get() {
+            if (forwards == 0) throw IllegalStateException("Rules might not have been executed. Run initialize() or perform/assert actions before accessing raw game state.")
+            return initializedGame().model
+        }
 
     override fun state(key: String, value: Any) {
         stateKeeper.save(key, value)
+        stateKeeper.replayMode = true
     }
 
     override suspend fun <A : Any> action(playerIndex: Int, actionType: ActionType<T, A>, parameter: A) {
-        val impl = gameImpl
-        if (impl is GameFlowImpl) {
-            val actionImpl = initializedGame().actions[actionType.name]
-            requireNotNull(actionImpl) { "No such action name: ${actionType.name}" }
-            impl.actionsInput.send(actionImpl.createAction(playerIndex, parameter))
-            awaitReady()
+        initialize()
+        val game = initializedGame()
+        val actionImpl = game.actions[actionType.name]
+        requireNotNull(actionImpl) { "No such action name: ${actionType.name}, available actions are ${game.actions.actionTypes}" }
+        val action = actionImpl.createAction(playerIndex, parameter)
+        if (!actionImpl.isAllowed(action)) {
+            throw IllegalStateException("Action is not allowed: $action")
+        }
+        if (game is GameFlowImpl<*>) {
+            game.actionsInput.send(action)
         } else {
-            val actionImpl = initializedGame().actions[actionType.name]
-            requireNotNull(actionImpl) { "No such action name: ${actionType.name}" }
-            val action = actionImpl.createAction(playerIndex, parameter)
             actionImpl.perform(action)
+        }
+        flowForward()
+    }
+
+    override suspend fun initialize() {
+        if (forwards == 0) {
+            forwards++
+            val game = initializedGame()
+            if (game is GameFlowImpl<*>) {
+                println("Initialize game, call flow forward")
+                flowForward()
+            }
+        }
+    }
+
+    private suspend fun flowForward() {
+        val game = initializedGame()
+        if (game is GameFlowImpl<*>) {
+            println("Test flow forward, awaiting feedback ${game.stateKeeper.lastMoveState()}")
+            do {
+                val output = game.feedbackReceiver.receive()
+                forwards++
+                println("Test flow forward $forwards: $output")
+            } while (output !is GameFlowContext.Steps.GameEnd && output !is GameFlowContext.Steps.AwaitInput)
+            println("Test flow forwarded ${game.stateKeeper.lastMoveState()}")
+        } else {
+            forwards++
         }
     }
 
@@ -71,6 +104,7 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
     }
 
     override suspend fun <A : Any> actionNotAllowed(playerIndex: Int, actionType: ActionType<T, A>, parameter: A) {
+        initialize()
         val actionImpl = initializedGame().actions[actionType.name]
         requireNotNull(actionImpl) { "No such action name: ${actionType.name}" }
         val actionable = actionImpl.createAction(playerIndex, parameter)
@@ -78,6 +112,7 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
     }
 
     override suspend fun expectNoActions(playerIndex: Int) {
+        initialize()
         for (actionType in initializedGame().actions.types()) {
             val actions = actionType.availableActions(playerIndex, null).take(5)
             if (actions.isNotEmpty()) {

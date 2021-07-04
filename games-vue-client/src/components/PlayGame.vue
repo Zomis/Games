@@ -1,20 +1,17 @@
 <template>
   <div class="game">
+    <v-btn v-for="(_, playerIndex) in gameInfo.access" :key="'switch-player-' + playerIndex"
+      @click="switchPlayerIndex(playerIndex)"
+    >
+      Reset (player {{ playerIndex }})
+    </v-btn>
     <component
       :is="viewComponent"
       v-if="view"
       :view="view"
       :actions="actions"
-      :players="players"
       :context="context"
     />
-    <v-btn
-      v-if="!isObserver"
-      :disabled="actionChoice === null"
-      @click="clearActions()"
-    >
-      Reset Action
-    </v-btn>
     <ActionLog
       :log-entries="actionLogEntries"
       :on-highlight="highlight"
@@ -43,7 +40,9 @@ export default {
       supportedGame: supportedGames.games[this.gameType],
       views: [],
       snackbar: false,
-      snackbarText: 'Welcome'
+      snackbarText: 'Welcome',
+      whispered: false,
+      audio: new Audio('https://actions.google.com/sounds/v1/cartoon/cartoon_cowbell.ogg')
     }
   },
   mounted() {
@@ -54,25 +53,29 @@ export default {
     })
   },
   methods: {
-    clearActions() {
-      this.$store.dispatch("DslGameState/requestView", this.gameInfo);
-      this.$store.dispatch("DslGameState/resetActions", { gameInfo: this.gameInfo });
+    switchPlayerIndex(playerIndex) {
+      this.$store.dispatch("DslGameState/switchPlayerIndex", { gameInfo: this.gameInfo, activeIndex: parseInt(playerIndex, 10) });
     },
     performChosenAction() {
       this.$store.dispatch("DslGameState/performChosenAction", { gameInfo: this.gameInfo });
     },
     highlight(highlight) {
+      console.log("highlight!!", highlight);
       this.$store.dispatch("DslGameState/highlight", { gameInfo: this.gameInfo, highlights: highlight });
     },
     actionParameter(actionType, serializedParameter) {
       this.$store.dispatch("DslGameState/action", { gameInfo: this.gameInfo, name: actionType, data: serializedParameter });
     },
+    actionStep(choice, actionType) {
+      this.$store.dispatch("DslGameState/nextAction", { gameInfo: this.gameInfo, name: actionType, action: choice });
+    },
     action(_, data) {
       let action = this.actionsAvailable[data]
       console.log("ACTION CHOICE", data, action)
       if (action === undefined) {
+        alert("Action undefined. Possibly a bug.");
         console.log("NO ACTION FOR", data)
-        this.clearActions();
+        //this.clearActions();
         return
       }
       let name = action.actionType
@@ -95,7 +98,21 @@ export default {
         this.snackbarText = 'The game is over';
         this.snackbar = true;
       }
+    },
+    actionsAvailable(state) {
+      const { playSoundOnPlayerTurn } = localStorage;
+      let actionsCount = Object.keys(state).length;
+      console.log("actionsAvailable update:", state, "playSound", playSoundOnPlayerTurn, "actionsCount", actionsCount);
+      if (!actionsCount) {
+        this.whispered = false;
+      }
+      if (playSoundOnPlayerTurn === 'true' && actionsCount && !this.whispered) {
+        this.audio.volume = 0.2;
+        this.audio.play();
+        this.whispered = true;
+      }
     }
+
   },
   computed: {
     viewComponent() {
@@ -116,24 +133,20 @@ export default {
         performChosen: this.performChosenAction,
         available: this.actionsAvailable,
         actionParameter: this.actionParameter,
-        actionTypes: this.actionTypes,
+        choose: this.actionStep,
         clear: this.clearActions,
         resetTo: this.resetActionsTo
       }
     },
     context() {
-      /* TODO:
-       Players + add controllable property (true/false) or controllable int *array*.
-        Also add eliminated property
-       Viewer - Int. (Make it changable in local or when controlling multiple players)
-       Scope/Context/View/yadayada: Replay/Game/Local/Lobby...
-       Eliminations.
-      */
+      // TODO: Add eliminated property for each player?
+      // Determine the access you have to each player (NONE / READ / WRITE / ADMIN)
+      let access = this.players.map((_, idx) => this.gameInfo.access[idx] || "NONE");
       return {
-        players: this.players.map((p, idx) => ({ ...p, controllable: this.gameInfo.yourIndex === idx, elimination: this.eliminations.find(e => e.player == idx) })),
+        players: this.players.map((p, idx) => ({ ...p, controllable: access[idx] === "WRITE" || access[idx] === "ADMIN", elimination: this.eliminations.find(e => e.player == idx) })),
         gameType: this.gameInfo.gameType,
         gameId: this.gameInfo.gameId,
-        viewer: this.gameInfo.yourIndex,
+        viewer: this.gameInfo.activeIndex,
         scope: 'play'
       }
     },
@@ -168,10 +181,6 @@ export default {
       players(state) {
         if (!state.games[this.gameId]) { return [] }
         return state.games[this.gameInfo.gameId].gameInfo.players;
-      },
-      actionTypes(state) {
-        if (!state.games[this.gameId]) { return [] }
-        return state.games[this.gameInfo.gameId].gameData.actionTypes;
       },
       actionsAvailable(state) {
         if (!state.games[this.gameId]) { return {} }
