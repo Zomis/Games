@@ -29,6 +29,10 @@ const serverOptions = [
     name: "zomis"
   },
   {
+    url: "wss://dfftey92j9.execute-api.eu-central-1.amazonaws.com/production",
+    name: "aws"
+  },
+  {
     url: "ws://127.0.0.1:42638/websocket",
     name: "localhost-development"
   }
