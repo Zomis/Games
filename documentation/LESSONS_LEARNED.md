@@ -8,13 +8,16 @@ As I have done many implementations of Servers, and many implementations of espe
 - Separate game logic from server logic
   - Example: Don't put the burden on a specific game handler to return "Game is full" error (Mistake done in [flexgame-server](https://github.com/Zomis/flexgame-server/blob/first/flexgame-server/src/main/java/net/zomis/spring/games/impls/ur/RoyalGameOfUrHelper.java#L34))
 - Java is very verbose and Groovy is too dynamic. Kotlin is amazing. (Groovy was used in [flexgame-server](https://github.com/Zomis/flexgame-server/) and in [Cardshifter](https://github.com/Cardshifter/Cardshifter/))
-- Using a dynamic event-driven approach for *everything*... (This was initially done in this project, but the approach has since changed but some traces of this might still remain)
+- Using a dynamic event-driven approach for *everything*... (This was initially done in this project, the approach has since changed although some traces of this might still remain)
   - makes code very unreadable and confusing
   - makes it difficult to figure out or troubleshoot "when A happens, B will happen"
   - is still an interesting concept, somehow specifying "business requirements" in code is still intriguing to me
     - No I don't mean Cucumber. In the actual application, not just in tests.
     - But no, I have no plans on going back to that approach for this project.
 - Using an Entity-Component-System approach... (This was considered for this project - also for non-game-specific things, but is also something used in [Cardshifter](https://github.com/Cardshifter/Cardshifter/))
+  - Makes it very flexible in many ways
+  - Makes it more error-prone when writing code, as some compile time checks cannot be made
+  - Makes it harder to troubleshoot errors
 - Storing all games in a database is good (This is one of the main features of [Minesweeper Flags Extreme](https://play.minesweeperflags.net))
   - Server might need an update every now and then
   - Replays are nice
