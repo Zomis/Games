@@ -93,12 +93,17 @@ class DslRandomPlayTest {
 
     @ParameterizedTest(name = "Random play {0} with {1} players")
     @MethodSource("serverGames")
-    @Disabled
-    fun dsl(gameType: GameEntryPoint<Any>, playerCount: Int) {
-        val dslGame = gameType.gameType
+    fun gameTests(gameType: GameEntryPoint<Any>, playerCount: Int) {
         runBlocking {
             gameType.runTests()
         }
+    }
+
+    @ParameterizedTest(name = "Random play {0} with {1} players")
+    @MethodSource("serverGames")
+    @Disabled
+    fun dsl(gameType: GameEntryPoint<Any>, playerCount: Int) {
+        val dslGame = gameType.gameType
 
         val clients = (1..playerCount).map { WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket")) }
         clients.forEach { it.connectBlocking() }
