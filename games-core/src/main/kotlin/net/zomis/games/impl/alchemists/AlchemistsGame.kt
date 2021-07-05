@@ -1,5 +1,6 @@
 package net.zomis.games.impl.alchemists
 
+import net.zomis.games.api.Games
 import net.zomis.games.api.GamesApi
 import net.zomis.games.cards.CardZone
 import net.zomis.games.common.next
@@ -7,7 +8,7 @@ import net.zomis.games.impl.alchemists.artifacts.*
 import net.zomis.games.dsl.flow.GameFlowScope
 import kotlin.random.Random
 
-class AlchemistsModel(playerCount: Int, val config: Config) {
+class AlchemistsModel(val playerCount: Int, val config: Config) {
 
     data class Hero(val requests: List<AlchemistsPotion>)
     data class Config(val master: Boolean) {
@@ -96,8 +97,8 @@ class AlchemistsModel(playerCount: Int, val config: Config) {
     }
 
     fun draftingRule(
-            vararg counts: Int,
-            specialCondition: ActionDrafting.SpacePlacementScope<ActionType, ActionUnit>.() -> Boolean
+        vararg counts: Int,
+        specialCondition: ActionDrafting.SpacePlacementScope<ActionType, ActionUnit>.() -> Boolean
     ): SpacePlacementRule<ActionType, ActionUnit> {
         // TODO: Use the counts parameter
         return {
@@ -110,13 +111,12 @@ class AlchemistsModel(playerCount: Int, val config: Config) {
 
     var firstPlayer: Int = 0
     lateinit var solution: Alchemists.AlchemistsSolution
-    val heroes = CardZone<Hero>()
+    val heroes = Games.components.cardZone<Hero>()
     val artifacts = CardZone<Artifact>()
     val ingredientDeck = CardZone<Alchemists.Ingredient>()
     val ingredientDiscard = CardZone<Alchemists.Ingredient>()
     val favorDeck = CardZone<FavorType>()
     val players = (0 until playerCount).map { Player(it) }
-    val playerCount: Int get() = players.size
 
     private val forageSpaces = if (playerCount == 4) intArrayOf(1, 1) else intArrayOf(1, 1, 1)
     private val exhibitSpaces = if (playerCount == 4) intArrayOf(1, 1, 1) else intArrayOf(1, 1, 1, 1)
@@ -148,7 +148,7 @@ class AlchemistsModel(playerCount: Int, val config: Config) {
 
 object AlchemistsGame {
 
-    val factory = GamesApi.gameCreator(AlchemistsModel::class)
+    val factory = Games.api.gameCreator(AlchemistsModel::class)
     val turnOrder = factory.action("turnOrder", AlchemistsModel.TurnOrder::class)
 
     class AlchemistsActionChoice(val playerIndex: Int, val assistants: Int, val placements: List<ActionDrafting.Placement<AlchemistsModel.ActionType, Boolean>>)
@@ -159,11 +159,7 @@ object AlchemistsGame {
             players(2..4)
             init { AlchemistsModel(playerCount, config) }
             onStart {
-                // Setup solution
-                val solutionStrings = replayable.strings("solution") {
-                    Alchemists.alchemyValues.shuffled().map { it.representation }
-                }
-                val solution = solutionStrings.map { str -> Alchemists.alchemyValues.first { it.representation == str } }
+                val solution = replayable.randomFromList("solution", Alchemists.alchemyValues, Alchemists.alchemyValues.size) { it.representation }
                 val ingredients = Alchemists.Ingredient.values()
                 game.solution = Alchemists.AlchemistsSolution(solution.withIndex().associate { ingredients[it.index] to it.value })
 
