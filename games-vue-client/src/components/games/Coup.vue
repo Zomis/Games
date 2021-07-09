@@ -58,8 +58,8 @@
             <div>
               <v-btn
                 v-if="player.actionable"
-                @click="actions.choose(playerIndex, 'perform')"
                 :actions="actions"
+                @click="actions.choose(playerIndex, 'perform')"
               >
                 Target
               </v-btn>
@@ -73,16 +73,43 @@
     </v-row>
     <v-row :key="'buttons'">
       <v-col>
-        <v-btn v-if="view.buttons.approve" @click="actions.actionParameter('approve', null)">Approve</v-btn>
-        <v-btn v-if="view.buttons.challenge" @click="actions.actionParameter('challenge', null)">Challenge</v-btn>
-        <v-btn v-if="view.buttons.reveal" @click="actions.actionParameter('reveal', null)">Reveal character</v-btn>
-        <v-btn v-for="character in view.buttons.loseInfluence" :key="'char' + character" @click="actions.actionParameter('lose', character)">
+        <v-btn
+          v-if="view.buttons.approve"
+          @click="actions.actionParameter('approve', null)"
+        >
+          Approve
+        </v-btn>
+        <v-btn
+          v-if="view.buttons.challenge"
+          @click="actions.actionParameter('challenge', null)"
+        >
+          Challenge
+        </v-btn>
+        <v-btn
+          v-if="view.buttons.reveal"
+          @click="actions.actionParameter('reveal', null)"
+        >
+          Reveal character
+        </v-btn>
+        <v-btn
+          v-for="character in view.buttons.loseInfluence"
+          :key="'char' + character"
+          @click="actions.actionParameter('lose', character)"
+        >
           Lose {{ character }}
         </v-btn>
-        <v-btn v-for="character in view.buttons.ambassadorPutBack" :key="'char' + character" @click="actions.actionParameter('putBack', character)">
+        <v-btn
+          v-for="character in view.buttons.ambassadorPutBack"
+          :key="'char' + character"
+          @click="actions.actionParameter('putBack', character)"
+        >
           Put back {{ character }}
         </v-btn>
-        <v-btn v-for="character in view.buttons.counter" :key="'char' + character" @click="actions.actionParameter('counteract', character)">
+        <v-btn
+          v-for="character in view.buttons.counter"
+          :key="'char' + character"
+          @click="actions.actionParameter('counteract', character)"
+        >
           Counteract by claiming {{ character }}
         </v-btn>
       </v-col>
@@ -101,7 +128,10 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(action, actionName) in view.actions" :key="actionName">
+              <tr
+                v-for="(action, actionName) in view.actions"
+                :key="actionName"
+              >
                 <td>
                   <v-btn
                     :disabled="!action.allowed"
@@ -114,7 +144,7 @@
                 <td>{{ action.claim }}</td>
                 <td>
                   <template v-for="(blockable, index) in action.blockable">
-                    <span :key="'span' + index">{{ blockable }}</span><br :key="'br' + index" />
+                    <span :key="'span' + index">{{ blockable }}</span><br :key="'br' + index">
                   </template>
                 </td>
               </tr>
@@ -142,11 +172,11 @@ import CardZone from "@/components/games/common/CardZone"
 import ActionLog from "@/components/games/ActionLog"
 
 export default {
-    name: "Coup",
-    props: ["view", "actions", "context"],
-    components: {
-        PlayerProfile, Actionable, CardZone, ActionLog
-    },
+  name: "Coup",
+  props: ["view", "actions", "context"],
+  components: {
+    PlayerProfile, Actionable, CardZone, ActionLog
+  },
 }
 </script>
 <style scoped>

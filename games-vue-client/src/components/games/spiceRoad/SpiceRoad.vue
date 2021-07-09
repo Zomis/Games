@@ -173,7 +173,7 @@ export default {
     }
   },
   components: {
-      PlayerProfile, Actionable, CardZone, SpiceRoadResources, SpiceRoadCard
+    PlayerProfile, Actionable, CardZone, SpiceRoadResources, SpiceRoadCard
   },
   computed: {
     choicesAvailable() {

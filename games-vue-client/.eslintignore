@@ -1,1 +1,4 @@
 ../games-js/**/*.js
+./node_modules
+./codedeploy
+./dist

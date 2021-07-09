@@ -45,64 +45,64 @@
 import { VBtn } from 'vuetify/lib'
 
 export default {
-    name: "Actionable",
-    props: {
-        actionable: { type: String, required: false },
-        actionType: {
-            validator(value) { return typeof value === 'string' || Array.isArray(value) }
-        },
-        hideIfIrrelevant: { type: Boolean, default: false },
-        stickyMenu: { type: Boolean, default: false },
-        actions: { type: Object, required: true },
-        button: { type: Boolean, default: false },
-        icon: { type: String, required: false },
-        value: { type: Number, required: false }
+  name: "Actionable",
+  props: {
+    actionable: { type: String, required: false },
+    actionType: {
+      validator(value) { return typeof value === 'string' || Array.isArray(value) }
     },
-    data() {
-        return {
-            showMenu: false
-        }
-    },
-    components: {
-        VBtn
-    },
-    methods: {
-        componentClick() {
-            if (this.actionable) {
-                this.actions.perform('', this.actionable)
-            }
-        }
-    },
-    computed: {
-        shouldBeVisible() {
-            return !this.hideIfIrrelevant || this.isActionable
-        },
-        useMenu() {
-            return !this.actionable // or if there are multiple actions for this actionable (such as both 'Play' and 'Discard' using the same parameter)
-        },
-        isActionable() {
-            return this.menuItems.length > 0 || (this.actionable && this.actions.available[this.actionable])
-        },
-        cssClass() {
-            return {
-                actionable: this.isActionable,
-                ['actionable-wrapper']: true
-            }
-        },
-        component() {
-            if (this.button) return 'v-btn'
-            return 'div'
-        },
-        tooltip() {
-            return 'Disabled'
-        },
-        menuItems() {
-            if (!this.actionable && this.actionType) {
-                return Object.keys(this.actions.available).filter(act => this.actionType.includes(this.actions.available[act].actionType))
-            }
-            return []
-        }
+    hideIfIrrelevant: { type: Boolean, default: false },
+    stickyMenu: { type: Boolean, default: false },
+    actions: { type: Object, required: true },
+    button: { type: Boolean, default: false },
+    icon: { type: String, required: false },
+    value: { type: Number, required: false }
+  },
+  data() {
+    return {
+      showMenu: false
     }
+  },
+  components: {
+    VBtn
+  },
+  methods: {
+    componentClick() {
+      if (this.actionable) {
+        this.actions.perform('', this.actionable)
+      }
+    }
+  },
+  computed: {
+    shouldBeVisible() {
+      return !this.hideIfIrrelevant || this.isActionable
+    },
+    useMenu() {
+      return !this.actionable // or if there are multiple actions for this actionable (such as both 'Play' and 'Discard' using the same parameter)
+    },
+    isActionable() {
+      return this.menuItems.length > 0 || (this.actionable && this.actions.available[this.actionable])
+    },
+    cssClass() {
+      return {
+        actionable: this.isActionable,
+        ['actionable-wrapper']: true
+      }
+    },
+    component() {
+      if (this.button) return 'v-btn'
+      return 'div'
+    },
+    tooltip() {
+      return 'Disabled'
+    },
+    menuItems() {
+      if (!this.actionable && this.actionType) {
+        return Object.keys(this.actions.available).filter(act => this.actionType.includes(this.actions.available[act].actionType))
+      }
+      return []
+    }
+  }
 }
 </script>
 <style scoped>

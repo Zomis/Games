@@ -39,13 +39,13 @@ import Actionable from "@/components/games/common/Actionable"
 import dungeonMayhemSymbols from "./dungeonMayhemSymbols"
 
 export default {
-    name: "DungeonMayhemCard",
-    props: ["card", "actionable", "actions"],
-    computed: {
-        symbolMap: () => dungeonMayhemSymbols
-    },
-    components: {
-        Actionable
-    }
+  name: "DungeonMayhemCard",
+  props: ["card", "actionable", "actions"],
+  computed: {
+    symbolMap: () => dungeonMayhemSymbols
+  },
+  components: {
+    Actionable
+  }
 }
 </script>

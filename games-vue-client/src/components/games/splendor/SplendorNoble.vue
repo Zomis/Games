@@ -41,11 +41,11 @@
 import PlayerProfile from "@/components/games/common/PlayerProfile"
 
 export default {
-    name: "SplendorNoble",
-    props: ["noble", "context"],
-    components: {
-        PlayerProfile
-    }
+  name: "SplendorNoble",
+  props: ["noble", "context"],
+  components: {
+    PlayerProfile
+  }
 }
 </script>
 <style>

@@ -8,8 +8,8 @@
 import GameTreeView from "@/components/games/debug/GameTreeView"
 
 export default {
-    name: "TreeViewGame",
-    props: ["view", "actions", "players"],
-    components: { GameTreeView }
+  name: "TreeViewGame",
+  props: ["view", "actions", "players"],
+  components: { GameTreeView }
 }
 </script>

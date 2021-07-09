@@ -117,26 +117,26 @@ import PlayerProfile from "@/components/games/common/PlayerProfile"
 import Actionable from "@/components/games/common/Actionable"
 
 export default {
-    name: "Skull",
-    props: ["view", "actions", "context"],
-    components: {
-        PlayerProfile, CardZone,
-        Actionable
-    },
-    data() {
-        return {
-            colors: { FLOWER: 'green', SKULL: 'black' },
-            icons: { FLOWER: 'mdi-flower', SKULL: 'mdi-skull' }
-        }
-    },
-    computed: {
-        mustDiscard() {
-            let keys = Object.keys(this.actions.available)
-            if (keys.length === 0) return false
-
-            return keys.every(key => this.actions.available[key].actionType === "discard")
-        }
+  name: "Skull",
+  props: ["view", "actions", "context"],
+  components: {
+    PlayerProfile, CardZone,
+    Actionable
+  },
+  data() {
+    return {
+      colors: { FLOWER: 'green', SKULL: 'black' },
+      icons: { FLOWER: 'mdi-flower', SKULL: 'mdi-skull' }
     }
+  },
+  computed: {
+    mustDiscard() {
+      let keys = Object.keys(this.actions.available)
+      if (keys.length === 0) return false
+
+      return keys.every(key => this.actions.available[key].actionType === "discard")
+    }
+  }
 }
 </script>
 <style scoped>

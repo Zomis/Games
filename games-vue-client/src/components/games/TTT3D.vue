@@ -54,7 +54,7 @@ export default {
     }
   },
   methods: {
-/*
+    /*
     onPointer(event) {
       console.log(event, this);
     },
@@ -78,7 +78,7 @@ export default {
         }
         let y = parseInt(splitted[1], 10);
         let x = parseInt(splitted[2], 10);
-/*        
+        /*        
         let z = parseInt(splitted[3], 10);
         console.log(hit, hit.name, y, x, z);
         let b = hit.material.albedoColor.b;

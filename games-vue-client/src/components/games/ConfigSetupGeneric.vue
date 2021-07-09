@@ -26,16 +26,16 @@
 </template>
 <script>
 export default {
-    name: "ConfigSetupGeneric",
-    props: ["config"],
-    data() {
-        return {
-            configProperties: Object.keys(this.config).map(key => ({
-                name: key,
-                type: typeof this.config[key],
-                value: this.config[key]
-            }))
-        }
+  name: "ConfigSetupGeneric",
+  props: ["config"],
+  data() {
+    return {
+      configProperties: Object.keys(this.config).map(key => ({
+        name: key,
+        type: typeof this.config[key],
+        value: this.config[key]
+      }))
     }
+  }
 }
 </script>

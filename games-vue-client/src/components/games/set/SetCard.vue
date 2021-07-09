@@ -32,49 +32,49 @@ const paths = {
 }
 
 const colors = {
-    red: "#ef476f",
-    purple: "#7057ff",
-    green: "#06D6A0",
+  red: "#ef476f",
+  purple: "#7057ff",
+  green: "#06D6A0",
 }
 
 const fill = (card) => {
-    if (card.filling == "striped") {
-        return 'url(#striped-' + card.color + ')'
-    } else if (card.filling == "clear") {
-        return 'none'
-    } else if (card.filling == "filled") {
-        return colors[card.color]
-    }
-
+  if (card.filling == "striped") {
+    return 'url(#striped-' + card.color + ')'
+  } else if (card.filling == "clear") {
     return 'none'
+  } else if (card.filling == "filled") {
+    return colors[card.color]
+  }
+
+  return 'none'
 }
 
 export default {
-    name: "SetCard",
-    props: ["card", "onClick", "selected"],
-    methods: {
-        click() {
-            this.onClick(this.card);
+  name: "SetCard",
+  props: ["card", "onClick", "selected"],
+  methods: {
+    click() {
+      this.onClick(this.card);
+    }
+  },
+  computed: {
+    selectedClass() {
+      return this.selected ? "selected" : "not-selected";
+    },
+    color() {
+      return colors[this.card.color]
+    },
+    shapes() {
+      const card = this.card
+      return Array.from({ length: card.count }).map((val, key) => {
+        return {
+          key,
+          fill: fill(card),
+          d: paths[card.shape],
         }
+      })
     },
-    computed: {
-        selectedClass() {
-            return this.selected ? "selected" : "not-selected";
-        },
-        color() {
-            return colors[this.card.color]
-        },
-        shapes() {
-            const card = this.card
-            return Array.from({ length: card.count }).map((val, key) => {
-                return {
-                    key,
-                    fill: fill(card),
-                    d: paths[card.shape],
-                }
-            })
-        },
-    },
+  },
 }
 </script>
 <style scoped>

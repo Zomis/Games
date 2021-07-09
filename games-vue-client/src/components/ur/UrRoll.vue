@@ -23,8 +23,8 @@
 function shuffle(array) {
   // https://stackoverflow.com/a/2450976/1310566
   var currentIndex = array.length,
-    temporaryValue,
-    randomIndex;
+      temporaryValue,
+      randomIndex;
 
   // While there remain elements to shuffle...
   while (0 !== currentIndex) {

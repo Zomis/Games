@@ -25,34 +25,34 @@
 </template>
 <script>
 export default {
-    name: "LogEntryText",
-    props: ["text", "onHighlight", "tooltipComponent", "hoverBindings", "private"],
-    data() {
-        return {
-            tooltipActive: false,
-            hover: false,
-            clicked: false
-        }
-    },
-    watch: {
-        hover(value) {
-            this.tooltipActive = value || this.clicked
-        },
-        clicked(value) {
-            this.tooltipActive = value || this.hover
-        }
-    },
-    computed: {
-        cssClasses() {
-            return {
-                ['has-tooltip']: this.useTooltip,
-                ['private-log']: this.private
-            }
-        },
-        useTooltip() {
-            return typeof this.tooltipComponent !== 'undefined'
-        }
+  name: "LogEntryText",
+  props: ["text", "onHighlight", "tooltipComponent", "hoverBindings", "private"],
+  data() {
+    return {
+      tooltipActive: false,
+      hover: false,
+      clicked: false
     }
+  },
+  watch: {
+    hover(value) {
+      this.tooltipActive = value || this.clicked
+    },
+    clicked(value) {
+      this.tooltipActive = value || this.hover
+    }
+  },
+  computed: {
+    cssClasses() {
+      return {
+        ['has-tooltip']: this.useTooltip,
+        ['private-log']: this.private
+      }
+    },
+    useTooltip() {
+      return typeof this.tooltipComponent !== 'undefined'
+    }
+  }
 }
 </script>
 <style scoped>

@@ -41,7 +41,7 @@
 <script>
 //"maxClueTokens":8,"maxFailTokens":3,
 export default {
-    name: "HanabiConfig",
-    props: ["config"]
+  name: "HanabiConfig",
+  props: ["config"]
 }
 </script>

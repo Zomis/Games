@@ -90,64 +90,64 @@ import InvitePlayer from "@/components/lobby/InvitePlayer"
 import Socket from "@/socket"
 
 export default {
-    name: "InviteScreen",
-    props: ["inviteId"],
-    components: { InvitePlayer },
-    mounted() {
-        console.log("InviteScreen mounted")
-        if (this.users.length === 0 && Socket.isConnected()) {
-            this.$store.dispatch("lobby/joinAndList");
-        }
-        this.$store.dispatch('wall').then(() => {
-            this.$store.dispatch("lobby/inviteView", { inviteId: this.inviteId })
-        })
-    },
-    methods: {
-        joinInvite() {
-            Socket.route(`invites/${this.inviteId}/respond`, { accepted: true });
-        },
-        declineInvite() {
-            Socket.route(`invites/${this.inviteId}/respond`, { accepted: false });
-            this.$router.push("/")
-        },
-        cancelInvite() {
-            Socket.route(`invites/${this.inviteId}/cancel`);
-            this.$router.push("/")
-        },
-        startInvite() {
-            Socket.route(`invites/${this.inviteId}/start`);
-        },
-
-    },
-    computed: {
-        gameStartable() {
-            if (!this.invite) return false;
-            let playerCount = this.invite.players.length;
-            return playerCount >= this.invite.minPlayers && playerCount <= this.invite.maxPlayers;
-        },
-        ...mapState("lobby", {
-            invite(state) {
-                return state.inviteViews[this.inviteId]//.find(inv => inv.inviteId === this.inviteId);
-            },
-            yourPlayer(state) {
-                return { id: state.yourPlayer.playerId, name: state.yourPlayer.name, picture: "TODO-UNKNOWN" }
-            },
-            myPlayerId(state) {
-                return state.yourPlayer.playerId
-            },
-            isHost(state) {
-                if (!this.invite) return false;
-                return this.invite.host.id === state.yourPlayer.playerId
-            },
-            users(state) {
-                if (!this.invite) return [];
-                return state.lobby[this.invite.gameType].filter((player) => !player.hidden) || []
-            }
-        }),
-        isInGame() {
-            if (!this.invite) return false;
-            return this.invite.players.findIndex(player => player.id === this.myPlayerId) >= 0
-        }
+  name: "InviteScreen",
+  props: ["inviteId"],
+  components: { InvitePlayer },
+  mounted() {
+    console.log("InviteScreen mounted")
+    if (this.users.length === 0 && Socket.isConnected()) {
+      this.$store.dispatch("lobby/joinAndList");
     }
+    this.$store.dispatch('wall').then(() => {
+      this.$store.dispatch("lobby/inviteView", { inviteId: this.inviteId })
+    })
+  },
+  methods: {
+    joinInvite() {
+      Socket.route(`invites/${this.inviteId}/respond`, { accepted: true });
+    },
+    declineInvite() {
+      Socket.route(`invites/${this.inviteId}/respond`, { accepted: false });
+      this.$router.push("/")
+    },
+    cancelInvite() {
+      Socket.route(`invites/${this.inviteId}/cancel`);
+      this.$router.push("/")
+    },
+    startInvite() {
+      Socket.route(`invites/${this.inviteId}/start`);
+    },
+
+  },
+  computed: {
+    gameStartable() {
+      if (!this.invite) return false;
+      let playerCount = this.invite.players.length;
+      return playerCount >= this.invite.minPlayers && playerCount <= this.invite.maxPlayers;
+    },
+    ...mapState("lobby", {
+      invite(state) {
+        return state.inviteViews[this.inviteId]//.find(inv => inv.inviteId === this.inviteId);
+      },
+      yourPlayer(state) {
+        return { id: state.yourPlayer.playerId, name: state.yourPlayer.name, picture: "TODO-UNKNOWN" }
+      },
+      myPlayerId(state) {
+        return state.yourPlayer.playerId
+      },
+      isHost(state) {
+        if (!this.invite) return false;
+        return this.invite.host.id === state.yourPlayer.playerId
+      },
+      users(state) {
+        if (!this.invite) return [];
+        return state.lobby[this.invite.gameType].filter((player) => !player.hidden) || []
+      }
+    }),
+    isInGame() {
+      if (!this.invite) return false;
+      return this.invite.players.findIndex(player => player.id === this.myPlayerId) >= 0
+    }
+  }
 }
 </script>

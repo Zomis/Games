@@ -34,59 +34,59 @@ import LogEntryText from "@/components/action-log/LogEntryText"
 import LogEntryInline from "@/components/action-log/LogEntryInline"
 
 export default {
-    name: "ActionLog",
-    props: {
-      logEntries: Array,
-      context: Object,
-      title: { type: String, default: "Action Log" },
-      reversed: { type: Boolean, default: true }
-    },
-    components: { PlayerProfile },
-    methods: {
-        highlight(value) {
-            console.log("highlight", value)
-        }
-    },
-    computed: {
-        hasLogEntries() {
-            return typeof this.logEntries !== 'undefined' && this.logEntries.length > 0
-        },
-        supportedGame() {
-            return supportedGames.games[this.context.gameType]
-        },
-        components() {
-            return {
-                player: {
-                    component: PlayerProfile,
-                    binds: (part) => ({ context: this.context, playerIndex: part.playerIndex })
-                },
-                inline: {
-                    component: LogEntryInline,
-                    binds: (part) => ({
-                        context: this.context,
-                        component: this.supportedGame.viewTypes[part.viewType].component,
-                        bindings: this.supportedGame.viewTypes[part.viewType].binds(part.data)
-                    })
-                },
-                text: {
-                    component: LogEntryText,
-                    binds: (part) => ({ text: part.text })
-                },
-                link: {
-                    component: LogEntryText,
-                    binds: (part) => ({
-                        text: part.text,
-                        tooltipComponent: this.supportedGame.viewTypes[part.viewType].component,
-                        hoverBindings: this.supportedGame.viewTypes[part.viewType].binds(part.value)
-                    })
-                },
-                highlight: {
-                    component: LogEntryText,
-                    binds: (part) => ({ text: part.value, onHighlight: this.highlight })
-                },
-            }
-        }
+  name: "ActionLog",
+  props: {
+    logEntries: Array,
+    context: Object,
+    title: { type: String, default: "Action Log" },
+    reversed: { type: Boolean, default: true }
+  },
+  components: { PlayerProfile },
+  methods: {
+    highlight(value) {
+      console.log("highlight", value)
     }
+  },
+  computed: {
+    hasLogEntries() {
+      return typeof this.logEntries !== 'undefined' && this.logEntries.length > 0
+    },
+    supportedGame() {
+      return supportedGames.games[this.context.gameType]
+    },
+    components() {
+      return {
+        player: {
+          component: PlayerProfile,
+          binds: (part) => ({ context: this.context, playerIndex: part.playerIndex })
+        },
+        inline: {
+          component: LogEntryInline,
+          binds: (part) => ({
+            context: this.context,
+            component: this.supportedGame.viewTypes[part.viewType].component,
+            bindings: this.supportedGame.viewTypes[part.viewType].binds(part.data)
+          })
+        },
+        text: {
+          component: LogEntryText,
+          binds: (part) => ({ text: part.text })
+        },
+        link: {
+          component: LogEntryText,
+          binds: (part) => ({
+            text: part.text,
+            tooltipComponent: this.supportedGame.viewTypes[part.viewType].component,
+            hoverBindings: this.supportedGame.viewTypes[part.viewType].binds(part.value)
+          })
+        },
+        highlight: {
+          component: LogEntryText,
+          binds: (part) => ({ text: part.value, onHighlight: this.highlight })
+        },
+      }
+    }
+  }
 }
 </script>
 <style scoped>

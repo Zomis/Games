@@ -18,7 +18,7 @@
           type="square"
           :size="8 + 8 * v"
           color="blue"
-          :onClick="() => playSize(0, v)"
+          :on-click="() => playSize(0, v)"
         />
       </v-col>
     </v-row>
@@ -36,7 +36,7 @@
           :test="slotProps"
           :size="slotProps.tile.tile.level === 0 ? 0 : 8 + 8 * slotProps.tile.tile.level"
           :color="slotProps.tile.tile.player == 'X' ? 'blue' : 'red'"
-          :onClick="() => {}"
+          :on-click="() => {}"
         />
       </template>
     </Map2D>
@@ -58,7 +58,7 @@
           type="square"
           :size="8 + 8 * v"
           color="red"
-          :onClick="() => playSize(1, v)"
+          :on-click="() => playSize(1, v)"
         />
       </v-col>
     </v-row>

@@ -113,32 +113,32 @@ import PlayerProfile from "@/components/games/common/PlayerProfile"
 import CardZone from "@/components/games/common/CardZone"
 
 export default {
-    name: "Dixit",
-    props: ["view", "actions", "context"],
-    components: {
-        PlayerProfile, CardZone
-    },
-    data() {
-        return {
-            story: ""
-        }
-    },
-    methods: {
-        chosenCard(card) {
-            if (this.actions.available.story) {
-                if (this.story.length > 0) {
-                    this.actions.actionParameter('story', card + ":" + this.story)
-                    this.story = "";
-                }
-            } else if (this.actions.available.place) {
-                this.actions.actionParameter('place', card + ":null")
-            }
-        },
-        vote(card) {
-            this.actions.actionParameter('vote', card + ":null")
-        },
-    },
-    computed: {
+  name: "Dixit",
+  props: ["view", "actions", "context"],
+  components: {
+    PlayerProfile, CardZone
+  },
+  data() {
+    return {
+      story: ""
     }
+  },
+  methods: {
+    chosenCard(card) {
+      if (this.actions.available.story) {
+        if (this.story.length > 0) {
+          this.actions.actionParameter('story', card + ":" + this.story)
+          this.story = "";
+        }
+      } else if (this.actions.available.place) {
+        this.actions.actionParameter('place', card + ":null")
+      }
+    },
+    vote(card) {
+      this.actions.actionParameter('vote', card + ":null")
+    },
+  },
+  computed: {
+  }
 }
 </script>

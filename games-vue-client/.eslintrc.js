@@ -10,6 +10,7 @@ module.exports = {
   ],
   "ignorePatterns": ["games-js.js"],
   rules: {
+    "vue/script-indent": ["error", 2, { "baseIndent": 0 }],
     "vue/no-use-v-if-with-v-for": "warn",
     "vue/require-prop-types": "off",
     "vue/order-in-components": "off",

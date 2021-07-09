@@ -110,10 +110,10 @@ export default {
       games: enabledGames.map((gameType) => {
         const { displayName = gameType, playTime = 'xx', amountOfPlayers = '-' } = supportedGames?.games[gameType];
         return {
-            gameType,
-            displayName,
-            playTime,
-            amountOfPlayers,
+          gameType,
+          displayName,
+          playTime,
+          amountOfPlayers,
         }
       }),
     }

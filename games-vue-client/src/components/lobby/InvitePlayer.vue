@@ -50,41 +50,41 @@ import PlayerProfile from "@/components/games/common/PlayerProfile"
 import { mapState } from 'vuex';
 
 export default {
-    name: "InvitePlayer",
-    props: ["invite", "player", "controllable"],
-    components: { PlayerProfile },
-    data() {
-        return {}
-    },
-    methods: {
-        sendInvite() {
-            Socket.route(`invites/${this.invite.inviteId}/send`, { invite: [this.player.id] });
-        }
-    },
-    computed: {
-        ...mapState('lobby', {
-            yourPlayer: state => state.yourPlayer
-        }),
-        isAI() {
-            return this.player.name.startsWith("#AI_");
-        },
-        totalPlayers() {
-            return this.invite.players.length + this.invite.invited.length
-        },
-        inviteIsFull() {
-            if (!this.invite) return false
-            return this.totalPlayers === this.invite.maxPlayers
-        },
-        inviteable() {
-            if (this.inviteIsFull) return false
-            if (this.player.id === this.yourPlayer.id) { return false }
-            return this.isAI || this.playerState.length === 0
-        },
-        playerState() {
-            if (!this.invite) { return [] }
-            return [...this.invite.players.filter(e => e.id === this.player.id).map(() => "accepted"),
-                    ...this.invite.invited.filter(e => e.id === this.player.id).map(() => "invited")]
-        }
+  name: "InvitePlayer",
+  props: ["invite", "player", "controllable"],
+  components: { PlayerProfile },
+  data() {
+    return {}
+  },
+  methods: {
+    sendInvite() {
+      Socket.route(`invites/${this.invite.inviteId}/send`, { invite: [this.player.id] });
     }
+  },
+  computed: {
+    ...mapState('lobby', {
+      yourPlayer: state => state.yourPlayer
+    }),
+    isAI() {
+      return this.player.name.startsWith("#AI_");
+    },
+    totalPlayers() {
+      return this.invite.players.length + this.invite.invited.length
+    },
+    inviteIsFull() {
+      if (!this.invite) return false
+      return this.totalPlayers === this.invite.maxPlayers
+    },
+    inviteable() {
+      if (this.inviteIsFull) return false
+      if (this.player.id === this.yourPlayer.id) { return false }
+      return this.isAI || this.playerState.length === 0
+    },
+    playerState() {
+      if (!this.invite) { return [] }
+      return [...this.invite.players.filter(e => e.id === this.player.id).map(() => "accepted"),
+              ...this.invite.invited.filter(e => e.id === this.player.id).map(() => "invited")]
+    }
+  }
 }
 </script>
