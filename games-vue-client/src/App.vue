@@ -51,7 +51,7 @@
         </div>
       </cookie-law>
       <span>
-        <i>&copy; 2018-2020 Zomis' Games</i>
+        <i>&copy; 2018-2021 Zomis' Games</i>
         | <a
           href="https://github.com/Zomis/Games"
           target="_blank"

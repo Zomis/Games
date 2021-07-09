@@ -1,6 +1,8 @@
 <template>
   <div class="game">
-    <v-btn v-for="(_, playerIndex) in gameInfo.access" :key="'switch-player-' + playerIndex"
+    <v-btn
+      v-for="(_, playerIndex) in gameInfo.access"
+      :key="'switch-player-' + playerIndex"
       @click="switchPlayerIndex(playerIndex)"
     >
       Reset (player {{ playerIndex }})
