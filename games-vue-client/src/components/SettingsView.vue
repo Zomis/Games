@@ -36,6 +36,11 @@
         v-model="playSoundOnPlayerTurn"
         label="Pling on my turn"
       />
+      <v-checkbox
+        v-model="compactList"
+        label="Compact"
+        prepend-icon="mdi-view-list"
+      />
     </v-list>
   </v-menu>
 </template>
@@ -70,6 +75,17 @@ export default {
       set(value) {
         this.$store.commit("settings/set", {
           key: "playSoundOnPlayerTurn",
+          value: value ? "true" : "",
+        });
+      },
+    },
+    compactList: {
+      get() {
+        return this.$store.state.settings.compactList;
+      },
+      set(value) {
+        this.$store.commit("settings/set", {
+          key: "compactList",
           value: value ? "true" : "",
         });
       },
