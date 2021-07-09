@@ -13,7 +13,8 @@
     "awsDeployPerform": "aws deploy create-deployment --application-name server2 --deployment-group-name server2-frontend --file-exists-behavior OVERWRITE --s3-location bucket=zomis,key=codedeploy-server2-fe.zip,bundleType=zip",
     "cypress:open": "cypress open",
     "test:unit": "vue-cli-service test:unit",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "validate": "vue-cli-service lint --no-fix"
   },
   "dependencies": {
     "@babylonjs/core": "4.2.0",
