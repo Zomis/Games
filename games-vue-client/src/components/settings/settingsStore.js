@@ -8,6 +8,7 @@ export default {
     volume: parseInt(localStorage.volume || "42", 10),
     theme: localStorage.theme || "",
     compactList: localStorage.compactList === "true",
+    background: localStorage.background || false
   },
   mutations: {
     set(state, data) {
