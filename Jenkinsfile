@@ -47,6 +47,26 @@ pipeline {
                 }
             }
         }
+        stage('Client npm install') {
+            options {
+                timeout(time: 5, unit: 'MINUTES')
+            }
+            steps {
+                dir('games-vue-client') {
+                    sh 'npm install'
+                }
+            }
+        }
+        stage('Client lint') {
+            options {
+                timeout(time: 5, unit: 'MINUTES')
+            }
+            steps {
+                dir('games-vue-client') {
+                    sh 'npm run validate'
+                }
+            }
+        }
         stage('Build Client') {
             options {
                 timeout(time: 15, unit: 'MINUTES')
@@ -54,7 +74,7 @@ pipeline {
             steps {
                 // sh 'cp games-js/.eslintrc.js games-js/web/'
                 dir('games-vue-client') {
-                    sh 'npm install && npm run build'
+                    sh 'npm run build'
                 }
             }
         }
