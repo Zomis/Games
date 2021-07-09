@@ -36,6 +36,11 @@
         v-model="playSoundOnPlayerTurn"
         label="Pling on my turn"
       />
+      <v-checkbox
+        v-model="woodBackground"
+        label="Wood"
+        prepend-icon="mdi-image-text"
+      />
     </v-list>
   </v-menu>
 </template>
@@ -71,6 +76,17 @@ export default {
         this.$store.commit("settings/set", {
           key: "playSoundOnPlayerTurn",
           value: value ? "true" : "",
+        });
+      },
+    },
+    woodBackground: {
+      get() {
+        return this.$store.state.settings.background;
+      },
+      set(value) {
+        this.$store.commit("settings/set", {
+          key: "background",
+          value: value ? "woodBackground" : "",
         });
       },
     },
