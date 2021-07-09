@@ -93,7 +93,7 @@ pipeline {
                     sh 'docker ps -q --filter name="games_server" | xargs -r docker stop'
 
                     // Deploy server
-                    sh 'docker build . -t gamesserver2'
+                    sh 'docker build ./docker/ -t gamesserver2'
                     withCredentials([usernamePassword(
                           credentialsId: 'AWS_CREDENTIALS',
                           passwordVariable: 'AWS_SECRET_ACCESS_KEY',
