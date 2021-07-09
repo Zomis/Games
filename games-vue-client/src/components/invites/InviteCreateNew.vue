@@ -46,26 +46,26 @@ import Socket from "@/socket"
 import ConfigSetupGeneric from "@/components/games/ConfigSetupGeneric"
 
 export default {
-    name: "InviteCreateNew",
-    props: ["gameType", "defaultConfig"],
-    components: {
-        ConfigSetupGeneric
-    },
-    data() {
-        return {
-            useDatabase: true,
-            allowAnyoneJoin: false,
-            timeLimit: 'No Limit',
-            timeLimitOptions: ['No Limit'],
-            playerOrder: 'Ordered',
-            gameOptionComponent: supportedGames.games[this.gameType].configComponent || ConfigSetupGeneric,
-            config: this.defaultConfig
-        }
-    },
-    methods: {
-        createInvite() {
-            Socket.route(`invites/start`, { gameType: this.gameType, options: {}, gameOptions: this.config })
-        }
+  name: "InviteCreateNew",
+  props: ["gameType", "defaultConfig"],
+  components: {
+    ConfigSetupGeneric
+  },
+  data() {
+    return {
+      useDatabase: true,
+      allowAnyoneJoin: false,
+      timeLimit: 'No Limit',
+      timeLimitOptions: ['No Limit'],
+      playerOrder: 'Ordered',
+      gameOptionComponent: supportedGames.games[this.gameType].configComponent || ConfigSetupGeneric,
+      config: this.defaultConfig
     }
+  },
+  methods: {
+    createInvite() {
+      Socket.route(`invites/start`, { gameType: this.gameType, options: {}, gameOptions: this.config })
+    }
+  }
 }
 </script>

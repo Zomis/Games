@@ -197,9 +197,9 @@ export default {
   name: "Hanabi",
   props: ["view", "actions", "context"],
   components: {
-      CardZone,
-      PlayerProfile,
-      HanabiCard
+    CardZone,
+    PlayerProfile,
+    HanabiCard
   },
   methods: {
     clue(index) {

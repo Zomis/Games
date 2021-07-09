@@ -12,7 +12,10 @@
             :post-fix="'(' + player.character.className + ')'"
           />
           <p>
-            Health: {{ player.health }} <v-icon v-if="player.protected" color="#6a0dad">
+            Health: {{ player.health }} <v-icon
+              v-if="player.protected"
+              color="#6a0dad"
+            >
               mdi-account-lock
             </v-icon>
           </p>
@@ -148,17 +151,17 @@ import Actionable from "@/components/games/common/Actionable"
 import dungeonMayhemSymbols from "./dungeonMayhemSymbols"
 
 export default {
-    name: "DungeonMayhem",
-    props: ["view", "actions", "context"],
-    components: {
-        PlayerProfile,
-        Actionable,
-        CardZone,
-        DungeonMayhemCard
-    },
-    computed: {
-        symbolsInGame: () => dungeonMayhemSymbols
-    }
+  name: "DungeonMayhem",
+  props: ["view", "actions", "context"],
+  components: {
+    PlayerProfile,
+    Actionable,
+    CardZone,
+    DungeonMayhemCard
+  },
+  computed: {
+    symbolsInGame: () => dungeonMayhemSymbols
+  }
 }
 </script>
 <style scoped>

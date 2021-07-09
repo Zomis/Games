@@ -41,43 +41,43 @@
 </template>
 <script>
 const colorToDisplayColor = {
-    "red": "#ef476f",
-    "blue": "#118AB2",
-    "green": "#06D6A0",
-    "yellow": "#FFD166",
-    "white": "#F5F5F5",
-    "rainbow": "#FF7F00"
+  "red": "#ef476f",
+  "blue": "#118AB2",
+  "green": "#06D6A0",
+  "yellow": "#FFD166",
+  "white": "#F5F5F5",
+  "rainbow": "#FF7F00"
 }
 
 export default {
-    name: "HanabiCard",
-    props: ["card", "index", "action", "doubleView", "highlight"],
-    computed: {
-        cardKnownValue() {
-            if (this.card.valueKnown) {
-                return this.card.value
-            }
-            return '???'
-        },
-        cardKnownColor() {
-            if (this.card.colorKnown) {
-                return colorToDisplayColor[this.card.color.toLowerCase()]
-            }
-            return "grey"
-        },
-        cardValue() {
-            if (this.card.value) {
-                return this.card.value
-            }
-            return '???'
-        },
-        cardColor() {
-            if (this.card.color) {
-                return colorToDisplayColor[this.card.color.toLowerCase()]
-            }
-            return "grey"
-        }
+  name: "HanabiCard",
+  props: ["card", "index", "action", "doubleView", "highlight"],
+  computed: {
+    cardKnownValue() {
+      if (this.card.valueKnown) {
+        return this.card.value
+      }
+      return '???'
     },
+    cardKnownColor() {
+      if (this.card.colorKnown) {
+        return colorToDisplayColor[this.card.color.toLowerCase()]
+      }
+      return "grey"
+    },
+    cardValue() {
+      if (this.card.value) {
+        return this.card.value
+      }
+      return '???'
+    },
+    cardColor() {
+      if (this.card.color) {
+        return colorToDisplayColor[this.card.color.toLowerCase()]
+      }
+      return "grey"
+    }
+  },
 
 }
 </script>

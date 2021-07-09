@@ -103,22 +103,22 @@ import SplendorNoble from "./SplendorNoble"
 import CardZone from "@/components/games/common/CardZone"
 
 export default {
-    name: "Splendor",
-    props: ["view", "actions", "context"],
-    components: {
-        SplendorPlayer, SplendorCard, SplendorNoble, CardZone
+  name: "Splendor",
+  props: ["view", "actions", "context"],
+  components: {
+    SplendorPlayer, SplendorCard, SplendorNoble, CardZone
+  },
+  methods: {
+    takeMoney(moneyType) {
+      this.actions.perform("takeMoney", 'take-' + moneyType)
     },
-    methods: {
-        takeMoney(moneyType) {
-            this.actions.perform("takeMoney", 'take-' + moneyType)
-        },
-        takeCurrentMoney() {
-            this.actions.performChosen()
-        }
-    },
-    computed: {
-        player() { return this.view.players[this.view.viewer] }
+    takeCurrentMoney() {
+      this.actions.performChosen()
     }
+  },
+  computed: {
+    player() { return this.view.players[this.view.viewer] }
+  }
 }
 </script>
 <style>

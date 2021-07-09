@@ -197,40 +197,40 @@ import PlayerProfile from "@/components/games/common/PlayerProfile"
 import Actionable from "@/components/games/common/Actionable"
 
 export default {
-    name: "Avalon",
-    props: ["view", "actions", "context"],
-    components: {
-        PlayerProfile, Actionable
+  name: "Avalon",
+  props: ["view", "actions", "context"],
+  components: {
+    PlayerProfile, Actionable
+  },
+  computed: {
+    actionDescriptions() {
+      return {
+        teamChoice: "Add to team",
+        assassinate: "Assassinate",
+        useLadyOfTheLake: "Target with lady of the lake"
+      }
     },
-    computed: {
-        actionDescriptions() {
-            return {
-                teamChoice: "Add to team",
-                assassinate: "Assassinate",
-                useLadyOfTheLake: "Target with lady of the lake"
-            }
-        },
-        characters() {
-            let oberonMessage = " Sees other evil except Oberon."
-            return {
-                MERLIN: "Loyal servant of King Arthur. Knows evil except for Mordred.",
-                MORDRED: "Master of evil. Hides from Merlin" + oberonMessage,
-                PERCIVAL: "Loyal servant of King Arthur. Sees Merlin and Morgana.",
-                MORGANA: "Evil. Is seen by Percival." + oberonMessage,
-                ASSASSIN: "Evil. Should figure out who Merlin is and kill him at the end." + oberonMessage,
-                MINION_OF_MORDRED: "Evil." + oberonMessage,
-                OBERON: "Evil. Does not know the other evil.",
-                LOYAL_SERVANT_OF_KING_ARTHUR: "Loyal servant of King Arthur. Knows nothing."
-            }
-        },
-        charactersInGame() {
-            if (!this.view || !this.view.characters) return []
-            let displayCharacters = this.view.characters.map(c => ({
-                name: c,
-                description: this.characters[c]
-            }));
-            return displayCharacters
-        }
+    characters() {
+      let oberonMessage = " Sees other evil except Oberon."
+      return {
+        MERLIN: "Loyal servant of King Arthur. Knows evil except for Mordred.",
+        MORDRED: "Master of evil. Hides from Merlin" + oberonMessage,
+        PERCIVAL: "Loyal servant of King Arthur. Sees Merlin and Morgana.",
+        MORGANA: "Evil. Is seen by Percival." + oberonMessage,
+        ASSASSIN: "Evil. Should figure out who Merlin is and kill him at the end." + oberonMessage,
+        MINION_OF_MORDRED: "Evil." + oberonMessage,
+        OBERON: "Evil. Does not know the other evil.",
+        LOYAL_SERVANT_OF_KING_ARTHUR: "Loyal servant of King Arthur. Knows nothing."
+      }
+    },
+    charactersInGame() {
+      if (!this.view || !this.view.characters) return []
+      let displayCharacters = this.view.characters.map(c => ({
+        name: c,
+        description: this.characters[c]
+      }));
+      return displayCharacters
     }
+  }
 }
 </script>

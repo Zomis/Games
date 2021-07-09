@@ -109,34 +109,34 @@
 import PlayerProfile from "@/components/games/common/PlayerProfile"
 
 export default {
-    name: "Decrypto",
-    props: ["view", "actions", "context"],
-    components: {
-        PlayerProfile
-    },
-    data() {
-        return {
-            chatMessage: "",
-            clues: "",
-            guess: ""
-        }
-    },
-    methods: {
-        sendChat() {
-            this.actions.actionParameter('chat', this.chatMessage)
-        },
-        giveClues() {
-            this.actions.actionParameter('giveClue', this.clues)
-        },
-        performGuess() {
-            this.actions.actionParameter('guessCode', this.guess)
-        }
-    },
-    computed: {
-        words() {
-            if (!this.view) return []
-            return this.view.words
-        }
+  name: "Decrypto",
+  props: ["view", "actions", "context"],
+  components: {
+    PlayerProfile
+  },
+  data() {
+    return {
+      chatMessage: "",
+      clues: "",
+      guess: ""
     }
+  },
+  methods: {
+    sendChat() {
+      this.actions.actionParameter('chat', this.chatMessage)
+    },
+    giveClues() {
+      this.actions.actionParameter('giveClue', this.clues)
+    },
+    performGuess() {
+      this.actions.actionParameter('guessCode', this.guess)
+    }
+  },
+  computed: {
+    words() {
+      if (!this.view) return []
+      return this.view.words
+    }
+  }
 }
 </script>

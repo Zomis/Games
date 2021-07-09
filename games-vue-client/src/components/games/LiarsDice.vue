@@ -80,12 +80,12 @@ import PlayerProfile from "@/components/games/common/PlayerProfile"
 import Actionable from "@/components/games/common/Actionable"
 
 export default {
-    name: "LiarsDice",
-    props: ["view", "actions", "context"],
-    components: {
-        PlayerProfile, CardZone,
-        Actionable
-    }
+  name: "LiarsDice",
+  props: ["view", "actions", "context"],
+  components: {
+    PlayerProfile, CardZone,
+    Actionable
+  }
 }
 </script>
 <style scoped>

@@ -48,42 +48,42 @@
 </template>
 <script>
 export default {
-    name: "SplendorCard",
-    props: ["card", "actions"],
-    data() {
-        return { showMenu: false }
-    },
-    methods: {
-        performAction(action) {
-            console.log(action, this.card, this.actions);
-            this.actions.perform(action, action + '-' + this.card.id)
-        }
-    },
-    computed: {
-        cardActions() {
-            if (!this.actions) return [];
-            if (this.isReservedBuyable) return ['buyReserved'];
-            if (this.isBuyable) return ['buy', 'reserve'];
-            if (this.isActionable) return ['reserve'];
-            return [];
-        },
-        isReservedBuyable() {
-            if (!this.actions) return false;
-            return this.actions.available['buyReserved-' + this.card.id];
-        },
-        isBuyable() {
-            if (!this.actions) return false;
-            return this.actions.available['buy-' + this.card.id]
-        },
-        isActionable() {
-            if (!this.actions) return false;
-            let reservable = this.actions.available['reserve-' + this.card.id];
-            return this.isBuyable || reservable || this.isReservedBuyable
-        },
-        discountColor() {
-            return this.card ? Object.keys(this.card.discount)[0] : false;
-        }
+  name: "SplendorCard",
+  props: ["card", "actions"],
+  data() {
+    return { showMenu: false }
+  },
+  methods: {
+    performAction(action) {
+      console.log(action, this.card, this.actions);
+      this.actions.perform(action, action + '-' + this.card.id)
     }
+  },
+  computed: {
+    cardActions() {
+      if (!this.actions) return [];
+      if (this.isReservedBuyable) return ['buyReserved'];
+      if (this.isBuyable) return ['buy', 'reserve'];
+      if (this.isActionable) return ['reserve'];
+      return [];
+    },
+    isReservedBuyable() {
+      if (!this.actions) return false;
+      return this.actions.available['buyReserved-' + this.card.id];
+    },
+    isBuyable() {
+      if (!this.actions) return false;
+      return this.actions.available['buy-' + this.card.id]
+    },
+    isActionable() {
+      if (!this.actions) return false;
+      let reservable = this.actions.available['reserve-' + this.card.id];
+      return this.isBuyable || reservable || this.isReservedBuyable
+    },
+    discountColor() {
+      return this.card ? Object.keys(this.card.discount)[0] : false;
+    }
+  }
 }
 </script>
 <style>

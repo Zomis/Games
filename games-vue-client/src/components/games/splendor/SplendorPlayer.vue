@@ -72,23 +72,23 @@ import PlayerProfile from "@/components/games/common/PlayerProfile"
 import SplendorCard from "./SplendorCard"
 
 export default {
-    name: "SplendorPlayer",
-    props: ["player", "controllable", "actions", "playerInfo"],
-    components: { SplendorCard, PlayerProfile },
-    methods: {
-        discard(moneyType) {
-            if (this.controllable) {
-                this.actions.perform("discardMoney", "discardMoney-" + moneyType)
-            }
-        }
-    },
-    computed: {
-        moneyTypes() {
-            let allMoneys = [...Object.keys(this.player.discounts), ...Object.keys(this.player.money)];
-            allMoneys.sort()
-            return [...new Set(allMoneys)]
-        }
+  name: "SplendorPlayer",
+  props: ["player", "controllable", "actions", "playerInfo"],
+  components: { SplendorCard, PlayerProfile },
+  methods: {
+    discard(moneyType) {
+      if (this.controllable) {
+        this.actions.perform("discardMoney", "discardMoney-" + moneyType)
+      }
     }
+  },
+  computed: {
+    moneyTypes() {
+      let allMoneys = [...Object.keys(this.player.discounts), ...Object.keys(this.player.money)];
+      allMoneys.sort()
+      return [...new Set(allMoneys)]
+    }
+  }
 }
 </script>
 <style>

@@ -98,119 +98,119 @@ import GameHead from "@/components/games/common/GameHead";
 import AiQuery from "./AiQuery";
 
 function unixtimeToString(date) {
-    return new Date(date * 1000).toISOString().replace("T"," ").replace(/\.\d+Z/g,"")
+  return new Date(date * 1000).toISOString().replace("T"," ").replace(/\.\d+Z/g,"")
 }
 
 export default {
-    name: "GameReplay",
-    props: ["gameUUID"],
-    data() {
-        return {
-            timerDelay: 1500,
-            running: false,
-            timer: null,
-            position: 0,
-            actions: {
-                chosen: null,
-                perform: () => {},
-                highlights: {},
-                available: {},
-                clear: () => {},
-                resetTo: () => {}
-            },
-            replay: null
-        }
-    },
-    components: {
-        GameHead,
-        AiQuery,
-        ...supportedGames.components() // TODO: This might not be needed
-    },
-    created() {
-        axios.get(`${this.baseURL}games/${this.gameUUID}/replay`).then(response => {
-            console.log(response)
-            this.replay = response.data
-            this.setRunning(true)
-        })
-    },
-    methods: {
-        setPosition(position) {
-            this.setRunning(false);
-            this.position = position;
-        },
-        changePosition(offset) {
-            this.setRunning(false);
-            this.position = this.position + offset;
-        },
-        setRunning(running) {
-            this.running = running;
-            if (running) {
-                this.timer = setInterval(() => {
-                    this.position = this.position + 1;
-                    if (this.position === this.replayLength) {
-                        this.setRunning(false);
-                    }
-                }, this.timerDelay);
-            } else {
-                clearInterval(this.timer);
-            }
-        }
-    },
-    computed: {
-        baseURL() {
-            return process.env.VUE_APP_URL
-        },
-        players() {
-            if (this.gameInfo == null) return [];
-            return this.gameInfo.players;
-        },
-        timeStarted() {
-            if (this.replay == null) return "";
-            return unixtimeToString(this.replay.timeStarted)
-        },
-        timeLastAction() {
-            if (this.replay == null) return "";
-            return unixtimeToString(this.replay.timeLastAction)
-        },
-        maxReplayStep() {
-            if (this.replay == null) { return 0 }
-            return this.replay.views.length - 1
-        },
-        gameComponent() {
-            if (this.replay == null) { return null }
-            return supportedGames.games[this.replay.gameType].component
-        },
-        currentEliminations() {
-            return [] // TODO: Determine when eliminations were done and add dynamically here based on position.
-        },
-        context() {
-            return {
-                players: this.replay.playersInGame.map(pig => ({ ...pig.player, controllable: false })),
-                gameType: this.replay.gameType,
-                gameId: this.gameInfo.gameId,
-                viewer: -1,
-                scope: 'replay'
-            }
-        },
-        playerNames() {
-            if (this.replay == null) { return [] }
-            return this.replay.playersInGame.map(pig => pig.player.name)
-        },
-        currentView() {
-            if (this.replay == null) { return null }
-            return this.replay.views[this.position]
-        },
-        gameInfo() {
-            if (this.replay == null) { return null }
-            let sortedPlayersInGame = this.replay.playersInGame.slice()
-            sortedPlayersInGame.sort((a, b) => a.playerIndex - b.playerIndex)
-            return {
-                gameType: this.replay.gameType,
-                players: sortedPlayersInGame.map(pig => pig.player),
-                gameId: this.gameUUID,
-                activeIndex: -1
-            }
-        }
+  name: "GameReplay",
+  props: ["gameUUID"],
+  data() {
+    return {
+      timerDelay: 1500,
+      running: false,
+      timer: null,
+      position: 0,
+      actions: {
+        chosen: null,
+        perform: () => {},
+        highlights: {},
+        available: {},
+        clear: () => {},
+        resetTo: () => {}
+      },
+      replay: null
     }
+  },
+  components: {
+    GameHead,
+    AiQuery,
+    ...supportedGames.components() // TODO: This might not be needed
+  },
+  created() {
+    axios.get(`${this.baseURL}games/${this.gameUUID}/replay`).then(response => {
+      console.log(response)
+      this.replay = response.data
+      this.setRunning(true)
+    })
+  },
+  methods: {
+    setPosition(position) {
+      this.setRunning(false);
+      this.position = position;
+    },
+    changePosition(offset) {
+      this.setRunning(false);
+      this.position = this.position + offset;
+    },
+    setRunning(running) {
+      this.running = running;
+      if (running) {
+        this.timer = setInterval(() => {
+          this.position = this.position + 1;
+          if (this.position === this.replayLength) {
+            this.setRunning(false);
+          }
+        }, this.timerDelay);
+      } else {
+        clearInterval(this.timer);
+      }
+    }
+  },
+  computed: {
+    baseURL() {
+      return process.env.VUE_APP_URL
+    },
+    players() {
+      if (this.gameInfo == null) return [];
+      return this.gameInfo.players;
+    },
+    timeStarted() {
+      if (this.replay == null) return "";
+      return unixtimeToString(this.replay.timeStarted)
+    },
+    timeLastAction() {
+      if (this.replay == null) return "";
+      return unixtimeToString(this.replay.timeLastAction)
+    },
+    maxReplayStep() {
+      if (this.replay == null) { return 0 }
+      return this.replay.views.length - 1
+    },
+    gameComponent() {
+      if (this.replay == null) { return null }
+      return supportedGames.games[this.replay.gameType].component
+    },
+    currentEliminations() {
+      return [] // TODO: Determine when eliminations were done and add dynamically here based on position.
+    },
+    context() {
+      return {
+        players: this.replay.playersInGame.map(pig => ({ ...pig.player, controllable: false })),
+        gameType: this.replay.gameType,
+        gameId: this.gameInfo.gameId,
+        viewer: -1,
+        scope: 'replay'
+      }
+    },
+    playerNames() {
+      if (this.replay == null) { return [] }
+      return this.replay.playersInGame.map(pig => pig.player.name)
+    },
+    currentView() {
+      if (this.replay == null) { return null }
+      return this.replay.views[this.position]
+    },
+    gameInfo() {
+      if (this.replay == null) { return null }
+      let sortedPlayersInGame = this.replay.playersInGame.slice()
+      sortedPlayersInGame.sort((a, b) => a.playerIndex - b.playerIndex)
+      return {
+        gameType: this.replay.gameType,
+        players: sortedPlayersInGame.map(pig => pig.player),
+        gameId: this.gameUUID,
+        activeIndex: -1
+      }
+    }
+  }
 }
 </script>

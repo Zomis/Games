@@ -51,38 +51,38 @@
 import axios from "axios";
 
 export default {
-    name: "AiQuery",
-    props: ["gameInfo", "gamePosition"],
-    data() {
-        return {
-            showRight: false,
-            actionsEvaluated: [],
-            heuristic: undefined,
-            aiName: "",
-            playerIndex: 0
-        }
-    },
-    methods: {
-        updateActions() {
-            let cleanURI = encodeURI(`${this.baseURL}games/${this.gameInfo.gameId}/analyze/${this.aiName}/${this.gamePosition}/${this.playerIndex}`).replace(/#/g, '%23')
-            axios.get(cleanURI).then(response => {
-                console.log(response)
-                this.actionsEvaluated = response.data.scores
-                this.heuristic = response.data.heuristic
-            })
-        },
-    },
-    mounted() {
-
-    },
-    computed: {
-        playerCount() {
-            return this.gameInfo.players.length;
-        },
-        baseURL() {
-            return process.env.VUE_APP_URL
-        }
+  name: "AiQuery",
+  props: ["gameInfo", "gamePosition"],
+  data() {
+    return {
+      showRight: false,
+      actionsEvaluated: [],
+      heuristic: undefined,
+      aiName: "",
+      playerIndex: 0
     }
+  },
+  methods: {
+    updateActions() {
+      let cleanURI = encodeURI(`${this.baseURL}games/${this.gameInfo.gameId}/analyze/${this.aiName}/${this.gamePosition}/${this.playerIndex}`).replace(/#/g, '%23')
+      axios.get(cleanURI).then(response => {
+        console.log(response)
+        this.actionsEvaluated = response.data.scores
+        this.heuristic = response.data.heuristic
+      })
+    },
+  },
+  mounted() {
+
+  },
+  computed: {
+    playerCount() {
+      return this.gameInfo.players.length;
+    },
+    baseURL() {
+      return process.env.VUE_APP_URL
+    }
+  }
 }
 </script>
 <style scoped>

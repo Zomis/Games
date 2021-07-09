@@ -50,67 +50,67 @@
 </template>
 <script>
 function winResultValue(winResult) {
-    if (winResult === 'WIN') return 1
-    if (winResult === 'LOSS') return -1
-    if (winResult === 'DRAW') return 0
-    throw winResult
+  if (winResult === 'WIN') return 1
+  if (winResult === 'LOSS') return -1
+  if (winResult === 'DRAW') return 0
+  throw winResult
 }
 
 export default {
-    name: "PlayerInGameInfo",
-    props: ["player", "displayStyle"],
-    computed: {
-        cols() {
-            if (this.displayStyle === 'vs') {
-                return 3;
-            }
-            if (this.displayStyle === 'avatars') {
-                return 2;
-            }
-            return 12
-        },
-        winResultClass() {
-            if (!this.elim) return 'not-eliminated';
-            let winValue = this.elim.winResult
-            if (winValue < 0) return 'loser'
-            if (winValue > 0) return 'winner'
-            return 'draw'
-        },
-        eliminatedOpacityClass() {
-            if (!this.elim) return 'normal'
-            if (this.elim.winResult > 0) return 'normal'
-            return 'eliminated'
-        },
-        tooltip() {
-            return this.player.name
-        },
-        elimResult() {
-            if (!this.elim) return ''
-            let winValue = this.elim.winResult
-            if (winValue < 0) return 'LOSE'
-            if (winValue > 0) return 'WIN'
-            return 'DRAW'
-        },
-        elimPosition() {
-            if (!this.elim) return ''
-            return this.elim.position
-        },
-        elim() {
-            let elimination = this.player.elimination
-            if (!elimination) return null
-            let server = !!elimination.type
-            if (server) {
-                return {
-                    position: elimination.position,
-                    winResult: winResultValue(elimination.winResult)
-                }
-            }
-            return {
-                position: elimination.position,
-                winResult: elimination.winResult.result
-            }
+  name: "PlayerInGameInfo",
+  props: ["player", "displayStyle"],
+  computed: {
+    cols() {
+      if (this.displayStyle === 'vs') {
+        return 3;
+      }
+      if (this.displayStyle === 'avatars') {
+        return 2;
+      }
+      return 12
+    },
+    winResultClass() {
+      if (!this.elim) return 'not-eliminated';
+      let winValue = this.elim.winResult
+      if (winValue < 0) return 'loser'
+      if (winValue > 0) return 'winner'
+      return 'draw'
+    },
+    eliminatedOpacityClass() {
+      if (!this.elim) return 'normal'
+      if (this.elim.winResult > 0) return 'normal'
+      return 'eliminated'
+    },
+    tooltip() {
+      return this.player.name
+    },
+    elimResult() {
+      if (!this.elim) return ''
+      let winValue = this.elim.winResult
+      if (winValue < 0) return 'LOSE'
+      if (winValue > 0) return 'WIN'
+      return 'DRAW'
+    },
+    elimPosition() {
+      if (!this.elim) return ''
+      return this.elim.position
+    },
+    elim() {
+      let elimination = this.player.elimination
+      if (!elimination) return null
+      let server = !!elimination.type
+      if (server) {
+        return {
+          position: elimination.position,
+          winResult: winResultValue(elimination.winResult)
         }
+      }
+      return {
+        position: elimination.position,
+        winResult: elimination.winResult.result
+      }
     }
+  }
 }
 </script>
 <style scoped>

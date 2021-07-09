@@ -85,54 +85,54 @@ import axios from "axios"
 import supportedGames from "@/supportedGames"
 
 const buildTitleFromGame = (game) => {
-    const titleTag = game.tags.reduce((acc, { tagId }) => {
-        const pre = acc.length > 0 ? ' ' : '';
-        const tagName = tagId.substring(5, tagId.length);
+  const titleTag = game.tags.reduce((acc, { tagId }) => {
+    const pre = acc.length > 0 ? ' ' : '';
+    const tagName = tagId.substring(5, tagId.length);
 
-        return `${pre}${acc} ${tagName}`;
-    }, '');
-    const shortGameId = game.gameId.substring(0, 8);
+    return `${pre}${acc} ${tagName}`;
+  }, '');
+  const shortGameId = game.gameId.substring(0, 8);
 
-    return `${titleTag} - ${shortGameId}`;
+  return `${titleTag} - ${shortGameId}`;
 }
 
 const appendedData = (data) => data.map((game) => {
-    return { ...game, title: buildTitleFromGame(game) };
+  return { ...game, title: buildTitleFromGame(game) };
 });
 
 export default {
-    name: "StatsScreen",
-    props: ["players", "tags"],
-    data() {
-        return {
-            supportedGames: [
-                { text: '', value: '' },
-                ...supportedGames.enabledGamesTextValue()
-            ],
-            gameList: [],
-            playerConditions: this.players ? this.players : "",
-            tagConditions: this.tags ? this.tags : "",
-        }
-    },
-    created() {
-        this.query();
-    },
-    methods: {
-        applyFilter() {
-            this.$router.push(`/stats?players=${this.playerConditions}&tags=${this.tagConditions}`);
-            this.query();
-        },
-        query() {
-            const cleanURI = encodeURI(`${this.baseURL}stats/query?players=${this.playerConditions}&tags=${this.tagConditions}`).replace(/#/g, '%23')
-            axios.get(cleanURI).then(response => {
-                this.gameList = appendedData(response.data);
-            })
-        }
-    },
-    computed: {
-        baseURL() {
-            return process.env.VUE_APP_URL
-        }
+  name: "StatsScreen",
+  props: ["players", "tags"],
+  data() {
+    return {
+      supportedGames: [
+        { text: '', value: '' },
+        ...supportedGames.enabledGamesTextValue()
+      ],
+      gameList: [],
+      playerConditions: this.players ? this.players : "",
+      tagConditions: this.tags ? this.tags : "",
     }
+  },
+  created() {
+    this.query();
+  },
+  methods: {
+    applyFilter() {
+      this.$router.push(`/stats?players=${this.playerConditions}&tags=${this.tagConditions}`);
+      this.query();
+    },
+    query() {
+      const cleanURI = encodeURI(`${this.baseURL}stats/query?players=${this.playerConditions}&tags=${this.tagConditions}`).replace(/#/g, '%23')
+      axios.get(cleanURI).then(response => {
+        this.gameList = appendedData(response.data);
+      })
+    }
+  },
+  computed: {
+    baseURL() {
+      return process.env.VUE_APP_URL
+    }
+  }
 }
 </script>

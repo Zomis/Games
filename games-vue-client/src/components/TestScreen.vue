@@ -105,11 +105,11 @@ import HanabiCard from "@/components/games/HanabiCard"
 import ActionLog from "@/components/games/ActionLog"
 
 function shuffle(a) {
-    for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
 }
 
 export default {
@@ -129,7 +129,7 @@ export default {
               costs: { WHITE: 4 }, discount: { BLACK: 1 }, id: "2:2:B.WWWW", level: 2, points: 2
             }
           },
-//          { type: "link", text: "something else", viewType: "number", value: 42 },
+          //          { type: "link", text: "something else", viewType: "number", value: 42 },
         ]
       }],
       context: {

@@ -139,9 +139,9 @@ export default {
   name: "Set",
   props: ["view", "actions", "context"],
   components: {
-      PlayerProfile,
-      CardZone,
-      SetCard
+    PlayerProfile,
+    CardZone,
+    SetCard
   },
   methods: {
     cardClick(card) {
