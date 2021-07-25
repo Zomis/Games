@@ -117,7 +117,8 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
             AttributeUpdate(Fields.GAME_TYPE.fieldName).put(game.gameType.type),
             AttributeUpdate(Fields.GAME_TIME_STARTED.fieldName).put(Instant.now().epochSecond)
         )
-        if (game.gameMeta.gameOptions != game.gameSetup().getDefaultConfig()) {
+        val defaultConfig = game.gameSetup().getDefaultConfig()
+        if (game.gameMeta.gameOptions != defaultConfig && defaultConfig != Unit) {
             updates = updates.plus(AttributeUpdate(Fields.GAME_OPTIONS.fieldName).put(convertToDBFormat(game.gameMeta.gameOptions ?: Unit)))
         }
         if (state != null) {
