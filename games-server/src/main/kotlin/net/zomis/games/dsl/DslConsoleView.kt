@@ -17,7 +17,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
 
         val config = setup.getDefaultConfig()
         println(config)
-        println("Enter number of players:")
+        println("Enter number of players: (${setup.playersCount})")
         val playerCount = scanner.nextLine().toInt()
 
         val replay = entryPoint.inMemoryReplay()
