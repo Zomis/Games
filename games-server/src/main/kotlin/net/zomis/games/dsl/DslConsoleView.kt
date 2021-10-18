@@ -26,6 +26,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
         val controller = ConsoleController<T>()
         runBlocking {
             replayable.playThrough {
+                view.showView(replayable.game, null)
                 controller.inputRepeat { controller.queryInput(replayable.game, scanner) }
             }
             val savedReplay = entryPoint.replay(replay.data()).goToEnd()
