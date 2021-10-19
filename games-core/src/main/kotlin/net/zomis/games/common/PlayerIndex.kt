@@ -6,6 +6,7 @@ import kotlin.math.round
 typealias PlayerIndex = Int?
 fun PlayerIndex.isObserver(): Boolean = this == null
 
+infix fun Int.fmod(other: Int) = ((this % other) + other) % other
 fun Int.withLeadingZeros(minSize: Int): String {
     return '0'.toString().repeat(minSize - this.toString().length) +
         this.toString()

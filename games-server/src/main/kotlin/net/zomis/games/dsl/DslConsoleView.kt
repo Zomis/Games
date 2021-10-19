@@ -1,11 +1,9 @@
 package net.zomis.games.dsl
 
 import kotlinx.coroutines.runBlocking
-import net.zomis.common.convertToDBFormat
-import net.zomis.games.common.Point
+import net.zomis.games.common.fmod
 import net.zomis.games.dsl.impl.*
 import net.zomis.games.server2.ServerGames
-import net.zomis.games.server2.games.ActionListRequestHandler
 import java.util.Scanner
 
 class DslConsoleView<T : Any>(private val game: GameSpec<T>) {

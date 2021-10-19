@@ -58,6 +58,9 @@ class ConsoleView<T: Any> {
     }
 
     fun displayGrid(indentation: Int, data: List<List<*>>): List<String> {
+        if (data.isEmpty()) {
+            return emptyList()
+        }
         val prefix = (0 until indentation).joinToString("") { " " }
         return sequence {
             /* one char = one char, one line = with spaces, multi-line = with |- separators */

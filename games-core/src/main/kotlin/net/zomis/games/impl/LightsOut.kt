@@ -29,6 +29,10 @@ object LightsOut {
 
         lateinit var cleanClicks: List<List<Int>>
         fun computeCleanClicks() {
+            if (config.wrapAround) {
+                cleanClicks = emptyList()
+                return
+            }
             /* Analyze tool to check how clicks in the first row affects bottom row */
             cleanClicks = (0 until config.width).map { firstRowClick ->
                 val copyMap = Model(config)
@@ -88,7 +92,9 @@ object LightsOut {
                     view("grid") {
                         game.map.view { it }
                     }
-                    view("cleanClicks") { game.cleanClicks }
+                    view("cleanClicks") {
+                        mapOf("grid" to game.cleanClicks)
+                    }
                     view("totals") { game.total() }
                 }
             }

@@ -2,6 +2,7 @@ package net.zomis.games
 
 import net.zomis.Best
 import net.zomis.games.common.Point
+import net.zomis.games.common.fmod
 
 private fun flipX(start: Position): Position {
     return Position(start.sizeX - 1 - start.x, start.y, start.sizeX, start.sizeY)
@@ -290,16 +291,6 @@ class Map2DX<T>(val sizeX: Int, val sizeY: Int, val factory: (x: Int, y: Int) ->
     }
 
     fun isOnMap(x: Int, y: Int): Boolean = x >= 0 && y >= 0 && x < this.sizeX && y < this.sizeY
-    fun wrapAround(point: Point): Point {
-        // TODO: This might be inefficient for extreme values, but should at least be bug-free.
-        var newPoint = point
-        while (newPoint.x < 0) {
-            newPoint += Point(sizeX, 0)
-        }
-        while (point.y < 0) {
-            newPoint += Point(0, sizeY)
-        }
-        return newPoint
-    }
+    fun wrapAround(point: Point): Point = Point(point.x fmod sizeX, point.y fmod sizeY)
 
 }
