@@ -1,5 +1,6 @@
 package net.zomis.games.impl
 
+import net.zomis.games.WinResult
 import net.zomis.games.api.Games
 import net.zomis.games.api.GamesApi
 import net.zomis.games.common.Direction4
@@ -82,6 +83,9 @@ object LightsOut {
                             options { game.map.points() }
                             perform {
                                 game.click(action.parameter)
+                                if (game.map.all().map { it.value }.all { it == 0 }) {
+                                    eliminations.eliminateRemaining(WinResult.WIN)
+                                }
                             }
                         }
                     }
