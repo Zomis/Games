@@ -10,6 +10,7 @@ import net.zomis.games.impl.words.Decrypto
 object ServerGames {
 
     val games = listOf(
+        Red7.Game.game,
         LightsOut.Game.game,
         TTTUpgrade.game,
         SpiceRoadDsl.game,
