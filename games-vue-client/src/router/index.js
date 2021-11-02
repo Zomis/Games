@@ -1,6 +1,7 @@
 import Vue from "vue";
 import Router from "vue-router";
 import StartSelector from "@/components/StartSelector";
+import AWSTestScreen from "@/components/AWSTestScreen";
 import TestScreen from "@/components/TestScreen";
 import StatsScreen from "@/components/stats/StatsScreen";
 import LobbyCompactList from "@/components/lobby/LobbyCompactList";
@@ -56,6 +57,11 @@ export default new Router({
       path: "/test",
       name: "TestScreen",
       component: TestScreen
+    },
+    {
+      path: "/aws",
+      name: "AWSTestScreen",
+      component: AWSTestScreen
     },
     {
       path: "/games/:gameTypeIgnored/:gameId/replay",
