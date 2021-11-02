@@ -32,7 +32,6 @@ typealias GameModelDsl<T, C> = GameModel<T, C>.() -> Unit
 typealias GameViewDsl<T> = GameView<T>.() -> Unit
 typealias GameActionRulesDsl<T> = GameActionRules<T>.() -> Unit
 typealias GameFlowRulesDsl<T> = GameFlowRules<T>.() -> Unit
-typealias GameRulesDsl<T> = GameRules<T>.() -> Unit
 typealias GameFlowDsl<T> = suspend GameFlowScope<T>.() -> Unit
 typealias GridDsl<T, P> = GameGrid<T, P>.() -> Unit
 
@@ -56,12 +55,8 @@ interface GameDsl<T : Any> {
     fun setup(modelDsl: GameModelDsl<T, Unit>)
     @Deprecated("use rules instead")
     fun view(viewDsl: GameViewDsl<T>)
-    @Deprecated("use actionRules instead", ReplaceWith("actionRules(actionRulesDsl)"))
-    fun rules(actionRulesDsl: GameActionRulesDsl<T>) { actionRules(actionRulesDsl) }
     fun testCase(players: Int, testDsl: GameTestDsl<T>)
     fun actionRules(actionRulesDsl: GameActionRulesDsl<T>)
-    @Deprecated("game should be migrated to gameFlow")
-    fun gameRules(rulesDsl: GameRulesDsl<T>)
     fun gameFlow(flowDsl: GameFlowDsl<T>)
     fun gameFlowRules(flowRulesDsl: GameFlowRulesDsl<T>)
 }

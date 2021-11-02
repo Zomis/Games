@@ -242,7 +242,6 @@ class GameDslContext<T : Any> : GameDsl<T> {
     lateinit var configClass: KClass<*>
     lateinit var modelDsl: GameModelDsl<T, Any>
     var viewDsl: GameViewDsl<T>? = null
-    var rulesDsl: GameRulesDsl<T>? = null
     var flowRulesDsl: GameFlowRulesDsl<T>? = null
     var flowDsl: GameFlowDsl<T>? = null
     var actionRulesDsl: GameActionRulesDsl<T>? = null
@@ -269,10 +268,6 @@ class GameDslContext<T : Any> : GameDsl<T> {
 
     override fun testCase(players: Int, testDsl: GameTestDsl<T>) {
         this.testCases.add(GameTestCaseContext(players, testDsl))
-    }
-
-    override fun gameRules(rulesDsl: GameRulesDsl<T>) {
-        this.rulesDsl = rulesDsl
     }
 
     override fun gameFlow(flowDsl: GameFlowDsl<T>) {
