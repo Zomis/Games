@@ -5,6 +5,8 @@ import net.zomis.games.api.GamesApi
 import net.zomis.games.cards.CardZone
 import net.zomis.games.common.next
 import net.zomis.games.common.toSingleList
+import net.zomis.games.dsl.flow.GameFlowScope
+import net.zomis.games.dsl.flow.GameFlowStep
 
 object Red7 {
 
@@ -122,31 +124,9 @@ object Red7 {
 //                play.nextStep { play.withParameters(params.playerIndex + 1, false) }
 
                 loop {
-                    step("step") {
-                        yieldAction(playPalette) {
-                            precondition { playerIndex == game.currentPlayerIndex }
-                            options { game.currentPlayer.hand.cards }
-                            perform {
-                                game.currentPlayer.hand.card(action.parameter).moveTo(game.currentPlayer.palette)
-                            }
-                        }
-                        yieldAction(discardCanvas) {
-                            precondition { playerIndex == game.currentPlayerIndex }
-                            options { game.currentPlayer.hand.cards }
-                            perform {
-                                game.currentPlayer.hand.card(action.parameter).moveTo(game.canvas)
-                            }
-                        }
-                        yieldAction(pass) {
-                            precondition { playerIndex == game.currentPlayerIndex }
-                            perform {
-                                val winner = game.determineWinner() == game.players[action.playerIndex]
-                                if (!winner) {
-                                    eliminations.result(action.playerIndex, WinResult.LOSS)
-                                }
-                                game.currentPlayerIndex = game.currentPlayerIndex.next(game.players.size)
-                            }
-                        }
+                    val step = playMode(this, game.currentPlayerIndex, false)
+                    if (step.action?.actionType == playPalette.name) {
+                        playMode(this, game.currentPlayerIndex, true)
                     }
                 }
             }
@@ -201,6 +181,37 @@ object Red7 {
                     hand2.findBestHand(Color.VIOLET))
                 expectEquals(Hand(listOf(Color.RED.value(6), Color.ORANGE.value(4), Color.INDIGO.value(2))),
                     hand2.findBestHand(Color.GREEN))
+            }
+        }
+        suspend fun playMode(scope: GameFlowScope<Model>, currentPlayer: Int, played: Boolean): GameFlowStep<Model> {
+            return scope.step("step") {
+                game.currentPlayerIndex = currentPlayer
+                if (!played) {
+                    yieldAction(playPalette) {
+                        precondition { playerIndex == game.currentPlayerIndex }
+                        options { game.currentPlayer.hand.cards }
+                        perform {
+                            game.currentPlayer.hand.card(action.parameter).moveTo(game.currentPlayer.palette)
+                        }
+                    }
+                }
+                yieldAction(discardCanvas) {
+                    precondition { playerIndex == game.currentPlayerIndex }
+                    options { game.currentPlayer.hand.cards }
+                    perform {
+                        game.currentPlayer.hand.card(action.parameter).moveTo(game.canvas)
+                    }
+                }
+                yieldAction(pass) {
+                    precondition { playerIndex == game.currentPlayerIndex }
+                    perform {
+                        val winner = game.determineWinner() == game.players[action.playerIndex]
+                        if (!winner) {
+                            eliminations.result(action.playerIndex, WinResult.LOSS)
+                        }
+                        game.currentPlayerIndex = game.currentPlayerIndex.next(game.players.size)
+                    }
+                }
             }
         }
     }
