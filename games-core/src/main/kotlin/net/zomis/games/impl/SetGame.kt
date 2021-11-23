@@ -194,6 +194,7 @@ object SetGame {
                 SetGameModel(config, this.playerCount)
             }
             onStart {
+                // Place cards on board
                 val states = replayable.strings("cards") { game.deck.top(12).map { c -> c.toStateString() } }
                 val cards = game.deck.findStates(states) { c -> c.toStateString() }
                 game.deck.deal(cards, listOf(game.board))

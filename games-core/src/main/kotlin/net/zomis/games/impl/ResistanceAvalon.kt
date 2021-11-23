@@ -146,17 +146,22 @@ object ResistanceAvalonGame {
         }
         actionRules {
             gameStart {
+                // Shuffle characters
                 val characters = CardZone(game.charactersUsed.toMutableList())
                 characters.random(replayable, game.playerCount, "characters") { it.name }.toList()
                     .forEachIndexed { index, card -> game.players[index].character = card.card }
 
+                // Show who each character sees
                 game.players.forEach {
                     val seesThumbs = it.character!!.seesThumbs()
                     it.knownThumbs = game.players.filter { pl -> seesThumbs.contains(pl.character) }.toSet()
                 }
 
+                // Set leader
                 val leader = replayable.int("leader") { Random.Default.nextInt(game.playerCount) }
                 game.leaderIndex = leader
+
+                // Give out lady of the lake
                 game.ladyOfTheLakePlayer = game.players[game.leaderIndex.nextReversed(game.playerCount)]
                     .takeIf { game.config.ladyOfTheLake }
             }

@@ -63,6 +63,7 @@ object Dixit {
                 Model(playerCount, config)
             }
             onStart {
+                // Create cards and deal cards to each player
                 game.deck.cards.addAll(game.cardSet.createCards())
                 val cards = game.deck.random(replayable, game.startingCards() * game.playerCount, "cards") { c -> c }
                 game.deck.deal(cards.map { c -> c.card }.toList(), game.players.map { player -> player.cards })

@@ -155,6 +155,7 @@ object CoupRuleBased {
         gameFlow {
             loop {
                 step("game") {
+                    // TODO: Rewrite Coup to gameFlow
                     println("Test")
                 }
             }
@@ -181,6 +182,7 @@ object CoupRuleBased {
                 }
             }
             rule("skip eliminated players") {
+                // TODO: rules.players.skipEliminated { game::currentPlayerIndex }
                 appliesWhen { !eliminations.isGameOver() && !eliminations.remainingPlayers().contains(game.currentPlayerIndex) }
                 effect {
                     // TODO: This should be `appliesWhile` or something, or try to execute (some) rules multiple times

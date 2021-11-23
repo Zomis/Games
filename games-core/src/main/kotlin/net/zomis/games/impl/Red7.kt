@@ -101,17 +101,19 @@ object Red7 {
             setup {
                 players(2..4)
                 onStart {
-                    // Distribute cards to players
-                    // Distribute palette cards to players
-                    game.canvas.cards.add(Card7(Color.RED, 0)) // Starting rule
+                    // Starting rule
+                    game.canvas.cards.add(Card7(Color.RED, 0))
 
+                    // Distribute cards to players
                     game.deck.cards.addAll(Color.values().flatMap { color -> (1..7).map { color.value(it) } })
                     val handCards = game.deck.random(replayable, 7 * game.players.size, "hands") { it.toStateString() }
                     game.deck.deal(handCards.map { it.card }.toList(), game.players.map { it.hand })
 
+                    // Distribute palette cards to players
                     val paletteCards = game.deck.random(replayable, game.players.size, "palette") { it.toStateString() }
                     game.deck.deal(paletteCards.map { it.card }.toList(), game.players.map { it.palette })
 
+                    // Set starting player
                     val winner = game.determineWinner()
                     game.currentPlayerIndex = (winner.playerIndex + 1) % game.players.size
                 }
