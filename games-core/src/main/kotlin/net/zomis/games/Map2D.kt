@@ -294,5 +294,44 @@ class Map2DX<T>(val sizeX: Int, val sizeY: Int, val factory: (x: Int, y: Int) ->
 
     fun isOnMap(x: Int, y: Int): Boolean = x >= 0 && y >= 0 && x < this.sizeX && y < this.sizeY
     fun wrapAround(point: Point): Point = Point(point.x fmod sizeX, point.y fmod sizeY)
+    class ConnectedArea<T, R>(val group: R, val points: List<Map2DPoint<T>>)
+    fun <R: Any> connected(neighbors: List<Point>, function: (Map2DPoint<T>) -> R): List<ConnectedArea<T, R>> {
+        val matched = mutableSetOf<Point>()
+        val waiting = mutableSetOf<Point>()
+        val inGroup = mutableSetOf<Map2DPoint<T>>()
+        val groups = mutableListOf<ConnectedArea<T, R>>()
+
+        for (pos in all()) {
+            if (matched.contains(pos.point)) {
+                continue
+            }
+            check(waiting.isEmpty())
+            waiting.add(pos.point)
+            val group = function(pos)
+
+            while (waiting.isNotEmpty()) {
+                // Pick a spot from awaiting, mark it as checked and add it to group
+                val current = waiting.first()
+                waiting.remove(current)
+                matched.add(current)
+                inGroup.add(point(current))
+
+                for (neighbor in neighbors) {
+                    // check neighbors of spot and compare grouping
+                    val target = this.point(current.x + neighbor.x, current.y + neighbor.y).rangeCheck(this) ?: continue
+                    if (matched.contains(target.point) || waiting.contains(target.point)) continue
+                    if (function(target) == group) {
+                        // if match, add to awaiting for later processing when it will be marked as checked and added to group
+                        waiting.add(target.point)
+                    }
+                }
+            }
+            // When awaiting is empty, finish group and move on
+            val area = ConnectedArea(group, inGroup.toList())
+            groups.add(area)
+            inGroup.clear()
+        }
+        return groups.toList()
+    }
 
 }
