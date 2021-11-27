@@ -80,6 +80,7 @@ class CardZone<T>(internal val cards: MutableList<T> = mutableListOf()) {
     val size: Int get() = cards.size
     val indices: IntRange get() = cards.indices
 
+    fun isEmpty(): Boolean = size == 0
     override fun toString(): String {
         return name ?: super.toString()
     }

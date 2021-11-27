@@ -10,6 +10,7 @@ data class Point(val x: Int, val y: Int) {
     fun manhattanDistance(other: Point): Int = abs(x - other.x) + abs(y - other.y)
     operator fun plus(other: Point) = Point(x + other.x, y + other.y)
     operator fun minus(other: Point): Point = Point(x - other.x, y - other.y)
+    fun toStateString(): String = "${x},${y}"
 }
 
 data class PointMove(val source: Point, val destination: Point)

@@ -149,6 +149,7 @@ interface Map2DPoint<T> {
     val y: Int
     var value: T
     fun rangeCheck(map: Map2DX<T>): Map2DPoint<T>?
+    val point get() = Point(x, y)
 }
 class Map2DPointImpl<T>(
     override val x: Int, override val y: Int,
@@ -178,6 +179,7 @@ class Map2DX<T>(val sizeX: Int, val sizeY: Int, val factory: (x: Int, y: Int) ->
     }
 
     fun get(x: Int, y: Int): T = grid[y][x]
+    fun getOrNull(point: Point): T? = getOrNull(point.x, point.y)
     fun getOrNull(x: Int, y: Int): T? {
         return if (x in 0 until sizeX && y in 0 until sizeY) get(x, y) else null
     }
