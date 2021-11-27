@@ -201,6 +201,9 @@ object PlayTests {
                 var nextViews = 0
                 for (a in replayable.game.feedbackReceiver) {
                     logger.info { a }
+                    if (a is GameFlowContext.Steps.GameSetup) {
+                        replayable.gameplayCallbacks.startedState(a.playerCount, a.config, a.state)
+                    }
                     if (a is GameFlowContext.Steps.NextView) {
                         if (nextViews++ > 10) throw IllegalStateException("Too many next views")
                     }
@@ -268,6 +271,9 @@ object PlayTests {
         val step = when (choice.toLowerCase()) {
             "x", "q" -> return false
             "r" -> {
+                if (replayable.game.isGameOver()) {
+                    return false
+                }
                 val serverAIs = ServerAIs(AIRepository(), emptySet())
                 val players = (0 until replayable.playerCount).shuffled()
                 val action = players.mapNotNull {

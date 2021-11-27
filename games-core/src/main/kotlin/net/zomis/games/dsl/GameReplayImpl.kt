@@ -45,7 +45,9 @@ class GameReplayableImpl<T : Any>(
     }
     val config = options ?: setup.getDefaultConfig()
     val game = setup.createGameWithState(playerCount, config, state).also {
-        gameplayCallbacks.startedState(playerCount, config, it.stateKeeper.lastMoveState())
+        if (it !is GameFlowImpl) {
+            gameplayCallbacks.startedState(playerCount, config, it.stateKeeper.lastMoveState())
+        }
     }
     var actionIndex: Int = 0
         private set
@@ -54,6 +56,9 @@ class GameReplayableImpl<T : Any>(
         if (game is GameFlowImpl) {
             for (feedback in game.feedbackReceiver) {
                 println("GameReplayImpl Playthrough begin: $feedback")
+                if (feedback is GameFlowContext.Steps.GameSetup) {
+                    gameplayCallbacks.startedState(feedback.playerCount, feedback.config, feedback.state)
+                }
                 if (feedback is GameFlowContext.Steps.AwaitInput) {
                     break
                 }
