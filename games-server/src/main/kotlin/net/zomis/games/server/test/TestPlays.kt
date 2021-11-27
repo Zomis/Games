@@ -15,6 +15,8 @@ import net.zomis.games.dsl.flow.GameFlowContext
 import net.zomis.games.dsl.flow.GameFlowImpl
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.server2.ServerGames
+import net.zomis.games.server2.ais.AIRepository
+import net.zomis.games.server2.ais.ServerAIs
 import java.io.File
 import java.util.Scanner
 
@@ -266,7 +268,13 @@ object PlayTests {
         val step = when (choice.toLowerCase()) {
             "x", "q" -> return false
             "r" -> {
-                TODO()
+                val serverAIs = ServerAIs(AIRepository(), emptySet())
+                val players = (0 until replayable.playerCount).shuffled()
+                val action = players.mapNotNull {
+                    serverAIs.randomActionable(replayable.game, it)
+                }.first()
+                val serialized = replayable.game.actions.type(action.actionType)!!.actionType.serialize(action.parameter)
+                PlayTestStepPerform(action.playerIndex, action.actionType, serialized, emptyMap()) // state is filled in later
             }
             "p" -> {
                 val action = ConsoleController<Any>().let {
