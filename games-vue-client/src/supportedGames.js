@@ -20,6 +20,7 @@ import RoyalGameOfUR from "@/components/RoyalGameOfUR";
 import DungeonMayhem from "@/components/games/dungeon-mayhem/DungeonMayhem"
 import UTTT from "@/components/games/UTTT";
 import Coup from "@/components/games/Coup";
+import KingDomino from "@/components/games/grids/KingDomino";
 import Hanabi from "@/components/games/Hanabi";
 import HanabiConfig from "@/components/games/hanabi/HanabiConfig";
 import TTTUpgrade from "@/components/games/TTTUpgrade";
@@ -109,6 +110,12 @@ function upgradeSpice(spice) {
 
 
 const supportedGames = {
+    "King Domino": {
+        dsl: true,
+        component: KingDomino,
+        playTime: '45',
+        amountOfPlayers: '2-4'
+    },
     "Dixit": {
         dsl: true,
         actions: {
