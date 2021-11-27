@@ -143,8 +143,11 @@ class GameViewContext<T : Any>(
         return this.requestable[key]?.invoke(gameViewOnRequestScope, params)
     }
 
-    override fun <A : Any> action(actionType: ActionType<T, A>): ActionView<T, A>
-        = ActionViewImpl(gameObj, actionType, PlayerViewer(playerIndex = viewer))
+    override fun <A : Any> action(actionType: ActionType<T, A>): ActionView<T, A> {
+        val chosen = gameObj.actions.choices.getChosen(viewer ?: -1)
+        val chosenList = if (chosen?.actionType == actionType.name) chosen.chosen else emptyList()
+        return ActionViewImpl(gameObj, actionType, PlayerViewer(playerIndex = viewer), chosenList)
+    }
 
     override fun actions(): ActionsView<T> = ActionsViewImpl(gameObj, PlayerViewer(playerIndex = viewer), false)
     override fun actionsChosen(): ActionsChosenView<T> = ActionsViewImpl(gameObj, PlayerViewer(playerIndex = viewer), true)
