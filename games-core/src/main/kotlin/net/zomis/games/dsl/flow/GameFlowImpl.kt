@@ -85,7 +85,7 @@ class GameFlowImpl<T: Any>(
 
     override fun view(playerIndex: PlayerIndex): Map<String, Any?> {
         val duplicates = views.map { it.first }.groupingBy { it }.eachCount().filter { it.value > 1 }
-        if (duplicates.isEmpty()) logger.warn {  "Multiple keys detected in view of: $duplicates" }
+        if (duplicates.isNotEmpty()) logger.warn {  "Multiple keys detected in view of: $duplicates" }
         val viewContext = GameViewContext(this, playerIndex)
         return this.views.associate { it.first to it.second(viewContext) }
     }
