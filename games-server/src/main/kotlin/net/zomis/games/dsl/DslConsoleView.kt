@@ -37,20 +37,27 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
 
 }
 
+class DslConsoleSetup {
+    fun chooseGame(scanner: Scanner): GameSpec<Any> {
+        val gameTypeList = ServerGames.games.map { it.key }.sorted()
+        gameTypeList.forEachIndexed { index, gameType ->
+            println("$index. $gameType")
+        }
+        println("Which game do you want to play?")
+        val chosenGame = scanner.nextLine()
+        val gameType = if (chosenGame.toIntOrNull() != null) gameTypeList[chosenGame.toInt()] else chosenGame
+        val gameSpec = ServerGames.games[gameType] as GameSpec<Any>?
+        if (gameSpec == null) {
+            println("No such game type: $chosenGame")
+            throw IllegalStateException()
+        }
+        return gameSpec
+    }
+}
+
 fun main() {
     val scanner = Scanner(System.`in`)
-    val gameTypeList = ServerGames.games.map { it.key }.sorted()
-    gameTypeList.forEachIndexed { index, gameType ->
-       println("$index. $gameType")
-    }
-    println("Which game do you want to play?")
-    val chosenGame = scanner.nextLine()
-    val gameType = if (chosenGame.toIntOrNull() != null) gameTypeList[chosenGame.toInt()] else chosenGame
-    val gameSpec = ServerGames.games[gameType] as GameSpec<Any>?
-    if (gameSpec == null) {
-        println("No such game type: $chosenGame")
-        return
-    }
+    val gameSpec = DslConsoleSetup().chooseGame(scanner)
     val view = DslConsoleView(gameSpec)
     view.play(scanner)
     scanner.close()
