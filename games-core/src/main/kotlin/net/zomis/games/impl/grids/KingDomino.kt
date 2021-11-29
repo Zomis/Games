@@ -5,6 +5,7 @@ import net.zomis.games.cards.CardZone
 import net.zomis.games.common.Direction4
 import net.zomis.games.common.Point
 import net.zomis.games.common.toSingleList
+import net.zomis.games.dsl.ReplayableScope
 
 object KingDomino {
 
@@ -139,6 +140,7 @@ object KingDomino {
         fun secondTile(domino: DominoTile): Tile = domino.tiles.toList().minus(firstTile).single()
 
         fun toStateString(): String = "${firstTile.toStateString()} ${point.toStateString()} ${point2.toStateString()}"
+        override fun toString(): String = toStateString()
         fun placePoints() = point.toSingleList() + point2
     }
 
@@ -161,9 +163,9 @@ object KingDomino {
 
                 game.dominoesRemaining -= game.dominoesPerTurn
                 game.dominoDeck.random(replayable, game.dominoesPerTurn, "dominoes") { it.toStateString() }.forEach {
-                    it.moveTo(game.dominoChoices)
+                    it.moveTo(game.dominoNextChoices)
                 }
-                game.dominoChoices.cards.sortBy { it.value }
+                game.dominoNextChoices.cards.sortBy { it.value }
             }
         }
         gameFlow {
@@ -174,19 +176,11 @@ object KingDomino {
                     yieldAction(chooseDomino) {
                         precondition { playerIndex == player }
                         requires { action.parameter.owner == null }
-                        options { game.dominoChoices.cards.filter { it.owner == null } }
+                        options { game.dominoNextChoices.cards.filter { it.owner == null } }
                         perform {
                             log { "${action.toStateString()} done by $player" }
                             action.parameter.owner = playerIndex
-
-                            if (game.dominoChoices.cards.none { it.owner == null }) {
-                                game.dominoesRemaining -= game.dominoesPerTurn
-                                game.dominoDeck.random(replayable, game.dominoesPerTurn, "dominoes") { it.toStateString() }.forEach {
-                                    it.moveTo(game.dominoNextChoices)
-                                }
-                                game.dominoNextChoices.cards.sortBy { it.value }
-                                game.playOrder = game.dominoChoices.cards.map { it.owner!! }
-                            }
+                            newDominoesCheck(game, replayable)
                         }
                     }
                 }
@@ -196,11 +190,12 @@ object KingDomino {
             loop {
                 for (player in game.playOrder) {
                     game.currentPlayerIndex = player
-//                    check(game.dominoChoices.cards.first().owner == player) {
-//                        "Next domino ${game.dominoChoices.cards.first()} is not owned by correct player $player"
-//                    }
+                    println("Chosen: " + game.dominoChoices.cards + " NextChoices: " + game.dominoNextChoices.cards)
+
+                    check(game.dominoChoices.cards.first().owner == player) {
+                        "Next domino ${game.dominoChoices.cards.first()} is not owned by correct player $player"
+                    }
                     val placementDone = step("place dominoes") {
-                        println("Chosen: " + game.dominoChoices.cards + " NextChoices: " + game.dominoNextChoices.cards)
                         yieldAction(place) {
                             precondition { playerIndex == player }
                             choose {
@@ -248,13 +243,16 @@ object KingDomino {
                             }
                         }
                     }
-                    println("Placement done: " + placementDone.action)
+                    println("Placement done: ${placementDone.action} for player $player in playOrder ${game.playOrder}")
+                    check(placementDone.action?.actionType == place.name || placementDone.action == null)
                     if (placementDone.action == null && !game.dominoChoices.isEmpty()) {
                         val discarded = game.dominoChoices.cards.removeFirst()
+                        check(discarded.owner == player) { "Discard issue with $discarded vs $player" }
                         println("No moves possible, player $player has to discard tile $discarded")
                     }
 
-                    println("BEFORE PICK NEXT TILE")
+                    println("BEFORE PICK NEXT TILE $player")
+                    println("XXX Chosen: " + game.dominoChoices.cards + " NextChoices: " + game.dominoNextChoices.cards)
                     val pickNext = step("pick next tile") {
                         yieldAction(chooseDomino) {
                             precondition { playerIndex == player }
@@ -263,24 +261,12 @@ object KingDomino {
                             perform {
                                 log { "${action.toStateString()} done by $player" }
                                 action.parameter.owner = playerIndex
-
-                                if (game.dominoNextChoices.cards.all { it.owner != null }) {
-                                    check(game.dominoChoices.isEmpty())
-                                    game.dominoNextChoices.moveAllTo(game.dominoChoices)
-
-                                    if (game.dominoesRemaining >= game.dominoesPerTurn) {
-                                        game.dominoesRemaining -= game.dominoesPerTurn
-                                        game.dominoDeck.random(replayable, game.dominoesPerTurn, "dominoes") { it.toStateString() }.forEach {
-                                            it.moveTo(game.dominoNextChoices)
-                                        }
-                                    }
-                                    game.dominoNextChoices.cards.sortBy { it.value }
-                                    game.playOrder = game.dominoChoices.cards.map { it.owner!! }
-                                }
+                                newDominoesCheck(game, replayable)
                             }
                         }
                     }
-                    println("AFTER PICK NEXT TILE")
+                    println("AFTER PICK NEXT TILE: ${pickNext.action}")
+                    check(pickNext.action?.actionType != place.name) { "Last action was ${pickNext.action}" }
                     if (pickNext.action == null) {
                         println("pickNext action null. No moves possible I guess")
                     }
@@ -342,6 +328,22 @@ object KingDomino {
                 }
                 view("dominoNextChoices") { game.dominoNextChoices.cards.map(::dominoView) }
             }
+        }
+    }
+
+    private fun newDominoesCheck(game: Model, replayable: ReplayableScope) {
+        if (game.dominoNextChoices.cards.all { it.owner != null }) {
+            check(game.dominoChoices.isEmpty())
+            game.dominoNextChoices.moveAllTo(game.dominoChoices)
+
+            if (game.dominoesRemaining >= game.dominoesPerTurn) {
+                game.dominoesRemaining -= game.dominoesPerTurn
+                game.dominoDeck.random(replayable, game.dominoesPerTurn, "dominoes") { it.toStateString() }.forEach {
+                    it.moveTo(game.dominoNextChoices)
+                }
+            }
+            game.dominoNextChoices.cards.sortBy { it.value }
+            game.playOrder = game.dominoChoices.cards.map { it.owner!! }
         }
     }
 
