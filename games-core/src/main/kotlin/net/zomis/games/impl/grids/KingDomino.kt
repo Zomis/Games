@@ -190,7 +190,6 @@ object KingDomino {
             loop {
                 for (player in game.playOrder) {
                     game.currentPlayerIndex = player
-                    println("Chosen: " + game.dominoChoices.cards + " NextChoices: " + game.dominoNextChoices.cards)
 
                     check(game.dominoChoices.cards.first().owner == player) {
                         "Next domino ${game.dominoChoices.cards.first()} is not owned by correct player $player"
@@ -243,16 +242,12 @@ object KingDomino {
                             }
                         }
                     }
-                    println("Placement done: ${placementDone.action} for player $player in playOrder ${game.playOrder}")
                     check(placementDone.action?.actionType == place.name || placementDone.action == null)
                     if (placementDone.action == null && !game.dominoChoices.isEmpty()) {
-                        val discarded = game.dominoChoices.cards.removeFirst()
-                        check(discarded.owner == player) { "Discard issue with $discarded vs $player" }
-                        println("No moves possible, player $player has to discard tile $discarded")
+                        game.dominoChoices.cards.removeFirst()
+                        log { "${player(player)} had to discard a tile" }
                     }
 
-                    println("BEFORE PICK NEXT TILE $player")
-                    println("XXX Chosen: " + game.dominoChoices.cards + " NextChoices: " + game.dominoNextChoices.cards)
                     val pickNext = step("pick next tile") {
                         yieldAction(chooseDomino) {
                             precondition { playerIndex == player }
@@ -265,11 +260,7 @@ object KingDomino {
                             }
                         }
                     }
-                    println("AFTER PICK NEXT TILE: ${pickNext.action}")
                     check(pickNext.action?.actionType != place.name) { "Last action was ${pickNext.action}" }
-                    if (pickNext.action == null) {
-                        println("pickNext action null. No moves possible I guess")
-                    }
                 }
 
                 step("end check") {
