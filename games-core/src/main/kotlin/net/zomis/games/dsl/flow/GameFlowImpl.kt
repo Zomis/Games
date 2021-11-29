@@ -120,6 +120,7 @@ class GameFlowImpl<T: Any>(
         } else {
             logger.info("GameFlow Coroutine No Available Actions")
             sendFeedback(GameFlowContext.Steps.NextView)
+            clear()
             runRules(GameFlowRulesState.AFTER_ACTIONS)
             return null
         }
