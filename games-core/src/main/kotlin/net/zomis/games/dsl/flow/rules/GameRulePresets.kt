@@ -117,7 +117,7 @@ class GameRulePresetsImpl<T: Any>(private val context: GameFlowRulesContext<T>):
             effect {
                 val prop = property.invoke(this)
                 while (!eliminations.remainingPlayers().contains(prop.getter.call())) {
-                    prop.setter.call(prop.getter.call(eliminations.playerCount).next(eliminations.playerCount))
+                    prop.setter.call(prop.getter.call().next(eliminations.playerCount))
                 }
             }
         }
