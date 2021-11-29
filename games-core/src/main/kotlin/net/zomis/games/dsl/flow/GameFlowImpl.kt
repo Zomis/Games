@@ -42,18 +42,17 @@ class GameFlowImpl<T: Any>(
     init {
         val game = this
         job = mainScope.launch(Dispatchers.Default) {
-            println("GameFlow Coroutine started")
+            logger.info("GameFlow Coroutine started")
             try {
                 val dsl = setupContext.flowDsl!!
                 val flowContext = GameFlowContext(this, game, "root")
                 setupContext.model.onStart(GameStartContext(model, replayable))
                 sendFeedback(GameFlowContext.Steps.GameSetup(playerCount, config, replayable.stateKeeper.lastMoveState()))
-                println("Clearing statekeeper after setup ${replayable.stateKeeper}")
                 replayable.stateKeeper.clear()
                 dsl.invoke(flowContext)
                 actionDone()
                 sendFeedback(GameFlowContext.Steps.GameEnd)
-                println("GameFlow Coroutine MainScope done for $game")
+                logger.info("GameFlow Coroutine MainScope done for $game")
             } catch (e: Exception) {
                 KLoggers.logger(game).error(e) { "Error in Coroutine for game $game" }
             }
@@ -65,11 +64,9 @@ class GameFlowImpl<T: Any>(
             sendFeedback(it)
         }
         stateKeeper.logs().forEach {
-            println("GameFlow Coroutine Feedback StateKeeper saved Log: $it")
             sendFeedback(GameFlowContext.Steps.Log(it))
         }
         stateKeeper.clearLogs()
-        println("GameFlow Coroutine Feedbacks clear")
         feedbacks.clear()
     }
 
@@ -107,7 +104,7 @@ class GameFlowImpl<T: Any>(
                 }
                 sendFeedback(GameFlowContext.Steps.AwaitInput)
                 val action = actionsInput.receive()
-                println("GameFlow Coroutine Action Received: $action")
+                logger.info("GameFlow Coroutine Action Received: $action")
                 require(action is Actionable<*, *>)
                 val typeEntry = actions.type(action.actionType)
                 if (typeEntry == null) {
@@ -121,7 +118,7 @@ class GameFlowImpl<T: Any>(
                 return action
             }
         } else {
-            println("GameFlow Coroutine No Available Actions")
+            logger.info("GameFlow Coroutine No Available Actions")
             sendFeedback(GameFlowContext.Steps.NextView)
             runRules(GameFlowRulesState.AFTER_ACTIONS)
             return null
@@ -142,9 +139,9 @@ class GameFlowImpl<T: Any>(
     }
 
     suspend fun sendFeedback(feedback: GameFlowContext.Steps.FlowStep) {
-        println("GameFlow Coroutine sends feedback: $feedback")
+        logger.info("GameFlow Coroutine sends feedback: $feedback")
         this.feedbackOutput.send(feedback)
-        println("GameFlow Coroutine feedback sent: $feedback, continuing coroutine...")
+        logger.info("GameFlow Coroutine feedback sent: $feedback, continuing coroutine...")
     }
 
     private fun runRules(state: GameFlowRulesState) {
@@ -161,13 +158,11 @@ class GameFlowImpl<T: Any>(
     }
 
     private fun clear() {
-        println("GameFlow Clear views and actions")
         this.views.clear()
         this.actions.clear()
     }
 
     override fun view(key: String, value: ViewScope<T>.() -> Any?) {
-        println("GameFlow Add view $key")
         views.add(key to value)
     }
 
