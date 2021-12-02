@@ -4,16 +4,6 @@ import net.zomis.Best
 import net.zomis.games.common.Point
 import net.zomis.games.common.fmod
 
-private fun flipX(start: Position): Position {
-    return Position(start.sizeX - 1 - start.x, start.y, start.sizeX, start.sizeY)
-}
-private fun flipY(start: Position): Position {
-    return Position(start.x, start.sizeY - 1 - start.y, start.sizeX, start.sizeY)
-}
-private fun rotate(start: Position): Position {
-    return Position(start.sizeY - 1 - start.y, start.x, start.sizeY, start.sizeX)
-}
-
 data class Position(val x: Int, val y: Int, val sizeX: Int, val sizeY: Int) {
     fun next(): Position? {
         if (x == sizeX - 1) {
@@ -22,15 +12,19 @@ data class Position(val x: Int, val y: Int, val sizeX: Int, val sizeY: Int) {
         return Position(this.x + 1, this.y, this.sizeX, this.sizeY)
     }
 
-    fun transform(transformation: Transformation): Position {
-        return transformation.transform(this)
-    }
+    internal fun rotate(): Position
+        = Position(this.sizeY - 1 - this.y, this.x, this.sizeY, this.sizeX)
+    internal fun flipX(): Position
+        = Position(this.sizeX - 1 - this.x, this.y, this.sizeX, this.sizeY)
+    internal fun flipY(): Position
+        = Position(this.x, this.sizeY - 1 - this.y, this.sizeX, this.sizeY)
+    fun transform(transformation: Transformation): Position = transformation.transform(this)
 }
 
 enum class TransformationType(val transforming: (Position) -> Position, val reverse: (Position) -> Position) {
-    FLIP_X(::flipX, ::flipX),
-    FLIP_Y(::flipY, ::flipY),
-    ROTATE(::rotate, { start -> rotate(rotate(rotate(start))) }),
+    FLIP_X(Position::flipX, Position::flipX),
+    FLIP_Y(Position::flipY, Position::flipY),
+    ROTATE(Position::rotate, { start -> start.rotate().rotate().rotate() }),
     ;
 }
 
