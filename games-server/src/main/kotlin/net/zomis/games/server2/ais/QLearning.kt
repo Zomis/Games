@@ -106,9 +106,9 @@ class MyQLearning<T, S>(val maxActions: Int,
 
         val nextStateStr = stateFunction(nextState)
         val estimateOfOptimalFutureValue = (0 until maxActions)
-                .filter { i -> actionPossible(nextState, i) }
-                .map { i -> stateActionFunction(rewardedState.state, nextStateStr, i) }
-                .map { str -> qTable.getOrDefault(str, DEFAULT_QVALUE) }.max() ?: 0.0
+            .filter { i -> actionPossible(nextState, i) }
+            .map { i -> stateActionFunction(rewardedState.state, nextStateStr, i) }
+            .maxOfOrNull { str -> qTable.getOrDefault(str, DEFAULT_QVALUE) } ?: 0.0
 
         val oldValue = qTable.getOrDefault(awaitReward.stateAction, DEFAULT_QVALUE)
         val learnedValue = rewardT + discountFactor * estimateOfOptimalFutureValue
@@ -149,7 +149,7 @@ class MyQLearning<T, S>(val maxActions: Int,
             val stateAction = stateActionFunction(environment, state, action)
             scores[i] = this.qTable.getOrDefault(stateAction, DEFAULT_QVALUE)
         }
-        val min = scores.min() ?: 0.0
+        val min = scores.minOrNull() ?: 0.0
         var sum = 0.0
         for (i in scores.indices) {
             scores[i] = scores[i] - min + bonus

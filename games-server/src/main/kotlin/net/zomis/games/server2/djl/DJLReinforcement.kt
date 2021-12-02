@@ -154,7 +154,7 @@ class DJLReinforcement {
 //                println("Choosing random action: $randomAction")
             return randomAction
         }
-        return floats.withIndex().maxBy { it.value.toDouble() }!!.index
+        return floats.withIndex().maxByOrNull { it.value.toDouble() }!!.index
     }
 
     data class IntCounter(var value: Int)

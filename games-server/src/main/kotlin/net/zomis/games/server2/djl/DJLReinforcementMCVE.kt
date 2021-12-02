@@ -63,7 +63,7 @@ class DJLReinforcementMCVE {
                 agentParameters.printConfig.playing("Choosing random action: $randomAction")
                 return randomAction
             }
-            return values.withIndex().maxBy { it.value.toDouble() }!!.index
+            return values.withIndex().maxByOrNull { it.value.toDouble() }!!.index
         }
 
         override fun processInput(ctx: TranslatorContext, input: BooleanArray): NDList

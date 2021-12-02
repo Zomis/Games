@@ -92,7 +92,7 @@ data class HanabiConfig(
 }
 data class HanabiColorData(val color: HanabiColor, val board: CardZone<HanabiCard> = CardZone(mutableListOf()), val discard: CardZone<HanabiCard> = CardZone(mutableListOf())) {
     fun values(): List<Pair<HanabiColor, Int>> = (1..5).map { color to it }
-    fun nextPlayable(): Int? = board.map { it.value }.max().let { (it ?: 0) + 1 }.takeIf { it <= 5 }
+    fun nextPlayable(): Int? = board.map { it.value }.maxOrNull().let { (it ?: 0) + 1 }.takeIf { it <= 5 }
 }
 data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
     val colors: List<HanabiColorData> = config.colors().map { HanabiColorData(it) }

@@ -31,13 +31,13 @@ object Decrypto {
         val opponentTeam: Team get() = teams[1 - currentTeamIndex]
         val teams = listOf(teamA, teamB)
 
-        fun roundNumber(): Int = teams.map { it.interceptionHistory.size }.min()!!
+        fun roundNumber(): Int = teams.minOf { it.interceptionHistory.size }
         fun teamFor(viewer: PlayerIndex): Team? = teams.find { it.teamMembers.contains(viewer) }
     }
     data class CluesAndGuess(private val correctCode: List<Int>, val clues: Clues, var guess: Guess?): Viewable {
         var correctCodeRevealed: Boolean = false
         fun publicCorrectCode(): List<Int> = if (correctCodeRevealed) correctCode else listOf()
-        override fun toView(viewer: PlayerIndex): Any?
+        override fun toView(viewer: PlayerIndex): Any
             = mapOf("clues" to clues.clues, "guess" to guess?.guess, "correct" to publicCorrectCode())
         fun correctGuess(): Boolean = guess?.guess == correctCode
     }

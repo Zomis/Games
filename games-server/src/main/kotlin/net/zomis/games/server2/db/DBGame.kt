@@ -44,7 +44,7 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
     val game = gameSetup.createGameWithState(summary.playersInGame.size, summary.gameConfig, stateKeeper)
     val views = mutableListOf<Map<String, Any?>>()
     val errors = mutableListOf<String>()
-    val timeLastAction = moveHistory.map { it.time }.maxBy { it ?: 0 }
+    val timeLastAction = moveHistory.map { it.time }.maxByOrNull { it ?: 0 }
 
     init {
         views.add(game.view(null))

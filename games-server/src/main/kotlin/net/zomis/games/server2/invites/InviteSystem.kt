@@ -198,7 +198,7 @@ class InviteSystem(
         message.client.send(mapOf(
             "type" to "InvitePrepare",
             "gameType" to gameType,
-            "playersMin" to setup?.playersCount?.min(), "playersMax" to setup?.playersCount?.max(),
+            "playersMin" to setup?.playersCount?.minOrNull(), "playersMax" to setup?.playersCount?.maxOrNull(),
             "config" to gameOptions
         ))
     }

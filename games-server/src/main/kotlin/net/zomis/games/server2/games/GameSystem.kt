@@ -12,7 +12,6 @@ import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.GameReplayableImpl
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.GamesImpl
-import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.server.GamesServer
 import net.zomis.games.server2.*
@@ -194,7 +193,7 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
         return playerIndices.map { highestAccessTo(it)!! }.map { playerMessage(it) }.toList()
     }
 
-    fun highestAccessTo(playerIndex: Int): Client? = this.players.maxBy { it.value.index(playerIndex) }?.key
+    fun highestAccessTo(playerIndex: Int): Client? = this.players.maxByOrNull { it.value.index(playerIndex) }?.key
 
     private fun createGameInfoMessage(client: Client): Map<String, Any?> {
         return this.toJson("GameInfo")
