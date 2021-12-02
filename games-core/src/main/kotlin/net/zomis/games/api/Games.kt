@@ -1,6 +1,7 @@
 package net.zomis.games.api
 
-import net.zomis.games.Map2DX
+import net.zomis.games.components.Grid
+import net.zomis.games.components.GridImpl
 
 object Games {
 
@@ -11,8 +12,6 @@ object Games {
 
 object GamesComponents {
 
-    fun <T> grid(x: Int, y: Int, init: (x: Int, y: Int) -> T): Map2DX<T> {
-        return Map2DX(x, y, init)
-    }
+    fun <T> grid(x: Int, y: Int, init: (x: Int, y: Int) -> T): Grid<T> = GridImpl(x, y, init)
 
 }

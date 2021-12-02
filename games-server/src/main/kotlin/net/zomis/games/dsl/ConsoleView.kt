@@ -22,7 +22,7 @@ class ConsoleView<T: Any> {
             if (name != null) return "$prefix$name$postName"
             return prefix
         }
-        if (name == "grid") {
+        if (name == "grid" && data is List<*>) {
             return start("").toSingleList() + displayGrid(indentation + 2, data as List<List<*>>)
         }
         val strings = sequence {

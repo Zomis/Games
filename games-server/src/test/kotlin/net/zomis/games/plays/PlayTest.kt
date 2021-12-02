@@ -21,7 +21,7 @@ class PlayTest {
     fun file(file: File): DynamicNode {
         return DynamicTest.dynamicTest(file.name) {
             if (file.name.endsWith("json")) {
-                PlayTests.fullJsonTest(file, TestPlayMenu.choices)
+                PlayTests.fullJsonTest(file, TestPlayMenu.choices, false)
             }
         }
     }

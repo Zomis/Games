@@ -179,10 +179,10 @@ object PlayTests {
             gameName = { gameName },
             playersCount = { playersCount },
             config = { config ?: it.setup().getDefaultConfig() }
-        ))
+        ), interactive = false)
     }
 
-    fun fullJsonTest(file: File, choices: TestPlayChoices) {
+    fun fullJsonTest(file: File, choices: TestPlayChoices, interactive: Boolean) {
         val tree = TestPlayRoot(mapper, file)
         val gameName = tree.getString("game", choices.gameName)
         val entry = ServerGames.entrypoint(gameName)!!
@@ -194,7 +194,7 @@ object PlayTests {
         val config = tree.configOrDefault(entry.setup())
         val replayable = entry.replayable(playersCount, config, tree.replayCallback())
 
-        val s = Scanner(System.`in`)
+        val s = Scanner(System.`in`).takeIf { interactive }
 
         if (replayable.game is GameFlowImpl) {
             runBlocking {
@@ -239,7 +239,7 @@ object PlayTests {
         return current
     }
 
-    private fun nextSteps(tree: TestPlayRoot, replayable: GameReplayableImpl<Any>, scanner: Scanner): Boolean {
+    private fun nextSteps(tree: TestPlayRoot, replayable: GameReplayableImpl<Any>, scanner: Scanner?): Boolean {
         do {
             val nextStep = tree.nextStep(replayable)
             println("Performing saved step")
@@ -250,6 +250,7 @@ object PlayTests {
                 return true
             }
         } while (nextStep != null)
+        if (scanner == null) return false
 
         val input = PlayTestInput(scanner, replayable)
 

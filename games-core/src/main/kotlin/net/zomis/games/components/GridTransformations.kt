@@ -1,8 +1,62 @@
 package net.zomis.games.components
 
 import net.zomis.Best
-import net.zomis.games.Position
-import net.zomis.games.Transformation
+
+data class Position(val x: Int, val y: Int, val sizeX: Int, val sizeY: Int) {
+    fun next(): Position? {
+        if (x == sizeX - 1) {
+            return if (y == sizeY - 1) null else Position(0, y + 1, sizeX, sizeY)
+        }
+        return Position(this.x + 1, this.y, this.sizeX, this.sizeY)
+    }
+
+    internal fun rotate(): Position
+            = Position(this.sizeY - 1 - this.y, this.x, this.sizeY, this.sizeX)
+    internal fun flipX(): Position
+            = Position(this.sizeX - 1 - this.x, this.y, this.sizeX, this.sizeY)
+    internal fun flipY(): Position
+            = Position(this.x, this.sizeY - 1 - this.y, this.sizeX, this.sizeY)
+    fun transform(transformation: Transformation): Position = transformation.transform(this)
+}
+
+enum class TransformationType(val transforming: (Position) -> Position, val reverse: (Position) -> Position) {
+    FLIP_X(Position::flipX, Position::flipX),
+    FLIP_Y(Position::flipY, Position::flipY),
+    ROTATE(Position::rotate, { start -> start.rotate().rotate().rotate() }),
+    ;
+}
+
+enum class Transformation(private val transformations: List<TransformationType>) {
+    NO_CHANGE(listOf()),
+    FLIP_X(listOf(TransformationType.FLIP_X)),
+    FLIP_Y(listOf(TransformationType.FLIP_Y)),
+    ROTATE_90(listOf(TransformationType.ROTATE)),
+    ROTATE_180(listOf(TransformationType.ROTATE, TransformationType.ROTATE)),
+    ROTATE_270(listOf(TransformationType.ROTATE, TransformationType.ROTATE, TransformationType.ROTATE)),
+    ROTATE_90_FLIP_X(listOf(TransformationType.ROTATE, TransformationType.FLIP_X)),
+    ROTATE_90_FLIP_Y(listOf(TransformationType.ROTATE, TransformationType.FLIP_Y)),
+    ;
+
+    fun transform(position: Position): Position {
+        return transformations.fold(position) { pos, trans -> trans.transforming(pos) }
+    }
+
+    fun reverseTransform(position: Position): Position {
+        return transformations.reversed().fold(position) { pos, trans -> trans.reverse(pos) }
+    }
+
+    private val referencePoints = arrayOf(
+        Position(3, 2, 5, 5),
+        Position(4, 0, 5, 5)
+    )
+    fun apply(transformation: Transformation): Transformation {
+        val simplestTransformation = Transformation.values().filter {result ->
+            referencePoints.all {p -> transformation.transform(this.transform(p)) == result.transform(p) }
+        }
+        return simplestTransformation.single()
+    }
+
+}
 
 private fun <T> Grid<T>.originalPossibleTransformations(): MutableSet<Transformation> {
     val possibleTransformations = Transformation.values().toMutableSet()

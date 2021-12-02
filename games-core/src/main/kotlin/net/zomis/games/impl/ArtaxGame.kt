@@ -1,19 +1,19 @@
 package net.zomis.games.impl
 
-import net.zomis.games.Map2DPoint
-import net.zomis.games.Map2DX
 import net.zomis.games.PlayerEliminationCallback
 import net.zomis.games.WinResult
+import net.zomis.games.api.Games
 import net.zomis.games.common.Direction8
 import net.zomis.games.common.Point
 import net.zomis.games.common.PointMove
+import net.zomis.games.components.GridPoint
 import net.zomis.games.dsl.*
 import kotlin.math.abs
 import kotlin.math.max
 
 class TTArtax(private val eliminationCallback: PlayerEliminationCallback,
           playerCount: Int, sizeX: Int, sizeY: Int) {
-    val board = Map2DX<Int?>(sizeX, sizeY) { _, _ -> null }
+    val board = Games.components.grid<Int?>(sizeX, sizeY) { _, _ -> null }
     var currentPlayer: Int = 0
 
     init {
@@ -33,15 +33,15 @@ class TTArtax(private val eliminationCallback: PlayerEliminationCallback,
         }
     }
 
-    private fun distance(a: Map2DPoint<Int?>, b: Map2DPoint<Int?>): Int {
+    private fun distance(a: GridPoint<Int?>, b: GridPoint<Int?>): Int {
         return max(abs(a.x - b.x), abs(a.y - b.y))
     }
 
-    fun allowedSource(tile: Map2DPoint<Int?>): Boolean {
+    fun allowedSource(tile: GridPoint<Int?>): Boolean {
         return tile.value == this.currentPlayer
     }
 
-    fun allowedDestination(source: Map2DPoint<Int?>, tile: Map2DPoint<Int?>): Boolean {
+    fun allowedDestination(source: GridPoint<Int?>, tile: GridPoint<Int?>): Boolean {
         if (tile.value != null) {
             return false
         }
@@ -50,7 +50,7 @@ class TTArtax(private val eliminationCallback: PlayerEliminationCallback,
         return tileDistance in 1..2
     }
 
-    fun perform(source: Map2DPoint<Int?>, destination: Map2DPoint<Int?>): Boolean {
+    fun perform(source: GridPoint<Int?>, destination: GridPoint<Int?>): Boolean {
         if (!allowedSource(source) || !allowedDestination(source, destination)) {
             return false
         }
@@ -112,10 +112,6 @@ object ArtaxGame {
     val factory = GameCreator(TTArtax::class)
     val moveAction = factory.action("move", PointMove::class)
     val gameArtax = factory.game("Artax") {
-        val grid = gridSpec<Int?> {
-            size(model.board.sizeX, model.board.sizeY)
-            getter(model.board::get)
-        }
         setup(Point::class) {
             players(2..4)
             defaultConfig { Point(7, 7) }
@@ -140,13 +136,8 @@ object ArtaxGame {
                 }
             }
             view("actionName") { moveAction.name }
-        }
-        view {
-            eliminations()
-            currentPlayer { it.currentPlayer }
-            grid("board", grid) {
-                owner { it }
-            }
+            view("currentPlayer") { game.currentPlayer }
+            view("grid") { game.board.view { mapOf("owner" to it) } }
         }
     }
 

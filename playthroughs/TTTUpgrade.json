@@ -18,7 +18,7 @@
   }, {
     "playerIndex" : 0,
     "assertionType" : "EQUALS",
-    "path" : [ "board", "1", "1" ],
+    "path" : [ "board", "grid", "1", "1" ],
     "parameter" : {
       "player" : "X",
       "level" : 2

@@ -66,7 +66,6 @@ interface Grid<T> {
     }
     fun all(): Iterable<GridPoint<T>> = points().map { point(it.x, it.y) }
 
-    fun mnkLines(includeDiagonals: Boolean): Sequence<GridLine<T>>
     fun view(viewFunction: (T) -> Any?): Any = mapOf(
         "width" to sizeX,
         "height" to sizeY,
@@ -74,8 +73,6 @@ interface Grid<T> {
     )
     fun boardView(viewFunction: (T) -> Any?): Any
         = (0 until sizeY).map { y -> (0 until sizeX).map { viewFunction(get(it, y)) } }
-    class ConnectedArea<T, R>(val group: R, val points: List<GridPoint<T>>)
-    fun <R : Any> connected(neighbors: List<Point>, function: (GridPoint<T>) -> R): List<ConnectedArea<T, R>>
 }
 
 class GridImpl<T>(override val sizeX: Int, override val sizeY: Int, val factory: (x: Int, y: Int) -> T) : Grid<T> {
@@ -87,99 +84,5 @@ class GridImpl<T>(override val sizeX: Int, override val sizeY: Int, val factory:
 
     override fun set(x: Int, y: Int, value: T) { grid[y][x] = value }
     override fun get(x: Int, y: Int): T = grid[y][x]
-
-    override fun mnkLines(includeDiagonals: Boolean): Sequence<GridLine<T>> {
-        fun loopAdd(board: Grid<T>, xxStart: Int, yyStart: Int, dx: Int, dy: Int): List<T> {
-            var xx = xxStart
-            var yy = yyStart
-            val items = mutableListOf<T>()
-
-            var tile: T?
-            do {
-                tile = board.getOrNull(xx, yy)
-                xx += dx
-                yy += dy
-                if (tile != null) {
-                    items.add(tile)
-                }
-            } while (tile != null)
-
-            return items
-        }
-        val board = this
-        return sequence {
-            // columns
-            for (xx in 0 until sizeX) {
-                yield(GridLine(loopAdd(board, xx, 0, 0, 1)))
-            }
-
-            // Scan rows for a winner
-            for (yy in 0 until sizeY) {
-                yield(GridLine(loopAdd(board, 0, yy, 1, 0)))
-            }
-
-            if (!includeDiagonals) {
-                return@sequence
-            }
-
-            // Scan diagonals for a winner: Bottom-right
-            for (yy in 0 until sizeY) {
-                yield(GridLine(loopAdd(board, 0, yy, 1, 1)))
-            }
-            for (xx in 1 until sizeX) {
-                yield(GridLine(loopAdd(board, xx, 0, 1, 1)))
-            }
-
-            // Scan diagonals for a winner: Bottom-left
-            for (xx in 0 until sizeX) {
-                yield(GridLine(loopAdd(board, xx, 0, -1, 1)))
-            }
-            for (yy in 1 until sizeY) {
-                yield(GridLine(loopAdd(board, board.sizeX - 1, yy, -1, 1)))
-            }
-        }
-    }
-
-    override fun <R : Any> connected(
-        neighbors: List<Point>,
-        function: (GridPoint<T>) -> R
-    ): List<Grid.ConnectedArea<T, R>> {
-        val matched = mutableSetOf<Point>()
-        val waiting = mutableSetOf<Point>()
-        val inGroup = mutableSetOf<GridPoint<T>>()
-        val groups = mutableListOf<Grid.ConnectedArea<T, R>>()
-
-        for (pos in all()) {
-            if (matched.contains(pos.point)) {
-                continue
-            }
-            check(waiting.isEmpty())
-            waiting.add(pos.point)
-            val group = function(pos)
-
-            while (waiting.isNotEmpty()) {
-                // Pick a spot from awaiting, mark it as checked and add it to group
-                val current = waiting.first()
-                waiting.remove(current)
-                matched.add(current)
-                inGroup.add(point(current))
-
-                for (neighbor in neighbors) {
-                    // check neighbors of spot and compare grouping
-                    val target = this.point(current.x + neighbor.x, current.y + neighbor.y).rangeCheck(this) ?: continue
-                    if (matched.contains(target.point) || waiting.contains(target.point)) continue
-                    if (function(target) == group) {
-                        // if match, add to awaiting for later processing when it will be marked as checked and added to group
-                        waiting.add(target.point)
-                    }
-                }
-            }
-            // When awaiting is empty, finish group and move on
-            val area = Grid.ConnectedArea(group, inGroup.toList())
-            groups.add(area)
-            inGroup.clear()
-        }
-        return groups.toList()
-    }
 
 }

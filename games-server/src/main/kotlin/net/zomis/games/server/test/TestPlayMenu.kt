@@ -19,7 +19,7 @@ object TestPlayMenu {
         f.walk().filter { it.isFile && it.name.endsWith(".json") }.forEach {
             if (game == null || it.absolutePath.contains(game)) {
                 println(it.absolutePath)
-                PlayTests.fullJsonTest(it, choices)
+                PlayTests.fullJsonTest(it, choices, true)
             }
         }
     }
@@ -43,7 +43,7 @@ object TestPlayMenu {
                     }
                     f = File(f, scanner.nextLine())
                 }
-                PlayTests.fullJsonTest(f, choices)
+                PlayTests.fullJsonTest(f, choices, true)
             }
             "c", "C" -> {
                 val gameSpec = DslConsoleSetup().chooseGame(scanner)
