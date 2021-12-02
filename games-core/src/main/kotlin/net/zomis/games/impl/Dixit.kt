@@ -208,6 +208,7 @@ object Dixit {
                         scoringPlayer.placedCard in votedFor.vote!!.asList()
                     }
                 }.forEach {votesFor ->
+                    // TODO: coerceAtMost configurable. Odyssey variant
                     val points = votesFor.value.count().coerceAtMost(3)
                     votesFor.key.points += points
                 }
