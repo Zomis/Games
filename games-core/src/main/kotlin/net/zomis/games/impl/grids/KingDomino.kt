@@ -105,8 +105,8 @@ object KingDomino {
 
         val biggestAreaSize: Int get() = this.connectedAreas()
             .filter { it.points.first().value.type != null }
-            .map { it.points.size }.maxOrNull()!!
-        val totalCrowns get() = grid.all().map { it.value.crowns }.sum()
+            .maxOf { it.points.size }
+        val totalCrowns get() = grid.all().sumOf { it.value.crowns }
 
         // For simplicity, as build grid is 5x5 but castle does not need to be in center, use 9x9
         val grid = Games.components.grid(9, 9) { _, _ -> Tile(null, 0) }
@@ -114,8 +114,8 @@ object KingDomino {
         fun connectedAreas() = grid.connected(Direction4.values().map(Direction4::delta)) { it.value.type?.name ?: "" }
         fun points(): Int {
             val areas = connectedAreas()
-            return areas.sumBy { area ->
-                val crowns = area.points.sumBy { it.value.crowns }
+            return areas.sumOf { area ->
+                val crowns = area.points.sumOf { it.value.crowns }
                 crowns * area.points.size
             }
         }
