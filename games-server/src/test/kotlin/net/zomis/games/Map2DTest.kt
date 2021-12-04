@@ -62,4 +62,38 @@ class Map2DTest {
         }
     }
 
+    @Test
+    fun expandable() {
+        val map = Games.components.expandableGrid<String>()
+        map.set(0, 0, "center")
+        Assertions.assertEquals("center", map.get(0, 0))
+        map.set(1, 0, "right")
+        map.set(2, 0, "right2")
+        map.set(0, -1, "up")
+        Assertions.assertEquals(3, map.sizeX)
+        Assertions.assertEquals(2, map.sizeY)
+
+        val border = map.border()
+        Assertions.assertEquals(0, border.left)
+        Assertions.assertEquals(-1, border.top)
+        Assertions.assertEquals(2, border.right)
+        Assertions.assertEquals(0, border.bottom)
+        Assertions.assertEquals(3, border.width)
+        Assertions.assertEquals(2, border.height)
+
+        val view = map.view { it }
+        Assertions.assertEquals(0, view["left"])
+        Assertions.assertEquals(-1, view["top"])
+        Assertions.assertEquals(3, view["width"])
+        Assertions.assertEquals(2, view["height"])
+        val grid = view["grid"] as List<List<String>>
+        Assertions.assertEquals("up", grid[0][0])
+        Assertions.assertEquals(null, grid[0][1])
+        Assertions.assertEquals(null, grid[0][2])
+
+        Assertions.assertEquals("center", grid[1][0])
+        Assertions.assertEquals("right", grid[1][1])
+        Assertions.assertEquals("right2", grid[1][2])
+    }
+
 }

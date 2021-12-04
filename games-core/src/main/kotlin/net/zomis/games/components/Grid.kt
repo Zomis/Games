@@ -1,6 +1,7 @@
 package net.zomis.games.components
 
 import net.zomis.games.common.Point
+import net.zomis.games.common.Rect
 import net.zomis.games.common.fmod
 
 // Artax, TTT, Othello...
@@ -61,18 +62,31 @@ interface Grid<T> {
     fun point(point: Point): GridPoint<T> = point(point.x, point.y)
     fun isOnMap(x: Int, y: Int): Boolean = x >= 0 && y >= 0 && x < this.sizeX && y < this.sizeY
     fun wrapAround(point: Point): Point = Point(point.x fmod sizeX, point.y fmod sizeY)
+    fun border(): Rect = Rect(top = 0, left = 0, right = sizeX - 1, bottom = sizeY - 1)
     fun points(): Iterable<Point> = (0 until sizeY).flatMap { y ->
         (0 until sizeX).map { x -> Point(x, y) }
     }
     fun all(): Iterable<GridPoint<T>> = points().map { point(it.x, it.y) }
 
-    fun view(viewFunction: (T) -> Any?): Any = mapOf(
-        "width" to sizeX,
-        "height" to sizeY,
-        "grid" to boardView(viewFunction)
-    )
-    fun boardView(viewFunction: (T) -> Any?): Any
-        = (0 until sizeY).map { y -> (0 until sizeX).map { viewFunction(get(it, y)) } }
+    fun view(viewFunction: (T) -> Any?): Map<String, Any> {
+        val border = border()
+        return mapOf(
+            "left" to border.left,
+            "top" to border.top,
+            "width" to border.width,
+            "height" to border.height,
+            "grid" to boardView(viewFunction)
+        )
+    }
+    fun boardView(viewFunction: (T) -> Any?): List<List<Any?>> {
+        val border = border()
+        return (border.top..border.bottom).map { y ->
+            (border.left..border.right).map { x ->
+                val pos = getOrNull(x, y)
+                if (pos != null) viewFunction(pos) else null
+            }
+        }
+    }
 }
 
 class GridImpl<T>(override val sizeX: Int, override val sizeY: Int, val factory: (x: Int, y: Int) -> T) : Grid<T> {
