@@ -85,17 +85,14 @@ export default {
   },
   methods: {
     placeTileType(type) {
-      this.actions.choose(type, "place");
+      this.actions.choose("place", type);
     },
     dominoClick(domino) {
       let dominoSerialized = this.view.actions.dominoOptions[domino.value];
       this.actions.actionParameter("choose", dominoSerialized);
     },
     onClick(x, y) {
-      // let actionName = this.view.actionName
-      console.log("click", x, y)
-      this.actions.choose({x,y}, "place")
-      //this.actions.perform(actionName, `${x},${y}`);
+      this.actions.choose("place", {x,y})
     }
   },
   computed: {

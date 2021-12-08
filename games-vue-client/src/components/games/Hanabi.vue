@@ -87,7 +87,7 @@
                 :class="{ ['color-' + actIndex]: view.actions.colors }"
                 @mouseover="highlightCards(act)"
                 @mouseleave="highlightCards([])"
-                @click="actions.choose(actIndex, 'GiveClue')"
+                @click="actions.choose('GiveClue', actIndex)"
               >
                 {{ actIndex }}
               </v-btn>

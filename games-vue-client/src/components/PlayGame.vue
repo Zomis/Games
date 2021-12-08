@@ -68,7 +68,7 @@ export default {
     actionParameter(actionType, serializedParameter) {
       this.$store.dispatch("DslGameState/action", { gameInfo: this.gameInfo, name: actionType, data: serializedParameter });
     },
-    actionStep(choice, actionType) {
+    actionStep(actionType, choice) {
       this.$store.dispatch("DslGameState/nextAction", { gameInfo: this.gameInfo, name: actionType, action: choice });
     },
     action(_, data) {

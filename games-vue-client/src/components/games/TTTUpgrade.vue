@@ -81,11 +81,11 @@ export default {
     playSize(playerIndex, size) {
       if (this.view.currentPlayer !== playerIndex) return;
       console.log("playSize", playerIndex, size);
-      this.actions.choose(size, "play");
+      this.actions.choose("play", size);
     },
     onClick(x, y) {
       console.log(x, y);
-      this.actions.choose({ x: x, y: y }, "play");
+      this.actions.choose("play", { x: x, y: y });
       // this.actions.perform("play", `${x},${y}`);
     }
   },

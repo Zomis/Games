@@ -59,7 +59,7 @@
               <v-btn
                 v-if="player.actionable"
                 :actions="actions"
-                @click="actions.choose(playerIndex, 'perform')"
+                @click="actions.choose('perform', playerIndex)"
               >
                 Target
               </v-btn>
@@ -135,7 +135,7 @@
                 <td>
                   <v-btn
                     :disabled="!action.allowed"
-                    @click="actions.choose(action.name, 'perform')"
+                    @click="actions.choose('perform', action.name)"
                   >
                     {{ action.name }}
                   </v-btn>
