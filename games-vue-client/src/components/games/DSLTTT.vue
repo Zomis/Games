@@ -10,7 +10,7 @@
       :grid="view.board"
       :click-handler="onClick"
       :actionable="actions.available"
-      :piece-exists="e => e.owner !== null"
+      :piece-exists="e => e !== null && e.owner !== null"
     >
       <template v-slot:default="slotProps">
         <UrPiece
@@ -51,13 +51,20 @@ export default {
     }
   },
   computed: {
-    width() {
+    actualGrid() {
       if (!this.view.board) { return 0 }
-      return this.view.board[0].length
+      if (this.view.board.grid) return this.view.board.grid;
+      return this.view.board;
+    },
+    width() {
+      if (!this.actualGrid) { return 0 }
+      if (this.view.board.width) return this.view.board.width;
+      return this.actualGrid[0].length
     },
     height() {
-      if (!this.view.board) { return 0 }
-      return this.view.board.length
+      if (!this.actualGrid) { return 0 }
+      if (this.view.board.height) return this.view.board.height;
+      return this.actualGrid.length
     }
   }
 };

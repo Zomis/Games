@@ -23,8 +23,6 @@
       </v-col>
     </v-row>
     <Map2D
-      :width="width"
-      :height="height"
       :grid="view.board"
       :click-handler="onClick"
       :piece-exists="e => true"

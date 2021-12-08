@@ -2,14 +2,14 @@
   <div class="board-parent">
     <div
       class="board"
-      :style="{width: width*64 + 'px', height: height*64 + 'px'}"
+      :style="{width: actualWidth*64 + 'px', height: actualHeight*64 + 'px'}"
     >
       <div
         class="pieces pieces-bg"
-        :style="{ 'grid-template-columns': `repeat(${width}, 1fr)`, 'grid-template-rows': `repeat(${height}, 1fr)` }"
+        :style="{ 'grid-template-columns': `repeat(${actualWidth}, 1fr)`, 'grid-template-rows': `repeat(${actualHeight}, 1fr)` }"
       >
-        <template v-for="y in height">
-          <template v-for="x in width">
+        <template v-for="y in actualHeight">
+          <template v-for="x in actualWidth">
             <div
               :key="`${x}_${y}`"
               :class="['piece', 'piece-bg', {actionable: actionable && actionable[`${x-1},${y-1}`]}]"
@@ -20,7 +20,7 @@
       </div>
       <div
         class="pieces player-pieces"
-        :style="{ 'grid-template-columns': `repeat(${width}, 1fr)`, 'grid-template-rows': `repeat(${height}, 1fr)` }"
+        :style="{ 'grid-template-columns': `repeat(${actualWidth}, 1fr)`, 'grid-template-rows': `repeat(${actualHeight}, 1fr)` }"
       >
         <template v-for="piece in gridTiles">
           <div
@@ -48,17 +48,42 @@ export default {
     onClick(data) {
       console.log("Map2D Click", data);
       if (this.clickHandler) {
-        this.clickHandler(data.x, data.y)
+        this.clickHandler(data.x + this.left, data.y + this.top)
       }
     }
   },
   computed: {
+    actualGrid() {
+      if (!this.grid) return [[]];
+      if (this.grid.grid) return this.grid.grid
+      return this.grid
+    },
+    actualWidth() {
+      if (!this.grid) return 0;
+      if (this.width) return this.width
+      if (this.grid.width) return this.grid.width
+      return 0
+    },
+    actualHeight() {
+      if (!this.grid) return 0;
+      if (this.height) return this.height
+      if (this.grid.height) return this.grid.height
+      return 0
+    },
+    top() {
+      if (this.grid.top) return this.grid.top
+      return 0
+    },
+    left() {
+      if (this.grid.left) return this.grid.left
+      return 0
+    },
     gridTiles() {
-      if (typeof this.grid === 'undefined') {
+      if (typeof this.actualGrid === 'undefined') {
         return []
       }
       let gridTiles = []
-      this.grid.forEach((row, y) => {
+      this.actualGrid.forEach((row, y) => {
         row.forEach((tile, x) => {
           if (this.pieceExists(tile)) {
             gridTiles.push({ key: `tile-${x}-${y}`, x: x, y: y, tile: tile })

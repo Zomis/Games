@@ -137,7 +137,7 @@ object ArtaxGame {
             }
             view("actionName") { moveAction.name }
             view("currentPlayer") { game.currentPlayer }
-            view("grid") { game.board.view { mapOf("owner" to it) } }
+            view("board") { game.board.view { mapOf("owner" to it) } }
         }
     }
 

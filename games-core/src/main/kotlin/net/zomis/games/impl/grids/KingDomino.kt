@@ -281,8 +281,6 @@ object KingDomino {
                     )
                 }
 
-                view("width") { game.players.first().grid.sizeX }
-                view("height") { game.players.first().grid.sizeY }
                 view("viewer") { viewer ?: 0 }
                 view("currentPlayer") { game.currentPlayerIndex }
                 view("actions") {
@@ -297,12 +295,13 @@ object KingDomino {
                 }
                 view("players") {
                     game.players.map { player ->
+                        val extraRadius = if (player.playerIndex == viewer) 2 else 0
                         mapOf(
                             "playerIndex" to player.playerIndex,
                             "points" to player.points(),
                             "biggestArea" to player.biggestAreaSize,
                             "crowns" to player.totalCrowns,
-                            "grid" to player.grid.view { tileView(it) }
+                            "grid" to player.grid.cropped(extraRadius).view { tileView(it) }
                         )
                     }
                 }

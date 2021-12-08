@@ -6,6 +6,7 @@
       Current player {{ view.currentPlayer }}
       </p>
       <p>
+        Debug information:
           {{ view.actions }}
       </p>
 
@@ -48,7 +49,6 @@
         </v-card-title>
         <v-card-text>
             <Map2D
-                :width="view.width" :height="view.height"
                 :grid="view.players[playerIndex].grid"
                 :click-handler="onClick" :piece-exists="_ => true"
             >
