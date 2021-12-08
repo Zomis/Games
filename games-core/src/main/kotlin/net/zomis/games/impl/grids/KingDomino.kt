@@ -66,7 +66,7 @@ object KingDomino {
         sand-***mine
         """.trimIndent().split("\n").filter { it.isNotEmpty() }.withIndex().map { domino ->
             domino.value.split("-").map { tile ->
-                Tile(TileType.valueOf(tile.toUpperCase().replace("*", "")), tile.count { it == '*' })
+                Tile(TileType.valueOf(tile.uppercase().replace("*", "")), tile.count { it == '*' })
             }.let { DominoTile(domino.index + 1, it[0] to it[1]) }
     }
 
@@ -94,13 +94,8 @@ object KingDomino {
         }
 
         fun placeableBox(placement: DominoPlacement): Boolean {
-            val existing = grid.all().filter { it.value.type != null }.map { it.point }
-            val check = existing + placement.placePoints()
-            val uniqueX = check.map { it.x }.distinct()
-            val uniqueY = check.map { it.y }.distinct()
-            val diffX = uniqueX.maxOrNull()!! - uniqueX.minOrNull()!!
-            val diffY = uniqueY.maxOrNull()!! - uniqueY.minOrNull()!!
-            return diffX <= 4 && diffY <= 4
+            val border = placement.placePoints().fold(grid.border()) { rect, point -> rect.include(point.x, point.y) }
+            return border.width <= 5 && border.height <= 5
         }
 
         val biggestAreaSize: Int get() = this.connectedAreas()
@@ -108,14 +103,13 @@ object KingDomino {
             .maxOf { it.points.size }
         val totalCrowns get() = grid.all().sumOf { it.value.crowns }
 
-        // For simplicity, as build grid is 5x5 but castle does not need to be in center, use 9x9
-        val grid = Games.components.grid(9, 9) { _, _ -> Tile(null, 0) }
+        val grid = Games.components.expandableGrid<Tile>()
 
-        fun connectedAreas() = grid.connected(Direction4.values().map(Direction4::delta)) { it.value.type?.name ?: "" }
+        fun connectedAreas() = grid.connected(Direction4.values().map(Direction4::delta)) { it.valueOrNull(grid)?.type?.name ?: "" }
         fun points(): Int {
             val areas = connectedAreas()
             return areas.sumOf { area ->
-                val crowns = area.points.sumOf { it.value.crowns }
+                val crowns = area.points.sumOf { it.valueOrNull(grid)?.crowns ?: 0 }
                 crowns * area.points.size
             }
         }
@@ -154,9 +148,7 @@ object KingDomino {
             init { Model(playerCount) }
             onStart {
                 game.players.forEach {
-                    val centerX = it.grid.sizeX / 2
-                    val centerY = it.grid.sizeY / 2
-                    it.grid.set(centerX, centerY, Tile(TileType.CASTLE, 0))
+                    it.grid.set(0, 0, Tile(TileType.CASTLE, 0))
                 }
 
                 val playerIndices = if (game.players.size == 2) game.players.indices + game.players.indices else game.players.indices
@@ -205,16 +197,16 @@ object KingDomino {
                                     chosenDomino.tiles.toList().distinctBy { it.type }.map { it.type!!.name to it }
                                 }) { firstTile ->
                                     options({
-                                        val grid = game.players[playerIndex].grid
-                                        grid.all().filter { tile -> tile.value.type == null && Direction4.values().any {
+                                        val grid = game.players[playerIndex].grid.cropped(1)
+                                        grid.all().filter { tile -> tile.valueOrNull(grid)?.type == null && Direction4.values().any {
                                             grid.getOrNull(tile.point + it.delta())?.connectableWith(firstTile) ?: false
                                         } }.map { it.point }
                                     }) { point ->
                                         options({ Direction4.values()
                                             .map { point + it.delta() }
                                             .filter {
-                                                val grid = game.players[playerIndex].grid
-                                                grid.isOnMap(it.x, it.y) && grid.get(it.x, it.y).type == null
+                                                val grid = game.players[playerIndex].grid.cropped(2)
+                                                grid.isOnMap(it.x, it.y) && grid.getOrNull(it.x, it.y)?.type == null
                                             }
                                         }) { point2 ->
                                             parameter(DominoPlacement(firstTile, point, point2))

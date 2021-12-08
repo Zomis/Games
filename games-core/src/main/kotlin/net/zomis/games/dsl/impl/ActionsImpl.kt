@@ -78,7 +78,7 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
             }.distinct()
             if (actions.size != 1) {
                 throw IllegalStateException("Actions available: ${actions.size} for player $playerIndex " +
-                        "move ${this.actionType.name} $serialized")
+                        "actionType '${this.actionType.name}' serialized parameter: $serialized")
             }
             actions.single()
         } else {
