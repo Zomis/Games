@@ -10,7 +10,7 @@ pipeline {
         timeout(time: 1, unit: 'HOURS')
     }
     tools {
-        jdk 'Java11'
+        jdk 'JavaLatest'
     }
 
     stages {
