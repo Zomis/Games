@@ -9,15 +9,16 @@ import net.zomis.games.common.fmod
 
 class GridPointImpl<T>(
     override val x: Int, override val y: Int,
-    private val getter: (x: Int, y: Int) -> T,
+    private val getter: (x: Int, y: Int) -> T?,
     private val setter: (x: Int, y: Int, value: T) -> Unit
 ): GridPoint<T> {
     override var value: T
-        get() = getter(x, y)
+        get() = getter(x, y) ?: throw IllegalStateException("Position $this does not have a value")
         set(value) { setter(x, y, value) }
 
-    override fun rangeCheck(map: Grid<T>): GridPoint<T>?
-        = this.takeUnless { x < 0 || x >= map.sizeX || y < 0 || y >= map.sizeY }
+    override fun valueOrNull(grid: Grid<T>): T? = getter(x, y)
+
+    override fun rangeCheck(map: Grid<T>): GridPoint<T>? = this.takeIf { map.isOnMap(x, y) }
     override fun toString(): String = "Map2DPointImpl($x, $y)"
 }
 
@@ -26,6 +27,8 @@ interface GridPoint<T> {
     val y: Int
     var value: T
     fun rangeCheck(map: Grid<T>): GridPoint<T>?
+    fun valueOrNull(grid: Grid<T>): T? = if (rangeCheck(grid) == null) null else value
+
     val point get() = Point(x, y)
 }
 
@@ -58,13 +61,20 @@ interface Grid<T> {
     fun get(x: Int, y: Int): T
     fun getOrNull(point: Point): T? = getOrNull(point.x, point.y)
     fun getOrNull(x: Int, y: Int): T? = if (isOnMap(x, y)) get(x, y) else null
-    fun point(x: Int, y: Int): GridPoint<T> = GridPointImpl(x, y, this::get, this::set)
+    fun point(x: Int, y: Int): GridPoint<T> = GridPointImpl(x, y, this::getOrNull, this::set)
     fun point(point: Point): GridPoint<T> = point(point.x, point.y)
-    fun isOnMap(x: Int, y: Int): Boolean = x >= 0 && y >= 0 && x < this.sizeX && y < this.sizeY
+    fun isOnMap(x: Int, y: Int): Boolean {
+        val border = border()
+        return x >= border.left && y >= border.top && x <= border.right && y <= border.bottom
+    }
+
     fun wrapAround(point: Point): Point = Point(point.x fmod sizeX, point.y fmod sizeY)
     fun border(): Rect = Rect(top = 0, left = 0, right = sizeX - 1, bottom = sizeY - 1)
-    fun points(): Iterable<Point> = (0 until sizeY).flatMap { y ->
-        (0 until sizeX).map { x -> Point(x, y) }
+    fun points(): Iterable<Point> {
+        val border = border()
+        return (border.top..border.bottom).flatMap { y ->
+            (border.left..border.right).map { x -> Point(x, y) }
+        }
     }
     fun all(): Iterable<GridPoint<T>> = points().map { point(it.x, it.y) }
 

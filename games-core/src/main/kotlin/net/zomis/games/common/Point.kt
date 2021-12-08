@@ -18,6 +18,8 @@ data class Rect(val top: Int, val left: Int, val right: Int, val bottom: Int) {
         return Rect(top = ys[0], left = xs[0], right = xs[1], bottom = ys[1])
     }
 
+    fun contains(x: Int, y: Int): Boolean = x in left..right && y in top..bottom
+
     fun expand(extraRadius: Int): Rect = Rect(
         top = top - extraRadius,     left = left - extraRadius,
         right = right + extraRadius, bottom = bottom + extraRadius

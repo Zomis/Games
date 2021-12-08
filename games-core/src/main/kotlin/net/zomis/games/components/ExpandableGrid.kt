@@ -32,6 +32,8 @@ class ExpandableGrid<T>(val chunkSize: Int = 16): Grid<T> {
         return chunks.getOrPut(point) { Chunk(chunkSize, chunkX, chunkY) }
     }
 
+    override fun points(): Iterable<Point> = super.points().filter { isOnMap(it.x, it.y) }
+
     fun cropped(extraRadius: Int = 0): Grid<T> {
         return object : Grid<T> {
             override fun border(): Rect = this@ExpandableGrid.border().expand(extraRadius)
@@ -68,8 +70,10 @@ class ExpandableGrid<T>(val chunkSize: Int = 16): Grid<T> {
 
     override fun set(x: Int, y: Int, value: T) = chunk(x, y).set(x + offset, y + offset, value)
 
-    override fun get(x: Int, y: Int): T = chunk(x, y).get(x + offset, y + offset)!!
+    override fun get(x: Int, y: Int): T = chunk(x, y).get(x + offset, y + offset)
+        ?: throw NullPointerException("Missing position ${Point(x, y)} on grid with border ${border()}")
 
     override fun getOrNull(x: Int, y: Int): T? = chunk(x, y).get(x + offset, y + offset)
+    override fun isOnMap(x: Int, y: Int): Boolean = getOrNull(x, y) != null
 
 }

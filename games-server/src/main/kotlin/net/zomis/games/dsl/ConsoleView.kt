@@ -67,9 +67,9 @@ class ConsoleView<T: Any> {
             val dataStrings = data.map { row ->
                 row.map { strings(0, null, it) }
             }
-            val maxLinesPerRow = dataStrings.map { row -> row.map { it.size }.maxOrNull()!! }
+            val maxLinesPerRow = dataStrings.map { row -> row.maxOf { it.size } }
             val maxWidthPerCol = dataStrings[0].indices.map { colIndex ->
-                dataStrings.map { it[colIndex] }.flatten().map { it.length }.maxOrNull()!!
+                dataStrings.map { it[colIndex] }.flatten().maxOf { it.length }
             }
             if (maxLinesPerRow.maxOrNull()!! == 1 && maxWidthPerCol.maxOrNull()!! == 1) {
                 // use single chars
@@ -93,10 +93,10 @@ class ConsoleView<T: Any> {
                 val lineSeparator = "".padEnd(maxLine, '-')
                 yield(prefix + lineSeparator)
                 for (row in lines) {
-                    val maxCellLines = row.map { it.size }.maxOrNull() ?: 1
+                    val maxCellLines = row.maxOfOrNull { it.size } ?: 1
                     val columnLines = (0 until maxCellLines).map { line ->
-                        row.map { cell ->
-                            cell[line]
+                        row.mapIndexed { x, cell ->
+                            if (cell.size > line) cell[line] else "".padStart(maxWidthPerCol[x])
                         }.joinToString("|", "|", "|")
                     }.map { prefix + it }
                     yieldAll(columnLines)
