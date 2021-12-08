@@ -41,9 +41,15 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         events.listen("Auth", ClientLoginEvent::class, {true}, {
             this.authenticate(it)
         })
+        /*
+        Should be refactored to query for each player instead of when game starts
+        game:<uuid>     player:<playerId>:unfinished    <player indices access>
+        game:<uuid>     awaiting                        PlayerActions: List of true/false (index = <playerIndex>)
+                        remove these when game is over
         events.listen("Load unfinished games", StartupEvent::class, {true}, {
             features.addData(UnfinishedGames(this.listUnfinished().toMutableSet()))
         })
+        */
         events.listen("save game in Database", ListenerPriority.LATER, GameInitializedEvent::class, { dbEnabled(it.game) }, {
             event -> this.createGame(event.game, event.replayState)
         })
