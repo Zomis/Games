@@ -1,65 +1,82 @@
 <template>
   <div class="king-domino">
-      <p>
+    <p>
       Play order {{ view.playOrder }}
       Viewer {{ view.viewer }}
       Current player {{ view.currentPlayer }}
-      </p>
-      <p>
-        Debug information:
-          {{ view.actions }}
-      </p>
+    </p>
+    <p>
+      Debug information:
+      {{ view.actions }}
+    </p>
 
     <!-- Choosable tiles -->
     <v-card>
-        <v-card-title>Upcoming dominoes</v-card-title>
-        <v-card-text>
-            <KingDominoPiece v-for="piece in view.dominoNextChoices" :key="piece.value"
-                :domino="piece"
-                :context="context"
-                :show-owner="true"
-                :on-click="dominoClick"
-            />
-        </v-card-text>
+      <v-card-title>Upcoming dominoes</v-card-title>
+      <v-card-text>
+        <KingDominoPiece
+          v-for="piece in view.dominoNextChoices"
+          :key="piece.value"
+          :domino="piece"
+          :context="context"
+          :show-owner="true"
+          :on-click="dominoClick"
+        />
+      </v-card-text>
     </v-card>
 
     <!-- Chosen tiles -->
     <v-card>
-        <v-card-title>Dominoes</v-card-title>
-        <v-card-text>
-            <v-btn v-for="(tile, index) in view.actions.place.tile" :key="index" @click="placeTileType(tile)">{{ tile }}</v-btn>
-            <KingDominoPiece v-for="piece in view.dominoChoices" :key="piece.value"
-                :domino="piece"
-                :context="context"
-                :show-owner="true"
-                :on-click="dominoClick"
-            />
-        </v-card-text>
+      <v-card-title>Dominoes</v-card-title>
+      <v-card-text>
+        <v-btn
+          v-for="(tile, index) in view.actions.place.tile"
+          :key="index"
+          @click="placeTileType(tile)"
+        >
+          {{ tile }}
+        </v-btn>
+        <KingDominoPiece
+          v-for="piece in view.dominoChoices"
+          :key="piece.value"
+          :domino="piece"
+          :context="context"
+          :show-owner="true"
+          :on-click="dominoClick"
+        />
+      </v-card-text>
     </v-card>
 
-    <v-card v-for="playerIndex in viewOrder" :key="playerIndex">
-        <v-card-title>
-            <PlayerProfile
-              :context="context"
-              :playerIndex="playerIndex"
-              :size="32"
-              show-name
-              :post-fix="playerIndex === view.viewer ? '(You)' : ''"
+    <v-card
+      v-for="playerIndex in viewOrder"
+      :key="playerIndex"
+    >
+      <v-card-title>
+        <PlayerProfile
+          :context="context"
+          :player-index="playerIndex"
+          :size="32"
+          show-name
+          :post-fix="playerIndex === view.viewer ? '(You)' : ''"
+        />
+      </v-card-title>
+      <v-card-text>
+        <Map2D
+          :grid="view.players[playerIndex].grid"
+          :click-handler="onClick"
+          :piece-exists="_ => true"
+        >
+          <template v-slot:default="slotProps">
+            <KingDominoTile
+              v-if="slotProps.tile.tile"
+              :tile="slotProps.tile.tile"
             />
-        </v-card-title>
-        <v-card-text>
-            <Map2D
-                :grid="view.players[playerIndex].grid"
-                :click-handler="onClick" :piece-exists="_ => true"
-            >
-                <template v-slot:default="slotProps">
-                    <KingDominoTile :tile="slotProps.tile.tile" v-if="slotProps.tile.tile" />
-                </template>
-            </Map2D>
-            <p>
-                {{ view.players[playerIndex].points }} points. Biggest area is {{ view.players[playerIndex].biggestArea }}. {{ view.players[playerIndex].crowns }} crowns.
-            </p>
-        </v-card-text>
+          </template>
+        </Map2D>
+        <p>
+          {{ view.players[playerIndex].points }} points. Biggest area is {{ view.players[playerIndex].biggestArea }}. {{ view.players[playerIndex].crowns }} crowns.
+        </p>
+      </v-card-text>
     </v-card>
   </div>
 </template>

@@ -1,16 +1,19 @@
 <template>
-    <div class="tile" :class="tileClass">
-        <v-icon
-            v-for="i in tile.crowns"
-            :key="i"
-            color="orange"
-        >
-            mdi-crown
-        </v-icon>
-        <v-icon v-if="tile.crowns === 0">
-            mdi-pen
-        </v-icon>
-    </div>
+  <div
+    class="tile"
+    :class="tileClass"
+  >
+    <v-icon
+      v-for="i in tile.crowns"
+      :key="i"
+      color="orange"
+    >
+      mdi-crown
+    </v-icon>
+    <v-icon v-if="tile.crowns === 0">
+      mdi-pen
+    </v-icon>
+  </div>
 </template>
 <script>
 export default {

@@ -1,11 +1,21 @@
 <template>
   <v-card>
     <v-text-field v-model="message" />
-    <v-btn @click="connect">Connect</v-btn>
-    <v-btn @click="login">Login</v-btn>
-    <v-btn @click="joinLobby">Join Lobby</v-btn>
-    <v-btn @click="chat">Chat</v-btn>
-    <v-btn @click="disconnect">Disconnect</v-btn>
+    <v-btn @click="connect">
+      Connect
+    </v-btn>
+    <v-btn @click="login">
+      Login
+    </v-btn>
+    <v-btn @click="joinLobby">
+      Join Lobby
+    </v-btn>
+    <v-btn @click="chat">
+      Chat
+    </v-btn>
+    <v-btn @click="disconnect">
+      Disconnect
+    </v-btn>
   </v-card>
 </template>
 
