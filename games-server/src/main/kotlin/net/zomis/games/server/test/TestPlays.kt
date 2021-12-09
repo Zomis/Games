@@ -222,7 +222,10 @@ object PlayTests {
                 }
             }
         } else {
-            nextSteps(tree, replayable, s)
+            var running: Boolean
+            do {
+                running = nextSteps(tree, replayable, s)
+            } while (running)
         }
 
         tree.save()
@@ -269,7 +272,7 @@ object PlayTests {
             println("No line from scanner, exiting")
             return false
         }
-        val step = when (choice.toLowerCase()) {
+        val step = when (choice.lowercase()) {
             "x", "q" -> return false
             "r" -> {
                 if (replayable.game.isGameOver()) {
@@ -277,9 +280,9 @@ object PlayTests {
                 }
                 val serverAIs = ServerAIs(AIRepository(), emptySet())
                 val players = (0 until replayable.playerCount).shuffled()
-                val action = players.mapNotNull {
+                val action = players.firstNotNullOf {
                     serverAIs.randomActionable(replayable.game, it)
-                }.first()
+                }
                 val serialized = replayable.game.actions.type(action.actionType)!!.actionType.serialize(action.parameter)
                 PlayTestStepPerform(action.playerIndex, action.actionType, serialized, emptyMap()) // state is filled in later
             }
@@ -298,7 +301,7 @@ object PlayTests {
 
                 val paths = mutableListOf<Any>()
                 var current: Any? = playerView
-                var input = ""
+                var inputPaths: String
                 do {
                     val options = when (current) {
                         is Map<*, *> -> current.keys.map { it.toString() }.sorted()
@@ -306,9 +309,9 @@ object PlayTests {
                         else -> break
                     }
                     println(options)
-                    input = scanner.nextLine()
-                    if (input.isEmpty()) break
-                    paths.add(input)
+                    inputPaths = scanner.nextLine()
+                    if (inputPaths.isEmpty()) break
+                    paths.add(inputPaths)
 
                     current = viewNavigation(playerView, paths)
                 } while (true)
@@ -319,7 +322,7 @@ object PlayTests {
                 println("E. I expected this")
                 println("X. I just expected it to be something")
                 println("Q. I expected it to not exist")
-                when (scanner.nextLine().toLowerCase()) {
+                when (scanner.nextLine().lowercase()) {
                     "w" -> PlayTestStepAssertView(playerIndex, PlayTestViewAssertionType.NOT_EQUALS, paths, current!!)
                     "e" -> PlayTestStepAssertView(playerIndex, PlayTestViewAssertionType.EQUALS, paths, current!!)
                     "x" -> PlayTestStepAssertView(playerIndex, PlayTestViewAssertionType.EXISTS, paths, -1)
