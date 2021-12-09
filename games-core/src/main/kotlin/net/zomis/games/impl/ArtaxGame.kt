@@ -38,11 +38,11 @@ class TTArtax(private val eliminationCallback: PlayerEliminationCallback,
     }
 
     fun allowedSource(tile: GridPoint<Int?>): Boolean {
-        return tile.value == this.currentPlayer
+        return tile.valueOrNull() == this.currentPlayer
     }
 
     fun allowedDestination(source: GridPoint<Int?>, tile: GridPoint<Int?>): Boolean {
-        if (tile.value != null) {
+        if (tile.valueOrNull() != null) {
             return false
         }
 
@@ -63,7 +63,7 @@ class TTArtax(private val eliminationCallback: PlayerEliminationCallback,
         Direction8.values().map { dir ->
             board.point(destination.x + dir.deltaX, destination.y + dir.deltaY)
                 .rangeCheck(board)
-                ?.takeIf { it.value != null }?.value = potentialWinner
+                ?.takeIf { it.valueOrNull() != null }?.value = potentialWinner
         }
 
         this.eliminatePlayersWithoutTiles()
@@ -76,13 +76,13 @@ class TTArtax(private val eliminationCallback: PlayerEliminationCallback,
         }
 
         val playersThatCanMove = eliminationCallback.remainingPlayers().filter {player ->
-            val playerTiles = this.board.all().filter { it.value == player }
-            return@filter this.board.all().any { tile -> tile.value == null &&
+            val playerTiles = this.board.all().filter { it.valueOrNull() == player }
+            return@filter this.board.all().any { tile -> tile.valueOrNull() == null &&
                 playerTiles.any { distance(tile, it) <= 2 } }
         }
         if (playersThatCanMove.size <= 1) {
             // If no moves are possible
-            val counts = this.board.all().filter { it.value != null }
+            val counts = this.board.all().filter { it.valueOrNull() != null }
                 .groupBy { it.value }
                 .mapKeys { it.key!! }
                 .mapValues { it.value.size }
@@ -100,7 +100,7 @@ class TTArtax(private val eliminationCallback: PlayerEliminationCallback,
 
     private fun eliminatePlayersWithoutTiles() {
         val losingPlayers = eliminationCallback.remainingPlayers().filter { player ->
-            this.board.all().none { it.value == player }
+            this.board.all().none { it.valueOrNull() == player }
         }
         eliminationCallback.eliminateMany(losingPlayers, WinResult.LOSS)
     }

@@ -105,11 +105,11 @@ object KingDomino {
 
         val grid = Games.components.expandableGrid<Tile>()
 
-        fun connectedAreas() = grid.connected(Direction4.values().map(Direction4::delta)) { it.valueOrNull(grid)?.type?.name ?: "" }
+        fun connectedAreas() = grid.connected(Direction4.values().map(Direction4::delta)) { it.valueOrNull()?.type?.name ?: "" }
         fun points(): Int {
             val areas = connectedAreas()
             return areas.sumOf { area ->
-                val crowns = area.points.sumOf { it.valueOrNull(grid)?.crowns ?: 0 }
+                val crowns = area.points.sumOf { it.valueOrNull()?.crowns ?: 0 }
                 crowns * area.points.size
             }
         }
@@ -198,7 +198,7 @@ object KingDomino {
                                 }) { firstTile ->
                                     options({
                                         val grid = game.players[playerIndex].grid.cropped(1)
-                                        grid.all().filter { tile -> tile.valueOrNull(grid)?.type == null && Direction4.values().any {
+                                        grid.all().filter { tile -> tile.valueOrNull()?.type == null && Direction4.values().any {
                                             grid.getOrNull(tile.point + it.delta())?.connectableWith(firstTile) ?: false
                                         } }.map { it.point }
                                     }) { point ->

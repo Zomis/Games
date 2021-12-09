@@ -16,7 +16,7 @@ class GridPointImpl<T>(
         get() = getter(x, y) ?: throw IllegalStateException("Position $this does not have a value")
         set(value) { setter(x, y, value) }
 
-    override fun valueOrNull(grid: Grid<T>): T? = getter(x, y)
+    override fun valueOrNull(): T? = getter(x, y)
 
     override fun rangeCheck(map: Grid<T>): GridPoint<T>? = this.takeIf { map.isOnMap(x, y) }
     override fun toString(): String = "Map2DPointImpl($x, $y)"
@@ -27,7 +27,7 @@ interface GridPoint<T> {
     val y: Int
     var value: T
     fun rangeCheck(map: Grid<T>): GridPoint<T>?
-    fun valueOrNull(grid: Grid<T>): T? = if (rangeCheck(grid) == null) null else value
+    fun valueOrNull(): T?
 
     val point get() = Point(x, y)
 }
@@ -100,12 +100,14 @@ interface Grid<T> {
 }
 
 class GridImpl<T>(override val sizeX: Int, override val sizeY: Int, val factory: (x: Int, y: Int) -> T) : Grid<T> {
+    private val border = Rect(0, 0, sizeX - 1, sizeY - 1)
     val grid: MutableList<MutableList<T>> = (0 until sizeY).map { y ->
         (0 until sizeX).map { x ->
             factory(x, y)
         }.toMutableList()
     }.toMutableList()
 
+    override fun border(): Rect = border
     override fun set(x: Int, y: Int, value: T) { grid[y][x] = value }
     override fun get(x: Int, y: Int): T = grid[y][x]
 
