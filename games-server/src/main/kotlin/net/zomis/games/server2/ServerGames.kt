@@ -5,12 +5,14 @@ import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.impl.*
 import net.zomis.games.impl.grids.KingDomino
+import net.zomis.games.impl.paths.Backgammon
 import net.zomis.games.impl.ttt.*
 import net.zomis.games.impl.words.Decrypto
 
 object ServerGames {
 
     val games = listOf(
+        Backgammon.game,
         KingDomino.game,
         Red7.Game.game,
         LightsOut.Game.game,

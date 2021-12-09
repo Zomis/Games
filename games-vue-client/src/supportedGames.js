@@ -16,6 +16,7 @@ function dsl(lookup) {
 
 import PlayGame from "@/components/PlayGame";
 
+import Backgammon from "@/components/games/paths/Backgammon";
 import RoyalGameOfUR from "@/components/RoyalGameOfUR";
 import DungeonMayhem from "@/components/games/dungeon-mayhem/DungeonMayhem"
 import UTTT from "@/components/games/UTTT";
@@ -110,6 +111,12 @@ function upgradeSpice(spice) {
 
 
 const supportedGames = {
+    "Backgammon": {
+        dsl: true,
+        component: Backgammon,
+        playTime: '15',
+        amountOfPlayers: '2'
+    },
     "King Domino": {
         dsl: true,
         component: KingDomino,

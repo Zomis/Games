@@ -39,6 +39,7 @@ class Graph<T, E> {
 }
 
 class Path<T: Any>(start: T) {
+    // Add bounce mechanics, or must go out on X
     val pos = mutableListOf(start)
 
     fun add(next: T) {
