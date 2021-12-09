@@ -179,7 +179,7 @@ object PlayTests {
             gameName = { gameName },
             playersCount = { playersCount },
             config = { config ?: it.setup().getDefaultConfig() }
-        ), interactive = false)
+        ), interactive = true)
     }
 
     fun fullJsonTest(file: File, choices: TestPlayChoices, interactive: Boolean) {
