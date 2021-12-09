@@ -48,7 +48,8 @@ export default {
   },
   computed: {
     serverInfo() {
-      const chosenServer = this.$route.query.server || "zomis";
+      const urlParams = new URLSearchParams(window.location.search);
+      const chosenServer = urlParams.get('server') || "zomis";
       return this.serverOptions.find(s => s.name === chosenServer) || this.serverOptions[0];
     }
   },
