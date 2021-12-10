@@ -16,6 +16,7 @@ object Backgammon {
     }
     data class PieceMove(val piece: Int, val steps: Int)
     class Model {
+        var discardedDice: List<Int> = emptyList()
         var currentPlayerIndex: Int = 0
         val points = (1..24).map { PiecePosition(0, 0) }
         val bars = (0..1).map { PiecePosition(it, 0) }
@@ -35,7 +36,7 @@ object Backgammon {
                 return false
             }
             if (piece + roll > 24) {
-                return allowBearOff(roll)
+                return allowBearOff(piece, roll)
             }
             val destination = path.pos.getOrNull(piece + roll) ?: return false
             return destination.playerIndex == currentPlayerIndex || destination.count <= 1
@@ -61,9 +62,11 @@ object Backgammon {
             }.map { it.index }
         }
 
-        fun allowBearOff(steps: Int): Boolean {
+        fun allowBearOff(piece: Int, steps: Int): Boolean {
             val playerPieces = this.playerPieces()
-            return playerPieces.all { it >= 24 - steps }
+            // Allow bear off if everything is over 18 and roll is exact, or if this piece is closest to goal
+            val allHome = playerPieces.all { it >= 18 } && piece + steps == 25
+            return allHome || playerPieces.all { it >= piece }
         }
 
         fun diceLocked(steps: Int): Boolean {
@@ -106,6 +109,7 @@ object Backgammon {
                 step("move") {
                     // Remove invalid dice
                     if (game.dice.all { game.diceLocked(it) }) {
+                        game.discardedDice = game.dice.toList()
                         game.dice.clear()
                     }
                     yieldAction(move) {
@@ -136,6 +140,7 @@ object Backgammon {
                         options { Unit.toSingleList() }
                         perform {
                             game.dice.clear()
+                            game.discardedDice = emptyList()
                             game.dice.add(replayable.int("roll1") { random.nextInt(6) + 1 })
                             game.dice.add(replayable.int("roll2") { random.nextInt(6) + 1 })
                             if (game.dice.distinct().size == 1) {
@@ -162,6 +167,7 @@ object Backgammon {
                 view("middle") {
                     (0..1).map { game.paths[it].pos[0] }
                 }
+                view("discardedDice") { game.discardedDice }
                 view("actions") {
                     val noChoices = actionsChosen().chosen()?.chosen?.isEmpty() ?: true
                     mapOf(

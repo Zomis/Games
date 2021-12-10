@@ -50,6 +50,7 @@
     </v-btn>
     {{ view.dice }}
     <v-btn v-for="(roll, i) in view.actions.dice" :key="i" @click="actions.choose('move', roll)">Use die {{ roll }}</v-btn>
+    <p v-if="view.discardedDice.length > 0">Unusable dice was: {{ view.discardedDice }}</p>
   </div>
 </template>
 <script>
@@ -93,7 +94,7 @@ export default {
       for (let playerIndex = 0; playerIndex <= 1; playerIndex++) {
         let pos = this.view.middle[playerIndex];
         for (let i = 0; i < pos.count; i++) {
-          arr.push({ x: 272, y: 100*playerIndex + 38*i, playerIndex: pos.playerIndex, pos: 'bar' });
+          arr.push({ x: 272, y: 100 + 200*playerIndex + 38*i, playerIndex: pos.playerIndex, pos: 'bar' });
         }
       }
 
