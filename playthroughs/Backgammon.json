@@ -1,0 +1,32 @@
+{
+  "game" : "Backgammon",
+  "players" : 2,
+  "config" : { },
+  "state" : { },
+  "steps" : [ {
+    "playerIndex" : 0,
+    "actionType" : "roll",
+    "action" : { },
+    "state" : {
+      "roll" : 2
+    },
+    "type" : "perform"
+  }, {
+    "playerIndex" : 1,
+    "actionType" : "roll",
+    "action" : { },
+    "state" : {
+      "roll" : 6
+    },
+    "type" : "perform"
+  }, {
+    "playerIndex" : 1,
+    "actionType" : "move",
+    "action" : {
+      "piece" : 6,
+      "steps" : 2
+    },
+    "state" : { },
+    "type" : "perform"
+  } ]
+}

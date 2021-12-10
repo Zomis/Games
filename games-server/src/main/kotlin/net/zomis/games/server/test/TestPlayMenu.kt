@@ -70,10 +70,9 @@ object TestPlayMenu {
 }
 
 fun main() {
-//    PlayTests.fullJsonTest(TestPlayMenu.file("TTTUpgrade.json"), TestPlayMenu.choices)
-//    PlayTests.fullJsonTest(TestPlayMenu.file("UR.json"), TestPlayMenu.choices)
-
-//    PlayTests.fullJsonTest(TestPlayMenu.file("t.json"), TestPlayMenu.choices)
+//    PlayTests.fullJsonTest(TestPlayMenu.file("TTTUpgrade.json"), TestPlayMenu.choices, true)
+//    PlayTests.fullJsonTest(TestPlayMenu.file("UR.json"), TestPlayMenu.choices, true)
+//    PlayTests.fullJsonTest(TestPlayMenu.file("Backgammon.json"), TestPlayMenu.choices, true)
 //    PlayTests.fullJsonTest(TestPlayMenu.file("KingDomino.json"), TestPlayMenu.choices, true)
-//    TestPlayMenu.menu()
+    TestPlayMenu.menu()
 }
