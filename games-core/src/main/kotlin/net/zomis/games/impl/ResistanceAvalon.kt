@@ -4,7 +4,6 @@ import net.zomis.games.WinResult
 import net.zomis.games.cards.CardZone
 import net.zomis.games.common.next
 import net.zomis.games.common.nextReversed
-import net.zomis.games.dsl.ActionChoicesNextScope
 import net.zomis.games.dsl.ActionChoicesScope
 import net.zomis.games.dsl.GameCreator
 import net.zomis.games.dsl.withIds

@@ -2,9 +2,7 @@ package net.zomis.games.dsl.actions
 
 import net.zomis.games.WinResult
 import net.zomis.games.api.GamesApi
-import net.zomis.games.dsl.ActionChoicesNextScope
 import net.zomis.games.dsl.ActionChoicesScope
-import net.zomis.games.dsl.ActionChoicesStartScope
 import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.impl.ActionSampleSize
 import org.junit.jupiter.api.Assertions

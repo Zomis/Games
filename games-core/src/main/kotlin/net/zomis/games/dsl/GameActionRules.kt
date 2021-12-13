@@ -81,17 +81,6 @@ interface ActionChoicesScope<T : Any, P : Any> {
     fun <E : Any> optionsWithIds(options: ActionOptionsScope<T>.() -> Iterable<Pair<String, E>>, next: ActionChoicesScope<T, P>.(E) -> Unit)
 }
 
-@Deprecated("use ActionChoicesScope instead")
-interface ActionChoicesNextScope<T : Any, A : Any> : ActionChoicesStartScope<T, A> {
-    fun parameter(action: A)
-}
-@Deprecated("use ActionChoicesScope instead")
-interface ActionChoicesStartScope<T : Any, A : Any> {
-    val context: ActionOptionsContext<T>
-    fun <E : Any> options(options: ActionOptionsScope<T>.() -> Iterable<E>, next: ActionChoicesNextScope<T, A>.(E) -> Unit)
-    fun <E : Any> optionsWithIds(options: ActionOptionsScope<T>.() -> Iterable<Pair<String, E>>, next: ActionChoicesNextScope<T, A>.(E) -> Unit)
-}
-
 interface GameRuleTriggerScope<T, E> {
     val game: T
     val trigger: E
