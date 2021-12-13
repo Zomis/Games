@@ -28,6 +28,18 @@ data class Rect(val top: Int, val left: Int, val right: Int, val bottom: Int) {
     fun include(x: Int, y: Int): Rect
         = Rect(left = min(left, x), right = max(right, x), top = min(top, y), bottom = max(bottom, y))
 
+    fun intersects(other: Rect): Boolean {
+        if (this.bottom < other.top) return false
+        if (this.right < other.left) return false
+        if (this.left > other.right) return false
+        if (this.top > other.bottom) return false
+        return true
+    }
+
+    fun points(): Sequence<Point> = (top..bottom).asSequence().flatMap { y ->
+        (left..right).asSequence().map { x -> Point(x, y) }
+    }
+
     val width: Int get() = right - left + 1
     val height: Int get() = bottom - top + 1
 }
