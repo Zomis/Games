@@ -2,17 +2,22 @@ package net.zomis.games
 
 import net.zomis.best
 
-interface PlayerEliminationCallback {
+interface PlayerEliminationsRead {
     val playerCount: Int
     val playerIndices: IntRange get() = 0 until playerCount
     fun remainingPlayers(): List<Int>
     fun eliminations(): List<PlayerElimination>
     fun nextPlayer(currentPlayer: Int): Int?
-
+    fun nextEliminationPosition(winResult: WinResult): Int
+    fun eliminationFor(playerIndex: Int): PlayerElimination? = eliminations().find { it.playerIndex == playerIndex }
+    fun isAlive(playerIndex: Int) = eliminationFor(playerIndex) == null
+    fun isGameOver(): Boolean
+    fun isEliminated(playerIndex: Int): Boolean = !isAlive(playerIndex)
+}
+interface PlayerEliminationsWrite: PlayerEliminationsRead {
     fun result(playerIndex: Int, winResult: WinResult)
     fun position(playerIndex: Int, winResult: WinResult, position: Int)
     fun eliminate(elimination: PlayerElimination)
-    fun nextEliminationPosition(winResult: WinResult): Int
     fun eliminateMany(playerIndices: Iterable<Int>, winResult: WinResult)
 
     fun eliminateRemaining(winResult: WinResult)
@@ -22,16 +27,13 @@ interface PlayerEliminationCallback {
         this.result(playerIndex, WinResult.WIN)
         this.eliminateRemaining(WinResult.LOSS)
     }
-
-    fun eliminationFor(playerIndex: Int): PlayerElimination? = eliminations().find { it.playerIndex == playerIndex }
-    fun isAlive(playerIndex: Int) = eliminationFor(playerIndex) == null
-    fun isGameOver(): Boolean
-    fun isEliminated(playerIndex: Int): Boolean = !isAlive(playerIndex)
 }
+@Deprecated("replace with PlayerEliminationsWrite or PlayerEliminationsRead")
+interface PlayerEliminationCallback: PlayerEliminationsWrite
 
 data class PlayerElimination(val playerIndex: Int, val winResult: WinResult, val position: Int)
 
-class PlayerEliminations(override val playerCount: Int): PlayerEliminationCallback {
+class PlayerEliminations(override val playerCount: Int): PlayerEliminationCallback, PlayerEliminationsWrite, PlayerEliminationsRead {
 
     private val eliminations = mutableListOf<PlayerElimination>()
     var callback: (PlayerElimination) -> Unit = {}
