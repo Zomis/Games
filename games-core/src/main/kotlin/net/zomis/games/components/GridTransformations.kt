@@ -27,6 +27,7 @@ enum class TransformationType(val transforming: (Position) -> Position, val reve
 }
 
 enum class Transformation(private val transformations: List<TransformationType>) {
+    // FLIP_XY with matrix (0, 1) (1, 0) is possible by using FLIP_X / FLIP_Y with rotation.
     NO_CHANGE(listOf()),
     FLIP_X(listOf(TransformationType.FLIP_X)),
     FLIP_Y(listOf(TransformationType.FLIP_Y)),
