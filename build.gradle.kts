@@ -72,8 +72,8 @@ kotlin {
 
                 implementation("com.beust:jcommander:1.81")
                 implementation("org.java-websocket:Java-WebSocket:1.5.2")
-                implementation("org.apache.logging.log4j:log4j-slf4j18-impl:2.15.0")
-                implementation("org.apache.logging.log4j:log4j-core:2.15.0")
+                implementation("org.apache.logging.log4j:log4j-slf4j18-impl:2.16.0")
+                implementation("org.apache.logging.log4j:log4j-core:2.16.0")
 
                 implementation("io.javalin:javalin:2.8.0")
                 implementation("com.github.kittinunf.fuel:fuel:2.3.1")
