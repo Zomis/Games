@@ -82,6 +82,10 @@ class ActionComplexBlockRun<T: Any, P: Any>(
         return this.internalOptions({ options(context).map { it.first to it.second } }, next)
     }
 
+    override fun <C : Any> recursive(base: List<C>, options: ActionChoicesRecursiveSpecScope<T, C, P>.() -> Unit) {
+        TODO("Not yet implemented")
+    }
+
     fun createNext(): ActionComplexNextImpl<T, P> {
         if (blockRun != this) return blockRun.createNext()
         return ActionComplexNextImpl(actionType, context, chosen, choices.asSequence(), parameters.asSequence())

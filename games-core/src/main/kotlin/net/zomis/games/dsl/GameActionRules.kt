@@ -1,6 +1,7 @@
 package net.zomis.games.dsl
 
 import net.zomis.games.PlayerEliminations
+import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.impl.ActionOptionsContext
 import kotlin.reflect.KClass
@@ -74,9 +75,30 @@ interface GameActionRule<T : Any, A : Any> : GameActionSpecificationScope<T, A> 
     operator fun invoke(ruleSpec: GameActionSpecificationScope<T, A>.() -> Unit)
 }
 
+interface ActionChoicesRecursiveScope<T : Any, C : Any> {
+    val chosen: List<C>
+    val game: T
+    val eliminations: PlayerEliminationsRead
+    val actionType: String
+    val playerIndex: Int
+}
+
+interface ActionChoicesRecursiveSpecScope<T : Any, C: Any, P : Any> {
+    val game: T
+    val playerIndex: Int
+
+    fun until(condition: ActionChoicesRecursiveScope<T, C>.() -> Boolean)
+    fun <E : Any> options(options: ActionChoicesRecursiveScope<T, C>.() -> Iterable<E>, next: ActionChoicesRecursiveSpecScope<T, C, P>.(E) -> Unit)
+    fun <E : Any> optionsWithIds(options: ActionChoicesRecursiveScope<T, C>.() -> Iterable<Pair<String, E>>, next: ActionChoicesRecursiveSpecScope<T, C, P>.(E) -> Unit)
+    fun recursion(chosen: C)
+    fun parameter(parameterCreator: ActionChoicesRecursiveScope<T, C>.() -> P)
+    fun intermediateParameter(allowed: ActionChoicesRecursiveScope<T, C>.() -> Boolean)
+}
+
 interface ActionChoicesScope<T : Any, P : Any> {
     fun parameter(parameter: P)
     val context: ActionOptionsContext<T>
+    fun <C : Any> recursive(base: List<C>, options: ActionChoicesRecursiveSpecScope<T, C, P>.() -> Unit)
     fun <E : Any> options(options: ActionOptionsScope<T>.() -> Iterable<E>, next: ActionChoicesScope<T, P>.(E) -> Unit)
     fun <E : Any> optionsWithIds(options: ActionOptionsScope<T>.() -> Iterable<Pair<String, E>>, next: ActionChoicesScope<T, P>.(E) -> Unit)
 }
