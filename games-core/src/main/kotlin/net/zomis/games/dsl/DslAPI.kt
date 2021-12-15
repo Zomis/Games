@@ -13,7 +13,7 @@ interface Actionable<T : Any, A : Any> {
     val parameter: A
 }
 interface GameUtils {
-    val playerEliminations: PlayerEliminationsRead
+    val eliminations: PlayerEliminationsRead
     val replayable: ReplayableScope
 }
 data class Action<T : Any, A : Any>(

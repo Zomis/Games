@@ -191,7 +191,7 @@ class StateKeeper {
         logEntries.add(log)
     }
 }
-class ReplayState(val stateKeeper: StateKeeper, override val playerEliminations: PlayerEliminationsWrite): EffectScope, ReplayableScope {
+class ReplayState(val stateKeeper: StateKeeper, override val eliminations: PlayerEliminationsWrite): EffectScope, ReplayableScope {
     private val mostRecent = mutableMapOf<String, Any>()
 
     override val replayable: ReplayableScope get() = this

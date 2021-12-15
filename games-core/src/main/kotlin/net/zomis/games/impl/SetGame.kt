@@ -220,7 +220,7 @@ object SetGame {
                         cardsResult.cards.asSequence().forEach { game.board.card(it).remove() }
                     }
                     if (!setCheck(game, this.replayable)) {
-                        playerEliminations.eliminateBy(game.players.mapIndexed { index, i -> index to i.points }, Comparator { a, b -> a - b })
+                        eliminations.eliminateBy(game.players.mapIndexed { index, i -> index to i.points }, Comparator { a, b -> a - b })
                     }
                 }
             }

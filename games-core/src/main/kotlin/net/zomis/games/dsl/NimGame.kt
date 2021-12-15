@@ -47,7 +47,7 @@ object NimGame {
                     action.parameter.amount > pileRemaining && action.parameter.amount <= game.maxPerTurn
                 }
                 effect {
-                    game.move(action.parameter, this.playerEliminations)
+                    game.move(action.parameter, eliminations)
                 }
             }
         }

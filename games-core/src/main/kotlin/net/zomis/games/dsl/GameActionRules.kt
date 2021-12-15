@@ -41,10 +41,8 @@ interface LogActionScope<T : Any, A : Any>: LogScope<T> {
 interface ActionRuleScope<T : Any, A : Any> : GameUtils, ActionOptionsScope<T> {
     override val game: T
     val action: Actionable<T, A>
-    val eliminations: PlayerEliminationsWrite
+    override val eliminations: PlayerEliminationsWrite
     override val replayable: ReplayableScope
-    override val playerEliminations: PlayerEliminationsWrite
-        get() = eliminations
     fun log(logging: LogActionScope<T, A>.() -> String)
     fun logSecret(player: PlayerIndex, logging: LogActionScope<T, A>.() -> String): LogSecretActionScope<T, A>
 }

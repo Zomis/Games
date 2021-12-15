@@ -367,7 +367,9 @@ object HanabiGame {
         }
     }
 
-    private fun playCardTo(playCard: Card<HanabiCard>, playArea: CardZone<HanabiCard>?, game: Hanabi, effectScope: GameUtils) {
+    private fun playCardTo(playCard: Card<HanabiCard>, playArea: CardZone<HanabiCard>?,
+        game: Hanabi, effectScope: ActionRuleScope<Hanabi, *>
+    ) {
         moveCard(effectScope.replayable, game, playCard, playArea ?: game.colorData(playCard.card).discard)
         if (playCard.card.value == 5 && playArea != null) {
             game.increaseClueTokens()
@@ -376,10 +378,10 @@ object HanabiGame {
             game.failTokens++
         }
         if (game.failTokens == game.config.maxFailTokens) {
-            effectScope.playerEliminations.eliminateRemaining(WinResult.LOSS)
+            effectScope.eliminations.eliminateRemaining(WinResult.LOSS)
         }
         if (game.boardComplete()) {
-            effectScope.playerEliminations.eliminateRemaining(WinResult.WIN)
+            effectScope.eliminations.eliminateRemaining(WinResult.WIN)
         }
     }
 

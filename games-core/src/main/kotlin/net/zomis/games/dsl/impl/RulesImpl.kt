@@ -137,7 +137,7 @@ class ActionOptionsContext<T : Any>(
     override val game: T,
     override val actionType: String,
     override val playerIndex: Int,
-    override val eliminations: PlayerEliminationsRead,
+    override val eliminations: PlayerEliminationsWrite,
     override val replayable: ReplayableScope
 ) : ActionOptionsScope<T>, GameRuleScope<T> {
     fun <A: Any> createAction(parameter: A): Actionable<T, A> = Action(game, playerIndex, actionType, parameter)

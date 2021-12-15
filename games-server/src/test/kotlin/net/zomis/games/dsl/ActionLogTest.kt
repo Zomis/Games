@@ -38,7 +38,7 @@ class ActionLogTest {
                     */
                     log { "$player changed the value in direction ${action.sign}" }
                     if (game.value == 0) {
-                        playerEliminations.eliminateRemaining(WinResult.WIN)
+                        eliminations.eliminateRemaining(WinResult.WIN)
                     }
                 }
             }

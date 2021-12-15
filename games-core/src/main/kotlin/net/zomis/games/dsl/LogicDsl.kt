@@ -18,6 +18,6 @@ interface ReplayableScope {
 }
 
 interface EffectScope : GameUtils {
-    override val playerEliminations: PlayerEliminationsWrite
+    override val eliminations: PlayerEliminationsWrite
     override val replayable: ReplayableScope
 }
