@@ -8,6 +8,7 @@ import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.impl.ActionSampleSize
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.server2.ServerGames
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -88,6 +89,14 @@ class InfiniteActionsTest {
         Assertions.assertEquals(4, result.filter { it.parameter.list.size == 2 }.size)
         Assertions.assertEquals(8, result.filter { it.parameter.list.size == 3 }.size)
         Assertions.assertEquals(16, result.filter { it.parameter.list.size == 4 }.size)
+    }
+
+    @Test
+    fun splendor() {
+        val setup = ServerGames.entrypoint("Splendor")!!.setup()
+        val game = setup.createGame(4, setup.getDefaultConfig())
+        val a = game.actions.type("takeMoney")!!.availableActions(0, null).toList()
+        Assertions.assertTrue(a.isNotEmpty())
     }
 
     @Test

@@ -107,7 +107,8 @@ class ActionRecursiveImpl<T: Any, C: Any, P: Any>(
             if (this.nextChoicesScope != null) {
                 TODO("Continuing with other choices after a recursion is not implemented yet")
             } else {
-                this.parameterCreator!!.invoke(recursiveContext)
+                val parameter = this.parameterCreator!!.invoke(recursiveContext)
+                parameters.add(ActionNextParameter(actionType, previousChoices, parameter))
             }
         } else {
             // Create intermediateParameter if allowed
