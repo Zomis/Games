@@ -1,6 +1,6 @@
 package net.zomis.games.server2.djl
 
-import net.zomis.games.PlayerEliminationCallback
+import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.WinResult
 import net.zomis.games.common.Direction4
 import net.zomis.games.components.Grid
@@ -17,7 +17,7 @@ object GridWorldGame {
         FAIL('F', 0f, -1f),
         ;
     }
-    data class GridWorldModel(val eliminations: PlayerEliminationCallback, val map: Grid<GridWorldTile>) {
+    data class GridWorldModel(val eliminations: PlayerEliminationsWrite, val map: Grid<GridWorldTile>) {
         fun move(parameter: Direction4) {
             val player = map.all().find { it.value == GridWorldTile.PLAYER }!!
             val delta = parameter.delta()

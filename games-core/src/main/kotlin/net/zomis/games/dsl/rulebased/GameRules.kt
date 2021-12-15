@@ -1,6 +1,6 @@
 package net.zomis.games.dsl.rulebased
 
-import net.zomis.games.PlayerEliminations
+import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.common.GameEvents
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.GameMarker
@@ -13,7 +13,7 @@ interface GameRules<T : Any> {
 @GameMarker
 interface GameRuleScope<T : Any> {
     val game: T
-    val eliminations: PlayerEliminations
+    val eliminations: PlayerEliminationsRead
     val replayable: ReplayableScope
 }
 

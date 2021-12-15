@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test
 
 class PlayerEliminationsTest {
 
-    private fun PlayerEliminations.scoreList() =
+    private fun PlayerEliminationsRead.scoreList() =
         this.eliminations().sortedBy { it.playerIndex }.map { it.winResult to it.position }
 
     @Test

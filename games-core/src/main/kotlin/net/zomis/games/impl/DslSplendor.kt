@@ -1,6 +1,6 @@
 package net.zomis.games.impl
 
-import net.zomis.games.PlayerEliminationCallback
+import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.cards.CardZone
 import net.zomis.games.common.mergeWith
 import net.zomis.games.common.next
@@ -128,7 +128,7 @@ fun startingStockForPlayerCount(playerCount: Int): Int {
     }
 }
 
-class SplendorGame(val config: SplendorConfig, val eliminations: PlayerEliminationCallback) {
+class SplendorGame(val config: SplendorConfig, val eliminations: PlayerEliminationsWrite) {
 
     val allNobles = CardZone(listOf("BR", "UW", "UG", "RG", "BW", "BRG", "BUW", "BRW", "GUW", "GUR").map {string ->
         val moneyTypes = string.map { ch -> MoneyType.values().first { it.char == ch } }

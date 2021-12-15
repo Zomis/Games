@@ -1,6 +1,6 @@
 package net.zomis.games.dsl.impl
 
-import net.zomis.games.PlayerEliminations
+import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.flow.GameFlowImpl
@@ -191,7 +191,7 @@ class StateKeeper {
         logEntries.add(log)
     }
 }
-class ReplayState(val stateKeeper: StateKeeper, override val playerEliminations: PlayerEliminations): EffectScope, ReplayableScope {
+class ReplayState(val stateKeeper: StateKeeper, override val playerEliminations: PlayerEliminationsWrite): EffectScope, ReplayableScope {
     private val mostRecent = mutableMapOf<String, Any>()
 
     override val replayable: ReplayableScope get() = this

@@ -1,6 +1,6 @@
 package net.zomis.games.dsl.impl
 
-import net.zomis.games.PlayerEliminations
+import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.mergeWith
 import net.zomis.games.dsl.*
 import kotlin.reflect.KClass
@@ -47,7 +47,7 @@ data class ActionSampleSize(val sampleSizes: List<Int>) {
 
 class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
     private val replayState: ReplayState,
-    private val eliminations: PlayerEliminations,
+    private val eliminations: PlayerEliminationsWrite,
     val actionType: ActionType<T, P>,
     private val impl: GameLogicActionType<T, P>
 ) {

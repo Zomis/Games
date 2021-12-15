@@ -5,8 +5,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import net.zomis.games.PlayerElimination
-import net.zomis.games.PlayerEliminationCallback
 import net.zomis.games.PlayerEliminations
+import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.GameEvents
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
@@ -32,7 +32,7 @@ class GameFlowImpl<T: Any>(
         }
     }
     override val events: GameEventsExecutor = this
-    override val eliminationCallback: PlayerEliminationCallback = eliminations
+    override val eliminationCallback: PlayerEliminationsWrite = eliminations
     override val model: T = setupContext.model.factory(this, config)
     val replayable = ReplayState(stateKeeper, eliminations)
     override val actions = GameFlowActionsImpl({ feedbacks.add(it) }, model, eliminations, replayable)
@@ -189,7 +189,7 @@ class GameFlowContext<T: Any>(
     private val name: String
 ): GameFlowScope<T>, GameFlowStepScope<T> {
     override val game: T get() = flow.model
-    override val eliminations: PlayerEliminationCallback get() = flow.eliminations
+    override val eliminations: PlayerEliminationsWrite get() = flow.eliminations
     override val replayable: ReplayState get() = flow.replayable
 
     object Steps {
@@ -252,7 +252,7 @@ interface GameFlowActionScope<T: Any, A: Any> {
 @GameMarker
 interface GameFlowStepScope<T: Any> {
     val game: T
-    val eliminations: PlayerEliminationCallback
+    val eliminations: PlayerEliminationsWrite
     val replayable: ReplayableScope
     fun <A: Any> yieldAction(action: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>)
     fun yieldView(key: String, value: ViewScope<T>.() -> Any?)
@@ -262,7 +262,7 @@ interface GameFlowStepScope<T: Any> {
 @GameMarker
 interface GameFlowScope<T: Any> {
     val game: T
-    val eliminations: PlayerEliminationCallback
+    val eliminations: PlayerEliminationsWrite
     suspend fun loop(function: suspend GameFlowScope<T>.() -> Unit)
     suspend fun step(name: String, step: suspend GameFlowStepScope<T>.() -> Unit): GameFlowStep<T>
     suspend fun log(logging: LogScope<T>.() -> String)

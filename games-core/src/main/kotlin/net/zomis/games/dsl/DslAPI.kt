@@ -1,10 +1,9 @@
 package net.zomis.games.dsl
 
-import net.zomis.games.PlayerEliminations
+import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.api.Games
 import net.zomis.games.dsl.flow.GameFlowRules
 import net.zomis.games.dsl.flow.GameFlowScope
-import net.zomis.games.dsl.rulebased.GameRules
 import kotlin.reflect.KClass
 
 interface Actionable<T : Any, A : Any> {
@@ -14,7 +13,7 @@ interface Actionable<T : Any, A : Any> {
     val parameter: A
 }
 interface GameUtils {
-    val playerEliminations: PlayerEliminations
+    val playerEliminations: PlayerEliminationsRead
     val replayable: ReplayableScope
 }
 data class Action<T : Any, A : Any>(

@@ -1,11 +1,10 @@
 package net.zomis.games.dsl.flow
 
 import klog.KLoggers
-import net.zomis.games.PlayerEliminations
+import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.flow.actions.GameFlowLogicActionDelegator
 import net.zomis.games.dsl.impl.*
-import net.zomis.games.dsl.rulebased.GameRule
 import kotlin.reflect.KClass
 
 open class GameFlowActionContext<T: Any, A: Any>: GameFlowActionScope<T, A> {
@@ -21,7 +20,7 @@ typealias GameFlowActionDsl<T, A> = GameFlowActionScope<T, A>.() -> Unit
 class GameFlowActionsImpl<T: Any>(
     private val feedback: (GameFlowContext.Steps.FlowStep) -> Unit,
     private val model: T,
-    private val eliminations: PlayerEliminations,
+    private val eliminations: PlayerEliminationsWrite,
     private val replayable: ReplayState
 ) : Actions<T> {
     override val choices = ActionChoices()

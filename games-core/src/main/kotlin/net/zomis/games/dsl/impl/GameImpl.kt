@@ -1,6 +1,7 @@
 package net.zomis.games.dsl.impl
 
 import net.zomis.games.PlayerEliminations
+import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.GameEvents
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
@@ -52,7 +53,7 @@ interface Game<T: Any> {
     val playerCount: Int
     val playerIndices: IntRange get() = 0 until playerCount
     val config: Any
-    val eliminations: PlayerEliminations
+    val eliminations: PlayerEliminationsWrite
     val model: T
     val stateKeeper: StateKeeper
     val actions: Actions<T>
@@ -70,7 +71,7 @@ class GameImpl<T : Any>(
 ): Game<T>, GameFactoryScope<Any>, GameEventsExecutor {
 
     override val eliminationCallback = PlayerEliminations(playerCount)
-    override val eliminations: PlayerEliminations get() = eliminationCallback
+    override val eliminations: PlayerEliminationsWrite get() = eliminationCallback
     override val model = setupContext.model.factory(this, config)
     private val replayState = ReplayState(stateKeeper, eliminationCallback)
     private val rules = GameActionRulesContext(model, replayState, eliminationCallback)

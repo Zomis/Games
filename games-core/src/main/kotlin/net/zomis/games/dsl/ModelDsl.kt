@@ -1,6 +1,6 @@
 package net.zomis.games.dsl
 
-import net.zomis.games.PlayerEliminationCallback
+import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.GameEvents
 
 interface GameEventsExecutor {
@@ -9,7 +9,7 @@ interface GameEventsExecutor {
 
 interface GameFactoryScope<C> {
     val events: GameEventsExecutor
-    val eliminationCallback: PlayerEliminationCallback
+    val eliminationCallback: PlayerEliminationsWrite
     val playerCount: Int
     val config: C
 }

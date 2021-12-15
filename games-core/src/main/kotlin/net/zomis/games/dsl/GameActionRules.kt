@@ -1,7 +1,7 @@
 package net.zomis.games.dsl
 
-import net.zomis.games.PlayerEliminations
 import net.zomis.games.PlayerEliminationsRead
+import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.impl.ActionOptionsContext
 import kotlin.reflect.KClass
@@ -41,9 +41,9 @@ interface LogActionScope<T : Any, A : Any>: LogScope<T> {
 interface ActionRuleScope<T : Any, A : Any> : GameUtils, ActionOptionsScope<T> {
     override val game: T
     val action: Actionable<T, A>
-    val eliminations: PlayerEliminations
+    val eliminations: PlayerEliminationsWrite
     override val replayable: ReplayableScope
-    override val playerEliminations: PlayerEliminations
+    override val playerEliminations: PlayerEliminationsWrite
         get() = eliminations
     fun log(logging: LogActionScope<T, A>.() -> String)
     fun logSecret(player: PlayerIndex, logging: LogActionScope<T, A>.() -> String): LogSecretActionScope<T, A>
@@ -108,7 +108,7 @@ interface GameRuleTriggerScope<T, E> {
     val game: T
     val trigger: E
     val replayable: ReplayableScope
-    val eliminations: PlayerEliminations
+    val eliminations: PlayerEliminationsWrite
 }
 interface GameRuleTrigger<T : Any, E : Any> {
 

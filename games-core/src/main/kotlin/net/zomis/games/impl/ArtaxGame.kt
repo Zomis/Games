@@ -1,6 +1,6 @@
 package net.zomis.games.impl
 
-import net.zomis.games.PlayerEliminationCallback
+import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.WinResult
 import net.zomis.games.api.Games
 import net.zomis.games.common.Direction8
@@ -11,7 +11,7 @@ import net.zomis.games.dsl.*
 import kotlin.math.abs
 import kotlin.math.max
 
-class TTArtax(private val eliminationCallback: PlayerEliminationCallback,
+class TTArtax(private val eliminationCallback: PlayerEliminationsWrite,
           playerCount: Int, sizeX: Int, sizeY: Int) {
     val board = Games.components.grid<Int?>(sizeX, sizeY) { _, _ -> null }
     var currentPlayer: Int = 0
