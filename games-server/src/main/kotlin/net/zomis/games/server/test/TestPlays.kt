@@ -25,6 +25,7 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
     private val node: ObjectNode = mapper.readTree(file) as ObjectNode
     private var modified = false
     private var nextStep: Int = 0
+    private var nextLoadState: Map<String, Any> = emptyMap()
 
     fun isModified() = modified
     private fun stateLoad(node: JsonNode?): GameSituationState {
@@ -43,6 +44,19 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
 
     fun replayCallback(): GameplayCallbacks<Any> {
         return object : GameplayCallbacks<Any>() {
+            override fun onPreMove(
+                actionIndex: Int, action: Actionable<Any, Any>,
+                setStateCallback: (GameSituationState) -> Unit
+            ) {
+                setStateCallback(nextLoadState)
+            }
+
+            override fun onMove(actionIndex: Int, action: Actionable<Any, Any>, actionReplay: ActionReplay) {
+                if (actionReplay.state?.isNotEmpty() == true) {
+                    replayState(actionReplay.state, 0)
+                }
+                nextLoadState = emptyMap()
+            }
             override fun startState(setStateCallback: (GameSituationState) -> Unit) = setStateCallback(stateLoad(node["state"]))
             override fun startedState(playerCount: Int, config: Any, state: GameSituationState) = stateSave(node, "state", state)
         }
@@ -81,9 +95,9 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
         }
     }
 
-    fun replayState(state: Map<String, Any>) {
+    fun replayState(state: Map<String, Any>, nextStepOffset: Int) {
         val steps = node.get("steps") as ArrayNode
-        val node = steps[nextStep - 1] as ObjectNode
+        val node = steps[nextStep + nextStepOffset] as ObjectNode
         val oldState = if (node.has("state")) node.get("state") as ObjectNode else null
         if (oldState != null && oldState.size() > 0) {
             val expected = mapper.convertValue(node.get("state"), object : TypeReference<Map<String, Any>>() {})
@@ -133,6 +147,7 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
             is PlayTestStepPerform -> {
                 if (step.state.isNotEmpty()) {
                     replayable.state.setState(step.state)
+                    this.nextLoadState = step.state
                 }
                 val actionType = replayable.game.actions.type(step.actionType) ?: throw IllegalStateException("Action ${step.type} does not exist")
                 val actionable = actionType.createAction(step.playerIndex, step.action)
@@ -208,7 +223,7 @@ object PlayTests {
                         if (nextViews++ > 10) throw IllegalStateException("Too many next views")
                     }
                     if (a is GameFlowContext.Steps.ActionPerformed<*>) {
-                        tree.replayState(a.replayState)
+                        tree.replayState(a.replayState, -1)
                     }
                     if (a is GameFlowContext.Steps.AwaitInput) {
                         nextViews = 0
