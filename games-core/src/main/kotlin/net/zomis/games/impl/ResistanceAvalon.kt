@@ -218,19 +218,13 @@ object ResistanceAvalonGame {
                         (if (game.config.chooseMission) remainingMissions else listOf(remainingMissions.first()))
                             .withIds { it.missionNumber.toString() }
                     }) {mission ->
-                        fun rec(scope: ActionChoicesScope<ResistanceAvalon, ResistanceAvalonTeamChoice>,
-                            chosen: List<ResistanceAvalonPlayer>,
-                            required: Int
-                        ) {
-                            if (required <= 0) {
-                                scope.parameter(ResistanceAvalonTeamChoice(mission, chosen))
-                                return
+                        recursive(emptyList<ResistanceAvalonPlayer>()) {
+                            until { chosen.size == mission.teamSize }
+                            optionsWithIds({ (game.players - chosen).withIds { it.index.toString() } }) {
+                                recursion(it) { list, e -> list + e }
                             }
-                            scope.optionsWithIds({ (game.players - chosen).withIds { it.index.toString() } }) { playerChoice ->
-                                rec(this, chosen + playerChoice, required - 1)
-                            }
+                            parameter { ResistanceAvalonTeamChoice(mission, chosen) }
                         }
-                        rec(this, listOf(), mission.teamSize)
                     }
                 }
                 effect {

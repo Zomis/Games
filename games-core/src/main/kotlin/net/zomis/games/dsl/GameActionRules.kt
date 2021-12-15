@@ -76,7 +76,7 @@ interface GameActionRule<T : Any, A : Any> : GameActionSpecificationScope<T, A> 
 }
 
 interface ActionChoicesRecursiveScope<T : Any, C : Any> {
-    val chosen: List<C>
+    val chosen: C
     val game: T
     val eliminations: PlayerEliminationsRead
     val actionType: String
@@ -90,15 +90,16 @@ interface ActionChoicesRecursiveSpecScope<T : Any, C: Any, P : Any> {
     fun until(condition: ActionChoicesRecursiveScope<T, C>.() -> Boolean)
     fun <E : Any> options(options: ActionChoicesRecursiveScope<T, C>.() -> Iterable<E>, next: ActionChoicesRecursiveSpecScope<T, C, P>.(E) -> Unit)
     fun <E : Any> optionsWithIds(options: ActionChoicesRecursiveScope<T, C>.() -> Iterable<Pair<String, E>>, next: ActionChoicesRecursiveSpecScope<T, C, P>.(E) -> Unit)
-    fun recursion(chosen: C)
+    fun <E : Any> recursion(chosen: E, operation: (C, E) -> C)
     fun parameter(parameterCreator: ActionChoicesRecursiveScope<T, C>.() -> P)
     fun intermediateParameter(allowed: ActionChoicesRecursiveScope<T, C>.() -> Boolean)
+    fun then(next: ActionChoicesScope<T, P>.() -> Unit)
 }
 
 interface ActionChoicesScope<T : Any, P : Any> {
     fun parameter(parameter: P)
     val context: ActionOptionsContext<T>
-    fun <C : Any> recursive(base: List<C>, options: ActionChoicesRecursiveSpecScope<T, C, P>.() -> Unit)
+    fun <C : Any> recursive(base: C, options: ActionChoicesRecursiveSpecScope<T, C, P>.() -> Unit)
     fun <E : Any> options(options: ActionOptionsScope<T>.() -> Iterable<E>, next: ActionChoicesScope<T, P>.(E) -> Unit)
     fun <E : Any> optionsWithIds(options: ActionOptionsScope<T>.() -> Iterable<Pair<String, E>>, next: ActionChoicesScope<T, P>.(E) -> Unit)
 }

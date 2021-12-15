@@ -13,7 +13,9 @@ data class ActionNextChoice<T: Any, P: Any>(
     val previouslyChosen: List<Any>,
     val choiceKey: Any,
     val choiceValue: Any,
-    val nextBlock: ActionChoicesScope<T, P>.(Any) -> Unit
+    val nextRecursive: (ActionChoicesRecursiveSpecScope<T, Any, P>.(Any) -> Unit)? = null,
+    val recursiveBlock: (ActionChoicesRecursiveSpecScope<T, Any, P>.() -> Unit)? = null,
+    val nextBlock: (ActionChoicesScope<T, P>.(Any) -> Unit)? = null,
 )
 
 class ActionComplexImpl<T: Any, P: Any>(
@@ -47,7 +49,9 @@ class ActionComplexBlockRun<T: Any, P: Any>(
     private val upcomingChoices: List<Any>,
     override val context: ActionOptionsContext<T>
 ): ActionChoicesScope<T, P> {
-    private var blockRun: ActionComplexBlockRun<T, P> = this
+    private var blockRun: () -> ActionComplexNextImpl<T, P> = {
+        ActionComplexNextImpl(actionType, context, 0, chosen, choices.asSequence(), parameters.asSequence())
+    }
     private val choices = mutableListOf<ActionNextChoice<T, P>>()
     private val parameters = mutableListOf<ActionNextParameter<T, P>>()
 
@@ -68,9 +72,11 @@ class ActionComplexBlockRun<T: Any, P: Any>(
 
             val nextScope = ActionComplexBlockRun(actionType, chosen + nextE.second, nextChosenList, context)
             next.invoke(nextScope, nextE.second)
-            blockRun = nextScope
+            blockRun = nextScope.blockRun
         } else {
-            choices.addAll(evaluated.map { ActionNextChoice(actionType, chosen, it.first, it.second, next as ActionChoicesScope<T, P>.(Any) -> Unit) })
+            choices.addAll(evaluated.map { ActionNextChoice(actionType, chosen, it.first, it.second,
+                nextBlock = next as ActionChoicesScope<T, P>.(Any) -> Unit)
+            })
         }
     }
 
@@ -82,20 +88,20 @@ class ActionComplexBlockRun<T: Any, P: Any>(
         return this.internalOptions({ options(context).map { it.first to it.second } }, next)
     }
 
-    override fun <C : Any> recursive(base: List<C>, options: ActionChoicesRecursiveSpecScope<T, C, P>.() -> Unit) {
-        TODO("Not yet implemented")
+    override fun <C : Any> recursive(base: C, options: ActionChoicesRecursiveSpecScope<T, C, P>.() -> Unit) {
+        val recursiveContext = ActionRecursiveImpl(context, actionType, base, chosen, upcomingChoices, options)
+        recursiveContext.evaluate()
+        blockRun = recursiveContext.blockRun
     }
 
-    fun createNext(): ActionComplexNextImpl<T, P> {
-        if (blockRun != this) return blockRun.createNext()
-        return ActionComplexNextImpl(actionType, context, chosen, choices.asSequence(), parameters.asSequence())
-    }
+    fun createNext(): ActionComplexNextImpl<T, P> = blockRun()
 
 }
 
 class ActionComplexNextImpl<T: Any, P: Any>(
     override val actionType: ActionType<T, P>,
     private val context: ActionOptionsContext<T>,
+    private val recursiveChosen: Any,
     override val chosen: List<Any>,
     private val nextChoices: Sequence<ActionNextChoice<T, P>>,
     private val nextParameters: Sequence<ActionNextParameter<T, P>>
@@ -111,6 +117,9 @@ class ActionComplexNextImpl<T: Any, P: Any>(
         val indices = this.indices.toMutableList()
         val result = mutableListOf<E>()
         repeat(count) {
+            if (indices.isEmpty()) {
+                throw IllegalArgumentException("No more items after $it/$count. Result is $result, remaining is $this")
+            }
             result.add(this[indices.removeAt(random.nextInt(indices.size))])
         }
         return result
@@ -119,7 +128,7 @@ class ActionComplexNextImpl<T: Any, P: Any>(
     override fun depthFirstActions(sampling: ActionSampleSize?): Sequence<ActionNextParameter<T, P>> {
         return sequence {
             yieldAll(nextParameters)
-            val (nextSampleSize, nextActionSampleSize) = sampling?.nextSample() ?: null to null
+            val (nextSampleSize, nextActionSampleSize) = sampling?.nextSample() ?: (null to null)
             val samples: List<ActionNextChoice<T, P>> = nextChoices.toList().randomSample(nextSampleSize, Random.Default)
 
             /*
@@ -133,9 +142,16 @@ class ActionComplexNextImpl<T: Any, P: Any>(
             */
 
             samples.forEach {
-                val nextScope = ActionComplexBlockRun(actionType, chosen + it.choiceValue, emptyList(), context)
-                it.nextBlock.invoke(nextScope, it.choiceValue)
-                yieldAll(nextScope.createNext().depthFirstActions(nextActionSampleSize))
+                if (it.nextBlock != null) {
+                    val nextScope = ActionComplexBlockRun(actionType, chosen + it.choiceValue, emptyList(), context)
+                    it.nextBlock.invoke(nextScope, it.choiceValue)
+                    yieldAll(nextScope.createNext().depthFirstActions(nextActionSampleSize))
+                }
+                if (it.nextRecursive != null) {
+                    val nextScope = ActionRecursiveImpl(context, actionType, recursiveChosen, chosen, emptyList(), it.recursiveBlock!!)
+                    it.nextRecursive.invoke(nextScope, it.choiceValue)
+                    yieldAll(nextScope.blockRun.invoke().depthFirstActions(nextActionSampleSize))
+                }
             }
         }
     }

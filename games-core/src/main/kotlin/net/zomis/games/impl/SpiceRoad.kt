@@ -10,6 +10,9 @@ object SpiceRoadDsl {
     data class PlayParameter(val card: SpiceRoadGameModel.ActionCard, val remove: SpiceRoadGameModel.Caravan, val add: SpiceRoadGameModel.Caravan)
     data class AcquireParameter(val card: SpiceRoadGameModel.ActionCard, val payArray: List<SpiceRoadGameModel.Spice>)
 
+    private fun List<SpiceRoadGameModel.Spice>.toCaravan(): SpiceRoadGameModel.Caravan
+        = this.fold(SpiceRoadGameModel.Caravan()) { acc, spice -> acc + spice.toCaravan() }
+
     val factory = GameCreator(SpiceRoadGameModel::class)
     val play = factory.action("play", PlayParameter::class).serializer {
         "Play Card " + it.card.toStateString() + " Remove " + it.remove.toStateString() + " Add " + it.add.toStateString()
@@ -80,30 +83,29 @@ object SpiceRoadDsl {
                 requires {
                     game.currentPlayer.caravan.has(action.parameter.remove)
                 }
+                fun removeUpgrades(chosen: List<Pair<SpiceRoadGameModel.Spice, Int>>): SpiceRoadGameModel.Caravan {
+                    return chosen.fold(SpiceRoadGameModel.Caravan()) { acc, next -> acc + next.first.toCaravan() }
+                }
+                fun addUpgrades(chosen: List<Pair<SpiceRoadGameModel.Spice, Int>>): SpiceRoadGameModel.Caravan {
+                    return chosen.fold(SpiceRoadGameModel.Caravan()) { acc, next -> acc + next.first.upgrade(next.second) }
+                }
+
                 choose {
                     optionsWithIds({ game.currentPlayer.hand.cards.map { it.toStateString() to it } }) { card ->
                         when {
                             card.gain != null -> parameter(PlayParameter(card, SpiceRoadGameModel.Caravan(), card.gain))
                             card.upgrade != null -> {
-                                fun rec(scope: ActionChoicesScope<SpiceRoadGameModel, PlayParameter>,
-                                        remaining: SpiceRoadGameModel.Caravan,
-                                        upgrades: Int,
-                                        remove: SpiceRoadGameModel.Caravan = SpiceRoadGameModel.Caravan(),
-                                        add: SpiceRoadGameModel.Caravan = SpiceRoadGameModel.Caravan()) {
-                                    scope.parameter(PlayParameter(card, remove, add))
-                                    if (upgrades <= 0) {
-                                        return
-                                    }
-                                    scope.options({ remaining.spice.filter { it.value > 0 }.keys - SpiceRoadGameModel.Spice.BROWN }) { spiceToUpgrade ->
-                                        this.options({ 1..(minOf(SpiceRoadGameModel.Spice.BROWN.ordinal - spiceToUpgrade.ordinal, upgrades)) }) { times ->
-                                            rec(this, remaining - spiceToUpgrade.toCaravan(),
-                                                    upgrades - times,
-                                                    remove + spiceToUpgrade.toCaravan(),
-                                                    add + (spiceToUpgrade + times).toCaravan())
-                                        }
+                                val upgrades = card.upgrade
+                                recursive(emptyList<Pair<SpiceRoadGameModel.Spice, Int>>()) {
+                                    intermediateParameter { true }
+                                    parameter { PlayParameter(card, removeUpgrades(chosen), addUpgrades(chosen)) }
+                                    until { chosen.sumOf { it.second } == upgrades }
+                                    options({ (game.currentPlayer.caravan - removeUpgrades(chosen)).remainingKeys() - SpiceRoadGameModel.Spice.BROWN }) { spiceToUpgrade ->
+                                         options({ 1..(minOf(SpiceRoadGameModel.Spice.BROWN.ordinal - spiceToUpgrade.ordinal, upgrades)) }) { times ->
+                                             recursion(spiceToUpgrade to times) { list, e -> list.plus(e) }
+                                         }
                                     }
                                 }
-                                rec(this, context.game.currentPlayer.caravan, card.upgrade)
                             }
                             card.trade != null -> options({ 1..(game.currentPlayer.caravan / card.trade.first) }) { times ->
                                 parameter(PlayParameter(card, card.trade.first * times, card.trade.second * times))
@@ -132,20 +134,13 @@ object SpiceRoadDsl {
                         game.visibleActionCards.cards.filterIndexed { index, _ -> index <= game.currentPlayer.caravan.count }
                                 .map { it.toStateString() to it }
                     }) { card ->
-                        fun rec(scope: ActionChoicesScope<SpiceRoadGameModel, AcquireParameter>,
-                                remaining: SpiceRoadGameModel.Caravan,
-                                leftToPay: Int,
-                                payList: List<SpiceRoadGameModel.Spice> = emptyList()
-                        ) {
-                            if (leftToPay <= 0) {
-                                scope.parameter(AcquireParameter(card, payList))
-                                return
+                        recursive(emptyList<SpiceRoadGameModel.Spice>()) {
+                            until { chosen.size == context.game.visibleActionCards.card(card).index }
+                            options({ (game.currentPlayer.caravan - chosen.toCaravan()).spice.filter { it.value > 0 }.keys }) {
+                                recursion(it) { list, e -> list + e }
                             }
-                            scope.options({ remaining.spice.filter { it.value > 0 }.keys }) { payWith ->
-                                rec(this, remaining - payWith.toCaravan(), leftToPay - 1, payList + payWith)
-                            }
+                            parameter { AcquireParameter(card, chosen) }
                         }
-                        rec(this, context.game.currentPlayer.caravan, context.game.visibleActionCards.card(card).index)
                     }
                 }
             }
@@ -277,6 +272,8 @@ class SpiceRoadGameModel(val playerCount: Int) {
         fun toCaravan(count: Int = 1): Caravan {
             return Caravan(mutableMapOf(this to count))
         }
+
+        fun upgrade(steps: Int): Caravan = Spice.values()[this.ordinal + steps].toCaravan()
     }
 
     private fun String.toCaravan(): Caravan? {
@@ -338,5 +335,7 @@ class SpiceRoadGameModel(val playerCount: Int) {
         fun toViewable(): Map<String, Int> {
             return this.spice.entries.sortedBy { it.key.name }.map { it.key.name to it.value }.toMap()
         }
+
+        fun remainingKeys() = spice.filter { it.value > 0 }.keys
     }
 }

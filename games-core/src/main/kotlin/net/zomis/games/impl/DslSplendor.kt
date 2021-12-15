@@ -319,16 +319,13 @@ object DslSplendor {
             }
 
             action(takeMoney).choose {
-                options({ MoneyType.values().asIterable() }) { first ->
-                    parameter(MoneyChoice(listOf(first)))
-                    options({ MoneyType.values().asIterable() }) { second ->
-                        parameter(MoneyChoice(listOf(first, second)))
-                        if (first != second) {
-                            options({ MoneyType.values().asIterable().minus(first).minus(second) }) { third ->
-                                parameter(MoneyChoice(listOf(first, second, third)))
-                            }
-                        }
+                recursive(emptyList<MoneyType>()) {
+                    options({ MoneyType.values().asIterable() - if (chosen.distinct().size == 2) chosen else emptyList() }) { moneyType ->
+                        recursion(moneyType) { list, e -> list + e }
                     }
+                    until { chosen.size in 1..3 }
+                    parameter { MoneyChoice(chosen) }
+                    intermediateParameter { true }
                 }
             }
             action(takeMoney).requires {
