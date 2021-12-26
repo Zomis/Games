@@ -117,7 +117,7 @@ object KingDomino {
     }
     class Model(playerCount: Int) {
         val dominoesPerTurn = if (playerCount == 3) playerCount else 4
-        val dominoDeck = CardZone(bricks.toMutableList())
+        val dominoDeck = CardZone(bricks.map { it.copy() }.toMutableList())
         val dominoChoices = CardZone<DominoTile>()
         val dominoNextChoices = CardZone<DominoTile>()
         var dominoesRemaining = 12 * playerCount
@@ -130,6 +130,7 @@ object KingDomino {
     class DominoTile(val value: Int, val tiles: Pair<Tile, Tile>, var owner: Int? = null) {
         override fun toString(): String = toStateString() + " (owned by $owner)"
         fun toStateString(): String = "$value: ${tiles.first.toStateString()}/${tiles.second.toStateString()}"
+        fun copy() = DominoTile(value, tiles, owner)
     }
     class DominoPlacement(val firstTile: Tile, val point: Point, val point2: Point) {
         fun secondTile(domino: DominoTile): Tile = domino.tiles.toList().minus(firstTile).single()
