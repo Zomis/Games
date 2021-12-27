@@ -112,10 +112,13 @@ object ArtaxGame {
     val factory = GameCreator(TTArtax::class)
     val moveAction = factory.action("move", PointMove::class)
     val gameArtax = factory.game("Artax") {
-        setup(Point::class) {
+        val sizeX = config("x") { 7 }
+        val sizeY = config("y") { 7 }
+        setup {
             players(2..4)
-            defaultConfig { Point(7, 7) }
-            init { TTArtax(eliminationCallback, playerCount, config.x, config.y) }
+            init {
+                TTArtax(eliminationCallback, playerCount, config(sizeX), config(sizeY))
+            }
         }
         actionRules {
             action(moveAction) {

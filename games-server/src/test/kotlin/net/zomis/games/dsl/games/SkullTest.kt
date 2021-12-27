@@ -19,7 +19,7 @@ class SkullTest {
     @BeforeEach
     fun setup() {
         val setup = GameSetupImpl(dsl)
-        game = setup.createGame(3, setup.getDefaultConfig())
+        game = setup.createGameWithDefaultConfig(3)
         test = GameAsserts(game)
     }
 

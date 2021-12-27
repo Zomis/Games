@@ -6,10 +6,9 @@ import net.zomis.games.dsl.*
 import net.zomis.games.dsl.flow.GameFlowImpl
 import kotlin.reflect.KClass
 
-class GameModelContext<T: Any, C> : GameModel<T, C> {
+class GameModelContext<T: Any, C>(val configs: MutableList<GameConfig<Any>>) : GameModel<T, C> {
     var playerCount: IntRange = 2..2
-    lateinit var factory: GameFactoryScope<C>.(C?) -> T
-    lateinit var config: () -> C
+    lateinit var factory: GameFactoryScope<C>.() -> T
     var onStart: GameStartScope<T>.() -> Unit = {}
 
     override fun players(playerCount: IntRange) {
@@ -21,10 +20,11 @@ class GameModelContext<T: Any, C> : GameModel<T, C> {
     }
 
     override fun defaultConfig(creator: () -> C) {
-        this.config = creator
+        check(configs.none { it.key == "" })
+        this.configs.add(GameConfigImpl("") { creator.invoke() as Any })
     }
 
-    override fun init(factory: GameFactoryScope<C>.(C?) -> T) {
+    override fun init(factory: GameFactoryScope<C>.() -> T) {
         this.factory = factory
     }
 
@@ -191,10 +191,15 @@ class StateKeeper {
         logEntries.add(log)
     }
 }
-class ReplayState(val stateKeeper: StateKeeper, override val eliminations: PlayerEliminationsWrite): EffectScope, ReplayableScope {
+class ReplayState(
+    val stateKeeper: StateKeeper,
+    override val eliminations: PlayerEliminationsWrite,
+    val config: GameConfigs
+): EffectScope, ReplayableScope {
     private val mostRecent = mutableMapOf<String, Any>()
 
     override val replayable: ReplayableScope get() = this
+    override fun <E : Any> config(gameConfig: GameConfig<E>): E = config.get(gameConfig)
 
     fun setReplayState(state: Map<String, Any>?) {
         stateKeeper.clear()
@@ -237,23 +242,35 @@ class ReplayState(val stateKeeper: StateKeeper, override val eliminations: Playe
 
 }
 
+class GameConfigImpl<E: Any>(override val key: String, override val default: () -> E): GameConfig<E> {
+    var isMutable = false
+    override var value: E = default()
+    override val clazz: KClass<E> get() = value::class as KClass<E>
+    override fun withDefaults(): GameConfig<E> = GameConfigImpl(key, default).also { it.isMutable = isMutable }
+
+    override fun mutable(): GameConfig<E> {
+        isMutable = true
+        return this
+    }
+
+}
 class GameDslContext<T : Any> : GameDsl<T> {
     override fun <P> gridSpec(spec: GameGrid<T, P>.() -> Unit): GridDsl<T, P> {
         return spec
     }
 
-    lateinit var configClass: KClass<*>
     lateinit var modelDsl: GameModelDsl<T, Any>
     var viewDsl: GameViewDsl<T>? = null
     var flowRulesDsl: GameFlowRulesDsl<T>? = null
     var flowDsl: GameFlowDsl<T>? = null
     var actionRulesDsl: GameActionRulesDsl<T>? = null
+    private var configs = mutableListOf<GameConfig<Any>>()
     val testCases: MutableList<GameTestCaseContext<T>> = mutableListOf()
 
-    val model = GameModelContext<T, Any>()
+    val model = GameModelContext<T, Any>(configs)
 
+    @Deprecated("use GameConfig class")
     override fun <C : Any> setup(configClass: KClass<C>, modelDsl: GameModelDsl<T, C>) {
-        this.configClass = configClass
         this.modelDsl = modelDsl as GameModelDsl<T, Any>
     }
 
@@ -277,7 +294,7 @@ class GameDslContext<T : Any> : GameDsl<T> {
         this.flowDsl = flowDsl
     }
 
-    fun createGame(playerCount: Int, config: Any, stateKeeper: StateKeeper): Game<T> {
+    fun createGame(playerCount: Int, config: GameConfigs, stateKeeper: StateKeeper): Game<T> {
         val flowDslNull = this.flowDsl == null
         val flowRulesNull = this.flowRulesDsl == null
         if (listOf(flowDslNull, flowRulesNull).distinct().size > 1) {
@@ -294,5 +311,13 @@ class GameDslContext<T : Any> : GameDsl<T> {
     override fun gameFlowRules(flowRulesDsl: GameFlowRulesDsl<T>) {
         this.flowRulesDsl = flowRulesDsl
     }
+
+    override fun <E: Any> config(key: String, default: () -> E): GameConfig<E> {
+        val config = GameConfigImpl(key, default)
+        this.configs.add(config as GameConfig<Any>)
+        return config
+    }
+
+    fun configs(): GameConfigs = GameConfigs(configs.map { it.withDefaults() })
 
 }

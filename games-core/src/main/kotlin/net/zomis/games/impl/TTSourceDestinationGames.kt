@@ -105,7 +105,7 @@ object TTSourceDestinationGames {
         }
         setup(TTOptions::class) {
             defaultConfig { TTOptions(5, 5, 5) }
-            init { conf -> TTQuixoController(TTFactories().classicMNK(conf!!.m, conf.n, conf.k)) }
+            init { TTQuixoController(TTFactories().classicMNK(config.m, config.n, config.k)) }
         }
         actionRules(ttRules())
         view(ttView(grid))

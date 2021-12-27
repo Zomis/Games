@@ -11,10 +11,9 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
     fun play(scanner: Scanner) {
         val entryPoint = GamesImpl.game(game)
         val setup = entryPoint.setup()
-        println(setup.configClass())
-
-        val config = setup.getDefaultConfig()
+        val config = setup.configs()
         println(config)
+        // TODO: Ask for configuration(s), make it configurable with JSON-like entry
         println("Enter number of players: (${setup.playersCount})")
         val playerCount = scanner.nextLine().toInt()
 

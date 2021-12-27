@@ -569,7 +569,7 @@ object CoupRuleBased {
             expectTrue(game.stack.isEmpty())
         }
         testCase(players = 3) {
-            config(CoupConfig(gainMoneyOnSuccessfulChallenge = 1))
+            config("", CoupConfig(gainMoneyOnSuccessfulChallenge = 1))
             state("start-0", listOf("CONTESSA", "ASSASSIN"))
             initialize()
             action(0, perform, CoupAction(game.players[0], CoupActionType.TAX))

@@ -19,8 +19,8 @@ object GamesServer {
 
     private fun cleanReplayData(data: ReplayData, gameSpec: GameSpec<Any>): ReplayData {
         val setup = GamesImpl.game(gameSpec).setup()
-        val game = setup.createGame(data.playerCount, setup.getDefaultConfig())
-        return data.copy(config = mapper.convertValue(data.config, setup.configClass().java),
+        val game = setup.createGame(data.playerCount, setup.configs())
+        return data.copy(config = data.config,
             actions = data.actions.map {
                 val serializedType = game.actions.type(it.actionType)!!.actionType.serializedType.java
                 it.copy(serializedParameter = mapper.convertValue(it.serializedParameter, serializedType))

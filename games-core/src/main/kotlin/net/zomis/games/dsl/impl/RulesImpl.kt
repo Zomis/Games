@@ -1,6 +1,5 @@
 package net.zomis.games.dsl.impl
 
-import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.GameEvents
 import net.zomis.games.common.PlayerIndex
@@ -160,6 +159,8 @@ class ActionRuleContext<T : Any, A : Any>(
         replayable.stateKeeper.log(context)
         return context
     }
+
+    override fun <E : Any> config(gameConfig: GameConfig<E>): E = replayable.config(gameConfig)
 }
 
 class GameActionRuleContext<T : Any, A : Any>(

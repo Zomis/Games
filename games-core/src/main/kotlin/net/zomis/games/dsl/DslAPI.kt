@@ -15,6 +15,7 @@ interface Actionable<T : Any, A : Any> {
 interface GameUtils {
     val eliminations: PlayerEliminationsRead
     val replayable: ReplayableScope
+    fun <E: Any> config(gameConfig: GameConfig<E>): E
 }
 data class Action<T : Any, A : Any>(
     override val game: T,
@@ -47,6 +48,40 @@ interface GridSpec<T, P> {
     fun get(model: T, x: Int, y: Int): P
 }
 
+interface GameConfig<E: Any> {
+    fun mutable(): GameConfig<E>
+    fun withDefaults(): GameConfig<E>
+
+    val key: String
+    val clazz: KClass<E>
+    val default: () -> E
+    var value: E
+}
+class GameConfigs(val configs: List<GameConfig<Any>>) {
+    fun <E: Any> get(config: GameConfig<E>): E = configs.first { it.key == config.key }.value as E
+    fun set(key: String, value: Any) {
+        this.configs.first { it.key == key }.value = value
+    }
+
+    fun toJSON(): Any {
+        return if (isOldStyle()) {
+            configs.single().value
+        } else {
+            configs.associate { it.key to it.value }
+        }
+    }
+
+    fun isOldStyle(): Boolean {
+        if (configs.isEmpty()) return true
+        return configs.size <= 1 && configs.first().key == ""
+    }
+    fun isNotDefault(): Boolean = configs.any { it.value != it.default.invoke() }
+    fun oldStyleValue(): Any {
+        check(isOldStyle())
+        return if (configs.isEmpty()) Unit else configs.single().value
+    }
+}
+
 interface GameDsl<T : Any> {
     @Deprecated("to be removed, try to use Grid2D or something instead")
     fun <P> gridSpec(spec: GridDsl<T, P>): GridDsl<T, P>
@@ -58,6 +93,7 @@ interface GameDsl<T : Any> {
     fun actionRules(actionRulesDsl: GameActionRulesDsl<T>)
     fun gameFlow(flowDsl: GameFlowDsl<T>)
     fun gameFlowRules(flowRulesDsl: GameFlowRulesDsl<T>)
+    fun <E: Any> config(key: String, default: () -> E): GameConfig<E>
 }
 
 class GameActionCreator<T : Any, A : Any, S : Any>(

@@ -33,8 +33,9 @@ object DslTTT {
             defaultConfig {
                 TTOptions(3, 3, 3)
             }
-            init {conf ->
-                TTClassicController(TTFactories().classicMNK(conf!!.m, conf.n, conf.k))
+            init {
+                val conf = this.config
+                TTClassicController(TTFactories().classicMNK(conf.m, conf.n, conf.k))
             }
         }
         actionRules(ttRules())
@@ -50,8 +51,8 @@ object DslTTT {
             defaultConfig {
                 TTOptions(7, 6, 4)
             }
-            init {conf ->
-                TTClassicControllerWithGravity(TTFactories().classicMNK(conf!!.m, conf.n, conf.k))
+            init {
+                TTClassicControllerWithGravity(TTFactories().classicMNK(config.m, config.n, config.k))
             }
         }
         actionRules(ttRules())
@@ -63,8 +64,8 @@ object DslTTT {
             defaultConfig {
                 TTOptions(3, 3, 3)
             }
-            init {conf ->
-                TTUltimateController(TTFactories().ultimateMNK(conf!!.m, conf.n, conf.k))
+            init {
+                TTUltimateController(TTFactories().ultimateMNK(config.m, config.n, config.k))
             }
         }
         actionRules(ttRules())

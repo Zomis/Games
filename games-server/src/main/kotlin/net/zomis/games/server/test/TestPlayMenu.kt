@@ -11,7 +11,7 @@ object TestPlayMenu {
     val choices = TestPlayChoices(
         gameName = { ServerGames.games.keys.random() },
         playersCount = { it.setup().playersCount.random() },
-        config = { it.setup().getDefaultConfig() }
+        config = { it.setup().configs() }
     )
 
     fun main(game: String? = null) {

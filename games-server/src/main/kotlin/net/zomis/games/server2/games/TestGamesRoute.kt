@@ -32,7 +32,7 @@ class TestGamesRoute(private val inviteSystem: InviteSystem) {
 
     private fun createTestGame(gameType: String): ServerGame {
         val setup = ServerGames.setup(gameType) ?: throw IllegalArgumentException("No such gameType: $gameType")
-        val gameConfig = setup.getDefaultConfig()
+        val gameConfig = setup.configs()
         val invite = inviteSystem.createInvite(gameType, inviteSystem.inviteIdGenerator(),
             InviteOptions(false, InviteTurnOrder.ORDERED, 0, gameConfig, false),
             fakes[0], emptyList()

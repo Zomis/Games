@@ -7,10 +7,16 @@ import org.junit.jupiter.api.Assertions
 
 object TestGame {
 
-    fun <E : Any> create(name: String, config: Any? = null): GameAsserts<E> {
+    @Deprecated("only supports two player games and not widely used")
+    fun <E : Any> create(name: String, config: GameConfigs? = null): GameAsserts<E> {
         val dsl = ServerGames.games[name] as GameSpec<E>
         val setup = GameSetupImpl(dsl)
-        val impl = setup.createGame(2, config ?: setup.getDefaultConfig())
+        val configs = setup.configs()
+        val impl = if (configs.isOldStyle()) {
+            setup.createGameWithOldConfig(2, config ?: configs.configs.single().default.invoke())
+        } else {
+            setup.createGame(2, config!!)
+        }
         return GameAsserts(impl)
     }
 

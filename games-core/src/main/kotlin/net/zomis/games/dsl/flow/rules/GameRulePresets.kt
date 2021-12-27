@@ -19,7 +19,7 @@ interface GameRulePresets<T: Any> {
         @Deprecated("non-optimal API, use 'losing' instead")
         fun losingPlayers(playerIndices: GameRuleScope<T>.() -> Iterable<Int>)
         fun losing(isLoss: GameRuleScope<T>.(Int) -> Boolean)
-        fun skipEliminated(property: GameRuleScope<T>.() -> KMutableProperty<Int>)
+        fun skipEliminated(property: GameRuleScope<T>.() -> KMutableProperty0<Int>)
     }
 
     interface Actions<T: Any, A: Any> {
@@ -107,17 +107,17 @@ class GameRulePresetsImpl<T: Any>(private val context: GameFlowRulesContext<T>):
     override fun <A : Any> action(actionType: ActionType<T, A>): GameRulePresets.Actions<T, A>
         = GameRulePresetsActionsImpl(this.context, actionType) { true }
 
-    override fun skipEliminated(property: GameRuleScope<T>.() -> KMutableProperty<Int>) {
+    override fun skipEliminated(property: GameRuleScope<T>.() -> KMutableProperty0<Int>) {
         context.rule("skip eliminated players") {
             // TODO: This should be `appliesWhile` or something, or try to execute (some) rules multiple times
             appliesWhen {
                 val prop = property.invoke(this)
-                !eliminations.isGameOver() && !eliminations.remainingPlayers().contains(prop.getter.call())
+                !eliminations.isGameOver() && !eliminations.remainingPlayers().contains(prop.get())
             }
             effect {
                 val prop = property.invoke(this)
-                while (!eliminations.remainingPlayers().contains(prop.getter.call())) {
-                    prop.setter.call(prop.getter.call().next(eliminations.playerCount))
+                while (!eliminations.remainingPlayers().contains(prop.get())) {
+                    prop.set(prop.get().next(eliminations.playerCount))
                 }
             }
         }

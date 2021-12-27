@@ -29,8 +29,8 @@ class SimpleMatchMakingSystem {
                     val opponent = waiting[gameType]!!
                     logger.info { "Pair up $gameType: Waiting $opponent now joining ${it.client}" }
 
-                    val gameOptions = ServerGames.setup(gameType)!!.getDefaultConfig()
-                    val inviteOptions = InviteOptions(false, InviteTurnOrder.ORDERED, -1, gameOptions, true)
+                    val config = ServerGames.setup(gameType)!!.configs()
+                    val inviteOptions = InviteOptions(false, InviteTurnOrder.ORDERED, -1, config, true)
                     val game = gameTypes[gameType]!!.createGame(inviteOptions)
                     game.players[opponent] = ClientAccess(gameAdmin = false).addAccess(0, ClientPlayerAccessType.ADMIN)
                     game.players[it.client] = ClientAccess(gameAdmin = false).addAccess(1, ClientPlayerAccessType.ADMIN)

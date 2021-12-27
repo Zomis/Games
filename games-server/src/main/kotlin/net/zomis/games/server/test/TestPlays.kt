@@ -14,6 +14,7 @@ import net.zomis.games.dsl.*
 import net.zomis.games.dsl.flow.GameFlowContext
 import net.zomis.games.dsl.flow.GameFlowImpl
 import net.zomis.games.dsl.impl.GameSetupImpl
+import net.zomis.games.server2.JacksonTools
 import net.zomis.games.server2.ServerGames
 import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.ais.ServerAIs
@@ -58,7 +59,7 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
                 nextLoadState = emptyMap()
             }
             override fun startState(setStateCallback: (GameSituationState) -> Unit) = setStateCallback(stateLoad(node["state"]))
-            override fun startedState(playerCount: Int, config: Any, state: GameSituationState) = stateSave(node, "state", state)
+            override fun startedState(playerCount: Int, config: GameConfigs, state: GameSituationState) = stateSave(node, "state", state)
         }
     }
 
@@ -80,13 +81,13 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
         return node.get(fieldName).asInt()
     }
 
-    fun configOrDefault(setup: GameSetupImpl<Any>): Any {
+    fun configOrDefault(setup: GameSetupImpl<Any>): GameConfigs {
         if (node.get("config") == null) {
             logger.info { "Config modified" }
             this.modified = true
-            node.set<JsonNode>("config", mapper.convertValue(setup.getDefaultConfig(), JsonNode::class.java))
+            node.set<JsonNode>("config", mapper.convertValue(setup.configs().toJSON(), JsonNode::class.java))
         }
-        return mapper.convertValue(node.get("config"), setup.configClass().java)
+        return JacksonTools.config(setup.configs(), node.get("config"))
     }
 
     fun save() {
@@ -179,7 +180,7 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
 class TestPlayChoices(
     val gameName: () -> String,
     val playersCount: (GameEntryPoint<Any>) -> Int,
-    val config: (GameEntryPoint<Any>) -> Any
+    val config: (GameEntryPoint<Any>) -> GameConfigs
 )
 
 object PlayTests {
@@ -187,13 +188,13 @@ object PlayTests {
     private val logger = KLoggers.logger(this)
     private val mapper = jacksonObjectMapper()
 
-    fun createNew(file: File, gameName: String, playersCount: Int, config: Any?) {
+    fun createNew(file: File, gameName: String, playersCount: Int, config: GameConfigs?) {
         if (file.exists()) throw IllegalArgumentException("File already exists: $file")
         file.writeText("{}")
         fullJsonTest(file, TestPlayChoices(
             gameName = { gameName },
             playersCount = { playersCount },
-            config = { config ?: it.setup().getDefaultConfig() }
+            config = { config ?: it.setup().configs() }
         ), interactive = true)
     }
 

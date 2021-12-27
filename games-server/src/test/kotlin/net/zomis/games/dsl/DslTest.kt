@@ -16,12 +16,13 @@ class DslTest {
     @Test
     fun config() {
         val setup = GameSetupImpl(DslTTT.game)
-        Assertions.assertEquals(TTOptions::class, setup.configClass())
+        Assertions.assertTrue(setup.configs().isOldStyle())
+        Assertions.assertEquals(TTOptions::class, setup.configs().configs.single().clazz)
     }
 
     private fun createGame(): Game<TTController> {
         val setup = GameSetupImpl(DslTTT.game)
-        val game = setup.createGame(2, TTOptions(3, 3, 3))
+        val game = setup.createGameWithOldConfig(2, TTOptions(3, 3, 3))
         Assertions.assertNotNull(game)
         return game
     }

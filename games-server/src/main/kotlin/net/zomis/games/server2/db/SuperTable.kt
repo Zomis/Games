@@ -123,9 +123,8 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
             AttributeUpdate(Fields.GAME_TYPE.fieldName).put(game.gameType.type),
             AttributeUpdate(Fields.GAME_TIME_STARTED.fieldName).put(Instant.now().epochSecond)
         )
-        val defaultConfig = game.gameSetup().getDefaultConfig()
-        if (game.gameMeta.gameOptions != defaultConfig && defaultConfig != Unit) {
-            updates = updates.plus(AttributeUpdate(Fields.GAME_OPTIONS.fieldName).put(convertToDBFormat(game.gameMeta.gameOptions ?: Unit)))
+        if (game.gameMeta.gameOptions.isNotDefault()) {
+            updates = updates.plus(AttributeUpdate(Fields.GAME_OPTIONS.fieldName).put(convertToDBFormat(game.gameMeta.gameOptions.toJSON())))
         }
         if (state != null) {
             updates = updates.plus(AttributeUpdate(Fields.MOVE_STATE.fieldName).put(state))
@@ -364,10 +363,9 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
 
         val setup = GameSetupImpl(gameSpec)
         val config = if (gameDetails.hasAttribute(Fields.GAME_OPTIONS.fieldName)) {
-            val gameConfigJSON =
-                    gameDetails.getJSON(Fields.GAME_OPTIONS.fieldName)
-            if (gameConfigJSON.length >= 10) JacksonTools.readValue(gameConfigJSON, setup.configClass().java) else setup.getDefaultConfig()
-        } else setup.getDefaultConfig()
+            val gameConfigJSON = gameDetails.getJSON(Fields.GAME_OPTIONS.fieldName)
+            if (gameConfigJSON.length >= 10) JacksonTools.configFromString(setup, gameConfigJSON) else setup.configs()
+        } else setup.configs()
 
         return DBGameSummary(gameSpec, config, Prefix.GAME.extract(gameId), playersInGame, gameType, gameState.value,
                 startingState, timeStarted.longValueExact())

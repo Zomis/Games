@@ -14,5 +14,5 @@ interface GameTest<T: Any> {
     fun branches(branches: GameTestBranches<T>.() -> Unit)
     suspend fun <A: Any> actionNotAllowed(playerIndex: Int, actionType: ActionType<T, A>, parameter: A)
     suspend fun expectNoActions(playerIndex: Int)
-    fun config(config: Any)
+    fun config(key: String, value: Any)
 }

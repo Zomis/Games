@@ -13,7 +13,7 @@ class AIPlayTest {
 
         val controller = gameAndAI.second.createController()
         val setup = GameSetupImpl(gameAndAI.first)
-        val game = setup.createGame(2, setup.getDefaultConfig())
+        val game = setup.createGame(2, setup.configs())
         var moveCount = 0
         while (!game.isGameOver()) {
             val controllerContext = GameControllerContext(game, game.model.currentPlayerIndex)

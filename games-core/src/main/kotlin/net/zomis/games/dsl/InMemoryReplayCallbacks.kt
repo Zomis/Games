@@ -5,7 +5,7 @@ class InMemoryReplayCallbacks<T : Any>(val gameType: String): GameplayCallbacks<
     private var gameStartedState: GameSituationState = null
     private val actions = mutableListOf<ActionReplay>()
     private var playerCount: Int? = null
-    private var config: Any? = null
+    private var config: GameConfigs? = null
 
     override fun onMove(actionIndex: Int, action: Actionable<T, Any>, actionReplay: ActionReplay) {
         val expectedActionIndex = actions.size
@@ -15,7 +15,7 @@ class InMemoryReplayCallbacks<T : Any>(val gameType: String): GameplayCallbacks<
         this.actions.add(actionReplay)
     }
 
-    override fun startedState(playerCount: Int, config: Any, state: GameSituationState) {
+    override fun startedState(playerCount: Int, config: GameConfigs, state: GameSituationState) {
         this.playerCount = playerCount
         this.config = config
         this.gameStartedState = state

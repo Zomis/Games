@@ -15,7 +15,7 @@ import net.zomis.games.dsl.impl.*
 typealias GameSituationState = Map<String, Any>?
 open class GameplayCallbacks<T : Any> {
     open fun startState(setStateCallback: (GameSituationState) -> Unit) {/* empty by default */}
-    open fun startedState(playerCount: Int, config: Any, state: GameSituationState) {/* empty by default */}
+    open fun startedState(playerCount: Int, config: GameConfigs, state: GameSituationState) {/* empty by default */}
     open fun onPreMove(actionIndex: Int, action: Actionable<T, Any>, setStateCallback: (GameSituationState) -> Unit) {/* empty by default */}
     open fun onMove(actionIndex: Int, action: Actionable<T, Any>, actionReplay: ActionReplay) {/* empty by default */}
     open fun onElimination(elimination: PlayerElimination) {/* empty by default */}
@@ -25,7 +25,7 @@ data class ActionReplay(val actionType: String, val playerIndex: Int, val serial
 data class ReplayData(
     val gameType: String,
     val playerCount: Int,
-    val config: Any,
+    val config: GameConfigs,
     val initialState: GameSituationState,
     val actions: List<ActionReplay>
 )
@@ -33,7 +33,7 @@ data class ReplayData(
 class GameReplayableImpl<T : Any>(
     gameSpec: GameSpec<T>,
     val playerCount: Int,
-    options: Any? = null,
+    config: GameConfigs,
     val gameplayCallbacks: GameplayCallbacks<T>
 ) {
 
@@ -43,7 +43,6 @@ class GameReplayableImpl<T : Any>(
         gameplayCallbacks.startState { curr = it }
         curr?.also { stateKeeper.setState(it) }
     }
-    val config = options ?: setup.getDefaultConfig()
     val game = setup.createGameWithState(playerCount, config, state).also {
         if (it !is GameFlowImpl) {
             gameplayCallbacks.startedState(playerCount, config, it.stateKeeper.lastMoveState())

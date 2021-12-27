@@ -16,7 +16,7 @@ class FirstReplayTest {
     fun ttt() {
         val entryPoint = GamesImpl.game(DslTTT.game)
         val replayStore = entryPoint.inMemoryReplay()
-        val gameplay = entryPoint.replayable(2, null, replayStore).runBlocking()
+        val gameplay = entryPoint.replayable(2, entryPoint.setup().configs(), replayStore).runBlocking()
         gameplay.actionSerialized(0, DslTTT.playAction, Point(0, 0))
         gameplay.actionSerialized(1, DslTTT.playAction, Point(1, 1))
         gameplay.actionSerialized(0, DslTTT.playAction, Point(2, 2))
@@ -41,7 +41,7 @@ class FirstReplayTest {
     fun gameWithAI() {
         val entryPoint = GamesImpl.game(DslSplendor.splendorGame)
         val replayStore = entryPoint.inMemoryReplay()
-        val play = entryPoint.replayable(3, null, replayStore).runBlocking()
+        val play = entryPoint.replayable(3, entryPoint.setup().configs(), replayStore).runBlocking()
         val controller = SplendorScorers.aiBuyFirst.createController()
         play.playThroughWithControllers { controller }
 

@@ -94,14 +94,14 @@ class InfiniteActionsTest {
     @Test
     fun splendor() {
         val setup = ServerGames.entrypoint("Splendor")!!.setup()
-        val game = setup.createGame(4, setup.getDefaultConfig())
+        val game = setup.createGameWithDefaultConfig(4)
         val a = game.actions.type("takeMoney")!!.availableActions(0, null).toList()
         Assertions.assertTrue(a.isNotEmpty())
     }
 
     @Test
     fun limitedEvaluation() {
-        val game = GamesImpl.game(game).setup().createGame(1, Unit)
+        val game = GamesImpl.game(game).setup().createGameWithDefaultConfig(1)
         testAvailableActions(game)
 
         val actionType = game.actions.type(combine)!!

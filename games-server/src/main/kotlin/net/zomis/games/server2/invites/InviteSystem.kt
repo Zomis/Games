@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.games.common.toSingleList
+import net.zomis.games.dsl.GameConfigs
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.server2.*
@@ -19,7 +20,7 @@ data class InviteOptions(
     val publicInvite: Boolean,
     val turnOrder: InviteTurnOrder,
     val timeLimit: Int,
-    val gameOptions: Any?,
+    val gameOptions: GameConfigs,
     val database: Boolean
 )
 
@@ -74,7 +75,7 @@ data class Invite(
         "minPlayers" to this.playerRange.first,
         "maxPlayers" to this.playerRange.last,
         "options" to null,
-        "gameOptions" to this.inviteOptions.gameOptions,
+        "gameOptions" to this.inviteOptions.gameOptions.toJSON(),
         "host" to this.host.toMessage(),
         "players" to (listOf(this.host) + this.accepted).map { it.toMessage().plus("playerOptions" to null) },
         "invited" to this.awaiting.map { it.toMessage() }
@@ -194,12 +195,12 @@ class InviteSystem(
     private fun invitePrepare(message: ClientJsonMessage) {
         val gameType = message.data.get("gameType")?.asText() ?: throw IllegalArgumentException("Missing field: gameType")
         val setup = ServerGames.setup(gameType)
-        val gameOptions = setup?.getDefaultConfig()?.takeUnless { it == Unit }
+        val gameOptions = setup?.configs()
         message.client.send(mapOf(
             "type" to "InvitePrepare",
             "gameType" to gameType,
             "playersMin" to setup?.playersCount?.minOrNull(), "playersMax" to setup?.playersCount?.maxOrNull(),
-            "config" to gameOptions
+            "config" to gameOptions?.toJSON()
         ))
     }
 
@@ -212,7 +213,7 @@ class InviteSystem(
 
     private fun createInviteOptions(gameType: String, invite: JsonNode, gameOptionsNode: JsonNode): InviteOptions {
         val setup = ServerGames.setup(gameType)!!
-        val gameOptions = jacksonObjectMapper().convertValue(gameOptionsNode, setup.configClass().java)
+        val gameOptions = JacksonTools.config(setup.configs(), gameOptionsNode)
         return InviteOptions(
             publicInvite = false,//invite["publicInvite"].asBoolean(),
             turnOrder = InviteTurnOrder.ORDERED,// InviteTurnOrder.values().first { it.name == invite["turnOrder"].asText() },
@@ -230,7 +231,7 @@ class InviteSystem(
             gameClients(gameType)!!.findPlayerId(playerId)
         }.filterIsInstance<Client>().toMutableList()
 
-        val defaultConfig = ServerGames.setup(gameType)?.getDefaultConfig() ?: Unit
+        val defaultConfig = ServerGames.setup(gameType)?.configs() ?: GameConfigs(emptyList())
         val options = InviteOptions(false, InviteTurnOrder.ORDERED, -1, defaultConfig, true)
 
         this.createInvite(gameType, inviteId, options, message.client, targetClients)

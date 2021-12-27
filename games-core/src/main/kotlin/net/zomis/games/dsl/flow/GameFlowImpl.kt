@@ -15,9 +15,11 @@ import net.zomis.games.dsl.impl.*
 class GameFlowImpl<T: Any>(
     private val setupContext: GameDslContext<T>,
     override val playerCount: Int,
-    override val config: Any,
+    val gameConfig: GameConfigs,
     override val stateKeeper: StateKeeper
 ): Game<T>, GameFactoryScope<Any>, GameEventsExecutor, GameFlowRuleCallbacks<T> {
+
+    override val config: Any get() = gameConfig.oldStyleValue()
     private val logger = KLoggers.logger(this)
     private var lastAction: GameFlowContext.Steps.ActionPerformed<T>? = null
     private val mainScope = MainScope()
@@ -33,8 +35,8 @@ class GameFlowImpl<T: Any>(
     }
     override val events: GameEventsExecutor = this
     override val eliminationCallback: PlayerEliminationsWrite = eliminations
-    override val model: T = setupContext.model.factory(this, config)
-    val replayable = ReplayState(stateKeeper, eliminations)
+    override val model: T = setupContext.model.factory(this)
+    val replayable = ReplayState(stateKeeper, eliminations, gameConfig)
     override val actions = GameFlowActionsImpl({ feedbacks.add(it) }, model, eliminations, replayable)
 
     val actionsInput: Channel<Any> = Channel()
@@ -47,7 +49,7 @@ class GameFlowImpl<T: Any>(
                 val dsl = setupContext.flowDsl!!
                 val flowContext = GameFlowContext(this, game, "root")
                 setupContext.model.onStart(GameStartContext(model, replayable))
-                sendFeedback(GameFlowContext.Steps.GameSetup(playerCount, config, replayable.stateKeeper.lastMoveState()))
+                sendFeedback(GameFlowContext.Steps.GameSetup(playerCount, gameConfig, replayable.stateKeeper.lastMoveState()))
                 replayable.stateKeeper.clear()
                 dsl.invoke(flowContext)
                 actionDone()
@@ -172,6 +174,8 @@ class GameFlowImpl<T: Any>(
         actions.add(action, actionDsl)
     }
 
+    override fun <E : Any> config(config: GameConfig<E>): E = this.gameConfig.get(config)
+
     // current possible actions, cleared and re-filled after every step
     // a coroutine to keep the game running. Cancellable?
     // an indicator if the game is running or not
@@ -205,7 +209,7 @@ class GameFlowContext<T: Any>(
         data class IllegalAction(val actionType: String, val playerIndex: Int, val parameter: Any): FlowStep
         data class Log(val log: ActionLogEntry): FlowStep
         data class RuleExecution(val ruleName: String, val values: Any): FlowStep
-        data class GameSetup(val playerCount: Int, val config: Any, val state: Map<String, Any>): FlowStep
+        data class GameSetup(val playerCount: Int, val config: GameConfigs, val state: Map<String, Any>): FlowStep
         object AwaitInput: FlowStep
         object NextView : FlowStep
     }
