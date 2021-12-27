@@ -63,7 +63,8 @@ class GameConfigs(val configs: List<GameConfig<Any>>) {
         this.configs.first { it.key == key }.value = value
     }
 
-    fun toJSON(): Any {
+    fun toJSON(): Any? {
+        if (configs.isEmpty()) return null
         return if (isOldStyle()) {
             configs.single().value
         } else {
