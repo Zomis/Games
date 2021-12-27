@@ -173,6 +173,9 @@ export default {
     border-color: #ffd166 !important;
 }
 
+.theme--dark.currentPlayer {
+  background-color: #331007;
+}
 .currentPlayer {
     background-color: #ddf9fd;
 }
