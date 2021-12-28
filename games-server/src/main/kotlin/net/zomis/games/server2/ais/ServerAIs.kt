@@ -17,14 +17,33 @@ class ServerAIs(private val aiRepository: AIRepository, private val dslGameTypes
     fun isDSLGameType(gameType: String) = dslGameTypes.contains(gameType)
 
     fun <T: Any> randomActionable(game: Game<T>, playerIndex: Int): Actionable<T, Any>? {
-        val actionTypes = game.actions.types()
-        val actions = actionTypes.flatMap {actionType ->
-            actionType.availableActions(playerIndex, null)
-        }
-        if (actions.isEmpty()) {
+        val actionTypes = game.actions.types().filter { it.availableActions(playerIndex, null).any() }
+        if (actionTypes.isEmpty()) {
             return null
         }
-        return actions.random()
+        val actionType = actionTypes.random()
+        if (!actionType.isComplex()) {
+            return actionType.availableActions(playerIndex, null).shuffled().random()
+        }
+
+        val chosen = mutableListOf<Any>()
+        while (true) {
+            val next = actionType.withChosen(playerIndex, chosen)
+            val options = next.nextOptions().toList()
+            val parameters = next.parameters().toList()
+            val random = (0 until (options.size + parameters.size)).random()
+            if (random >= options.size) {
+                val actionable = actionType.createAction(playerIndex, parameters[random - options.size].parameter)
+                if (actionType.isAllowed(actionable)) {
+                    return actionable
+                } else {
+                    println("Reset after $playerIndex ${actionType.name}: $chosen")
+                    chosen.clear()
+                }
+            } else {
+                chosen.add(options[random].choiceValue)
+            }
+        }
     }
 
     fun randomAction(game: ServerGame, client: Client, index: Int): PlayerGameMoveRequest? {
