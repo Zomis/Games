@@ -227,7 +227,7 @@ class GameActionRuleContext<T : Any, A : Any>(
         } else {
             require(this.availableActionsEvaluator == null) { "An action must have only one rule for either choices or options" }
             val complex = ActionComplexImpl(actionType, context, this.choices!!)
-            return complex.start().depthFirstActions(sampleSize).map { createAction(playerIndex, it.parameter) }.filter { actionAllowed(it) }.toList()
+            return complex.start().depthFirstActions(sampleSize).map { createAction(playerIndex, it.parameter) }.filter { actionAllowed(it) }.asIterable()
         }
     }
 

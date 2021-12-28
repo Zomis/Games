@@ -141,14 +141,14 @@ class ActionComplexNextImpl<T: Any, P: Any>(
             * Store intermediate options in another
             */
 
-            samples.forEach {
+            for (it in samples) {
                 if (it.nextBlock != null) {
                     val nextScope = ActionComplexBlockRun(actionType, chosen + it.choiceValue, emptyList(), context)
                     it.nextBlock.invoke(nextScope, it.choiceValue)
                     yieldAll(nextScope.createNext().depthFirstActions(nextActionSampleSize))
                 }
                 if (it.nextRecursive != null) {
-                    val nextScope = ActionRecursiveImpl(context, actionType, recursiveChosen, chosen, emptyList(), it.recursiveBlock!!)
+                    val nextScope = ActionRecursiveImpl(context, actionType, recursiveChosen, chosen + it.choiceValue, emptyList(), it.recursiveBlock!!)
                     it.nextRecursive.invoke(nextScope, it.choiceValue)
                     yieldAll(nextScope.blockRun.invoke().depthFirstActions(nextActionSampleSize))
                 }

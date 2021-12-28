@@ -1,13 +1,14 @@
 package net.zomis.games.dsl.actions
 
+import kotlinx.coroutines.runBlocking
 import net.zomis.games.WinResult
 import net.zomis.games.api.GamesApi
 import net.zomis.games.dsl.ActionChoicesRecursiveSpecScope
-import net.zomis.games.dsl.ActionChoicesScope
 import net.zomis.games.dsl.GamesImpl
+import net.zomis.games.dsl.flow.GameFlowContext
+import net.zomis.games.dsl.flow.GameFlowImpl
 import net.zomis.games.dsl.impl.ActionSampleSize
 import net.zomis.games.dsl.impl.Game
-import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.server2.ServerGames
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -80,6 +81,9 @@ class InfiniteActionsTest {
     }
 
     private fun testAvailableActions(game: Game<MyList>) {
+        Assertions.assertTrue(game.eliminations.playerIndices.any { playerIndex ->
+            game.actions.types().any { it.availableActions(playerIndex, null).any() }
+        })
         val result = game.actions.type(combine)!!
             .availableActions(0, ActionSampleSize(listOf(2, 2, 2, 2, 0)))
             .toList()
@@ -100,8 +104,42 @@ class InfiniteActionsTest {
     }
 
     @Test
+    fun spiceRoad() {
+        val setup = ServerGames.entrypoint("Spice Road")!!.setup()
+        val game = setup.createGameWithDefaultConfig(2)
+        val a = game.actions.type("play")!!.availableActions(0, null).toList()
+        println(a)
+        Assertions.assertTrue(a.size > 2)
+    }
+
+    @Test
     fun limitedEvaluation() {
         val game = GamesImpl.game(game).setup().createGameWithDefaultConfig(1)
+        testAvailableActions(game)
+
+        val actionType = game.actions.type(combine)!!
+        val withChosen = actionType.withChosen(0, listOf(10, 10, 10, 10, 10))
+        val next = withChosen.nextOptions().toList()
+        Assertions.assertEquals(10, next.size)
+        next.forEach {
+            Assertions.assertEquals(5, it.previouslyChosen.size)
+            it.previouslyChosen.forEach { choice -> Assertions.assertEquals(10, choice) }
+        }
+        (1..10).forEach { v ->
+            Assertions.assertTrue(next.any { it.choiceValue == v })
+            Assertions.assertTrue(next.any { it.choiceKey == v })
+        }
+    }
+
+    @Test
+    fun limitedEvaluationGameFlow() {
+        val game = GamesImpl.game(gameFlow).setup().createGameWithDefaultConfig(1) as GameFlowImpl<MyList>
+        runBlocking {
+            while (true) {
+                val a = game.feedbackReceiver.receive()
+                if (a is GameFlowContext.Steps.AwaitInput) break
+            }
+        }
         testAvailableActions(game)
 
         val actionType = game.actions.type(combine)!!
