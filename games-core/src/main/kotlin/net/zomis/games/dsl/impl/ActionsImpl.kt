@@ -18,6 +18,7 @@ interface ActionComplexChosenStep<T: Any, P: Any> : GameLogicActionTypeChosen<T,
 
 interface GameLogicActionType<T : Any, P : Any> {
     val actionType: ActionType<T, P>
+    fun isComplex(): Boolean
     fun availableActions(playerIndex: Int, sampleSize: ActionSampleSize?): Iterable<Actionable<T, P>>
     fun actionAllowed(action: Actionable<T, P>): Boolean
     fun replayAction(action: Actionable<T, P>, state: Map<String, Any>?)
@@ -62,6 +63,7 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
     }
     fun createAction(playerIndex: Int, parameter: P): Actionable<T, P> = impl.createAction(playerIndex, parameter)
     fun isAllowed(action: Actionable<T, P>): Boolean = impl.actionAllowed(action)
+    fun isComplex(): Boolean = impl.isComplex()
 
     fun createActionFromSerialized(playerIndex: Int, serialized: Any): Actionable<T, P> {
         val actionOptionsContext = actionOptionsContext(playerIndex)

@@ -293,6 +293,8 @@ class GameActionRuleContext<T : Any, A : Any>(
         return ActionComplexImpl(actionType, context, this.choices!!).withChosen(chosen)
     }
 
+    override fun isComplex(): Boolean = this.choices != null
+
 }
 
 data class GameRuleTriggerContext<T : Any, E : Any>(

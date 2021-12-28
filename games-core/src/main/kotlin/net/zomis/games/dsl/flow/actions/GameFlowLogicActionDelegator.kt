@@ -55,4 +55,6 @@ class GameFlowLogicActionDelegator<T: Any, A: Any>(
         return available.withChosen(playerIndex, chosen)
     }
 
+    override fun isComplex(): Boolean = available.isComplex()
+
 }
