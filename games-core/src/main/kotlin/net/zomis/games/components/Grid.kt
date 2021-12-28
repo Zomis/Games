@@ -83,8 +83,8 @@ interface Grid<T> {
         return mapOf(
             "left" to border.left,
             "top" to border.top,
-            "width" to border.width,
-            "height" to border.height,
+            "width" to border.width(),
+            "height" to border.height(),
             "grid" to boardView(viewFunction)
         )
     }

@@ -78,8 +78,8 @@ class Map2DTest {
         Assertions.assertEquals(-1, border.top)
         Assertions.assertEquals(2, border.right)
         Assertions.assertEquals(0, border.bottom)
-        Assertions.assertEquals(3, border.width)
-        Assertions.assertEquals(2, border.height)
+        Assertions.assertEquals(3, border.width())
+        Assertions.assertEquals(2, border.height())
 
         val view = map.view { it }
         Assertions.assertEquals(0, view["left"])

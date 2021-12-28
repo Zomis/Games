@@ -40,8 +40,8 @@ data class Rect(val top: Int, val left: Int, val right: Int, val bottom: Int) {
         (left..right).asSequence().map { x -> Point(x, y) }
     }
 
-    val width: Int get() = right - left + 1
-    val height: Int get() = bottom - top + 1
+    fun width(): Int = right - left + 1
+    fun height(): Int = bottom - top + 1
 }
 
 data class PointMove(val source: Point, val destination: Point)

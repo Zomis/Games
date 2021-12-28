@@ -37,8 +37,8 @@ class ExpandableGrid<T>(val chunkSize: Int = 16): Grid<T> {
     fun cropped(extraRadius: Int = 0): Grid<T> {
         return object : Grid<T> {
             override fun border(): Rect = this@ExpandableGrid.border().expand(extraRadius)
-            override val sizeX: Int get() = border().width
-            override val sizeY: Int get() = border().height
+            override val sizeX: Int get() = border().width()
+            override val sizeY: Int get() = border().height()
             override fun set(x: Int, y: Int, value: T) = this@ExpandableGrid.set(x, y, value)
             override fun get(x: Int, y: Int): T = this@ExpandableGrid.get(x, y)
             override fun getOrNull(x: Int, y: Int): T? = this@ExpandableGrid.getOrNull(x, y)
@@ -65,8 +65,8 @@ class ExpandableGrid<T>(val chunkSize: Int = 16): Grid<T> {
         return result ?: throw IllegalStateException("ExpandableGrid contains nothing")
     }
 
-    override val sizeX: Int get() = border().width
-    override val sizeY: Int get() = border().height
+    override val sizeX: Int get() = border().width()
+    override val sizeY: Int get() = border().height()
 
     override fun set(x: Int, y: Int, value: T) = chunk(x, y).set(x + offset, y + offset, value)
 

@@ -95,7 +95,7 @@ object KingDomino {
 
         fun placeableBox(placement: DominoPlacement): Boolean {
             val border = placement.placePoints().fold(grid.border()) { rect, point -> rect.include(point.x, point.y) }
-            return border.width <= 5 && border.height <= 5
+            return border.width() <= 5 && border.height() <= 5
         }
 
         val biggestAreaSize: Int get() = this.connectedAreas()
