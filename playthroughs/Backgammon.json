@@ -23,7 +23,7 @@
     "playerIndex" : 1,
     "actionType" : "move",
     "action" : {
-      "piece" : 6,
+      "piece" : 1,
       "steps" : 2
     },
     "state" : { },
