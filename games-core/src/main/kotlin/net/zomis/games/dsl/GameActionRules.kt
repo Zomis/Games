@@ -82,6 +82,7 @@ interface ActionChoicesRecursiveScope<T : Any, C : Any> {
 }
 
 interface ActionChoicesRecursiveSpecScope<T : Any, C: Any, P : Any> {
+    val chosen: C
     val game: T
     val playerIndex: Int
 

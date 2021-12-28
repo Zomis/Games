@@ -20,7 +20,7 @@ class ActionRecursiveContext<T: Any, C: Any>(
 class ActionRecursiveImpl<T: Any, C: Any, P: Any>(
     val context: ActionOptionsContext<T>,
     val actionType: ActionType<T, P>,
-    val chosen: C,
+    override val chosen: C,
     val previousChoices: List<Any>,
     private val upcomingChoices: List<Any>,
     private val recursiveBlock: ActionChoicesRecursiveSpecScope<T, C, P>.() -> Unit
