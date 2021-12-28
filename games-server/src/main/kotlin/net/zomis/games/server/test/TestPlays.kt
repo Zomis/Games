@@ -152,6 +152,9 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
                 }
                 val actionType = replayable.game.actions.type(step.actionType) ?: throw IllegalStateException("Action ${step.type} does not exist")
                 val actionable = actionType.createAction(step.playerIndex, step.action)
+                if (!actionType.isAllowed(actionable)) {
+                    throw IllegalStateException("Action is not allowed: $actionable")
+                }
                 runBlocking {
                     if (replayable.game is GameFlowImpl<*>) {
                         replayable.game.actionsInput.send(actionable)
