@@ -83,11 +83,8 @@ object SpiceRoadDsl {
                 requires {
                     game.currentPlayer.caravan.has(action.parameter.remove)
                 }
-                fun removeUpgrades(chosen: List<Pair<SpiceRoadGameModel.Spice, Int>>): SpiceRoadGameModel.Caravan {
-                    return chosen.fold(SpiceRoadGameModel.Caravan()) { acc, next -> acc + next.first.toCaravan() }
-                }
-                fun addUpgrades(chosen: List<Pair<SpiceRoadGameModel.Spice, Int>>): SpiceRoadGameModel.Caravan {
-                    return chosen.fold(SpiceRoadGameModel.Caravan()) { acc, next -> acc + next.first.upgrade(next.second) }
+                fun removeUpgrades(chosen: Pair<SpiceRoadGameModel.Caravan, Int>): SpiceRoadGameModel.Caravan {
+                    return chosen.first.filter { it.value < 0 }.map { it.first to it.second.times(-1) }
                 }
 
                 choose {
@@ -96,14 +93,17 @@ object SpiceRoadDsl {
                             card.gain != null -> parameter(PlayParameter(card, SpiceRoadGameModel.Caravan(), card.gain))
                             card.upgrade != null -> {
                                 val upgrades = card.upgrade
-                                recursive(emptyList<Pair<SpiceRoadGameModel.Spice, Int>>()) {
+                                recursive(SpiceRoadGameModel.Caravan() to upgrades) {
                                     intermediateParameter { true }
-                                    parameter { PlayParameter(card, removeUpgrades(chosen), addUpgrades(chosen)) }
-                                    until { chosen.sumOf { it.second } == upgrades }
+                                    parameter { PlayParameter(card, removeUpgrades(chosen), chosen.first.filter { it.value > 0 }) }
+                                    until { chosen.second == 0 }
                                     options({ (game.currentPlayer.caravan - removeUpgrades(chosen)).remainingKeys() - SpiceRoadGameModel.Spice.BROWN }) { spiceToUpgrade ->
-                                         options({ 1..(minOf(SpiceRoadGameModel.Spice.BROWN.ordinal - spiceToUpgrade.ordinal, upgrades)) }) { times ->
-                                             recursion(spiceToUpgrade to times) { list, e -> list.plus(e) }
-                                         }
+                                        options({ 1..(minOf(SpiceRoadGameModel.Spice.BROWN.ordinal - spiceToUpgrade.ordinal, chosen.second)) }) { times ->
+                                            val caravan = spiceToUpgrade.toCaravan(-1) + spiceToUpgrade.upgrade(times)
+                                            recursion(caravan to times) { previous, e ->
+                                                (previous.first + e.first) to (previous.second - e.second)
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -337,5 +337,6 @@ class SpiceRoadGameModel(val playerCount: Int) {
         }
 
         fun remainingKeys() = spice.filter { it.value > 0 }.keys
+        fun filter(predicate: (Map.Entry<Spice, Int>) -> Boolean): Caravan = Caravan(spice.filter(predicate).toMutableMap())
     }
 }

@@ -115,6 +115,8 @@ class InfiniteActionsTest {
             .depthFirstActions(null)
         println(a)
         println(b.toList())
+        Assertions.assertTrue(a.none { it.remove.count == 3 })
+        Assertions.assertTrue(a.none { (it.add.spice[SpiceRoadGameModel.Spice.GREEN] ?: 0) > 1 })
         Assertions.assertTrue(b.any())
         Assertions.assertTrue(a.size > 2)
     }
