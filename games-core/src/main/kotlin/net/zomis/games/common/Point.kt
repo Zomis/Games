@@ -42,6 +42,9 @@ data class Rect(val top: Int, val left: Int, val right: Int, val bottom: Int) {
 
     fun width(): Int = right - left + 1
     fun height(): Int = bottom - top + 1
+    fun area(): Int = width() * height()
+    fun isWithin(other: Rect): Boolean = other.covers(this)
+    fun covers(other: Rect): Boolean = this.left <= other.left && this.top <= other.top && this.right >= other.right && this.bottom >= other.bottom
 }
 
 data class PointMove(val source: Point, val destination: Point)
