@@ -9,6 +9,8 @@ import net.zomis.games.dsl.flow.GameFlowContext
 import net.zomis.games.dsl.flow.GameFlowImpl
 import net.zomis.games.dsl.impl.ActionSampleSize
 import net.zomis.games.dsl.impl.Game
+import net.zomis.games.impl.SpiceRoadDsl
+import net.zomis.games.impl.SpiceRoadGameModel
 import net.zomis.games.server2.ServerGames
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -106,9 +108,14 @@ class InfiniteActionsTest {
     @Test
     fun spiceRoad() {
         val setup = ServerGames.entrypoint("Spice Road")!!.setup()
-        val game = setup.createGameWithDefaultConfig(2)
-        val a = game.actions.type("play")!!.availableActions(0, null).toList()
+        val game = setup.createGameWithDefaultConfig(2) as Game<SpiceRoadGameModel>
+        val actionType = game.actions.type("play")!!
+        val a = actionType.availableActions(0, null).toList().map { (it.parameter as SpiceRoadDsl.PlayParameter) }
+        val b = actionType.withChosen(0, listOf(game.model.players[0].hand.cards.first { it.upgrade == 2 }, SpiceRoadGameModel.Spice.YELLOW))
+            .depthFirstActions(null)
         println(a)
+        println(b.toList())
+        Assertions.assertTrue(b.any())
         Assertions.assertTrue(a.size > 2)
     }
 

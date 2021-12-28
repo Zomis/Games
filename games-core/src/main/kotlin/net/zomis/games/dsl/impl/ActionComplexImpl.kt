@@ -90,7 +90,7 @@ class ActionComplexBlockRun<T: Any, P: Any>(
 
     override fun <C : Any> recursive(base: C, options: ActionChoicesRecursiveSpecScope<T, C, P>.() -> Unit) {
         val recursiveContext = ActionRecursiveImpl(context, actionType, base, chosen, upcomingChoices, options)
-        recursiveContext.evaluate()
+        recursiveContext.evaluate(true)
         blockRun = recursiveContext.blockRun
     }
 
@@ -150,6 +150,7 @@ class ActionComplexNextImpl<T: Any, P: Any>(
                 if (it.nextRecursive != null) {
                     val nextScope = ActionRecursiveImpl(context, actionType, recursiveChosen, chosen + it.choiceValue, emptyList(), it.recursiveBlock!!)
                     it.nextRecursive.invoke(nextScope, it.choiceValue)
+                    nextScope.evaluate(false)
                     yieldAll(nextScope.blockRun.invoke().depthFirstActions(nextActionSampleSize))
                 }
             }

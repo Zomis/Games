@@ -58,6 +58,7 @@ class ActionRecursiveImpl<T: Any, C: Any, P: Any>(
 
             val nextScope = ActionRecursiveImpl(context, actionType, chosen, previousChoices + nextE.second, nextChosenList, recursiveBlock)
             next.invoke(nextScope, nextE.second)
+            nextScope.evaluate(false)
             blockRun = nextScope.blockRun
         } else {
             potentialChoices.addAll(evaluated.map { ActionNextChoice(actionType, previousChoices, it.first, it.second,
@@ -84,7 +85,7 @@ class ActionRecursiveImpl<T: Any, C: Any, P: Any>(
     override fun <E : Any> recursion(chosen: E, operation: (C, E) -> C) {
         val nextChosen = operation.invoke(this.chosen, chosen)
         val next = ActionRecursiveImpl(context, actionType, nextChosen, previousChoices, upcomingChoices, recursiveBlock)
-        next.evaluate()
+        next.evaluate(true)
         blockRun = next.blockRun
     }
 
@@ -100,8 +101,10 @@ class ActionRecursiveImpl<T: Any, C: Any, P: Any>(
         this.nextChoicesScope = next
     }
 
-    internal fun evaluate() {
-        recursiveBlock.invoke(this)
+    internal fun evaluate(invoke: Boolean) {
+        if (invoke) {
+            recursiveBlock.invoke(this)
+        }
         if (this.untilCondition(recursiveContext)) {
             // Recursion done, either run next section, or create final parameter
             if (this.nextChoicesScope != null) {
