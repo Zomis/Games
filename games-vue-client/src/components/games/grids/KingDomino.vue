@@ -50,6 +50,8 @@
     <v-card
       v-for="playerIndex in viewOrder"
       :key="playerIndex"
+      class="player"
+      :class="{ 'current-player': playerIndex == view.currentPlayer }"
     >
       <v-card-title>
         <PlayerProfile
@@ -123,4 +125,5 @@ export default {
 </script>
 <style>
 @import "../../../assets/games-style.css";
+@import "../../../assets/active-player.css";
 </style>

@@ -35,6 +35,7 @@ object SpiceRoadDsl {
                 game.actionDeck.random(this.replayable, 6, "DealActionCards") { it.toStateString() }.forEach { it.moveTo(game.visibleActionCards) }
                 game.pointsDeck.random(this.replayable, 5, "DealPointCards") { it.toStateString() }.forEach { it.moveTo(game.visiblePointCards) }
             }
+            this.view("currentPlayer") { game.currentPlayerIndex }
             this.view("players") { game.players.map(SpiceRoadGameModel.Player::toViewable) }
             this.view("actionDeck") { game.actionDeck.size }
             this.view("pointsDeck") { game.pointsDeck.size }

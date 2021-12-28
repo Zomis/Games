@@ -1,0 +1,11 @@
+.theme--dark.player.current-player {
+  background-color: #331007;
+  border: 1px solid #331007 !important;
+  box-shadow: 0px 0px 5px 6px #331007 !important;
+}
+
+.player.current-player {
+  background-color: #ddf9fd;
+  border: 1px solid #ddf9fd !important;
+  box-shadow: 0px 0px 5px 6px #ddf9fd !important;
+}

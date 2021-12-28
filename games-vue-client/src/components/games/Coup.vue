@@ -8,7 +8,7 @@
       >
         <v-card
           :class="{ 'current-player': view.currentPlayer == playerIndex, eliminated: !player.alive }"
-          class="animate-all"
+          class="player animate-all"
         >
           <v-card-title>
             <PlayerProfile
@@ -180,6 +180,7 @@ export default {
 }
 </script>
 <style scoped>
+@import "../../assets/active-player.css";
 @import "../../assets/games-style.css";
 @import "../../assets/games-animations.css";
 

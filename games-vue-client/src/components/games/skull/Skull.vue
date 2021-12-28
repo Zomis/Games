@@ -141,6 +141,7 @@ export default {
 </script>
 <style scoped>
 @import "../../../assets/games-animations.css";
+@import "../../../assets/active-player.css";
 
 .discard-notice {
     color: red;
@@ -154,10 +155,5 @@ export default {
     border-style: solid !important;
     border-width: thick !important;
     border-color: #ffd166 !important;
-}
-
-.player.current-player {
-    border: 1px solid #ddf9fd !important;
-    box-shadow: 0px 0px 5px 6px #ddf9fd !important;
 }
 </style>

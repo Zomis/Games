@@ -1,10 +1,9 @@
 <template>
   <div class="game-tttupgrade">
-    <v-row>
+    <v-row class="player" :class="{ 'current-player': view.currentPlayer == 0 }">
       <v-col>
         <PlayerProfile
           show-name
-          :highlight="view.currentPlayer == 0"
           :context="context"
           :player-index="0"
         />
@@ -38,11 +37,10 @@
         />
       </template>
     </Map2D>
-    <v-row>
+    <v-row class="player" :class="{ 'current-player': view.currentPlayer == 1 }">
       <v-col>
         <PlayerProfile
           show-name
-          :highlight="view.currentPlayer == 1"
           :context="context"
           :player-index="1"
         />
@@ -103,6 +101,7 @@ export default {
   }
 };
 </script>
-<style>
+<style scoped>
+@import "../../assets/active-player.css";
 @import "../../assets/games-style.css";
 </style>
