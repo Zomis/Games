@@ -11,14 +11,17 @@ object DslUR {
     val roll = factory.action("roll", Unit::class)
     val move = factory.action("move", Int::class)
     val gameUR = factory.game("DSL-UR") {
-        setup(Config::class) {
-            defaultConfig { Config(7) }
+        val piecesPerPlayer = config("piecesPerPlayer") { 7 }
+        setup {
             playersFixed(2)
-            init { RoyalGameOfUr(config.piecesPerPlayer) }
+            init { RoyalGameOfUr(config(piecesPerPlayer)) }
         }
         gameFlowRules {
             rules.players.singleWinner { game.winner.takeIf { game.isFinished } }
             beforeReturnRule("view") {
+                view("actions") {
+                    mapOf("roll" to action(roll).anyAvailable()) + action(move).options().associateBy { "move-$it" }
+                }
                 view("currentPlayer") { game.currentPlayer }
                 view("lastRoll") { game.lastRoll }
                 view("roll") { game.roll }

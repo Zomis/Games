@@ -143,10 +143,6 @@ const supportedGames = {
     "DSL-UR": {
         displayName: "Royal Game of UR",
         dsl: dsl(g => g.net.zomis.games.impl.DslUR.gameUR),
-        actions: {
-            roll: () => "roll",
-            move: (i) => `${i}`
-        },
         component: RoyalGameOfUR,
         playTime: '30',
         amountOfPlayers: '2',
