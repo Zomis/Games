@@ -204,11 +204,11 @@ object SetGame {
         actionRules {
             action(callSet) {
                 choose {
-                    options({ game.board.map { c -> c.toStateString() } }) {first ->
-                        options({ game.board.map { c -> c.toStateString() }.minus(first) }) {second ->
-                            options({ game.board.map { c -> c.toStateString() }.minus(first).minus(second) }) {third ->
-                                parameter(SetAction(listOf(first, second, third)))
-                            }
+                    recursive(emptyList<SetPiece>()) {
+                        until { chosen.size == 3 }
+                        parameter { SetAction(chosen.map { it.toStateString() }) }
+                        optionsWithIds({ (game.board.cards - chosen.toSet()).map { it.toStateString() to it } }) { card ->
+                            recursion(card) { list, c -> list + c }
                         }
                     }
                 }
@@ -224,14 +224,15 @@ object SetGame {
                     }
                 }
             }
-        }
-        view {
-            value("deck") { it.deck.size }
-            value("players") {
-                it.players.map { player -> player.toMap() }
+            view("deck") { game.deck.size }
+            view("players") {
+                game.players.map { it.toMap() }
             }
-            value("cards") {
-                it.board.map { card -> card.toMap() }
+            view("chosen") {
+                actionsChosen().chosen()?.chosen?.filterIsInstance<String>()?.associate { it to true } ?: emptyMap<String, Boolean>()
+            }
+            view("cards") {
+                game.board.map { it.toMap() }
             }
         }
     }
