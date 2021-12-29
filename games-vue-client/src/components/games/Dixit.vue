@@ -67,7 +67,7 @@
         </v-card>
       </v-col>
     </v-row>
-    <v-row v-if="actions.available.story">
+    <v-row v-if="view.action === 'story'">
       <v-col>
         <v-text-field
           v-model="story"
@@ -125,12 +125,12 @@ export default {
   },
   methods: {
     chosenCard(card) {
-      if (this.actions.available.story) {
+      if (this.view.action === "story") {
         if (this.story.length > 0) {
           this.actions.actionParameter('story', card + ":" + this.story)
           this.story = "";
         }
-      } else if (this.actions.available.place) {
+      } else if (this.view.action === "place") {
         this.actions.actionParameter('place', card + ":null")
       }
     },

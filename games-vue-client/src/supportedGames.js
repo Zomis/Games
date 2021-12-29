@@ -108,11 +108,6 @@ const supportedGames = {
     },
     "Dixit": {
         dsl: true,
-        actions: {
-            story: () => "story",
-            place: () => "place",
-            vote: (card) => `vote-${card}`,
-        },
         viewTypes: {
             round: { component: DixitRound, binds: (v) => ({ results: v }) }
         },

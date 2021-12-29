@@ -87,6 +87,14 @@ object Dixit {
         }
         gameFlowRules {
             beforeReturnRule("view") {
+                view("action") {
+                    when {
+                        action(story).anyAvailable() -> "story"
+                        action(place).anyAvailable() -> "place"
+                        action(vote).anyAvailable() -> "vote"
+                        else -> ""
+                    }
+                }
                 view("phase") { game.phase }
                 view("config") {
                     mapOf("cardSet" to game.cardSet.cardSetName)
