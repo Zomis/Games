@@ -5,6 +5,7 @@ import net.zomis.games.cards.CardZone
 import net.zomis.games.common.next
 import net.zomis.games.common.nextReversed
 import net.zomis.games.dsl.ActionChoicesScope
+import net.zomis.games.dsl.ActionableOption
 import net.zomis.games.dsl.GameCreator
 import net.zomis.games.dsl.withIds
 import kotlin.random.Random
@@ -163,6 +164,35 @@ object ResistanceAvalonGame {
                 // Give out lady of the lake
                 game.ladyOfTheLakePlayer = game.players[game.leaderIndex.nextReversed(game.playerCount)]
                     .takeIf { game.config.ladyOfTheLake }
+            }
+
+            view("actions") {
+                fun buttons(): List<ActionableOption> {
+                    // Action type, value, display
+                    val list = mutableListOf<ActionableOption>()
+                    list.addAll(action(vote).options().map { ActionableOption(vote.name, it, if (it) "Accept" else "Reject") }.reversed())
+                    list.addAll(action(performMission).options().map { option ->
+                        val failsText = game.activeMission?.failsNeeded?.takeIf { it > 1 }.let {
+                            if (it != null) " (needs $it fails)" else ""
+                        }
+                        ActionableOption(performMission.name, option, if (option) "Success" else "Failure$failsText")
+                    }.reversed())
+                    return list
+                }
+                val playerEffect = when {
+                    action(assassinate).anyAvailable() -> assassinate.name to "Assassinate"
+                    action(useLadyOfTheLake).anyAvailable() -> useLadyOfTheLake.name to "Use Lady of the Lake"
+                    action(chooseTeam).anyAvailable() -> chooseTeam.name to "Add to team"
+                    else -> {"" to ""}
+                }
+                val playerOptions = actionsChosen().nextSteps(ResistanceAvalonPlayer::class) +
+                        action(assassinate).options() + action(useLadyOfTheLake).options()
+                mapOf(
+                    "buttons" to buttons(),
+                    "players" to playerOptions.associate {
+                        it.index to ActionableOption(playerEffect.first, it.index, playerEffect.second)
+                    }
+                )
             }
 
             view("characters") { game.charactersUsed.map { it.name }.distinct() }

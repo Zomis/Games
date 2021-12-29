@@ -124,14 +124,7 @@
               </v-icon>
             </p>
             <div>
-              <Actionable
-                v-if="actions.available[`players/${playerIndex}`]"
-                button
-                :actionable="`players/${playerIndex}`"
-                :actions="actions"
-              >
-                {{ actionDescriptions[actions.available[`players/${playerIndex}`].actionType] }}
-              </Actionable>
+              <v-btn v-if="view.actions.players[playerIndex]" @click="playerClick(playerIndex)">{{ view.actions.players[playerIndex].display }}</v-btn>
             </div>
             <div v-if="player.character">
               <p>{{ player.character }}</p>
@@ -150,20 +143,7 @@
     </v-row>
     <v-row>
       <v-col>
-        <Actionable
-          button
-          :action-type="['vote']"
-          :actions="actions"
-        >
-          Vote for team
-        </Actionable>
-        <Actionable
-          button
-          :action-type="['performMission']"
-          :actions="actions"
-        >
-          Perform mission
-        </Actionable>
+        <v-btn v-for="(act) in view.actions.buttons" :key="act.display" @click="buttonClick(act)">{{ act.display }}</v-btn>
       </v-col>
     </v-row>
     <v-row>
@@ -202,14 +182,20 @@ export default {
   components: {
     PlayerProfile, Actionable
   },
-  computed: {
-    actionDescriptions() {
-      return {
-        teamChoice: "Add to team",
-        assassinate: "Assassinate",
-        useLadyOfTheLake: "Target with lady of the lake"
-      }
+  methods: {
+    buttonClick(act) {
+      this.actions.actionParameter(act.actionType, act.parameter)
     },
+    playerClick(playerIndex) {
+      let act = this.view.actions.players[playerIndex]
+      if (act.actionType === "chooseTeam") {
+        this.actions.choose(act.actionType, act.parameter)
+      } else {
+        this.actions.actionParameter(act.actionType, act.parameter)
+      }
+    }
+  },
+  computed: {
     characters() {
       let oberonMessage = " Sees other evil except Oberon."
       return {

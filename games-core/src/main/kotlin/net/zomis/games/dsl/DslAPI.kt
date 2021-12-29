@@ -6,6 +6,7 @@ import net.zomis.games.dsl.flow.GameFlowRules
 import net.zomis.games.dsl.flow.GameFlowScope
 import kotlin.reflect.KClass
 
+data class ActionableOption(val actionType: String, val parameter: Any, val display: Any)
 interface Actionable<T : Any, A : Any> {
     val playerIndex: Int
     val game: T

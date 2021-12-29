@@ -85,13 +85,6 @@ const setActions = {
     })
 }
 
-function recursiveAvalon(teamMember) {
-    return {
-        key: 'players/' + teamMember,
-        next: recursiveAvalon
-    }
-}
-
 function paySpice(spice) {
     return {
         key: 'pay-' + spice,
@@ -143,16 +136,6 @@ const supportedGames = {
     },
     "Avalon": {
         dsl: dsl(g => g.net.zomis.games.impl.ResistanceAvalonGame.game),
-        actions: {
-            teamChoice: (missionNumber) => ({
-                key: 'mission-' + missionNumber,
-                next: recursiveAvalon
-            }),
-            vote: (result) => `${result}`,
-            performMission: (result) => `${result}`,
-            assassinate: (targetPlayer) => "players/" + targetPlayer,
-            useLadyOfTheLake: (targetPlayer) => "players/" + targetPlayer
-        },
         component: Avalon,
         playTime: '30',
         amountOfPlayers: '5-10',
