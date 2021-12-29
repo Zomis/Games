@@ -41,7 +41,7 @@ export default {
     UrPiece
   },
   methods: {
-    doNothing: function() {},
+    doNothing() {},
     pieceClick(data) {
       console.log("IGNORED PIECECLICK", data)
     },
