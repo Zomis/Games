@@ -356,13 +356,10 @@ object DslSplendor {
                     log { "$player got ${viewLink("a noble", "noble", viewNoble(game, noble))}" }
                 }
             }
-        }
-        view {
-            currentPlayer { it.currentPlayerIndex }
-            eliminations()
-            value("viewer") { viewer }
-            value("round") { it.roundNumber }
-            value("cardLevels") { game ->
+            view("currentPlayer") { game.currentPlayerIndex }
+            view("viewer") { viewer }
+            view("round") { game.roundNumber }
+            view("cardLevels") {
                 game.board.cards.sortedBy { -it.level }.groupBy { it.level }.mapValues {
                     mapOf(
                             "level" to it.key,
@@ -371,14 +368,14 @@ object DslSplendor {
                     )
                 }.values.toList()
             }
-            value("stock") { game ->
+            view("stock") {
                 MoneyType.values().associate { it to game.stock.moneys[it] }.plus("wildcards" to game.stock.wildcards)
             }
-            value("nobles") {
-                val allNobles = it.players.flatMap { pl -> pl.nobles.cards } + it.nobles.cards
+            view("nobles") {
+                val allNobles = game.players.flatMap { pl -> pl.nobles.cards } + game.nobles.cards
                 allNobles.map { noble -> viewNoble(game, noble) }
             }
-            value("players") { game ->
+            view("players") {
                 game.players.map { player ->
                     val reservedPair = if (player.index == viewer || game.config.showReservedCards)
                         "reservedCards" to player.reserved.map { viewCard(it) }

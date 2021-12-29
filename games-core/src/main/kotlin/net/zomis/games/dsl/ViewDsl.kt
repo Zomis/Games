@@ -35,9 +35,6 @@ interface ActionsChosenView<T: Any>: ActionsView<T> {
 
 @Deprecated("use other view system instead")
 interface GameView<T: Any> : ViewScope<T> {
-    fun result(): Map<String, Any?>
-    fun currentPlayer(function: (T) -> Int)
     fun value(key: String, value: (T) -> Any?)
-    fun eliminations()
     fun onRequest(requestName: String, function: GameViewOnRequestFunction<T>)
 }

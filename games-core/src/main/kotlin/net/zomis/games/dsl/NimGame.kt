@@ -50,11 +50,8 @@ object NimGame {
                     game.move(action.parameter, eliminations)
                 }
             }
-        }
-        view {
-            value("piles") { it.piles }
-            currentPlayer { it.currentPlayer }
-            eliminations()
+            view("piles") { game.piles }
+            view("currentPlayer") { game.currentPlayer }
         }
     }
 

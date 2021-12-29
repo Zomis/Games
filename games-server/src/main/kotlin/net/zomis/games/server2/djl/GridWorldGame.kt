@@ -52,9 +52,7 @@ object GridWorldGame {
                 options { Direction4.values().asIterable() }
                 effect { game.move(action.parameter) }
             }
-        }
-        view {
-            this.value("board") {game ->
+            view("board") {
                 game.map.all().map { it.value.ch }
             }
         }

@@ -41,28 +41,12 @@ class GameViewContext<T : Any>(
     private val requestable = mutableMapOf<String, GameViewOnRequestFunction<T>>()
     private val viewResult: MutableMap<String, Any?> = mutableMapOf()
 
-    override fun result(): Map<String, Any?> {
+    fun result(): Map<String, Any?> {
         return viewResult.toMap()
     }
 
     override fun value(key: String, value: (T) -> Any?) {
         this.viewResult[key] = value(game)
-    }
-
-    override fun currentPlayer(function: (T) -> Int) {
-        viewResult["currentPlayer"] = function(game)
-    }
-
-    override fun eliminations() {
-        val eliminationsDone = gameObj.eliminations.eliminations()
-        viewResult["eliminations"] = (0 until gameObj.eliminations.playerCount).map {playerIndex ->
-            val elimination = eliminationsDone.firstOrNull { it.playerIndex == playerIndex }
-            if (elimination == null) {
-                mapOf("eliminated" to false)
-            } else {
-                mapOf("eliminated" to true, "result" to elimination.winResult, "position" to elimination.position)
-            }
-        }
     }
 
     override fun onRequest(requestName: String, function: GameViewOnRequestFunction<T>) {
