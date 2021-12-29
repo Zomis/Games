@@ -188,7 +188,6 @@ const supportedGames = {
     },
     "Set": {
         dsl: true,
-        enabled: true,
         resetActions: false,
         actions: setActions,
         component: SetGame,
@@ -197,7 +196,6 @@ const supportedGames = {
     },
     "Splendor": {
         dsl: dsl(g => g.net.zomis.games.impl.DslSplendor.splendorGame),
-        enabled: true,
         actions: splendorActions,
         component: Splendor,
         viewTypes: {
