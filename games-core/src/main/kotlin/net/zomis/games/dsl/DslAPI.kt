@@ -34,20 +34,6 @@ typealias GameViewDsl<T> = GameView<T>.() -> Unit
 typealias GameActionRulesDsl<T> = GameActionRules<T>.() -> Unit
 typealias GameFlowRulesDsl<T> = GameFlowRules<T>.() -> Unit
 typealias GameFlowDsl<T> = suspend GameFlowScope<T>.() -> Unit
-typealias GridDsl<T, P> = GameGrid<T, P>.() -> Unit
-
-@Deprecated("to be removed, try to use Grid2D or something instead")
-interface GameGrid<T, P> {
-    val model: T
-    fun size(sizeX: Int, sizeY: Int)
-    fun getter(getter: (x: Int, y: Int) -> P)
-}
-
-interface GridSpec<T, P> {
-    val sizeX: (T) -> Int
-    val sizeY: (T) -> Int
-    fun get(model: T, x: Int, y: Int): P
-}
 
 interface GameConfig<E: Any> {
     fun mutable(): GameConfig<E>
@@ -85,8 +71,7 @@ class GameConfigs(val configs: List<GameConfig<Any>>) {
 }
 
 interface GameDsl<T : Any> {
-    @Deprecated("to be removed, try to use Grid2D or something instead")
-    fun <P> gridSpec(spec: GridDsl<T, P>): GridDsl<T, P>
+    @Deprecated("use GameConfig class")
     fun <C : Any> setup(configClass: KClass<C>, modelDsl: GameModelDsl<T, C>)
     fun setup(modelDsl: GameModelDsl<T, Unit>)
     @Deprecated("use rules instead")

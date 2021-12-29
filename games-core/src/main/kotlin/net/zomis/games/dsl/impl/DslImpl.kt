@@ -33,52 +33,6 @@ class GameModelContext<T: Any, C>(val configs: MutableList<GameConfig<Any>>) : G
     }
 }
 
-class GameViewContext2D<T, P>(override val model: T) : GameView2D<T, P> {
-
-    private var ownerFunction: ((tile: P) -> Int?)? = null
-    private val properties = mutableListOf<Pair<String, (P) -> Any?>>()
-
-    override fun owner(function: (tile: P) -> Int?) {
-        this.ownerFunction = function
-    }
-
-    override fun property(name: String, value: (tile: P) -> Any?) {
-        this.properties.add(name to value)
-    }
-
-    fun view(p: P): Map<String, Any?> {
-        val tileMap = mutableMapOf<String, Any?>()
-        for (property in properties) {
-            tileMap[property.first] = property.second(p)
-        }
-        if (this.ownerFunction != null) {
-            tileMap["owner"] = this.ownerFunction!!(p)
-        }
-        return tileMap
-    }
-
-}
-
-class GameGridBuilder<T : Any, P>(override val model: T) : GameGrid<T, P>, GridSpec<T, P> {
-    override lateinit var sizeX: (T) -> Int
-    override lateinit var sizeY: (T) -> Int
-    lateinit var getter: (x: Int, y: Int) -> P
-
-    override fun get(model: T, x: Int, y: Int): P {
-        return this.getter(x, y)
-    }
-
-    override fun size(sizeX: Int, sizeY: Int) {
-        this.sizeX = { sizeX }
-        this.sizeY = { sizeY }
-    }
-
-    override fun getter(getter: (x: Int, y: Int) -> P) {
-        this.getter = getter
-    }
-
-}
-
 class GameViewContext<T : Any>(
     private val gameObj: Game<T>,
     override val viewer: PlayerIndex
@@ -97,19 +51,6 @@ class GameViewContext<T : Any>(
 
     override fun currentPlayer(function: (T) -> Int) {
         viewResult["currentPlayer"] = function(game)
-    }
-
-    override fun <P> grid(name: String, grid: GridDsl<T, P>, view: ViewDsl2D<T, P>) {
-        val gridSpec = GameGridBuilder<T, P>(game)
-        gridSpec.apply(grid as GameGridBuilder<T, P>.() -> Unit)
-        val context = GameViewContext2D<T, P>(game)
-        view(context)
-        viewResult[name] = (0 until gridSpec.sizeY(game)).map {y ->
-            (0 until gridSpec.sizeX(game)).map {x ->
-                val p = gridSpec.get(game, x, y)
-                context.view(p)
-            }
-        }
     }
 
     override fun eliminations() {
@@ -255,10 +196,6 @@ class GameConfigImpl<E: Any>(override val key: String, override val default: () 
 
 }
 class GameDslContext<T : Any> : GameDsl<T> {
-    override fun <P> gridSpec(spec: GameGrid<T, P>.() -> Unit): GridDsl<T, P> {
-        return spec
-    }
-
     lateinit var modelDsl: GameModelDsl<T, Any>
     var viewDsl: GameViewDsl<T>? = null
     var flowRulesDsl: GameFlowRulesDsl<T>? = null
@@ -269,7 +206,6 @@ class GameDslContext<T : Any> : GameDsl<T> {
 
     val model = GameModelContext<T, Any>(configs)
 
-    @Deprecated("use GameConfig class")
     override fun <C : Any> setup(configClass: KClass<C>, modelDsl: GameModelDsl<T, C>) {
         this.modelDsl = modelDsl as GameModelDsl<T, Any>
     }
