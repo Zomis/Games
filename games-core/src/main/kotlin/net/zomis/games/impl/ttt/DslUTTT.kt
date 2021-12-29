@@ -2,10 +2,7 @@ package net.zomis.games.impl.ttt
 
 import net.zomis.games.WinResult
 import net.zomis.games.common.Point
-import net.zomis.games.dsl.GameCreator
-import net.zomis.games.dsl.GameActionRulesDsl
-import net.zomis.games.dsl.GameViewDsl
-import net.zomis.games.dsl.GridDsl
+import net.zomis.games.dsl.*
 import net.zomis.games.impl.ttt.ultimate.*
 
 data class TTOptions(val m: Int, val n: Int, val k: Int)
@@ -24,55 +21,55 @@ object DslTTT {
     val playAction = factory.action("play", TTBase::class).serialization({ Point(it.globalX, it.globalY) }, {
         game.game.getSmallestTile(it.x, it.y)!!
     })
+
+    private fun GameDsl<TTController>.ttConfigs(options: TTOptions): List<GameConfig<Int>> {
+        val m = config("m") { options.m }
+        val n = config("n") { options.n }
+        val k = config("k") { options.k }
+        return listOf(m, n, k)
+    }
+    private fun GameDsl<TTController>.ttGame() {
+        actionRules {
+            ttRules()
+            ttView()
+        }
+    }
+
     val game = factory.game("DSL-TTT") {
-        val grid = gridSpec<TTBase> {
-            size(model.game.sizeX, model.game.sizeY)
-            getter { x, y -> model.game.getSub(x, y)!! }
-        }
-        setup(TTOptions::class) {
-            defaultConfig {
-                TTOptions(3, 3, 3)
-            }
+        val (m, n, k) = ttConfigs(TTOptions(3, 3, 3))
+        setup {
+            playersFixed(2)
             init {
-                val conf = this.config
-                TTClassicController(TTFactories().classicMNK(conf.m, conf.n, conf.k))
+                TTClassicController(TTFactories().classicMNK(config(m), config(n), config(k)))
             }
         }
-        actionRules(ttRules())
-        view(ttView(grid))
+        ttGame()
     }
 
     val gameConnect4 = factory.game("DSL-Connect4") {
-        val grid = gridSpec<TTBase> {
-            size(model.game.sizeX, model.game.sizeY)
-            getter { x, y -> model.game.getSub(x, y)!! }
-        }
-        setup(TTOptions::class) {
-            defaultConfig {
-                TTOptions(7, 6, 4)
-            }
+        val (m, n, k) = ttConfigs(TTOptions(7, 6, 4))
+        setup {
+            playersFixed(2)
             init {
-                TTClassicControllerWithGravity(TTFactories().classicMNK(config.m, config.n, config.k))
+                TTClassicControllerWithGravity(TTFactories().classicMNK(config(m), config(n), config(k)))
             }
         }
-        actionRules(ttRules())
-        view(ttView(grid))
+        ttGame()
     }
 
     val gameUTTT = factory.game("DSL-UTTT") {
+        val (m, n, k) = ttConfigs(TTOptions(3, 3, 3))
         setup(TTOptions::class) {
-            defaultConfig {
-                TTOptions(3, 3, 3)
-            }
+            playersFixed(2)
             init {
-                TTUltimateController(TTFactories().ultimateMNK(config.m, config.n, config.k))
+                TTUltimateController(TTFactories().ultimateMNK(config(m), config(n), config(k)))
             }
         }
-        actionRules(ttRules())
-        view {
-            currentPlayer { it.currentPlayer.index() }
-            value("boards") {e ->
-                e.game.subs().chunked(3).map {areas ->
+        actionRules {
+            ttRules()
+            view("currentPlayer") { game.currentPlayer.index() }
+            view("boards") {
+                game.game.subs().chunked(3).map {areas ->
                     areas.map {area ->
                         val chunkedSubs = area.subs().chunked(3).map {tiles ->
                             tiles.map { tile ->
@@ -84,34 +81,31 @@ object DslTTT {
                     }
                 }
             }
-            value("activeBoard") {
-                val active = (it as TTUltimateController).activeBoard ?: return@value null
+            view("activeBoard") {
+                val active = (game as TTUltimateController).activeBoard ?: return@view null
                 mapOf("x" to active.x, "y" to active.y)
             }
         }
     }
 
     val gameReversi = factory.game("DSL-Reversi") {
-        val grid = gridSpec<TTBase> {
-            size(model.game.sizeX, model.game.sizeY)
-            getter { x, y -> model.game.getSmallestTile(x, y)!! }
-        }
-        setup(Unit::class) {
-            defaultConfig { Unit }
+        setup {
+            playersFixed(2)
             init { TTOthello(8) }
         }
-        actionRules(ttRules())
-        view(ttView(grid))
+        ttGame()
     }
 
-    private fun ttView(grid: GridDsl<TTController, TTBase>): GameViewDsl<TTController> = {
-        currentPlayer { it.currentPlayer.index() }
-        grid("board", grid) {
-            owner { it.wonBy.index().takeIf {n -> n >= 0 } }
+    private fun GameActionRules<TTController>.ttView() {
+        view("currentPlayer") { game.currentPlayer.index() }
+        view("board") {
+            game.game.view {
+                mapOf("owner" to it.wonBy.index().takeIf { n -> n >= 0 })
+            }
         }
     }
 
-    private fun ttRules(): GameActionRulesDsl<TTController> = {
+    private fun GameActionRules<TTController>.ttRules() {
         allActions.precondition { playerIndex == game.currentPlayer.index() }
         action(playAction) {
             options { allSmallest(game.game).asIterable() }

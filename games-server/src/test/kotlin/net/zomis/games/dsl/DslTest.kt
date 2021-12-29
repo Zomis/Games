@@ -15,14 +15,20 @@ class DslTest {
 
     @Test
     fun config() {
-        val setup = GameSetupImpl(DslTTT.game)
-        Assertions.assertTrue(setup.configs().isOldStyle())
-        Assertions.assertEquals(TTOptions::class, setup.configs().configs.single().clazz)
+        val configs = GameSetupImpl(DslTTT.game).configs()
+        Assertions.assertFalse(configs.isOldStyle())
+        Assertions.assertEquals(3, configs.configs.size)
+        Assertions.assertTrue(configs.configs.all { it.clazz == Int::class })
+        Assertions.assertTrue(configs.configs.all { it.value == 3 })
     }
 
     private fun createGame(): Game<TTController> {
         val setup = GameSetupImpl(DslTTT.game)
-        val game = setup.createGameWithOldConfig(2, TTOptions(3, 3, 3))
+        val configs = setup.configs()
+        configs.set("m", 3)
+        configs.set("n", 3)
+        configs.set("k", 3)
+        val game = setup.createGame(2, configs)
         Assertions.assertNotNull(game)
         return game
     }

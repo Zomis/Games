@@ -1,5 +1,8 @@
 package net.zomis.games.impl.ttt.ultimate
 
+import net.zomis.games.common.Grid2D
+import net.zomis.games.components.Grid
+
 data class TTMNKParameters(val width: Int, val height: Int, val consecutiveRequired: Int)
 
 /**
@@ -155,7 +158,7 @@ object TicUtils {
 
 }
 class TTBase(val parent: TTBase?, val x: Int, val y: Int,
-             val mnkParameters: TTMNKParameters, factory: TicFactory?) : Winnable, HasSub<TTBase> {
+             val mnkParameters: TTMNKParameters, factory: TicFactory?) : Winnable, HasSub<TTBase>, Grid<TTBase> {
 
     private val subs: Array<Array<TTBase>>
 
@@ -260,6 +263,11 @@ class TTBase(val parent: TTBase?, val x: Int, val y: Int,
         val board = getSub(subX, subY) ?: throw NullPointerException("No such smallest tile found: $x, $y")
         return board.getSub(x - subX * sizeX, y - subY * sizeY)
     }
+
+    override fun set(x: Int, y: Int, value: TTBase) {
+        this.subs[y][x] = value
+    }
+    override fun get(x: Int, y: Int): TTBase = this.subs[y][x]
 
 }
 
