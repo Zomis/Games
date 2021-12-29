@@ -12,7 +12,8 @@ class RoyalGameOfUrFlowTest {
     @Test
     fun test() {
         val entryPoint = GamesImpl.game(DslUR.gameUR)
-        val gameFlowImpl = entryPoint.setup().createGameWithOldConfig(2, DslUR.Config(1)) as GameFlowImpl<RoyalGameOfUr>
+        val config = entryPoint.setup().configs().also { it.set("piecesPerPlayer", 1) }
+        val gameFlowImpl = entryPoint.setup().createGame(2, config) as GameFlowImpl<RoyalGameOfUr>
         val test = GameFlowTestHelper(gameFlowImpl)
         val model = gameFlowImpl.model
         runBlocking {

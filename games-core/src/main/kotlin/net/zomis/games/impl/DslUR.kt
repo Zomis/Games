@@ -6,7 +6,6 @@ import net.zomis.games.ur.RoyalGameOfUr
 
 object DslUR {
 
-    data class Config(val piecesPerPlayer: Int)
     val factory = GameCreator(RoyalGameOfUr::class)
     val roll = factory.action("roll", Unit::class)
     val move = factory.action("move", Int::class)
