@@ -20,7 +20,7 @@
               class="piece"
               :class="{['piece-' + slotProps.tile.tile.owner]: true, highlighted: highlightedAreas[areaIndex]}"
               :onclick="generateOnClickFor(areaIndex)"
-              :actionable="actions.available[`${Math.floor(areaIndex % 3) * 3 + slotProps.tile.x},${Math.floor(areaIndex / 3) * 3 + slotProps.tile.y}`]"
+              :actionable="slotProps.tile.tile.actionable"
               :piece="slotProps.tile"
             />
           </template>

@@ -282,7 +282,6 @@ const supportedGames = {
     "DSL-UTTT": {
         displayName: "Tic-Tac-Toe Ultimate",
         dsl: dsl(g => g.net.zomis.games.impl.ttt.DslTTT.gameUTTT),
-        actions: tttActions,
         component: UTTT,
     },
     "DSL-TTT": {

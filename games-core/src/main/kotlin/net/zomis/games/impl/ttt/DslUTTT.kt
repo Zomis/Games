@@ -69,11 +69,15 @@ object DslTTT {
             ttRules()
             view("currentPlayer") { game.currentPlayer.index() }
             view("boards") {
+                val actions = action(playAction).options().associateWith { true }
                 game.game.subs().chunked(3).map {areas ->
                     areas.map {area ->
                         val chunkedSubs = area.subs().chunked(3).map {tiles ->
                             tiles.map { tile ->
-                                mapOf("owner" to tile.wonBy.index().takeIf { i -> i >= 0 })
+                                mapOf(
+                                    "owner" to tile.wonBy.index().takeIf { i -> i >= 0 },
+                                    "actionable" to actions.containsKey(tile)
+                                )
                             }
                         }
                         mapOf("owner" to area.wonBy.index().takeIf { i -> i >= 0 },
