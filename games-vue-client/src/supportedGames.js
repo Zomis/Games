@@ -75,16 +75,6 @@ const splendorActions = {
     reserve: (card) => 'reserve-' + card
 }
 
-const setActions = {
-    set: (target1) => ({
-        key: 'set-' + target1,
-        next: (target2) => ({
-            key: 'set-' + target2,
-            next: (target3) => 'set-' + target3
-        })
-    })
-}
-
 function paySpice(spice) {
     return {
         key: 'pay-' + spice,
@@ -189,7 +179,6 @@ const supportedGames = {
     "Set": {
         dsl: true,
         resetActions: false,
-        actions: setActions,
         component: SetGame,
         playTime: '30',
         amountOfPlayers: '1-20',
