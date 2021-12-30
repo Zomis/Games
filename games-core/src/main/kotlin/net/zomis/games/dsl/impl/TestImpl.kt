@@ -19,8 +19,6 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
         return gameImpl!!
     }
 
-    override suspend fun initializeGame(): T = initializedGame().model
-
     override val game: T
         get() {
             if (forwards == 0) throw IllegalStateException("Rules might not have been executed. Run initialize() or perform/assert actions before accessing raw game state.")

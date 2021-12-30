@@ -626,7 +626,7 @@ object CoupRuleBased {
             state("start-0", listOf("CONTESSA", "ASSASSIN"))
             state("start-1", listOf("CONTESSA", "ASSASSIN"))
             state("start-2", listOf("DUKE", "DUKE"))
-            initializeGame()
+            initialize()
             actionNotAllowed(1, counter, CoupCharacter.DUKE) // Not time to counter yet
             action(0, perform, CoupAction(game.players[0], CoupActionType.FOREIGN_AID, null))
             action(1, counter, CoupCharacter.DUKE)

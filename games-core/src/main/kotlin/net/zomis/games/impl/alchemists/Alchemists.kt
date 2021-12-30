@@ -183,7 +183,7 @@ object Alchemists {
                 }
                 val probabilitySum = allRemains.sumByDouble { it.probability }
                 SellAnalyze(probabilitySum, guarantee, probabilitySum * guarantee.price)
-            }.maxBy { it.expectedGold }
+            }.maxOf { it.expectedGold }
             return "selling gives $weightedRemains weighted remains, best guarantee is $reward"
         }
 
@@ -284,12 +284,12 @@ object Alchemists {
         }
 
         fun showBestImprovement() {
-            val currentMaxSum = probabilities().map { it.value.values.max() ?: 0.0 }.sum()
+            val currentMaxSum = probabilities().map { it.value.values.maxOrNull() ?: 0.0 }.sum()
             for (combination in ingredientCombinations()) {
                 var newMaxTotal = 0.0
                 for (potion in possiblePotions()) {
                     val test = weightedRemains { it.matchesKnowledge(AlchemistsKnowledge(combination.first, combination.second, potion)) }
-                    val newMaxProbabilitySum = test.solution.probabilities().map { it.value.values.max() ?: 0.0 }.sum()
+                    val newMaxProbabilitySum = test.solution.probabilities().map { it.value.values.maxOrNull() ?: 0.0 }.sum()
                     newMaxTotal += test.probability * newMaxProbabilitySum
                 }
                 if (newMaxTotal > currentMaxSum) {
@@ -308,7 +308,7 @@ object Alchemists {
                     if (sol2.count > 0) {
                         val probability = sol2.count.toDouble() / count.toDouble()
                         val probabilities = sol2.probabilityOfIngredient(ingredient)
-                        val maxProbability = probabilities.values.max()!!
+                        val maxProbability = probabilities.values.maxOrNull()!!
                         sum += maxProbability * probability
                         println("Mix ${mix.first} + ${mix.second} = $potion: $probabilities ($probability)")
                     }
