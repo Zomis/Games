@@ -1,7 +1,8 @@
 package net.zomis.games.impl.ttt
 
-import net.zomis.games.Map2D
 import net.zomis.games.common.Point
+import net.zomis.games.components.Grid
+import net.zomis.games.components.standardize
 
 typealias TTT3DAI = (TTT3D) -> Pair<Int, Int>
 private val RANGE: IntRange = (0 until 4)
@@ -159,12 +160,18 @@ class TTT3D {
             }
         }
 
-        Map2D(4, 4, getter, setter).standardize {
+        val grid = object : Grid<List<TTT3DPiece?>> {
+            override val sizeX: Int = 4
+            override val sizeY: Int = 4
+            override fun set(x: Int, y: Int, value: List<TTT3DPiece?>) = setter.invoke(x, y, value)
+            override fun get(x: Int, y: Int): List<TTT3DPiece?> = getter.invoke(x, y)
+        }
+        grid.standardize {
             it.mapIndexed{a, b -> a to b}.fold(0) { curr, next -> curr * 10 + (next.second?.ordinal ?: 5) }
         }
     }
 
-    fun position(parameter: Point): TTT3DPoint? {
+    fun position(parameter: Point): TTT3DPoint {
         return this.pieces[parameter.y][parameter.x].first { it.piece == null }
     }
 

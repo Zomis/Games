@@ -92,7 +92,7 @@ data class HanabiConfig(
 }
 data class HanabiColorData(val color: HanabiColor, val board: CardZone<HanabiCard> = CardZone(mutableListOf()), val discard: CardZone<HanabiCard> = CardZone(mutableListOf())) {
     fun values(): List<Pair<HanabiColor, Int>> = (1..5).map { color to it }
-    fun nextPlayable(): Int? = board.map { it.value }.max().let { (it ?: 0) + 1 }.takeIf { it <= 5 }
+    fun nextPlayable(): Int? = board.map { it.value }.maxOrNull().let { (it ?: 0) + 1 }.takeIf { it <= 5 }
 }
 data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
     val colors: List<HanabiColorData> = config.colors().map { HanabiColorData(it) }
@@ -367,7 +367,9 @@ object HanabiGame {
         }
     }
 
-    private fun playCardTo(playCard: Card<HanabiCard>, playArea: CardZone<HanabiCard>?, game: Hanabi, effectScope: GameUtils) {
+    private fun playCardTo(playCard: Card<HanabiCard>, playArea: CardZone<HanabiCard>?,
+        game: Hanabi, effectScope: ActionRuleScope<Hanabi, *>
+    ) {
         moveCard(effectScope.replayable, game, playCard, playArea ?: game.colorData(playCard.card).discard)
         if (playCard.card.value == 5 && playArea != null) {
             game.increaseClueTokens()
@@ -376,10 +378,10 @@ object HanabiGame {
             game.failTokens++
         }
         if (game.failTokens == game.config.maxFailTokens) {
-            effectScope.playerEliminations.eliminateRemaining(WinResult.LOSS)
+            effectScope.eliminations.eliminateRemaining(WinResult.LOSS)
         }
         if (game.boardComplete()) {
-            effectScope.playerEliminations.eliminateRemaining(WinResult.WIN)
+            effectScope.eliminations.eliminateRemaining(WinResult.WIN)
         }
     }
 

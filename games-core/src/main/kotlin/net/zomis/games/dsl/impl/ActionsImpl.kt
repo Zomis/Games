@@ -1,6 +1,6 @@
 package net.zomis.games.dsl.impl
 
-import net.zomis.games.PlayerEliminations
+import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.mergeWith
 import net.zomis.games.dsl.*
 import kotlin.reflect.KClass
@@ -18,6 +18,7 @@ interface ActionComplexChosenStep<T: Any, P: Any> : GameLogicActionTypeChosen<T,
 
 interface GameLogicActionType<T : Any, P : Any> {
     val actionType: ActionType<T, P>
+    fun isComplex(): Boolean
     fun availableActions(playerIndex: Int, sampleSize: ActionSampleSize?): Iterable<Actionable<T, P>>
     fun actionAllowed(action: Actionable<T, P>): Boolean
     fun replayAction(action: Actionable<T, P>, state: Map<String, Any>?)
@@ -47,10 +48,11 @@ data class ActionSampleSize(val sampleSizes: List<Int>) {
 
 class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
     private val replayState: ReplayState,
-    private val eliminations: PlayerEliminations,
+    private val eliminations: PlayerEliminationsWrite,
     val actionType: ActionType<T, P>,
     private val impl: GameLogicActionType<T, P>
 ) {
+    override fun toString(): String = "ActionType:${actionType.name}"
     fun availableActions(playerIndex: Int, sampleSize: ActionSampleSize?): Iterable<Actionable<T, P>> = impl.availableActions(playerIndex, sampleSize)
     fun perform(playerIndex: Int, parameter: P) = this.perform(this.createAction(playerIndex, parameter))
     fun replayAction(action: Actionable<T, P>, state: Map<String, Any>?) {
@@ -61,6 +63,7 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
     }
     fun createAction(playerIndex: Int, parameter: P): Actionable<T, P> = impl.createAction(playerIndex, parameter)
     fun isAllowed(action: Actionable<T, P>): Boolean = impl.actionAllowed(action)
+    fun isComplex(): Boolean = impl.isComplex()
 
     fun createActionFromSerialized(playerIndex: Int, serialized: Any): Actionable<T, P> {
         val actionOptionsContext = actionOptionsContext(playerIndex)
@@ -77,7 +80,7 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
             }.distinct()
             if (actions.size != 1) {
                 throw IllegalStateException("Actions available: ${actions.size} for player $playerIndex " +
-                        "move ${this.actionType.name} $serialized")
+                        "actionType '${this.actionType.name}' serialized parameter: $serialized")
             }
             actions.single()
         } else {

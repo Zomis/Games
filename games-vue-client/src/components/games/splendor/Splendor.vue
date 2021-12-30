@@ -16,7 +16,8 @@
           :player-info="context.players[index]"
           :controllable="index == view.viewer"
           :actions="actions"
-          :class="{activePlayer: index == view.currentPlayer}"
+          class="player"
+          :class="{ 'current-player': index == view.currentPlayer }"
         />
       </v-col>
     </v-row>
@@ -103,25 +104,26 @@ import SplendorNoble from "./SplendorNoble"
 import CardZone from "@/components/games/common/CardZone"
 
 export default {
-    name: "Splendor",
-    props: ["view", "actions", "context"],
-    components: {
-        SplendorPlayer, SplendorCard, SplendorNoble, CardZone
+  name: "Splendor",
+  props: ["view", "actions", "context"],
+  components: {
+    SplendorPlayer, SplendorCard, SplendorNoble, CardZone
+  },
+  methods: {
+    takeMoney(moneyType) {
+      this.actions.perform("takeMoney", 'take-' + moneyType)
     },
-    methods: {
-        takeMoney(moneyType) {
-            this.actions.perform("takeMoney", 'take-' + moneyType)
-        },
-        takeCurrentMoney() {
-            this.actions.performChosen()
-        }
-    },
-    computed: {
-        player() { return this.view.players[this.view.viewer] }
+    takeCurrentMoney() {
+      this.actions.performChosen()
     }
+  },
+  computed: {
+    player() { return this.view.players[this.view.viewer] }
+  }
 }
 </script>
 <style>
+@import "../../../assets/active-player.css";
 
 .animate, .list-complete-item {
     transition: all 1.5s linear;
@@ -141,19 +143,13 @@ export default {
     position: absolute;
 }
 
-:root{
+:root {
     --splendor-red: #ef476f;
     --splendor-blue: #118AB2;
     --splendor-green: #06D6A0;
     --splendor-black: #011627;
     --splendor-white: #f0e6ef;
     --splendor-yellow: #ffd166;
-}
-
-.activePlayer {
-    border-style: solid !important;
-        border-width: thick !important;
-        border-color: var(--splendor-yellow) !important;
 }
 
 .bank-RED,

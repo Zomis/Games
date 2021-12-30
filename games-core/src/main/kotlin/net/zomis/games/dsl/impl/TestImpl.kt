@@ -7,7 +7,7 @@ import net.zomis.games.dsl.flow.GameFlowImpl
 class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount: Int): GameTest<T> {
     val stateKeeper = StateKeeper()
     val setup = entryPoint.setup()
-    var config: Any = setup.getDefaultConfig()
+    var config: GameConfigs = setup.configs()
     var gameImpl: Game<T>? = null
     var forwards = 0
 
@@ -109,8 +109,8 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
         }
     }
 
-    override fun config(config: Any) {
-        this.config = config
+    override fun config(key: String, value: Any) {
+        this.config.set(key, value)
     }
 
 }

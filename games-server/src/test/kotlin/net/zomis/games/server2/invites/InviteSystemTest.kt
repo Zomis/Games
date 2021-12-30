@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
+import net.zomis.games.dsl.GameConfigs
 import net.zomis.games.example.TestGames
 import net.zomis.games.server2.ClientJsonMessage
 import net.zomis.games.server2.ClientLoginEvent
@@ -43,7 +44,7 @@ class InviteSystemTest {
 
     private val idGenerator: GameIdGenerator = { "1" }
     private lateinit var system: InviteSystem
-    private val inviteOptions = InviteOptions(false, InviteTurnOrder.ORDERED, -1, Unit, false)
+    private val inviteOptions = InviteOptions(false, InviteTurnOrder.ORDERED, -1, GameConfigs(emptyList()), false)
 
     @BeforeEach
     fun before() {

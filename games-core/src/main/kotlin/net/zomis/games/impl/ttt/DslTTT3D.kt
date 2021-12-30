@@ -10,10 +10,6 @@ object TTT3DGame {
     val playAction = factory.action("play", Point::class)
     val SIZE = 4
     val game = factory.game("DSL-TTT3D") {
-        val grid = gridSpec<Array<TTT3DPoint>> {
-            size(SIZE, SIZE)
-            getter { x, y -> model.pieces[y][x] }
-        }
         setup(Unit::class) {
             defaultConfig { Unit }
             init { TTT3D() }
@@ -26,14 +22,16 @@ object TTT3DGame {
                 effect { game.playAt(action.parameter.y, action.parameter.x) }
             }
             allActions.after {
-                game.findWinner()?.let { it.playerIndex }?.let { eliminations.singleWinner(it) }
+                game.findWinner()?.playerIndex?.also { eliminations.singleWinner(it) }
                 if (game.isDraw()) eliminations.eliminateRemaining(WinResult.DRAW)
             }
-        }
-        view {
-            currentPlayer { it.currentPlayer.playerIndex }
-            grid("board", grid) {
-                property("row") { it.map { piece -> piece.piece?.playerIndex } }
+            view("currentPlayer") { game.currentPlayer.playerIndex }
+            view("board") {
+                (0 until SIZE).map { y ->
+                    (0 until SIZE).map { x ->
+                        mapOf("row" to game.pieces[y][x].map { it.piece?.playerIndex })
+                    }
+                }
             }
         }
     }

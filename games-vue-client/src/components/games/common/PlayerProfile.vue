@@ -1,5 +1,8 @@
 <template>
-  <div class="player-profile" :class="{ highlight: highlight }">
+  <div
+    class="player-profile"
+    :class="{ highlight: highlight }"
+  >
     <v-tooltip bottom>
       <template v-slot:activator="{ on }">
         <v-avatar
@@ -20,38 +23,38 @@
 </template>
 <script>
 export default {
-    // Tooltip, Menu/v-router-link (go to profile page), v-avatar, show-name
-    name: "PlayerProfile",
-    props: {
-        context: { type: Object, default: null },
-        playerIndex: { type: Number, default: null },
-        player: { type: Object, default: null },
-        showName: { type: Boolean, default: false },
-        size: { type: Number, default: 32 },
-        highlight: { type: Boolean, default: false },
-        postFix: { type: String, default: "" }
+  // Tooltip, Menu/v-router-link (go to profile page), v-avatar, show-name
+  name: "PlayerProfile",
+  props: {
+    context: { type: Object, default: null },
+    playerIndex: { type: Number, default: null },
+    player: { type: Object, default: null },
+    showName: { type: Boolean, default: false },
+    size: { type: Number, default: 32 },
+    highlight: { type: Boolean, default: false },
+    postFix: { type: String, default: "" }
+  },
+  computed: {
+    playerToDisplay() {
+      if (this.player) return this.player;
+      return this.context.players[this.playerIndex]
     },
-    computed: {
-        playerToDisplay() {
-            if (this.player) return this.player;
-            return this.context.players[this.playerIndex]
-        },
-        elim() {
-            return null
-        },
-        winResultClass() {
-            if (!this.elim) return 'not-eliminated';
-            let winValue = this.elim.winResult
-            if (winValue < 0) return 'loser'
-            if (winValue > 0) return 'winner'
-            return 'draw'
-        },
-        eliminatedOpacityClass() {
-            if (!this.elim) return 'normal'
-            if (this.elim.winResult > 0) return 'normal'
-            return 'eliminated'
-        }
+    elim() {
+      return null
+    },
+    winResultClass() {
+      if (!this.elim) return 'not-eliminated';
+      let winValue = this.elim.winResult
+      if (winValue < 0) return 'loser'
+      if (winValue > 0) return 'winner'
+      return 'draw'
+    },
+    eliminatedOpacityClass() {
+      if (!this.elim) return 'normal'
+      if (this.elim.winResult > 0) return 'normal'
+      return 'eliminated'
     }
+  }
 }
 </script>
 <style scoped>

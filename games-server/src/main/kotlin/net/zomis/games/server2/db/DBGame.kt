@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonUnwrapped
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.games.dsl.ActionReplay
+import net.zomis.games.dsl.GameConfigs
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.ReplayData
 import net.zomis.games.dsl.impl.Game
@@ -26,7 +27,7 @@ private val mapper = jacksonObjectMapper()
 data class DBGameSummary(
     @JsonIgnore
     val gameSpec: GameSpec<Any>,
-    val gameConfig: Any,
+    val gameConfig: GameConfigs,
     val gameId: String,
     val playersInGame: List<PlayerInGame>,
     val gameType: String,
@@ -44,7 +45,7 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
     val game = gameSetup.createGameWithState(summary.playersInGame.size, summary.gameConfig, stateKeeper)
     val views = mutableListOf<Map<String, Any?>>()
     val errors = mutableListOf<String>()
-    val timeLastAction = moveHistory.map { it.time }.maxBy { it ?: 0 }
+    val timeLastAction = moveHistory.map { it.time }.maxByOrNull { it ?: 0 }
 
     init {
         views.add(game.view(null))
@@ -82,7 +83,7 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
 
     fun at(position: Int): Game<Any> {
         val stateKeeper = StateKeeper().also { if (summary.startingState != null) it.setState(summary.startingState) }
-        val game = gameSetup.createGameWithState(summary.playersInGame.size, gameSetup.getDefaultConfig(), stateKeeper)
+        val game = gameSetup.createGameWithState(summary.playersInGame.size, summary.gameConfig, stateKeeper)
         moveHistory.slice(0 until position).withIndex().forEach { performMove(game, it) }
         return game
     }

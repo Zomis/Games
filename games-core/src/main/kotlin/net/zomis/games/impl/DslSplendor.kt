@@ -1,6 +1,6 @@
 package net.zomis.games.impl
 
-import net.zomis.games.PlayerEliminationCallback
+import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.cards.CardZone
 import net.zomis.games.common.mergeWith
 import net.zomis.games.common.next
@@ -128,7 +128,7 @@ fun startingStockForPlayerCount(playerCount: Int): Int {
     }
 }
 
-class SplendorGame(val config: SplendorConfig, val eliminations: PlayerEliminationCallback) {
+class SplendorGame(val config: SplendorConfig, val eliminations: PlayerEliminationsWrite) {
 
     val allNobles = CardZone(listOf("BR", "UW", "UG", "RG", "BW", "BRG", "BUW", "BRW", "GUW", "GUR").map {string ->
         val moneyTypes = string.map { ch -> MoneyType.values().first { it.char == ch } }
@@ -319,16 +319,16 @@ object DslSplendor {
             }
 
             action(takeMoney).choose {
-                options({ MoneyType.values().asIterable() }) { first ->
-                    parameter(MoneyChoice(listOf(first)))
-                    options({ MoneyType.values().asIterable() }) { second ->
-                        parameter(MoneyChoice(listOf(first, second)))
-                        if (first != second) {
-                            options({ MoneyType.values().asIterable().minus(first).minus(second) }) { third ->
-                                parameter(MoneyChoice(listOf(first, second, third)))
-                            }
-                        }
+                recursive(emptyList<MoneyType>()) {
+                    options({
+                        val all = MoneyType.values().asIterable()
+                        if (chosen.distinct().size == 2) all - chosen.toSet() else all
+                    }) { moneyType ->
+                        recursion(moneyType) { list, e -> list + e }
                     }
+                    until { chosen.size == 3 || (chosen.size == 2 && chosen.distinct().size == 1) }
+                    parameter { MoneyChoice(chosen) }
+                    intermediateParameter { chosen.size in 1..3 }
                 }
             }
             action(takeMoney).requires {
@@ -356,13 +356,10 @@ object DslSplendor {
                     log { "$player got ${viewLink("a noble", "noble", viewNoble(game, noble))}" }
                 }
             }
-        }
-        view {
-            currentPlayer { it.currentPlayerIndex }
-            eliminations()
-            value("viewer") { viewer }
-            value("round") { it.roundNumber }
-            value("cardLevels") { game ->
+            view("currentPlayer") { game.currentPlayerIndex }
+            view("viewer") { viewer }
+            view("round") { game.roundNumber }
+            view("cardLevels") {
                 game.board.cards.sortedBy { -it.level }.groupBy { it.level }.mapValues {
                     mapOf(
                             "level" to it.key,
@@ -371,14 +368,14 @@ object DslSplendor {
                     )
                 }.values.toList()
             }
-            value("stock") { game ->
+            view("stock") {
                 MoneyType.values().associate { it to game.stock.moneys[it] }.plus("wildcards" to game.stock.wildcards)
             }
-            value("nobles") {
-                val allNobles = it.players.flatMap { pl -> pl.nobles.cards } + it.nobles.cards
+            view("nobles") {
+                val allNobles = game.players.flatMap { pl -> pl.nobles.cards } + game.nobles.cards
                 allNobles.map { noble -> viewNoble(game, noble) }
             }
-            value("players") { game ->
+            view("players") {
                 game.players.map { player ->
                     val reservedPair = if (player.index == viewer || game.config.showReservedCards)
                         "reservedCards" to player.reserved.map { viewCard(it) }

@@ -1,15 +1,14 @@
 package net.zomis.games.dsl.impl
 
-import net.zomis.games.PlayerEliminations
+import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.flow.GameFlowImpl
 import kotlin.reflect.KClass
 
-class GameModelContext<T: Any, C> : GameModel<T, C> {
+class GameModelContext<T: Any, C>(val configs: MutableList<GameConfig<Any>>) : GameModel<T, C> {
     var playerCount: IntRange = 2..2
-    lateinit var factory: GameFactoryScope<C>.(C?) -> T
-    lateinit var config: () -> C
+    lateinit var factory: GameFactoryScope<C>.() -> T
     var onStart: GameStartScope<T>.() -> Unit = {}
 
     override fun players(playerCount: IntRange) {
@@ -21,62 +20,17 @@ class GameModelContext<T: Any, C> : GameModel<T, C> {
     }
 
     override fun defaultConfig(creator: () -> C) {
-        this.config = creator
+        check(configs.none { it.key == "" })
+        this.configs.add(GameConfigImpl("") { creator.invoke() as Any })
     }
 
-    override fun init(factory: GameFactoryScope<C>.(C?) -> T) {
+    override fun init(factory: GameFactoryScope<C>.() -> T) {
         this.factory = factory
     }
 
     override fun onStart(effect: GameStartScope<T>.() -> Unit) {
         this.onStart = effect
     }
-}
-
-class GameViewContext2D<T, P>(override val model: T) : GameView2D<T, P> {
-
-    private var ownerFunction: ((tile: P) -> Int?)? = null
-    private val properties = mutableListOf<Pair<String, (P) -> Any?>>()
-
-    override fun owner(function: (tile: P) -> Int?) {
-        this.ownerFunction = function
-    }
-
-    override fun property(name: String, value: (tile: P) -> Any?) {
-        this.properties.add(name to value)
-    }
-
-    fun view(p: P): Map<String, Any?> {
-        val tileMap = mutableMapOf<String, Any?>()
-        for (property in properties) {
-            tileMap[property.first] = property.second(p)
-        }
-        if (this.ownerFunction != null) {
-            tileMap["owner"] = this.ownerFunction!!(p)
-        }
-        return tileMap
-    }
-
-}
-
-class GameGridBuilder<T : Any, P>(override val model: T) : GameGrid<T, P>, GridSpec<T, P> {
-    override lateinit var sizeX: (T) -> Int
-    override lateinit var sizeY: (T) -> Int
-    lateinit var getter: (x: Int, y: Int) -> P
-
-    override fun get(model: T, x: Int, y: Int): P {
-        return this.getter(x, y)
-    }
-
-    override fun size(sizeX: Int, sizeY: Int) {
-        this.sizeX = { sizeX }
-        this.sizeY = { sizeY }
-    }
-
-    override fun getter(getter: (x: Int, y: Int) -> P) {
-        this.getter = getter
-    }
-
 }
 
 class GameViewContext<T : Any>(
@@ -87,41 +41,12 @@ class GameViewContext<T : Any>(
     private val requestable = mutableMapOf<String, GameViewOnRequestFunction<T>>()
     private val viewResult: MutableMap<String, Any?> = mutableMapOf()
 
-    override fun result(): Map<String, Any?> {
+    fun result(): Map<String, Any?> {
         return viewResult.toMap()
     }
 
     override fun value(key: String, value: (T) -> Any?) {
         this.viewResult[key] = value(game)
-    }
-
-    override fun currentPlayer(function: (T) -> Int) {
-        viewResult["currentPlayer"] = function(game)
-    }
-
-    override fun <P> grid(name: String, grid: GridDsl<T, P>, view: ViewDsl2D<T, P>) {
-        val gridSpec = GameGridBuilder<T, P>(game)
-        gridSpec.apply(grid as GameGridBuilder<T, P>.() -> Unit)
-        val context = GameViewContext2D<T, P>(game)
-        view(context)
-        viewResult[name] = (0 until gridSpec.sizeY(game)).map {y ->
-            (0 until gridSpec.sizeX(game)).map {x ->
-                val p = gridSpec.get(game, x, y)
-                context.view(p)
-            }
-        }
-    }
-
-    override fun eliminations() {
-        val eliminationsDone = gameObj.eliminations.eliminations()
-        viewResult["eliminations"] = (0 until gameObj.eliminations.playerCount).map {playerIndex ->
-            val elimination = eliminationsDone.firstOrNull { it.playerIndex == playerIndex }
-            if (elimination == null) {
-                mapOf("eliminated" to false)
-            } else {
-                mapOf("eliminated" to true, "result" to elimination.winResult, "position" to elimination.position)
-            }
-        }
     }
 
     override fun onRequest(requestName: String, function: GameViewOnRequestFunction<T>) {
@@ -143,8 +68,11 @@ class GameViewContext<T : Any>(
         return this.requestable[key]?.invoke(gameViewOnRequestScope, params)
     }
 
-    override fun <A : Any> action(actionType: ActionType<T, A>): ActionView<T, A>
-        = ActionViewImpl(gameObj, actionType, PlayerViewer(playerIndex = viewer))
+    override fun <A : Any> action(actionType: ActionType<T, A>): ActionView<T, A> {
+        val chosen = gameObj.actions.choices.getChosen(viewer ?: -1)
+        val chosenList = if (chosen?.actionType == actionType.name) chosen.chosen else emptyList()
+        return ActionViewImpl(gameObj, actionType, PlayerViewer(playerIndex = viewer), chosenList)
+    }
 
     override fun actions(): ActionsView<T> = ActionsViewImpl(gameObj, PlayerViewer(playerIndex = viewer), false)
     override fun actionsChosen(): ActionsChosenView<T> = ActionsViewImpl(gameObj, PlayerViewer(playerIndex = viewer), true)
@@ -188,10 +116,15 @@ class StateKeeper {
         logEntries.add(log)
     }
 }
-class ReplayState(val stateKeeper: StateKeeper, override val playerEliminations: PlayerEliminations): EffectScope, ReplayableScope {
+class ReplayState(
+    val stateKeeper: StateKeeper,
+    override val eliminations: PlayerEliminationsWrite,
+    val config: GameConfigs
+): EffectScope, ReplayableScope {
     private val mostRecent = mutableMapOf<String, Any>()
 
     override val replayable: ReplayableScope get() = this
+    override fun <E : Any> config(gameConfig: GameConfig<E>): E = config.get(gameConfig)
 
     fun setReplayState(state: Map<String, Any>?) {
         stateKeeper.clear()
@@ -220,12 +153,13 @@ class ReplayState(val stateKeeper: StateKeeper, override val playerEliminations:
     override fun strings(key: String, default: () -> List<String>): List<String> = replayable(key, default)
     override fun list(key: String, default: () -> List<Map<String, Any>>): List<Map<String, Any>> = replayable(key, default)
     override fun <E> randomFromList(key: String, list: List<E>, count: Int, stringMapper: (E) -> String): List<E> {
-        val strings = strings(key) { list.shuffled().take(count).map(stringMapper) }.toMutableList()
+        val remainingList = list.toMutableList()
+        val strings = strings(key) { remainingList.shuffled().take(count).map(stringMapper) }.toMutableList()
         val result = mutableListOf<E>()
         while (strings.isNotEmpty()) {
-            val item = list.first { stringMapper(it) == strings.last() }
+            val next = strings.removeLast()
+            val item = remainingList.removeAt(remainingList.indexOfFirst { stringMapper(it) == next })
             result.add(item)
-            strings.removeLast()
         }
         if (result.size != count) throw IllegalStateException("Size mismatch: Was ${result.size} but expected $count")
         return result
@@ -233,24 +167,30 @@ class ReplayState(val stateKeeper: StateKeeper, override val playerEliminations:
 
 }
 
-class GameDslContext<T : Any> : GameDsl<T> {
-    override fun <P> gridSpec(spec: GameGrid<T, P>.() -> Unit): GridDsl<T, P> {
-        return spec
+class GameConfigImpl<E: Any>(override val key: String, override val default: () -> E): GameConfig<E> {
+    var isMutable = false
+    override var value: E = default()
+    override val clazz: KClass<E> get() = value::class as KClass<E>
+    override fun withDefaults(): GameConfig<E> = GameConfigImpl(key, default).also { it.isMutable = isMutable }
+
+    override fun mutable(): GameConfig<E> {
+        isMutable = true
+        return this
     }
 
-    lateinit var configClass: KClass<*>
+}
+class GameDslContext<T : Any> : GameDsl<T> {
     lateinit var modelDsl: GameModelDsl<T, Any>
     var viewDsl: GameViewDsl<T>? = null
-    var rulesDsl: GameRulesDsl<T>? = null
     var flowRulesDsl: GameFlowRulesDsl<T>? = null
     var flowDsl: GameFlowDsl<T>? = null
     var actionRulesDsl: GameActionRulesDsl<T>? = null
+    private var configs = mutableListOf<GameConfig<Any>>()
     val testCases: MutableList<GameTestCaseContext<T>> = mutableListOf()
 
-    val model = GameModelContext<T, Any>()
+    val model = GameModelContext<T, Any>(configs)
 
     override fun <C : Any> setup(configClass: KClass<C>, modelDsl: GameModelDsl<T, C>) {
-        this.configClass = configClass
         this.modelDsl = modelDsl as GameModelDsl<T, Any>
     }
 
@@ -270,15 +210,11 @@ class GameDslContext<T : Any> : GameDsl<T> {
         this.testCases.add(GameTestCaseContext(players, testDsl))
     }
 
-    override fun gameRules(rulesDsl: GameRulesDsl<T>) {
-        this.rulesDsl = rulesDsl
-    }
-
     override fun gameFlow(flowDsl: GameFlowDsl<T>) {
         this.flowDsl = flowDsl
     }
 
-    fun createGame(playerCount: Int, config: Any, stateKeeper: StateKeeper): Game<T> {
+    fun createGame(playerCount: Int, config: GameConfigs, stateKeeper: StateKeeper): Game<T> {
         val flowDslNull = this.flowDsl == null
         val flowRulesNull = this.flowRulesDsl == null
         if (listOf(flowDslNull, flowRulesNull).distinct().size > 1) {
@@ -295,5 +231,13 @@ class GameDslContext<T : Any> : GameDsl<T> {
     override fun gameFlowRules(flowRulesDsl: GameFlowRulesDsl<T>) {
         this.flowRulesDsl = flowRulesDsl
     }
+
+    override fun <E: Any> config(key: String, default: () -> E): GameConfig<E> {
+        val config = GameConfigImpl(key, default)
+        this.configs.add(config as GameConfig<Any>)
+        return config
+    }
+
+    fun configs(): GameConfigs = GameConfigs(configs.map { it.withDefaults() })
 
 }

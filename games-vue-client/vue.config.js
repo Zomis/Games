@@ -14,6 +14,7 @@ if (branch === "main") {
 if (process.env.NODE_ENV === "development") {
   branch = "";
 }
+console.log("Branch is:", branch);
 
 module.exports = {
   runtimeCompiler: true,

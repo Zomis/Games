@@ -3,6 +3,7 @@ package net.zomis.games.impl.ttt
 import net.zomis.games.api.Games
 import net.zomis.games.api.GamesApi
 import net.zomis.games.common.Point
+import net.zomis.games.components.mnkLines
 import net.zomis.games.impl.ttt.ultimate.TTPlayer
 
 object TTTUpgrade {

@@ -63,6 +63,7 @@ object Dixit {
                 Model(playerCount, config)
             }
             onStart {
+                // Create cards and deal cards to each player
                 game.deck.cards.addAll(game.cardSet.createCards())
                 val cards = game.deck.random(replayable, game.startingCards() * game.playerCount, "cards") { c -> c }
                 game.deck.deal(cards.map { c -> c.card }.toList(), game.players.map { player -> player.cards })
@@ -86,6 +87,14 @@ object Dixit {
         }
         gameFlowRules {
             beforeReturnRule("view") {
+                view("action") {
+                    when {
+                        action(story).anyAvailable() -> "story"
+                        action(place).anyAvailable() -> "place"
+                        action(vote).anyAvailable() -> "vote"
+                        else -> ""
+                    }
+                }
                 view("phase") { game.phase }
                 view("config") {
                     mapOf("cardSet" to game.cardSet.cardSetName)
@@ -207,6 +216,7 @@ object Dixit {
                         scoringPlayer.placedCard in votedFor.vote!!.asList()
                     }
                 }.forEach {votesFor ->
+                    // TODO: coerceAtMost configurable. Odyssey variant
                     val points = votesFor.value.count().coerceAtMost(3)
                     votesFor.key.points += points
                 }

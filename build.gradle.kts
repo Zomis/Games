@@ -1,7 +1,7 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-    kotlin("multiplatform") version "1.4.32"
+    kotlin("multiplatform") version "1.6.0"
     id("com.github.johnrengelman.shadow") version "5.2.0"
     id("com.github.ben-manes.versions") version "0.39.0"
 }
@@ -38,7 +38,7 @@ kotlin {
             resources.srcDir("games-core/src/main/resources")
             dependencies {
                 implementation(kotlin("stdlib-common"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
 //                implementation("com.github.lewik.klog:klog-metadata:2.0.2")
             }
         }
@@ -52,7 +52,7 @@ kotlin {
             kotlin.srcDir("games-server/src/main/kotlin")
             resources.srcDir("games-server/src/main/resources")
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.4.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.5.2")
                 implementation("com.github.lewik.klog:klog-jvm:2.0.2")
                 implementation(kotlin("reflect"))
 
@@ -72,8 +72,9 @@ kotlin {
 
                 implementation("com.beust:jcommander:1.81")
                 implementation("org.java-websocket:Java-WebSocket:1.5.2")
-                implementation("log4j:log4j:1.2.17")
-                implementation("org.slf4j:slf4j-log4j12:1.7.30")
+                implementation("org.apache.logging.log4j:log4j-slf4j-impl:2.16.0")
+                implementation("org.apache.logging.log4j:log4j-core:2.16.0")
+
                 implementation("io.javalin:javalin:2.8.0")
                 implementation("com.github.kittinunf.fuel:fuel:2.3.1")
                 implementation("com.amazonaws:aws-java-sdk-dynamodb:1.11.1031")
@@ -94,13 +95,13 @@ kotlin {
                 implementation("org.junit.jupiter:junit-jupiter-api:$jupiterVersion")
                 implementation("org.junit.jupiter:junit-jupiter-params:$jupiterVersion")
                 runtimeOnly("org.junit.jupiter:junit-jupiter-engine:$jupiterVersion")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.4.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.5.2")
             }
         }
         val jsMain by getting {
             kotlin.srcDir("games-js/src/main/kotlin")
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:1.4.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:1.5.2")
                 implementation("com.github.lewik.klog:klog-js:2.0.2")
             }
         }

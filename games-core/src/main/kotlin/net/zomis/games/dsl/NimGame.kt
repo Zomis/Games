@@ -1,6 +1,6 @@
 package net.zomis.games.dsl
 
-import net.zomis.games.PlayerEliminations
+import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.WinResult
 import kotlin.math.min
 
@@ -9,7 +9,7 @@ object NimGame {
     data class Nim(val piles: MutableList<Int>, val playerCount: Int, val lastWins: Boolean, val maxPerTurn: Int, var currentPlayer: Int = 0) {
         fun copy(): Nim = Nim(piles.toMutableList(), playerCount, lastWins, maxPerTurn, currentPlayer)
 
-        fun move(move: NimMove, playerEliminations: PlayerEliminations) {
+        fun move(move: NimMove, playerEliminations: PlayerEliminationsWrite) {
             piles[move.pileIndex] -= move.amount
             if (piles.all { it == 0 }) {
                 playerEliminations.result(currentPlayer, if (lastWins) WinResult.WIN else WinResult.LOSS)
@@ -47,14 +47,11 @@ object NimGame {
                     action.parameter.amount > pileRemaining && action.parameter.amount <= game.maxPerTurn
                 }
                 effect {
-                    game.move(action.parameter, this.playerEliminations)
+                    game.move(action.parameter, eliminations)
                 }
             }
-        }
-        view {
-            value("piles") { it.piles }
-            currentPlayer { it.currentPlayer }
-            eliminations()
+            view("piles") { game.piles }
+            view("currentPlayer") { game.currentPlayer }
         }
     }
 

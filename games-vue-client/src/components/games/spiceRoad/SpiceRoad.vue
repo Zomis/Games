@@ -67,7 +67,7 @@
       :key="player.index"
     >
       <v-col>
-        <v-card>
+        <v-card class="player" :class="{ 'current-player': view.currentPlayer == player.index }">
           <v-card-text>
             <v-row>
               <v-col cols="2">
@@ -173,7 +173,7 @@ export default {
     }
   },
   components: {
-      PlayerProfile, Actionable, CardZone, SpiceRoadResources, SpiceRoadCard
+    PlayerProfile, Actionable, CardZone, SpiceRoadResources, SpiceRoadCard
   },
   computed: {
     choicesAvailable() {
@@ -183,7 +183,9 @@ export default {
   }
 }
 </script>
-<style>
+<style scoped>
+@import "../../../assets/active-player.css";
+
 :root {
     --spiceRoad-yellow: #ffd166;
     --spiceRoad-red: #ef476f;

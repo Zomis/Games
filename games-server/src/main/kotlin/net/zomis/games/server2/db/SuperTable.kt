@@ -41,9 +41,15 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         events.listen("Auth", ClientLoginEvent::class, {true}, {
             this.authenticate(it)
         })
+        /*
+        Should be refactored to query for each player instead of when game starts
+        game:<uuid>     player:<playerId>:unfinished    <player indices access>
+        game:<uuid>     awaiting                        PlayerActions: List of true/false (index = <playerIndex>)
+                        remove these when game is over
         events.listen("Load unfinished games", StartupEvent::class, {true}, {
             features.addData(UnfinishedGames(this.listUnfinished().toMutableSet()))
         })
+        */
         events.listen("save game in Database", ListenerPriority.LATER, GameInitializedEvent::class, { dbEnabled(it.game) }, {
             event -> this.createGame(event.game, event.replayState)
         })
@@ -117,8 +123,8 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
             AttributeUpdate(Fields.GAME_TYPE.fieldName).put(game.gameType.type),
             AttributeUpdate(Fields.GAME_TIME_STARTED.fieldName).put(Instant.now().epochSecond)
         )
-        if (game.gameMeta.gameOptions != game.gameSetup().getDefaultConfig()) {
-            updates = updates.plus(AttributeUpdate(Fields.GAME_OPTIONS.fieldName).put(convertToDBFormat(game.gameMeta.gameOptions ?: Unit)))
+        if (game.gameMeta.gameOptions.isNotDefault()) {
+            updates = updates.plus(AttributeUpdate(Fields.GAME_OPTIONS.fieldName).put(convertToDBFormat(game.gameMeta.gameOptions.toJSON()!!)))
         }
         if (state != null) {
             updates = updates.plus(AttributeUpdate(Fields.MOVE_STATE.fieldName).put(state))
@@ -357,10 +363,9 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
 
         val setup = GameSetupImpl(gameSpec)
         val config = if (gameDetails.hasAttribute(Fields.GAME_OPTIONS.fieldName)) {
-            val gameConfigJSON =
-                    gameDetails.getJSON(Fields.GAME_OPTIONS.fieldName)
-            if (gameConfigJSON.length >= 10) JacksonTools.readValue(gameConfigJSON, setup.configClass().java) else setup.getDefaultConfig()
-        } else setup.getDefaultConfig()
+            val gameConfigJSON = gameDetails.getJSON(Fields.GAME_OPTIONS.fieldName)
+            if (gameConfigJSON.length >= 10) JacksonTools.configFromString(setup, gameConfigJSON) else setup.configs()
+        } else setup.configs()
 
         return DBGameSummary(gameSpec, config, Prefix.GAME.extract(gameId), playersInGame, gameType, gameState.value,
                 startingState, timeStarted.longValueExact())

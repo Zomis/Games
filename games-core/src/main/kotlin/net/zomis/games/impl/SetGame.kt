@@ -194,6 +194,7 @@ object SetGame {
                 SetGameModel(config, this.playerCount)
             }
             onStart {
+                // Place cards on board
                 val states = replayable.strings("cards") { game.deck.top(12).map { c -> c.toStateString() } }
                 val cards = game.deck.findStates(states) { c -> c.toStateString() }
                 game.deck.deal(cards, listOf(game.board))
@@ -203,11 +204,11 @@ object SetGame {
         actionRules {
             action(callSet) {
                 choose {
-                    options({ game.board.map { c -> c.toStateString() } }) {first ->
-                        options({ game.board.map { c -> c.toStateString() }.minus(first) }) {second ->
-                            options({ game.board.map { c -> c.toStateString() }.minus(first).minus(second) }) {third ->
-                                parameter(SetAction(listOf(first, second, third)))
-                            }
+                    recursive(emptyList<SetPiece>()) {
+                        until { chosen.size == 3 }
+                        parameter { SetAction(chosen.map { it.toStateString() }) }
+                        optionsWithIds({ (game.board.cards - chosen.toSet()).map { it.toStateString() to it } }) { card ->
+                            recursion(card) { list, c -> list + c }
                         }
                     }
                 }
@@ -219,18 +220,19 @@ object SetGame {
                         cardsResult.cards.asSequence().forEach { game.board.card(it).remove() }
                     }
                     if (!setCheck(game, this.replayable)) {
-                        playerEliminations.eliminateBy(game.players.mapIndexed { index, i -> index to i.points }, Comparator { a, b -> a - b })
+                        eliminations.eliminateBy(game.players.mapIndexed { index, i -> index to i.points }, Comparator { a, b -> a - b })
                     }
                 }
             }
-        }
-        view {
-            value("deck") { it.deck.size }
-            value("players") {
-                it.players.map { player -> player.toMap() }
+            view("deck") { game.deck.size }
+            view("players") {
+                game.players.map { it.toMap() }
             }
-            value("cards") {
-                it.board.map { card -> card.toMap() }
+            view("chosen") {
+                actionsChosen().chosen()?.chosen?.filterIsInstance<String>()?.associate { it to true } ?: emptyMap<String, Boolean>()
+            }
+            view("cards") {
+                game.board.map { it.toMap() }
             }
         }
     }

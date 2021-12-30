@@ -1,6 +1,7 @@
 package net.zomis.games.dsl
 
-import net.zomis.games.PlayerEliminations
+import net.zomis.games.PlayerEliminationsRead
+import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.impl.ActionOptionsContext
 import kotlin.reflect.KClass
@@ -40,10 +41,8 @@ interface LogActionScope<T : Any, A : Any>: LogScope<T> {
 interface ActionRuleScope<T : Any, A : Any> : GameUtils, ActionOptionsScope<T> {
     override val game: T
     val action: Actionable<T, A>
-    val eliminations: PlayerEliminations
+    override val eliminations: PlayerEliminationsWrite
     override val replayable: ReplayableScope
-    override val playerEliminations: PlayerEliminations
-        get() = eliminations
     fun log(logging: LogActionScope<T, A>.() -> String)
     fun logSecret(player: PlayerIndex, logging: LogActionScope<T, A>.() -> String): LogSecretActionScope<T, A>
 }
@@ -74,29 +73,41 @@ interface GameActionRule<T : Any, A : Any> : GameActionSpecificationScope<T, A> 
     operator fun invoke(ruleSpec: GameActionSpecificationScope<T, A>.() -> Unit)
 }
 
+interface ActionChoicesRecursiveScope<T : Any, C : Any> {
+    val chosen: C
+    val game: T
+    val eliminations: PlayerEliminationsRead
+    val actionType: String
+    val playerIndex: Int
+}
+
+interface ActionChoicesRecursiveSpecScope<T : Any, C: Any, P : Any> {
+    val chosen: C
+    val game: T
+    val playerIndex: Int
+
+    fun until(condition: ActionChoicesRecursiveScope<T, C>.() -> Boolean)
+    fun <E : Any> options(options: ActionChoicesRecursiveScope<T, C>.() -> Iterable<E>, next: ActionChoicesRecursiveSpecScope<T, C, P>.(E) -> Unit)
+    fun <E : Any> optionsWithIds(options: ActionChoicesRecursiveScope<T, C>.() -> Iterable<Pair<String, E>>, next: ActionChoicesRecursiveSpecScope<T, C, P>.(E) -> Unit)
+    fun <E : Any> recursion(chosen: E, operation: (C, E) -> C)
+    fun parameter(parameterCreator: ActionChoicesRecursiveScope<T, C>.() -> P)
+    fun intermediateParameter(allowed: ActionChoicesRecursiveScope<T, C>.() -> Boolean)
+    fun then(next: ActionChoicesScope<T, P>.() -> Unit)
+}
+
 interface ActionChoicesScope<T : Any, P : Any> {
     fun parameter(parameter: P)
     val context: ActionOptionsContext<T>
+    fun <C : Any> recursive(base: C, options: ActionChoicesRecursiveSpecScope<T, C, P>.() -> Unit)
     fun <E : Any> options(options: ActionOptionsScope<T>.() -> Iterable<E>, next: ActionChoicesScope<T, P>.(E) -> Unit)
     fun <E : Any> optionsWithIds(options: ActionOptionsScope<T>.() -> Iterable<Pair<String, E>>, next: ActionChoicesScope<T, P>.(E) -> Unit)
-}
-
-@Deprecated("use ActionChoicesScope instead")
-interface ActionChoicesNextScope<T : Any, A : Any> : ActionChoicesStartScope<T, A> {
-    fun parameter(action: A)
-}
-@Deprecated("use ActionChoicesScope instead")
-interface ActionChoicesStartScope<T : Any, A : Any> {
-    val context: ActionOptionsContext<T>
-    fun <E : Any> options(options: ActionOptionsScope<T>.() -> Iterable<E>, next: ActionChoicesNextScope<T, A>.(E) -> Unit)
-    fun <E : Any> optionsWithIds(options: ActionOptionsScope<T>.() -> Iterable<Pair<String, E>>, next: ActionChoicesNextScope<T, A>.(E) -> Unit)
 }
 
 interface GameRuleTriggerScope<T, E> {
     val game: T
     val trigger: E
     val replayable: ReplayableScope
-    val eliminations: PlayerEliminations
+    val eliminations: PlayerEliminationsWrite
 }
 interface GameRuleTrigger<T : Any, E : Any> {
 

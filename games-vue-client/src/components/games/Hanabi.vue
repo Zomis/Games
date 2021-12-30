@@ -43,7 +43,7 @@
       >
         <v-card
           :class="{ 'current-player': view.currentPlayer == player.index }"
-          class="animate-all"
+          class="player animate-all"
         >
           <v-card-title>
             <PlayerProfile
@@ -87,7 +87,7 @@
                 :class="{ ['color-' + actIndex]: view.actions.colors }"
                 @mouseover="highlightCards(act)"
                 @mouseleave="highlightCards([])"
-                @click="actions.choose(actIndex, 'GiveClue')"
+                @click="actions.choose('GiveClue', actIndex)"
               >
                 {{ actIndex }}
               </v-btn>
@@ -154,7 +154,7 @@
       <transition name="translate-animation">
         <v-card
           :key="view.hand.index"
-          class="animate-all player-hand"
+          class="animate-all player player-hand"
           :class="{ 'current-player': view.currentPlayer == view.hand.index }"
         >
           <v-card-title>
@@ -197,9 +197,9 @@ export default {
   name: "Hanabi",
   props: ["view", "actions", "context"],
   components: {
-      CardZone,
-      PlayerProfile,
-      HanabiCard
+    CardZone,
+    PlayerProfile,
+    HanabiCard
   },
   methods: {
     clue(index) {
@@ -260,6 +260,7 @@ export default {
 };
 </script>
 <style scoped>
+@import "../../assets/active-player.css";
 @import "../../assets/games-style.css";
 @import "../../assets/games-animations.css";
 
@@ -322,11 +323,6 @@ export default {
 }
 .translate-animation-leave-active {
   transform: translateX(-400px);
-}
-
-.current-player {
-  border: 1px solid #ddf9fd !important;
-  box-shadow: 0px 0px 5px 6px #ddf9fd !important;
 }
 
 .number-transition-enter-active {

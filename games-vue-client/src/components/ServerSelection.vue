@@ -29,6 +29,10 @@ const serverOptions = [
     name: "zomis"
   },
   {
+    url: "wss://dfftey92j9.execute-api.eu-central-1.amazonaws.com/production",
+    name: "aws"
+  },
+  {
     url: "ws://127.0.0.1:42638/websocket",
     name: "localhost-development"
   }
@@ -44,19 +48,13 @@ export default {
   },
   computed: {
     serverInfo() {
-      const query = this.$route.query.server;
-      const chosenServer = query || localStorage.chosenServer;
-
+      const urlParams = new URLSearchParams(window.location.search);
+      const chosenServer = urlParams.get('server') || "zomis";
       return this.serverOptions.find(s => s.name === chosenServer) || this.serverOptions[0];
     }
   },
   components: { AuthChoice },
   mounted() {
-    const query = this.$route.query.server;
-    if (query) {
-      localStorage.chosenServer = query;
-    }
-
     console.log("Mounted Redirect is:", this.redirect)
     if (Socket.isConnected()) {
       this.$router.push("/");
@@ -66,8 +64,6 @@ export default {
     onAuthenticated() {
       console.log("Redirect is:", this.redirect)
       if (this.redirect) {
-        console.log("Using redirect")
-        //this.redirect.resolve()
         this.$router.push(this.redirect.route)
       } else {
         this.$router.push("/");

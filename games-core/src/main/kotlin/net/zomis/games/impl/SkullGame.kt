@@ -60,8 +60,8 @@ class SkullGameModel(val config: SkullGameConfig, playerCount: Int): Viewable {
         }
     }
 
-    fun currentBet(): Int = players.map { it.bet }.max()!!
-    override fun toView(viewer: PlayerIndex): Any? {
+    fun currentBet(): Int = players.maxOf { it.bet }
+    override fun toView(viewer: PlayerIndex): Any {
         return mapOf(
             "currentPlayer" to currentPlayerIndex,
             "cardsTotal" to players.sumBy { it.played.size + it.chosen.size },
@@ -101,7 +101,7 @@ object SkullGame {
             action(play).forceUntil { game.currentPlayer.played.size + game.currentPlayer.chosen.size > 0 || game.choseOwnSkull }
             action(play).requires { game.players.all { it.bet == 0 } }
             action(bet).effect { game.currentPlayer.bet = action.parameter }
-            action(bet).options { (game.players.map { it.bet }.max()!! + 1)..game.players.map { it.played.size }.sum() }
+            action(bet).options { (game.players.maxOf { it.bet } + 1)..game.players.map { it.played.size }.sum() }
             action(pass).requires { game.players.any { it.bet > 0 } }
             action(pass).requires { game.players.count { !it.pass } > 1 }
             action(pass).effect { game.currentPlayer.pass = true }
@@ -112,7 +112,7 @@ object SkullGame {
                 }
             }
             action(bet).requires {
-                val maxBet = game.players.maxBy { it.bet }!!.bet
+                val maxBet = game.players.maxByOrNull { it.bet }!!.bet
                 game.currentPlayer.bet < maxBet || maxBet == 0
             }
             action(bet).after {

@@ -35,7 +35,7 @@
         </v-btn>
       </v-toolbar-items>
     </v-app-bar>
-    <v-content>
+    <v-content :class="mainClass">
       <router-view :key="$route.path" />
     </v-content>
     <v-footer
@@ -51,7 +51,7 @@
         </div>
       </cookie-law>
       <span>
-        <i>&copy; 2018-2020 Zomis' Games</i>
+        <i>&copy; 2018-2021 Zomis' Games</i>
         | <a
           href="https://github.com/Zomis/Games"
           target="_blank"
@@ -99,6 +99,9 @@ export default {
     }),
     ...mapState("lobby", {
       yourPlayer(state) { return state.yourPlayer }
+    }),
+    ...mapState("settings", {
+      mainClass(state) { return state.background }
     })
   }
 };
@@ -112,6 +115,12 @@ export default {
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+}
+
+.woodBackground {
+  background-repeat: initial;
+  background-color: #996633;
+  background-image: url("./assets/wood-pattern.png");
 }
 
 footer {

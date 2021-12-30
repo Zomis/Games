@@ -16,10 +16,12 @@ function dsl(lookup) {
 
 import PlayGame from "@/components/PlayGame";
 
+import Backgammon from "@/components/games/paths/Backgammon";
 import RoyalGameOfUR from "@/components/RoyalGameOfUR";
 import DungeonMayhem from "@/components/games/dungeon-mayhem/DungeonMayhem"
 import UTTT from "@/components/games/UTTT";
 import Coup from "@/components/games/Coup";
+import KingDomino from "@/components/games/grids/KingDomino";
 import Hanabi from "@/components/games/Hanabi";
 import HanabiConfig from "@/components/games/hanabi/HanabiConfig";
 import TTTUpgrade from "@/components/games/TTTUpgrade";
@@ -73,23 +75,6 @@ const splendorActions = {
     reserve: (card) => 'reserve-' + card
 }
 
-const setActions = {
-    set: (target1) => ({
-        key: 'set-' + target1,
-        next: (target2) => ({
-            key: 'set-' + target2,
-            next: (target3) => 'set-' + target3
-        })
-    })
-}
-
-function recursiveAvalon(teamMember) {
-    return {
-        key: 'players/' + teamMember,
-        next: recursiveAvalon
-    }
-}
-
 function paySpice(spice) {
     return {
         key: 'pay-' + spice,
@@ -109,13 +94,20 @@ function upgradeSpice(spice) {
 
 
 const supportedGames = {
+    "Backgammon": {
+        dsl: true,
+        component: Backgammon,
+        playTime: '15',
+        amountOfPlayers: '2'
+    },
+    "King Domino": {
+        dsl: true,
+        component: KingDomino,
+        playTime: '45',
+        amountOfPlayers: '2-4'
+    },
     "Dixit": {
         dsl: true,
-        actions: {
-            story: () => "story",
-            place: () => "place",
-            vote: (card) => `vote-${card}`,
-        },
         viewTypes: {
             round: { component: DixitRound, binds: (v) => ({ results: v }) }
         },
@@ -129,16 +121,6 @@ const supportedGames = {
     },
     "Avalon": {
         dsl: dsl(g => g.net.zomis.games.impl.ResistanceAvalonGame.game),
-        actions: {
-            teamChoice: (missionNumber) => ({
-                key: 'mission-' + missionNumber,
-                next: recursiveAvalon
-            }),
-            vote: (result) => `${result}`,
-            performMission: (result) => `${result}`,
-            assassinate: (targetPlayer) => "players/" + targetPlayer,
-            useLadyOfTheLake: (targetPlayer) => "players/" + targetPlayer
-        },
         component: Avalon,
         playTime: '30',
         amountOfPlayers: '5-10',
@@ -146,10 +128,6 @@ const supportedGames = {
     "DSL-UR": {
         displayName: "Royal Game of UR",
         dsl: dsl(g => g.net.zomis.games.impl.DslUR.gameUR),
-        actions: {
-            roll: () => "roll",
-            move: (i) => `${i}`
-        },
         component: RoyalGameOfUR,
         playTime: '30',
         amountOfPlayers: '2',
@@ -195,16 +173,13 @@ const supportedGames = {
     },
     "Set": {
         dsl: true,
-        enabled: true,
         resetActions: false,
-        actions: setActions,
         component: SetGame,
         playTime: '30',
         amountOfPlayers: '1-20',
     },
     "Splendor": {
         dsl: dsl(g => g.net.zomis.games.impl.DslSplendor.splendorGame),
-        enabled: true,
         actions: splendorActions,
         component: Splendor,
         viewTypes: {
@@ -307,7 +282,6 @@ const supportedGames = {
     "DSL-UTTT": {
         displayName: "Tic-Tac-Toe Ultimate",
         dsl: dsl(g => g.net.zomis.games.impl.ttt.DslTTT.gameUTTT),
-        actions: tttActions,
         component: UTTT,
     },
     "DSL-TTT": {

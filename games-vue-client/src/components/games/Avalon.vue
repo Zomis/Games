@@ -124,14 +124,7 @@
               </v-icon>
             </p>
             <div>
-              <Actionable
-                v-if="actions.available[`players/${playerIndex}`]"
-                button
-                :actionable="`players/${playerIndex}`"
-                :actions="actions"
-              >
-                {{ actionDescriptions[actions.available[`players/${playerIndex}`].actionType] }}
-              </Actionable>
+              <v-btn v-if="view.actions.players[playerIndex]" @click="playerClick(playerIndex)">{{ view.actions.players[playerIndex].display }}</v-btn>
             </div>
             <div v-if="player.character">
               <p>{{ player.character }}</p>
@@ -150,20 +143,7 @@
     </v-row>
     <v-row>
       <v-col>
-        <Actionable
-          button
-          :action-type="['vote']"
-          :actions="actions"
-        >
-          Vote for team
-        </Actionable>
-        <Actionable
-          button
-          :action-type="['performMission']"
-          :actions="actions"
-        >
-          Perform mission
-        </Actionable>
+        <v-btn v-for="(act) in view.actions.buttons" :key="act.display" @click="buttonClick(act)">{{ act.display }}</v-btn>
       </v-col>
     </v-row>
     <v-row>
@@ -197,40 +177,46 @@ import PlayerProfile from "@/components/games/common/PlayerProfile"
 import Actionable from "@/components/games/common/Actionable"
 
 export default {
-    name: "Avalon",
-    props: ["view", "actions", "context"],
-    components: {
-        PlayerProfile, Actionable
+  name: "Avalon",
+  props: ["view", "actions", "context"],
+  components: {
+    PlayerProfile, Actionable
+  },
+  methods: {
+    buttonClick(act) {
+      this.actions.actionParameter(act.actionType, act.parameter)
     },
-    computed: {
-        actionDescriptions() {
-            return {
-                teamChoice: "Add to team",
-                assassinate: "Assassinate",
-                useLadyOfTheLake: "Target with lady of the lake"
-            }
-        },
-        characters() {
-            let oberonMessage = " Sees other evil except Oberon."
-            return {
-                MERLIN: "Loyal servant of King Arthur. Knows evil except for Mordred.",
-                MORDRED: "Master of evil. Hides from Merlin" + oberonMessage,
-                PERCIVAL: "Loyal servant of King Arthur. Sees Merlin and Morgana.",
-                MORGANA: "Evil. Is seen by Percival." + oberonMessage,
-                ASSASSIN: "Evil. Should figure out who Merlin is and kill him at the end." + oberonMessage,
-                MINION_OF_MORDRED: "Evil." + oberonMessage,
-                OBERON: "Evil. Does not know the other evil.",
-                LOYAL_SERVANT_OF_KING_ARTHUR: "Loyal servant of King Arthur. Knows nothing."
-            }
-        },
-        charactersInGame() {
-            if (!this.view || !this.view.characters) return []
-            let displayCharacters = this.view.characters.map(c => ({
-                name: c,
-                description: this.characters[c]
-            }));
-            return displayCharacters
-        }
+    playerClick(playerIndex) {
+      let act = this.view.actions.players[playerIndex]
+      if (act.actionType === "chooseTeam") {
+        this.actions.choose(act.actionType, act.parameter)
+      } else {
+        this.actions.actionParameter(act.actionType, act.parameter)
+      }
     }
+  },
+  computed: {
+    characters() {
+      let oberonMessage = " Sees other evil except Oberon."
+      return {
+        MERLIN: "Loyal servant of King Arthur. Knows evil except for Mordred.",
+        MORDRED: "Master of evil. Hides from Merlin" + oberonMessage,
+        PERCIVAL: "Loyal servant of King Arthur. Sees Merlin and Morgana.",
+        MORGANA: "Evil. Is seen by Percival." + oberonMessage,
+        ASSASSIN: "Evil. Should figure out who Merlin is and kill him at the end." + oberonMessage,
+        MINION_OF_MORDRED: "Evil." + oberonMessage,
+        OBERON: "Evil. Does not know the other evil.",
+        LOYAL_SERVANT_OF_KING_ARTHUR: "Loyal servant of King Arthur. Knows nothing."
+      }
+    },
+    charactersInGame() {
+      if (!this.view || !this.view.characters) return []
+      let displayCharacters = this.view.characters.map(c => ({
+        name: c,
+        description: this.characters[c]
+      }));
+      return displayCharacters
+    }
+  }
 }
 </script>

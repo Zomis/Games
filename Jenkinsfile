@@ -10,7 +10,7 @@ pipeline {
         timeout(time: 1, unit: 'HOURS')
     }
     tools {
-        jdk 'Java11'
+        jdk 'JavaLatest'
     }
 
     stages {
@@ -37,13 +37,34 @@ pipeline {
             }
             steps {
                 sh 'cp /home/zomis/jenkins/server2-secrets.properties games-server/src/main/resources/secrets.properties'
-                sh 'cp /home/zomis/jenkins/server2-startup.conf server2.conf.docker'
+                sh 'cp /home/zomis/jenkins/server2-startup.conf docker/server2.conf.docker'
                 sh './gradlew clean test shadowCreate --info'
                 script {
                     def gitChanges = sh(script: 'git diff-index HEAD', returnStatus: true)
                     if (gitChanges) {
                         error("There are git changes after build")
                     }
+                }
+                sh 'cp build/libs/*-all.jar docker/'
+            }
+        }
+        stage('Client npm install') {
+            options {
+                timeout(time: 5, unit: 'MINUTES')
+            }
+            steps {
+                dir('games-vue-client') {
+                    sh 'npm install'
+                }
+            }
+        }
+        stage('Client lint') {
+            options {
+                timeout(time: 5, unit: 'MINUTES')
+            }
+            steps {
+                dir('games-vue-client') {
+                    sh 'npm run validate'
                 }
             }
         }
@@ -54,7 +75,7 @@ pipeline {
             steps {
                 // sh 'cp games-js/.eslintrc.js games-js/web/'
                 dir('games-vue-client') {
-                    sh 'npm install && npm run build'
+                    sh 'npm run build'
                 }
             }
         }
@@ -72,14 +93,14 @@ pipeline {
                     sh 'docker ps -q --filter name="games_server" | xargs -r docker stop'
 
                     // Deploy server
-                    sh 'docker build . -t gamesserver2'
+                    sh 'docker build ./docker/ -t gamesserver2'
                     withCredentials([usernamePassword(
                           credentialsId: 'AWS_CREDENTIALS',
                           passwordVariable: 'AWS_SECRET_ACCESS_KEY',
                           usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
                         withEnv(["ENV_AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}", "ENV_AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}"]) {
 
-                            def result = sh(script: """docker run -d --rm --name games_server -p 42638:42638 \
+                            def result = sh(script: """docker run --network host -d --rm --name games_server \
                               -e TZ=Europe/Amsterdam \
                               -e AWS_SECRET_ACCESS_KEY=$ENV_AWS_SECRET_ACCESS_KEY \
                               -e AWS_ACCESS_KEY_ID=$ENV_AWS_ACCESS_KEY_ID \

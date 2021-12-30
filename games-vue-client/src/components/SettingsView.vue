@@ -36,6 +36,16 @@
         v-model="playSoundOnPlayerTurn"
         label="Pling on my turn"
       />
+      <v-checkbox
+        v-model="compactList"
+        label="Compact"
+        prepend-icon="mdi-view-list"
+      />
+      <v-checkbox
+        v-model="woodBackground"
+        label="Wood"
+        prepend-icon="mdi-image-text"
+      />
     </v-list>
   </v-menu>
 </template>
@@ -71,6 +81,28 @@ export default {
         this.$store.commit("settings/set", {
           key: "playSoundOnPlayerTurn",
           value: value ? "true" : "",
+        });
+      },
+    },
+    compactList: {
+      get() {
+        return this.$store.state.settings.compactList;
+      },
+      set(value) {
+        this.$store.commit("settings/set", {
+          key: "compactList",
+          value: value ? "true" : "",
+        });
+      },
+    },
+    woodBackground: {
+      get() {
+        return this.$store.state.settings.background;
+      },
+      set(value) {
+        this.$store.commit("settings/set", {
+          key: "background",
+          value: value ? "woodBackground" : "",
         });
       },
     },

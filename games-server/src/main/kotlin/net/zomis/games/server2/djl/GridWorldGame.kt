@@ -1,9 +1,10 @@
 package net.zomis.games.server2.djl
 
-import net.zomis.games.Map2DX
-import net.zomis.games.PlayerEliminationCallback
+import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.WinResult
 import net.zomis.games.common.Direction4
+import net.zomis.games.components.Grid
+import net.zomis.games.components.GridImpl
 import net.zomis.games.dsl.GameCreator
 
 object GridWorldGame {
@@ -16,7 +17,7 @@ object GridWorldGame {
         FAIL('F', 0f, -1f),
         ;
     }
-    data class GridWorldModel(val eliminations: PlayerEliminationCallback, val map: Map2DX<GridWorldTile>) {
+    data class GridWorldModel(val eliminations: PlayerEliminationsWrite, val map: Grid<GridWorldTile>) {
         fun move(parameter: Direction4) {
             val player = map.all().find { it.value == GridWorldTile.PLAYER }!!
             val delta = parameter.delta()
@@ -51,9 +52,7 @@ object GridWorldGame {
                 options { Direction4.values().asIterable() }
                 effect { game.move(action.parameter) }
             }
-        }
-        view {
-            this.value("board") {game ->
+            view("board") {
                 game.map.all().map { it.value.ch }
             }
         }
@@ -77,10 +76,10 @@ object GridWorldGame {
         """.trimIndent()
     }
 
-    private fun generateMap(config: GridWorldConfig): Map2DX<GridWorldTile> {
+    private fun generateMap(config: GridWorldConfig): Grid<GridWorldTile> {
         val mapString = Maps.oneEach3x2.trimIndent().trim().split('\n').map { it.trim() }
         val size = mapString.map { it.length }
-        val map2D = Map2DX(size.max()!!, size.size) {_, _ -> GridWorldTile.EMPTY }
+        val map2D = GridImpl(size.maxOrNull()!!, size.size) { _, _ -> GridWorldTile.EMPTY }
         mapString.forEachIndexed { y, s ->
             s.forEachIndexed { x, c ->
                 map2D.set(x, y, GridWorldTile.values().find { it.ch == c }!!)

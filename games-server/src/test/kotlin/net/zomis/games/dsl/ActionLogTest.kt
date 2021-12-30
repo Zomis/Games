@@ -38,7 +38,7 @@ class ActionLogTest {
                     */
                     log { "$player changed the value in direction ${action.sign}" }
                     if (game.value == 0) {
-                        playerEliminations.eliminateRemaining(WinResult.WIN)
+                        eliminations.eliminateRemaining(WinResult.WIN)
                     }
                 }
             }
@@ -48,7 +48,7 @@ class ActionLogTest {
     @Test
     fun test() {
         val entry = GamesImpl.game(spec)
-        val play = entry.replayable(2, null, entry.inMemoryReplay()).runBlocking()
+        val play = entry.replayable(2, entry.setup().configs(), entry.inMemoryReplay()).runBlocking()
         play.action(0, change, 2)
         play.action(0, change, 3)
         play.action(1, change, -2)

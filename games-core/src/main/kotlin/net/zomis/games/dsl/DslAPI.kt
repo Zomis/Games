@@ -1,12 +1,12 @@
 package net.zomis.games.dsl
 
-import net.zomis.games.PlayerEliminations
+import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.api.Games
 import net.zomis.games.dsl.flow.GameFlowRules
 import net.zomis.games.dsl.flow.GameFlowScope
-import net.zomis.games.dsl.rulebased.GameRules
 import kotlin.reflect.KClass
 
+data class ActionableOption(val actionType: String, val parameter: Any, val display: Any)
 interface Actionable<T : Any, A : Any> {
     val playerIndex: Int
     val game: T
@@ -14,8 +14,9 @@ interface Actionable<T : Any, A : Any> {
     val parameter: A
 }
 interface GameUtils {
-    val playerEliminations: PlayerEliminations
+    val eliminations: PlayerEliminationsRead
     val replayable: ReplayableScope
+    fun <E: Any> config(gameConfig: GameConfig<E>): E
 }
 data class Action<T : Any, A : Any>(
     override val game: T,
@@ -32,37 +33,54 @@ typealias GameModelDsl<T, C> = GameModel<T, C>.() -> Unit
 typealias GameViewDsl<T> = GameView<T>.() -> Unit
 typealias GameActionRulesDsl<T> = GameActionRules<T>.() -> Unit
 typealias GameFlowRulesDsl<T> = GameFlowRules<T>.() -> Unit
-typealias GameRulesDsl<T> = GameRules<T>.() -> Unit
 typealias GameFlowDsl<T> = suspend GameFlowScope<T>.() -> Unit
-typealias GridDsl<T, P> = GameGrid<T, P>.() -> Unit
 
-@Deprecated("to be removed, try to use Grid2D or something instead")
-interface GameGrid<T, P> {
-    val model: T
-    fun size(sizeX: Int, sizeY: Int)
-    fun getter(getter: (x: Int, y: Int) -> P)
+interface GameConfig<E: Any> {
+    fun mutable(): GameConfig<E>
+    fun withDefaults(): GameConfig<E>
+
+    val key: String
+    val clazz: KClass<E>
+    val default: () -> E
+    var value: E
 }
+class GameConfigs(val configs: List<GameConfig<Any>>) {
+    fun <E: Any> get(config: GameConfig<E>): E = configs.first { it.key == config.key }.value as E
+    fun set(key: String, value: Any) {
+        this.configs.first { it.key == key }.value = value
+    }
 
-interface GridSpec<T, P> {
-    val sizeX: (T) -> Int
-    val sizeY: (T) -> Int
-    fun get(model: T, x: Int, y: Int): P
+    fun toJSON(): Any? {
+        if (configs.isEmpty()) return null
+        return if (isOldStyle()) {
+            configs.single().value
+        } else {
+            configs.associate { it.key to it.value }
+        }
+    }
+
+    fun isOldStyle(): Boolean {
+        if (configs.isEmpty()) return true
+        return configs.size <= 1 && configs.first().key == ""
+    }
+    fun isNotDefault(): Boolean = configs.any { it.value != it.default.invoke() }
+    fun oldStyleValue(): Any {
+        check(isOldStyle())
+        return if (configs.isEmpty()) Unit else configs.single().value
+    }
 }
 
 interface GameDsl<T : Any> {
-    @Deprecated("to be removed, try to use Grid2D or something instead")
-    fun <P> gridSpec(spec: GridDsl<T, P>): GridDsl<T, P>
+    @Deprecated("use GameConfig class")
     fun <C : Any> setup(configClass: KClass<C>, modelDsl: GameModelDsl<T, C>)
     fun setup(modelDsl: GameModelDsl<T, Unit>)
+    @Deprecated("use rules instead")
     fun view(viewDsl: GameViewDsl<T>)
-    @Deprecated("use actionRules instead", ReplaceWith("actionRules(actionRulesDsl)"))
-    fun rules(actionRulesDsl: GameActionRulesDsl<T>) { actionRules(actionRulesDsl) }
     fun testCase(players: Int, testDsl: GameTestDsl<T>)
     fun actionRules(actionRulesDsl: GameActionRulesDsl<T>)
-    @Deprecated("game should be migrated to gameFlow")
-    fun gameRules(rulesDsl: GameRulesDsl<T>)
     fun gameFlow(flowDsl: GameFlowDsl<T>)
     fun gameFlowRules(flowRulesDsl: GameFlowRulesDsl<T>)
+    fun <E: Any> config(key: String, default: () -> E): GameConfig<E>
 }
 
 class GameActionCreator<T : Any, A : Any, S : Any>(

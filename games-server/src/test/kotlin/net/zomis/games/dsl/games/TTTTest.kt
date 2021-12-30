@@ -20,7 +20,7 @@ class TTTTest {
     @BeforeEach
     fun setup() {
         val setup = GameSetupImpl(dsl)
-        game = setup.createGame(2, setup.getDefaultConfig())
+        game = setup.createGameWithDefaultConfig(2)
         test = GameAsserts(game)
     }
 

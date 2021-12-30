@@ -85,38 +85,38 @@ import Socket from "@/socket";
 import supportedGames from "@/supportedGames";
 
 export default {
-    name: "LobbyGameType",
-    props: ["gameType", "users", "yourPlayer"],
-    methods: {
-        testGame(gameType) {
-          Socket.route("testGames/game", { gameType: gameType })
-        },
-        createInvite(gameType) {
-            Socket.route("invites/prepare", { gameType: gameType })
-        },
-        invite(gameType, playerId) {
-            Socket.route("invites/invite", { gameType: gameType, invite: [playerId] });
-        }
+  name: "LobbyGameType",
+  props: ["gameType", "users", "yourPlayer"],
+  methods: {
+    testGame(gameType) {
+      Socket.route("testGames/game", { gameType: gameType })
     },
-    computed: {
-        gameTypeCssName() {
-            return 'game-' + this.gameType.toLowerCase().replace(" ", "-");
-        },
-        activeGames() {
-            return this.$store.getters.activeGames.filter(game => game.gameInfo.gameType === this.gameType);
-        },
-        supportedGame() {
-            return supportedGames.games[this.gameType];
-        },
-        displayName() {
-            return this.supportedGame.displayName ? this.supportedGame.displayName : this.gameType;
-        },
-        yourGames() {
-            return this.activeGames.filter(game => game.gameInfo.yourIndex >= 0)
-        },
-        otherGames() {
-            return this.activeGames.filter(game => game.gameInfo.yourIndex < 0)
-        }
+    createInvite(gameType) {
+      Socket.route("invites/prepare", { gameType: gameType })
+    },
+    invite(gameType, playerId) {
+      Socket.route("invites/invite", { gameType: gameType, invite: [playerId] });
     }
+  },
+  computed: {
+    gameTypeCssName() {
+      return 'game-' + this.gameType.toLowerCase().replace(" ", "-");
+    },
+    activeGames() {
+      return this.$store.getters.activeGames.filter(game => game.gameInfo.gameType === this.gameType);
+    },
+    supportedGame() {
+      return supportedGames.games[this.gameType];
+    },
+    displayName() {
+      return this.supportedGame.displayName ? this.supportedGame.displayName : this.gameType;
+    },
+    yourGames() {
+      return this.activeGames.filter(game => game.gameInfo.yourIndex >= 0)
+    },
+    otherGames() {
+      return this.activeGames.filter(game => game.gameInfo.yourIndex < 0)
+    }
+  }
 }
 </script>

@@ -14,7 +14,10 @@ import net.zomis.games.dsl.*
 import net.zomis.games.dsl.flow.GameFlowContext
 import net.zomis.games.dsl.flow.GameFlowImpl
 import net.zomis.games.dsl.impl.GameSetupImpl
+import net.zomis.games.server2.JacksonTools
 import net.zomis.games.server2.ServerGames
+import net.zomis.games.server2.ais.AIRepository
+import net.zomis.games.server2.ais.ServerAIs
 import java.io.File
 import java.util.Scanner
 
@@ -23,6 +26,7 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
     private val node: ObjectNode = mapper.readTree(file) as ObjectNode
     private var modified = false
     private var nextStep: Int = 0
+    private var nextLoadState: Map<String, Any> = emptyMap()
 
     fun isModified() = modified
     private fun stateLoad(node: JsonNode?): GameSituationState {
@@ -41,8 +45,21 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
 
     fun replayCallback(): GameplayCallbacks<Any> {
         return object : GameplayCallbacks<Any>() {
+            override fun onPreMove(
+                actionIndex: Int, action: Actionable<Any, Any>,
+                setStateCallback: (GameSituationState) -> Unit
+            ) {
+                setStateCallback(nextLoadState)
+            }
+
+            override fun onMove(actionIndex: Int, action: Actionable<Any, Any>, actionReplay: ActionReplay) {
+                if (actionReplay.state?.isNotEmpty() == true) {
+                    replayState(actionReplay.state, 0)
+                }
+                nextLoadState = emptyMap()
+            }
             override fun startState(setStateCallback: (GameSituationState) -> Unit) = setStateCallback(stateLoad(node["state"]))
-            override fun startedState(playerCount: Int, config: Any, state: GameSituationState) = stateSave(node, "state", state)
+            override fun startedState(playerCount: Int, config: GameConfigs, state: GameSituationState) = stateSave(node, "state", state)
         }
     }
 
@@ -64,13 +81,13 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
         return node.get(fieldName).asInt()
     }
 
-    fun configOrDefault(setup: GameSetupImpl<Any>): Any {
+    fun configOrDefault(setup: GameSetupImpl<Any>): GameConfigs {
         if (node.get("config") == null) {
             logger.info { "Config modified" }
             this.modified = true
-            node.set<JsonNode>("config", mapper.convertValue(setup.getDefaultConfig(), JsonNode::class.java))
+            node.set<JsonNode>("config", mapper.convertValue(setup.configs().toJSON(), JsonNode::class.java))
         }
-        return mapper.convertValue(node.get("config"), setup.configClass().java)
+        return JacksonTools.config(setup.configs(), node.get("config"))
     }
 
     fun save() {
@@ -79,9 +96,9 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
         }
     }
 
-    fun replayState(state: Map<String, Any>) {
+    fun replayState(state: Map<String, Any>, nextStepOffset: Int) {
         val steps = node.get("steps") as ArrayNode
-        val node = steps[nextStep - 1] as ObjectNode
+        val node = steps[nextStep + nextStepOffset] as ObjectNode
         val oldState = if (node.has("state")) node.get("state") as ObjectNode else null
         if (oldState != null && oldState.size() > 0) {
             val expected = mapper.convertValue(node.get("state"), object : TypeReference<Map<String, Any>>() {})
@@ -131,9 +148,13 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
             is PlayTestStepPerform -> {
                 if (step.state.isNotEmpty()) {
                     replayable.state.setState(step.state)
+                    this.nextLoadState = step.state
                 }
                 val actionType = replayable.game.actions.type(step.actionType) ?: throw IllegalStateException("Action ${step.type} does not exist")
                 val actionable = actionType.createAction(step.playerIndex, step.action)
+                if (!actionType.isAllowed(actionable)) {
+                    throw IllegalStateException("Action is not allowed: $actionable")
+                }
                 runBlocking {
                     if (replayable.game is GameFlowImpl<*>) {
                         replayable.game.actionsInput.send(actionable)
@@ -162,7 +183,7 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
 class TestPlayChoices(
     val gameName: () -> String,
     val playersCount: (GameEntryPoint<Any>) -> Int,
-    val config: (GameEntryPoint<Any>) -> Any
+    val config: (GameEntryPoint<Any>) -> GameConfigs
 )
 
 object PlayTests {
@@ -170,17 +191,17 @@ object PlayTests {
     private val logger = KLoggers.logger(this)
     private val mapper = jacksonObjectMapper()
 
-    fun createNew(file: File, gameName: String, playersCount: Int, config: Any?) {
+    fun createNew(file: File, gameName: String, playersCount: Int, config: GameConfigs?) {
         if (file.exists()) throw IllegalArgumentException("File already exists: $file")
         file.writeText("{}")
         fullJsonTest(file, TestPlayChoices(
             gameName = { gameName },
             playersCount = { playersCount },
-            config = { config ?: it.setup().getDefaultConfig() }
-        ))
+            config = { config ?: it.setup().configs() }
+        ), interactive = true)
     }
 
-    fun fullJsonTest(file: File, choices: TestPlayChoices) {
+    fun fullJsonTest(file: File, choices: TestPlayChoices, interactive: Boolean) {
         val tree = TestPlayRoot(mapper, file)
         val gameName = tree.getString("game", choices.gameName)
         val entry = ServerGames.entrypoint(gameName)!!
@@ -192,18 +213,21 @@ object PlayTests {
         val config = tree.configOrDefault(entry.setup())
         val replayable = entry.replayable(playersCount, config, tree.replayCallback())
 
-        val s = Scanner(System.`in`)
+        val s = Scanner(System.`in`).takeIf { interactive }
 
         if (replayable.game is GameFlowImpl) {
             runBlocking {
                 var nextViews = 0
                 for (a in replayable.game.feedbackReceiver) {
                     logger.info { a }
+                    if (a is GameFlowContext.Steps.GameSetup) {
+                        replayable.gameplayCallbacks.startedState(a.playerCount, a.config, a.state)
+                    }
                     if (a is GameFlowContext.Steps.NextView) {
                         if (nextViews++ > 10) throw IllegalStateException("Too many next views")
                     }
                     if (a is GameFlowContext.Steps.ActionPerformed<*>) {
-                        tree.replayState(a.replayState)
+                        tree.replayState(a.replayState, -1)
                     }
                     if (a is GameFlowContext.Steps.AwaitInput) {
                         nextViews = 0
@@ -217,7 +241,10 @@ object PlayTests {
                 }
             }
         } else {
-            nextSteps(tree, replayable, s)
+            var running: Boolean
+            do {
+                running = nextSteps(tree, replayable, s)
+            } while (running)
         }
 
         tree.save()
@@ -234,7 +261,7 @@ object PlayTests {
         return current
     }
 
-    private fun nextSteps(tree: TestPlayRoot, replayable: GameReplayableImpl<Any>, scanner: Scanner): Boolean {
+    private fun nextSteps(tree: TestPlayRoot, replayable: GameReplayableImpl<Any>, scanner: Scanner?): Boolean {
         do {
             val nextStep = tree.nextStep(replayable)
             println("Performing saved step")
@@ -245,6 +272,7 @@ object PlayTests {
                 return true
             }
         } while (nextStep != null)
+        if (scanner == null) return false
 
         val input = PlayTestInput(scanner, replayable)
 
@@ -263,10 +291,19 @@ object PlayTests {
             println("No line from scanner, exiting")
             return false
         }
-        val step = when (choice.toLowerCase()) {
+        val step = when (choice.lowercase()) {
             "x", "q" -> return false
             "r" -> {
-                TODO()
+                if (replayable.game.isGameOver()) {
+                    return false
+                }
+                val serverAIs = ServerAIs(AIRepository(), emptySet())
+                val players = (0 until replayable.playerCount).shuffled()
+                val action = players.firstNotNullOf {
+                    serverAIs.randomActionable(replayable.game, it)
+                }
+                val serialized = replayable.game.actions.type(action.actionType)!!.actionType.serialize(action.parameter)
+                PlayTestStepPerform(action.playerIndex, action.actionType, serialized, emptyMap()) // state is filled in later
             }
             "p" -> {
                 val action = ConsoleController<Any>().let {
@@ -283,7 +320,7 @@ object PlayTests {
 
                 val paths = mutableListOf<Any>()
                 var current: Any? = playerView
-                var input = ""
+                var inputPaths: String
                 do {
                     val options = when (current) {
                         is Map<*, *> -> current.keys.map { it.toString() }.sorted()
@@ -291,9 +328,9 @@ object PlayTests {
                         else -> break
                     }
                     println(options)
-                    input = scanner.nextLine()
-                    if (input.isEmpty()) break
-                    paths.add(input)
+                    inputPaths = scanner.nextLine()
+                    if (inputPaths.isEmpty()) break
+                    paths.add(inputPaths)
 
                     current = viewNavigation(playerView, paths)
                 } while (true)
@@ -304,7 +341,7 @@ object PlayTests {
                 println("E. I expected this")
                 println("X. I just expected it to be something")
                 println("Q. I expected it to not exist")
-                when (scanner.nextLine().toLowerCase()) {
+                when (scanner.nextLine().lowercase()) {
                     "w" -> PlayTestStepAssertView(playerIndex, PlayTestViewAssertionType.NOT_EQUALS, paths, current!!)
                     "e" -> PlayTestStepAssertView(playerIndex, PlayTestViewAssertionType.EQUALS, paths, current!!)
                     "x" -> PlayTestStepAssertView(playerIndex, PlayTestViewAssertionType.EXISTS, paths, -1)

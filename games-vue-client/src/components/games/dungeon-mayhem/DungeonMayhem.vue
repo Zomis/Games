@@ -5,14 +5,17 @@
         v-for="(player, playerIndex) in view.players"
         :key="playerIndex"
       >
-        <v-card :class="{ ['color-' + player.character.color ]: true, currentPlayer: playerIndex == view.currentPlayer }">
+        <v-card class="player" :class="{ ['color-' + player.character.color ]: true, 'current-player': playerIndex == view.currentPlayer }">
           <PlayerProfile
             :player="context.players[playerIndex]"
             show-name
             :post-fix="'(' + player.character.className + ')'"
           />
           <p>
-            Health: {{ player.health }} <v-icon v-if="player.protected" color="#6a0dad">
+            Health: {{ player.health }} <v-icon
+              v-if="player.protected"
+              color="#6a0dad"
+            >
               mdi-account-lock
             </v-icon>
           </p>
@@ -148,29 +151,26 @@ import Actionable from "@/components/games/common/Actionable"
 import dungeonMayhemSymbols from "./dungeonMayhemSymbols"
 
 export default {
-    name: "DungeonMayhem",
-    props: ["view", "actions", "context"],
-    components: {
-        PlayerProfile,
-        Actionable,
-        CardZone,
-        DungeonMayhemCard
-    },
-    computed: {
-        symbolsInGame: () => dungeonMayhemSymbols
-    }
+  name: "DungeonMayhem",
+  props: ["view", "actions", "context"],
+  components: {
+    PlayerProfile,
+    Actionable,
+    CardZone,
+    DungeonMayhemCard
+  },
+  computed: {
+    symbolsInGame: () => dungeonMayhemSymbols
+  }
 }
 </script>
 <style scoped>
 @import "../../../assets/games-animations.css";
+@import "../../../assets/active-player.css";
 
 .actionable {
     border-style: solid !important;
     border-width: thick !important;
     border-color: #ffd166 !important;
-}
-
-.currentPlayer {
-    background-color: #ddf9fd;
 }
 </style>

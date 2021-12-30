@@ -5,11 +5,12 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import net.zomis.core.events.EventSystem
-import net.zomis.games.Map2D
-import net.zomis.games.Position
-import net.zomis.games.Transformation
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.common.Point
+import net.zomis.games.components.GridImpl
+import net.zomis.games.components.Position
+import net.zomis.games.components.Transformation
+import net.zomis.games.components.standardizedTransformation
 import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.impl.ttt.index
 import net.zomis.games.impl.ttt.ultimate.TTController
@@ -35,9 +36,9 @@ class TTTQLearn(val games: GameSystem) {
     }
 
     private fun normalizeTransformation(controller: TTController): Transformation {
-        return Map2D(controller.game.sizeX, controller.game.sizeY, {x, y ->
+        return GridImpl(controller.game.sizeX, controller.game.sizeY) { x, y ->
             controller.game.getSub(x, y)!!.wonBy
-        }).standardizedTransformation {
+        }.standardizedTransformation {
             it.ordinal
         }
     }

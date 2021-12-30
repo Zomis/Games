@@ -13,7 +13,7 @@ object ArtaxScorers {
         val neighbors = Direction8.values()
                 .map { board.point(pm.destination.x + it.deltaX, pm.destination.y + it.deltaY) }
                 .mapNotNull { it.rangeCheck(board) }
-                .count { it.value != action.playerIndex && it.value != null }
+                .count { it.valueOrNull() != action.playerIndex && it.valueOrNull() != null }
         neighbors.toDouble()
     }
     val copying = scorers.action(ArtaxGame.moveAction) {

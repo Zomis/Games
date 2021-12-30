@@ -15,12 +15,12 @@
           <template v-slot:default="slotProps">
             <UrPiece
               :key="slotProps.key"
-              :mouseover="doNothing"
-              :mouseleave="doNothing"
+              :mouseover="highlight(slotProps)"
+              :mouseleave="highlight(null)"
               class="piece"
-              :class="'piece-' + slotProps.tile.tile.owner"
+              :class="{['piece-' + slotProps.tile.tile.owner]: true, highlighted: highlightedAreas[areaIndex]}"
               :onclick="generateOnClickFor(areaIndex)"
-              :actionable="actions.available[`${Math.floor(areaIndex % 3) * 3 + slotProps.tile.x},${Math.floor(areaIndex / 3) * 3 + slotProps.tile.y}`]"
+              :actionable="slotProps.tile.tile.actionable"
               :piece="slotProps.tile"
             />
           </template>
@@ -65,7 +65,10 @@ export default {
     UrPiece
   },
   data() {
-    return { showRules: false }
+    return {
+      showRules: false,
+      highlightedAreas: [false, false, false, false, false, false, false, false, false]
+    }
   },
   computed: {
     areas() {
@@ -75,7 +78,23 @@ export default {
     }
   },
   methods: {
-    doNothing: function() {},
+    highlight(props) {
+      return () => {
+        let highlightedAreas = [false, false, false, false, false, false, false, false, false]
+        if (props !== null && props.tile !== null) {
+          if (this.view.boards[props.tile.y][props.tile.x].owner === null) {
+            highlightedAreas[props.tile.y * 3 + props.tile.x] = true;
+          } else {
+            for (let i = 0; i < 9; i++) {
+              if (this.view.boards[Math.floor(i / 3)][Math.floor(i % 3)].owner === null) {
+                highlightedAreas[i] = true;
+              }
+            }
+          }
+        }
+        this.highlightedAreas = highlightedAreas;
+      }
+    },
     generateOnClickFor(areaIndex) {
       return (piece) => this.pieceClick(areaIndex, piece)
     },

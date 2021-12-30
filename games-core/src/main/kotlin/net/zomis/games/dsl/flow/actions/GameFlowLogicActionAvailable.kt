@@ -129,4 +129,10 @@ class GameFlowLogicActionAvailable<T: Any, A: Any>(
         return ActionComplexImpl(actionType, createOptionsContext(playerIndex), context.choicesRule!!).withChosen(chosen)
     }
 
+    fun isComplex(): Boolean {
+        val context = GameFlowActionContextOptions<T, A>()
+        actionDsls().forEach { it.invoke(context) }
+        return context.choicesRule != null
+    }
+
 }

@@ -6,7 +6,9 @@ export default {
     playSoundOnPlayerTurn: localStorage.playSoundOnPlayerTurn === "true",
     hideAIUsers: localStorage.hideAIUsers === "true",
     volume: parseInt(localStorage.volume || "42", 10),
-    theme: localStorage.theme || ""
+    theme: localStorage.theme || "",
+    compactList: localStorage.compactList === "true",
+    background: localStorage.background || false
   },
   mutations: {
     set(state, data) {

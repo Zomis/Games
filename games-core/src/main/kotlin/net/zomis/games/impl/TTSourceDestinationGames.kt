@@ -99,19 +99,22 @@ object TTSourceDestinationGames {
     val moveAction = factory.action("move", PointMove::class)
 
     val gameQuixo = factory.game("Quixo") {
-        val grid = gridSpec<TTBase> {
-            size(model.board.sizeX, model.board.sizeY)
-            getter { x, y -> model.board.getSub(x, y)!! }
-        }
         setup(TTOptions::class) {
             defaultConfig { TTOptions(5, 5, 5) }
-            init { conf -> TTQuixoController(TTFactories().classicMNK(conf!!.m, conf.n, conf.k)) }
+            init { TTQuixoController(TTFactories().classicMNK(config.m, config.n, config.k)) }
         }
-        actionRules(ttRules())
-        view(ttView(grid))
+        actionRules {
+            ttRules()
+            view("currentPlayer") { game.currentPlayer.index() }
+            view("board") {
+                game.board.view {
+                    mapOf("owner" to it.wonBy.index().takeIf { n -> n >= 0 })
+                }
+            }
+        }
     }
 
-    private fun ttRules(): GameActionRules<TTControllerSourceDestination>.() -> Unit = {
+    private fun GameActionRules<TTControllerSourceDestination>.ttRules() {
         allActions.precondition { playerIndex == game.currentPlayer.index() }
         action(moveAction) {
             choose {
@@ -139,13 +142,6 @@ object TTSourceDestinationGames {
             }
         }
         view("actionName") { moveAction.name }
-    }
-
-    private fun ttView(grid: GridDsl<TTControllerSourceDestination, TTBase>): GameViewDsl<TTControllerSourceDestination> = {
-        currentPlayer { it.currentPlayer.index() }
-        grid("board", grid) {
-            owner { it.wonBy.index().takeIf {n -> n >= 0 } }
-        }
     }
 
     private fun TTControllerSourceDestination.point(point: Point): TTBase {

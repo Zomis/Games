@@ -1,10 +1,10 @@
 package net.zomis.games.dsl.impl
 
 import net.zomis.games.PlayerEliminations
+import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.GameEvents
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
-import kotlin.reflect.KClass
 
 class GameControllerContext<T : Any>(
     override val game: Game<T>, override val playerIndex: Int
@@ -30,18 +30,23 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
 
     val playersCount: IntRange = context.model.playerCount
 
-    fun configClass(): KClass<*> = context.configClass
-    fun getDefaultConfig(): Any = if (configClass() == Unit::class) Unit else context.model.config()
+    fun createGameWithOldConfig(playerCount: Int, config: Any): Game<T> {
+        return createGame(playerCount, configs().also { it.set("", config) })
+    }
 
-    fun createGame(playerCount: Int, config: Any): Game<T>
+    fun createGameWithDefaultConfig(playerCount: Int): Game<T> = createGame(playerCount, configs())
+
+    fun createGame(playerCount: Int, config: GameConfigs): Game<T>
         = this.createGameWithState(playerCount, config, StateKeeper())
 
-    fun createGameWithState(playerCount: Int, config: Any, stateKeeper: StateKeeper): Game<T> {
+    fun createGameWithState(playerCount: Int, config: GameConfigs, stateKeeper: StateKeeper): Game<T> {
         if (playerCount !in playersCount) {
             throw IllegalArgumentException("Invalid number of players: $playerCount, expected $playersCount")
         }
         return context.createGame(playerCount, config, stateKeeper)
     }
+
+    fun configs(): GameConfigs = context.configs()
 
 }
 
@@ -52,7 +57,7 @@ interface Game<T: Any> {
     val playerCount: Int
     val playerIndices: IntRange get() = 0 until playerCount
     val config: Any
-    val eliminations: PlayerEliminations
+    val eliminations: PlayerEliminationsWrite
     val model: T
     val stateKeeper: StateKeeper
     val actions: Actions<T>
@@ -65,25 +70,25 @@ interface Game<T: Any> {
 class GameImpl<T : Any>(
     private val setupContext: GameDslContext<T>,
     override val playerCount: Int,
-    override val config: Any,
+    val gameConfig: GameConfigs,
     override val stateKeeper: StateKeeper
 ): Game<T>, GameFactoryScope<Any>, GameEventsExecutor {
 
+    override val config: Any get() = gameConfig.oldStyleValue()
     override val eliminationCallback = PlayerEliminations(playerCount)
-    override val eliminations: PlayerEliminations get() = eliminationCallback
-    override val model = setupContext.model.factory(this, config)
-    private val replayState = ReplayState(stateKeeper, eliminationCallback)
+    override val eliminations: PlayerEliminationsWrite get() = eliminationCallback
+    override val model = setupContext.model.factory(this)
+    private val replayState = ReplayState(stateKeeper, eliminationCallback, gameConfig)
     private val rules = GameActionRulesContext(model, replayState, eliminationCallback)
     init {
         setupContext.model.onStart(GameStartContext(model, replayState))
         setupContext.actionRulesDsl?.invoke(rules)
-        setupContext.rulesDsl?.invoke(rules)
         rules.gameStart()
     }
     override val actions = ActionsImpl(model, rules, replayState)
 
     override fun copy(copier: (source: T, destination: T) -> Unit): GameImpl<T> {
-        val copy = GameImpl(setupContext, playerCount, config, stateKeeper)
+        val copy = GameImpl(setupContext, playerCount, gameConfig, stateKeeper)
         copier(this.model, copy.model)
         this.eliminations.eliminations().forEach { copy.eliminations.eliminate(it) }
         return copy
@@ -110,4 +115,5 @@ class GameImpl<T : Any>(
 
     override val events: GameEventsExecutor get() = this
     override fun <E> fire(executor: GameEvents<E>, event: E) = this.rules.fire(executor, event)
+    override fun <E: Any> config(config: GameConfig<E>): E = gameConfig.get(config)
 }

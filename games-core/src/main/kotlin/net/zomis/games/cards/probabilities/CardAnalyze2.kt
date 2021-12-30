@@ -352,7 +352,7 @@ class ProgressAnalyze<T>(
             // No solution
             return emptySequence()
         }
-        val smallestGroup = rule.groups.minBy { it.placementsLeft }!!
+        val smallestGroup = rule.groups.minByOrNull { it.placementsLeft }!!
         val maxAssignment = min(rule.size, smallestGroup.placementsLeft)
 
         return sequence {

@@ -60,10 +60,14 @@ class ConsoleController<T: Any> {
     private fun printAvailableActions(game: Game<T>) {
         game.playerIndices.map { playerIndex ->
             game.actions.types().forEach { actionType ->
-                val actionsCount = actionType.availableActions(playerIndex, null).asSequence().take(1000).count()
+                val actionsAvailable = actionType.availableActions(playerIndex, null).asSequence().take(1000).toList()
+                val actionsCount = actionsAvailable.size
                 val plus = if (actionsCount == 1000) "+" else ""
                 if (actionsCount > 0) {
                     println("$playerIndex ${actionType.name}: $actionsCount$plus actions")
+                    if (actionsCount <= 10) {
+                        actionsAvailable.map { it.parameter }.forEach { println(it) }
+                    }
                 }
             }
         }

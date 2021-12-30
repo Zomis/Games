@@ -1,10 +1,9 @@
 <template>
   <div class="game-tttupgrade">
-    <v-row>
+    <v-row class="player" :class="{ 'current-player': view.currentPlayer == 0 }">
       <v-col>
         <PlayerProfile
           show-name
-          :highlight="view.currentPlayer == 0"
           :context="context"
           :player-index="0"
         />
@@ -18,13 +17,11 @@
           type="square"
           :size="8 + 8 * v"
           color="blue"
-          :onClick="() => playSize(0, v)"
+          :on-click="() => playSize(0, v)"
         />
       </v-col>
     </v-row>
     <Map2D
-      :width="width"
-      :height="height"
       :grid="view.board"
       :click-handler="onClick"
       :piece-exists="e => true"
@@ -36,15 +33,14 @@
           :test="slotProps"
           :size="slotProps.tile.tile.level === 0 ? 0 : 8 + 8 * slotProps.tile.tile.level"
           :color="slotProps.tile.tile.player == 'X' ? 'blue' : 'red'"
-          :onClick="() => {}"
+          :on-click="() => {}"
         />
       </template>
     </Map2D>
-    <v-row>
+    <v-row class="player" :class="{ 'current-player': view.currentPlayer == 1 }">
       <v-col>
         <PlayerProfile
           show-name
-          :highlight="view.currentPlayer == 1"
           :context="context"
           :player-index="1"
         />
@@ -58,7 +54,7 @@
           type="square"
           :size="8 + 8 * v"
           color="red"
-          :onClick="() => playSize(1, v)"
+          :on-click="() => playSize(1, v)"
         />
       </v-col>
     </v-row>
@@ -81,11 +77,11 @@ export default {
     playSize(playerIndex, size) {
       if (this.view.currentPlayer !== playerIndex) return;
       console.log("playSize", playerIndex, size);
-      this.actions.choose(size, "play");
+      this.actions.choose("play", size);
     },
     onClick(x, y) {
       console.log(x, y);
-      this.actions.choose({ x: x, y: y }, "play");
+      this.actions.choose("play", { x: x, y: y });
       // this.actions.perform("play", `${x},${y}`);
     }
   },
@@ -105,6 +101,7 @@ export default {
   }
 };
 </script>
-<style>
+<style scoped>
+@import "../../assets/active-player.css";
 @import "../../assets/games-style.css";
 </style>

@@ -26,7 +26,7 @@ class ReplayException(override val message: String?, override val cause: Throwab
 class Replay<T : Any>(
     gameSpec: GameSpec<T>,
     val playerCount: Int,
-    val options: Any?,
+    val config: GameConfigs,
     private val replayData: ReplayData,
     val postReplayMoveCallback: GameplayCallbacks<T>,
     val alwaysCallback: GameplayCallbacks<T>
@@ -63,7 +63,7 @@ class Replay<T : Any>(
     }
 
     private fun restart() {
-        gameReplayable = entryPoint.replayable(playerCount, options, ReplayCallback(replayData), PostReplayCallback(replayData.actions.size, postReplayMoveCallback), alwaysCallback)
+        gameReplayable = entryPoint.replayable(playerCount, config, ReplayCallback(replayData), PostReplayCallback(replayData.actions.size, postReplayMoveCallback), alwaysCallback)
         this.position = 0
     }
 

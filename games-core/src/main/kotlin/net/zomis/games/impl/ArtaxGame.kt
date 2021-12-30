@@ -1,19 +1,19 @@
 package net.zomis.games.impl
 
-import net.zomis.games.Map2DPoint
-import net.zomis.games.Map2DX
-import net.zomis.games.PlayerEliminationCallback
+import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.WinResult
+import net.zomis.games.api.Games
 import net.zomis.games.common.Direction8
 import net.zomis.games.common.Point
 import net.zomis.games.common.PointMove
+import net.zomis.games.components.GridPoint
 import net.zomis.games.dsl.*
 import kotlin.math.abs
 import kotlin.math.max
 
-class TTArtax(private val eliminationCallback: PlayerEliminationCallback,
+class TTArtax(private val eliminationCallback: PlayerEliminationsWrite,
           playerCount: Int, sizeX: Int, sizeY: Int) {
-    val board = Map2DX<Int?>(sizeX, sizeY) { _, _ -> null }
+    val board = Games.components.grid<Int?>(sizeX, sizeY) { _, _ -> null }
     var currentPlayer: Int = 0
 
     init {
@@ -33,16 +33,16 @@ class TTArtax(private val eliminationCallback: PlayerEliminationCallback,
         }
     }
 
-    private fun distance(a: Map2DPoint<Int?>, b: Map2DPoint<Int?>): Int {
+    private fun distance(a: GridPoint<Int?>, b: GridPoint<Int?>): Int {
         return max(abs(a.x - b.x), abs(a.y - b.y))
     }
 
-    fun allowedSource(tile: Map2DPoint<Int?>): Boolean {
-        return tile.value == this.currentPlayer
+    fun allowedSource(tile: GridPoint<Int?>): Boolean {
+        return tile.valueOrNull() == this.currentPlayer
     }
 
-    fun allowedDestination(source: Map2DPoint<Int?>, tile: Map2DPoint<Int?>): Boolean {
-        if (tile.value != null) {
+    fun allowedDestination(source: GridPoint<Int?>, tile: GridPoint<Int?>): Boolean {
+        if (tile.valueOrNull() != null) {
             return false
         }
 
@@ -50,7 +50,7 @@ class TTArtax(private val eliminationCallback: PlayerEliminationCallback,
         return tileDistance in 1..2
     }
 
-    fun perform(source: Map2DPoint<Int?>, destination: Map2DPoint<Int?>): Boolean {
+    fun perform(source: GridPoint<Int?>, destination: GridPoint<Int?>): Boolean {
         if (!allowedSource(source) || !allowedDestination(source, destination)) {
             return false
         }
@@ -63,7 +63,7 @@ class TTArtax(private val eliminationCallback: PlayerEliminationCallback,
         Direction8.values().map { dir ->
             board.point(destination.x + dir.deltaX, destination.y + dir.deltaY)
                 .rangeCheck(board)
-                ?.takeIf { it.value != null }?.value = potentialWinner
+                ?.takeIf { it.valueOrNull() != null }?.value = potentialWinner
         }
 
         this.eliminatePlayersWithoutTiles()
@@ -76,13 +76,13 @@ class TTArtax(private val eliminationCallback: PlayerEliminationCallback,
         }
 
         val playersThatCanMove = eliminationCallback.remainingPlayers().filter {player ->
-            val playerTiles = this.board.all().filter { it.value == player }
-            return@filter this.board.all().any { tile -> tile.value == null &&
+            val playerTiles = this.board.all().filter { it.valueOrNull() == player }
+            return@filter this.board.all().any { tile -> tile.valueOrNull() == null &&
                 playerTiles.any { distance(tile, it) <= 2 } }
         }
         if (playersThatCanMove.size <= 1) {
             // If no moves are possible
-            val counts = this.board.all().filter { it.value != null }
+            val counts = this.board.all().filter { it.valueOrNull() != null }
                 .groupBy { it.value }
                 .mapKeys { it.key!! }
                 .mapValues { it.value.size }
@@ -100,7 +100,7 @@ class TTArtax(private val eliminationCallback: PlayerEliminationCallback,
 
     private fun eliminatePlayersWithoutTiles() {
         val losingPlayers = eliminationCallback.remainingPlayers().filter { player ->
-            this.board.all().none { it.value == player }
+            this.board.all().none { it.valueOrNull() == player }
         }
         eliminationCallback.eliminateMany(losingPlayers, WinResult.LOSS)
     }
@@ -112,14 +112,13 @@ object ArtaxGame {
     val factory = GameCreator(TTArtax::class)
     val moveAction = factory.action("move", PointMove::class)
     val gameArtax = factory.game("Artax") {
-        val grid = gridSpec<Int?> {
-            size(model.board.sizeX, model.board.sizeY)
-            getter(model.board::get)
-        }
-        setup(Point::class) {
+        val sizeX = config("x") { 7 }
+        val sizeY = config("y") { 7 }
+        setup {
             players(2..4)
-            defaultConfig { Point(7, 7) }
-            init { TTArtax(eliminationCallback, playerCount, config.x, config.y) }
+            init {
+                TTArtax(eliminationCallback, playerCount, config(sizeX), config(sizeY))
+            }
         }
         actionRules {
             action(moveAction) {
@@ -140,13 +139,8 @@ object ArtaxGame {
                 }
             }
             view("actionName") { moveAction.name }
-        }
-        view {
-            eliminations()
-            currentPlayer { it.currentPlayer }
-            grid("board", grid) {
-                owner { it }
-            }
+            view("currentPlayer") { game.currentPlayer }
+            view("board") { game.board.view { mapOf("owner" to it) } }
         }
     }
 

@@ -54,7 +54,7 @@
             class="list-complete-item animate"
             :card="card"
             :on-click="cardClick"
-            :selected="actions.chosen ? actions.chosen.choices.includes(card.key) : false"
+            :selected="view.chosen[card.key]"
           />
         </CardZone>
       </v-col>
@@ -139,13 +139,13 @@ export default {
   name: "Set",
   props: ["view", "actions", "context"],
   components: {
-      PlayerProfile,
-      CardZone,
-      SetCard
+    PlayerProfile,
+    CardZone,
+    SetCard
   },
   methods: {
     cardClick(card) {
-      this.actions.perform('ignored', "set-" + card.key);
+      this.actions.choose('set', card.key);
     }
   },
   computed: {

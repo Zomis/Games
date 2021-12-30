@@ -17,7 +17,7 @@ class TestGamesRoute(private val inviteSystem: InviteSystem) {
     val router = MessageRouter(this)
         .handler("game", this::game)
 
-    private val maxPlayers = ServerGames.games.values.map { GamesImpl.game(it).setup().playersCount.max()!! }.max()!!
+    private val maxPlayers = ServerGames.games.values.maxOf { GamesImpl.game(it).setup().playersCount.maxOrNull()!! }
     private val fakes = (0..maxPlayers).map {i ->
         FakeClient().also {
             it.updateInfo("Player$i", UUID.fromString("00000000-0000-0000-0000-${i.toStringLength(12)}"))
@@ -32,7 +32,7 @@ class TestGamesRoute(private val inviteSystem: InviteSystem) {
 
     private fun createTestGame(gameType: String): ServerGame {
         val setup = ServerGames.setup(gameType) ?: throw IllegalArgumentException("No such gameType: $gameType")
-        val gameConfig = setup.getDefaultConfig()
+        val gameConfig = setup.configs()
         val invite = inviteSystem.createInvite(gameType, inviteSystem.inviteIdGenerator(),
             InviteOptions(false, InviteTurnOrder.ORDERED, 0, gameConfig, false),
             fakes[0], emptyList()

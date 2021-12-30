@@ -155,6 +155,7 @@ object CoupRuleBased {
         gameFlow {
             loop {
                 step("game") {
+                    // TODO: Rewrite Coup to gameFlow
                     println("Test")
                 }
             }
@@ -180,15 +181,7 @@ object CoupRuleBased {
                     game.stack.pop()
                 }
             }
-            rule("skip eliminated players") {
-                appliesWhen { !eliminations.isGameOver() && !eliminations.remainingPlayers().contains(game.currentPlayerIndex) }
-                effect {
-                    // TODO: This should be `appliesWhile` or something, or try to execute (some) rules multiple times
-                    while (!eliminations.remainingPlayers().contains(game.currentPlayerIndex)) {
-                        game.currentPlayerIndex = game.currentPlayerIndex.next(eliminations.playerCount)
-                    }
-                }
-            }
+            rules.players.skipEliminated { game::currentPlayerIndex }
             rule("await countering: no more counters") {
                 appliesWhen {
                     val stackTop = game.stack.peek()
@@ -576,7 +569,7 @@ object CoupRuleBased {
             expectTrue(game.stack.isEmpty())
         }
         testCase(players = 3) {
-            config(CoupConfig(gainMoneyOnSuccessfulChallenge = 1))
+            config("", CoupConfig(gainMoneyOnSuccessfulChallenge = 1))
             state("start-0", listOf("CONTESSA", "ASSASSIN"))
             initialize()
             action(0, perform, CoupAction(game.players[0], CoupActionType.TAX))

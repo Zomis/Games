@@ -1,6 +1,6 @@
 package net.zomis.games.dsl.rulebased
 
-import net.zomis.games.PlayerEliminations
+import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.GameEvents
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.ReplayableScope
@@ -65,7 +65,7 @@ class GameRuleEventContext<T: Any, E>(
     override val event: E
 ): GameRuleEventScope<T, E> {
     override val game: T get() = context.game
-    override val eliminations: PlayerEliminations get() = context.eliminations
+    override val eliminations: PlayerEliminationsWrite get() = context.eliminations
     override val replayable: ReplayableScope get() = context.replayable
 }
 class GameRuleEventListenerImpl<T: Any, E>(

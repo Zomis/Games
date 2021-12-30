@@ -159,7 +159,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                 else GameplayCallbacks()
             it.game.obj = entryPoint.replayable(
                 it.game.playerCount,
-                it.game.gameMeta.gameOptions ?: Unit,
+                it.game.gameMeta.gameOptions,
                 serverGameListener(it.game),
                 appropriateReplayListener
             ) as GameReplayableImpl<Any>

@@ -5,7 +5,7 @@
         v-for="(player, playerIndex) in view.players"
         :key="playerIndex"
       >
-        <v-card :class="{ currentPlayer: playerIndex == view.currentPlayer, eliminated: player.dice.length === 0 }">
+        <v-card class="player" :class="{ 'current-player': playerIndex == view.currentPlayer, eliminated: player.dice.length === 0 }">
           <v-card-title>
             <PlayerProfile
               show-name
@@ -80,15 +80,17 @@ import PlayerProfile from "@/components/games/common/PlayerProfile"
 import Actionable from "@/components/games/common/Actionable"
 
 export default {
-    name: "LiarsDice",
-    props: ["view", "actions", "context"],
-    components: {
-        PlayerProfile, CardZone,
-        Actionable
-    }
+  name: "LiarsDice",
+  props: ["view", "actions", "context"],
+  components: {
+    PlayerProfile, CardZone,
+    Actionable
+  }
 }
 </script>
 <style scoped>
+@import "../../assets/active-player.css";
+
 .eliminated {
     opacity: 0.5
 }
@@ -96,9 +98,5 @@ export default {
     border-style: solid !important;
     border-width: thick !important;
     border-color: #ffd166 !important;
-}
-
-.currentPlayer {
-    background-color: #ddf9fd;
 }
 </style>

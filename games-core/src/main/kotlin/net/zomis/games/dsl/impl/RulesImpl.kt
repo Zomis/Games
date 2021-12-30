@@ -1,6 +1,6 @@
 package net.zomis.games.dsl.impl
 
-import net.zomis.games.PlayerEliminations
+import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.GameEvents
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
@@ -9,14 +9,14 @@ import kotlin.reflect.KClass
 
 class GameRuleContext<T: Any>(
     override val game: T,
-    override val eliminations: PlayerEliminations,
+    override val eliminations: PlayerEliminationsWrite,
     override val replayable: ReplayState
 ): GameRuleScope<T>
 
 class GameActionRulesContext<T : Any>(
     val model: T,
     val replayable: ReplayState,
-    val eliminations: PlayerEliminations
+    val eliminations: PlayerEliminationsWrite
 ): GameActionRules<T>, GameRules<T>, GameEventsExecutor {
     private val views = mutableListOf<Pair<String, ViewScope<T>.() -> Any?>>()
 //    private val logger = KLoggers.logger(this)
@@ -123,7 +123,7 @@ class GameStartContext<T : Any>(override val game: T, override val replayable: R
 class GameRuleList<T : Any>(
     val model: T,
     val replayable: ReplayableScope,
-    val eliminations: PlayerEliminations
+    val eliminations: PlayerEliminationsWrite
 ): GameAllActionsRule<T> {
     val after = mutableListOf<ActionRuleScope<T, Any>.() -> Unit>()
     val preconditions = mutableListOf<ActionOptionsScope<T>.() -> Boolean>()
@@ -136,7 +136,7 @@ class ActionOptionsContext<T : Any>(
     override val game: T,
     override val actionType: String,
     override val playerIndex: Int,
-    override val eliminations: PlayerEliminations,
+    override val eliminations: PlayerEliminationsWrite,
     override val replayable: ReplayableScope
 ) : ActionOptionsScope<T>, GameRuleScope<T> {
     fun <A: Any> createAction(parameter: A): Actionable<T, A> = Action(game, playerIndex, actionType, parameter)
@@ -145,7 +145,7 @@ class ActionOptionsContext<T : Any>(
 class ActionRuleContext<T : Any, A : Any>(
     override val game: T,
     override val action: Actionable<T, A>,
-    override val eliminations: PlayerEliminations,
+    override val eliminations: PlayerEliminationsWrite,
     override val replayable: ReplayState
 ): ActionRuleScope<T, A>, GameRuleScope<T> {
     override val playerIndex: Int get() = action.playerIndex
@@ -159,12 +159,14 @@ class ActionRuleContext<T : Any, A : Any>(
         replayable.stateKeeper.log(context)
         return context
     }
+
+    override fun <E : Any> config(gameConfig: GameConfig<E>): E = replayable.config(gameConfig)
 }
 
 class GameActionRuleContext<T : Any, A : Any>(
     val model: T,
     val replayable: ReplayState,
-    val eliminations: PlayerEliminations,
+    val eliminations: PlayerEliminationsWrite,
     val actionDefinition: ActionType<T, A>,
     val globalRules: GameRuleList<T>
 ): GameActionRule<T, A>, GameLogicActionType<T, A> {
@@ -225,7 +227,7 @@ class GameActionRuleContext<T : Any, A : Any>(
         } else {
             require(this.availableActionsEvaluator == null) { "An action must have only one rule for either choices or options" }
             val complex = ActionComplexImpl(actionType, context, this.choices!!)
-            return complex.start().depthFirstActions(sampleSize).map { createAction(playerIndex, it.parameter) }.filter { actionAllowed(it) }.toList()
+            return complex.start().depthFirstActions(sampleSize).map { createAction(playerIndex, it.parameter) }.filter { actionAllowed(it) }.asIterable()
         }
     }
 
@@ -291,19 +293,21 @@ class GameActionRuleContext<T : Any, A : Any>(
         return ActionComplexImpl(actionType, context, this.choices!!).withChosen(chosen)
     }
 
+    override fun isComplex(): Boolean = this.choices != null
+
 }
 
 data class GameRuleTriggerContext<T : Any, E : Any>(
     override val game: T,
     override val trigger: E,
     override val replayable: ReplayableScope,
-    override val eliminations: PlayerEliminations
+    override val eliminations: PlayerEliminationsWrite
 ): GameRuleTriggerScope<T, E>
 
 class GameRuleTriggerImpl<T : Any, E : Any>(
     val model: T,
     val replayable: ReplayState,
-    val eliminations: PlayerEliminations
+    val eliminations: PlayerEliminationsWrite
 ) : GameRuleTrigger<T, E> {
     private val effects = mutableListOf<GameRuleTriggerScope<T, E>.() -> Unit>()
     private val mappings = mutableListOf<GameRuleTriggerScope<T, E>.() -> E>()

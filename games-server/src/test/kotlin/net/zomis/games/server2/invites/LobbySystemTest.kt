@@ -2,6 +2,7 @@ package net.zomis.games.server2.invites
 
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
+import net.zomis.games.dsl.GameConfigs
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.example.TestGames
 import net.zomis.games.server2.Client
@@ -85,7 +86,7 @@ class LobbySystemTest {
             gameLoader = { null },
             moveHandler = {}
         )
-        val inviteOptions = InviteOptions(false, InviteTurnOrder.ORDERED, -1, Unit, false)
+        val inviteOptions = InviteOptions(false, InviteTurnOrder.ORDERED, -1, GameConfigs(emptyList()), false)
         val game = ServerGame(callback, GameType(callback, TestGames.gameTypeA as GameSpec<Any>, {null}, events, idGenerator, null), idGenerator(), inviteOptions)
         game.players[clientAB2] = ClientAccess(gameAdmin = false).addAccess(0, ClientPlayerAccessType.ADMIN)
         game.players[clientA1] = ClientAccess(gameAdmin = false).addAccess(1, ClientPlayerAccessType.ADMIN)

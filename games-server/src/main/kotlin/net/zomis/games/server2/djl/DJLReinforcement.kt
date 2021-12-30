@@ -154,14 +154,14 @@ class DJLReinforcement {
 //                println("Choosing random action: $randomAction")
             return randomAction
         }
-        return floats.withIndex().maxBy { it.value.toDouble() }!!.index
+        return floats.withIndex().maxByOrNull { it.value.toDouble() }!!.index
     }
 
     data class IntCounter(var value: Int)
     fun <T: Any> playSeries(count: Int, agent: LearningAgent, gameSetup: GameSetupImpl<T>, actionsMade: IntCounter): Float {
         var seriesAwards = 0f
         repeat(count) {gameNumber ->
-            val game = gameSetup.createGame(1, gameSetup.getDefaultConfig())
+            val game = gameSetup.createGame(1, gameSetup.configs())
             var totalReward = 0f
             val actions = mutableListOf<Int>()
             while (!game.isGameOver()) {

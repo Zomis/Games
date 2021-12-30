@@ -9,9 +9,9 @@
 </template>
 <script>
 export default {
-    name: "CardZone",
-    props: {
-        animation: { type: String, default: "list-complete" }
-    }
+  name: "CardZone",
+  props: {
+    animation: { type: String, default: "list-complete" }
+  }
 }
 </script>

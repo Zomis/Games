@@ -22,9 +22,10 @@ class GameFlowLogicActionDelegator<T: Any, A: Any>(
     private val performer = GameFlowLogicActionPerform(gameData, actionDsls, feedback)
 
     override fun availableActions(playerIndex: Int, sampleSize: ActionSampleSize?): Iterable<Actionable<T, A>>
-        = available.availableActions(playerIndex, sampleSize)
+        = available.availableActions(playerIndex, sampleSize).asSequence()
             .map { createAction(playerIndex, it) }
             .filter { this.actionAllowed(it) }
+            .asIterable()
 
     override fun actionAllowed(action: Actionable<T, A>): Boolean = available.actionAllowed(action)
 
@@ -53,5 +54,7 @@ class GameFlowLogicActionDelegator<T: Any, A: Any>(
     override fun withChosen(playerIndex: Int, chosen: List<Any>): ActionComplexChosenStep<T, A> {
         return available.withChosen(playerIndex, chosen)
     }
+
+    override fun isComplex(): Boolean = available.isComplex()
 
 }

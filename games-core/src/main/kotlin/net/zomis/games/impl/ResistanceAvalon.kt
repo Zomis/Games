@@ -4,8 +4,8 @@ import net.zomis.games.WinResult
 import net.zomis.games.cards.CardZone
 import net.zomis.games.common.next
 import net.zomis.games.common.nextReversed
-import net.zomis.games.dsl.ActionChoicesNextScope
 import net.zomis.games.dsl.ActionChoicesScope
+import net.zomis.games.dsl.ActionableOption
 import net.zomis.games.dsl.GameCreator
 import net.zomis.games.dsl.withIds
 import kotlin.random.Random
@@ -146,19 +146,53 @@ object ResistanceAvalonGame {
         }
         actionRules {
             gameStart {
+                // Shuffle characters
                 val characters = CardZone(game.charactersUsed.toMutableList())
                 characters.random(replayable, game.playerCount, "characters") { it.name }.toList()
                     .forEachIndexed { index, card -> game.players[index].character = card.card }
 
+                // Show who each character sees
                 game.players.forEach {
                     val seesThumbs = it.character!!.seesThumbs()
                     it.knownThumbs = game.players.filter { pl -> seesThumbs.contains(pl.character) }.toSet()
                 }
 
+                // Set leader
                 val leader = replayable.int("leader") { Random.Default.nextInt(game.playerCount) }
                 game.leaderIndex = leader
+
+                // Give out lady of the lake
                 game.ladyOfTheLakePlayer = game.players[game.leaderIndex.nextReversed(game.playerCount)]
                     .takeIf { game.config.ladyOfTheLake }
+            }
+
+            view("actions") {
+                fun buttons(): List<ActionableOption> {
+                    // Action type, value, display
+                    val list = mutableListOf<ActionableOption>()
+                    list.addAll(action(vote).options().map { ActionableOption(vote.name, it, if (it) "Accept" else "Reject") }.reversed())
+                    list.addAll(action(performMission).options().map { option ->
+                        val failsText = game.activeMission?.failsNeeded?.takeIf { it > 1 }.let {
+                            if (it != null) " (needs $it fails)" else ""
+                        }
+                        ActionableOption(performMission.name, option, if (option) "Success" else "Failure$failsText")
+                    }.reversed())
+                    return list
+                }
+                val playerEffect = when {
+                    action(assassinate).anyAvailable() -> assassinate.name to "Assassinate"
+                    action(useLadyOfTheLake).anyAvailable() -> useLadyOfTheLake.name to "Use Lady of the Lake"
+                    action(chooseTeam).anyAvailable() -> chooseTeam.name to "Add to team"
+                    else -> {"" to ""}
+                }
+                val playerOptions = actionsChosen().nextSteps(ResistanceAvalonPlayer::class) +
+                        action(assassinate).options() + action(useLadyOfTheLake).options()
+                mapOf(
+                    "buttons" to buttons(),
+                    "players" to playerOptions.associate {
+                        it.index to ActionableOption(playerEffect.first, it.index, playerEffect.second)
+                    }
+                )
             }
 
             view("characters") { game.charactersUsed.map { it.name }.distinct() }
@@ -214,19 +248,13 @@ object ResistanceAvalonGame {
                         (if (game.config.chooseMission) remainingMissions else listOf(remainingMissions.first()))
                             .withIds { it.missionNumber.toString() }
                     }) {mission ->
-                        fun rec(scope: ActionChoicesScope<ResistanceAvalon, ResistanceAvalonTeamChoice>,
-                            chosen: List<ResistanceAvalonPlayer>,
-                            required: Int
-                        ) {
-                            if (required <= 0) {
-                                scope.parameter(ResistanceAvalonTeamChoice(mission, chosen))
-                                return
+                        recursive(emptyList<ResistanceAvalonPlayer>()) {
+                            until { chosen.size == mission.teamSize }
+                            optionsWithIds({ (game.players - chosen).withIds { it.index.toString() } }) {
+                                recursion(it) { list, e -> list + e }
                             }
-                            scope.optionsWithIds({ (game.players - chosen).withIds { it.index.toString() } }) { playerChoice ->
-                                rec(this, chosen + playerChoice, required - 1)
-                            }
+                            parameter { ResistanceAvalonTeamChoice(mission, chosen) }
                         }
-                        rec(this, listOf(), mission.teamSize)
                     }
                 }
                 effect {

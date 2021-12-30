@@ -10,7 +10,10 @@
         </v-col>
       </v-row>
       <v-row>
-        <v-col v-for="(player, index) in results.cards" :key="index">
+        <v-col
+          v-for="(player, index) in results.cards"
+          :key="index"
+        >
           <v-row>
             <v-col>
               <PlayerProfile
@@ -19,7 +22,9 @@
                 :player-index="player.playerIndex"
                 show-name
               />
-              <v-icon v-if="player.storyteller">mdi-chat</v-icon>
+              <v-icon v-if="player.storyteller">
+                mdi-chat
+              </v-icon>
             </v-col>
           </v-row>
           <v-row>
@@ -29,7 +34,10 @@
               />
             </v-col>
           </v-row>
-          <v-row v-for="voter in player.firstVotes" :key="voter">
+          <v-row
+            v-for="voter in player.firstVotes"
+            :key="voter"
+          >
             <PlayerProfile
               :size="32"
               :context="context"
@@ -46,10 +54,10 @@
 import PlayerProfile from "@/components/games/common/PlayerProfile"
 
 export default {
-    name: "DixitRound",
-    props: ["results", "context"],
-    components: {
-        PlayerProfile
-    }
+  name: "DixitRound",
+  props: ["results", "context"],
+  components: {
+    PlayerProfile
+  }
 }
 </script>

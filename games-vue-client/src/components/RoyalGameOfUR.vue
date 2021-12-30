@@ -56,7 +56,7 @@
             class="highlighted"
             :mouseover="doNothing"
             :mouseleave="doNothing"
-            :class="{['piece-' + destination.player]: true}"
+            :class="'piece-' + destination.player"
           />
           <UrPiece
             v-for="piece in playerPieces"
@@ -64,8 +64,7 @@
             class="piece"
             :mouseover="mouseover"
             :mouseleave="mouseleave"
-            :class="{['piece-' + piece.player]: true, 'moveable':
-                       view.isMoveTime && piece.player === view.currentPlayer,
+            :class="{['piece-' + piece.player]: true, 'moveable': piece.player === view.currentPlayer && view.actions['move-' + piece.position],
                      opponent: !canControlCurrentPlayer}"
             :piece="piece"
             :onclick="onClick"
@@ -82,7 +81,7 @@
       />
       <UrRoll
         :roll="lastRoll"
-        :usable="view.roll < 0 && canControlCurrentPlayer"
+        :usable="view.actions['roll']"
         :on-do-roll="onDoRoll"
       />
     </div>
@@ -192,7 +191,7 @@ export default {
   },
   methods: {
     doNothing() {},
-    placeNew() { // playerIndex parameter
+    placeNew() {
       if (this.canPlaceNew) {
         this.actions.actionParameter("move", 0);
       }
