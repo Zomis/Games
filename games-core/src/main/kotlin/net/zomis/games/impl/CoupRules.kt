@@ -135,20 +135,20 @@ object CoupRuleBased {
                         "description" to action.description,
                         "claim" to action.claim,
                         "blockable" to action.blockableBy,
-                        "allowed" to action(perform).choose(action).anyAvailable()
+                        "allowed" to actionRaw(perform).choose(action.name).anyAvailable()
                     )
                 }
             }
             view("buttons") {
                 if (viewer == null) return@view emptyMap<String, Any>()
                 mapOf(
-                    "approve" to action(approve).anyAvailable(),
-                    "counter" to action(counter).options(),
-                    "challenge" to action(challenge).anyAvailable(),
+                    "approve" to actionRaw(approve).anyAvailable(),
+                    "counter" to actionRaw(counter).options(),
+                    "challenge" to actionRaw(challenge).anyAvailable(),
                     // CoupCharacters:
-                    "reveal" to action(reveal).anyAvailable(),
-                    "ambassadorPutBack" to action(ambassadorPutBack).options().map { it.name },
-                    "loseInfluence" to action(loseInfluence).options().map { it.name }
+                    "reveal" to actionRaw(reveal).anyAvailable(),
+                    "ambassadorPutBack" to actionRaw(ambassadorPutBack).options().map { it.name },
+                    "loseInfluence" to actionRaw(loseInfluence).options().map { it.name }
                 )
             }
         }
