@@ -465,9 +465,14 @@ object CoupRuleBased {
             initialize()
             expectEquals(2, game.players[0].coins)
             suspend fun tax() {
+                expectTrue(game.stack.isEmpty())
+                expectEquals(0, game.currentPlayerIndex)
                 action(0, perform, CoupAction(game.players[0], CoupActionType.TAX))
                 action(1, approve, Unit)
                 action(2, approve, Unit)
+                action(1, perform, CoupAction(game.players[1], CoupActionType.INCOME))
+                action(2, perform, CoupAction(game.players[2], CoupActionType.INCOME))
+                expectTrue(game.stack.isEmpty())
             }
             tax()
             tax()
