@@ -312,14 +312,6 @@ object CoupRuleBased {
                     }
                 }
             }
-            afterActionRule("coup action") {
-                rule("must perform coup") {
-                    appliesWhen { game.currentPlayer.coins >= 10 }
-                    action(perform) {
-                        requires { action.parameter.action == CoupActionType.COUP }
-                    }
-                }
-            }
             rule("eliminated players can't counteract") {
                 appliesWhen {
                     if (game.stack.peek() !is CoupAwaitCountering) return@appliesWhen false
@@ -458,7 +450,32 @@ object CoupRuleBased {
                     }
                 }
             }
+            afterActionRule("enforce coup action") {
+                rule("must perform coup") {
+                    appliesWhen { game.currentPlayer.coins >= 10 }
+                    action(perform) {
+                        requires { action.parameter.action == CoupActionType.COUP }
+                    }
+                }
+            }
             // challenging returns coins, counteraction does not (Assassination)
+        }
+        testCase(players = 3) {
+            // Check enforcement of Coup action
+            initialize()
+            expectEquals(2, game.players[0].coins)
+            suspend fun tax() {
+                action(0, perform, CoupAction(game.players[0], CoupActionType.TAX))
+                action(1, approve, Unit)
+                action(2, approve, Unit)
+            }
+            tax()
+            tax()
+            tax()
+            expectEquals(11, game.players[0].coins)
+            expectTrue(game.stack.isEmpty())
+            actionNotAllowed(0, perform, CoupAction(game.players[0], CoupActionType.TAX))
+            action(0, perform, CoupAction(game.players[0], CoupActionType.COUP, game.players[1]))
         }
         testCase(players = 3) {
             // Simple take income action
