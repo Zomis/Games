@@ -283,21 +283,6 @@ object CoupRuleBased {
                     }
                 }
             }
-            afterActionRule("coup action") {
-                // actions: List options -> Requires -> Perform
-                // Options: There should only be one total of options and choose.
-                // Options: Loop through all rules, check for action statement, 1) check preconditions 2) check options/choose
-                // Options - Choose: Resolve and return while checking
-                // View - Available Options: view("thing") { mapOf(...) + actionable(player.hand.card(it)) } <-- object equals check
-                // Actions - Requires: Loop through all rules, check for action statement, check apply-for-action / requires
-                // Actions - Perform: Loop through all rules, check for action statement, check apply-for-action / run perform
-                rule("must perform coup") {
-                    appliesWhen { game.currentPlayer.coins >= 10 }
-                    action(perform) {
-                        requires { action.parameter.action == CoupActionType.COUP }
-                    }
-                }
-            }
             afterActionRule("perform action") {
                 action(perform) {
                     precondition { game.stack.isEmpty() }
@@ -324,6 +309,14 @@ object CoupRuleBased {
                             ))
                             log { "$player claims ${action.action.claim}" }
                         }
+                    }
+                }
+            }
+            afterActionRule("coup action") {
+                rule("must perform coup") {
+                    appliesWhen { game.currentPlayer.coins >= 10 }
+                    action(perform) {
+                        requires { action.parameter.action == CoupActionType.COUP }
                     }
                 }
             }
