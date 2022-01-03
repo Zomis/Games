@@ -135,20 +135,20 @@ object CoupRuleBased {
                         "description" to action.description,
                         "claim" to action.claim,
                         "blockable" to action.blockableBy,
-                        "allowed" to action(perform).choose(action).anyAvailable()
+                        "allowed" to actionRaw(perform).choose(action.name).anyAvailable()
                     )
                 }
             }
             view("buttons") {
                 if (viewer == null) return@view emptyMap<String, Any>()
                 mapOf(
-                    "approve" to action(approve).anyAvailable(),
-                    "counter" to action(counter).options(),
-                    "challenge" to action(challenge).anyAvailable(),
+                    "approve" to actionRaw(approve).anyAvailable(),
+                    "counter" to actionRaw(counter).options(),
+                    "challenge" to actionRaw(challenge).anyAvailable(),
                     // CoupCharacters:
-                    "reveal" to action(reveal).anyAvailable(),
-                    "ambassadorPutBack" to action(ambassadorPutBack).options().map { it.name },
-                    "loseInfluence" to action(loseInfluence).options().map { it.name }
+                    "reveal" to actionRaw(reveal).anyAvailable(),
+                    "ambassadorPutBack" to actionRaw(ambassadorPutBack).options().map { it.name },
+                    "loseInfluence" to actionRaw(loseInfluence).options().map { it.name }
                 )
             }
         }
@@ -280,21 +280,6 @@ object CoupRuleBased {
                             game.stack.pop()
                             game.currentPlayerIndex = game.currentPlayerIndex.next(eliminations.playerCount)
                         }
-                    }
-                }
-            }
-            afterActionRule("coup action") {
-                // actions: List options -> Requires -> Perform
-                // Options: There should only be one total of options and choose.
-                // Options: Loop through all rules, check for action statement, 1) check preconditions 2) check options/choose
-                // Options - Choose: Resolve and return while checking
-                // View - Available Options: view("thing") { mapOf(...) + actionable(player.hand.card(it)) } <-- object equals check
-                // Actions - Requires: Loop through all rules, check for action statement, check apply-for-action / requires
-                // Actions - Perform: Loop through all rules, check for action statement, check apply-for-action / run perform
-                rule("must perform coup") {
-                    appliesWhen { game.currentPlayer.coins >= 10 }
-                    action(perform) {
-                        requires { action.parameter.action == CoupActionType.COUP }
                     }
                 }
             }
@@ -465,7 +450,37 @@ object CoupRuleBased {
                     }
                 }
             }
+            afterActionRule("enforce coup action") {
+                rule("must perform coup") {
+                    appliesWhen { game.currentPlayer.coins >= 10 }
+                    action(perform) {
+                        requires { action.parameter.action == CoupActionType.COUP }
+                    }
+                }
+            }
             // challenging returns coins, counteraction does not (Assassination)
+        }
+        testCase(players = 3) {
+            // Check enforcement of Coup action
+            initialize()
+            expectEquals(2, game.players[0].coins)
+            suspend fun tax() {
+                expectTrue(game.stack.isEmpty())
+                expectEquals(0, game.currentPlayerIndex)
+                action(0, perform, CoupAction(game.players[0], CoupActionType.TAX))
+                action(1, approve, Unit)
+                action(2, approve, Unit)
+                action(1, perform, CoupAction(game.players[1], CoupActionType.INCOME))
+                action(2, perform, CoupAction(game.players[2], CoupActionType.INCOME))
+                expectTrue(game.stack.isEmpty())
+            }
+            tax()
+            tax()
+            tax()
+            expectEquals(11, game.players[0].coins)
+            expectTrue(game.stack.isEmpty())
+            actionNotAllowed(0, perform, CoupAction(game.players[0], CoupActionType.TAX))
+            action(0, perform, CoupAction(game.players[0], CoupActionType.COUP, game.players[1]))
         }
         testCase(players = 3) {
             // Simple take income action

@@ -13,7 +13,10 @@ interface Viewable {
 interface ViewScope<T: Any> {
     fun actions(): ActionsView<T>
     fun actionsChosen(): ActionsChosenView<T>
+    @Deprecated("use actionRaw or chosenActions instead")
     fun <A: Any> action(actionType: ActionType<T, A>): ActionView<T, A>
+    fun <A: Any> actionRaw(actionType: ActionType<T, A>): ActionView<T, A>
+    fun <A: Any> chosenActions(actionType: ActionType<T, A>): ActionView<T, A>
     val game: T
     val viewer: PlayerIndex
 }
