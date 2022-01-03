@@ -59,7 +59,7 @@ object DslTTT {
 
     val gameUTTT = factory.game("DSL-UTTT") {
         val (m, n, k) = ttConfigs(TTOptions(3, 3, 3))
-        setup(TTOptions::class) {
+        setup {
             playersFixed(2)
             init {
                 TTUltimateController(TTFactories().ultimateMNK(config(m), config(n), config(k)))

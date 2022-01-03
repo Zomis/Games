@@ -6,7 +6,7 @@ open class TTClassicController(board: TTBase) : TTController(board) {
 
     override fun isAllowedPlay(tile: TTBase): Boolean {
         return tile.parent != null && !tile.hasSubs() &&
-                tile.parent.wonBy.equals(TTPlayer.NONE) &&
+                tile.parent.wonBy == TTPlayer.NONE &&
                 tile.wonBy === TTPlayer.NONE
     }
 
@@ -26,12 +26,11 @@ class TTClassicControllerWithGravity(board: TTBase) : TTClassicController(board)
 
     override fun isAllowedPlay(tile: TTBase): Boolean {
         val sup = super.isAllowedPlay(tile)
-        if (!sup)
+        if (!sup) {
             return false
-
+        }
         val parent = tile.parent
-        val below = parent!!.getSub(tile.x, tile.y + 1) ?: return true
-        return below.isWon
+        return parent!!.getSub(tile.x, tile.y + 1)?.isWon ?: true
     }
 
 }
@@ -152,11 +151,13 @@ class TTOthello constructor(size: Int = 8) : TTController(TTFactories().othello(
     }
 
     override fun isAllowedPlay(tile: TTBase): Boolean {
-        if (game.isWon)
+        if (game.isWon) {
             return false
-        if (tile.hasSubs())
+        }
+        if (tile.hasSubs()) {
             return false
-        return if (tile.isWon) false else !fieldCover(tile, currentPlayer).isEmpty()
+        }
+        return if (tile.isWon) false else fieldCover(tile, currentPlayer).isNotEmpty()
     }
 
     private fun fieldCover(tile: TTBase, player: TTPlayer): List<TTBase> {
@@ -197,17 +198,14 @@ class TTOthello constructor(size: Int = 8) : TTController(TTFactories().othello(
         }
         tile.setPlayedBy(currentPlayer)
         nextPlayer()
-        if (!isMovePossible(currentPlayer)) {
+        if (!isMovePossible()) {
             nextPlayer()
-            if (!isMovePossible(currentPlayer)) {
+            if (!isMovePossible()) {
                 val x = countSquares(TTPlayer.X)
                 val o = countSquares(TTPlayer.O)
                 var result = TTPlayer.NONE
-                if (x >= o)
-                    result = result.or(TTPlayer.X)
-                if (o >= x)
-                    result = result.or(TTPlayer.O)
-
+                if (x >= o) result = result.or(TTPlayer.X)
+                if (o >= x) result = result.or(TTPlayer.O)
                 game.setPlayedBy(result)
             }
         }
@@ -215,28 +213,9 @@ class TTOthello constructor(size: Int = 8) : TTController(TTFactories().othello(
         return true
     }
 
-    private fun countSquares(player: TTPlayer): Int {
-        var count = 0
-        for (xx in 0 until game.sizeX) {
-            for (yy in 0 until game.sizeY) {
-                val sub = game.getSub(xx, yy)
-                if (sub!!.wonBy.`is`(player))
-                    count++
-            }
-        }
+    private fun countSquares(player: TTPlayer): Int = game.all().count { it.value.wonBy.`is`(player) }
 
-        return count
-    }
-
-    private fun isMovePossible(currentPlayer: TTPlayer): Boolean {
-        for (xx in 0 until this.game.sizeX) {
-            for (yy in 0 until this.game.sizeY) {
-                if (this.isAllowedPlay(game.getSub(xx, yy)!!))
-                    return true
-            }
-        }
-        return false
-    }
+    private fun isMovePossible(): Boolean = this.game.all().any { isAllowedPlay(it.value) }
 
     override fun onReset() {
         val board = this.game
@@ -372,27 +351,22 @@ class TTQuantumController : TTController(TTFactories().ultimate()) {
 
         val subs = TicUtils.getAllSubs(area)
         for (sub in subs) {
-            if (sub == tile)
-                continue
-            if (!sub.isWon)
-                continue
-
-            if (scannedTiles.contains(sub))
-                return true
+            if (sub == tile) continue
+            if (!sub.isWon) continue
+            if (scannedTiles.contains(sub)) return true
 
             scannedTiles.add(sub)
             val tangled = findEntanglement(sub)
             if (tangled != null) {
                 val recursive = isEntaglementCycleCreated(tangled, scannedAreas, scannedTiles)
-                if (recursive)
-                    return true
+                if (recursive) return true
             }
         }
         return false
     }
 
     private fun collapseCheck() {
-        // TEST: When a field does not have an entaglement anymore, collapse it
+        // TEST: When a field does not have an entanglement anymore, collapse it
 
         for (ee in this.subscripts.entries) {
             // remove those that should be removed first, to make a clean scan later
