@@ -275,6 +275,7 @@ interface GameFlowStepScope<T: Any> {
 interface GameFlowScope<T: Any> {
     val game: T
     val eliminations: PlayerEliminationsWrite
+    val replayable: ReplayableScope
     suspend fun loop(function: suspend GameFlowScope<T>.() -> Unit)
     suspend fun step(name: String, step: suspend GameFlowStepScope<T>.() -> Unit): GameFlowStep<T>
     suspend fun log(logging: LogScope<T>.() -> String)

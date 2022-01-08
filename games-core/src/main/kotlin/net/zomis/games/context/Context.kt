@@ -17,8 +17,10 @@ class ComponentDelegate<E>(initialValue: E): ReadWriteProperty<Entity?, E> {
         this.value = value
     }
 }
-interface HandlerScope<E> {
+interface HandlerScope<E, T> {
     val replayable: ReplayableScope
+    val value: E
+    val event: T
 }
 
 class ContextFactory<E>(var ctx: Context, val default: ContextHolder.() -> E) {
@@ -58,7 +60,8 @@ class ContextFactory<E>(var ctx: Context, val default: ContextHolder.() -> E) {
         return this
     }
 
-    fun <T: Any> on(event: Event<T>, handler: HandlerScope<E>.(T) -> Unit): ContextFactory<E> {
+    fun <T: Any> on(event: Event<T>, handler: HandlerScope<E, T>.() -> Unit): ContextFactory<E> {
+        ctx.onEvent(event, handler) { delegate.value }
         return this
     }
 
@@ -92,9 +95,11 @@ class ActionFactory<T: Any, A: Any>(
     }
 }
 
-class Event<E: Any>(ctx: Context) {
-    operator fun invoke(e: E) {
-//        TODO("event listeners not implemented yet")
+class Event<E: Any>(val ctx: Context) {
+    operator fun invoke(c: GameFlowScope<*>, e: E) {
+        ctx.rootContext.onEvent.forEach {
+            it.fire(c, this as Event<Any>, e)
+        }
     }
 }
 
@@ -126,12 +131,32 @@ class Context(val gameContext: GameContext, val parent: Context?, val name: Any)
 
     fun mapView(viewScope: ViewScope<Any>): Any = children.filter { it.view != null }.associate { it.name to it.view(viewScope) }
     fun listView(viewScope: ViewScope<Any>): Any = children.map { it.view(viewScope) }
+    fun <T: Any, E> onEvent(event: Event<T>, handler: HandlerScope<E, T>.() -> Unit, value: () -> E) {
+        this.rootContext.onEvent.add(EventListener(gameContext, event as Event<Any>, handler as HandlerScope<Any, Any>.() -> Unit) { value() as Any })
+    }
 
     val playerIndices get() = (0 until gameContext.playerCount)
     val children = mutableListOf<Context>()
 
+    internal val onEvent = mutableListOf<EventListener>()
     internal val onSetup = mutableListOf<GameStartScope<Any>.() -> Unit>()
 
+}
+class EventListener(
+    val gameContext: GameContext,
+    val event: Event<Any>,
+    val handler: HandlerScope<Any, Any>.() -> Unit,
+    val delegate: () -> Any
+) {
+    fun fire(c: GameFlowScope<*>, event: Event<Any>, eventValue: Any) {
+        if (this.event == event) {
+            this.handler.invoke(object : HandlerScope<Any, Any> {
+                override val replayable: ReplayableScope get() = c.replayable
+                override val value: Any get() = delegate.invoke()
+                override val event: Any get() = eventValue
+            })
+        }
+    }
 }
 class GameCreatorContext<T: ContextHolder>(val gameName: String, val function: GameCreatorContextScope<T>.() -> Unit): GameCreatorContextScope<T> {
     private var playerRange = 0..0
