@@ -41,7 +41,7 @@ class GameActionRulesContext<T : Any>(
     }
 
     override fun gameStart(onStart: GameStartScope<T>.() -> Unit) {
-        onStart.invoke(GameStartContext(model, replayable))
+        onStart.invoke(GameStartContext(model, replayable, eliminations.playerCount))
     }
 
     fun view(context: GameViewContext<T>) {
@@ -118,7 +118,11 @@ class GameActionRulesContext<T : Any>(
 
 }
 
-class GameStartContext<T : Any>(override val game: T, override val replayable: ReplayableScope) : GameStartScope<T>
+class GameStartContext<T : Any>(
+    override val game: T,
+    override val replayable: ReplayableScope,
+    override val playerCount: Int
+) : GameStartScope<T>
 
 class GameRuleList<T : Any>(
     val model: T,
