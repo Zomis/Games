@@ -10,6 +10,7 @@ import net.zomis.games.dsl.rulebased.*
 
 @GameMarker
 interface GameFlowRule<T : Any>: GameCommonRule<T> {
+    val game: T
     fun rule(name: String, rule: GameFlowRule<T>.() -> Any?)
 
     fun view(key: String, value: ViewScope<T>.() -> Any?)
@@ -70,7 +71,7 @@ class GameFlowRulesContext<T: Any>(
 
 }
 
-open class GameFlowRuleContext<T: Any>: GameFlowRule<T> {
+abstract class GameFlowRuleContext<T: Any>: GameFlowRule<T> {
     override fun appliesWhen(condition: GameRuleScope<T>.() -> Boolean) {}
     override fun effect(effect: GameRuleScope<T>.() -> Unit) {}
     override fun <E> applyForEach(list: GameRuleScope<T>.() -> Iterable<E>): GameRuleForEach<T, E> {
@@ -113,6 +114,7 @@ class GameFlowRuleContextRun<T: Any>(
 class GameFlowRuleContextActiveCheck<T: Any>(
     private val context: GameRuleContext<T>
 ) : GameFlowRuleContext<T>() {
+    override val game: T get() = context.game
     var result: Boolean = true
 
     override fun appliesWhen(condition: GameRuleScope<T>.() -> Boolean) {
@@ -124,6 +126,7 @@ class GameFlowRuleContextExecution<T: Any>(
     private val callbacks: GameFlowRuleCallbacks<T>,
     private val eventsMap: MutableMap<GameEvents<Any>, MutableList<GameRuleEventScope<T, Any>.() -> Unit>>
 ): GameFlowRuleContext<T>() {
+    override val game: T get() = context.game
 
     class GameRuleForEachImpl<T: Any, E>(val context: GameRuleContext<T>, val list: Iterable<E>): GameRuleForEach<T, E> {
         override fun effect(effect: GameRuleScope<T>.(E) -> Unit) {

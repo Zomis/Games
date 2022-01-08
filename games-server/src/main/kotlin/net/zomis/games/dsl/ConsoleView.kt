@@ -29,7 +29,7 @@ class ConsoleView<T: Any> {
             when (data) {
                 null, is Int, is String, is Boolean, is Double -> yield(start (" = ") + data.toString())
                 is List<*> -> {
-                    yield(start(""))
+                    yield(start(": List"))
                     data.forEachIndexed { index, value ->
                         yieldAll(strings(indentation + 2, index.toString(), value))
                     }
@@ -40,12 +40,13 @@ class ConsoleView<T: Any> {
                     yield(start(" ") + data.first + ": " + data.second)
                 }
                 is Map<*, *> -> {
-                    yield(start(""))
+                    yield(start(": Map"))
                     data.entries.sortedBy { it.key.toString() }.forEach {
                         yieldAll(strings(indentation + 2, it.key.toString(), it.value))
                     }
                 }
                 else -> {
+                    println("Attempting to convert $name from data $data (${data.javaClass})")
                     try {
                         yieldAll(strings(indentation, name, convertToDBFormat(data)))
                     } catch (e: Exception) {

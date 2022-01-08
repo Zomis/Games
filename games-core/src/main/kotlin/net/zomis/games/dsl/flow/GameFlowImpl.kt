@@ -241,6 +241,9 @@ class GameFlowContext<T: Any>(
         replayable.stateKeeper.log(context)
         return context
     }
+
+    override fun <A : Any> enableAction(actionDefinition: ActionDefinition<T, A>)
+        = yieldAction(actionDefinition.actionType, actionDefinition.actionDsl)
 }
 
 @GameMarker
@@ -253,11 +256,16 @@ interface GameFlowActionScope<T: Any, A: Any> {
     fun options(rule: ActionOptionsScope<T>.() -> Iterable<A>)
     fun choose(options: ActionChoicesScope<T, A>.() -> Unit)
 }
+interface ActionDefinition<T: Any, A: Any> {
+    val actionType: ActionType<T, A>
+    val actionDsl: GameFlowActionScope<T, A>.() -> Unit
+}
 @GameMarker
 interface GameFlowStepScope<T: Any> {
     val game: T
     val eliminations: PlayerEliminationsWrite
     val replayable: ReplayableScope
+    fun <A: Any> enableAction(actionDefinition: ActionDefinition<T, A>)
     fun <A: Any> yieldAction(action: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>)
     fun yieldView(key: String, value: ViewScope<T>.() -> Any?)
     suspend fun log(logging: LogScope<T>.() -> String)
