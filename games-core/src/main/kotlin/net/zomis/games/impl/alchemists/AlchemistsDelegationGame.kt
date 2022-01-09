@@ -8,6 +8,7 @@ import net.zomis.games.common.times
 import net.zomis.games.context.Context
 import net.zomis.games.context.ContextHolder
 import net.zomis.games.context.Entity
+import net.zomis.games.dsl.GameSerializable
 import net.zomis.games.dsl.flow.ActionDefinition
 
 object AlchemistsDelegationGame {
@@ -29,8 +30,12 @@ object AlchemistsDelegationGame {
                 val list = Ingredient.values().toList()
                 replayable.randomFromList("solution", list.shuffled(), list.size, Ingredient::toString)
             }
-        inner class TurnOrder(val gold: Int, val favors: Int, val ingredients: Int, val choosable: Boolean = true, var chosenBy: Int? = null) {
+        inner class TurnOrder(
+            val gold: Int, val favors: Int, val ingredients: Int,
+            val choosable: Boolean = true, var chosenBy: Int? = null
+        ): GameSerializable {
             fun toStateString(): String = "$gold/$favors/$ingredients"
+            override fun serialize(): Any = this.toStateString()
         }
 
         inner class TurnPicker(ctx: Context): Entity(ctx) {
@@ -47,7 +52,7 @@ object AlchemistsDelegationGame {
                     add(TurnOrder(0, 1, 1, false))
                 }
             }.on(newRound) { value.filter { it.choosable }.forEach { it.chosenBy = null } }
-            val action by action<Model, TurnOrder>("turn", TurnOrder::class) {
+            val action by actionSerializable<Model, TurnOrder>("turn", TurnOrder::class) {
                 precondition {
                     playerIndex == Players.startingWith(this@Model.players.indices.toList(), this@Model.startingPlayer).minus(
                         options.map { it.chosenBy }.toSet()

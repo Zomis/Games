@@ -93,7 +93,7 @@ class ActionFactory<T: Any, A: Any>(
     val name: String, val parameterType: KClass<A>,
     override val actionDsl: GameFlowActionScope<T, A>.() -> Unit
 ): ActionDefinition<T, A> {
-    override val actionType = GameActionCreator<T, A, A>(name, parameterType, parameterType, { it }, { it })
+    override var actionType = GameActionCreator<T, A>(name, parameterType, parameterType, { it }, { it as A })
     operator fun provideDelegate(thisRef: Entity?, prop: KProperty<*>): ReadWriteProperty<Entity?, ActionDefinition<T, A>> {
         return ComponentDelegate(this@ActionFactory)
     }
@@ -122,7 +122,9 @@ open class Entity(protected open val ctx: Context) {
     fun playerReference(function: ContextHolder.() -> Int): ContextFactory<Int> = ContextFactory(ctx, function)
     fun <E> cards(): ContextFactory<CardZone<E>> = ContextFactory<CardZone<E>>(ctx) { CardZone() }.publicView { it.cards }
     fun <T: Any, A: Any> action(name: String, parameter: KClass<A>, actionDefinition: GameFlowActionScope<T, A>.() -> Unit)
-        = ActionFactory(name, parameter, actionDefinition)
+            = ActionFactory(name, parameter, actionDefinition)
+    fun <T: Any, A: GameSerializable> actionSerializable(name: String, parameter: KClass<A>, actionDefinition: GameFlowActionScope<T, A>.() -> Unit)
+            = ActionFactory(name, parameter, actionDefinition).also { it.actionType = it.actionType.serializer { a -> a.serialize() } }
 }
 class GameContext(val playerCount: Int, val eliminations: PlayerEliminationsWrite)
 interface ContextHolder {

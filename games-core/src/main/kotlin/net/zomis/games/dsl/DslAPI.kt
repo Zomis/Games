@@ -7,6 +7,9 @@ import net.zomis.games.dsl.flow.GameFlowScope
 import kotlin.reflect.KClass
 
 data class ActionableOption(val actionType: String, val parameter: Any, val display: Any)
+interface GameSerializable {
+    fun serialize(): Any
+}
 interface Actionable<T : Any, A : Any> {
     val playerIndex: Int
     val game: T
@@ -83,21 +86,21 @@ interface GameDsl<T : Any> {
     fun <E: Any> config(key: String, default: () -> E): GameConfig<E>
 }
 
-class GameActionCreator<T : Any, A : Any, S : Any>(
+class GameActionCreator<T : Any, A : Any>(
     override val name: String,
     override val parameterType: KClass<A>,
-    override val serializedType: KClass<S>,
-    val serializer: (A) -> S,
-    val deserializer: (ActionOptionsScope<T>.(S) -> A)?
+    override val serializedType: KClass<*>,
+    val serializer: (A) -> Any,
+    val deserializer: (ActionOptionsScope<T>.(Any) -> A)?
 ): ActionType<T, A> {
     override fun serialize(parameter: A): Any = serializer(parameter)
-    override fun deserialize(scope: ActionOptionsScope<T>, serialized: Any): A? = deserializer?.invoke(scope, serialized as S)
+    override fun deserialize(scope: ActionOptionsScope<T>, serialized: Any): A? = deserializer?.invoke(scope, serialized)
 
-    inline fun <reified S2: Any> serialization(noinline serializer: (A) -> S2, noinline deserializer: ActionOptionsScope<T>.(S2) -> A): GameActionCreator<T, A, S2> {
-        return GameActionCreator(name, parameterType, S2::class, serializer, deserializer)
+    inline fun <reified S2: Any> serialization(noinline serializer: (A) -> S2, noinline deserializer: ActionOptionsScope<T>.(S2) -> A): GameActionCreator<T, A> {
+        return GameActionCreator(name, parameterType, S2::class, serializer, deserializer as ActionOptionsScope<T>.(Any) -> A)
     }
 
-    inline fun <reified S2: Any> serializer(noinline serializer: (A) -> S2): GameActionCreator<T, A, S2> {
+    inline fun <reified S2: Any> serializer(noinline serializer: (A) -> S2): GameActionCreator<T, A> {
         return GameActionCreator(name, parameterType, S2::class, serializer, null)
     }
 
@@ -105,8 +108,8 @@ class GameActionCreator<T : Any, A : Any, S : Any>(
 
 class GameCreator<T : Any>(val modelClass: KClass<T>) {
     fun game(name: String, dsl: GameDsl<T>.() -> Unit): GameSpec<T> = GameSpec(name, dsl)
-    fun <A: Any> action(name: String, parameterType: KClass<A>): GameActionCreator<T, A, A>
-        = GameActionCreator(name, parameterType, parameterType, {it}, {it})
+    fun <A: Any> action(name: String, parameterType: KClass<A>): GameActionCreator<T, A>
+        = GameActionCreator(name, parameterType, parameterType, {it}, {it as A})
     fun singleAction(name: String) = this.action(name, Unit::class)
     val components = Games.components
 }
