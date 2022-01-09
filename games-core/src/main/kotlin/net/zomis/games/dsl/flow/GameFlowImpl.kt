@@ -38,6 +38,7 @@ class GameFlowImpl<T: Any>(
     override val model: T = setupContext.model.factory(this)
     val replayable = ReplayState(stateKeeper, eliminations, gameConfig)
     override val actions = GameFlowActionsImpl({ feedbacks.add(it) }, model, eliminations, replayable)
+    private var gameSetupSent = false
 
     val actionsInput: Channel<Any> = Channel()
     val job: Job
@@ -49,8 +50,6 @@ class GameFlowImpl<T: Any>(
                 val dsl = setupContext.flowDsl!!
                 val flowContext = GameFlowContext(this, game, "root")
                 setupContext.model.onStart(GameStartContext(model, replayable, playerCount))
-                sendFeedback(GameFlowContext.Steps.GameSetup(playerCount, gameConfig, replayable.stateKeeper.lastMoveState()))
-                replayable.stateKeeper.clear()
                 dsl.invoke(flowContext)
                 actionDone()
                 sendFeedback(GameFlowContext.Steps.GameEnd)
@@ -94,6 +93,10 @@ class GameFlowImpl<T: Any>(
     }
 
     suspend fun nextAction(): Actionable<T, Any>? {
+        if (this.lastAction != null) {
+            val last = this.lastAction!!
+            this.lastAction = last.copy(replayState = replayable.stateKeeper.lastMoveState())
+        }
         if (isGameOver()) {
             this.actionDone()
             return null
@@ -103,6 +106,11 @@ class GameFlowImpl<T: Any>(
             while (true) {
                 if (isGameOver()) {
                     return null
+                }
+                if (!gameSetupSent) {
+                    sendFeedback(GameFlowContext.Steps.GameSetup(playerCount, gameConfig, replayable.stateKeeper.lastMoveState()))
+                    replayable.stateKeeper.clear()
+                    gameSetupSent = true
                 }
                 sendFeedback(GameFlowContext.Steps.AwaitInput)
                 val action = actionsInput.receive()
