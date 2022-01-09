@@ -98,7 +98,7 @@ object AlchemistsDelegationGame {
             }
 
             private fun nextIndex(): Pair<Int, Int>? {
-                for (index in 0..rows.maxOf { it?.second?.maxOfOrNull { i -> i ?: 0 } ?: 0 }) {
+                for (index in 0..rows.maxOf { it?.second?.size ?: 0 }) {
                     for (rowIndex in rows.indices) {
                         val row = rows[rowIndex]
                         if (row != null && row.second.size > index && row.second[index] != null) {
@@ -174,6 +174,7 @@ object AlchemistsDelegationGame {
             precondition {
                 playerIndex == turnPicker.options.last { it.chosenBy != null }.chosenBy
             }
+            requires { action.parameter.chosen.sumOf { it.second } <= actionCubeCount }
             perform {
                 action.parameter.chosen.groupBy { it.first }.mapValues { it.value.map { p -> p.second } }.forEach {
                     it.key.actionSpace.place(playerIndex, it.value)
@@ -183,10 +184,10 @@ object AlchemistsDelegationGame {
             choose {
                 recursive(emptyList<Pair<HasAction, Int>>()) {
                     parameter { ActionPlacement(chosen) }
-                    until { this.chosen.size == actionCubeCount }
+                    until { this.chosen.sumOf { it.second } == actionCubeCount }
                     optionsWithIds({ actionSpaces.map {
                         it.actionSpace.name to (it to it.actionSpace.nextCost(chosen))
-                    }.filter { it.second.second != null } }) { next ->
+                    }.filter { it.second.second != null && it.second.second!! <= actionCubeCount - chosen.sumOf { c -> c.second } } }) { next ->
                         recursion(next) { acc, n -> acc + (n.first to n.second!!) }
                     }
                 }
