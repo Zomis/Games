@@ -150,7 +150,7 @@ object AlchemistsDelegationGame {
                 .on(newRound) {
                     println("Refilling ingredients for round $event")
                     value.cards.clear()
-                    deck.random(replayable, 5, "ingredients") { it.toString() }.forEach { it.moveTo(value) }
+                    deck.random(replayable, 5, "ingredients-slots") { it.toString() }.forEach { it.moveTo(value) }
                 }
             override val actionSpace by component { ActionSpace(this.ctx, "Ingredients") }
                 .setup { it.initialize(if (playerCount == 4) listOf(1, 1) else listOf(1, 1, 1), playerCount) }
@@ -169,8 +169,10 @@ object AlchemistsDelegationGame {
             }
         }
         val ingredients by component { Ingredients(ctx) }
-        data class ActionPlacement(val chosen: List<Pair<HasAction, Int>>)
-        val actionPlacement by action<Model, ActionPlacement>("action", ActionPlacement::class) {
+        data class ActionPlacement(val chosen: List<Pair<HasAction, Int>>): GameSerializable {
+            override fun serialize(): Any = chosen.map { it.first.actionSpace.name }
+        }
+        val actionPlacement by actionSerializable<Model, ActionPlacement>("action", ActionPlacement::class) {
             precondition {
                 playerIndex == turnPicker.options.last { it.chosenBy != null }.chosenBy
             }
