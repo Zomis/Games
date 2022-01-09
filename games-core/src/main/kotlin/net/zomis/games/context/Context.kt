@@ -60,8 +60,12 @@ class ContextFactory<E>(var ctx: Context, val default: ContextHolder.() -> E) {
         return this
     }
 
+    fun <T: Any> changeOn(event: Event<T>, handler: HandlerScope<E, T>.() -> E): ContextFactory<E> {
+        ctx.onEvent(event, handler) { delegate }
+        return this
+    }
     fun <T: Any> on(event: Event<T>, handler: HandlerScope<E, T>.() -> Unit): ContextFactory<E> {
-        ctx.onEvent(event, handler) { delegate.value }
+        ctx.onEvent(event, { handler.invoke(this); value }) { delegate }
         return this
     }
 
@@ -131,8 +135,12 @@ class Context(val gameContext: GameContext, val parent: Context?, val name: Any)
 
     fun mapView(viewScope: ViewScope<Any>): Any = children.filter { it.view != null }.associate { it.name to it.view(viewScope) }
     fun listView(viewScope: ViewScope<Any>): Any = children.map { it.view(viewScope) }
-    fun <T: Any, E> onEvent(event: Event<T>, handler: HandlerScope<E, T>.() -> Unit, value: () -> E) {
-        this.rootContext.onEvent.add(EventListener(gameContext, event as Event<Any>, handler as HandlerScope<Any, Any>.() -> Unit) { value() as Any })
+    fun <T: Any, E> onEvent(event: Event<T>, handler: HandlerScope<E, T>.() -> E, value: () -> ComponentDelegate<E>) {
+        this.rootContext.onEvent.add(
+            EventListener(gameContext, event as Event<Any>, handler as HandlerScope<Any, Any>.() -> Any) {
+                value.invoke() as ComponentDelegate<Any>
+            }
+        )
     }
 
     val playerIndices get() = (0 until gameContext.playerCount)
@@ -145,16 +153,18 @@ class Context(val gameContext: GameContext, val parent: Context?, val name: Any)
 class EventListener(
     val gameContext: GameContext,
     val event: Event<Any>,
-    val handler: HandlerScope<Any, Any>.() -> Unit,
-    val delegate: () -> Any
+    val handler: HandlerScope<Any, Any>.() -> Any,
+    val delegate: () -> ComponentDelegate<Any>
 ) {
     fun fire(c: GameFlowScope<*>, event: Event<Any>, eventValue: Any) {
         if (this.event == event) {
-            this.handler.invoke(object : HandlerScope<Any, Any> {
+            var delegateValue by delegate.invoke()
+            val result = this.handler.invoke(object : HandlerScope<Any, Any> {
                 override val replayable: ReplayableScope get() = c.replayable
-                override val value: Any get() = delegate.invoke()
+                override val value: Any get() = delegateValue
                 override val event: Any get() = eventValue
             })
+            delegateValue = result
         }
     }
 }
