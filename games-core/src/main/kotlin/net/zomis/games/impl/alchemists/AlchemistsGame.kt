@@ -194,13 +194,13 @@ object AlchemistsGame {
                     it.reputation = 10
                 }
 
-                // Setup Heroes
-                game.heroes.cards.add(AlchemistsModel.Hero(listOf(Alchemists.red.plus, Alchemists.green.plus, Alchemists.blue.plus)))
-                game.heroes.cards.add(AlchemistsModel.Hero(listOf(Alchemists.red.minus, Alchemists.green.minus, Alchemists.blue.minus)))
+                // Setup Heroes (Order of potions does matter, for three-player games, where selling one may lock another)
+                game.heroes.cards.add(AlchemistsModel.Hero(listOf(Alchemists.blue.plus, Alchemists.red.plus, Alchemists.green.plus)))
+                game.heroes.cards.add(AlchemistsModel.Hero(listOf(Alchemists.blue.minus, Alchemists.red.minus, Alchemists.green.minus)))
                 game.heroes.cards.add(AlchemistsModel.Hero(listOf(Alchemists.red.minus, Alchemists.green.minus, Alchemists.blue.plus)))
-                game.heroes.cards.add(AlchemistsModel.Hero(listOf(Alchemists.red.plus, Alchemists.green.minus, Alchemists.blue.minus)))
+                game.heroes.cards.add(AlchemistsModel.Hero(listOf(Alchemists.green.minus, Alchemists.blue.minus, Alchemists.red.plus)))
                 game.heroes.cards.add(AlchemistsModel.Hero(listOf(Alchemists.red.plus, Alchemists.green.plus, Alchemists.blue.minus)))
-                game.heroes.cards.add(AlchemistsModel.Hero(listOf(Alchemists.red.minus, Alchemists.green.plus, Alchemists.blue.plus)))
+                game.heroes.cards.add(AlchemistsModel.Hero(listOf(Alchemists.green.plus, Alchemists.blue.plus, Alchemists.red.minus)))
                 game.heroes.random(replayable, 5, "heroes") { it.requests.map { req -> req.textRepresentation }.joinToString("") }
             }
         }
