@@ -109,9 +109,9 @@ class GameFlowImpl<T: Any>(
                 }
                 if (!gameSetupSent) {
                     sendFeedback(GameFlowContext.Steps.GameSetup(playerCount, gameConfig, replayable.stateKeeper.lastMoveState()))
-                    replayable.stateKeeper.clear()
                     gameSetupSent = true
                 }
+                replayable.stateKeeper.clear()
                 sendFeedback(GameFlowContext.Steps.AwaitInput)
                 val action = actionsInput.receive()
                 logger.info("GameFlow Coroutine Action Received: $action")
@@ -124,7 +124,6 @@ class GameFlowImpl<T: Any>(
                 actions.clearAndPerform(action as Actionable<T, Any>) { this.clear() }
                 this.lastAction = GameFlowContext.Steps.ActionPerformed(typeEntry, action.playerIndex, action.parameter, replayable.stateKeeper.lastMoveState())
                 runRules(GameFlowRulesState.AFTER_ACTIONS)
-                replayable.stateKeeper.clear()
                 return action
             }
         } else {
