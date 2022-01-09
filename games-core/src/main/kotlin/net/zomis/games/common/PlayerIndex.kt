@@ -6,6 +6,9 @@ import kotlin.math.round
 
 typealias PlayerIndex = Int?
 fun PlayerIndex.isObserver(): Boolean = this == null
+object Players {
+    fun startingWith(playerIndices: List<Int>, firstPlayer: Int): List<Int> = playerIndices.shifted(firstPlayer)
+}
 
 infix fun Int.fmod(other: Int) = ((this % other) + other) % other
 fun Int.withLeadingZeros(minSize: Int): String {
