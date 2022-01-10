@@ -1,6 +1,8 @@
 package net.zomis.games.impl.alchemists.artifacts
 
-interface Artifact {
+import net.zomis.games.dsl.GameSerializable
+
+interface Artifact: GameSerializable {
 
     val name: String
     val description: String
@@ -8,4 +10,5 @@ interface Artifact {
     val cost: Int
     val victoryPoints: Int
 
+    override fun serialize(): String = name
 }

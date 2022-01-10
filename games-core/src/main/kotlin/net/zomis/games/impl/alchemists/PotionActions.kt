@@ -26,13 +26,15 @@ object PotionActions {
 
     class SellHero(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
         override fun actionAvailable(): Boolean = model.round >= 2
-        override val actionSpace: AlchemistsDelegationGame.Model.ActionSpace
-            get() = TODO("Not yet implemented")
-        override val action: ActionDefinition<AlchemistsDelegationGame.Model, *>
-            get() = TODO("Not yet implemented")
+        override val actionSpace by component { model.ActionSpace(this.ctx, "Sell") }
+            .setup { it.initialize(listOf(2), playerCount) }
+        override val action by actionSerializable<AlchemistsDelegationGame.Model, IngredientsMix>("sell", IngredientsMix::class) {
+            // TODO: Discounts and stuff... can be kept as local variables
+        }
     }
 
-    class TestStudent(model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
+    class TestStudent(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
+        override fun actionAvailable(): Boolean = model.round <= 5
         var poisoned by component { false }
         override val actionSpace by component { model.ActionSpace(this.ctx, "TestStudent") }
             .setup { it.initialize(listOf(1, 1), playerCount) }
@@ -58,7 +60,8 @@ object PotionActions {
         }
     }
 
-    class TestSelf(model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
+    class TestSelf(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
+        override fun actionAvailable(): Boolean = model.round <= 5
         override val actionSpace by component { model.ActionSpace(this.ctx, "TestSelf") }
             .setup { it.initialize(listOf(1, 1), playerCount) }
         override val action by actionSerializable<AlchemistsDelegationGame.Model, IngredientsMix>("testSelf", IngredientsMix::class) {
@@ -82,6 +85,15 @@ object PotionActions {
                     }
                 }
             }
+        }
+    }
+
+    class Exhibition(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
+        override fun actionAvailable(): Boolean = model.round >= 6
+        override val actionSpace by component { model.ActionSpace(ctx, "Exhibition") }
+            .setup { it.initialize(if (playerCount == 4) listOf(1, 1, 1) else listOf(1, 1, 1, 1), playerCount) }
+        override val action by actionSerializable<AlchemistsDelegationGame.Model, IngredientsMix>("exhibit", IngredientsMix::class) {
+
         }
     }
 

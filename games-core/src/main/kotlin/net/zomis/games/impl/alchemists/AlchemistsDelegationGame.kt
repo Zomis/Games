@@ -185,10 +185,20 @@ object AlchemistsDelegationGame {
 
         val ingredients by component { IngredientActions.Ingredients(this@Model, ctx) }
         val transmute by component { IngredientActions.Transmute(this@Model, ctx) }
+        val sellPotion by component { PotionActions.SellHero(this@Model, ctx) }
+        val buyArtifact by component { ArtifactActions.BuyArtifact(this@Model, ctx) }
+        val debunkTheory by component { TheoryActions.DebunkTheory(this@Model, this.ctx) }
+        val publishTheory by component { TheoryActions.PublishTheory(this@Model, this.ctx) }
         val testStudent by component { PotionActions.TestStudent(this@Model, ctx) }
         val testSelf by component { PotionActions.TestSelf(this@Model, ctx) }
 
-        val actionSpaces = listOf<HasAction>(ingredients, transmute, testStudent, testSelf)
+        val exhibition by component { PotionActions.Exhibition(this@Model, this.ctx) }
+
+        val actionSpaces = listOf<HasAction>(
+            ingredients, transmute, sellPotion, buyArtifact,
+            debunkTheory, publishTheory, testStudent, testSelf,
+            exhibition
+        )
 
     }
 
