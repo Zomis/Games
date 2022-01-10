@@ -4,6 +4,12 @@ import net.zomis.games.cards.probabilities.Combinatorics
 import net.zomis.games.common.toPercent
 import kotlin.math.round
 
+enum class Ingredient(private val char: Char) {
+    PURPLE_MUSHROOM('A'), GREEN_PLANT('B'), BROWN_FROG('C'), YELLOW_CHICKEN_LEG('D'),
+    BLUE_FLOWER('E'), GRAY_TREE('F'), RED_SCORPION('G'), BLACK_FEATHER('H'),
+    ;
+    override fun toString(): String = char.toString()
+}
 enum class AlchemistsColor(private val char: Char) {
     RED('R'), GREEN('G'), BLUE('B');
     fun with(sign: AlchemistsSign, size: AlchemistsSize): Pair<AlchemistsColor, AlchemistsProperty>
@@ -47,6 +53,10 @@ data class AlchemistsPotion(val color: AlchemistsColor?, val sign: AlchemistsSig
     }
     val blocked = color == null && sign == null
     val textRepresentation = if (blocked) "NO" else color.toString() + sign.toString()
+    val positive = sign == AlchemistsSign.POSITIVE
+    val negative = sign == AlchemistsSign.NEGATIVE
+    val plus = positive
+    val minus = negative
     override fun toString(): String = textRepresentation
 }
 class AlchemistsChemical(vararg properties: Pair<AlchemistsColor, AlchemistsProperty>) {
@@ -314,22 +324,12 @@ object Alchemists {
                     }
                 }
                 println("Mix ${mix.first} + ${mix.second}: sum $sum")
-//                if (newAvg > )
             }
         }
-
-//        fun potionMix(ingredient: Ingredient, other: Ingredient): AlchemistsPotion {
-//            this.
-//        }
     }
 
-    enum class Ingredient(private val char: Char) {
-        PURPLE_MUSHROOM('A'), GREEN_PLANT('B'), BROWN_FROG('C'), YELLOW_CHICKEN_LEG('D'),
-        BLUE_FLOWER('E'), GRAY_TREE('F'), RED_SCORPION('G'), BLACK_FEATHER('H'),
-        ;
-        override fun toString(): String = char.toString()
-    }
     class AlchemistsSolution(private val values: Map<Ingredient, AlchemistsChemical>) {
+        override fun toString(): String = values.toString()
         fun matchesKnowledge(knowledge: AlchemistsKnowledge): Boolean {
             val actual = values.getValue(knowledge.ingredient).mixWith(values.getValue(knowledge.other))
             val expected = knowledge.result
@@ -348,6 +348,7 @@ object Alchemists {
         fun ingredientIs(ingredient: Ingredient, chemical: AlchemistsChemical): Boolean = valueOf(ingredient) == chemical
 
         fun valueOf(ingredient: Ingredient): AlchemistsChemical = values.getValue(ingredient)
+        fun mixPotion(ingredients: Pair<Ingredient, Ingredient>) = mixPotion(ingredients.first, ingredients.second)
         fun mixPotion(ingredient: Ingredient, other: Ingredient): AlchemistsPotion
             = valueOf(ingredient).mixWith(valueOf(other))
     }
@@ -445,6 +446,9 @@ object Alchemists {
             }
         }
     }.toList()
+
+    fun solutionWith(orderedIngredients: List<Ingredient>): AlchemistsSolution
+        = AlchemistsSolution(alchemyValues.withIndex().associate { orderedIngredients[it.index] to it.value })
 
     val blocked = AlchemistsPotion(null, null)
 

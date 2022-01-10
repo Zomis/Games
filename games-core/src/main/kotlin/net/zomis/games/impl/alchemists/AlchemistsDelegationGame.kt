@@ -12,24 +12,19 @@ import net.zomis.games.dsl.GameSerializable
 import net.zomis.games.dsl.flow.ActionDefinition
 
 object AlchemistsDelegationGame {
-    enum class Ingredient(private val char: Char) {
-        PURPLE_MUSHROOM('A'), GREEN_PLANT('B'), BROWN_FROG('C'), YELLOW_CHICKEN_LEG('D'),
-        BLUE_FLOWER('E'), GRAY_TREE('F'), RED_SCORPION('G'), BLACK_FEATHER('H'),
-        ;
-        override fun toString(): String = char.toString()
-    }
-
     interface HasAction {
         val actionSpace: Model.ActionSpace
         val action: ActionDefinition<Model, *>
     }
     class Model(override val ctx: Context) : Entity(ctx), ContextHolder {
         val newRound by event(Int::class)
+        val playerMixPotion by event(PotionActions.IngredientsMix::class)
         val solution by component { emptyList<Ingredient>() }
             .setup {
                 val list = Ingredient.values().toList()
                 replayable.randomFromList("solution", list.shuffled(), list.size, Ingredient::toString)
             }
+        val alchemySolution get() = Alchemists.solutionWith(solution)
         inner class TurnOrder(
             val gold: Int, val favors: Int, val ingredients: Int,
             val choosable: Boolean = true, var chosenBy: Int? = null
@@ -133,6 +128,12 @@ object AlchemistsDelegationGame {
                     if (event == 1) this@Model.ingredients.deck.random(replayable, 3, "startingIngredients-$playerIndex") { it.toString() }
                         .forEach { it.moveTo(value) }
                 }
+                .on(playerMixPotion) {
+                    if (playerIndex == event.playerIndex) {
+                        value.cards.remove(event.ingredients.first)
+                        value.cards.remove(event.ingredients.second)
+                    }
+                }
                 .privateView(playerIndex) { it.cards }
                 .publicView { it.size }
         }
@@ -217,7 +218,11 @@ object AlchemistsDelegationGame {
             }
         }
         val transmute by component { Transmute(ctx) }
-        val actionSpaces = listOf<HasAction>(ingredients, transmute)
+
+        val testStudent by component { PotionActions.TestStudent(this@Model, ctx) }
+        val testSelf by component { PotionActions.TestSelf(this@Model, ctx) }
+
+        val actionSpaces = listOf<HasAction>(ingredients, transmute, testStudent, testSelf)
 
     }
 
@@ -225,6 +230,7 @@ object AlchemistsDelegationGame {
         players(2..4)
         init { Model(ctx) }
         gameFlow {
+            println("SOLUTION: " + game.alchemySolution)
             for (round in 1..6) {
                 game.newRound(this, round)
                 step("round $round - turnPicker") {
