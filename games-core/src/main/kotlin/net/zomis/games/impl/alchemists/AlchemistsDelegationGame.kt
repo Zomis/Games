@@ -15,9 +15,11 @@ object AlchemistsDelegationGame {
     interface HasAction {
         val actionSpace: Model.ActionSpace
         val action: ActionDefinition<Model, *>
+        fun actionAvailable(): Boolean = true
     }
     class Model(override val ctx: Context) : Entity(ctx), ContextHolder {
         val newRound by event(Int::class)
+        var round by value { 0 }.changeOn(newRound) { event }
         val playerMixPotion by event(PotionActions.IngredientsMix::class)
         val solution by component { emptyList<Ingredient>() }
             .setup {

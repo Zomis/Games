@@ -24,7 +24,8 @@ object PotionActions {
         }
     }
 
-    class SellHero(model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
+    class SellHero(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
+        override fun actionAvailable(): Boolean = model.round >= 2
         override val actionSpace: AlchemistsDelegationGame.Model.ActionSpace
             get() = TODO("Not yet implemented")
         override val action: ActionDefinition<AlchemistsDelegationGame.Model, *>
