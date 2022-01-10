@@ -6,9 +6,12 @@ import net.zomis.games.dsl.*
 import net.zomis.games.dsl.flow.ActionDefinition
 import net.zomis.games.dsl.flow.GameFlowActionScope
 import net.zomis.games.dsl.flow.GameFlowScope
+import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
+
+// TODO: Make tests and refactor this file.
 
 class ComponentDelegate<E>(initialValue: E): ReadWriteProperty<Entity?, E> {
     var value = initialValue
@@ -17,10 +20,52 @@ class ComponentDelegate<E>(initialValue: E): ReadWriteProperty<Entity?, E> {
         this.value = value
     }
 }
+
+class DynamicValueDelegate<E>(val function: () -> E): ReadOnlyProperty<Entity?, E> {
+    override fun getValue(thisRef: Entity?, property: KProperty<*>): E = function.invoke()
+}
+
 interface HandlerScope<E, T> {
     val replayable: ReplayableScope
     val value: E
     val event: T
+}
+
+class DynamicValueDelegateFactory<E>(override var ctx: Context, val function: ContextHolder.() -> E): ContextHolder {
+    val value get() = function.invoke(this)
+
+    private val privateViews = mutableMapOf<Int, (ViewScope<Any>) -> Any?>()
+    var view: ((ViewScope<Any>) -> Any?)? = {
+        function.invoke(this)
+    }
+
+    operator fun provideDelegate(thisRef: Entity?, prop: KProperty<*>): ReadOnlyProperty<Entity?, E> {
+        val newContext = Context(ctx.gameContext, ctx, prop.name)
+        newContext.view = {
+            val privateView = privateViews[it.viewer] ?: view
+            privateView?.invoke(it)
+        }
+        ctx.children.add(newContext)
+        this.ctx = newContext
+        return DynamicValueDelegate { function.invoke(this) }
+    }
+
+    fun privateView(playerIndices: List<Int>, view: (E) -> Any): DynamicValueDelegateFactory<E> {
+        playerIndices.forEach { index ->
+            privateViews[index] = { view.invoke(value) }
+        }
+        return this
+    }
+    fun privateView(playerIndex: Int, view: (E) -> Any): DynamicValueDelegateFactory<E> = this.privateView(listOf(playerIndex), view)
+    fun publicView(view: (E) -> Any): DynamicValueDelegateFactory<E> {
+        this.view = { view.invoke(value) }
+        return this
+    }
+
+    fun hiddenView(): DynamicValueDelegateFactory<E> {
+        this.view = null
+        return this
+    }
 }
 
 class ContextFactory<E>(var ctx: Context, val default: ContextHolder.() -> E) {
@@ -119,6 +164,8 @@ open class Entity(protected open val ctx: Context) {
         }.also { it.listView = true }
     }
     fun <E> component(function: ContextHolder.() -> E): ContextFactory<E> = ContextFactory(ctx, function)
+    fun <E> value(function: ContextHolder.() -> E): ContextFactory<E> = component(function)
+    fun <E> dynamicValue(function: ContextHolder.() -> E): DynamicValueDelegateFactory<E> = DynamicValueDelegateFactory(ctx, function)
     fun playerReference(function: ContextHolder.() -> Int): ContextFactory<Int> = ContextFactory(ctx, function)
     fun <E> cards(): ContextFactory<CardZone<E>> = ContextFactory<CardZone<E>>(ctx) { CardZone() }.publicView { it.cards }
     fun <T: Any, A: Any> action(name: String, parameter: KClass<A>, actionDefinition: GameFlowActionScope<T, A>.() -> Unit)

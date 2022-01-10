@@ -123,6 +123,8 @@ object AlchemistsDelegationGame {
         inner class Player(ctx: Context, val playerIndex: Int): Entity(ctx) {
             var gold by component { 2 }
             var reputation by component { 10 }
+            var hospital by component { 0 }
+            val actionCubesAvailable by dynamicValue { this@Model.actionCubeCount - hospital }
             val ingredients by cards<Ingredient>()
                 .on(newRound) {
                     if (event == 1) this@Model.ingredients.deck.random(replayable, 3, "startingIngredients-$playerIndex") { it.toString() }
@@ -177,7 +179,7 @@ object AlchemistsDelegationGame {
             precondition {
                 playerIndex == turnPicker.options.last { it.chosenBy != null }.chosenBy
             }
-            requires { action.parameter.chosen.sumOf { it.second } <= actionCubeCount }
+            requires { action.parameter.chosen.sumOf { it.second } <= players[playerIndex].actionCubesAvailable }
             perform {
                 action.parameter.chosen.groupBy { it.first }.mapValues { it.value.map { p -> p.second } }.forEach {
                     it.key.actionSpace.place(playerIndex, it.value)
@@ -187,10 +189,12 @@ object AlchemistsDelegationGame {
             choose {
                 recursive(emptyList<Pair<HasAction, Int>>()) {
                     parameter { ActionPlacement(chosen) }
-                    until { this.chosen.sumOf { it.second } == actionCubeCount }
+                    until { this.chosen.sumOf { it.second } == players[playerIndex].actionCubesAvailable }
                     optionsWithIds({ actionSpaces.map {
                         it.actionSpace.name to (it to it.actionSpace.nextCost(chosen))
-                    }.filter { it.second.second != null && it.second.second!! <= actionCubeCount - chosen.sumOf { c -> c.second } } }) { next ->
+                    }.filter {
+                        it.second.second != null && it.second.second!! <= players[playerIndex].actionCubesAvailable - chosen.sumOf { c -> c.second }
+                    }}) { next ->
                         recursion(next) { acc, n -> acc + (n.first to n.second!!) }
                     }
                 }
