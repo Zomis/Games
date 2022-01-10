@@ -284,6 +284,7 @@ object PlayTests {
         println("A. Assert actions")
         println("E. Assert eliminations")
         println("X/Q. Exit/Quit")
+        println("Available actions is: ${replayable.game.actions.actionTypes}")
         val choice: String
         try {
             choice = scanner.nextLine()
@@ -404,7 +405,7 @@ object PlayTests {
                     }
                 }
             }
-            else -> throw IllegalArgumentException("Invalid choice")
+            else -> return nextSteps(tree, replayable, scanner)
         }
         tree.addStep(step)
 
