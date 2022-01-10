@@ -1,12 +1,12 @@
 package net.zomis.games.impl.alchemists
 
 object TheoryBoard {
-    val theories = listOf(Alchemists.Ingredient.values().map { Theory(mutableListOf(), it, null) })
+    val theories = listOf(Ingredient.values().map { Theory(mutableListOf(), it, null) })
 }
 
 class Theory(
         val seals: MutableList<Seal>,
-        val ingredient: Alchemists.Ingredient,
+        val ingredient: Ingredient,
         var alchemical: AlchemistsChemical?
 ) {
 

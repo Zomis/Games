@@ -89,7 +89,7 @@ class AlchemistsModel(val playerCount: Int, val config: Config) {
         var gold: Int = 0
         var reputation: Int = 0
         val favors = CardZone<FavorType>()
-        val ingredients = CardZone<Alchemists.Ingredient>()
+        val ingredients = CardZone<Ingredient>()
 
         fun victoryPoints(): Int {
             return reputation
@@ -113,8 +113,8 @@ class AlchemistsModel(val playerCount: Int, val config: Config) {
     lateinit var solution: Alchemists.AlchemistsSolution
     val heroes = Games.components.cardZone<Hero>()
     val artifacts = CardZone<Artifact>()
-    val ingredientDeck = CardZone<Alchemists.Ingredient>()
-    val ingredientDiscard = CardZone<Alchemists.Ingredient>()
+    val ingredientDeck = CardZone<Ingredient>()
+    val ingredientDiscard = CardZone<Ingredient>()
     val favorDeck = CardZone<FavorType>()
     val players = (0 until playerCount).map { Player(it) }
 
@@ -160,7 +160,7 @@ object AlchemistsGame {
             init { AlchemistsModel(playerCount, config) }
             onStart {
                 val solution = replayable.randomFromList("solution", Alchemists.alchemyValues, Alchemists.alchemyValues.size) { it.representation }
-                val ingredients = Alchemists.Ingredient.values()
+                val ingredients = Ingredient.values()
                 game.solution = Alchemists.AlchemistsSolution(solution.withIndex().associate { ingredients[it.index] to it.value })
 
                 // Setup favors
@@ -171,7 +171,7 @@ object AlchemistsGame {
                 }
 
                 // Setup ingredients
-                Alchemists.Ingredient.values().forEach { ingredient ->
+                Ingredient.values().forEach { ingredient ->
                     repeat(8) {
                         game.ingredientDeck.cards.add(ingredient)
                     }
