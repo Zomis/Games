@@ -62,7 +62,7 @@ object AlchemistsDelegationGame {
                 requires { players[playerIndex].gold >= -action.parameter.gold }
                 perform {
                     action.parameter.chosenBy = playerIndex
-                    players[playerIndex].gold += -action.parameter.gold
+                    players[playerIndex].gold += action.parameter.gold
                     if (action.parameter.ingredients > 0) {
                         game.ingredients.deck.random(replayable, action.parameter.ingredients, "ingredients") { it.toString() }.forEach {
                             it.moveTo(game.players[playerIndex].ingredients)
