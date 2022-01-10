@@ -58,30 +58,11 @@ class AlchemistsModel(val playerCount: Int, val config: Config) {
         ;
     }
 
-    fun allArtifacts(): List<Artifact> {
-        return listOf(
-                AltarOfGold,
-                AmuletOfRhetoric,
-                BootsOfSpeed,
-                BronzeCup,
-                CrystalCabinet,
-                DiscountCard,
-                FeatherInCap,
-                HypnoticAmulet,
-                MagicMirror,
-                MagicMortar,
-                Periscope,
-                PrintingPress,
-                RobeOfRespect,
-                SealOfAuthority,
-                SilverChalice,
-                ThinkingCap,
-                WisdomIdol,
-                WitchsTrunk
-        )
+    fun allArtifacts(): List<ArtifactActions.Artifact> {
+        return ArtifactActions.artifacts
     }
 
-    fun selectArtifacts(artifacts: List<Artifact>): List<Artifact> {
+    fun selectArtifacts(artifacts: List<ArtifactActions.Artifact>): List<ArtifactActions.Artifact> {
         return artifacts.groupBy { it.level }.map { it.value.shuffled().take(3) }.flatten()
     }
 
@@ -112,7 +93,7 @@ class AlchemistsModel(val playerCount: Int, val config: Config) {
     var firstPlayer: Int = 0
     lateinit var solution: Alchemists.AlchemistsSolution
     val heroes = Games.components.cardZone<Hero>()
-    val artifacts = CardZone<Artifact>()
+    val artifacts = CardZone<ArtifactActions.Artifact>()
     val ingredientDeck = CardZone<Ingredient>()
     val ingredientDiscard = CardZone<Ingredient>()
     val favorDeck = CardZone<FavorType>()
