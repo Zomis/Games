@@ -251,6 +251,7 @@ class GameFlowContext<T: Any>(
 
     override fun <A : Any> enableAction(actionDefinition: ActionDefinition<T, A>)
         = yieldAction(actionDefinition.actionType, actionDefinition.actionDsl)
+    override fun <E : Any> config(gameConfig: GameConfig<E>): E = flow.gameConfig.get(gameConfig)
 }
 
 @GameMarker
@@ -279,10 +280,10 @@ interface GameFlowStepScope<T: Any> {
     suspend fun logSecret(player: PlayerIndex, logging: LogScope<T>.() -> String): LogSecretScope<T>
 }
 @GameMarker
-interface GameFlowScope<T: Any> {
+interface GameFlowScope<T: Any>: EventTools {
     val game: T
-    val eliminations: PlayerEliminationsWrite
-    val replayable: ReplayableScope
+    override val eliminations: PlayerEliminationsWrite
+    override val replayable: ReplayableScope
     suspend fun loop(function: suspend GameFlowScope<T>.() -> Unit)
     suspend fun step(name: String, step: suspend GameFlowStepScope<T>.() -> Unit): GameFlowStep<T>
     suspend fun log(logging: LogScope<T>.() -> String)

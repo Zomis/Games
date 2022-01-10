@@ -39,7 +39,7 @@ interface LogActionScope<T : Any, A : Any>: LogScope<T> {
     val player: String
     val action: A
 }
-interface ActionRuleScope<T : Any, A : Any> : GameUtils, ActionOptionsScope<T> {
+interface ActionRuleScope<T : Any, A : Any> : GameUtils, ActionOptionsScope<T>, EventTools {
     override val game: T
     val action: Actionable<T, A>
     override val eliminations: PlayerEliminationsWrite

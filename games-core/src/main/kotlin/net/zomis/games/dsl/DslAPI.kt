@@ -1,6 +1,7 @@
 package net.zomis.games.dsl
 
 import net.zomis.games.PlayerEliminationsRead
+import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.api.Games
 import net.zomis.games.dsl.flow.GameFlowRules
 import net.zomis.games.dsl.flow.GameFlowScope
@@ -15,6 +16,11 @@ interface Actionable<T : Any, A : Any> {
     val game: T
     val actionType: String
     val parameter: A
+}
+interface EventTools {
+    val eliminations: PlayerEliminationsWrite
+    val replayable: ReplayableScope
+    fun <E: Any> config(gameConfig: GameConfig<E>): E
 }
 interface GameUtils {
     val eliminations: PlayerEliminationsRead

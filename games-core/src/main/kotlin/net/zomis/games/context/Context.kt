@@ -100,7 +100,7 @@ class ActionFactory<T: Any, A: Any>(
 }
 
 class Event<E: Any>(val ctx: Context) {
-    operator fun invoke(c: GameFlowScope<*>, e: E) {
+    operator fun invoke(c: EventTools, e: E) {
         ctx.rootContext.onEvent.forEach {
             it.fire(c, this as Event<Any>, e)
         }
@@ -158,7 +158,7 @@ class EventListener(
     val handler: HandlerScope<Any, Any>.() -> Any,
     val delegate: () -> ComponentDelegate<Any>
 ) {
-    fun fire(c: GameFlowScope<*>, event: Event<Any>, eventValue: Any) {
+    fun fire(c: EventTools, event: Event<Any>, eventValue: Any) {
         if (this.event == event) {
             var delegateValue by delegate.invoke()
             val result = this.handler.invoke(object : HandlerScope<Any, Any> {
