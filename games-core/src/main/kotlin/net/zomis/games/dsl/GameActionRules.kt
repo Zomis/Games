@@ -19,6 +19,7 @@ interface GameStartScope<T : Any> {
     val game: T
     val replayable: ReplayableScope
     val playerCount: Int
+    fun <E: Any> config(config: GameConfig<E>): E
 }
 
 interface LogSecretScope<T : Any> {

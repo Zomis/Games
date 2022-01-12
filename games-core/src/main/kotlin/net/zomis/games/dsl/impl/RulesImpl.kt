@@ -14,6 +14,7 @@ class GameRuleContext<T: Any>(
 ): GameRuleScope<T>
 
 class GameActionRulesContext<T : Any>(
+    val configs: GameConfigs,
     val model: T,
     val replayable: ReplayState,
     val eliminations: PlayerEliminationsWrite
@@ -41,7 +42,7 @@ class GameActionRulesContext<T : Any>(
     }
 
     override fun gameStart(onStart: GameStartScope<T>.() -> Unit) {
-        onStart.invoke(GameStartContext(model, replayable, eliminations.playerCount))
+        onStart.invoke(GameStartContext(configs, model, replayable, eliminations.playerCount))
     }
 
     fun view(context: GameViewContext<T>) {
@@ -119,10 +120,13 @@ class GameActionRulesContext<T : Any>(
 }
 
 class GameStartContext<T : Any>(
+    val configs: GameConfigs,
     override val game: T,
     override val replayable: ReplayableScope,
     override val playerCount: Int
-) : GameStartScope<T>
+) : GameStartScope<T> {
+    override fun <E : Any> config(config: GameConfig<E>): E = configs.get(config)
+}
 
 class GameRuleList<T : Any>(
     val model: T,

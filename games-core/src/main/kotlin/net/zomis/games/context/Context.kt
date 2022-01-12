@@ -6,6 +6,7 @@ import net.zomis.games.dsl.*
 import net.zomis.games.dsl.flow.ActionDefinition
 import net.zomis.games.dsl.flow.GameFlowActionScope
 import net.zomis.games.dsl.flow.GameFlowScope
+import net.zomis.games.dsl.impl.GameConfigImpl
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
@@ -29,6 +30,7 @@ interface HandlerScope<E, T> {
     val replayable: ReplayableScope
     val value: E
     val event: T
+    fun <E: Any> config(config: GameConfig<E>): E
 }
 
 class DynamicValueDelegateFactory<E>(override var ctx: Context, val function: ContextHolder.() -> E): ContextHolder {
@@ -167,13 +169,13 @@ open class Entity(protected open val ctx: Context) {
     fun <E> value(function: ContextHolder.() -> E): ContextFactory<E> = component(function)
     fun <E> dynamicValue(function: ContextHolder.() -> E): DynamicValueDelegateFactory<E> = DynamicValueDelegateFactory(ctx, function)
     fun playerReference(function: ContextHolder.() -> Int): ContextFactory<Int> = ContextFactory(ctx, function)
-    fun <E> cards(): ContextFactory<CardZone<E>> = ContextFactory<CardZone<E>>(ctx) { CardZone() }.publicView { it.cards }
+    fun <E> cards(list: MutableList<E> = mutableListOf()): ContextFactory<CardZone<E>> = ContextFactory(ctx) { CardZone(list) }.publicView { it.cards }
     fun <T: Any, A: Any> action(name: String, parameter: KClass<A>, actionDefinition: GameFlowActionScope<T, A>.() -> Unit)
             = ActionFactory(name, parameter, actionDefinition)
     fun <T: Any, A: GameSerializable> actionSerializable(name: String, parameter: KClass<A>, actionDefinition: GameFlowActionScope<T, A>.() -> Unit)
             = ActionFactory(name, parameter, actionDefinition).also { it.actionType = it.actionType.serializer { a -> a.serialize() } }
 }
-class GameContext(val playerCount: Int, val eliminations: PlayerEliminationsWrite)
+class GameContext(val playerCount: Int, val eliminations: PlayerEliminationsWrite, val configLookup: (GameConfig<Any>) -> Any)
 interface ContextHolder {
     val ctx: Context
 }
@@ -212,6 +214,9 @@ class EventListener(
                 override val replayable: ReplayableScope get() = c.replayable
                 override val value: Any get() = delegateValue
                 override val event: Any get() = eventValue
+                override fun <E : Any> config(config: GameConfig<E>): E {
+                    return gameContext.configLookup.invoke(config as GameConfig<Any>) as E
+                }
             })
             delegateValue = result
         }
@@ -221,6 +226,7 @@ class GameCreatorContext<T: ContextHolder>(val gameName: String, val function: G
     private var playerRange = 0..0
     private lateinit var init: ContextHolder.() -> T
     private lateinit var gameFlow: suspend GameFlowScope<T>.() -> Unit
+    private val configs = mutableListOf<GameConfig<Any>>()
 
     override fun players(players: IntRange) {
         this.playerRange = players
@@ -234,16 +240,25 @@ class GameCreatorContext<T: ContextHolder>(val gameName: String, val function: G
         this.gameFlow = function
     }
 
+    override fun <E: Any> config(key: String, default: () -> E): GameConfig<E> {
+        val config = GameConfigImpl(key, default)
+        this.configs.add(config as GameConfig<Any>)
+        return config
+    }
+
     fun toDsl(): GameDsl<T>.() -> Unit {
         this.function.invoke(this)
         return {
+            for (config in configs) {
+                this.config(config.key, config.default)
+            }
             setup {
                 players(playerRange)
                 onStart {
                     this.game.ctx.onSetup.forEach { it.invoke(this as GameStartScope<Any>) }
                 }
                 init {
-                    val gc = GameContext(this.playerCount, this.eliminationCallback)
+                    val gc = GameContext(this.playerCount, this.eliminationCallback) { config(it) }
                     val context = Context(gc, null, "")
                     context.view = {
                         context.children.associate { it.name to it.view }
@@ -270,4 +285,5 @@ interface GameCreatorContextScope<T: Any> {
     fun players(players: IntRange)
     fun init(function: ContextHolder.() -> T)
     fun gameFlow(function: suspend GameFlowScope<T>.() -> Unit)
+    fun <E : Any> config(key: String, default: () -> E): GameConfig<E>
 }
