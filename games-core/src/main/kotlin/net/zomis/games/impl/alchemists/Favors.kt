@@ -5,6 +5,7 @@ import net.zomis.games.common.toSingleList
 import net.zomis.games.context.Context
 import net.zomis.games.context.Entity
 import net.zomis.games.dsl.GameSerializable
+import net.zomis.games.dsl.flow.ActionDefinition
 
 object Favors {
 
@@ -15,13 +16,14 @@ object Favors {
         CUSTODIAN(3), // Drink potion before sell to hero, allow use multiple, can also be used in round 6
         SHOPKEEPER(2), // Discount by 1 gold when buying an artifact
         BARMAID(2), // If you mix an exact match, gain 1 reputation. Otherwise count potion as 1 step better. Stacks when playing multiple
-        MERCHANT(2), // Allow selling potion on any slot
+        MERCHANT(2), // Allow selling potion on any slot or gain 1 gold if you go first. Stacks when playing multiple
         SAGE(2), // Transmute gives 1 extra gold
         ;
         override fun serialize(): String = this.name
     }
 
-    class FavorDeck(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx) {
+    class FavorDeck(ctx: Context): Entity(ctx) {
+        var favorsPlayed by cards<FavorType>()
         val playersDiscardingSetupFavor by value { mutableListOf<Int>() }.setup { it.addAll(0 until playerCount); it }
 
         val chooseFavor by actionSerializable<AlchemistsDelegationGame.Model, FavorType>("chooseFavor", FavorType::class) {
@@ -33,6 +35,14 @@ object Favors {
             }
         }
 
+        fun allowFavors(vararg favorType: FavorType): ActionDefinition<AlchemistsDelegationGame.Model, FavorType> {
+            return action("favor", FavorType::class) {
+                precondition { game.players[playerIndex].favors.cards.any { favorType.contains(it) } }
+                perform {
+                    game.players[playerIndex].favors.card(action.parameter).moveTo(favorsPlayed)
+                }
+            }
+        }
         val assistant by action<AlchemistsDelegationGame.Model, Unit>("assistant", Unit::class) {
             precondition { game.players[playerIndex].favors.cards.contains(FavorType.ASSISTANT) }
             perform {

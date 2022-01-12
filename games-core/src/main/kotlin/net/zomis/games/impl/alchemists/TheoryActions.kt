@@ -78,7 +78,7 @@ object TheoryActions {
     }
 
     class DebunkTheory(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
-        override fun actionAvailable(): Boolean = model.round >= 2
+        override fun actionAvailable(playerIndex: Int, chosen: List<AlchemistsDelegationGame.Model.ActionChoice>): Boolean = model.round >= 2
         override val actionSpace by component { model.ActionSpace(this.ctx, "PublishTheory") }
             .setup { it.initialize(listOf(1, 2), playerCount) }
         override val action by actionSerializable<AlchemistsDelegationGame.Model, DebunkAction>("publishTheory", DebunkAction::class) {
@@ -194,8 +194,7 @@ object TheoryActions {
         = if (game.players[playerIndex].artifacts.cards.contains(ArtifactActions.printingPress)) 0 else 1
 
     class PublishTheory(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
-
-        override fun actionAvailable(): Boolean = model.round >= 2
+        override fun actionAvailable(playerIndex: Int, chosen: List<AlchemistsDelegationGame.Model.ActionChoice>): Boolean = model.round >= 2
         override val actionSpace by component { model.ActionSpace(this.ctx, "PublishTheory") }
             .setup { it.initialize(listOf(1, 2), playerCount) }
         override val action by actionSerializable<AlchemistsDelegationGame.Model, TheoryAction>("publishTheory", TheoryAction::class) {

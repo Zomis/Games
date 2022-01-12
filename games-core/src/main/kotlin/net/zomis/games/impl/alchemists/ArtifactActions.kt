@@ -67,11 +67,12 @@ object ArtifactActions {
     )
 
     class BuyArtifact(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
+        override fun extraActions() = listOf(model.favors.allowFavors(Favors.FavorType.SHOPKEEPER))
         var usedDiscountCard = false
         var usedPeriscope = false
         var usedBootsOfSpeed: Boolean = false
 
-        fun goldModifier(playerIndex: Int): Int = when {
+        fun goldModifier(playerIndex: Int): Int = -model.favors.favorsPlayed.cards.count { it == Favors.FavorType.SHOPKEEPER } + when {
             model.players[playerIndex].artifacts.cards.contains(discountCard) -> if (usedDiscountCard) -1 else -2
             else -> 0
         }
@@ -104,13 +105,20 @@ object ArtifactActions {
             options { forSale.cards }
             perform {
                 actionSpace.resolveNext()
-                game.players[playerIndex].gold -= action.parameter.cost - goldModifier(playerIndex)
+                val cost = action.parameter.cost - goldModifier(playerIndex)
+                game.players[playerIndex].gold -= if (cost >= 0) cost else 0
                 forSale.card(action.parameter).moveTo(game.players[playerIndex].artifacts)
+                game.favors.favorsPlayed.cards.clear()
             }
             perform {
                 val player = game.players[playerIndex]
                 val buyAction = action
+                if (action.parameter.victoryPoints == null) {
+                    TODO("artifact not implemented yet")
+                }
+
                 when (action.parameter) {
+                    bootsOfSpeed, periscope, robeOfRespect, sealOfAuthority -> TODO("artifact not implemented yet")
                     altarOfGold -> {
                         // Immediate effect: Pay 1 to 8 gold pieces. Gain that many points of reputation
                         game.queue.add(action<AlchemistsDelegationGame.Model, Int>("altarOfGold", Int::class) {
@@ -126,11 +134,14 @@ object ArtifactActions {
                     amuletOfRhetoric -> player.reputation += 5
                     hypnoticAmulet -> {
                         // Immediate effect: Draw 4 favor cards
-                        game.favors.deck.random(replayable, 4, "hypnoticAmulet") { it.name }.forEach {
-                            if (it.card == Favors.FavorType.HERBALIST) {
+                        game.favors.deck.random(replayable, 4, "hypnoticAmulet") { it.name }.forEach { favor ->
+                            if (favor.card == Favors.FavorType.HERBALIST) {
+                                game.ingredients.deck.random(replayable, 3, "herbalist") { it.serialize() }.forEach {
+                                    it.moveTo(game.players[playerIndex].ingredients)
+                                }
                                 game.queue.add(game.favors.herbalistDiscard as ActionDefinition<AlchemistsDelegationGame.Model, Any>)
                             }
-                            it.moveTo(game.players[playerIndex].favors)
+                            favor.moveTo(game.players[playerIndex].favors)
                         }
                     }
                     thinkingCap -> {

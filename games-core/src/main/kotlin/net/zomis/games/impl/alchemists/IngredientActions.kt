@@ -34,7 +34,7 @@ object IngredientActions {
         }
     }
 
-    class Transmute(model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
+    class Transmute(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
         override val actionSpace by component { model.ActionSpace(this.ctx, "Transmute") }.setup { it.initialize(listOf(1, 2), playerCount) }
         override val action by actionSerializable<AlchemistsDelegationGame.Model, Ingredient>("transmute", Ingredient::class) {
             precondition { playerIndex == actionSpace.nextPlayerIndex() }
@@ -42,9 +42,11 @@ object IngredientActions {
             perform {
                 actionSpace.resolveNext()
                 game.players[playerIndex].ingredients.cards.remove(action.parameter)
-                game.players[playerIndex].gold++
+                game.players[playerIndex].gold += 1 + game.favors.favorsPlayed.cards.count { it == Favors.FavorType.SAGE }
+                game.favors.favorsPlayed.cards.clear()
             }
         }
+        override fun extraActions() = listOf(model.favors.allowFavors(Favors.FavorType.SAGE))
     }
 
 

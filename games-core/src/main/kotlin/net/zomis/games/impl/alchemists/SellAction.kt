@@ -43,7 +43,7 @@ object SellAction {
                     Hero(listOf(Alchemists.red.plus, Alchemists.green.plus, Alchemists.blue.minus)),
                     Hero(listOf(Alchemists.green.plus, Alchemists.blue.plus, Alchemists.red.minus))
                 )
-                it.addAll(replayable.randomFromList("heroes", heroes, 5) { hero -> hero.requests.map { req -> req.textRepresentation }.joinToString("") })
+                it.addAll(replayable.randomFromList("heroes", heroes, 5) { hero -> hero.requests.joinToString("") { req -> req.textRepresentation } })
                 it
             }.on(model.newRound) {
                 if (event >= 2) value.removeFirst()
@@ -64,7 +64,8 @@ object SellAction {
             sellOrder = emptyList()
         }
 
-        override fun actionAvailable(): Boolean = model.round >= 2
+        override fun actionAvailable(playerIndex: Int, chosen: List<AlchemistsDelegationGame.Model.ActionChoice>): Boolean
+            = model.round >= 2
         override val actionSpace by component { model.ActionSpace(this.ctx, "Sell") }
             .setup { it.initialize(listOf(2), playerCount) }
         override val action by actionSerializable<AlchemistsDelegationGame.Model, SellAction>("sell", SellAction::class) {
@@ -107,6 +108,7 @@ object SellAction {
                     val request = heroes[0].requests[action.parameter.slot!!]
                     val sellResult = action.parameter.guarantee!!.result(request, result)
                     game.players[playerIndex].gold += sellResult.price
+                    game.favors.favorsPlayed.cards.clear()
                 }
             }
         }

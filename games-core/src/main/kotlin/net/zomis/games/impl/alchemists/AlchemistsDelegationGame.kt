@@ -17,7 +17,8 @@ object AlchemistsDelegationGame {
     interface HasAction {
         val actionSpace: Model.ActionSpace
         val action: ActionDefinition<Model, *>
-        fun actionAvailable(): Boolean = true
+        fun actionAvailable(playerIndex: Int, chosen: List<Model.ActionChoice>): Boolean? = true
+        fun extraActions(): List<ActionDefinition<Model, *>> = emptyList()
     }
     class Model(override val ctx: Context, master: GameConfig<Boolean>) : Entity(ctx), ContextHolder {
         val master by value { false }.setup { config(master) }
@@ -66,8 +67,19 @@ object AlchemistsDelegationGame {
                     action.parameter.chosenBy = playerIndex
                     players[playerIndex].gold += action.parameter.gold
                     if (action.parameter.ingredients > 0) {
-                        game.ingredients.deck.random(replayable, action.parameter.ingredients, "ingredients") { it.toString() }.forEach {
+                        game.ingredients.deck.random(replayable, action.parameter.ingredients, "ingredients") { it.serialize() }.forEach {
                             it.moveTo(game.players[playerIndex].ingredients)
+                        }
+                    }
+                    if (action.parameter.favors > 0) {
+                        game.favors.deck.random(replayable, action.parameter.favors, "favors") { it.serialize() }.forEach { favor ->
+                            if (favor.card == Favors.FavorType.HERBALIST) {
+                                game.ingredients.deck.random(replayable, 3, "herbalist") { it.serialize() }.forEach {
+                                    it.moveTo(game.players[playerIndex].ingredients)
+                                }
+                                game.queue.add(game.favors.herbalistDiscard as ActionDefinition<AlchemistsDelegationGame.Model, Any>)
+                            }
+                            favor.moveTo(game.players[playerIndex].favors)
                         }
                     }
                 }
@@ -75,7 +87,7 @@ object AlchemistsDelegationGame {
         }
         val turnPicker by component { TurnPicker(ctx) }
 
-        inner class ActionSpace(ctx: Context, val name: String): Entity(ctx) {
+        inner class ActionSpace(ctx: Context, val name: String, val cost: Favors.FavorType? = null): Entity(ctx) {
             val spaces by component { mutableListOf<Int>() }
             val rows by component { mutableListOf<Pair<Int, MutableList<Int?>>?>() }
                 // cubes in each row. Row 3 to [1, 2] means that player 3 has 1 cube, then 2 cubes in that row.
@@ -123,19 +135,23 @@ object AlchemistsDelegationGame {
                 return row.first to row.second[actionListIndex]!!
             }
 
-            fun resolveNext(playerIndex: Int) {
+            fun resolveNext(playerIndex: Int): Int {
                 val list = rows.first { it?.first == playerIndex }!!.second
-                list.remove(list.first { it != null })
+                val value = list.first { it != null }!!
+                list.remove(value)
+                return value
             }
             fun has(playerIndex: Int): Boolean {
                 val list = rows.find { it?.first == playerIndex }?.second ?: return false
                 return list.any { it != null }
             }
-            fun resolveNext() {
-                val index = nextIndex() ?: return
+            fun resolveNext(): Int {
+                val index = nextIndex()!!
                 val (rowIndex, actionListIndex) = index
                 val row = rows[rowIndex]!!
+                val count = row.second[actionListIndex]
                 row.second[actionListIndex] = null
+                return count!!
             }
 
             fun nextPlayerIndex(): Int? = this.next()?.first
@@ -189,7 +205,12 @@ object AlchemistsDelegationGame {
             }
             requires { action.parameter.chosen.sumOf { it.count } <= players[playerIndex].actionCubesAvailable }
             requires { action.parameter.chosen.groupBy { it.spot }.values.all { it.count { c -> c.associate } <= 1 } }
+            requires { players[playerIndex].favors.cards.count { it == Favors.FavorType.CUSTODIAN } >= action.parameter.chosen.count { it.spot == custodian } }
+            requires { action.parameter.chosen.all { it.spot.actionAvailable(playerIndex, action.parameter.chosen) != false } }
             perform {
+                for (i in 1..action.parameter.chosen.count { it.spot == custodian }) {
+                    players[playerIndex].favors.card(Favors.FavorType.CUSTODIAN).remove()
+                }
                 action.parameter.chosen.groupBy { it.spot }.forEach {
                     it.key.actionSpace.place(playerIndex, it.value)
                 }
@@ -203,7 +224,7 @@ object AlchemistsDelegationGame {
                         it.actionSpace.name to (it to it.actionSpace.nextCost(chosen))
                     }.filter {
                         it.second.second != null && it.second.second!! <= players[playerIndex].actionCubesAvailable - chosen.sumOf { c -> c.count }
-                    }}) { next ->
+                    }.filter { it.second.first.actionAvailable(playerIndex, chosen) == true } }) { next ->
                         if (game.players[playerIndex].favors.cards.contains(Favors.FavorType.ASSOCIATE)) {
                             optionsWithIds({ listOf("associate" to true, "no associate" to false) }) { useAssociate ->
                                 recursion(next) { acc, n -> acc + ActionChoice(n.first, n.second!!, useAssociate) }
@@ -224,9 +245,10 @@ object AlchemistsDelegationGame {
             }
         }
 
-        val favors by component { Favors.FavorDeck(this@Model, ctx) }
+        val favors by component { Favors.FavorDeck(ctx) }
         val ingredients by component { IngredientActions.Ingredients(this@Model, ctx) }
         val transmute by component { IngredientActions.Transmute(this@Model, ctx) }
+        val custodian by component { PotionActions.Custodian(this@Model, ctx) }
         val sellPotion by component { SellAction.SellHero(this@Model, ctx) }
         val buyArtifact by component { ArtifactActions.BuyArtifact(this@Model, ctx) }
         val debunkTheory by component { TheoryActions.DebunkTheory(this@Model, this.ctx) }
@@ -235,9 +257,18 @@ object AlchemistsDelegationGame {
         val testSelf by component { PotionActions.TestSelf(this@Model, ctx) }
         val exhibition by component { PotionActions.Exhibition(this@Model, this.ctx) }
         val theoryBoard by component { TheoryActions.TheoryBoard(this@Model, ctx) }
+        val cancelledActions by value { mutableListOf<Int>() }
+        fun cancelAction(space: HasAction) = action<Model, Unit>("cancel", Unit::class) {
+            precondition { playerIndex == space.actionSpace.nextPlayerIndex() }
+            perform {
+                val count = space.actionSpace.resolveNext()
+                for (i in 1..count) cancelledActions.add(playerIndex)
+                favors.favorsPlayed.cards.clear()
+            }
+        }
 
         val actionSpaces = listOf<HasAction>(
-            ingredients, transmute, sellPotion, buyArtifact,
+            ingredients, transmute, custodian, sellPotion, buyArtifact,
             debunkTheory, publishTheory, testStudent, testSelf,
             exhibition
         )
@@ -268,13 +299,13 @@ object AlchemistsDelegationGame {
                 game.sellPotion.reset()
                 step("round $round - turnPicker") {
                     enableAction(game.turnPicker.action)
-                    enableAction(game.favors.assistant)
                 }.loopUntil { game.players.indices.all { player -> game.turnPicker.options.any { it.chosenBy == player } } }
 
                 stateChecks(this)
 
                 step("round $round - placeActions") {
                     enableAction(game.actionPlacement)
+                    enableAction(game.favors.assistant)
                 }.loopUntil { game.turnPicker.options.all { it.chosenBy == null } }
 
                 for (space in game.actionSpaces) {
@@ -283,9 +314,13 @@ object AlchemistsDelegationGame {
                             enableAction(game.queue.first())
                         } else {
                             enableAction(space.action)
+                            enableAction(game.cancelAction(space))
+                            space.extraActions().forEach { enableAction(it) }
                         }
                     }.loopUntil {
-                        game.queue.isEmpty() && space.actionSpace.rows.all { it == null || it.second.all { i -> i == null } }
+                        action?.parameter !is Favors.FavorType
+                            && game.queue.isEmpty()
+                            && space.actionSpace.rows.all { it == null || it.second.all { i -> i == null } }
                     }
                 }
             }
