@@ -17,6 +17,7 @@ object AlchemistsDelegationGame {
         fun actionAvailable(): Boolean = true
     }
     class Model(override val ctx: Context) : Entity(ctx), ContextHolder {
+        val stack by component { mutableListOf<ActionDefinition<Model, Any>>() }
         val newRound by event(Int::class)
         var round by value { 0 }.changeOn(newRound) { event }
         val playerMixPotion by event(PotionActions.IngredientsMix::class)
@@ -125,6 +126,7 @@ object AlchemistsDelegationGame {
             var gold by component { 2 }
             var reputation by component { 10 }
             var hospital by component { 0 }
+            var artifacts by cards<ArtifactActions.Artifact>()
             val actionCubesAvailable by dynamicValue { this@Model.actionCubeCount - hospital }
             val ingredients by cards<Ingredient>()
                 .on(newRound) {
@@ -183,15 +185,15 @@ object AlchemistsDelegationGame {
             }
         }
 
+        val favors by component { Favors.FavorDeck(this@Model, ctx) }
         val ingredients by component { IngredientActions.Ingredients(this@Model, ctx) }
         val transmute by component { IngredientActions.Transmute(this@Model, ctx) }
-        val sellPotion by component { PotionActions.SellHero(this@Model, ctx) }
+        val sellPotion by component { SellAction.SellHero(this@Model, ctx) }
         val buyArtifact by component { ArtifactActions.BuyArtifact(this@Model, ctx) }
         val debunkTheory by component { TheoryActions.DebunkTheory(this@Model, this.ctx) }
         val publishTheory by component { TheoryActions.PublishTheory(this@Model, this.ctx) }
         val testStudent by component { PotionActions.TestStudent(this@Model, ctx) }
         val testSelf by component { PotionActions.TestSelf(this@Model, ctx) }
-
         val exhibition by component { PotionActions.Exhibition(this@Model, this.ctx) }
 
         val actionSpaces = listOf<HasAction>(
@@ -209,6 +211,7 @@ object AlchemistsDelegationGame {
             println("SOLUTION: " + game.alchemySolution)
             for (round in 1..6) {
                 game.newRound(this, round)
+                game.sellPotion.reset()
                 step("round $round - turnPicker") {
                     enableAction(game.turnPicker.action)
                 }.loopUntil { game.players.indices.all { player -> game.turnPicker.options.any { it.chosenBy == player } } }

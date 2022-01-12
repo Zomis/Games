@@ -4,7 +4,6 @@ import net.zomis.games.context.Context
 import net.zomis.games.context.Entity
 import net.zomis.games.dsl.ActionChoicesScope
 import net.zomis.games.dsl.GameSerializable
-import net.zomis.games.dsl.flow.ActionDefinition
 
 object PotionActions {
 
@@ -21,15 +20,6 @@ object PotionActions {
             }) {
                 recursion(it) { acc, i -> acc + i }
             }
-        }
-    }
-
-    class SellHero(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
-        override fun actionAvailable(): Boolean = model.round >= 2
-        override val actionSpace by component { model.ActionSpace(this.ctx, "Sell") }
-            .setup { it.initialize(listOf(2), playerCount) }
-        override val action by actionSerializable<AlchemistsDelegationGame.Model, IngredientsMix>("sell", IngredientsMix::class) {
-            // TODO: Discounts and stuff... can be kept as local variables
         }
     }
 

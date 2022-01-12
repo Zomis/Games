@@ -24,12 +24,6 @@ enum class AlchemistsSign(private val char: Char) {
     override fun toString(): String = char.toString()
 }
 enum class AlchemistsSize { BIG, SMALL }
-enum class AlchemistsSellResult(val price: Int) {
-    CORRECT_COLOR_AND_SIGN(4),
-    CORRECT_SIGN_WRONG_COLOR(3),
-    BLOCKED(2),
-    WRONG_SIGN(1)
-}
 data class AlchemistsProperty(val sign: AlchemistsSign, val size: AlchemistsSize) {
     fun mixWith(other: AlchemistsProperty): AlchemistsSign? {
         if (this.sign != other.sign) return null
@@ -142,6 +136,10 @@ object Alchemists {
         }
 
         fun findBestPotionMix() {
+            if (solutions.isEmpty()) {
+                println("No possibilities")
+                return
+            }
             val potions = possiblePotions()
             val best = mutableListOf<Pair<Ingredient, Ingredient>>()
             var bestScore: Double = solutions.size.toDouble()
@@ -279,7 +277,7 @@ object Alchemists {
 
         fun probabilities() = Ingredient.values().associate { it to probabilityOfIngredient(it) }
 
-        fun showProbabilities() {
+        fun showProbabilities(): Solutions {
             val probabilities = probabilities()
             println("\t\t\t" + Ingredient.values().map { it.toString().padStart(8) }.joinToString("\t"))
             for (chemical in alchemyValues) {
@@ -291,6 +289,7 @@ object Alchemists {
                     .map { it.padStart(8) }
                     .joinToString("\t"))
             }
+            return this
         }
 
         fun showBestImprovement() {
@@ -359,6 +358,11 @@ object Alchemists {
 
     class State {
         private val knowledge = mutableListOf<AlchemistsKnowledge>()
+        fun copy(): State {
+            val state = State()
+            state.knowledge.addAll(this.knowledge)
+            return state
+        }
 
         fun addKnowledge(knowledge: AlchemistsKnowledge) {
             this.knowledge.add(knowledge)

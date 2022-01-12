@@ -10,24 +10,24 @@ object ArtifactActions {
         val description: String,
         val level: Int,
         val cost: Int,
-        val victoryPoints: Int
+        val victoryPoints: Int?
     ): GameSerializable {
         override fun serialize(): String = name
     }
 
     val altarOfGold = Artifact("Altar of Gold", "Immediate effect: Pay 1 to 8 gold pieces. Gain that many points of reputation.", 3, 1, 0)
     val amuletOfRhetoric = Artifact("Amulet of Rhetoric", "Immediate effect: Gain 5 points of reputation.", 2, 4, 0)
-    val bootsOfSpeed = Artifact("Boots of Speed", "On an action space whee you have at least one cube, you can perform that action again after everyone is done. Limi once per round. Can't be used to Sell Potions.",
+    val bootsOfSpeed = Artifact("Boots of Speed", "On an action space where you have at least one cube, you can perform that action again after everyone is done. Limit once per round. Can't be used to Sell Potions.",
             1, 4, 2)
     val bronzeCup = Artifact("Bronze Cup", "This artifact has no special effect, but will earn you victory points.", 3, 4, 4)
-    val crystalCabinet = Artifact("Crystal Cabinet", "When scoring artifacts, this is worth 2 points for each artifact you own, including this one.", 3, 5, 0)
+    val crystalCabinet = Artifact("Crystal Cabinet", "When scoring artifacts, this is worth 2 points for each artifact you own, including this one.", 3, 5, null)
     val discountCard = Artifact("Discount Card", "Your next artifact costs 2 gold less. After that, artifacts cost you 1 gold less.", 1, 3, 1)
     val featherInCap =
-        Artifact("Feather in Cap", "During the exhibition: Set aside ingredients from potions you demonstrate successfully. When scoring artifacts, this cap is worth 1 point for each type of ingredient set aside.", 3, 3, 0)
+        Artifact("Feather in Cap", "During the exhibition: Set aside ingredients from potions you demonstrate successfully. When scoring artifacts, this cap is worth 1 point for each type of ingredient set aside.", 3, 3, null)
     val hypnoticAmulet =
         Artifact("Hypnotic Amulet", "Immediate effect: Draw 4 favor cards.", 2, 3, 1)
     val magicMirror =
-        Artifact("Magic Mirror", "When scoring artifacts, this is worth 1 victory point for every 5 reputation points you had at the end of the final round.", 3, 4, 0)
+        Artifact("Magic Mirror", "When scoring artifacts, this is worth 1 victory point for every 5 reputation points you had at the end of the final round.", 3, 4, null)
     val magicMortar = Artifact("Magic Mortar", "When you mix a potion, discard only one of the ingredients. A colleague chooses it randomly.", 1, 3, 1)
     val periscope = Artifact("Periscope", "Immediately after a colleague sells or tests a potion, you may look at one of the ingredients. Choose It randomly. Limit once per round.", 1, 3, 1)
     val printingPress =
@@ -41,15 +41,83 @@ object ArtifactActions {
     val thinkingCap =
         Artifact("Thinking Cap", "Immediate effect: Test up to two separate pairs of ingredients in you hand. Do not discard them.", 2, 4, 1)
     val wisdomIdol =
-        Artifact("Wisdom Idol", "At the end of the game, Wisdom Idol is worth 1 point for each seal you have on a correct theory.", 3, 4, 0)
+        Artifact("Wisdom Idol", "At the end of the game, Wisdom Idol is worth 1 point for each seal you have on a correct theory.", 3, 4, null)
     val witchTrunk =
         Artifact("Witch's Trunk", "Immediate effect: Draw 7 ingredients. | You no longer draw ingredients when choosing play order.", 2, 3, 2)
+    val artifacts: List<Artifact> = listOf(
+        altarOfGold,
+        amuletOfRhetoric,
+        bootsOfSpeed,
+        bronzeCup,
+        discountCard,
+        crystalCabinet,
+        featherInCap,
+        hypnoticAmulet,
+        magicMirror,
+        magicMortar,
+        periscope,
+        printingPress,
+        robeOfRespect,
+        sealOfAuthority,
+        silverChalice,
+        thinkingCap,
+        wisdomIdol,
+        witchTrunk
+    )
 
-    class BuyArtifact(model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
+    class BuyArtifact(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
+        var usedDiscountCard = false
+        var usedPeriscope = false
+        var usedBootsOfSpeed: Boolean = false
+
+        fun goldModifier(playerIndex: Int): Int = when {
+            model.players[playerIndex].artifacts.cards.contains(discountCard) -> if (usedDiscountCard) -1 else -2
+            else -> 0
+        }
+        val artifactsInGame by cards<Artifact>()
+            .setup { zone ->
+                for (level in 1..3) {
+                    zone.cards.addAll(replayable.randomFromList("artifacts-$level", artifacts.filter { it.level == level }, 3) { a -> a.name })
+                }
+                zone
+            }
+        val forSale by cards<Artifact>()
+            .on(model.newRound) {
+                val artifactsLevel = when (event) {
+                    1 -> 1
+                    4 -> 2
+                    6 -> 3
+                    else -> null
+                }
+                if (artifactsLevel != null) {
+                    value.cards.clear()
+                    artifactsInGame.asSequence().filter { it.card.level == 3 }.forEach { it.moveTo(value) }
+                }
+            }
+
         override val actionSpace by component { model.ActionSpace(this.ctx, "BuyArtifacts") }
             .setup { it.initialize(listOf(1, 2), playerCount) }
         override val action by actionSerializable<AlchemistsDelegationGame.Model, Artifact>("buyArtifact", Artifact::class) {
-
+            precondition { playerIndex == actionSpace.nextPlayerIndex() }
+            requires { game.players[playerIndex].gold >= action.parameter.cost - goldModifier(playerIndex) }
+            options { forSale.cards }
+            perform {
+                actionSpace.resolveNext()
+                game.players[playerIndex].gold -= action.parameter.cost - goldModifier(playerIndex)
+                forSale.card(action.parameter).moveTo(game.players[playerIndex].artifacts)
+            }
+            perform {
+                val player = game.players[playerIndex]
+                when (action.parameter) {
+                    altarOfGold -> TODO() // Immediate effect: Pay 1 to 8 gold pieces. Gain that many points of reputation
+                    amuletOfRhetoric -> player.reputation += 5
+                    hypnoticAmulet -> TODO() // Immediate effect: Draw 4 favor cards
+                    thinkingCap -> TODO() // Immediate effect: Test up to two separate pairs of ingredients in you hand. Do not discard them
+                    witchTrunk -> {
+                        game.ingredients.deck.random(replayable, 7, "ingredients") { it.toString() }.forEach { it.moveTo(player.ingredients) }
+                    }
+                }
+            }
         }
     }
 
