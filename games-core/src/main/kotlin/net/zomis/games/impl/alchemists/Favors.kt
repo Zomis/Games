@@ -1,6 +1,5 @@
 package net.zomis.games.impl.alchemists
 
-import net.zomis.games.common.PlayerIndex
 import net.zomis.games.common.times
 import net.zomis.games.common.toSingleList
 import net.zomis.games.context.Context
@@ -41,9 +40,23 @@ object Favors {
                 game.players[playerIndex].extraCubes++
             }
         }
-//        val herbalistDiscard by actionSerializable<AlchemistsDelegationGame.Model, Ingredient>("discard", Ingredient::class) {
-//            precondition { game.players }
-//        }
+        val herbalistDiscard by actionSerializable<AlchemistsDelegationGame.Model, PotionActions.IngredientsMix>("discard", PotionActions.IngredientsMix::class) {
+            precondition { game.players[playerIndex].favors.cards.contains(FavorType.HERBALIST) }
+            choose {
+                recursive(emptyList<Ingredient>()) {
+                    until { chosen.size == 2 }
+                    parameter { PotionActions.IngredientsMix(playerIndex, chosen[0] to chosen[1]) }
+                    optionsWithIds({ game.players[playerIndex].ingredients.cards.distinct().map { it.serialize() to it } }) {
+                        recursion(it) { acc, next -> acc + next }
+                    }
+                }
+            }
+            perform {
+                game.players[playerIndex].favors.cards.remove(FavorType.HERBALIST)
+                game.players[playerIndex].ingredients.cards.remove(action.parameter.ingredients.first)
+                game.players[playerIndex].ingredients.cards.remove(action.parameter.ingredients.second)
+            }
+        }
 
         val deck by cards(FavorType.values().flatMap { it.toSingleList().times(it.count) }.toMutableList())
             .publicView { it.size }

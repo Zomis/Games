@@ -10,7 +10,7 @@ enum class Ingredient(private val char: Char): GameSerializable {
     BLUE_FLOWER('E'), GRAY_TREE('F'), RED_SCORPION('G'), BLACK_FEATHER('H'),
     ;
     override fun toString(): String = char.toString()
-    override fun serialize(): Any = toString()
+    override fun serialize(): String = char.toString()
 }
 enum class AlchemistsColor(private val char: Char) {
     RED('R'), GREEN('G'), BLUE('B');

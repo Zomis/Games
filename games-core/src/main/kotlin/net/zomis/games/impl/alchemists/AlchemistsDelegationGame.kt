@@ -10,6 +10,7 @@ import net.zomis.games.context.Entity
 import net.zomis.games.dsl.GameConfig
 import net.zomis.games.dsl.GameSerializable
 import net.zomis.games.dsl.flow.ActionDefinition
+import net.zomis.games.dsl.flow.GameFlowScope
 import kotlin.random.Random
 
 object AlchemistsDelegationGame {
@@ -20,7 +21,7 @@ object AlchemistsDelegationGame {
     }
     class Model(override val ctx: Context, master: GameConfig<Boolean>) : Entity(ctx), ContextHolder {
         val master by value { false }.setup { config(master) }
-        val stack by component { mutableListOf<ActionDefinition<Model, Any>>() }
+        val queue by component { mutableListOf<ActionDefinition<Model, Any>>() }
         val newRound by event(Int::class)
         val gameInit by event(Unit::class)
         var round by value { 0 }.changeOn(newRound) { event }
@@ -122,6 +123,14 @@ object AlchemistsDelegationGame {
                 return row.first to row.second[actionListIndex]!!
             }
 
+            fun resolveNext(playerIndex: Int) {
+                val list = rows.first { it?.first == playerIndex }!!.second
+                list.remove(list.first { it != null })
+            }
+            fun has(playerIndex: Int): Boolean {
+                val list = rows.find { it?.first == playerIndex }?.second ?: return false
+                return list.any { it != null }
+            }
             fun resolveNext() {
                 val index = nextIndex() ?: return
                 val (rowIndex, actionListIndex) = index
@@ -232,7 +241,14 @@ object AlchemistsDelegationGame {
             debunkTheory, publishTheory, testStudent, testSelf,
             exhibition
         )
+    }
 
+    suspend fun stateChecks(scope: GameFlowScope<Model>) {
+        if (scope.game.queue.isNotEmpty()) {
+            scope.step("empty queue") {
+                enableAction(scope.game.queue[0])
+            }.loopUntil { scope.game.queue.isEmpty() }
+        }
     }
 
     val game = GamesApi.gameContext("Alchemists", Model::class) {
@@ -245,6 +261,7 @@ object AlchemistsDelegationGame {
             step("choose favors") {
                 enableAction(game.favors.chooseFavor)
             }.loopUntil { game.favors.playersDiscardingSetupFavor.isEmpty() }
+            stateChecks(this)
 
             for (round in 1..6) {
                 game.newRound(this, round)
@@ -254,15 +271,21 @@ object AlchemistsDelegationGame {
                     enableAction(game.favors.assistant)
                 }.loopUntil { game.players.indices.all { player -> game.turnPicker.options.any { it.chosenBy == player } } }
 
+                stateChecks(this)
+
                 step("round $round - placeActions") {
                     enableAction(game.actionPlacement)
                 }.loopUntil { game.turnPicker.options.all { it.chosenBy == null } }
 
                 for (space in game.actionSpaces) {
                     step("resolve round $round ${space.actionSpace.name}") {
-                        enableAction(space.action)
+                        if (game.queue.isNotEmpty()) {
+                            enableAction(game.queue.first())
+                        } else {
+                            enableAction(space.action)
+                        }
                     }.loopUntil {
-                        space.actionSpace.rows.all { it == null || it.second.all { i -> i == null } }
+                        game.queue.isEmpty() && space.actionSpace.rows.all { it == null || it.second.all { i -> i == null } }
                     }
                 }
             }

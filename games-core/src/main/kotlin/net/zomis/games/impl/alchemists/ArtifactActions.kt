@@ -3,6 +3,7 @@ package net.zomis.games.impl.alchemists
 import net.zomis.games.context.Context
 import net.zomis.games.context.Entity
 import net.zomis.games.dsl.GameSerializable
+import net.zomis.games.dsl.flow.ActionDefinition
 
 object ArtifactActions {
     data class Artifact(
@@ -108,11 +109,46 @@ object ArtifactActions {
             }
             perform {
                 val player = game.players[playerIndex]
+                val buyAction = action
                 when (action.parameter) {
-                    altarOfGold -> TODO() // Immediate effect: Pay 1 to 8 gold pieces. Gain that many points of reputation
+                    altarOfGold -> {
+                        // Immediate effect: Pay 1 to 8 gold pieces. Gain that many points of reputation
+                        game.queue.add(action<AlchemistsDelegationGame.Model, Int>("altarOfGold", Int::class) {
+                            precondition { playerIndex == buyAction.playerIndex }
+                            options { 1..8 }
+                            requires { game.players[playerIndex].gold >= action.parameter }
+                            perform {
+                                game.players[playerIndex].gold -= action.parameter
+                                game.players[playerIndex].reputation += action.parameter
+                            }
+                        } as ActionDefinition<AlchemistsDelegationGame.Model, Any>)
+                    }
                     amuletOfRhetoric -> player.reputation += 5
-                    hypnoticAmulet -> TODO() // Immediate effect: Draw 4 favor cards
-                    thinkingCap -> TODO() // Immediate effect: Test up to two separate pairs of ingredients in you hand. Do not discard them
+                    hypnoticAmulet -> {
+                        // Immediate effect: Draw 4 favor cards
+                        game.favors.deck.random(replayable, 4, "hypnoticAmulet") { it.name }.forEach {
+                            if (it.card == Favors.FavorType.HERBALIST) {
+                                game.queue.add(game.favors.herbalistDiscard as ActionDefinition<AlchemistsDelegationGame.Model, Any>)
+                            }
+                            it.moveTo(game.players[playerIndex].favors)
+                        }
+                    }
+                    thinkingCap -> {
+                        // Immediate effect: Test up to two separate pairs of ingredients in you hand. Do not discard them
+                        val freeTest = actionSerializable<AlchemistsDelegationGame.Model, PotionActions.IngredientsMix>("freeTest", PotionActions.IngredientsMix::class) {
+                            precondition { playerIndex == buyAction.playerIndex }
+                            choose {
+                                PotionActions.chooseIngredients(this)
+                            }
+                            perform {
+                                val result = game.alchemySolution.mixPotion(action.parameter.ingredients)
+                                logSecret(playerIndex) { "$player mixed ingredients ${action.ingredients.toList()} and got result $result" }
+                                    .publicLog { "$player tested a pair of ingredients and got $result" }
+                            }
+                        } as ActionDefinition<AlchemistsDelegationGame.Model, Any>
+                        game.queue.add(freeTest)
+                        game.queue.add(freeTest)
+                    }
                     witchTrunk -> {
                         game.ingredients.deck.random(replayable, 7, "ingredients") { it.toString() }.forEach { it.moveTo(player.ingredients) }
                     }
