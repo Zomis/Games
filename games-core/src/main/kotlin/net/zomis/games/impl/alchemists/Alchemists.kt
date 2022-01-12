@@ -2,13 +2,15 @@ package net.zomis.games.impl.alchemists
 
 import net.zomis.games.cards.probabilities.Combinatorics
 import net.zomis.games.common.toPercent
+import net.zomis.games.dsl.GameSerializable
 import kotlin.math.round
 
-enum class Ingredient(private val char: Char) {
+enum class Ingredient(private val char: Char): GameSerializable {
     PURPLE_MUSHROOM('A'), GREEN_PLANT('B'), BROWN_FROG('C'), YELLOW_CHICKEN_LEG('D'),
     BLUE_FLOWER('E'), GRAY_TREE('F'), RED_SCORPION('G'), BLACK_FEATHER('H'),
     ;
     override fun toString(): String = char.toString()
+    override fun serialize(): Any = toString()
 }
 enum class AlchemistsColor(private val char: Char) {
     RED('R'), GREEN('G'), BLUE('B');
@@ -173,19 +175,19 @@ object Alchemists {
             best.forEach { println(it) }
         }
 
-        data class SellAnalyze(val probability: Double, val guarantee: AlchemistsSellResult, val expectedGold: Double) {
+        data class SellAnalyze(val probability: Double, val guarantee: SellAction.SellResult, val expectedGold: Double) {
             override fun toString(): String = "($probability, $guarantee, $expectedGold gold)"
         }
         private fun sellAnalyze(a: Ingredient, b: Ingredient, request: AlchemistsPotion): String {
             if (request == blocked) return ""
             var weightedRemains = 0.0
-            for (sellResult in AlchemistsSellResult.values()) {
+            for (sellResult in SellAction.SellResult.values()) {
                 val remains = this.weightedRemains { it.sellPotion(a, b, request) == sellResult }
                 weightedRemains += remains.probability * remains.count
             }
 
-            val reward = AlchemistsSellResult.values().map { guarantee ->
-                val betterOrEqual = AlchemistsSellResult.values().filter { it.price >= guarantee.price }
+            val reward = SellAction.SellResult.values().map { guarantee ->
+                val betterOrEqual = SellAction.SellResult.values().filter { it.price >= guarantee.price }
                 val allRemains = betterOrEqual.map {result ->
                     weightedRemains { it.sellPotion(a, b, request) == result }
                 }
@@ -228,7 +230,7 @@ object Alchemists {
             // Find out which one is more likely to give money
 
             val ingredients = Ingredient.values().toList()
-            val sellResults = AlchemistsSellResult.values().toList()
+            val sellResults = SellAction.SellResult.values().toList()
             var qualityBest = 0 to mutableListOf<Pair<Ingredient, Ingredient>>()
             var solutionsBest = solutions.size to mutableListOf<Pair<Ingredient, Ingredient>>()
             for ((a, b) in ingredientCombinations()) {
@@ -335,13 +337,13 @@ object Alchemists {
             return actual == expected
         }
 
-        fun sellPotion(ingredient: Ingredient, other: Ingredient, request: AlchemistsPotion): AlchemistsSellResult {
+        fun sellPotion(ingredient: Ingredient, other: Ingredient, request: AlchemistsPotion): SellAction.SellResult {
             val actual = valueOf(ingredient).mixWith(valueOf(other))
             return when {
-                actual.color == null && actual.sign == null -> AlchemistsSellResult.BLOCKED
-                actual.color == request.color && actual.sign == request.sign -> AlchemistsSellResult.CORRECT_COLOR_AND_SIGN
-                actual.sign == request.sign -> AlchemistsSellResult.CORRECT_SIGN_WRONG_COLOR
-                else -> AlchemistsSellResult.WRONG_SIGN
+                actual.color == null && actual.sign == null -> SellAction.SellResult.BLOCKED
+                actual.color == request.color && actual.sign == request.sign -> SellAction.SellResult.CORRECT_COLOR_AND_SIGN
+                actual.sign == request.sign -> SellAction.SellResult.CORRECT_SIGN_WRONG_COLOR
+                else -> SellAction.SellResult.WRONG_SIGN
             }
         }
         fun ingredientIs(ingredient: Ingredient, chemical: AlchemistsChemical): Boolean = valueOf(ingredient) == chemical
@@ -354,7 +356,7 @@ object Alchemists {
     data class AlchemistsKnowledge(val ingredient: Ingredient, val other: Ingredient, val result: AlchemistsPotion) {
         override fun toString(): String = "$ingredient + $other => $result"
     }
-    class AlchemistsPotionSell(val ingredient: Ingredient, val other: Ingredient, val promise: AlchemistsPotion, val result: AlchemistsSellResult)
+    class AlchemistsPotionSell(val ingredient: Ingredient, val other: Ingredient, val promise: AlchemistsPotion, val result: SellAction.SellResult)
 
     class State {
         private val knowledge = mutableListOf<AlchemistsKnowledge>()

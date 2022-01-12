@@ -7,6 +7,29 @@ import net.zomis.games.dsl.GameSerializable
 
 object SellAction {
 
+    enum class SellResult(val price: Int) {
+        CORRECT_COLOR_AND_SIGN(4),
+        CORRECT_SIGN_WRONG_COLOR(3),
+        BLOCKED(2),
+        WRONG_SIGN(1)
+    }
+
+    enum class Guarantee(val level: Int) {
+        WRONG_SIGN(0),
+        BLOCKED(1),
+        SAME_COLOR(2),
+        EXACT_MATCH(3);
+
+        fun result(request: AlchemistsPotion, result: AlchemistsPotion): SellResult {
+            return when {
+                result.blocked -> SellResult.BLOCKED
+                result.sign != request.sign -> SellResult.WRONG_SIGN
+                result.color != request.color -> SellResult.CORRECT_SIGN_WRONG_COLOR
+                else -> SellResult.CORRECT_COLOR_AND_SIGN
+            }
+        }
+    }
+
     data class Hero(val requests: List<AlchemistsPotion>)
     class SellHero(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
         val heroes by component { mutableListOf<Hero>() }
@@ -20,34 +43,12 @@ object SellAction {
                     Hero(listOf(Alchemists.red.plus, Alchemists.green.plus, Alchemists.blue.minus)),
                     Hero(listOf(Alchemists.green.plus, Alchemists.blue.plus, Alchemists.red.minus))
                 )
-                replayable.randomFromList("heroes", heroes, 5) { hero -> hero.requests.map { req -> req.textRepresentation }.joinToString("") }
+                it.addAll(replayable.randomFromList("heroes", heroes, 5) { hero -> hero.requests.map { req -> req.textRepresentation }.joinToString("") })
                 it
             }.on(model.newRound) {
                 if (event >= 2) value.removeFirst()
             }.publicView { it.take(if (model.round == 1) 1 else 2) }
 
-        enum class SellResult(val price: Int) {
-            CORRECT_COLOR_AND_SIGN(4),
-            CORRECT_SIGN_WRONG_COLOR(3),
-            BLOCKED(2),
-            WRONG_SIGN(1)
-        }
-
-        enum class Guarantee(val level: Int) {
-            WRONG_SIGN(0),
-            BLOCKED(1),
-            SAME_COLOR(2),
-            EXACT_MATCH(3);
-
-            fun result(request: AlchemistsPotion, result: AlchemistsPotion): SellResult {
-                return when {
-                    result.blocked -> SellResult.BLOCKED
-                    result.sign != request.sign -> SellResult.WRONG_SIGN
-                    result.color != request.color -> SellResult.CORRECT_SIGN_WRONG_COLOR
-                    else -> SellResult.CORRECT_COLOR_AND_SIGN
-                }
-            }
-        }
         class SellAction(var discount: Int?, var ingredients: PotionActions.IngredientsMix?, val guarantee: Guarantee?, val slot: Int?):
             GameSerializable {
             override fun serialize(): String = "$discount/${ingredients?.serialize()}/${guarantee?.level}/$slot"

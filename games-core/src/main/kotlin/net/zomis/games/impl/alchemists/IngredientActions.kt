@@ -36,7 +36,7 @@ object IngredientActions {
 
     class Transmute(model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
         override val actionSpace by component { model.ActionSpace(this.ctx, "Transmute") }.setup { it.initialize(listOf(1, 2), playerCount) }
-        override val action by action<AlchemistsDelegationGame.Model, Ingredient>("transmute", Ingredient::class) {
+        override val action by actionSerializable<AlchemistsDelegationGame.Model, Ingredient>("transmute", Ingredient::class) {
             precondition { playerIndex == actionSpace.nextPlayerIndex() }
             options { game.players[playerIndex].ingredients.cards.distinct() }
             perform {

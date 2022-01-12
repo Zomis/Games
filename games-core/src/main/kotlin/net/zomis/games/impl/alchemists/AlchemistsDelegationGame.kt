@@ -7,8 +7,10 @@ import net.zomis.games.common.next
 import net.zomis.games.context.Context
 import net.zomis.games.context.ContextHolder
 import net.zomis.games.context.Entity
+import net.zomis.games.dsl.GameConfig
 import net.zomis.games.dsl.GameSerializable
 import net.zomis.games.dsl.flow.ActionDefinition
+import kotlin.random.Random
 
 object AlchemistsDelegationGame {
     interface HasAction {
@@ -16,9 +18,11 @@ object AlchemistsDelegationGame {
         val action: ActionDefinition<Model, *>
         fun actionAvailable(): Boolean = true
     }
-    class Model(override val ctx: Context) : Entity(ctx), ContextHolder {
+    class Model(override val ctx: Context, master: GameConfig<Boolean>) : Entity(ctx), ContextHolder {
+        val master by value { false }.setup { config(master) }
         val stack by component { mutableListOf<ActionDefinition<Model, Any>>() }
         val newRound by event(Int::class)
+        val gameInit by event(Unit::class)
         var round by value { 0 }.changeOn(newRound) { event }
         val playerMixPotion by event(PotionActions.IngredientsMix::class)
         val solution by component { emptyList<Ingredient>() }
@@ -82,16 +86,22 @@ object AlchemistsDelegationGame {
                 return this
             }
 
-            fun nextCost(chosen: List<Pair<HasAction, Int>>): Int? {
-                val spacesLeft = chosen.filter { it.first.actionSpace == this }.map { it.second }.fold(spaces) { acc, next -> acc.minusElement(next).toMutableList() }
+            fun nextCost(chosen: List<ActionChoice>): Int? {
+                val spacesLeft = chosen.filter { it.spot.actionSpace == this }.map { it.count }.fold(spaces) { acc, next -> acc.minusElement(next).toMutableList() }
                 return spacesLeft.firstOrNull()
             }
 
-            fun place(playerIndex: Int, cubes: List<Int?>) {
+            fun place(playerIndex: Int, choice: List<ActionChoice>) {
+                val cubes = choice.map { it.count }
                 val spacesLeft = this.spaces.toMutableList()
                 check(spacesLeft.take(cubes.size) == cubes)
-                val rowIndex = rows.lastIndexOf(null)
-                rows[rowIndex] = playerIndex to cubes.toMutableList()
+                if (choice.any { it.associate }) {
+                    rows.add(0, playerIndex to cubes.toMutableList())
+                    rows.removeAt(rows.indexOf(null))
+                } else {
+                    val rowIndex = rows.lastIndexOf(null)
+                    rows[rowIndex] = playerIndex to cubes.toMutableList()
+                }
             }
 
             private fun nextIndex(): Pair<Int, Int>? {
@@ -122,56 +132,76 @@ object AlchemistsDelegationGame {
             fun nextPlayerIndex(): Int? = this.next()?.first
         }
 
-        inner class Player(ctx: Context, val playerIndex: Int): Entity(ctx) {
+        inner class Player(val model: Model, ctx: Context, val playerIndex: Int): Entity(ctx) {
             var gold by component { 2 }
             var reputation by component { 10 }
-            var hospital by component { 0 }
-            var artifacts by cards<ArtifactActions.Artifact>()
-            val actionCubesAvailable by dynamicValue { this@Model.actionCubeCount - hospital }
+            var extraCubes by component { 0 }
+            var artifacts by cards<ArtifactActions.Artifact>().publicView { it.cards }
+            val favors by cards<Favors.FavorType>().privateView(playerIndex) { it.cards }.publicView { it.size }
+                .setup { myFavors ->
+                    model.favors.deck.random(replayable, 2, "favors-$playerIndex") { it.serialize() }.forEach { it.moveTo(myFavors) }
+                    myFavors
+                }
+            val seals by cards<TheoryActions.Seal>().privateView(playerIndex) { it.cards }
+            val actionCubesAvailable by dynamicValue { this@Model.actionCubeCount + extraCubes }
             val ingredients by cards<Ingredient>()
-                .on(newRound) {
-                    if (event == 1) this@Model.ingredients.deck.random(replayable, 3, "startingIngredients-$playerIndex") { it.toString() }
+                .on(gameInit) {
+                    val startingIngredients = if (master) 2 else 3
+                    model.ingredients.deck.random(replayable, startingIngredients, "startingIngredients-$playerIndex") { it.toString() }
                         .forEach { it.moveTo(value) }
                 }
                 .on(playerMixPotion) {
                     if (playerIndex == event.playerIndex) {
-                        value.cards.remove(event.ingredients.first)
-                        value.cards.remove(event.ingredients.second)
+                        val discardIndices = if (artifacts.cards.contains(ArtifactActions.magicMortar))
+                                listOf(replayable.int("discardIndex") { Random.Default.nextInt(0, 2) })
+                            else listOf(0, 1)
+                        discardIndices.forEach {
+                            value.cards.remove(event.ingredients.toList()[it])
+                        }
                     }
                 }
                 .privateView(playerIndex) { it.cards }
                 .publicView { it.size }
         }
 
-        val players by playerComponent { Player(ctx, it) }
+        val players by playerComponent { Player(this@Model, ctx, it) }
         val startingPlayer by playerReference { 0 }
             .setup { replayable.int("startingPlayer") { (0 until playerCount).random() } }
             .on(newRound) { value.next(players.size) }
 
-        data class ActionPlacement(val chosen: List<Pair<HasAction, Int>>): GameSerializable {
-            override fun serialize(): Any = chosen.map { it.first.actionSpace.name }
+        data class ActionChoice(val spot: HasAction, val count: Int, val associate: Boolean)
+        data class ActionPlacement(val chosen: List<ActionChoice>): GameSerializable {
+            override fun serialize(): Any = chosen.map { "${it.associate}/${it.spot.actionSpace.name}" }
         }
+        fun nextPlayer(): Int? = turnPicker.options.last { it.chosenBy != null }.chosenBy
         val actionPlacement by actionSerializable<Model, ActionPlacement>("action", ActionPlacement::class) {
             precondition {
-                playerIndex == turnPicker.options.last { it.chosenBy != null }.chosenBy
+                playerIndex == nextPlayer()
             }
-            requires { action.parameter.chosen.sumOf { it.second } <= players[playerIndex].actionCubesAvailable }
+            requires { action.parameter.chosen.sumOf { it.count } <= players[playerIndex].actionCubesAvailable }
+            requires { action.parameter.chosen.groupBy { it.spot }.values.all { it.count { c -> c.associate } <= 1 } }
             perform {
-                action.parameter.chosen.groupBy { it.first }.mapValues { it.value.map { p -> p.second } }.forEach {
+                action.parameter.chosen.groupBy { it.spot }.forEach {
                     it.key.actionSpace.place(playerIndex, it.value)
                 }
                 turnPicker.options.first { it.chosenBy == playerIndex }.chosenBy = null
             }
             choose {
-                recursive(emptyList<Pair<HasAction, Int>>()) {
+                recursive(emptyList<ActionChoice>()) {
                     parameter { ActionPlacement(chosen) }
-                    until { this.chosen.sumOf { it.second } == players[playerIndex].actionCubesAvailable }
+                    until { this.chosen.sumOf { it.count } == players[playerIndex].actionCubesAvailable }
                     optionsWithIds({ actionSpaces.map {
                         it.actionSpace.name to (it to it.actionSpace.nextCost(chosen))
                     }.filter {
-                        it.second.second != null && it.second.second!! <= players[playerIndex].actionCubesAvailable - chosen.sumOf { c -> c.second }
+                        it.second.second != null && it.second.second!! <= players[playerIndex].actionCubesAvailable - chosen.sumOf { c -> c.count }
                     }}) { next ->
-                        recursion(next) { acc, n -> acc + (n.first to n.second!!) }
+                        if (game.players[playerIndex].favors.cards.contains(Favors.FavorType.ASSOCIATE)) {
+                            optionsWithIds({ listOf("associate" to true, "no associate" to false) }) { useAssociate ->
+                                recursion(next) { acc, n -> acc + ActionChoice(n.first, n.second!!, useAssociate) }
+                            }
+                        } else {
+                            recursion(next) { acc, n -> acc + ActionChoice(n.first, n.second!!, false) }
+                        }
                     }
                 }
             }
@@ -195,6 +225,7 @@ object AlchemistsDelegationGame {
         val testStudent by component { PotionActions.TestStudent(this@Model, ctx) }
         val testSelf by component { PotionActions.TestSelf(this@Model, ctx) }
         val exhibition by component { PotionActions.Exhibition(this@Model, this.ctx) }
+        val theoryBoard by component { TheoryActions.TheoryBoard(this@Model, ctx) }
 
         val actionSpaces = listOf<HasAction>(
             ingredients, transmute, sellPotion, buyArtifact,
@@ -205,15 +236,22 @@ object AlchemistsDelegationGame {
     }
 
     val game = GamesApi.gameContext("Alchemists", Model::class) {
+        val master = config("master") { false }
         players(2..4)
-        init { Model(ctx) }
+        init { Model(ctx, master) }
         gameFlow {
             println("SOLUTION: " + game.alchemySolution)
+            game.gameInit.invoke(this, Unit)
+            step("choose favors") {
+                enableAction(game.favors.chooseFavor)
+            }.loopUntil { game.favors.playersDiscardingSetupFavor.isEmpty() }
+
             for (round in 1..6) {
                 game.newRound(this, round)
                 game.sellPotion.reset()
                 step("round $round - turnPicker") {
                     enableAction(game.turnPicker.action)
+                    enableAction(game.favors.assistant)
                 }.loopUntil { game.players.indices.all { player -> game.turnPicker.options.any { it.chosenBy == player } } }
 
                 step("round $round - placeActions") {

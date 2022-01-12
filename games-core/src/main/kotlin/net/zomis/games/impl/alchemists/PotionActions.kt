@@ -70,7 +70,7 @@ object PotionActions {
                     when (result.color) {
                         AlchemistsColor.BLUE -> game.players[playerIndex].reputation--
                         AlchemistsColor.GREEN -> game.turnPicker.options.firstOrNull { it.chosenBy == null && !it.choosable }?.chosenBy = playerIndex
-                        AlchemistsColor.RED -> game.players[playerIndex].hospital++
+                        AlchemistsColor.RED -> game.players[playerIndex].extraCubes--
                         else -> throw IllegalStateException("Unexpected potion: $result")
                     }
                 }
