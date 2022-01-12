@@ -130,7 +130,7 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
             "perform" -> {
                 val actionTypeName = node["actionType"].asText()
                 val actionParameterAny = mapper.convertValue(node["action"], Any::class.java)
-                val actionType = replayable.game.actions.type(actionTypeName)!!
+                val actionType = replayable.game.actions.type(actionTypeName) ?: throw IllegalStateException("No such actionType found: '$actionTypeName'")
                 val actionParameterSerialized = mapper.convertValue(actionParameterAny, actionType.actionType.serializedType.java)
                 val actionable = actionType.createActionFromSerialized(node["playerIndex"].asInt(), actionParameterSerialized)
                 val state = if (node.has("state")) mapper.convertValue(node["state"], object : TypeReference<Map<String, Any>>() {}) else emptyMap()
