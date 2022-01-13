@@ -25,6 +25,7 @@ object AlchemistsDelegationGame {
         val queue by component { mutableListOf<ActionDefinition<Model, Any>>() }
         val newRound by event(Int::class)
         val gameInit by event(Unit::class)
+        val spaceDone by event(HasAction::class)
         var round by value { 0 }.changeOn(newRound) { event }
         val playerMixPotion by event(PotionActions.IngredientsMix::class)
         val solution by component { emptyList<Ingredient>() }
@@ -77,7 +78,7 @@ object AlchemistsDelegationGame {
                                 game.ingredients.deck.random(replayable, 3, "herbalist") { it.serialize() }.forEach {
                                     it.moveTo(game.players[playerIndex].ingredients)
                                 }
-                                game.queue.add(game.favors.herbalistDiscard as ActionDefinition<AlchemistsDelegationGame.Model, Any>)
+                                game.queue.add(game.favors.herbalistDiscard as ActionDefinition<Model, Any>)
                             }
                             favor.moveTo(game.players[playerIndex].favors)
                         }
@@ -322,6 +323,7 @@ object AlchemistsDelegationGame {
                             && game.queue.isEmpty()
                             && space.actionSpace.rows.all { it == null || it.second.all { i -> i == null } }
                     }
+                    game.spaceDone.invoke(this, space)
                 }
             }
         }

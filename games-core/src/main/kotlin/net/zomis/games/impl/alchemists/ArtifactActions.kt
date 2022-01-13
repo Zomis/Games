@@ -82,20 +82,51 @@ object ArtifactActions {
                     zone.cards.addAll(replayable.randomFromList("artifacts-$level", artifacts.filter { it.level == level }, 3) { a -> a.name })
                 }
                 zone
+            }.on(model.playerMixPotion) {
+                val playerWithPeriscope = model.players.find { it.artifacts.cards.contains(periscope) } ?: return@on
+                if (usedPeriscope || playerWithPeriscope.playerIndex == event.playerIndex) return@on
+                model.queue.add(action<AlchemistsDelegationGame.Model, Boolean>("periscope", Boolean::class) {
+                    precondition { playerIndex == playerWithPeriscope.playerIndex }
+                    options { listOf(false, true) }
+                    perform {
+                        game.queue.removeAt(0)
+                        if (!action.parameter) return@perform
+                        usedPeriscope = true
+                        val ingredient =
+                            replayable.randomFromList("periscope", event.ingredients.toList(), 1) { it.serialize() }
+                                .single()
+                        val potion = game.alchemySolution.mixPotion(event.ingredients)
+                        log { "${player(event.playerIndex)} used $ingredient to mix ${potion.textRepresentation}" }
+                    }
+                } as ActionDefinition<AlchemistsDelegationGame.Model, Any>)
+            }.on(model.spaceDone) {
+                if (usedBootsOfSpeed) return@on
+                val playerWithBoots = model.players.find { it.artifacts.cards.contains(bootsOfSpeed) } ?: return@on
+                model.queue.add(action<AlchemistsDelegationGame.Model, Boolean>("bootsOfSpeed", Boolean::class) {
+                    precondition { playerIndex == playerWithBoots.playerIndex }
+                    options { listOf(false, true) }
+                    perform {
+                        game.queue.removeAt(0)
+                        if (!action.parameter) return@perform
+                        usedBootsOfSpeed = true
+                        game.queue.add(event.action as ActionDefinition<AlchemistsDelegationGame.Model, Any>)
+                    }
+                } as ActionDefinition<AlchemistsDelegationGame.Model, Any>)
+            }.on(model.newRound) {
+                usedPeriscope = false
+                usedBootsOfSpeed = false
             }
-        val forSale by cards<Artifact>()
-            .on(model.newRound) {
-                val artifactsLevel = when (event) {
-                    1 -> 1
-                    4 -> 2
-                    6 -> 3
-                    else -> null
-                }
-                if (artifactsLevel != null) {
-                    value.cards.clear()
-                    artifactsInGame.asSequence().filter { it.card.level == 3 }.forEach { it.moveTo(value) }
-                }
+        val forSale by cards<Artifact>().on(model.newRound) {
+            val zone = value
+            val artifactsLevel = when (event) {
+                1 -> 1
+                4 -> 2
+                6 -> 3
+                else -> return@on
             }
+            zone.cards.clear()
+            artifactsInGame.asSequence().filter { it.card.level == artifactsLevel }.forEach { it.moveTo(zone) }
+        }
 
         override val actionSpace by component { model.ActionSpace(this.ctx, "BuyArtifacts") }
             .setup { it.initialize(listOf(1, 2), playerCount) }
@@ -118,7 +149,7 @@ object ArtifactActions {
                 }
 
                 when (action.parameter) {
-                    bootsOfSpeed, periscope, robeOfRespect, sealOfAuthority -> TODO("artifact not implemented yet")
+                    robeOfRespect -> TODO("artifact not implemented yet")
                     altarOfGold -> {
                         // Immediate effect: Pay 1 to 8 gold pieces. Gain that many points of reputation
                         game.queue.add(action<AlchemistsDelegationGame.Model, Int>("altarOfGold", Int::class) {

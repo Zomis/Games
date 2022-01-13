@@ -187,6 +187,8 @@ object TheoryActions {
             } else {
                 game.theoryBoard.theories.add(Theory(mutableListOf(action.parameter.seal), action.parameter.ingredient, action.parameter.alchemical))
             }
+            val reputationGain = if (game.players[this.playerIndex].artifacts.cards.contains(ArtifactActions.sealOfAuthority)) 3 else 1
+            game.players[this.playerIndex].reputation += reputationGain
             game.players[this.playerIndex].seals.card(action.parameter.seal).remove()
         }
     }
