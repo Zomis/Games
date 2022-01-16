@@ -11,6 +11,7 @@ object PotionActions {
     class IngredientsMix(val playerIndex: Int, val ingredients: Pair<Ingredient, Ingredient>): GameSerializable {
         override fun serialize(): String =
             ingredients.toList().joinToString("+") { it.toString() }
+        override fun toString(): String = serialize()
     }
     fun chooseIngredients(scope: ActionChoicesScope<AlchemistsDelegationGame.Model, IngredientsMix>) {
         scope.recursive(emptyList<Ingredient>()) {
@@ -106,7 +107,7 @@ object PotionActions {
         override val actionSpace by component { model.ActionSpace(ctx, "Exhibition") }
             .setup { it.initialize(if (playerCount == 4) listOf(1, 1, 1) else listOf(1, 1, 1, 1), playerCount) }
         override val action by actionSerializable<AlchemistsDelegationGame.Model, IngredientsMix>("exhibit", IngredientsMix::class) {
-
+            precondition { false }
         }
     }
 

@@ -68,14 +68,14 @@ object AlchemistsDelegationGame {
                     action.parameter.chosenBy = playerIndex
                     players[playerIndex].gold += action.parameter.gold
                     if (action.parameter.ingredients > 0) {
-                        game.ingredients.deck.random(replayable, action.parameter.ingredients, "ingredients") { it.serialize() }.forEach {
+                        game.ingredients.deck.randomWithRefill(game.ingredients.discardPile, replayable, action.parameter.ingredients, "ingredients") { it.serialize() }.forEach {
                             it.moveTo(game.players[playerIndex].ingredients)
                         }
                     }
                     if (action.parameter.favors > 0) {
-                        game.favors.deck.random(replayable, action.parameter.favors, "favors") { it.serialize() }.forEach { favor ->
+                        game.favors.deck.randomWithRefill(game.favors.discardPile, replayable, action.parameter.favors, "favors") { it.serialize() }.forEach { favor ->
                             if (favor.card == Favors.FavorType.HERBALIST) {
-                                game.ingredients.deck.random(replayable, 3, "herbalist") { it.serialize() }.forEach {
+                                game.ingredients.deck.randomWithRefill(game.ingredients.discardPile, replayable, 3, "herbalist") { it.serialize() }.forEach {
                                     it.moveTo(game.players[playerIndex].ingredients)
                                 }
                                 game.queue.add(game.favors.herbalistDiscard as ActionDefinition<Model, Any>)
@@ -83,6 +83,7 @@ object AlchemistsDelegationGame {
                             favor.moveTo(game.players[playerIndex].favors)
                         }
                     }
+                    log { "$player chose turn order ${action.toStateString()}" }
                 }
             }
         }
@@ -182,11 +183,11 @@ object AlchemistsDelegationGame {
                                 listOf(replayable.int("discardIndex") { Random.Default.nextInt(0, 2) })
                             else listOf(0, 1)
                         discardIndices.forEach {
-                            value.cards.remove(event.ingredients.toList()[it])
+                            value.card(event.ingredients.toList()[it]).moveTo(model.ingredients.discardPile)
                         }
                     }
                 }
-                .privateView(playerIndex) { it.cards }
+                .privateView(playerIndex) { it.cards.map { i -> i.serialize() } }
                 .publicView { it.size }
         }
 
@@ -216,6 +217,7 @@ object AlchemistsDelegationGame {
                     it.key.actionSpace.place(playerIndex, it.value)
                 }
                 turnPicker.options.first { it.chosenBy == playerIndex }.chosenBy = null
+                log { "$player chose actions ${action.chosen.map { it.spot.actionSpace.name }.sorted()}" }
             }
             choose {
                 recursive(emptyList<ActionChoice>()) {
@@ -264,7 +266,8 @@ object AlchemistsDelegationGame {
             perform {
                 val count = space.actionSpace.resolveNext()
                 for (i in 1..count) cancelledActions.add(playerIndex)
-                favors.favorsPlayed.cards.clear()
+                favors.favorsPlayed.moveAllTo(favors.discardPile)
+                log { "$player cancelled their action" }
             }
         }
 
@@ -298,6 +301,7 @@ object AlchemistsDelegationGame {
             for (round in 1..6) {
                 game.newRound(this, round)
                 game.sellPotion.reset()
+                log { "Round $round" }
                 step("round $round - turnPicker") {
                     enableAction(game.turnPicker.action)
                 }.loopUntil { game.players.indices.all { player -> game.turnPicker.options.any { it.chosenBy == player } } }

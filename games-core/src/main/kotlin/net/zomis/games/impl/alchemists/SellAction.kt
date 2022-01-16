@@ -30,18 +30,18 @@ object SellAction {
         }
     }
 
-    data class Hero(val requests: List<AlchemistsPotion>)
+    data class Hero(val id: Int, val requests: List<AlchemistsPotion>)
     class SellHero(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
         val heroes by component { mutableListOf<Hero>() }
             .setup {
                 // Order of potions does matter for three-player games, where selling one may lock another
                 val heroes = listOf(
-                    Hero(listOf(Alchemists.blue.plus, Alchemists.red.plus, Alchemists.green.plus)),
-                    Hero(listOf(Alchemists.blue.minus, Alchemists.red.minus, Alchemists.green.minus)),
-                    Hero(listOf(Alchemists.red.minus, Alchemists.green.minus, Alchemists.blue.plus)),
-                    Hero(listOf(Alchemists.green.minus, Alchemists.blue.minus, Alchemists.red.plus)),
-                    Hero(listOf(Alchemists.red.plus, Alchemists.green.plus, Alchemists.blue.minus)),
-                    Hero(listOf(Alchemists.green.plus, Alchemists.blue.plus, Alchemists.red.minus))
+                    Hero(0, listOf(Alchemists.blue.plus, Alchemists.red.plus, Alchemists.green.plus)),
+                    Hero(1, listOf(Alchemists.blue.minus, Alchemists.red.minus, Alchemists.green.minus)),
+                    Hero(2, listOf(Alchemists.red.minus, Alchemists.green.minus, Alchemists.blue.plus)),
+                    Hero(3, listOf(Alchemists.green.minus, Alchemists.blue.minus, Alchemists.red.plus)),
+                    Hero(4, listOf(Alchemists.red.plus, Alchemists.green.plus, Alchemists.blue.minus)),
+                    Hero(5, listOf(Alchemists.green.plus, Alchemists.blue.plus, Alchemists.red.minus))
                 )
                 it.addAll(replayable.randomFromList("heroes", heroes, 5) { hero -> hero.requests.joinToString("") { req -> req.textRepresentation } })
                 it
@@ -76,12 +76,15 @@ object SellAction {
                 requires { action.parameter.discount != null }
                 perform {
                     discounts.add(playerIndex to action.parameter.discount!!)
-                    // TODO: Merchant and Barmaid favors
-                    actionSpace.rows.sortBy { row ->
-                        if (row == null) -1
-                        else discounts.first { it.first == row.first }.second
+                    // TODO: Merchant and Barmaid favors, and reputation happiness
+                    if (discounts.size == playerCount) {
+                        actionSpace.rows.sortBy { row ->
+                            if (row == null) -1
+                            else discounts.first { it.first == row.first }.second
+                        }
+                        sellOrder = discounts.sortedBy { it.second }.map { it.first }
                     }
-                    sellOrder = discounts.sortedBy { it.second }.map { it.first }
+                    logSecret(playerIndex) { "$player has chosen discount ${action.discount} to the hero" }.publicLog { "$player has chosen a discount for the hero" }
                 }
             } else {
                 precondition { playerIndex == actionSpace.nextPlayerIndex() }
@@ -108,7 +111,9 @@ object SellAction {
                     val request = heroes[0].requests[action.parameter.slot!!]
                     val sellResult = action.parameter.guarantee!!.result(request, result)
                     game.players[playerIndex].gold += sellResult.price
-                    game.favors.favorsPlayed.cards.clear()
+                    game.favors.favorsPlayed.moveAllTo(game.favors.discardPile)
+                    logSecret(playerIndex) { "$player mixed ${action.ingredients} to mix ${result.textRepresentation} which was $sellResult" }
+                        .publicLog { "$player sold a potion to the hero, yielding the result $sellResult" }
                 }
             }
         }

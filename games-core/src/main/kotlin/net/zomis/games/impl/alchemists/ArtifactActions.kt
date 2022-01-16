@@ -1,5 +1,6 @@
 package net.zomis.games.impl.alchemists
 
+import net.zomis.games.cards.CardZone
 import net.zomis.games.context.Context
 import net.zomis.games.context.Entity
 import net.zomis.games.dsl.GameSerializable
@@ -96,7 +97,8 @@ object ArtifactActions {
                             replayable.randomFromList("periscope", event.ingredients.toList(), 1) { it.serialize() }
                                 .single()
                         val potion = game.alchemySolution.mixPotion(event.ingredients)
-                        log { "${player(event.playerIndex)} used $ingredient to mix ${potion.textRepresentation}" }
+                        logSecret(playerIndex) { "${player(event.playerIndex)} used $ingredient to mix ${potion.textRepresentation}" }
+                            .publicLog { "$player uses periscope to see one ingredient used to mix ${potion.textRepresentation}" }
                     }
                 } as ActionDefinition<AlchemistsDelegationGame.Model, Any>)
             }.on(model.spaceDone) {
@@ -110,6 +112,7 @@ object ArtifactActions {
                         if (!action.parameter) return@perform
                         usedBootsOfSpeed = true
                         game.queue.add(event.action as ActionDefinition<AlchemistsDelegationGame.Model, Any>)
+                        log { "$player uses boots of speed at ${event.actionSpace.name}" }
                     }
                 } as ActionDefinition<AlchemistsDelegationGame.Model, Any>)
             }.on(model.newRound) {
@@ -117,7 +120,7 @@ object ArtifactActions {
                 usedBootsOfSpeed = false
             }
         val forSale by cards<Artifact>().on(model.newRound) {
-            val zone = value
+            val zone = value as CardZone<Artifact>
             val artifactsLevel = when (event) {
                 1 -> 1
                 4 -> 2
@@ -139,7 +142,7 @@ object ArtifactActions {
                 val cost = action.parameter.cost - goldModifier(playerIndex)
                 game.players[playerIndex].gold -= if (cost >= 0) cost else 0
                 forSale.card(action.parameter).moveTo(game.players[playerIndex].artifacts)
-                game.favors.favorsPlayed.cards.clear()
+                game.favors.favorsPlayed.moveAllTo(game.favors.discardPile)
             }
             perform {
                 val player = game.players[playerIndex]
@@ -147,6 +150,7 @@ object ArtifactActions {
                 if (action.parameter.victoryPoints == null) {
                     TODO("artifact not implemented yet")
                 }
+                log { "${this.player} buys artifact ${action.name}" }
 
                 when (action.parameter) {
                     robeOfRespect -> TODO("artifact not implemented yet")
@@ -159,6 +163,7 @@ object ArtifactActions {
                             perform {
                                 game.players[playerIndex].gold -= action.parameter
                                 game.players[playerIndex].reputation += action.parameter
+                                log { "$player pays $action gold to get $action reputation" }
                             }
                         } as ActionDefinition<AlchemistsDelegationGame.Model, Any>)
                     }

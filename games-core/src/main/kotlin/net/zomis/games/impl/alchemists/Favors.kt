@@ -1,5 +1,6 @@
 package net.zomis.games.impl.alchemists
 
+import net.zomis.games.cards.CardZone
 import net.zomis.games.common.times
 import net.zomis.games.common.toSingleList
 import net.zomis.games.context.Context
@@ -31,7 +32,8 @@ object Favors {
             options { game.players[playerIndex].favors.cards.distinct() }
             perform {
                 playersDiscardingSetupFavor.remove(playerIndex)
-                game.players[playerIndex].favors.cards.remove(action.parameter)
+                game.players[playerIndex].favors.card(action.parameter).moveTo(discardPile)
+                log { "$player discarded $action" }
             }
         }
 
@@ -40,14 +42,16 @@ object Favors {
                 precondition { game.players[playerIndex].favors.cards.any { favorType.contains(it) } }
                 perform {
                     game.players[playerIndex].favors.card(action.parameter).moveTo(favorsPlayed)
+                    log { "$player uses $action" }
                 }
             }
         }
         val assistant by action<AlchemistsDelegationGame.Model, Unit>("assistant", Unit::class) {
             precondition { game.players[playerIndex].favors.cards.contains(FavorType.ASSISTANT) }
             perform {
-                game.players[playerIndex].favors.cards.remove(FavorType.ASSISTANT)
+                game.players[playerIndex].favors.card(FavorType.ASSISTANT).moveTo(discardPile)
                 game.players[playerIndex].extraCubes++
+                log { "$player uses assistant to get one extra cube" }
             }
         }
         val herbalistDiscard by actionSerializable<AlchemistsDelegationGame.Model, PotionActions.IngredientsMix>("discard", PotionActions.IngredientsMix::class) {
@@ -62,12 +66,15 @@ object Favors {
                 }
             }
             perform {
-                game.players[playerIndex].favors.cards.remove(FavorType.HERBALIST)
-                game.players[playerIndex].ingredients.cards.remove(action.parameter.ingredients.first)
-                game.players[playerIndex].ingredients.cards.remove(action.parameter.ingredients.second)
+                game.queue.removeAt(0)
+                game.players[playerIndex].favors.card(FavorType.HERBALIST).moveTo(discardPile)
+                game.players[playerIndex].ingredients.card(action.parameter.ingredients.first).moveTo(game.ingredients.discardPile)
+                game.players[playerIndex].ingredients.card(action.parameter.ingredients.second).moveTo(game.ingredients.discardPile)
+                log { "$player discards two ingredients because of herbalist" }
             }
         }
 
+        val discardPile = CardZone<FavorType>()
         val deck by cards(FavorType.values().flatMap { it.toSingleList().times(it.count) }.toMutableList())
             .publicView { it.size }
     }

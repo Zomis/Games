@@ -115,8 +115,10 @@ object TheoryActions {
                     TODO("Master debunking not implemented yet")
                     // Master: Pick potion to mix (using any ingredients) and verify if that mix gives that result or not.
                     // Then check which ones are not possible given that knowledge. Can cause conflict, can cause debunking of one or two theories.
+                    return@perform
                 }
                 val debunked = action.parameter.findDebunkedTheories(game.alchemySolution, game.theoryBoard)
+                log { "$player tries to debunk ${action.aspect} of ${action.ingredient} which debunks $debunked" }
                 if (debunked.isEmpty()) {
                     game.players[playerIndex].reputation--
                 } else {
@@ -190,6 +192,7 @@ object TheoryActions {
             val reputationGain = if (game.players[this.playerIndex].artifacts.cards.contains(ArtifactActions.sealOfAuthority)) 3 else 1
             game.players[this.playerIndex].reputation += reputationGain
             game.players[this.playerIndex].seals.card(action.parameter.seal).remove()
+            log { "$player publishes a theory about $action" }
         }
     }
     fun goldBankCost(game: AlchemistsDelegationGame.Model, playerIndex: Int): Int

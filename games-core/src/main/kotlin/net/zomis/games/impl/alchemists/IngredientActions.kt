@@ -1,5 +1,6 @@
 package net.zomis.games.impl.alchemists
 
+import net.zomis.games.cards.CardZone
 import net.zomis.games.common.times
 import net.zomis.games.context.Context
 import net.zomis.games.context.Entity
@@ -7,15 +8,19 @@ import net.zomis.games.context.Entity
 object IngredientActions {
 
     class Ingredients(model: AlchemistsDelegationGame.Model, ctx: Context) : Entity(ctx), AlchemistsDelegationGame.HasAction {
+        val discardPile = CardZone<Ingredient>()
         val deck by cards<Ingredient>()
             .setup { it.cards.addAll(Ingredient.values().toList().times(5)); it }
             .publicView { it.size }
         val slots by cards<Ingredient>()
+            .on(model.spaceDone) {
+                // TODO: This should happen LATER than Speed of Boots, which is why we're temporarily checking for transmute instead
+                if (event == model.transmute) value.cards.clear()
+            }
             .on(model.newRound) {
                 println("Refilling ingredients for round $event")
-                value.cards.clear()
-                deck.random(replayable, 5, "ingredients-slots") { it.toString() }.forEach { it.moveTo(value) }
-            }
+                deck.randomWithRefill(discardPile, replayable, 5, "ingredients-slots") { it.toString() }.forEach { it.moveTo(value) }
+            }.publicView { it.cards.map { i -> i.serialize() } }
         override val actionSpace by component { model.ActionSpace(this.ctx, "Ingredients") }
             .setup { it.initialize(if (playerCount == 4) listOf(1, 1) else listOf(1, 1, 1), playerCount) }
         override val action by action<AlchemistsDelegationGame.Model, String>("takeIngredient", String::class) {
@@ -24,12 +29,13 @@ object IngredientActions {
             perform {
                 actionSpace.resolveNext()
                 if (action.parameter.isEmpty()) {
-                    deck.random(replayable, 1, "ingredientDeck") { it.toString() }
+                    deck.randomWithRefill(discardPile, replayable, 1, "ingredientDeck") { it.toString() }
                         .forEach { it.moveTo(game.players[playerIndex].ingredients) }
                 } else {
                     slots.card(slots.cards.first { it.toString() == action.parameter })
                         .moveTo(game.players[playerIndex].ingredients)
                 }
+                log { "$player took ingredient ${action.ifEmpty { "from deck" }}" }
             }
         }
     }
@@ -41,9 +47,10 @@ object IngredientActions {
             options { game.players[playerIndex].ingredients.cards.distinct() }
             perform {
                 actionSpace.resolveNext()
-                game.players[playerIndex].ingredients.cards.remove(action.parameter)
+                game.players[playerIndex].ingredients.card(action.parameter).moveTo(game.ingredients.discardPile)
                 game.players[playerIndex].gold += 1 + game.favors.favorsPlayed.cards.count { it == Favors.FavorType.SAGE }
-                game.favors.favorsPlayed.cards.clear()
+                game.favors.favorsPlayed.moveAllTo(game.favors.discardPile)
+                logSecret(playerIndex) { "$player transmuted ingredient $action" }.publicLog { "$player transmuted an ingredient" }
             }
         }
         override fun extraActions() = listOf(model.favors.allowFavors(Favors.FavorType.SAGE))
