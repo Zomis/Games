@@ -99,6 +99,7 @@ class GameActionCreator<T : Any, A : Any>(
     val serializer: (A) -> Any,
     val deserializer: (ActionOptionsScope<T>.(Any) -> A)?
 ): ActionType<T, A> {
+    override fun toString(): String = "(ActionType '$name' of type $parameterType)"
     override fun serialize(parameter: A): Any = serializer(parameter)
     override fun deserialize(scope: ActionOptionsScope<T>, serialized: Any): A? = deserializer?.invoke(scope, serialized)
 
