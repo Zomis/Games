@@ -55,8 +55,9 @@ interface GameConfig<E: Any> {
 }
 class GameConfigs(val configs: List<GameConfig<Any>>) {
     fun <E: Any> get(config: GameConfig<E>): E = configs.first { it.key == config.key }.value as E
-    fun set(key: String, value: Any) {
+    fun set(key: String, value: Any): GameConfigs {
         this.configs.first { it.key == key }.value = value
+        return this
     }
 
     fun toJSON(): Any? {

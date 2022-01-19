@@ -51,18 +51,19 @@ class GameReplayableImpl<T : Any>(
     var actionIndex: Int = 0
         private set
 
-    suspend fun playThrough(function: () -> Actionable<T, Any>) {
+    suspend fun await() {
         if (game is GameFlowImpl) {
             for (feedback in game.feedbackReceiver) {
-                println("GameReplayImpl Playthrough begin: $feedback")
-                if (feedback is GameFlowContext.Steps.GameSetup) {
-                    gameplayCallbacks.startedState(feedback.playerCount, feedback.config, feedback.state)
-                }
+                println("Replayable await gets feedback: $feedback")
+                handleFeedback(feedback)
                 if (feedback is GameFlowContext.Steps.AwaitInput) {
                     break
                 }
             }
         }
+    }
+    suspend fun playThrough(function: () -> Actionable<T, Any>) {
+        await()
         while (!game.isGameOver()) {
             perform(function())
         }
@@ -89,6 +90,12 @@ class GameReplayableImpl<T : Any>(
         perform(game.actions.type(actionType)!!.createActionFromSerialized(playerIndex, serialized) as Actionable<T, Any>)
     }
 
+    suspend fun performSerialized(playerIndex: Int, actionName: String, serialized: Any) {
+        val actImpl = game.actions.type(actionName) ?: throw IllegalStateException("No such action: $actionName")
+        val action = actImpl.createActionFromSerialized(playerIndex, serialized)
+        perform(action)
+    }
+
     suspend fun perform(action: Actionable<T, Any>) {
         if (game.eliminations.eliminationFor(action.playerIndex) != null) {
             throw IllegalArgumentException("Player ${action.playerIndex} is already eliminated.")
@@ -100,29 +107,27 @@ class GameReplayableImpl<T : Any>(
         }
     }
 
+    private fun handleFeedback(feedback: GameFlowContext.Steps.FlowStep) {
+        when (feedback) {
+            is GameFlowContext.Steps.GameSetup -> gameplayCallbacks.startedState(feedback.playerCount, feedback.config, feedback.state)
+            is GameFlowContext.Steps.NextView -> {}
+            is GameFlowContext.Steps.Elimination -> gameplayCallbacks.onElimination(feedback.elimination)
+            is GameFlowContext.Steps.Log -> gameplayCallbacks.onLog(listOf(feedback.log))
+            is GameFlowContext.Steps.ActionPerformed<*> -> {
+                val actionReplay = ActionReplay(feedback.actionImpl.actionType.name, feedback.playerIndex,
+                    feedback.actionImpl.actionType.serialize(feedback.parameter), feedback.replayState
+                )
+                gameplayCallbacks.onMove(actionIndex, feedback.action as Actionable<T, Any>, actionReplay)
+                this.actionIndex++
+            }
+        }
+    }
+
     private suspend fun performGameFlow(action: Actionable<T, Any>) {
         val gameFlow = game as GameFlowImpl<T>
         println("GameReplayImpl Send Action: $action")
         gameFlow.actionsInput.send(action)
-        for (feedback in gameFlow.feedbackReceiver) {
-            println("GameReplayImpl Feedback: $feedback")
-            when (feedback) {
-                // is GameEnd is not needed because feedbackReceiver will stop
-                is GameFlowContext.Steps.NextView -> {}
-                is GameFlowContext.Steps.Elimination -> gameplayCallbacks.onElimination(feedback.elimination)
-                is GameFlowContext.Steps.Log -> gameplayCallbacks.onLog(listOf(feedback.log))
-                is GameFlowContext.Steps.GameSetup -> gameplayCallbacks.startedState(feedback.playerCount, feedback.config, feedback.state)
-                is GameFlowContext.Steps.ActionPerformed<*> -> {
-                    val actionReplay = ActionReplay(action.actionType, action.playerIndex,
-                        feedback.actionImpl.actionType.serialize(action.parameter), feedback.replayState
-                    )
-                    gameplayCallbacks.onMove(actionIndex, action, actionReplay)
-                    this.actionIndex++
-                }
-                is GameFlowContext.Steps.AwaitInput -> return
-                else -> {}
-            }
-        }
+        await()
     }
 
     private fun performDirect(action: Actionable<T, Any>) {

@@ -122,7 +122,7 @@ class GameFlowImpl<T: Any>(
                     continue
                 }
                 actions.clearAndPerform(action as Actionable<T, Any>) { this.clear() }
-                this.lastAction = GameFlowContext.Steps.ActionPerformed(typeEntry, action.playerIndex, action.parameter, replayable.stateKeeper.lastMoveState())
+                this.lastAction = GameFlowContext.Steps.ActionPerformed(action, typeEntry, replayable.stateKeeper.lastMoveState())
                 runRules(GameFlowRulesState.AFTER_ACTIONS)
                 return action
             }
@@ -208,11 +208,13 @@ class GameFlowContext<T: Any>(
         object GameEnd: FlowStep
         data class Elimination(val elimination: PlayerElimination): FlowStep
         data class ActionPerformed<T: Any>(
+            val action: Actionable<T, Any>,
             val actionImpl: ActionTypeImplEntry<T, Any>,
-            val playerIndex: Int,
-            val parameter: Any,
             val replayState: Map<String,  Any>
-        ): FlowStep
+        ): FlowStep {
+            val playerIndex: Int get() = action.playerIndex
+            val parameter: Any get() = action.parameter
+        }
         data class IllegalAction(val actionType: String, val playerIndex: Int, val parameter: Any): FlowStep
         data class Log(val log: ActionLogEntry): FlowStep
         data class RuleExecution(val ruleName: String, val values: Any): FlowStep
