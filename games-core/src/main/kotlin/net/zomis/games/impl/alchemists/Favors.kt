@@ -1,5 +1,6 @@
 package net.zomis.games.impl.alchemists
 
+import net.zomis.games.cards.Card
 import net.zomis.games.cards.CardZone
 import net.zomis.games.common.times
 import net.zomis.games.common.toSingleList
@@ -24,10 +25,11 @@ object Favors {
     }
 
     class FavorDeck(ctx: Context): Entity(ctx) {
+        val herbalistActionName = "herbalist"
         var favorsPlayed by cards<FavorType>()
         val playersDiscardingSetupFavor by value { mutableListOf<Int>() }.setup { it.addAll(0 until playerCount); it }
 
-        val chooseFavor by actionSerializable<AlchemistsDelegationGame.Model, FavorType>("chooseFavor", FavorType::class) {
+        val discardFavor by actionSerializable<AlchemistsDelegationGame.Model, FavorType>("discardFavor", FavorType::class) {
             precondition { playersDiscardingSetupFavor.contains(playerIndex) }
             options { game.players[playerIndex].favors.cards.distinct() }
             perform {
@@ -46,6 +48,14 @@ object Favors {
                 }
             }
         }
+
+        fun giveFavor(game: AlchemistsDelegationGame.Model, favor: Card<FavorType>, player: AlchemistsDelegationGame.Model.Player) {
+            if (favor.card == FavorType.HERBALIST) {
+                game.queue.add(game.favors.herbalistDiscard as ActionDefinition<AlchemistsDelegationGame.Model, Any>)
+            }
+            favor.moveTo(player.favors)
+        }
+
         val assistant by action<AlchemistsDelegationGame.Model, Unit>("assistant", Unit::class) {
             precondition { game.players[playerIndex].favors.cards.contains(FavorType.ASSISTANT) }
             perform {
@@ -54,13 +64,18 @@ object Favors {
                 log { "$player uses assistant to get one extra cube" }
             }
         }
-        val herbalistDiscard by actionSerializable<AlchemistsDelegationGame.Model, PotionActions.IngredientsMix>("discard", PotionActions.IngredientsMix::class) {
-            precondition { game.players[playerIndex].favors.cards.contains(FavorType.HERBALIST) }
+        val herbalistDiscard by actionSerializable<AlchemistsDelegationGame.Model, PotionActions.IngredientsMix>(herbalistActionName, PotionActions.IngredientsMix::class) {
+            precondition { game.players[playerIndex].favors.cards.contains(FavorType.HERBALIST)
+                    && playerIndex == game.players.first { it.favors.cards.contains(FavorType.HERBALIST) }.playerIndex }
             choose {
                 recursive(emptyList<Ingredient>()) {
                     until { chosen.size == 2 }
                     parameter { PotionActions.IngredientsMix(playerIndex, chosen[0] to chosen[1]) }
-                    optionsWithIds({ game.players[playerIndex].ingredients.cards.distinct().map { it.serialize() to it } }) {
+                    optionsWithIds({
+                        game.players[playerIndex].ingredients.cards
+                            .minus(chosen.firstOrNull()).filterNotNull()
+                            .distinct().map { it.serialize() to it }
+                    }) {
                         recursion(it) { acc, next -> acc + next }
                     }
                 }

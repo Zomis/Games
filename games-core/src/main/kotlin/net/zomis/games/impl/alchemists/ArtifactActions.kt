@@ -170,15 +170,8 @@ object ArtifactActions {
                     amuletOfRhetoric -> player.reputation += 5
                     hypnoticAmulet -> {
                         // Immediate effect: Draw 4 favor cards
-                        game.favors.deck.random(replayable, 4, "hypnoticAmulet") { it.name }.forEach { favor ->
-                            if (favor.card == Favors.FavorType.HERBALIST) {
-                                game.ingredients.deck.random(replayable, 3, "herbalist") { it.serialize() }.forEach {
-                                    it.moveTo(game.players[playerIndex].ingredients)
-                                }
-                                game.queue.add(game.favors.herbalistDiscard as ActionDefinition<AlchemistsDelegationGame.Model, Any>)
-                            }
-                            favor.moveTo(game.players[playerIndex].favors)
-                        }
+                        game.favors.deck.random(replayable, 4, "hypnoticAmulet") { it.name }
+                            .forEach { game.favors.giveFavor(game, it, game.players[playerIndex]) }
                     }
                     thinkingCap -> {
                         // Immediate effect: Test up to two separate pairs of ingredients in you hand. Do not discard them

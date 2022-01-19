@@ -11,6 +11,7 @@ import net.zomis.games.dsl.GameConfig
 import net.zomis.games.dsl.GameSerializable
 import net.zomis.games.dsl.flow.ActionDefinition
 import net.zomis.games.dsl.flow.GameFlowScope
+import net.zomis.games.dsl.flow.GameFlowStepScope
 import kotlin.random.Random
 
 object AlchemistsDelegationGame {
@@ -22,7 +23,7 @@ object AlchemistsDelegationGame {
     }
     class Model(override val ctx: Context, master: GameConfig<Boolean>) : Entity(ctx), ContextHolder {
         val master by value { false }.setup { config(master) }
-        val queue by component { mutableListOf<ActionDefinition<Model, Any>>() }
+        val queue by component { mutableListOf<ActionDefinition<Model, Any>>() }.publicView { it.map { s -> s.actionType.name } }
         val newRound by event(Int::class)
         val gameInit by event(Unit::class)
         val spaceDone by event(HasAction::class)
@@ -73,15 +74,8 @@ object AlchemistsDelegationGame {
                         }
                     }
                     if (action.parameter.favors > 0) {
-                        game.favors.deck.randomWithRefill(game.favors.discardPile, replayable, action.parameter.favors, "favors") { it.serialize() }.forEach { favor ->
-                            if (favor.card == Favors.FavorType.HERBALIST) {
-                                game.ingredients.deck.randomWithRefill(game.ingredients.discardPile, replayable, 3, "herbalist") { it.serialize() }.forEach {
-                                    it.moveTo(game.players[playerIndex].ingredients)
-                                }
-                                game.queue.add(game.favors.herbalistDiscard as ActionDefinition<Model, Any>)
-                            }
-                            favor.moveTo(game.players[playerIndex].favors)
-                        }
+                        game.favors.deck.randomWithRefill(game.favors.discardPile, replayable, action.parameter.favors, "favors") { it.serialize() }
+                            .forEach { game.favors.giveFavor(game, it, game.players[playerIndex]) }
                     }
                     log { "$player chose turn order ${action.toStateString()}" }
                 }
@@ -278,10 +272,19 @@ object AlchemistsDelegationGame {
         )
     }
 
+    private fun checkQueue(scope: GameFlowStepScope<Model>) {
+        val item = scope.game.queue.first()
+        if (item.actionType.name == scope.game.favors.herbalistActionName) {
+            val player = scope.game.players.first { it.favors.cards.contains(Favors.FavorType.HERBALIST) }
+            scope.game.ingredients.deck.randomWithRefill(scope.game.ingredients.discardPile, scope.replayable, 3, "herbalist") { it.serialize() }
+                .forEach { it.moveTo(player.ingredients) }
+        }
+        scope.enableAction(item)
+    }
     suspend fun stateChecks(scope: GameFlowScope<Model>) {
         if (scope.game.queue.isNotEmpty()) {
             scope.step("empty queue") {
-                enableAction(scope.game.queue[0])
+                checkQueue(this)
             }.loopUntil { scope.game.queue.isEmpty() }
         }
     }
@@ -294,8 +297,13 @@ object AlchemistsDelegationGame {
             println("SOLUTION: " + game.alchemySolution)
             game.gameInit.invoke(this, Unit)
             step("choose favors") {
-                enableAction(game.favors.chooseFavor)
+                enableAction(game.favors.discardFavor)
             }.loopUntil { game.favors.playersDiscardingSetupFavor.isEmpty() }
+            game.players.forEach { player ->
+                repeat(player.favors.cards.count { it == Favors.FavorType.HERBALIST }) {
+                    game.queue.add(game.favors.herbalistDiscard as ActionDefinition<Model, Any>)
+                }
+            }
             stateChecks(this)
 
             for (round in 1..6) {
@@ -303,8 +311,12 @@ object AlchemistsDelegationGame {
                 game.sellPotion.reset()
                 log { "Round $round" }
                 step("round $round - turnPicker") {
-                    enableAction(game.turnPicker.action)
-                }.loopUntil { game.players.indices.all { player -> game.turnPicker.options.any { it.chosenBy == player } } }
+                    if (game.queue.isNotEmpty()) checkQueue(this)
+                    else enableAction(game.turnPicker.action)
+                }.loopUntil {
+                    game.queue.isEmpty()
+                        && game.players.indices.all { player -> game.turnPicker.options.any { it.chosenBy == player } }
+                }
 
                 stateChecks(this)
 
@@ -316,7 +328,7 @@ object AlchemistsDelegationGame {
                 for (space in game.actionSpaces) {
                     step("resolve round $round ${space.actionSpace.name}") {
                         if (game.queue.isNotEmpty()) {
-                            enableAction(game.queue.first())
+                            checkQueue(this)
                         } else {
                             enableAction(space.action)
                             enableAction(game.cancelAction(space))
