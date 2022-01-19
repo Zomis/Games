@@ -12,12 +12,13 @@ import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 
-// TODO: Make tests and refactor this file.
+// TODO: Refactor this file.
 
 class ComponentDelegate<E>(initialValue: E): ReadWriteProperty<Entity?, E> {
     var value = initialValue
     override fun getValue(thisRef: Entity?, property: KProperty<*>): E = value
     override fun setValue(thisRef: Entity?, property: KProperty<*>, value: E) {
+        println("Set $property on $thisRef to $value")
         this.value = value
     }
 }
