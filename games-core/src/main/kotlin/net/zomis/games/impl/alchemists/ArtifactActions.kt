@@ -119,7 +119,7 @@ object ArtifactActions {
                 usedPeriscope = false
                 usedBootsOfSpeed = false
             }
-        val forSale by cards<Artifact>().on(model.newRound) {
+        val forSale: CardZone<Artifact> by cards<Artifact>().on(model.newRound) {
             val zone = value as CardZone<Artifact>
             val artifactsLevel = when (event) {
                 1 -> 1

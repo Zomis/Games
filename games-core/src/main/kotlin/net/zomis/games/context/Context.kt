@@ -12,8 +12,6 @@ import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 
-// TODO: Refactor this file.
-
 class ComponentDelegate<E>(initialValue: E): ReadWriteProperty<Entity?, E> {
     var value = initialValue
     override fun getValue(thisRef: Entity?, property: KProperty<*>): E = value
@@ -84,7 +82,12 @@ class ContextFactory<E>(var ctx: Context, val default: ContextHolder.() -> E) {
             else -> delegate.value
         }
     }
-
+/*
+* Add event listeners, setup listeners
+* Set view (private, public, hidden) -- name doesn't come until "provide delegate"
+* Set value, setters and getters, dynamic value...
+*
+*/
     operator fun provideDelegate(thisRef: Entity?, prop: KProperty<*>): ReadWriteProperty<Entity?, E> {
         val newName = name ?: prop.name
         val newContext = Context(ctx.gameContext, ctx, newName)
@@ -156,7 +159,9 @@ class Event<E: Any>(val ctx: Context) {
 }
 
 open class Entity(protected open val ctx: Context) {
-    fun <E: Any> event(clazz: KClass<E>): ContextFactory<Event<E>> = ContextFactory<Event<E>>(ctx) { Event(ctx) }.hiddenView()
+    // TODO: Don't think `action` and `event` needs to be delegates.
+    fun <E: Any> event(): ContextFactory<Event<E>> = ContextFactory<Event<E>>(ctx) { Event(ctx) }.hiddenView()
+    fun <E: Any> event(clazz: KClass<E>) = event<E>()
     fun <E> playerComponent(function: ContextHolder.(Int) -> E): ContextFactory<List<E>> {
         return ContextFactory(ctx) {
             val players = ctx.playerIndices.map { index ->

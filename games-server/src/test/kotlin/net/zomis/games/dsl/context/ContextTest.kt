@@ -10,7 +10,6 @@ import net.zomis.games.dsl.GameReplayableImpl
 import net.zomis.games.dsl.GameSerializable
 import net.zomis.games.dsl.GamesImpl
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class ContextTest {
@@ -121,7 +120,21 @@ class ContextTest {
     }
 
     @Test
-    fun sum() {
+    fun changeOnEvent() {
+        val replayable = init()
+        replayable.doGlobal(0, 10)
+        Assertions.assertEquals(10, replayable.game.model.inner.sum)
+    }
+
+    @Test
+    fun onEvent() {
+        val replayable = init()
+        replayable.doBoost(0, Booster.RESET)
+        Assertions.assertEquals(listOf(Booster.RESET), replayable.game.model.players[0].used.cards)
+    }
+
+    @Test
+    fun dynamicSum() {
         val view = runAndView().first
         val v = view["inner"] as Map<String, Any?>
         Assertions.assertEquals(10, v["sum"])
@@ -135,7 +148,6 @@ class ContextTest {
     }
 
     @Test
-    @Disabled
     fun playerValue() {
         val (_, view) = runAndViewPlayer(0)
         val (_, invisible) = runAndViewPlayer(1)
@@ -144,7 +156,6 @@ class ContextTest {
     }
 
     @Test
-    @Disabled
     fun playerEvent() {
         val (game, view) = runAndViewPlayer(0)
         Assertions.assertFalse(view.containsKey(game.players[0]::boosterEvent.name))
@@ -189,7 +200,6 @@ class ContextTest {
     }
 
     @Test
-    @Disabled
     fun event() {
         val (view, game) = runAndView()
         Assertions.assertFalse(view.containsKey(game::eventRun.name))
