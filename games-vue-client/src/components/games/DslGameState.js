@@ -137,6 +137,14 @@ const gameStore = {
       context.commit("resetActions", { gameInfo: data.gameInfo });
       context.dispatch("requestActions", { gameInfo: data.gameInfo });
     },
+    randomAction(context, data) {
+      let game = context.state.games[data.gameInfo.gameId];
+      let obj = {
+        playerIndex: game.gameInfo.activeIndex,
+        control: "random"
+      };
+      Socket.route(`games/${data.gameInfo.gameType}/${data.gameInfo.gameId}/actionControl`, obj);
+    },
     joinGame(context, data) {
       Socket.route(`games/${data.gameType}/${data.gameId}/join`, {})
     },

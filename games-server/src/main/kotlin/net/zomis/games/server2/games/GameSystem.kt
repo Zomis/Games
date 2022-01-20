@@ -15,6 +15,8 @@ import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.server.GamesServer
 import net.zomis.games.server2.*
+import net.zomis.games.server2.ais.AIRepository
+import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.clients.FakeClient
 import net.zomis.games.server2.db.DBGame
 import net.zomis.games.server2.db.DBIntegration
@@ -56,6 +58,7 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
         .handler("meta", this::meta)
         .handler("actionList", actionListHandler::sendActionList)
         .handler("action", this::actionRequest)
+        .handler("actionControl", this::actionControl)
         .handler("move", this::moveRequest)
         .handler("join", this::clientJoin)
         .handler("viewRequest", this::viewRequest)
@@ -113,6 +116,15 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
         */
     }
 
+    private fun actionControl(message: ClientJsonMessage) {
+        if (message.data.get("control").asText() == "random") {
+            // val playerIndex = message.data.get("playerIndex")
+            val ais = ServerAIs(AIRepository(), emptySet())
+            val access = playerAccess(message.client).access.filter { it.value >= ClientPlayerAccessType.WRITE }.map { it.key }
+            val action = access.mapNotNull { ais.randomAction(this, message.client, it) }.takeIf { it.isNotEmpty() }?.random() ?: return
+            callback.moveHandler(action)
+        }
+    }
     private fun actionRequest(message: ClientJsonMessage) {
         if (!this.actionListHandler.actionRequest(message, callback)) {
             // If it's an incomplete action and only a choice step, broadcast view update

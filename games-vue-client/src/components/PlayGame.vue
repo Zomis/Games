@@ -7,6 +7,7 @@
     >
       Reset (player {{ playerIndex }})
     </v-btn>
+    <v-btn @click="randomAction()">Random action</v-btn>
     <component
       :is="viewComponent"
       v-if="view"
@@ -93,6 +94,9 @@ export default {
     resetActionsTo(actionName, actionValue) {
       this.$store.dispatch("DslGameState/resetActionsTo", { gameInfo: this.gameInfo, name: actionName, action: actionValue });
     },
+    randomAction() {
+      this.$store.dispatch("DslGameState/randomAction", { gameInfo: this.gameInfo });
+    }
   },
   watch: {
     gameOver(val) {
