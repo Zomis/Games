@@ -106,7 +106,7 @@ object Alchemists {
     val blue = AlchemistsColor.BLUE
     class Solutions(private val solutions: Set<AlchemistsSolution>) {
 
-
+        fun copy(): Solutions = Solutions(solutions.toSet())
         fun filtered(function: (AlchemistsSolution) -> Boolean): Solutions {
             return Solutions(solutions.filter(function).toSet())
         }

@@ -16,6 +16,7 @@ function dsl(lookup) {
 
 import PlayGame from "@/components/PlayGame";
 
+import Alchemists from "@/components/games/alchemists/Alchemists";
 import Backgammon from "@/components/games/paths/Backgammon";
 import RoyalGameOfUR from "@/components/RoyalGameOfUR";
 import DungeonMayhem from "@/components/games/dungeon-mayhem/DungeonMayhem"
@@ -94,6 +95,12 @@ function upgradeSpice(spice) {
 
 
 const supportedGames = {
+    "Alchemists": {
+        dsl: true,
+        component: Alchemists,
+        playTime: '60',
+        amountOfPlayers: '2-4'
+    },
     "Backgammon": {
         dsl: true,
         component: Backgammon,
