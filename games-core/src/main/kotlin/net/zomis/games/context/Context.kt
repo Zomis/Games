@@ -113,22 +113,24 @@ class Event<E: Any>(val ctx: Context) {
 }
 
 open class Entity(override val ctx: Context): ContextHolder {
+    private fun <E> delegate(context: Context = ctx, factory: (Context) -> ComponentDelegate<E>): DelegateFactory<E, ComponentDelegate<E>> {
+        return DelegateFactory(context, factory, { it.value }, { d, v -> d.value = v })
+    }
+
     fun <E: Any> event(): Event<E> = Event(ctx)
     fun <E> playerComponent(function: ContextHolder.(Int) -> E): DelegateFactory<List<E>, ComponentDelegate<List<E>>> {
         fun listFactory(context: Context): ComponentDelegate<List<E>> {
             val list = ctx.playerIndices.map { index ->
-                val playerContext by DelegateFactory<E, ComponentDelegate<E>>(context, {
-                    ComponentDelegate(function.invoke(ContextHolderImpl(it), index))
-                }, { it.value }, { d, v -> d.value = v }).also { it.name = index }
+                val playerContext by delegate(context) { ComponentDelegate(function.invoke(ContextHolderImpl(it), index)) }
+                    .also { it.name = index }
                 playerContext
             }
             return ComponentDelegate(list)
         }
-        return DelegateFactory(ctx, { listFactory(it) }, { it.value }, { d, v -> d.value = v }).also { it.listView = true }
+        return delegate { listFactory(it) }.also { it.listView = true }
     }
     fun <E> component(function: ContextHolder.() -> E): DelegateFactory<E, ComponentDelegate<E>> {
-        return DelegateFactory(ctx, { ComponentDelegate(function.invoke(ContextHolderImpl(it))) },
-            { it.value }, { d, v -> d.value = v })
+        return delegate { ComponentDelegate(function.invoke(ContextHolderImpl(it))) }
     }
     fun <E> value(function: ContextHolder.() -> E): DelegateFactory<E, ComponentDelegate<E>> = component(function)
     fun <E> dynamicValue(function: ContextHolder.() -> E): DelegateFactory<E, DynamicValueDelegate<E>> {
@@ -138,7 +140,7 @@ open class Entity(override val ctx: Context): ContextHolder {
     fun playerReference(function: ContextHolder.() -> Int): DelegateFactory<Int, ComponentDelegate<Int>> = component(function)
     fun <E> cards(list: MutableList<E> = mutableListOf()): DelegateFactory<CardZone<E>, ComponentDelegate<CardZone<E>>> {
         val delegate = ComponentDelegate(CardZone(list))
-        return DelegateFactory(ctx, { delegate }, { delegate.value }, { d, v -> d.value = v }).publicView { it.cards }
+        return this.delegate { delegate }.publicView { it.cards }
     }
     fun <T: Any, A: Any> action(name: String, parameter: KClass<A>, actionDefinition: GameFlowActionScope<T, A>.() -> Unit)
             = ActionFactory(name, parameter, actionDefinition)
