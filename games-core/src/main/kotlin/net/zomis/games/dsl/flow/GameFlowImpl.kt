@@ -39,6 +39,7 @@ class GameFlowImpl<T: Any>(
     val replayable = ReplayState(stateKeeper, eliminations, gameConfig)
     override val actions = GameFlowActionsImpl({ feedbacks.add(it) }, model, eliminations, replayable)
     private var gameSetupSent = false
+    override val feedback: (GameFlowContext.Steps.FlowStep) -> Unit = { feedbacks.add(it) }
 
     val actionsInput: Channel<Any> = Channel()
     val job: Job
@@ -176,7 +177,6 @@ class GameFlowImpl<T: Any>(
         views.add(key to value)
     }
 
-    override val feedback: (GameFlowContext.Steps.FlowStep) -> Unit = { feedbacks.add(it) }
     override fun <A : Any> action(action: ActionType<T, A>, actionDsl: GameFlowActionScope<T, A>.() -> Unit) {
         actions.add(action, actionDsl)
     }
