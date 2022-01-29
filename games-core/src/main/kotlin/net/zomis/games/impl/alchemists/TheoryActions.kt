@@ -79,9 +79,9 @@ object TheoryActions {
 
     class DebunkTheory(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
         override fun actionAvailable(playerIndex: Int, chosen: List<AlchemistsDelegationGame.Model.ActionChoice>): Boolean = model.round >= 2
-        override val actionSpace by component { model.ActionSpace(this.ctx, "PublishTheory") }
+        override val actionSpace by component { model.ActionSpace(ctx, "PublishTheory") }
             .setup { it.initialize(listOf(1, 2), playerCount) }
-        override val action by actionSerializable<AlchemistsDelegationGame.Model, DebunkAction>("publishTheory", DebunkAction::class) {
+        override val action = actionSerializable<AlchemistsDelegationGame.Model, DebunkAction>("publishTheory", DebunkAction::class) {
             precondition { playerIndex == actionSpace.nextPlayerIndex() }
             choose {
                 if (model.master) {
@@ -200,9 +200,9 @@ object TheoryActions {
 
     class PublishTheory(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
         override fun actionAvailable(playerIndex: Int, chosen: List<AlchemistsDelegationGame.Model.ActionChoice>): Boolean = model.round >= 2
-        override val actionSpace by component { model.ActionSpace(this.ctx, "PublishTheory") }
+        override val actionSpace by component { model.ActionSpace(ctx, "PublishTheory") }
             .setup { it.initialize(listOf(1, 2), playerCount) }
-        override val action by actionSerializable<AlchemistsDelegationGame.Model, TheoryAction>("publishTheory", TheoryAction::class) {
+        override val action = actionSerializable<AlchemistsDelegationGame.Model, TheoryAction>("publishTheory", TheoryAction::class) {
             theoryAction(this, actionSpace.nextPlayerIndex())
             perform {
                 actionSpace.resolveNext(playerIndex)

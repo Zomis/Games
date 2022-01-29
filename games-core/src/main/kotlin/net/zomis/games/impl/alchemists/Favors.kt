@@ -29,7 +29,7 @@ object Favors {
         var favorsPlayed by cards<FavorType>()
         val playersDiscardingSetupFavor by value { mutableListOf<Int>() }.setup { it.addAll(0 until playerCount); it }
 
-        val discardFavor by actionSerializable<AlchemistsDelegationGame.Model, FavorType>("discardFavor", FavorType::class) {
+        val discardFavor = actionSerializable<AlchemistsDelegationGame.Model, FavorType>("discardFavor", FavorType::class) {
             precondition { playersDiscardingSetupFavor.contains(playerIndex) }
             options { game.players[playerIndex].favors.cards.distinct() }
             perform {
@@ -56,7 +56,7 @@ object Favors {
             favor.moveTo(player.favors)
         }
 
-        val assistant by action<AlchemistsDelegationGame.Model, Unit>("assistant", Unit::class) {
+        val assistant = action<AlchemistsDelegationGame.Model, Unit>("assistant", Unit::class) {
             precondition { game.players[playerIndex].favors.cards.contains(FavorType.ASSISTANT) }
             perform {
                 game.players[playerIndex].favors.card(FavorType.ASSISTANT).moveTo(discardPile)
@@ -64,7 +64,7 @@ object Favors {
                 log { "$player uses assistant to get one extra cube" }
             }
         }
-        val herbalistDiscard by actionSerializable<AlchemistsDelegationGame.Model, PotionActions.IngredientsMix>(herbalistActionName, PotionActions.IngredientsMix::class) {
+        val herbalistDiscard = actionSerializable<AlchemistsDelegationGame.Model, PotionActions.IngredientsMix>(herbalistActionName, PotionActions.IngredientsMix::class) {
             precondition { game.players[playerIndex].favors.cards.contains(FavorType.HERBALIST)
                     && playerIndex == game.players.first { it.favors.cards.contains(FavorType.HERBALIST) }.playerIndex }
             choose {

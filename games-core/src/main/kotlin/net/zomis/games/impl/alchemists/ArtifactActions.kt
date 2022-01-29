@@ -131,9 +131,9 @@ object ArtifactActions {
             artifactsInGame.asSequence().filter { it.card.level == artifactsLevel }.forEach { it.moveTo(zone) }
         }
 
-        override val actionSpace by component { model.ActionSpace(this.ctx, "BuyArtifacts") }
+        override val actionSpace by component { model.ActionSpace(ctx, "BuyArtifacts") }
             .setup { it.initialize(listOf(1, 2), playerCount) }
-        override val action by actionSerializable<AlchemistsDelegationGame.Model, Artifact>("buyArtifact", Artifact::class) {
+        override val action = actionSerializable<AlchemistsDelegationGame.Model, Artifact>("buyArtifact", Artifact::class) {
             precondition { playerIndex == actionSpace.nextPlayerIndex() }
             requires { game.players[playerIndex].gold >= action.parameter.cost - goldModifier(playerIndex) }
             options { forSale.cards }

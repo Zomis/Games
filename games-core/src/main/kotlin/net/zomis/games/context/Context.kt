@@ -12,6 +12,7 @@ import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 
+object HiddenValue
 class ComponentDelegate<E>(initialValue: E): ReadWriteProperty<Entity?, E> {
     var value = initialValue
     override fun getValue(thisRef: Entity?, property: KProperty<*>): E = value
@@ -32,110 +33,66 @@ interface HandlerScope<E, T> {
     fun <E: Any> config(config: GameConfig<E>): E
 }
 
-class DynamicValueDelegateFactory<E>(override var ctx: Context, val function: ContextHolder.() -> E): ContextHolder {
-    val value get() = function.invoke(this)
+typealias ViewFunction = (ViewScope<Any>) -> Any?
 
-    private val privateViews = mutableMapOf<Int, (ViewScope<Any>) -> Any?>()
-    var view: ((ViewScope<Any>) -> Any?)? = {
-        function.invoke(this)
-    }
-
-    operator fun provideDelegate(thisRef: Entity?, prop: KProperty<*>): ReadOnlyProperty<Entity?, E> {
-        val newContext = Context(ctx.gameContext, ctx, prop.name)
-        newContext.view = {
-            val privateView = privateViews[it.viewer] ?: view
-            privateView?.invoke(it)
-        }
-        ctx.children.add(newContext)
-        this.ctx = newContext
-        return DynamicValueDelegate { function.invoke(this) }
-    }
-
-    fun privateView(playerIndices: List<Int>, view: (E) -> Any): DynamicValueDelegateFactory<E> {
-        playerIndices.forEach { index ->
-            privateViews[index] = { view.invoke(value) }
-        }
-        return this
-    }
-    fun privateView(playerIndex: Int, view: (E) -> Any): DynamicValueDelegateFactory<E> = this.privateView(listOf(playerIndex), view)
-    fun publicView(view: (E) -> Any): DynamicValueDelegateFactory<E> {
-        this.view = { view.invoke(value) }
-        return this
-    }
-
-    fun hiddenView(): DynamicValueDelegateFactory<E> {
-        this.view = null
-        return this
-    }
-}
-
-class ContextFactory<E>(var ctx: Context, val default: ContextHolder.() -> E) {
+class DelegateFactory<E, P: ReadOnlyProperty<Entity?, E>>(
+    override val ctx: Context,
+    val propertyFactory: (Context) -> P,
+    val getter: (P) -> E,
+    val setter: (P, E) -> Unit
+): ContextHolder {
     var name: Any? = null
-    private lateinit var delegate: ComponentDelegate<E>
-    private val privateViews = mutableMapOf<Int, (ViewScope<Any>) -> Any?>()
-
     var listView = false
-    var view: ((ViewScope<Any>) -> Any?)? = {
+    lateinit var newContext: Context
+    lateinit var delegate: P
+    internal val privateViews = mutableMapOf<Int, ViewFunction>()
+    internal var publicView: ViewFunction? = {
         when {
-            listView -> ctx.listView(it)
-            ctx.children.isNotEmpty() -> ctx.mapView(it)
-            else -> delegate.value
+            listView -> newContext.listView(it)
+            newContext.children.isNotEmpty() -> newContext.mapView(it)
+            else -> getter.invoke(delegate)
         }
     }
-/*
-* Add event listeners, setup listeners
-* Set view (private, public, hidden) -- name doesn't come until "provide delegate"
-* Set value, setters and getters, dynamic value...
-*
-*/
-    operator fun provideDelegate(thisRef: Entity?, prop: KProperty<*>): ReadWriteProperty<Entity?, E> {
-        val newName = name ?: prop.name
-        val newContext = Context(ctx.gameContext, ctx, newName)
-        this.delegate = ComponentDelegate(default.invoke(object : ContextHolder {
-            override val ctx: Context get() = newContext
-        }))
-        newContext.view = {
-            val privateView = privateViews[it.viewer] ?: view
-            privateView?.invoke(it)
-        }
-        ctx.children.add(newContext)
-        this.ctx = newContext
+
+    operator fun provideDelegate(thisRef: Entity?, prop: KProperty<*>): P {
+        this.name = this.name ?: prop.name
+        this.newContext = ctx.createChild(thisRef, name!!, this)
+        this.delegate = propertyFactory.invoke(newContext)
         return delegate
     }
 
-    fun setup(init: GameStartScope<Any>.(E) -> E): ContextFactory<E> {
-        ctx.rootContext.onSetup.add {
-            val result = init.invoke(this, delegate.value)
-            delegate.value = result
+    fun <T: Any> on(event: Event<T>, handler: HandlerScope<E, T>.() -> Unit): DelegateFactory<E, P> {
+        this.ctx.onEvent<T, E>(event, { handler.invoke(this); value }, { getter.invoke(delegate) }, { setter.invoke(delegate, it) })
+        return this
+    }
+
+    fun setup(init: GameStartScope<Any>.(E) -> E): DelegateFactory<E, P> {
+        ctx.gameContext.onSetup.add {
+            val result = init.invoke(this, getter.invoke(delegate))
+            setter.invoke(delegate, result)
         }
         return this
     }
 
-    fun <T: Any> changeOn(event: Event<T>, handler: HandlerScope<E, T>.() -> E): ContextFactory<E> {
-        ctx.onEvent(event, handler) { delegate }
-        return this
-    }
-    fun <T: Any> on(event: Event<T>, handler: HandlerScope<E, T>.() -> Unit): ContextFactory<E> {
-        ctx.onEvent(event, { handler.invoke(this); value }) { delegate }
+    fun <T: Any> changeOn(event: Event<T>, handler: HandlerScope<E, T>.() -> E): DelegateFactory<E, P> {
+        ctx.onEvent(event, handler, { getter.invoke(delegate) }, { setter.invoke(delegate, it) })
         return this
     }
 
-    fun privateView(playerIndices: List<Int>, view: (E) -> Any): ContextFactory<E> {
+    fun privateView(playerIndices: List<Int>, view: (E) -> Any): DelegateFactory<E, P> {
         playerIndices.forEach { index ->
-            privateViews.put(index) {
-                view.invoke(delegate.value)
-            }
+            privateViews[index] = { view.invoke(getter.invoke(delegate)) }
         }
         return this
     }
-    fun privateView(playerIndex: Int, view: (E) -> Any): ContextFactory<E> = this.privateView(listOf(playerIndex), view)
-    fun publicView(view: (E) -> Any): ContextFactory<E> {
-        this.view = { view.invoke(delegate.value) }
+    fun privateView(playerIndex: Int, view: (E) -> Any): DelegateFactory<E, P> = this.privateView(listOf(playerIndex), view)
+    fun publicView(view: (E) -> Any): DelegateFactory<E, P> {
+        this.publicView = { view.invoke(getter.invoke(delegate)) }
         return this
     }
 
-    fun hiddenView(): ContextFactory<E> {
-        this.view = null
+    fun hiddenView(): DelegateFactory<E, P> {
+        this.publicView = { HiddenValue }
         return this
     }
 }
@@ -145,86 +102,104 @@ class ActionFactory<T: Any, A: Any>(
     override val actionDsl: GameFlowActionScope<T, A>.() -> Unit
 ): ActionDefinition<T, A> {
     override var actionType = GameActionCreator<T, A>(name, parameterType, parameterType, { it }, { it as A })
-    operator fun provideDelegate(thisRef: Entity?, prop: KProperty<*>): ReadWriteProperty<Entity?, ActionDefinition<T, A>> {
-        return ComponentDelegate(this@ActionFactory)
-    }
 }
 
 class Event<E: Any>(val ctx: Context) {
     operator fun invoke(c: EventTools, e: E) {
-        ctx.rootContext.onEvent.forEach {
+        ctx.rootContext.gameContext.onEvent.forEach {
             it.fire(c, this as Event<Any>, e)
         }
     }
 }
 
-open class Entity(protected open val ctx: Context) {
-    // TODO: Don't think `action` and `event` needs to be delegates.
-    fun <E: Any> event(): ContextFactory<Event<E>> = ContextFactory<Event<E>>(ctx) { Event(ctx) }.hiddenView()
-    fun <E: Any> event(clazz: KClass<E>) = event<E>()
-    fun <E> playerComponent(function: ContextHolder.(Int) -> E): ContextFactory<List<E>> {
-        return ContextFactory(ctx) {
-            val players = ctx.playerIndices.map { index ->
-                val playerContext by ContextFactory<E>(this.ctx) { function.invoke(this, index) }.also { it.name = index }
+open class Entity(override val ctx: Context): ContextHolder {
+    fun <E: Any> event(): Event<E> = Event(ctx)
+    fun <E> playerComponent(function: ContextHolder.(Int) -> E): DelegateFactory<List<E>, ComponentDelegate<List<E>>> {
+        fun listFactory(context: Context): ComponentDelegate<List<E>> {
+            val list = ctx.playerIndices.map { index ->
+                val playerContext by DelegateFactory<E, ComponentDelegate<E>>(context, {
+                    ComponentDelegate(function.invoke(ContextHolderImpl(it), index))
+                }, { it.value }, { d, v -> d.value = v }).also { it.name = index }
                 playerContext
             }
-            players
-        }.also { it.listView = true }
+            return ComponentDelegate(list)
+        }
+        return DelegateFactory(ctx, { listFactory(it) }, { it.value }, { d, v -> d.value = v }).also { it.listView = true }
     }
-    fun <E> component(function: ContextHolder.() -> E): ContextFactory<E> = ContextFactory(ctx, function)
-    fun <E> value(function: ContextHolder.() -> E): ContextFactory<E> = component(function)
-    fun <E> dynamicValue(function: ContextHolder.() -> E): DynamicValueDelegateFactory<E> = DynamicValueDelegateFactory(ctx, function)
-    fun playerReference(function: ContextHolder.() -> Int): ContextFactory<Int> = ContextFactory(ctx, function)
-    fun <E> cards(list: MutableList<E> = mutableListOf()): ContextFactory<CardZone<E>> = ContextFactory(ctx) { CardZone(list) }.publicView { it.cards }
+    fun <E> component(function: ContextHolder.() -> E): DelegateFactory<E, ComponentDelegate<E>> {
+        return DelegateFactory(ctx, { ComponentDelegate(function.invoke(ContextHolderImpl(it))) },
+            { it.value }, { d, v -> d.value = v })
+    }
+    fun <E> value(function: ContextHolder.() -> E): DelegateFactory<E, ComponentDelegate<E>> = component(function)
+    fun <E> dynamicValue(function: ContextHolder.() -> E): DelegateFactory<E, DynamicValueDelegate<E>> {
+        val delegate = DynamicValueDelegate { function.invoke(this) }
+        return DelegateFactory(ctx, { delegate }, { it.function.invoke() }, {_, _ ->})
+    }
+    fun playerReference(function: ContextHolder.() -> Int): DelegateFactory<Int, ComponentDelegate<Int>> = component(function)
+    fun <E> cards(list: MutableList<E> = mutableListOf()): DelegateFactory<CardZone<E>, ComponentDelegate<CardZone<E>>> {
+        val delegate = ComponentDelegate(CardZone(list))
+        return DelegateFactory(ctx, { delegate }, { delegate.value }, { d, v -> d.value = v }).publicView { it.cards }
+    }
     fun <T: Any, A: Any> action(name: String, parameter: KClass<A>, actionDefinition: GameFlowActionScope<T, A>.() -> Unit)
             = ActionFactory(name, parameter, actionDefinition)
     fun <T: Any, A: GameSerializable> actionSerializable(name: String, parameter: KClass<A>, actionDefinition: GameFlowActionScope<T, A>.() -> Unit)
             = ActionFactory(name, parameter, actionDefinition).also { it.actionType = it.actionType.serializer { a -> a.serialize() } }
 }
-class GameContext(val playerCount: Int, val eliminations: PlayerEliminationsWrite, val configLookup: (GameConfig<Any>) -> Any)
+class GameContext(val playerCount: Int, val eliminations: PlayerEliminationsWrite, val configLookup: (GameConfig<Any>) -> Any) {
+    internal val onEvent = mutableListOf<EventListener>()
+    internal val onSetup = mutableListOf<GameStartScope<Any>.() -> Unit>()
+}
 interface ContextHolder {
     val ctx: Context
 }
+class ContextHolderImpl(override val ctx: Context): ContextHolder
 class Context(val gameContext: GameContext, val parent: Context?, val name: Any) {
     val rootContext: Context get() = parent?.rootContext ?: this
-    var view: ((ViewScope<Any>) -> Any?)? = { mapView(it) }
+    var view: ViewFunction? = { mapView(it) }
     fun view(viewScope: ViewScope<Any>): Any? = this.view?.invoke(viewScope)
 
-    fun mapView(viewScope: ViewScope<Any>): Any = children.filter { it.view != null }.associate { it.name to it.view(viewScope) }
+    fun mapView(viewScope: ViewScope<Any>): Any = children.filter { it.view != null }
+        .associate { it.name to it.view(viewScope) }.filterValues { it != HiddenValue }
     fun listView(viewScope: ViewScope<Any>): Any = children.map { it.view(viewScope) }
-    fun <T: Any, E> onEvent(event: Event<T>, handler: HandlerScope<E, T>.() -> E, value: () -> ComponentDelegate<E>) {
-        this.rootContext.onEvent.add(
-            EventListener(gameContext, event as Event<Any>, handler as HandlerScope<Any, Any>.() -> Any) {
-                value.invoke() as ComponentDelegate<Any>
-            }
+    fun <T: Any, E> onEvent(event: Event<T>, handler: HandlerScope<E, T>.() -> E, getter: () -> E, setter: (E) -> Unit) {
+        this.rootContext.gameContext.onEvent.add(
+            EventListener(gameContext, event as Event<Any>, handler as HandlerScope<Any, Any>.() -> Any,
+                { getter.invoke() as Any }, { setter.invoke(it as E) })
         )
+    }
+
+    fun <E, P: ReadOnlyProperty<Entity?, E>> createChild(thisRef: Entity?, name: Any, factory: DelegateFactory<E, P>): Context {
+        val newContext = Context(gameContext, this, name)
+        newContext.view = {
+            val privateView = factory.privateViews[it.viewer] ?: factory.publicView
+            privateView?.invoke(it) ?: HiddenValue
+        }
+        this.children.add(newContext)
+        return newContext
     }
 
     val playerIndices get() = (0 until gameContext.playerCount)
     val children = mutableListOf<Context>()
-
-    internal val onEvent = mutableListOf<EventListener>()
-    internal val onSetup = mutableListOf<GameStartScope<Any>.() -> Unit>()
-
 }
 class EventListener(
     val gameContext: GameContext,
     val event: Event<Any>,
     val handler: HandlerScope<Any, Any>.() -> Any,
-    val delegate: () -> ComponentDelegate<Any>
+    val getter: () -> Any,
+    val resultHandler: (Any) -> Unit
 ) {
     fun fire(c: EventTools, event: Event<Any>, eventValue: Any) {
         if (this.event == event) {
-            var delegateValue by delegate.invoke()
+            val value = getter.invoke()
             val result = this.handler.invoke(object : HandlerScope<Any, Any> {
                 override val replayable: ReplayableScope get() = c.replayable
-                override val value: Any get() = delegateValue
+                override val value: Any get() = value
                 override val event: Any get() = eventValue
                 override fun <E : Any> config(config: GameConfig<E>): E {
                     return gameContext.configLookup.invoke(config as GameConfig<Any>) as E
                 }
             })
-            delegateValue = result
+            resultHandler.invoke(result)
         }
     }
 }
@@ -261,7 +236,7 @@ class GameCreatorContext<T: ContextHolder>(val gameName: String, val function: G
             setup {
                 players(playerRange)
                 onStart {
-                    this.game.ctx.onSetup.forEach { it.invoke(this as GameStartScope<Any>) }
+                    this.game.ctx.gameContext.onSetup.forEach { it.invoke(this as GameStartScope<Any>) }
                 }
                 init {
                     val gc = GameContext(this.playerCount, this.eliminationCallback) { config(it) }
@@ -269,9 +244,7 @@ class GameCreatorContext<T: ContextHolder>(val gameName: String, val function: G
                     context.view = {
                         context.children.associate { it.name to it.view }
                     }
-                    init.invoke(object : ContextHolder {
-                        override val ctx: Context get() = context
-                    })
+                    init.invoke(ContextHolderImpl(context))
                 }
             }
             gameFlow {

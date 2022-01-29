@@ -21,9 +21,9 @@ object IngredientActions {
                 println("Refilling ingredients for round $event")
                 deck.randomWithRefill(discardPile, replayable, 5, "ingredients-slots") { it.toString() }.forEach { it.moveTo(value) }
             }.publicView { it.cards.map { i -> i.serialize() } }
-        override val actionSpace by component { model.ActionSpace(this.ctx, "Ingredients") }
+        override val actionSpace by component { model.ActionSpace(ctx, "Ingredients") }
             .setup { it.initialize(if (playerCount == 4) listOf(1, 1) else listOf(1, 1, 1), playerCount) }
-        override val action by action<AlchemistsDelegationGame.Model, String>("takeIngredient", String::class) {
+        override val action = action<AlchemistsDelegationGame.Model, String>("takeIngredient", String::class) {
             precondition { playerIndex == actionSpace.nextPlayerIndex() }
             options { listOf("") + slots.cards.distinct().map { it.toString() } }
             perform {
@@ -41,8 +41,8 @@ object IngredientActions {
     }
 
     class Transmute(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
-        override val actionSpace by component { model.ActionSpace(this.ctx, "Transmute") }.setup { it.initialize(listOf(1, 2), playerCount) }
-        override val action by actionSerializable<AlchemistsDelegationGame.Model, Ingredient>("transmute", Ingredient::class) {
+        override val actionSpace by component { model.ActionSpace(ctx, "Transmute") }.setup { it.initialize(listOf(1, 2), playerCount) }
+        override val action = actionSerializable<AlchemistsDelegationGame.Model, Ingredient>("transmute", Ingredient::class) {
             precondition { playerIndex == actionSpace.nextPlayerIndex() }
             options { game.players[playerIndex].ingredients.cards.distinct() }
             perform {

@@ -66,9 +66,9 @@ object SellAction {
 
         override fun actionAvailable(playerIndex: Int, chosen: List<AlchemistsDelegationGame.Model.ActionChoice>): Boolean
             = model.round >= 2
-        override val actionSpace by component { model.ActionSpace(this.ctx, "Sell") }
+        override val actionSpace by component { model.ActionSpace(ctx, "Sell") }
             .setup { it.initialize(listOf(2), playerCount) }
-        override val action by actionSerializable<AlchemistsDelegationGame.Model, SellAction>("sell", SellAction::class) {
+        override val action = actionSerializable<AlchemistsDelegationGame.Model, SellAction>("sell", SellAction::class) {
             if (discounts.size < playerCount && playerCount >= 2) {
                 precondition { playerIndex in actionSpace.rows.map { it?.first } } // player is selling
                 precondition { playerIndex !in discounts.map { it.first } } // player has not chosen discount

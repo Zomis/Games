@@ -24,11 +24,11 @@ object AlchemistsDelegationGame {
     class Model(override val ctx: Context, master: GameConfig<Boolean>) : Entity(ctx), ContextHolder {
         val master by value { false }.setup { config(master) }
         val queue by component { mutableListOf<ActionDefinition<Model, Any>>() }.publicView { it.map { s -> s.actionType.name } }
-        val newRound by event(Int::class)
-        val gameInit by event(Unit::class)
-        val spaceDone by event(HasAction::class)
+        val newRound = event<Int>()
+        val gameInit = event<Unit>()
+        val spaceDone = event<HasAction>()
         var round by value { 0 }.changeOn(newRound) { event }
-        val playerMixPotion by event(PotionActions.IngredientsMix::class)
+        val playerMixPotion = event<PotionActions.IngredientsMix>()
         val solution by component { emptyList<Ingredient>() }
             .setup {
                 val list = Ingredient.values().toList()
@@ -57,7 +57,7 @@ object AlchemistsDelegationGame {
                     add(TurnOrder(0, 1, 1, false))
                 }
             }.on(newRound) { value.filter { it.choosable }.forEach { it.chosenBy = null } }
-            val action by actionSerializable<Model, TurnOrder>("turn", TurnOrder::class) {
+            val action = actionSerializable<Model, TurnOrder>("turn", TurnOrder::class) {
                 precondition {
                     playerIndex == Players.startingWith(this@Model.players.indices.toList(), this@Model.startingPlayer).minus(
                         options.map { it.chosenBy }.toSet()
@@ -195,7 +195,7 @@ object AlchemistsDelegationGame {
             override fun serialize(): Any = chosen.map { "${it.associate}/${it.spot.actionSpace.name}" }
         }
         fun nextPlayer(): Int? = turnPicker.options.last { it.chosenBy != null }.chosenBy
-        val actionPlacement by actionSerializable<Model, ActionPlacement>("action", ActionPlacement::class) {
+        val actionPlacement = actionSerializable<Model, ActionPlacement>("action", ActionPlacement::class) {
             precondition {
                 playerIndex == nextPlayer()
             }
@@ -248,11 +248,11 @@ object AlchemistsDelegationGame {
         val custodian by component { PotionActions.Custodian(this@Model, ctx) }
         val sellPotion by component { SellAction.SellHero(this@Model, ctx) }
         val buyArtifact by component { ArtifactActions.BuyArtifact(this@Model, ctx) }
-        val debunkTheory by component { TheoryActions.DebunkTheory(this@Model, this.ctx) }
-        val publishTheory by component { TheoryActions.PublishTheory(this@Model, this.ctx) }
+        val debunkTheory by component { TheoryActions.DebunkTheory(this@Model, ctx) }
+        val publishTheory by component { TheoryActions.PublishTheory(this@Model, ctx) }
         val testStudent by component { PotionActions.TestStudent(this@Model, ctx) }
         val testSelf by component { PotionActions.TestSelf(this@Model, ctx) }
-        val exhibition by component { PotionActions.Exhibition(this@Model, this.ctx) }
+        val exhibition by component { PotionActions.Exhibition(this@Model, ctx) }
         val theoryBoard by component { TheoryActions.TheoryBoard(this@Model, ctx) }
         val cancelledActions by value { mutableListOf<Int>() }
         fun cancelAction(space: HasAction) = action<Model, Unit>("cancel", Unit::class) {
@@ -292,7 +292,7 @@ object AlchemistsDelegationGame {
     val game = GamesApi.gameContext("Alchemists", Model::class) {
         val master = config("master") { false }
         players(2..4)
-        init { Model(ctx, master) }
+        init { Model(this.ctx, master) }
         gameFlow {
             println("SOLUTION: " + game.alchemySolution)
             game.gameInit.invoke(this, Unit)

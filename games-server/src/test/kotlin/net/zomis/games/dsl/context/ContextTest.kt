@@ -5,6 +5,7 @@ import net.zomis.games.api.GamesApi
 import net.zomis.games.context.Context
 import net.zomis.games.context.ContextHolder
 import net.zomis.games.context.Entity
+import net.zomis.games.context.HiddenValue
 import net.zomis.games.dsl.ConsoleView
 import net.zomis.games.dsl.GameReplayableImpl
 import net.zomis.games.dsl.GameSerializable
@@ -25,17 +26,17 @@ class ContextTest {
         override fun serialize(): String = name
     }
     class Player(ctx: Context, val playerIndex: Int): Entity(ctx) {
-        var value by value { 0 }.privateView(playerIndex) { it }
-        val boosterEvent by event(Booster::class) // TODO: Support generic types
+        var value by value { 0 }.privateView(playerIndex) { it }.publicView { HiddenValue }
+        val boosterEvent = event<Booster>()
         val boosters by cards<Booster>().setup { it.cards.addAll(Booster.values()); it }
             .privateView(playerIndex) { it.cards }.publicView { it.size }
         val used by cards<Booster>().on(boosterEvent) { value.cards.add(event) }.publicView { it.cards }
     }
     class Model(override val ctx: Context): Entity(ctx), ContextHolder {
-        val eventRun by event(EventClass::class)
-        val players by playerComponent { Player(ctx, it) }
+        val eventRun = event<EventClass>()
+        val players by playerComponent { Player(this.ctx, it) }
         var value by value { 0 }
-        val inner by component { Inner(this@Model, ctx) }
+        val inner by component { Inner(this@Model, this.ctx) }
         val globalAction = action<Model, Int>("global", Int::class) {
             precondition { true }
             options { 1..10 }
