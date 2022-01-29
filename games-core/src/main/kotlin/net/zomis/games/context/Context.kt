@@ -13,6 +13,15 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 
 object HiddenValue
+enum class EventPriority {
+    EARLIEST,
+    EARLIER,
+    EARLY,
+    NORMAL,
+    LATE,
+    LATER,
+    LATEST
+}
 class ComponentDelegate<E>(initialValue: E): ReadWriteProperty<Entity?, E> {
     var value = initialValue
     override fun getValue(thisRef: Entity?, property: KProperty<*>): E = value
@@ -61,10 +70,13 @@ class DelegateFactory<E, P: ReadOnlyProperty<Entity?, E>>(
         return delegate
     }
 
-    fun <T: Any> on(event: Event<T>, handler: HandlerScope<E, T>.() -> Unit): DelegateFactory<E, P> {
-        this.ctx.onEvent<T, E>(event, { handler.invoke(this); value }, { getter.invoke(delegate) }, { setter.invoke(delegate, it) })
+    fun <T: Any> on(event: Event<T>, priority: EventPriority, handler: HandlerScope<E, T>.() -> Unit): DelegateFactory<E, P> {
+        this.ctx.onEvent<T, E>(event, priority, { handler.invoke(this); value }, { getter.invoke(delegate) }, { setter.invoke(delegate, it) })
         return this
     }
+
+    fun <T: Any> on(event: Event<T>, handler: HandlerScope<E, T>.() -> Unit): DelegateFactory<E, P>
+        = this.on(event, EventPriority.NORMAL, handler)
 
     fun setup(init: GameStartScope<Any>.(E) -> E): DelegateFactory<E, P> {
         ctx.gameContext.onSetup.add {
@@ -74,10 +86,12 @@ class DelegateFactory<E, P: ReadOnlyProperty<Entity?, E>>(
         return this
     }
 
-    fun <T: Any> changeOn(event: Event<T>, handler: HandlerScope<E, T>.() -> E): DelegateFactory<E, P> {
-        ctx.onEvent(event, handler, { getter.invoke(delegate) }, { setter.invoke(delegate, it) })
+    fun <T: Any> changeOn(event: Event<T>, priority: EventPriority, handler: HandlerScope<E, T>.() -> E): DelegateFactory<E, P> {
+        ctx.onEvent(event, priority, handler, { getter.invoke(delegate) }, { setter.invoke(delegate, it) })
         return this
     }
+    fun <T: Any> changeOn(event: Event<T>, handler: HandlerScope<E, T>.() -> E): DelegateFactory<E, P>
+        = changeOn(event, EventPriority.NORMAL, handler)
 
     fun privateView(playerIndices: List<Int>, view: (E) -> Any): DelegateFactory<E, P> {
         playerIndices.forEach { index ->
@@ -106,9 +120,7 @@ class ActionFactory<T: Any, A: Any>(
 
 class Event<E: Any>(val ctx: Context) {
     operator fun invoke(c: EventTools, e: E) {
-        ctx.rootContext.gameContext.onEvent.forEach {
-            it.fire(c, this as Event<Any>, e)
-        }
+        ctx.rootContext.gameContext.fireEvent(c, this as Event<Any>, e)
     }
 }
 
@@ -148,7 +160,18 @@ open class Entity(override val ctx: Context): ContextHolder {
             = ActionFactory(name, parameter, actionDefinition).also { it.actionType = it.actionType.serializer { a -> a.serialize() } }
 }
 class GameContext(val playerCount: Int, val eliminations: PlayerEliminationsWrite, val configLookup: (GameConfig<Any>) -> Any) {
-    internal val onEvent = mutableListOf<EventListener>()
+    internal fun fireEvent(c: EventTools, event: Event<Any>, eventValue: Any) {
+        for (priority in EventPriority.values()) {
+            onEvent[priority]?.forEach {
+                it.fire(c, event, eventValue)
+            }
+        }
+    }
+    internal fun addEventListener(priority: EventPriority, listener: EventListener) {
+        onEvent.getOrPut(priority) { mutableListOf() }.add(listener)
+    }
+
+    private val onEvent = mutableMapOf<EventPriority, MutableList<EventListener>>()
     internal val onSetup = mutableListOf<GameStartScope<Any>.() -> Unit>()
 }
 interface ContextHolder {
@@ -163,8 +186,9 @@ class Context(val gameContext: GameContext, val parent: Context?, val name: Any)
     fun mapView(viewScope: ViewScope<Any>): Any = children.filter { it.view != null }
         .associate { it.name to it.view(viewScope) }.filterValues { it != HiddenValue }
     fun listView(viewScope: ViewScope<Any>): Any = children.map { it.view(viewScope) }
-    fun <T: Any, E> onEvent(event: Event<T>, handler: HandlerScope<E, T>.() -> E, getter: () -> E, setter: (E) -> Unit) {
-        this.rootContext.gameContext.onEvent.add(
+
+    fun <T: Any, E> onEvent(event: Event<T>, priority: EventPriority, handler: HandlerScope<E, T>.() -> E, getter: () -> E, setter: (E) -> Unit) {
+        this.rootContext.gameContext.addEventListener(priority,
             EventListener(gameContext, event as Event<Any>, handler as HandlerScope<Any, Any>.() -> Any,
                 { getter.invoke() as Any }, { setter.invoke(it as E) })
         )
