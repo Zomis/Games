@@ -120,11 +120,11 @@ class ActionFactory<T: Any, A: Any>(
 
 class Event<E: Any>(val ctx: Context) {
     operator fun invoke(c: EventTools, e: E) {
-        ctx.rootContext.gameContext.fireEvent(c, this as Event<Any>, e)
+        ctx.rootContext().gameContext.fireEvent(c, this as Event<Any>, e)
     }
 }
 
-open class Entity(override val ctx: Context): ContextHolder {
+open class Entity(protected open val ctx: Context) {
     private fun <E> delegate(context: Context = ctx, factory: (Context) -> ComponentDelegate<E>): DelegateFactory<E, ComponentDelegate<E>> {
         return DelegateFactory(context, factory, { it.value }, { d, v -> d.value = v })
     }
@@ -146,7 +146,7 @@ open class Entity(override val ctx: Context): ContextHolder {
     }
     fun <E> value(function: ContextHolder.() -> E): DelegateFactory<E, ComponentDelegate<E>> = component(function)
     fun <E> dynamicValue(function: ContextHolder.() -> E): DelegateFactory<E, DynamicValueDelegate<E>> {
-        val delegate = DynamicValueDelegate { function.invoke(this) }
+        val delegate = DynamicValueDelegate { function.invoke(ContextHolderImpl(ctx)) }
         return DelegateFactory(ctx, { delegate }, { it.function.invoke() }, {_, _ ->})
     }
     fun playerReference(function: ContextHolder.() -> Int): DelegateFactory<Int, ComponentDelegate<Int>> = component(function)
@@ -178,8 +178,8 @@ interface ContextHolder {
     val ctx: Context
 }
 class ContextHolderImpl(override val ctx: Context): ContextHolder
-class Context(val gameContext: GameContext, val parent: Context?, val name: Any) {
-    val rootContext: Context get() = parent?.rootContext ?: this
+class Context(val gameContext: GameContext, private val parent: Context?, val name: Any) {
+    fun rootContext(): Context = parent?.rootContext() ?: this
     var view: ViewFunction? = { mapView(it) }
     fun view(viewScope: ViewScope<Any>): Any? = this.view?.invoke(viewScope)
 
@@ -188,7 +188,7 @@ class Context(val gameContext: GameContext, val parent: Context?, val name: Any)
     fun listView(viewScope: ViewScope<Any>): Any = children.map { it.view(viewScope) }
 
     fun <T: Any, E> onEvent(event: Event<T>, priority: EventPriority, handler: HandlerScope<E, T>.() -> E, getter: () -> E, setter: (E) -> Unit) {
-        this.rootContext.gameContext.addEventListener(priority,
+        this.rootContext().gameContext.addEventListener(priority,
             EventListener(gameContext, event as Event<Any>, handler as HandlerScope<Any, Any>.() -> Any,
                 { getter.invoke() as Any }, { setter.invoke(it as E) })
         )
@@ -205,7 +205,7 @@ class Context(val gameContext: GameContext, val parent: Context?, val name: Any)
     }
 
     val playerIndices get() = (0 until gameContext.playerCount)
-    val children = mutableListOf<Context>()
+    internal val children = mutableListOf<Context>()
 }
 class EventListener(
     val gameContext: GameContext,

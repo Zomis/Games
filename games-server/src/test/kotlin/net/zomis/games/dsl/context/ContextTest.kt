@@ -1,5 +1,6 @@
 package net.zomis.games.dsl.context
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.coroutines.runBlocking
 import net.zomis.games.api.GamesApi
 import net.zomis.games.context.Context
@@ -204,6 +205,12 @@ class ContextTest {
     fun event() {
         val (view, game) = runAndView()
         Assertions.assertFalse(view.containsKey(game::eventRun.name))
+    }
+
+    @Test
+    fun noStackOverflowView() {
+        val view = runAndView().first
+        jacksonObjectMapper().writeValueAsString(view)
     }
 
 }
