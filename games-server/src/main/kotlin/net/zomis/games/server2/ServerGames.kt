@@ -10,10 +10,12 @@ import net.zomis.games.impl.grids.KingDomino
 import net.zomis.games.impl.paths.Backgammon
 import net.zomis.games.impl.ttt.*
 import net.zomis.games.impl.words.Decrypto
+import net.zomis.games.impl.words.Wordle
 
 object ServerGames {
 
     val games = listOf(
+        Wordle.game,
         AlchemistsDelegationGame.game,
         Battleship.game,
         Backgammon.game,
