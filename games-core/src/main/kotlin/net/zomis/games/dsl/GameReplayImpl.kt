@@ -59,6 +59,9 @@ class GameReplayableImpl<T : Any>(
                 if (feedback is GameFlowContext.Steps.AwaitInput) {
                     break
                 }
+                if (feedback is GameFlowContext.Steps.GameEnd) {
+                    break
+                }
             }
         }
     }
