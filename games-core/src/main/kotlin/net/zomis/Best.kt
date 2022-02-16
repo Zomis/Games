@@ -2,11 +2,32 @@ package net.zomis
 
 import kotlin.math.sign
 
+@Deprecated("to avoid calling valueFunction too many times, use `bestOf` instead", replaceWith = ReplaceWith("bestOf"))
 fun <T> Iterable<T>.bestBy(valueFunction: (T) -> Double): List<T> {
     val comparator: Comparator<T> = Comparator {a, b ->
         (valueFunction(a) - valueFunction(b)).sign.toInt()
     }
     return this.best(comparator)
+}
+
+fun <T> Iterable<T>.bestOf(valueFunction: (T) -> Double): List<T> {
+    val iterator = iterator()
+    if (!iterator.hasNext()) return emptyList()
+    val first = iterator.next()
+    var max = valueFunction.invoke(first)
+    var maxElements = mutableListOf(first)
+    while (iterator.hasNext()) {
+        val e = iterator.next()
+        val eValue = valueFunction.invoke(e)
+        when (eValue.compareTo(max).sign) { // e, max here creates the descending order
+            1 -> {
+                max = eValue
+                maxElements = mutableListOf(e)
+            }
+            0 -> maxElements.add(e)
+        }
+    }
+    return maxElements
 }
 
 fun <T> Iterable<T>.best(comparator: Comparator<in T>): List<T> {
@@ -27,7 +48,7 @@ fun <T> Iterable<T>.best(comparator: Comparator<in T>): List<T> {
     return maxElements
 }
 
-@Deprecated("Use Iterable<T>.best instead")
+@Deprecated("Use Iterable<T>.bestOf instead", replaceWith = ReplaceWith("bestOf"))
 class Best<T>(private val valueFunction: (T) -> Double) {
 
     private var bestValue: Double = Double.NEGATIVE_INFINITY
