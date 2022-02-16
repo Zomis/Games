@@ -32,7 +32,7 @@ class ConsoleController<T: Any> {
             return null
         }
         val (playerIndex, actionType) = line.split(" ")
-        val actionLogic = game.actions.types().find { it.name.toLowerCase() == actionType.toLowerCase() }
+        val actionLogic = game.actions.types().find { it.name.equals(actionType, ignoreCase = true) }
         if (actionLogic == null) {
             println("Invalid action")
             return null
