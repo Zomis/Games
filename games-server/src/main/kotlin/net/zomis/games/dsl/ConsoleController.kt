@@ -48,6 +48,10 @@ class ConsoleController<T: Any> {
                 actionLogic.createActionFromSerialized(playerIndex.toInt(), Point(x, y))
             }
             Unit::class -> actionLogic.createActionFromSerialized(playerIndex.toInt(), Unit)
+            String::class -> {
+                println("Enter string:")
+                actionLogic.createActionFromSerialized(playerIndex.toInt(), scanner.nextLine())
+            }
             else -> {
                 stepByStepActionable(game, playerIndex.toInt(), actionType, scanner)
             }
