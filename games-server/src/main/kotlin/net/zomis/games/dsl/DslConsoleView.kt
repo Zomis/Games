@@ -1,8 +1,6 @@
 package net.zomis.games.dsl
 
 import kotlinx.coroutines.runBlocking
-import net.zomis.games.common.fmod
-import net.zomis.games.dsl.impl.*
 import net.zomis.games.server2.ServerGames
 import java.util.Scanner
 
