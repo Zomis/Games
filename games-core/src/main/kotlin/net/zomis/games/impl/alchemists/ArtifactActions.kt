@@ -23,21 +23,21 @@ object ArtifactActions {
             1, 4, 2)
     val bronzeCup = Artifact("Bronze Cup", "This artifact has no special effect, but will earn you victory points.", 3, 4, 4)
     val crystalCabinet = Artifact("Crystal Cabinet", "When scoring artifacts, this is worth 2 points for each artifact you own, including this one.", 3, 5, null)
-    val discountCard = Artifact("Discount Card", "Your next artifact costs 2 gold less. After that, artifacts cost you 1 gold less.", 1, 3, 1)
+    val discountCard = Artifact("Discount Card", "Your next artifact costs 2 gold less. After that, artifacts cost you 1 gold less.", 1, 3, 1) // TODO: Could be rule modification
     val featherInCap =
         Artifact("Feather in Cap", "During the exhibition: Set aside ingredients from potions you demonstrate successfully. When scoring artifacts, this cap is worth 1 point for each type of ingredient set aside.", 3, 3, null)
     val hypnoticAmulet =
         Artifact("Hypnotic Amulet", "Immediate effect: Draw 4 favor cards.", 2, 3, 1)
     val magicMirror =
         Artifact("Magic Mirror", "When scoring artifacts, this is worth 1 victory point for every 5 reputation points you had at the end of the final round.", 3, 4, null)
-    val magicMortar = Artifact("Magic Mortar", "When you mix a potion, discard only one of the ingredients. A colleague chooses it randomly.", 1, 3, 1)
+    val magicMortar = Artifact("Magic Mortar", "When you mix a potion, discard only one of the ingredients. A colleague chooses it randomly.", 1, 3, 1) // TODO: Could be rule modification?
     val periscope = Artifact("Periscope", "Immediately after a colleague sells or tests a potion, you may look at one of the ingredients. Choose It randomly. Limit once per round.", 1, 3, 1)
     val printingPress =
-        Artifact("Printing Press", "You do not pay 1 gold to the bank when you publish or endorse a theory.", 1, 4, 2)
+        Artifact("Printing Press", "You do not pay 1 gold to the bank when you publish or endorse a theory.", 1, 4, 2)// TODO: Could be rule modification
     val robeOfRespect =
-        Artifact("Robe of Respect", "Whenever you gain reputation points, gain 1 more. This does not apply in the final round.", 1, 4, 0)
+        Artifact("Robe of Respect", "Whenever you gain reputation points, gain 1 more. This does not apply in the final round.", 1, 4, 0)// TODO: Could be rule modification
     val sealOfAuthority =
-        Artifact("Seal of Authority", "When you publish or endorse a theory, gain 2 additional points of reputation.", 2, 4, 0)
+        Artifact("Seal of Authority", "When you publish or endorse a theory, gain 2 additional points of reputation.", 2, 4, 0)// TODO: Could be rule modification?
     val silverChalice =
         Artifact("Silver Chalice", "This artifact has no special effect, but will earn you victory points", 2, 4, 6)
     val thinkingCap =
@@ -45,7 +45,7 @@ object ArtifactActions {
     val wisdomIdol =
         Artifact("Wisdom Idol", "At the end of the game, Wisdom Idol is worth 1 point for each seal you have on a correct theory.", 3, 4, null)
     val witchTrunk =
-        Artifact("Witch's Trunk", "Immediate effect: Draw 7 ingredients. | You no longer draw ingredients when choosing play order.", 2, 3, 2)
+        Artifact("Witch's Trunk", "Immediate effect: Draw 7 ingredients. | You no longer draw ingredients when choosing play order.", 2, 3, 2)// TODO: Could be rule modification
     val artifacts: List<Artifact> = listOf(
         altarOfGold,
         amuletOfRhetoric,
