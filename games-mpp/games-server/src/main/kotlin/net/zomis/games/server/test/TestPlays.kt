@@ -54,7 +54,7 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
 
             override fun onMove(actionIndex: Int, action: Actionable<Any, Any>, actionReplay: ActionReplay) {
                 if (actionReplay.state?.isNotEmpty() == true) {
-                    replayState(actionReplay.state, 0)
+                    replayState(actionReplay.state.toMap(), 0)
                 }
                 nextLoadState = emptyMap()
             }
@@ -157,7 +157,7 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
                 }
                 runBlocking {
                     if (replayable.game is GameFlowImpl<*>) {
-                        replayable.game.actionsInput.send(actionable)
+                        (replayable.game as GameFlowImpl<*>).actionsInput.send(actionable)
                     } else {
                         replayable.perform(actionable)
                         println("LAST MOVE STATE: " + replayable.state.lastMoveState())
@@ -218,7 +218,8 @@ object PlayTests {
         if (replayable.game is GameFlowImpl) {
             runBlocking {
                 var nextViews = 0
-                for (a in replayable.game.feedbackReceiver) {
+                val gameFlow = replayable.game as GameFlowImpl<*>
+                for (a in gameFlow.feedbackReceiver) {
                     logger.info { a }
                     if (a is GameFlowContext.Steps.GameSetup) {
                         replayable.gameplayCallbacks.startedState(a.playerCount, a.config, a.state)

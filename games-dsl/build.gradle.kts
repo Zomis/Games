@@ -24,6 +24,7 @@ kotlin {
             kotlin.srcDir("common/src/main/kotlin")
             dependencies {
                 implementation(kotlin("stdlib-common"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.2")
             }
         }
         val commonTest by getting {
@@ -33,8 +34,17 @@ kotlin {
                 implementation(kotlin("test-annotations-common"))
             }
         }
+        val jvmMain by getting {
+            kotlin.srcDir("jvm/src/main/kotlin")
+            dependencies {
+                implementation("com.github.lewik.klog:klog-jvm:2.0.2")
+            }
+        }
         val jsMain by getting {
             kotlin.srcDir("js/src/main/kotlin")
+            dependencies {
+                implementation("com.github.lewik.klog:klog-js:2.0.2")
+            }
         }
     }
 }

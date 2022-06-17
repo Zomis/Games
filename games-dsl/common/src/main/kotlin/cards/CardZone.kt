@@ -23,7 +23,7 @@ data class Card<T>(val zone: CardZone<T>, val index: Int, val card: T) {
     }
 }
 
-class CardZone<T>(internal val cards: MutableList<T> = mutableListOf()) {
+class CardZone<T>(val cards: MutableList<T> = mutableListOf()) {
 
     var name: String? = null
 

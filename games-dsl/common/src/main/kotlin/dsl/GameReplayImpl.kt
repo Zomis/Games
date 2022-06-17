@@ -21,7 +21,7 @@ open class GameplayCallbacks<T : Any> {
     open fun onElimination(elimination: PlayerElimination) {/* empty by default */}
     open fun onLog(log: List<ActionLogEntry>) {/* empty by default */}
 }
-data class ActionReplay(val actionType: String, val playerIndex: Int, val serializedParameter: Any, val state: GameSituationState)
+data class ActionReplay(val actionType: String, val playerIndex: Int, val serializedParameter: Any, val state: Map<String, Any>)
 data class ReplayData(
     val gameType: String,
     val playerCount: Int,

@@ -36,7 +36,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
 
 class DslConsoleSetup {
     fun chooseGame(scanner: Scanner): GameSpec<Any> {
-        val gameTypeList = ServerGames.games.map { it.key }.sorted()
+        val gameTypeList = ServerGames.games.map { game -> game.key }.sorted()
         gameTypeList.forEachIndexed { index, gameType ->
             println("$index. $gameType")
         }

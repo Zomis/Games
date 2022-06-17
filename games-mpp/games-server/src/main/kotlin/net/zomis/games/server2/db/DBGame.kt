@@ -100,7 +100,7 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
         return ReplayData(
             summary.gameType, summary.playersInGame.size,
             summary.gameConfig, summary.startingState,
-            moveHistory.map { ActionReplay(it.moveType, it.playerIndex, it.move ?: Unit, it.state) }
+            moveHistory.map { ActionReplay(it.moveType, it.playerIndex, it.move ?: Unit, it.state ?: emptyMap()) }
         )
     }
 
