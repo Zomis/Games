@@ -34,6 +34,7 @@ kotlin {
             dependencies {
                 implementation(kotlin("stdlib-common"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
+                implementation(project(":games-dsl"))
 //                implementation("com.github.lewik.klog:klog-metadata:2.0.2")
             }
         }
