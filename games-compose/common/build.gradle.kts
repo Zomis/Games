@@ -30,6 +30,8 @@ kotlin {
                 api(compose.runtime)
                 api(compose.foundation)
                 api(compose.material)
+                implementation(project(":games-dsl"))
+                implementation(project(":games-impl"))
                 implementation(project(":games-mpp"))
             }
         }

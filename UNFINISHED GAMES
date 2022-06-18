@@ -1,0 +1,45 @@
+Sagrada
+Alchemists
+Red7
+Decrypto
+
+Love Letter
+I would fight the dragon
+
+Pentacolor
+Ricochet Robots
+
+Memory
+Mahjong
+
+Should be somewhat easy to support:
+Isle of Sky
+Carcassone
+
+val coup = factory.game {
+    setup {
+
+    }
+    ecs {
+        // How to fix view with this approach? Make each thing viewable and use public-setting stuff?
+
+        val players = (0 until playerCount).map { playerIndex ->
+            entity {
+                it has hand
+                it has discard
+                it has resources(coins)
+                it has view { mapOf(...) }
+                it has actions(action) {
+                    playerIndex(playerIndex)
+                }
+            }
+        }
+        val deck = entity {
+            it has cards
+            it has view { cards.size }
+        }
+        game has currentPlayer
+        game has stack
+        game has view("players" to players, "deck" to deck)
+    }
+}

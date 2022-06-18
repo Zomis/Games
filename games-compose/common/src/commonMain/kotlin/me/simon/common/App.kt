@@ -7,10 +7,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import net.zomis.games.dsl.GameConfigs
 import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.impl.DslSplendor
-import net.zomis.games.impl.SplendorGame
 
 @Composable
 fun App() {

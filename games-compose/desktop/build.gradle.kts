@@ -20,8 +20,10 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation(project(":games-compose:common"))
-                implementation(project(":games-mpp"))
                 implementation(compose.desktop.currentOs)
+                implementation(project(":games-dsl"))
+                implementation(project(":games-impl"))
+                implementation(project(":games-mpp"))
             }
         }
         val jvmTest by getting
