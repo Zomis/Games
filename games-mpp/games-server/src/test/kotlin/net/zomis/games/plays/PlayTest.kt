@@ -28,7 +28,7 @@ class PlayTest {
 
     @TestFactory
     fun test(): List<DynamicNode> {
-        return recursive(File("playthroughs"))
+        return recursive(File("../playthroughs"))
     }
 
 }

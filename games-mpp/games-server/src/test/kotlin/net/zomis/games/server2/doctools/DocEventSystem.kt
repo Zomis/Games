@@ -53,7 +53,7 @@ class DocBlock(val events: EventSystem, val printer: PrintWriter) {
 class DocWriter(val docFile: String = "UNDEFINED") {
 
     fun document(events: EventSystem, header: String, block: DocBlock.() -> Unit) {
-        val printer = PrintWriter(FileWriter(File("documentation/$docFile.md"), true))
+        val printer = PrintWriter(FileWriter(File("../documentation/$docFile.md"), true))
         printer.use {
             it.append("### $header\n\n")
 
