@@ -133,17 +133,18 @@ class DslRandomPlayTest {
         val remainingPlayers = clientsById.filter { it.value != clients[0] }
 
         val invitees = mapper.writeValueAsString(remainingPlayers.keys)
-        clients[0].sendAndExpectResponse("""{ "route": "invites/$inviteId/send", "gameType": "$dslGame", "invite": $invitees }""")
+        if (remainingPlayers.isNotEmpty()) {
+            clients[0].sendAndExpectResponse("""{ "route": "invites/$inviteId/send", "gameType": "$dslGame", "invite": $invitees }""")
 
-        clients.subList(1, clients.size).forEach { client ->
-            client.send("""{ "route": "invites/$inviteId/respond", "accepted": true }""")
-            client.takeUntilJson { it.getText("type") == "InviteView" }
+            clients.subList(1, clients.size).forEach { client ->
+                client.send("""{ "route": "invites/$inviteId/respond", "accepted": true }""")
+                client.takeUntilJson { it.getText("type") == "InviteView" }
+            }
+            clients[0].takeUntilJson {
+                it.getText("type") == "InviteView" && it["players"].size() == clients.size
+            }
         }
-
-        clients[0].takeUntilJson {
-            it.getText("type") == "InviteView" && it["players"].size() == clients.size
-        }
-        if (playerCount < gameType.setup().playersCount.maxOrNull()!!) {
+        if (playerCount < gameType.setup().playersCount.maxOrNull()!! || playerCount == 1) {
             // Only start game manually if needed. If it's maximum players, game will autostart
             clients[0].send("""{ "route": "invites/$inviteId/start" }""")
         }
