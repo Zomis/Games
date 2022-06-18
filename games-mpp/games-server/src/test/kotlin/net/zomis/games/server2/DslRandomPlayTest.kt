@@ -23,7 +23,6 @@ import net.zomis.games.server2.games.PlayerGameMoveRequest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
@@ -64,7 +63,9 @@ class DslRandomPlayTest {
     companion object {
         @JvmStatic
         fun serverGames(): List<Arguments> {
-            return ServerGames.games.values.sortedBy { it.name }
+            return ServerGames.games.values.filter {
+                it.name.startsWith("DSL") || it.name in listOf("Backgammon", "Wordle") // TODO: Enable all games again, once they are tested
+            }
             .map {
                 val entryPoint = GamesImpl.game(it)
                 val playerCount = entryPoint.setup().playersCount
@@ -101,11 +102,10 @@ class DslRandomPlayTest {
 
     @ParameterizedTest(name = "Random play {0} with {1} players")
     @MethodSource("serverGames")
-    @Disabled
     fun dsl(gameType: GameEntryPoint<Any>, playerCount: Int) {
         val dslGame = gameType.gameType
 
-        val clients = (1..playerCount).map { WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket")) }
+        val clients = (0 until playerCount).map { WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket")) }
         clients.forEach { it.connectBlocking() }
 
         val clientsById = clients.associateBy {client ->
