@@ -156,12 +156,17 @@ object Wordle {
     }
 
     val game = GamesApi.gameContext("Wordle", Model::class) {
+        val maxGuesses = config("maxGuesses") { 42 }
         players(1..1)
         init { Model(this.ctx) }
         gameFlow {
             loop {
                 step("guess") {
                     game.players.forEach {
+                        if (it.guesses.size >= maxGuesses.value) {
+                            eliminations.result(it.playerIndex, WinResult.LOSS)
+                            return@forEach
+                        }
                         this.enableAction(it.guessAction)
                     }
                 }
