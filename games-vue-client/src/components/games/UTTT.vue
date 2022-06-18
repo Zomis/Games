@@ -101,7 +101,7 @@ export default {
     pieceClick(areaIndex, piece) {
       let global = this.boardTileToGlobal({ boardIndex: areaIndex, x: piece.x, y: piece.y })
       console.log("play on", global)
-      this.actions.perform("play", `${global.x},${global.y}`);
+      this.actions.actionParameter("play", { x: global.x, y: global.y });
     },
     boardTileToGlobal(piece) {
       let x = (piece.boardIndex % 3) * 3 + piece.x;

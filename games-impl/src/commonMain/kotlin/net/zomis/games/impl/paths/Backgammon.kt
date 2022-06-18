@@ -65,7 +65,7 @@ object Backgammon {
         fun allowBearOff(piece: Int, steps: Int): Boolean {
             val playerPieces = this.playerPieces()
             // Allow bear off if everything is over 18 and roll is exact, or if this piece is closest to goal
-            val allHome = playerPieces.all { it >= 18 } && piece + steps == 25
+            val allHome = playerPieces.all { it > 18 } && piece + steps == 25
             return allHome || playerPieces.all { it >= piece }
         }
 
