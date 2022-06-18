@@ -5,11 +5,12 @@ import net.zomis.games.common.Point
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.GameReplayableImpl
+import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameController
 
 class GameFlowTestHelper<T: Any>(val gameFlow: GameFlowImpl<T>) {
-    suspend fun takeUntil(condition: (GameFlowContext.Steps.FlowStep) -> Boolean): GameFlowContext.Steps.FlowStep {
+    suspend fun takeUntil(condition: (FlowStep) -> Boolean): FlowStep {
         while (true) {
             val output = gameFlow.feedbackReceiver.receive()
             println("Test Received: $output")

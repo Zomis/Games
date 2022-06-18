@@ -7,6 +7,7 @@ import net.zomis.games.dsl.flow.GameFlowActionDsl
 import net.zomis.games.dsl.flow.GameFlowActionScope
 import net.zomis.games.dsl.flow.GameFlowContext
 import net.zomis.games.dsl.impl.ActionRuleContext
+import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.GameRuleContext
 
 class GameFlowActionContextPerform<T: Any, A: Any>(val context: ActionRuleContext<T, A>): GameFlowActionContext<T, A>() {
@@ -23,7 +24,7 @@ class GameFlowActionContextAfter<T: Any, A: Any>(val context: ActionRuleContext<
 class GameFlowLogicActionPerform<T: Any, A: Any>(
     private val gameData: GameRuleContext<T>,
     private val actionDsls: () -> List<GameFlowActionDsl<T, A>>,
-    private val feedback: (GameFlowContext.Steps.FlowStep) -> Unit
+    private val feedback: (FlowStep) -> Unit
 ) {
     private fun createContext(action: Actionable<T, A>)
         = ActionRuleContext(gameData.game, action, gameData.eliminations, gameData.replayable)

@@ -10,7 +10,7 @@ import net.zomis.games.dsl.impl.*
 class GameFlowLogicActionDelegator<T: Any, A: Any>(
     private val gameData: GameRuleContext<T>,
     override val actionType: ActionType<T, A>,
-    private val feedback: (GameFlowContext.Steps.FlowStep) -> Unit,
+    private val feedback: (FlowStep) -> Unit,
     actionDsls: () -> List<GameFlowActionScope<T, A>.() -> Unit>
 ): GameLogicActionType<T, A> {
     // Keep a list of all ActionDsls here for this specific actionType
@@ -45,7 +45,7 @@ class GameFlowLogicActionDelegator<T: Any, A: Any>(
 
     private fun checkActionAllowed(action: Actionable<T, A>): Boolean {
         if (!actionAllowed(action)) {
-            feedback.invoke(GameFlowContext.Steps.IllegalAction(action.actionType, action.playerIndex, action.parameter))
+            feedback.invoke(FlowStep.IllegalAction(action.actionType, action.playerIndex, action.parameter))
             return false
         }
         return true

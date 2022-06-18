@@ -13,6 +13,7 @@ import net.zomis.games.WinResult
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.flow.GameFlowContext
 import net.zomis.games.dsl.flow.GameFlowImpl
+import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.server2.JacksonTools
 import net.zomis.games.server2.ServerGames
@@ -221,21 +222,21 @@ object PlayTests {
                 val gameFlow = replayable.game as GameFlowImpl<*>
                 for (a in gameFlow.feedbackReceiver) {
                     logger.info { a }
-                    if (a is GameFlowContext.Steps.GameSetup) {
+                    if (a is FlowStep.GameSetup) {
                         replayable.gameplayCallbacks.startedState(a.playerCount, a.config, a.state)
                     }
-                    if (a is GameFlowContext.Steps.NextView) {
+                    if (a is FlowStep.NextView) {
                         if (nextViews++ > 10) throw IllegalStateException("Too many next views")
                     }
-                    if (a is GameFlowContext.Steps.ActionPerformed<*>) {
+                    if (a is FlowStep.ActionPerformed<*>) {
                         tree.replayState(a.replayState, -1)
                     }
-                    if (a is GameFlowContext.Steps.AwaitInput) {
+                    if (a is FlowStep.AwaitInput) {
                         nextViews = 0
                         println("--- Await Input")
                         nextSteps(tree, replayable, s) || break
                     }
-                    if (a is GameFlowContext.Steps.GameEnd) {
+                    if (a is FlowStep.GameEnd) {
                         nextSteps(tree, replayable, s) || break
                         break
                     }

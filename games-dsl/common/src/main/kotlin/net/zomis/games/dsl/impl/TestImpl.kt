@@ -66,7 +66,7 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
                 val output = game.feedbackReceiver.receive()
                 forwards++
                 println("Test flow forward $forwards: $output")
-            } while (output !is GameFlowContext.Steps.GameEnd && output !is GameFlowContext.Steps.AwaitInput)
+            } while (output !is FlowStep.GameEnd && output !is FlowStep.AwaitInput)
             println("Test flow forwarded ${game.stateKeeper.lastMoveState()}")
         } else {
             forwards++

@@ -72,25 +72,25 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
         for (feedback in gameFlow.feedbackReceiver) {
             println("Feedback received: $feedback")
             when (feedback) {
-                is GameFlowContext.Steps.GameEnd -> events.execute(GameEndedEvent(game))
-                is GameFlowContext.Steps.Elimination -> events.execute(
+                is FlowStep.GameEnd -> events.execute(GameEndedEvent(game))
+                is FlowStep.Elimination -> events.execute(
                     PlayerEliminatedEvent(game, feedback.elimination.playerIndex,
                         feedback.elimination.winResult, feedback.elimination.position
                     ))
-                is GameFlowContext.Steps.Log -> sendLogs(game, feedback.log)
-                is GameFlowContext.Steps.ActionPerformed<*> -> events.execute(
+                is FlowStep.Log -> sendLogs(game, feedback.log)
+                is FlowStep.ActionPerformed<*> -> events.execute(
                     MoveEvent(game, feedback.playerIndex, feedback.actionImpl.actionType, feedback.parameter, feedback.replayState)
                 )
-                is GameFlowContext.Steps.AwaitInput -> {
+                is FlowStep.AwaitInput -> {
                     if (gameFlow.eliminations.isGameOver()) {
                         throw IllegalStateException("Game is over but AwaitInput was sent")
                     }
                     return
                 }
-                is GameFlowContext.Steps.GameSetup -> { /* SuperTable also listens for GameStartedEvent with higher priority */ }
-                is GameFlowContext.Steps.RuleExecution -> logger.debug { "Rule Execution: $feedback" }
-                is GameFlowContext.Steps.IllegalAction -> logger.error { "Illegal action in feedback: $feedback" }
-                is GameFlowContext.Steps.NextView -> logger.debug { "NextView: $feedback" } // TODO: Not implemented yet, should pause a bit and then continue
+                is FlowStep.GameSetup -> { /* SuperTable also listens for GameStartedEvent with higher priority */ }
+                is FlowStep.RuleExecution -> logger.debug { "Rule Execution: $feedback" }
+                is FlowStep.IllegalAction -> logger.error { "Illegal action in feedback: $feedback" }
+                is FlowStep.NextView -> logger.debug { "NextView: $feedback" } // TODO: Not implemented yet, should pause a bit and then continue
                 else -> {
                     logger.error(IllegalArgumentException("Unsupported feedback: $feedback"))
                 }

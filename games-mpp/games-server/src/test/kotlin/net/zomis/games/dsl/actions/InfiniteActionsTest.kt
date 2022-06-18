@@ -8,6 +8,7 @@ import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.flow.GameFlowContext
 import net.zomis.games.dsl.flow.GameFlowImpl
 import net.zomis.games.dsl.impl.ActionSampleSize
+import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.impl.SpiceRoadDsl
 import net.zomis.games.impl.SpiceRoadGameModel
@@ -146,7 +147,7 @@ class InfiniteActionsTest {
         runBlocking {
             while (true) {
                 val a = game.feedbackReceiver.receive()
-                if (a is GameFlowContext.Steps.AwaitInput) break
+                if (a is FlowStep.AwaitInput) break
             }
         }
         testAvailableActions(game)

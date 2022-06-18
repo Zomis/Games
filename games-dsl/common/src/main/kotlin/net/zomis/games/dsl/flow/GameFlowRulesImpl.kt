@@ -4,6 +4,7 @@ import net.zomis.games.common.GameEvents
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.flow.rules.GameRulePresets
 import net.zomis.games.dsl.flow.rules.GameRulePresetsImpl
+import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.GameMarker
 import net.zomis.games.dsl.impl.GameRuleContext
 import net.zomis.games.dsl.rulebased.*
@@ -90,7 +91,7 @@ abstract class GameFlowRuleContext<T: Any>: GameFlowRule<T> {
 }
 interface GameFlowRuleCallbacks<T: Any> {
     fun view(key: String, value: ViewScope<T>.() -> Any?)
-    val feedback: (GameFlowContext.Steps.FlowStep) -> Unit
+    val feedback: (FlowStep) -> Unit
     fun <A : Any> action(action: ActionType<T, A>, actionDsl: GameFlowActionScope<T, A>.() -> Unit)
 }
 
@@ -105,7 +106,7 @@ class GameFlowRuleContextRun<T: Any>(
         if (!activeCheck.result) return
 
         println("Execute rule: $name")
-        callbacks.feedback.invoke(GameFlowContext.Steps.RuleExecution(name, Unit))
+        callbacks.feedback.invoke(FlowStep.RuleExecution(name, Unit))
         val execution = GameFlowRuleContextExecution(context, callbacks, eventsMap)
         rule.invoke(execution)
     }

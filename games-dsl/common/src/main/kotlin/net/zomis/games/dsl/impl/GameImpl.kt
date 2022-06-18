@@ -1,5 +1,7 @@
 package net.zomis.games.dsl.impl
 
+import kotlinx.coroutines.flow.Flow
+import net.zomis.games.PlayerElimination
 import net.zomis.games.PlayerEliminations
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.GameEvents
@@ -52,6 +54,25 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
 
 @DslMarker
 annotation class GameMarker
+
+sealed class FlowStep {
+    object GameEnd: FlowStep()
+    data class Elimination(val elimination: PlayerElimination): FlowStep()
+    data class ActionPerformed<T: Any>(
+        val action: Actionable<T, Any>,
+        val actionImpl: ActionTypeImplEntry<T, Any>,
+        val replayState: Map<String,  Any>
+    ): FlowStep() {
+        val playerIndex: Int get() = action.playerIndex
+        val parameter: Any get() = action.parameter
+    }
+    data class IllegalAction(val actionType: String, val playerIndex: Int, val parameter: Any): FlowStep()
+    data class Log(val log: ActionLogEntry): FlowStep()
+    data class RuleExecution(val ruleName: String, val values: Any): FlowStep()
+    data class GameSetup(val playerCount: Int, val config: GameConfigs, val state: Map<String, Any>): FlowStep()
+    object AwaitInput: FlowStep()
+    object NextView : FlowStep()
+}
 
 interface Game<T: Any> {
     val playerCount: Int

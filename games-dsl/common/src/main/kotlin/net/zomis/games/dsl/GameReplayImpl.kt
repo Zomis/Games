@@ -56,10 +56,10 @@ class GameReplayableImpl<T : Any>(
             for (feedback in game.feedbackReceiver) {
                 println("Replayable await gets feedback: $feedback")
                 handleFeedback(feedback)
-                if (feedback is GameFlowContext.Steps.AwaitInput) {
+                if (feedback is FlowStep.AwaitInput) {
                     break
                 }
-                if (feedback is GameFlowContext.Steps.GameEnd) {
+                if (feedback is FlowStep.GameEnd) {
                     break
                 }
             }
@@ -110,13 +110,13 @@ class GameReplayableImpl<T : Any>(
         }
     }
 
-    private fun handleFeedback(feedback: GameFlowContext.Steps.FlowStep) {
+    private fun handleFeedback(feedback: FlowStep) {
         when (feedback) {
-            is GameFlowContext.Steps.GameSetup -> gameplayCallbacks.startedState(feedback.playerCount, feedback.config, feedback.state)
-            is GameFlowContext.Steps.NextView -> {}
-            is GameFlowContext.Steps.Elimination -> gameplayCallbacks.onElimination(feedback.elimination)
-            is GameFlowContext.Steps.Log -> gameplayCallbacks.onLog(listOf(feedback.log))
-            is GameFlowContext.Steps.ActionPerformed<*> -> {
+            is FlowStep.GameSetup -> gameplayCallbacks.startedState(feedback.playerCount, feedback.config, feedback.state)
+            is FlowStep.NextView -> {}
+            is FlowStep.Elimination -> gameplayCallbacks.onElimination(feedback.elimination)
+            is FlowStep.Log -> gameplayCallbacks.onLog(listOf(feedback.log))
+            is FlowStep.ActionPerformed<*> -> {
                 val actionReplay = ActionReplay(feedback.actionImpl.actionType.name, feedback.playerIndex,
                     feedback.actionImpl.actionType.serialize(feedback.parameter), feedback.replayState
                 )

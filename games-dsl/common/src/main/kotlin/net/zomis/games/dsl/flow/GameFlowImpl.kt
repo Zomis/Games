@@ -4,7 +4,7 @@ import klog.KLoggers
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import net.zomis.games.PlayerElimination
+import kotlinx.coroutines.flow.Flow
 import net.zomis.games.PlayerEliminations
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.GameEvents
@@ -21,16 +21,16 @@ class GameFlowImpl<T: Any>(
 
     override val config: Any get() = gameConfig.oldStyleValue()
     private val logger = KLoggers.logger(this)
-    private var lastAction: GameFlowContext.Steps.ActionPerformed<T>? = null
+    private var lastAction: FlowStep.ActionPerformed<T>? = null
     private val mainScope = MainScope()
     val views = mutableListOf<Pair<String, ViewScope<T>.() -> Any?>>()
-    private val feedbackOutput = Channel<GameFlowContext.Steps.FlowStep>()
-    val feedbackReceiver: ReceiveChannel<GameFlowContext.Steps.FlowStep> get() = feedbackOutput
-    private val feedbacks = mutableListOf<GameFlowContext.Steps.FlowStep>()
+    private val feedbackOutput = Channel<FlowStep>()
+    val feedbackReceiver: ReceiveChannel<FlowStep> get() = feedbackOutput
+    private val feedbacks = mutableListOf<FlowStep>()
 
     override val eliminations: PlayerEliminations = PlayerEliminations(playerCount).also {
         it.callback = { elimination ->
-            feedbacks.add(GameFlowContext.Steps.Elimination(elimination))
+            feedbacks.add(FlowStep.Elimination(elimination))
         }
     }
     override val events: GameEventsExecutor = this
@@ -39,7 +39,7 @@ class GameFlowImpl<T: Any>(
     val replayable = ReplayState(stateKeeper, eliminations, gameConfig)
     override val actions = GameFlowActionsImpl({ feedbacks.add(it) }, model, eliminations, replayable)
     private var gameSetupSent = false
-    override val feedback: (GameFlowContext.Steps.FlowStep) -> Unit = { feedbacks.add(it) }
+    override val feedback: (FlowStep) -> Unit = { feedbacks.add(it) }
 
     val actionsInput: Channel<Any> = Channel()
     val job: Job
@@ -53,7 +53,7 @@ class GameFlowImpl<T: Any>(
                 setupContext.model.onStart(GameStartContext(gameConfig, model, replayable, playerCount))
                 dsl.invoke(flowContext)
                 actionDone()
-                sendFeedback(GameFlowContext.Steps.GameEnd)
+                sendFeedback(FlowStep.GameEnd)
                 logger.info("GameFlow Coroutine MainScope done for $game")
             } catch (e: Exception) {
                 KLoggers.logger(game).error(e) { "Error in Coroutine for game $game" }
@@ -66,7 +66,7 @@ class GameFlowImpl<T: Any>(
             sendFeedback(it)
         }
         stateKeeper.logs().forEach {
-            sendFeedback(GameFlowContext.Steps.Log(it))
+            sendFeedback(FlowStep.Log(it))
         }
         stateKeeper.clearLogs()
         feedbacks.clear()
@@ -109,27 +109,27 @@ class GameFlowImpl<T: Any>(
                     return null
                 }
                 if (!gameSetupSent) {
-                    sendFeedback(GameFlowContext.Steps.GameSetup(playerCount, gameConfig, replayable.stateKeeper.lastMoveState()))
+                    sendFeedback(FlowStep.GameSetup(playerCount, gameConfig, replayable.stateKeeper.lastMoveState()))
                     gameSetupSent = true
                 }
                 replayable.stateKeeper.clear()
-                sendFeedback(GameFlowContext.Steps.AwaitInput)
+                sendFeedback(FlowStep.AwaitInput)
                 val action = actionsInput.receive()
                 logger.info("GameFlow Coroutine Action Received: $action")
                 require(action is Actionable<*, *>)
                 val typeEntry = actions.type(action.actionType)
                 if (typeEntry == null) {
-                    sendFeedback(GameFlowContext.Steps.IllegalAction(action.actionType, action.playerIndex, action.parameter))
+                    sendFeedback(FlowStep.IllegalAction(action.actionType, action.playerIndex, action.parameter))
                     continue
                 }
                 actions.clearAndPerform(action as Actionable<T, Any>) { this.clear() }
-                this.lastAction = GameFlowContext.Steps.ActionPerformed(action, typeEntry, replayable.stateKeeper.lastMoveState())
+                this.lastAction = FlowStep.ActionPerformed(action, typeEntry, replayable.stateKeeper.lastMoveState())
                 runRules(GameFlowRulesState.AFTER_ACTIONS)
                 return action
             }
         } else {
             logger.info("GameFlow Coroutine No Available Actions")
-            sendFeedback(GameFlowContext.Steps.NextView)
+            sendFeedback(FlowStep.NextView)
             clear()
             runRules(GameFlowRulesState.AFTER_ACTIONS)
             return null
@@ -149,7 +149,7 @@ class GameFlowImpl<T: Any>(
         }
     }
 
-    suspend fun sendFeedback(feedback: GameFlowContext.Steps.FlowStep) {
+    suspend fun sendFeedback(feedback: FlowStep) {
         logger.info("GameFlow Coroutine sends feedback: $feedback")
         this.feedbackOutput.send(feedback)
         logger.info("GameFlow Coroutine feedback sent: $feedback, continuing coroutine...")
@@ -202,26 +202,6 @@ class GameFlowContext<T: Any>(
     override val game: T get() = flow.model
     override val eliminations: PlayerEliminationsWrite get() = flow.eliminations
     override val replayable: ReplayState get() = flow.replayable
-
-    object Steps {
-        interface FlowStep
-        object GameEnd: FlowStep
-        data class Elimination(val elimination: PlayerElimination): FlowStep
-        data class ActionPerformed<T: Any>(
-            val action: Actionable<T, Any>,
-            val actionImpl: ActionTypeImplEntry<T, Any>,
-            val replayState: Map<String,  Any>
-        ): FlowStep {
-            val playerIndex: Int get() = action.playerIndex
-            val parameter: Any get() = action.parameter
-        }
-        data class IllegalAction(val actionType: String, val playerIndex: Int, val parameter: Any): FlowStep
-        data class Log(val log: ActionLogEntry): FlowStep
-        data class RuleExecution(val ruleName: String, val values: Any): FlowStep
-        data class GameSetup(val playerCount: Int, val config: GameConfigs, val state: Map<String, Any>): FlowStep
-        object AwaitInput: FlowStep
-        object NextView : FlowStep
-    }
 
     override suspend fun loop(function: suspend GameFlowScope<T>.() -> Unit) {
         while (!flow.isGameOver()) {

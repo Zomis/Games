@@ -18,7 +18,7 @@ open class GameFlowActionContext<T: Any, A: Any>: GameFlowActionScope<T, A> {
 
 typealias GameFlowActionDsl<T, A> = GameFlowActionScope<T, A>.() -> Unit
 class GameFlowActionsImpl<T: Any>(
-    private val feedback: (GameFlowContext.Steps.FlowStep) -> Unit,
+    private val feedback: (FlowStep) -> Unit,
     private val model: T,
     private val eliminations: PlayerEliminationsWrite,
     private val replayable: ReplayState
