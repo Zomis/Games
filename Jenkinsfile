@@ -36,7 +36,7 @@ pipeline {
                 timeout(time: 15, unit: 'MINUTES')
             }
             steps {
-                sh 'cp /home/zomis/jenkins/server2-secrets.properties games-server/src/main/resources/secrets.properties'
+                sh 'cp /home/zomis/jenkins/server2-secrets.properties games-mpp/games-server/src/main/resources/secrets.properties'
                 sh 'cp /home/zomis/jenkins/server2-startup.conf docker/server2.conf.docker'
                 sh './gradlew clean test shadowCreate --info'
                 script {
@@ -45,7 +45,7 @@ pipeline {
                         error("There are git changes after build")
                     }
                 }
-                sh 'cp build/libs/*-all.jar docker/'
+                sh 'cp games-mpp/build/libs/*-all.jar docker/'
             }
         }
         stage('Client npm install') {
