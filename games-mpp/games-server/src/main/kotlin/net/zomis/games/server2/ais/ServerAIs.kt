@@ -31,6 +31,7 @@ class ServerAIs(private val aiRepository: AIRepository, private val dslGameTypes
             val next = actionType.withChosen(playerIndex, chosen)
             val options = next.nextOptions().toList()
             val parameters = next.parameters().toList()
+            if (options.isEmpty() && parameters.isEmpty()) return null
             val random = (0 until (options.size + parameters.size)).random()
             if (random >= options.size) {
                 val actionable = actionType.createAction(playerIndex, parameters[random - options.size].parameter)
