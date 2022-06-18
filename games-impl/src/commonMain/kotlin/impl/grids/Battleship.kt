@@ -2,6 +2,7 @@ package net.zomis.games.impl.grids
 
 import net.zomis.games.WinResult
 import net.zomis.games.api.Games
+import net.zomis.games.api.components
 import net.zomis.games.common.Point
 import net.zomis.games.common.Rect
 

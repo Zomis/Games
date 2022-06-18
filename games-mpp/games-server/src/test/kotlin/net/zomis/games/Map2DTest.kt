@@ -1,6 +1,7 @@
 package net.zomis.games
 
 import net.zomis.games.api.Games
+import net.zomis.games.api.components
 import net.zomis.games.components.*
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test

@@ -3,6 +3,7 @@ package net.zomis.games.impl
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.WinResult
 import net.zomis.games.api.Games
+import net.zomis.games.api.components
 import net.zomis.games.common.Direction8
 import net.zomis.games.common.Point
 import net.zomis.games.common.PointMove

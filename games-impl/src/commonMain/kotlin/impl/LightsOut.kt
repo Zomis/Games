@@ -3,6 +3,7 @@ package net.zomis.games.impl
 import net.zomis.games.WinResult
 import net.zomis.games.api.Games
 import net.zomis.games.api.GamesApi
+import net.zomis.games.api.components
 import net.zomis.games.common.Direction4
 import net.zomis.games.common.Point
 
