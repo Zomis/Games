@@ -188,7 +188,7 @@ class DslRandomPlayTest {
             }
             actionCounter++
             if (actionCounter % 10 == 0) {
-                clients[0].sendAndExpectResponse("""{ "route": "games/$dslGame/1/view", "playerIndex": -1 }""")
+                clients[0].sendAndExpectResponse("""{ "route": "games/$dslGame/1/view", "playerIndex": 0 }""")
                 clients[0].takeUntilJson { it.getText("type") == "GameView" }
             }
             val actions: List<PlayerGameMoveRequest> = players.mapNotNull {playerClient ->
@@ -205,7 +205,7 @@ class DslRandomPlayTest {
                 }
             }.map { it.serialize(gameImpl) }
             if (actions.isEmpty()) {
-                clients[0].sendAndExpectResponse("""{ "route": "games/$dslGame/1/view" }""")
+                clients[0].sendAndExpectResponse("""{ "route": "games/$dslGame/1/view", "playerIndex": 0 }""")
                 val view = clients[0].takeUntilJson { it.getText("type") == "GameView" }
                 throw IllegalStateException("Game is not over but no actions available after $actionCounter actions. Is the game a draw? View is $view")
             }
