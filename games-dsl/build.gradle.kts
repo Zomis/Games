@@ -4,6 +4,8 @@ plugins {
 
 version = "1.0-SNAPSHOT"
 
+val jupiterVersion = "5.7.1"
+
 kotlin {
     jvm {
         compilations.all {
@@ -40,11 +42,26 @@ kotlin {
                 implementation("com.github.lewik.klog:klog-jvm:2.0.2")
             }
         }
+        val jvmTest by getting {
+            kotlin.srcDir("src/jvmTest/kotlin")
+            dependencies {
+                implementation("org.junit.jupiter:junit-jupiter-api:$jupiterVersion")
+                implementation("org.junit.jupiter:junit-jupiter-params:$jupiterVersion")
+                runtimeOnly("org.junit.jupiter:junit-jupiter-engine:$jupiterVersion")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.5.2")
+            }
+        }
         val jsMain by getting {
             kotlin.srcDir("js/src/main/kotlin")
             dependencies {
                 implementation("com.github.lewik.klog:klog-js:2.0.2")
             }
         }
+    }
+}
+
+tasks {
+    withType<Test> {
+        useJUnitPlatform()
     }
 }
