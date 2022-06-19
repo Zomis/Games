@@ -54,7 +54,7 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
             }
 
             override fun onMove(actionIndex: Int, action: Actionable<Any, Any>, actionReplay: ActionReplay) {
-                if (actionReplay.state?.isNotEmpty() == true) {
+                if (actionReplay.state.isNotEmpty()) {
                     replayState(actionReplay.state.toMap(), 0)
                 }
                 nextLoadState = emptyMap()

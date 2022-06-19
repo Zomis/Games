@@ -141,10 +141,8 @@ class ReplayState(
     }
 
     private fun <T: Any> replayable(key: String, default: () -> T): T {
-        if (stateKeeper.containsKey(key) && !stateKeeper.replayMode) {
-            throw IllegalStateException("State was already saved once for key $key. Use a different key")
-        }
         if (stateKeeper.containsKey(key)) {
+            check(stateKeeper.replayMode) { "State was already saved once for key $key. Use a different key" }
             return stateKeeper[key] as T
         }
         val value = default()
