@@ -2,6 +2,7 @@ package net.zomis.games.dsl.context
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import net.zomis.games.api.GamesApi
 import net.zomis.games.context.Context
 import net.zomis.games.context.ContextHolder
@@ -11,6 +12,7 @@ import net.zomis.games.dsl.ConsoleView
 import net.zomis.games.dsl.GameReplayableImpl
 import net.zomis.games.dsl.GameSerializable
 import net.zomis.games.dsl.GamesImpl
+import net.zomis.games.dsl.flow.GameFlowImpl
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -80,7 +82,12 @@ class ContextTest {
     fun startConfig() {
         val entry = GamesImpl.game(game)
         val replayable = entry.replayable(3, entry.setup().configs().set("startValue", 100))
-        runBlocking { replayable.await() }
+        runBlocking {
+            withTimeout(2000) {
+                replayable.game.start(this)
+                replayable.await()
+            }
+        }
         Assertions.assertEquals(3, replayable.game.model.players.size)
         Assertions.assertTrue(replayable.game.model.players.all { it.value == 100 })
     }
@@ -88,7 +95,13 @@ class ContextTest {
     private fun init(): GameReplayableImpl<Model> {
         val entry = GamesImpl.game(game)
         val repl = entry.replayable(2, entry.setup().configs())
-        runBlocking { repl.await() }
+        runBlocking {
+            withTimeout(1000) {
+                repl.game.start(this)
+                check(repl.game is GameFlowImpl)
+                repl.await()
+            }
+        }
         return repl
     }
 

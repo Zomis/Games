@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test
 
 class QuixoTest {
 
-    private val createTestGame = { TestGame.create<TTQuixoController>("Quixo") }
+    private val createTestGame = { TestGame.create<TTQuixoController>("Quixo").also { it.game.startSynchronized() } }
     private val move = "move"
 
     @Test

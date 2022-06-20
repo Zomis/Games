@@ -1,6 +1,8 @@
 package net.zomis.games.dsl.actions
 
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import net.zomis.games.WinResult
 import net.zomis.games.api.GamesApi
 import net.zomis.games.dsl.ActionChoicesRecursiveSpecScope
@@ -125,6 +127,11 @@ class InfiniteActionsTest {
     @Test
     fun limitedEvaluation() {
         val game = GamesImpl.game(game).setup().createGameWithDefaultConfig(1)
+        runBlocking {
+            withTimeout(1000) {
+                game.start(this)
+            }
+        }
         testAvailableActions(game)
 
         val actionType = game.actions.type(combine)!!
@@ -145,9 +152,9 @@ class InfiniteActionsTest {
     fun limitedEvaluationGameFlow() {
         val game = GamesImpl.game(gameFlow).setup().createGameWithDefaultConfig(1) as GameFlowImpl<MyList>
         runBlocking {
-            while (true) {
-                val a = game.feedbackReceiver.receive()
-                if (a is FlowStep.AwaitInput) break
+            withTimeout(2000) {
+                game.start(this)
+                game.feedbackReceiverFlow().collect {  }
             }
         }
         testAvailableActions(game)

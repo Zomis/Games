@@ -53,15 +53,9 @@ class GameReplayableImpl<T : Any>(
 
     suspend fun await() {
         if (game is GameFlowImpl) {
-            for (feedback in game.feedbackReceiver) {
+            game.feedbackReceiverFlow().collect { feedback ->
                 println("Replayable await gets feedback: $feedback")
                 handleFeedback(feedback)
-                if (feedback is FlowStep.AwaitInput) {
-                    break
-                }
-                if (feedback is FlowStep.GameEnd) {
-                    break
-                }
             }
         }
     }

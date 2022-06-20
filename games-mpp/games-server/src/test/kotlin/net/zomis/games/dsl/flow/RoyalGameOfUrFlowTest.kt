@@ -18,6 +18,7 @@ class RoyalGameOfUrFlowTest {
         val test = GameFlowTestHelper(gameFlowImpl)
         val model = gameFlowImpl.model
         runBlocking {
+            gameFlowImpl.start(this)
             Assertions.assertEquals(1, model.piecesCopy[0].count { it == 0 })
             test.takeUntil { it is FlowStep.AwaitInput }
 

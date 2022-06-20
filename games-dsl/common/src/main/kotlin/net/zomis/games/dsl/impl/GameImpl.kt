@@ -59,7 +59,8 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
 annotation class GameMarker
 
 sealed class FlowStep {
-    object GameEnd: FlowStep()
+    interface ProceedStep
+    object GameEnd: FlowStep(), ProceedStep
     data class Elimination(val elimination: PlayerElimination): FlowStep()
     data class ActionPerformed<T: Any>(
         val action: Actionable<T, Any>,
@@ -73,8 +74,8 @@ sealed class FlowStep {
     data class Log(val log: ActionLogEntry): FlowStep()
     data class RuleExecution(val ruleName: String, val values: Any): FlowStep()
     data class GameSetup(val playerCount: Int, val config: GameConfigs, val state: Map<String, Any>): FlowStep()
-    object AwaitInput: FlowStep()
-    object NextView : FlowStep()
+    object AwaitInput: FlowStep(), ProceedStep
+    object NextView : FlowStep(), ProceedStep
 }
 
 interface Game<T: Any> {

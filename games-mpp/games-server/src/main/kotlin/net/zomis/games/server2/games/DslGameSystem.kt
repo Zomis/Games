@@ -164,8 +164,19 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                 appropriateReplayListener
             ) as GameReplayableImpl<Any>
             val game = it.game.obj!!.game
+            GlobalScope.launch {
+                println("Call start game")
+                game.start(this)
+                if (game !is GameFlowImpl) game.actionsInput.close()
+                println("Game started")
+            }
             if (game is GameFlowImpl) {
-                runBlocking { handleFeedbacks(game as GameFlowImpl<T>, events, it.game) }
+                println("Run blocking")
+                runBlocking {
+                    println("before handle feedbacks")
+                    handleFeedbacks(game as GameFlowImpl<T>, events, it.game)
+                    println("after handle feedbacks")
+                }
             }
             events.execute(GameInitializedEvent(it.game, game.stateKeeper.lastMoveState()))
         })

@@ -1,10 +1,12 @@
 package net.zomis.games.dsl.games
 
+import kotlinx.coroutines.runBlocking
 import net.zomis.games.WinResult
 import net.zomis.games.common.Point
 import net.zomis.games.dsl.GameAsserts
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
+import net.zomis.games.dsl.startSynchronized
 import net.zomis.games.impl.ttt.DslTTT
 import net.zomis.games.impl.ttt.ultimate.TTController
 import org.junit.jupiter.api.Assertions
@@ -21,6 +23,7 @@ class TTTTest {
     fun setup() {
         val setup = GameSetupImpl(dsl)
         game = setup.createGameWithDefaultConfig(2)
+        game.startSynchronized()
         test = GameAsserts(game)
     }
 

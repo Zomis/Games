@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonTypeRef
 import klog.KLoggers
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import net.zomis.games.WinResult
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.flow.GameFlowContext
@@ -215,12 +215,18 @@ object PlayTests {
         val replayable = entry.replayable(playersCount, config, tree.replayCallback())
 
         val s = Scanner(System.`in`).takeIf { interactive }
-
+        CoroutineScope(Dispatchers.Default).launch {
+            replayable.game.start(this)
+            if (replayable.game !is GameFlowImpl) replayable.game.actionsInput.close()
+        }
+        println(replayable.game)
         if (replayable.game is GameFlowImpl) {
             runBlocking {
                 var nextViews = 0
                 val gameFlow = replayable.game as GameFlowImpl<*>
+                println("awaiting feedback")
                 for (a in gameFlow.feedbackReceiver) {
+                    println("feedback $a")
                     logger.info { a }
                     if (a is FlowStep.GameSetup) {
                         replayable.gameplayCallbacks.startedState(a.playerCount, a.config, a.state)

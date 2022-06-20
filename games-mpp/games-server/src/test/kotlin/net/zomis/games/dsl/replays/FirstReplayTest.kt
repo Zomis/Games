@@ -4,6 +4,7 @@ import kotlinx.coroutines.runBlocking
 import net.zomis.games.common.Point
 import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.flow.runBlocking
+import net.zomis.games.dsl.startSynchronized
 import net.zomis.games.impl.DslSplendor
 import net.zomis.games.impl.ttt.DslTTT
 import net.zomis.games.server2.ais.gamescorers.SplendorScorers
@@ -17,6 +18,7 @@ class FirstReplayTest {
         val entryPoint = GamesImpl.game(DslTTT.game)
         val replayStore = entryPoint.inMemoryReplay()
         val gameplay = entryPoint.replayable(2, entryPoint.setup().configs(), replayStore).runBlocking()
+        gameplay.game.startSynchronized()
         gameplay.actionSerialized(0, DslTTT.playAction, Point(0, 0))
         gameplay.actionSerialized(1, DslTTT.playAction, Point(1, 1))
         gameplay.actionSerialized(0, DslTTT.playAction, Point(2, 2))
@@ -28,9 +30,11 @@ class FirstReplayTest {
         gameplay.actionSerialized(0, DslTTT.playAction, Point(0, 1))
         Assertions.assertTrue(gameplay.game.isGameOver())
         val view = gameplay.game.view(0)
+        println(replayStore.data().actions)
 
         runBlocking {
             val replay = entryPoint.replay(replayStore.data())
+            replay.game.startSynchronized()
             replay.goToEnd()
             Assertions.assertTrue(replay.game.isGameOver())
             Assertions.assertEquals(view, replay.game.view(0))
@@ -42,6 +46,7 @@ class FirstReplayTest {
         val entryPoint = GamesImpl.game(DslSplendor.splendorGame)
         val replayStore = entryPoint.inMemoryReplay()
         val play = entryPoint.replayable(3, entryPoint.setup().configs(), replayStore).runBlocking()
+        play.game.startSynchronized()
         val controller = SplendorScorers.aiBuyFirst.createController()
         play.playThroughWithControllers { controller }
 
@@ -49,6 +54,9 @@ class FirstReplayTest {
         val view = play.game.view(0)
         runBlocking {
             val replay = entryPoint.replay(replayData)
+            println("Initial state: " + replayData.initialState)
+            println(replayData.actions)
+            replay.game.startSynchronized()
             replay.goToEnd()
             Assertions.assertTrue(replay.game.isGameOver())
             Assertions.assertEquals(view, replay.game.view(0))

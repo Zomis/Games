@@ -1,5 +1,6 @@
 package net.zomis.games.dsl.impl
 
+import kotlinx.coroutines.flow.collect
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.flow.GameFlowContext
 import net.zomis.games.dsl.flow.GameFlowImpl
@@ -62,11 +63,10 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
         val game = initializedGame()
         if (game is GameFlowImpl<*>) {
             println("Test flow forward, awaiting feedback ${game.stateKeeper.lastMoveState()}")
-            do {
-                val output = game.feedbackReceiver.receive()
+            game.feedbackReceiverFlow().collect { output ->
                 forwards++
                 println("Test flow forward $forwards: $output")
-            } while (output !is FlowStep.GameEnd && output !is FlowStep.AwaitInput)
+            }
             println("Test flow forwarded ${game.stateKeeper.lastMoveState()}")
         } else {
             forwards++

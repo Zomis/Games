@@ -1,6 +1,11 @@
 package net.zomis.games.dsl
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.takeWhile
+import net.zomis.games.dsl.flow.GameFlowImpl
+import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.listeners.ConsoleControl
 import net.zomis.games.listeners.ConsoleViewer
@@ -24,7 +29,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
         }
 
         runBlocking {
-            entryPoint.startGame2(this, playerCount) { g ->
+            val game = entryPoint.startGame2(this, playerCount) { g ->
                 listOf(
                     ConsoleViewer(g),
                     ConsoleControl(g, scanner),
@@ -32,6 +37,13 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
                         ServerAIs(AIRepository(), emptySet()).randomActionable(controller.game, controller.playerIndex)
                     }
                 )
+            }
+            if (game is GameFlowImpl<*>) {
+                while (game.isRunning()) {
+                    game.feedbackReceiverFlow().collect {
+                        println("Received feedback: $it")
+                    }
+                }
             }
             println("end of run blocking")
         }
