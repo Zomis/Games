@@ -85,7 +85,7 @@ interface Game<T: Any> {
     val model: T
     val stateKeeper: StateKeeper
     val actions: Actions<T>
-    val actionsInput: Channel<Actionable<T, Any>>
+    val actionsInput: Channel<Actionable<T, out Any>>
     val feedbackFlow: MutableSharedFlow<FlowStep>
     suspend fun start(coroutineScope: CoroutineScope)
     fun copy(copier: (source: T, destination: T) -> Unit): Game<T>
@@ -132,7 +132,7 @@ class GameImpl<T : Any>(
 
     override val actions = ActionsImpl(model, rules, replayState)
 
-    override val actionsInput: Channel<Actionable<T, Any>> = Channel()
+    override val actionsInput: Channel<Actionable<T, out Any>> = Channel()
     override val feedbackFlow: MutableSharedFlow<FlowStep> = MutableSharedFlow()
 
     override fun copy(copier: (source: T, destination: T) -> Unit): GameImpl<T> {

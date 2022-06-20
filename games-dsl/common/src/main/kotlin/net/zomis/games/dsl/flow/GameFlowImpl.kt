@@ -41,7 +41,7 @@ class GameFlowImpl<T: Any>(
     private var gameSetupSent = false
     override val feedback: (FlowStep) -> Unit = { feedbacks.add(it) }
 
-    override val actionsInput: Channel<Actionable<T, Any>> = Channel()
+    override val actionsInput: Channel<Actionable<T, out Any>> = Channel()
     var job: Job? = null
     override suspend fun start(coroutineScope: CoroutineScope) {
         val game = this
