@@ -70,7 +70,7 @@ object Wordle {
     class Board(ctx: Context, val playerIndex: Int): Entity(ctx) {
         val guesses by value { mutableListOf<Guess>() }
         val guessAction = action<Model, String>("guess", String::class) {
-            precondition { true }
+            precondition { playerIndex == this@Board.playerIndex }
             requires { action.parameter in WordleWords.allGuessable }
             options { WordleWords.allGuessable }
             perform {

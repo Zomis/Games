@@ -33,7 +33,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
                 listOf(
                     ConsoleViewer(g),
                     ConsoleControl(g, scanner),
-                    PlayerController(g, 1) { controller ->
+                    PlayerController(g, 0) { controller ->
                         ServerAIs(AIRepository(), emptySet()).randomActionable(controller.game, controller.playerIndex)
                     }
                 )
