@@ -6,6 +6,7 @@ import net.zomis.games.dsl.impl.GameControllerScope
 import net.zomis.games.server2.games.ActionListRequestHandler
 import net.zomis.games.server2.games.JsonChoices
 import java.util.*
+import kotlin.coroutines.cancellation.CancellationException
 
 class ConsoleController<T: Any> {
 
@@ -24,6 +25,7 @@ class ConsoleController<T: Any> {
     }
 
     fun queryInput(game: Game<T>, scanner: Scanner): Actionable<T, Any>? {
+        if (game.isGameOver()) throw CancellationException("Game has ended")
         println("Available actions is: ${game.actions.actionTypes}. Who is playing and what is your action?")
         val line = scanner.nextLine()
         if (!line.contains(" ")) {

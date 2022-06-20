@@ -4,7 +4,7 @@ import klog.KLoggers
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import net.zomis.games.PlayerEliminations
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.GameEvents
@@ -41,11 +41,11 @@ class GameFlowImpl<T: Any>(
     private var gameSetupSent = false
     override val feedback: (FlowStep) -> Unit = { feedbacks.add(it) }
 
-    val actionsInput: Channel<Any> = Channel()
-    val job: Job
-    init {
+    override val actionsInput: Channel<Actionable<T, Any>> = Channel()
+    var job: Job? = null
+    override suspend fun start(coroutineScope: CoroutineScope) {
         val game = this
-        job = mainScope.launch(Dispatchers.Default) {
+        job = coroutineScope.launch(Dispatchers.Default) {
             logger.info("GameFlow Coroutine started")
             try {
                 val dsl = setupContext.flowDsl!!
@@ -152,6 +152,7 @@ class GameFlowImpl<T: Any>(
     suspend fun sendFeedback(feedback: FlowStep) {
         logger.info("GameFlow Coroutine sends feedback: $feedback")
         this.feedbackOutput.send(feedback)
+        this.feedbackFlow.emit(feedback)
         logger.info("GameFlow Coroutine feedback sent: $feedback, continuing coroutine...")
     }
 
@@ -182,6 +183,7 @@ class GameFlowImpl<T: Any>(
     }
 
     override fun <E : Any> config(config: GameConfig<E>): E = this.gameConfig.get(config)
+    override val feedbackFlow: MutableSharedFlow<FlowStep> = MutableSharedFlow()
 
     // current possible actions, cleared and re-filled after every step
     // a coroutine to keep the game running. Cancellable?

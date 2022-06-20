@@ -158,7 +158,7 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
                 }
                 runBlocking {
                     if (replayable.game is GameFlowImpl<*>) {
-                        (replayable.game as GameFlowImpl<*>).actionsInput.send(actionable)
+                        (replayable.game as GameFlowImpl<Any>).actionsInput.send(actionable)
                     } else {
                         replayable.perform(actionable)
                         println("LAST MOVE STATE: " + replayable.state.lastMoveState())

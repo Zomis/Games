@@ -1,6 +1,8 @@
 package net.zomis.games.dsl.impl
 
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import net.zomis.games.PlayerElimination
 import net.zomis.games.PlayerEliminations
 import net.zomis.games.PlayerEliminationsWrite
@@ -37,6 +39,7 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
     }
 
     fun createGameWithDefaultConfig(playerCount: Int): Game<T> = createGame(playerCount, configs())
+    fun createGame(playerCount: Int) = createGameWithState(playerCount, configs(), StateKeeper())
 
     fun createGame(playerCount: Int, config: GameConfigs): Game<T>
         = this.createGameWithState(playerCount, config, StateKeeper())
@@ -82,8 +85,12 @@ interface Game<T: Any> {
     val model: T
     val stateKeeper: StateKeeper
     val actions: Actions<T>
+    val actionsInput: Channel<Actionable<T, Any>>
+    val feedbackFlow: MutableSharedFlow<FlowStep>
+    suspend fun start(coroutineScope: CoroutineScope)
     fun copy(copier: (source: T, destination: T) -> Unit): Game<T>
     fun isGameOver(): Boolean
+    fun isRunning() = !isGameOver()
     fun view(playerIndex: PlayerIndex): Map<String, Any?>
     fun viewRequest(playerIndex: PlayerIndex, key: String, params: Map<String, Any>): Any?
 }
@@ -101,12 +108,32 @@ class GameImpl<T : Any>(
     override val model = setupContext.model.factory(this)
     private val replayState = ReplayState(stateKeeper, eliminationCallback, gameConfig)
     private val rules = GameActionRulesContext(gameConfig, model, replayState, eliminationCallback)
-    init {
+
+    override suspend fun start(coroutineScope: CoroutineScope) {
         setupContext.model.onStart(GameStartContext(gameConfig, model, replayState, playerCount))
         setupContext.actionRulesDsl?.invoke(rules)
         rules.gameStart()
+        feedbackFlow.emit(FlowStep.GameSetup(playerCount, gameConfig, stateKeeper.lastMoveState()))
+
+        coroutineScope.launch {
+            for (action in actionsInput) {
+                println("GameImpl received action $action")
+                actions.type(action.actionType)?.perform(action.playerIndex, action.parameter)
+                awaitInput()
+                if (isGameOver()) break
+            }
+        }
+        awaitInput()
     }
+
+    private suspend fun awaitInput() {
+        feedbackFlow.emit(if (this.isGameOver()) FlowStep.GameEnd else FlowStep.AwaitInput)
+    }
+
     override val actions = ActionsImpl(model, rules, replayState)
+
+    override val actionsInput: Channel<Actionable<T, Any>> = Channel()
+    override val feedbackFlow: MutableSharedFlow<FlowStep> = MutableSharedFlow()
 
     override fun copy(copier: (source: T, destination: T) -> Unit): GameImpl<T> {
         val copy = GameImpl(setupContext, playerCount, gameConfig, stateKeeper)
