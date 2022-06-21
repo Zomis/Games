@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test
 class FirstReplayTest {
 
     @Test
-    fun ttt() {
+    fun `Deterministic Tic-Tac-Toe game`() {
         val entryPoint = GamesImpl.game(DslTTT.game)
         val replayStore = entryPoint.inMemoryReplay()
         val gameplay = entryPoint.replayable(2, entryPoint.setup().configs(), replayStore).runBlocking()

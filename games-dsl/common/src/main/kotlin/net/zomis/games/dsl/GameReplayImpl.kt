@@ -111,9 +111,7 @@ class GameReplayableImpl<T : Any>(
             is FlowStep.Elimination -> gameplayCallbacks.onElimination(feedback.elimination)
             is FlowStep.Log -> gameplayCallbacks.onLog(listOf(feedback.log))
             is FlowStep.ActionPerformed<*> -> {
-                val actionReplay = ActionReplay(feedback.actionImpl.actionType.name, feedback.playerIndex,
-                    feedback.actionImpl.actionType.serialize(feedback.parameter), feedback.replayState
-                )
+                val actionReplay = feedback.toActionReplay()
                 gameplayCallbacks.onMove(actionIndex, feedback.action as Actionable<T, Any>, actionReplay)
                 this.actionIndex++
             }
@@ -142,7 +140,7 @@ class GameReplayableImpl<T : Any>(
         )
         gameplayCallbacks.onMove(actionIndex, action, actionReplay)
         gameplayCallbacks.onLog(game.stateKeeper.logs())
-        val newlyEliminated = game.eliminations.eliminations() - eliminatedBefore
+        val newlyEliminated = game.eliminations.eliminations() - eliminatedBefore.toSet()
         newlyEliminated.forEach { gameplayCallbacks.onElimination(it) }
 
         this.actionIndex++

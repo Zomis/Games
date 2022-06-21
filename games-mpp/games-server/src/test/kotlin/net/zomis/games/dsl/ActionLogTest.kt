@@ -49,7 +49,7 @@ class ActionLogTest {
     @Test
     fun test() = runTest {
         val entry = GamesImpl.game(spec)
-        val play = entry.replayable(2, entry.setup().configs(), entry.inMemoryReplay()).runBlocking()
+        val play = entry.replayable(2, entry.setup().configs()).runBlocking()
         play.game.start(this)
         play.game.actionsInput.close()
         play.action(0, change, 2)

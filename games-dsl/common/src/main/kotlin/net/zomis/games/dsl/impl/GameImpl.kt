@@ -60,17 +60,22 @@ annotation class GameMarker
 
 sealed class FlowStep {
     interface ProceedStep
+    interface ActionResult
     object GameEnd: FlowStep(), ProceedStep
     data class Elimination(val elimination: PlayerElimination): FlowStep()
     data class ActionPerformed<T: Any>(
         val action: Actionable<T, Any>,
         val actionImpl: ActionTypeImplEntry<T, Any>,
         val replayState: Map<String,  Any>
-    ): FlowStep() {
+    ): FlowStep(), ActionResult {
+        val serializedParameter: Any get() = actionImpl.actionType.serialize(action.parameter)
         val playerIndex: Int get() = action.playerIndex
         val parameter: Any get() = action.parameter
+        fun toActionReplay(): ActionReplay
+            = ActionReplay(actionImpl.actionType.name, playerIndex, serializedParameter, replayState)
     }
-    data class IllegalAction(val actionType: String, val playerIndex: Int, val parameter: Any): FlowStep()
+    // TODO: Add reason for why Action is not allowed, of some form... name of rule(s)?
+    data class IllegalAction(val actionType: String, val playerIndex: Int, val parameter: Any): FlowStep(), ActionResult
     data class Log(val log: ActionLogEntry): FlowStep()
     data class RuleExecution(val ruleName: String, val values: Any): FlowStep()
     data class GameSetup(val playerCount: Int, val config: GameConfigs, val state: Map<String, Any>): FlowStep()
