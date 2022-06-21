@@ -89,7 +89,7 @@ interface Game<T: Any> {
     val config: Any
     val eliminations: PlayerEliminationsWrite
     val model: T
-    val stateKeeper: StateKeeper
+    val stateKeeper: StateKeeper // TODO: Hide `stateKeeper` and use FlowSteps as much as possible
     val actions: Actions<T>
     val actionsInput: Channel<Actionable<T, out Any>>
     val feedbackFlow: MutableSharedFlow<FlowStep>
@@ -126,8 +126,12 @@ class GameImpl<T : Any>(
         this.actionsInputJob = coroutineScope.launch {
             for (action in actionsInput) {
                 println("GameImpl received action $action")
-                actions.type(action.actionType)?.perform(action.playerIndex, action.parameter)
-                awaitInput()
+                stateKeeper.clear()
+                val result = actions.type(action.actionType)?.perform(action.playerIndex, action.parameter)
+                if (result != null) {
+                    feedbackFlow.emit(result as FlowStep)
+                    awaitInput()
+                }
                 if (isGameOver()) break
             }
         }

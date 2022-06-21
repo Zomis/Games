@@ -1,12 +1,18 @@
 package net.zomis.games.dsl.replays
 
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 import net.zomis.games.common.Point
 import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.flow.runBlocking
+import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.dsl.startSynchronized
 import net.zomis.games.impl.DslSplendor
 import net.zomis.games.impl.ttt.DslTTT
+import net.zomis.games.listeners.PlayerController
+import net.zomis.games.listeners.ReplayListener
 import net.zomis.games.server2.ais.gamescorers.SplendorScorers
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -42,23 +48,39 @@ class FirstReplayTest {
     }
 
     @Test
-    fun gameWithAI() {
+    fun `Game with AI and replayable randomness`() = runTest {
         val entryPoint = GamesImpl.game(DslSplendor.splendorGame)
-        val replayStore = entryPoint.inMemoryReplay()
-        val play = entryPoint.replayable(3, entryPoint.setup().configs(), replayStore).runBlocking()
-        play.game.startSynchronized()
+        var replayListener: ReplayListener? = null
         val controller = SplendorScorers.aiBuyFirst.createController()
-        play.playThroughWithControllers { controller }
+        val game = entryPoint.startGame2(this, 3) {
+            replayListener = ReplayListener(entryPoint.gameType, it)
+            listOf(
+                replayListener!!,
+                PlayerController(it, 0, controller as GameController<Any>),
+                PlayerController(it, 1, controller as GameController<Any>),
+                PlayerController(it, 2, controller as GameController<Any>),
+            )
+        }
+        while (!game.isGameOver()) {
+//            Thread.sleep(1000)
+            delay(1000)
+        }
+        println("game: $game")
 
-        val replayData = replayStore.data()
-        val view = play.game.view(0)
+//        game.startSynchronized()
+//        game.playThroughWithControllers { controller }
+
+        val replayData = replayListener!!.data()
+        val view = game.view(0)
         runBlocking {
             val replay = entryPoint.replay(replayData)
             println("Initial state: " + replayData.initialState)
-            println(replayData.actions)
+            println("Actions: ${replayData.actions}")
+            Assertions.assertTrue(replayData.initialState!!.isNotEmpty()) { "No initial state" }
+            Assertions.assertTrue(replayData.actions.isNotEmpty()) { "No actions!" }
             replay.game.startSynchronized()
             replay.goToEnd()
-            Assertions.assertTrue(replay.game.isGameOver())
+            Assertions.assertTrue(replay.game.isGameOver()) { "Replayed game didn't finish properly" }
             Assertions.assertEquals(view, replay.game.view(0))
         }
     }

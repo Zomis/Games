@@ -25,7 +25,7 @@ class PlayerController(
                     println("PlayerController($playerIndex) launched coroutine")
                     delay(500)
                     game.actionsInput.send(action)
-                    println("Sent action from $this")
+                    println("Sent action from $this: $action")
                 }
             }
         }

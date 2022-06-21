@@ -45,6 +45,7 @@ class GameReplayableImpl<T : Any>(
     }
     val game = setup.createGameWithState(playerCount, config, state).also {
         if (it !is GameFlowImpl) {
+            // game.start not called, so rules are not called, therefore nothing available here...
             gameplayCallbacks.startedState(playerCount, config, it.stateKeeper.lastMoveState())
         }
     }
