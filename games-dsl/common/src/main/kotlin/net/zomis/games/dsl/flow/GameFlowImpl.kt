@@ -65,6 +65,11 @@ class GameFlowImpl<T: Any>(
         }
     }
 
+    override fun stop() {
+        this.job?.cancel()
+        this.job = null
+    }
+
     suspend fun sendFeedbacks() {
         feedbacks.forEach {
             sendFeedback(it)

@@ -94,6 +94,7 @@ interface Game<T: Any> {
     fun isRunning() = !isGameOver()
     fun view(playerIndex: PlayerIndex): Map<String, Any?>
     fun viewRequest(playerIndex: PlayerIndex, key: String, params: Map<String, Any>): Any?
+    fun stop()
 }
 
 class GameImpl<T : Any>(
@@ -103,6 +104,7 @@ class GameImpl<T : Any>(
     override val stateKeeper: StateKeeper
 ): Game<T>, GameFactoryScope<Any>, GameEventsExecutor {
 
+    private var actionsInputJob: Job? = null
     override val config: Any get() = gameConfig.oldStyleValue()
     override val eliminationCallback = PlayerEliminations(playerCount)
     override val eliminations: PlayerEliminationsWrite get() = eliminationCallback
@@ -116,7 +118,7 @@ class GameImpl<T : Any>(
         rules.gameStart()
         feedbackFlow.emit(FlowStep.GameSetup(playerCount, gameConfig, stateKeeper.lastMoveState()))
 
-        coroutineScope.launch {
+        this.actionsInputJob = coroutineScope.launch {
             for (action in actionsInput) {
                 println("GameImpl received action $action")
                 actions.type(action.actionType)?.perform(action.playerIndex, action.parameter)
@@ -125,6 +127,11 @@ class GameImpl<T : Any>(
             }
         }
         awaitInput()
+    }
+
+    override fun stop() {
+        this.actionsInputJob?.cancel()
+        this.actionsInputJob = null
     }
 
     private suspend fun awaitInput() {
