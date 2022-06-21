@@ -49,6 +49,7 @@ kotlin {
         val jvmMain by getting {
             kotlin.srcDir("games-server/src/main/kotlin")
             resources.srcDir("games-server/src/main/resources")
+            languageSettings.optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:$coroutinesVersion")
                 implementation("com.github.lewik.klog:klog-jvm:2.0.2")
@@ -89,6 +90,7 @@ kotlin {
         val jvmTest by getting {
             kotlin.srcDir("games-server/src/test/kotlin")
             resources.srcDir("games-server/src/test/resources")
+            languageSettings.optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
             dependencies {
                 implementation("org.junit.jupiter:junit-jupiter-api:$jupiterVersion")
                 implementation("org.junit.jupiter:junit-jupiter-params:$jupiterVersion")
@@ -119,6 +121,11 @@ tasks {
     }
     val build by existing {
         dependsOn(shadowCreate)
+    }
+
+    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
+        kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"
     }
 
     withType<Test> {
