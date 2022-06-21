@@ -1,5 +1,7 @@
 package net.zomis.games.dsl.games
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.test.runTest
 import net.zomis.games.dsl.GameAsserts
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
@@ -16,15 +18,16 @@ class SkullTest {
     lateinit var game: Game<SkullGameModel>
     lateinit var test: GameAsserts<SkullGameModel>
 
-    @BeforeEach
-    fun setup() {
+    suspend fun setup(coroutineScope: CoroutineScope) {
         val setup = GameSetupImpl(dsl)
         game = setup.createGameWithDefaultConfig(3)
+        game.start(coroutineScope)
         test = GameAsserts(game)
     }
 
     @Test
-    fun startingPosition() {
+    fun startingPosition() = runTest {
+        setup(this)
         test.expectPossibleActions(1, 0)
         test.expectPossibleActions(2, 0)
 
@@ -71,6 +74,7 @@ class SkullTest {
         Assertions.assertEquals(3, game.model.players[0].totalCards)
         // With the default options, currentPlayer should not change if you lose a bet.
         Assertions.assertEquals(0, game.model.currentPlayerIndex)
+        game.stop()
     }
 
 }
