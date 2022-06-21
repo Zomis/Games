@@ -38,7 +38,9 @@ class MessageRouter<T>(owner: T) {
             nextRouter.handle(message.substringAfter(DELIMITER), data)
             return
         }
-        this.handlers[message]?.invoke(data) ?: throw IllegalArgumentException("Unable to handle: $message. Handlers: ${handlers.keys}")
+        synchronized(this.handlers) {
+            this.handlers[message]?.invoke(data) ?: throw IllegalArgumentException("Unable to handle: $message. Handlers: ${handlers.keys}")
+        }
     }
 
 }
