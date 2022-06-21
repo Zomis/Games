@@ -215,7 +215,8 @@ object PlayTests {
         val replayable = entry.replayable(playersCount, config, tree.replayCallback())
 
         val s = Scanner(System.`in`).takeIf { interactive }
-        CoroutineScope(Dispatchers.Default).launch {
+        val coroutineScope = CoroutineScope(Dispatchers.Default)
+        val job = coroutineScope.launch {
             replayable.game.start(this)
             if (replayable.game !is GameFlowImpl) replayable.game.actionsInput.close()
         }
@@ -249,6 +250,9 @@ object PlayTests {
                 }
             }
         } else {
+            runBlocking {
+                job.join()
+            }
             var running: Boolean
             do {
                 running = nextSteps(tree, replayable, s)
