@@ -22,7 +22,7 @@ interface GameLogicActionType<T : Any, P : Any> {
     fun availableActions(playerIndex: Int, sampleSize: ActionSampleSize?): Iterable<Actionable<T, P>>
     fun actionAllowed(action: Actionable<T, P>): Boolean
     fun replayAction(action: Actionable<T, P>, state: Map<String, Any>?)
-    fun performAction(action: Actionable<T, P>)
+    fun performAction(action: Actionable<T, P>): FlowStep.ActionResult
     fun createAction(playerIndex: Int, parameter: P): Actionable<T, P>
     fun actionInfoKeys(playerIndex: Int, previouslySelected: List<Any>): List<ActionInfoKey> = withChosen(playerIndex, previouslySelected).actionKeys()
     fun withChosen(playerIndex: Int, chosen: List<Any>): ActionComplexChosenStep<T, P>
@@ -58,9 +58,7 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
     fun replayAction(action: Actionable<T, P>, state: Map<String, Any>?) {
         impl.replayAction(action, state)
     }
-    fun perform(action: Actionable<T, P>) {
-        impl.performAction(action)
-    }
+    fun perform(action: Actionable<T, P>): FlowStep.ActionResult = impl.performAction(action)
     fun createAction(playerIndex: Int, parameter: P): Actionable<T, P> = impl.createAction(playerIndex, parameter)
     fun isAllowed(action: Actionable<T, P>): Boolean = impl.actionAllowed(action)
     fun isComplex(): Boolean = impl.isComplex()

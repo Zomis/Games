@@ -11,6 +11,7 @@ class GameFlowLogicActionDelegator<T: Any, A: Any>(
     private val gameData: GameRuleContext<T>,
     override val actionType: ActionType<T, A>,
     private val feedback: (FlowStep) -> Unit,
+    private val actionTypeImplEntry: () -> ActionTypeImplEntry<T, A>,
     actionDsls: () -> List<GameFlowActionScope<T, A>.() -> Unit>
 ): GameLogicActionType<T, A> {
     // Keep a list of all ActionDsls here for this specific actionType
@@ -32,9 +33,11 @@ class GameFlowLogicActionDelegator<T: Any, A: Any>(
     override fun replayAction(action: Actionable<T, A>, state: Map<String, Any>?)
         = performer.replay(action, state)
 
-    override fun performAction(action: Actionable<T, A>) {
-        if (!checkActionAllowed(action)) return
+    override fun performAction(action: Actionable<T, A>): FlowStep.ActionResult {
+        if (!checkActionAllowed(action)) return FlowStep.IllegalAction(action.actionType, action.playerIndex, action.parameter)
         performer.perform(action)
+        return FlowStep.ActionPerformed(action as Actionable<T, Any>,
+            actionTypeImplEntry.invoke() as ActionTypeImplEntry<T, Any>, gameData.replayable.stateKeeper.lastMoveState())
     }
 
     override fun createAction(playerIndex: Int, parameter: A): Actionable<T, A>

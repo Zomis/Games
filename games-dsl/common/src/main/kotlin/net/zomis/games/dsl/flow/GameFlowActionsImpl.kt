@@ -32,6 +32,7 @@ class GameFlowActionsImpl<T: Any>(
         this.actions.clear()
         this.actionDsls.clear()
     }
+    fun findAction(actionType: String): ActionTypeImplEntry<T, Any> = actions.single { it.name == actionType }
 
     fun <A: Any> add(actionType: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>) {
         if (actionDsls.any { it.key == actionType.name && it.value.contains(actionDsl as GameFlowActionDsl<T, Any>) }) {
@@ -40,7 +41,7 @@ class GameFlowActionsImpl<T: Any>(
         }
         val gameRuleContext = GameRuleContext(model, eliminations, replayable)
         val entry = ActionTypeImplEntry(model, replayable, eliminations, actionType,
-            GameFlowLogicActionDelegator(gameRuleContext, actionType, feedback) {
+            GameFlowLogicActionDelegator(gameRuleContext, actionType, feedback, {findAction(actionType.name) as ActionTypeImplEntry<T, A>}) {
                 actionDsls[actionType.name] as List<GameFlowActionDsl<T, A>>? ?: emptyList()
             }
         )
@@ -71,7 +72,7 @@ class GameFlowActionsImpl<T: Any>(
         }
         // Save DSLs so that they don't get reset before performing action
         val dsls = actionDsls[action.actionType] ?: emptyList<GameFlowActionDsl<T, Any>>()
-        val delegator = GameFlowLogicActionDelegator(gameRuleContext, existing.actionType, feedback) { dsls }
+        val delegator = GameFlowLogicActionDelegator(gameRuleContext, existing.actionType, feedback, {existing}) { dsls }
         if (delegator.actionAllowed(action)) {
             clearer.invoke()
         } else {

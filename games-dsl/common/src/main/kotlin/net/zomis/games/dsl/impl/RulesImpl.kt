@@ -33,7 +33,7 @@ class GameActionRulesContext<T : Any>(
 
     override fun <A : Any> action(actionType: ActionType<T, A>): GameActionRule<T, A> {
         return actionRules.getOrPut(actionType.name) {
-            GameActionRuleContext(model, replayable, eliminations, actionType, allActionRules) as GameActionRuleContext<T, Any>
+            GameActionRuleContext(model, replayable, eliminations, actionType, allActionRules) { this.actionType(it)!! as ActionTypeImplEntry<T, A> } as GameActionRuleContext<T, Any>
         } as GameActionRule<T, A>
     }
 
@@ -176,7 +176,8 @@ class GameActionRuleContext<T : Any, A : Any>(
     val replayable: ReplayState,
     val eliminations: PlayerEliminationsWrite,
     val actionDefinition: ActionType<T, A>,
-    val globalRules: GameRuleList<T>
+    val globalRules: GameRuleList<T>,
+    val actionTypeRetriever: (String) -> ActionTypeImplEntry<T, A>
 ): GameActionRule<T, A>, GameLogicActionType<T, A> {
     override val actionType: ActionType<T, A> = actionDefinition
 
@@ -251,12 +252,16 @@ class GameActionRuleContext<T : Any, A : Any>(
         this.performAction(action)
     }
 
-    override fun performAction(action: Actionable<T, A>) {
-        if (!actionAllowed(action)) throw IllegalStateException("Action is not allowed: $action")
+    override fun performAction(action: Actionable<T, A>): FlowStep.ActionResult {
+        if (!actionAllowed(action)) {
+            return FlowStep.IllegalAction(action.actionType, action.playerIndex, action.parameter)
+        }
         val context = ActionRuleContext(model, action, eliminations, replayable)
         this.effects.forEach { it.invoke(context) }
         this.after.forEach { it.invoke(context) }
         this.globalRules.after.forEach { it.invoke(context as ActionRuleScope<T, Any>) }
+        val actionTypeImplEntry = actionTypeRetriever.invoke(action.actionType)
+        return FlowStep.ActionPerformed(action as Actionable<T, Any>, actionTypeImplEntry as ActionTypeImplEntry<T, Any>, replayable.stateKeeper.lastMoveState())
     }
 
     override fun createAction(playerIndex: Int, parameter: A): Action<T, A>
