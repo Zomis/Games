@@ -1,5 +1,6 @@
 package net.zomis.games.dsl
 
+import kotlinx.coroutines.test.runTest
 import net.zomis.games.WinResult
 import net.zomis.games.dsl.flow.runBlocking
 import net.zomis.games.dsl.impl.*
@@ -46,9 +47,11 @@ class ActionLogTest {
     }
 
     @Test
-    fun test() {
+    fun test() = runTest {
         val entry = GamesImpl.game(spec)
         val play = entry.replayable(2, entry.setup().configs(), entry.inMemoryReplay()).runBlocking()
+        play.game.start(this)
+        play.game.actionsInput.close()
         play.action(0, change, 2)
         play.action(0, change, 3)
         play.action(1, change, -2)
