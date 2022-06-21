@@ -4,9 +4,7 @@ import klog.KLoggers
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.takeWhile
+import kotlinx.coroutines.flow.*
 import net.zomis.games.PlayerEliminations
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.GameEvents
@@ -28,7 +26,10 @@ class GameFlowImpl<T: Any>(
     val views = mutableListOf<Pair<String, ViewScope<T>.() -> Any?>>()
     private val feedbackOutput = Channel<FlowStep>()
     val feedbackReceiver: ReceiveChannel<FlowStep> get() = feedbackOutput
-    fun feedbackReceiverFlow() = feedbackReceiver.receiveAsFlow().takeWhile { it !is FlowStep.ProceedStep }
+    fun feedbackReceiverFlow() = feedbackReceiver.receiveAsFlow().transformWhile {
+        emit(it)
+        it !is FlowStep.ProceedStep
+    }
     private val feedbacks = mutableListOf<FlowStep>()
 
     override val eliminations: PlayerEliminations = PlayerEliminations(playerCount).also {
