@@ -1,7 +1,11 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
 package net.zomis.games.dsl.context
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
 import net.zomis.games.api.GamesApi
 import net.zomis.games.context.Context
@@ -79,150 +83,146 @@ class ContextTest {
     }
 
     @Test
-    fun startConfig() {
+    fun startConfig() = runTest {
         val entry = GamesImpl.game(game)
         val replayable = entry.replayable(3, entry.setup().configs().set("startValue", 100))
-        runBlocking {
-            withTimeout(2000) {
-                replayable.game.start(this)
-                replayable.await()
-            }
-        }
+        replayable.game.start(this)
+        replayable.await()
         Assertions.assertEquals(3, replayable.game.model.players.size)
         Assertions.assertTrue(replayable.game.model.players.all { it.value == 100 })
+        replayable.game.stop()
     }
 
-    private fun init(): GameReplayableImpl<Model> {
+    private suspend fun init(coroutineScope: CoroutineScope): GameReplayableImpl<Model> {
         val entry = GamesImpl.game(game)
         val repl = entry.replayable(2, entry.setup().configs())
-        runBlocking {
-            withTimeout(1000) {
-                repl.game.start(this)
-                check(repl.game is GameFlowImpl)
-                repl.await()
-            }
-        }
+        repl.game.start(coroutineScope)
+        check(repl.game is GameFlowImpl)
+        repl.await()
         return repl
     }
 
-    private fun runAndView(): Pair<Map<String, Any?>, Model> {
-        val replayable = init()
+    private suspend fun runAndView(coroutineScope: CoroutineScope): Pair<Map<String, Any?>, Model> {
+        val replayable = init(coroutineScope)
         replayable.doGlobal(0, 10)
         replayable.doBoost(0, Booster.TEN_TIMES)
-        return replayable.game.view(0) to replayable.game.model
+
+        val view = replayable.game.view(0) to replayable.game.model
+        replayable.game.stop()
+        return view
     }
 
-    private fun runAndViewPlayer(viewer: Int): Pair<Model, Map<String, Any?>> {
-        val replayable = init()
+    private suspend fun runAndViewPlayer(coroutineScope: CoroutineScope, viewer: Int): Pair<Model, Map<String, Any?>> {
+        val replayable = init(coroutineScope)
         replayable.doGlobal(0, 10)
         replayable.doBoost(0, Booster.TEN_TIMES)
         val view = replayable.game.view(viewer)
         ConsoleView<Model>().showView(replayable.game, viewer)
         val playerViews = view["players"].let { it as List<Map<String, Any?>> }
-        return replayable.game.model to playerViews[0]
+        val result = replayable.game.model to playerViews[0]
+        replayable.game.stop()
+        return result
     }
 
-    private fun GameReplayableImpl<Model>.doGlobal(playerIndex: Int, value: Int) {
-        runBlocking {
-            this@doGlobal.performSerialized(playerIndex, "global", value)
-        }
+    private suspend fun GameReplayableImpl<Model>.doGlobal(playerIndex: Int, value: Int) {
+        this.performSerialized(playerIndex, "global", value)
     }
 
-    private fun GameReplayableImpl<Model>.doBoost(playerIndex: Int, value: Booster) {
-        runBlocking {
-            this@doBoost.performSerialized(playerIndex, "boost", value.name)
-        }
+    private suspend fun GameReplayableImpl<Model>.doBoost(playerIndex: Int, value: Booster) {
+        this.performSerialized(playerIndex, "boost", value.name)
     }
 
     @Test
-    fun changeOnEvent() {
-        val replayable = init()
+    fun changeOnEvent() = runTest {
+        val replayable = init(this)
         replayable.doGlobal(0, 10)
         Assertions.assertEquals(10, replayable.game.model.inner.sum)
+        replayable.game.stop()
     }
 
     @Test
-    fun onEvent() {
-        val replayable = init()
+    fun onEvent() = runTest {
+        val replayable = init(this)
         replayable.doBoost(0, Booster.RESET)
         Assertions.assertEquals(listOf(Booster.RESET), replayable.game.model.players[0].used.cards)
+        replayable.game.stop()
     }
 
     @Test
-    fun dynamicSum() {
-        val view = runAndView().first
+    fun dynamicSum() = runTest {
+        val view = runAndView(this).first
         val v = view["inner"] as Map<String, Any?>
         Assertions.assertEquals(10, v["sum"])
     }
 
     @Test
-    fun dynamic() {
-        val view = runAndView().first
+    fun dynamic() = runTest {
+        val view = runAndView(this).first
         val v = view["inner"] as Map<String, Any?>
         Assertions.assertEquals(20, v["dynamic"])
     }
 
     @Test
-    fun playerValue() {
-        val (_, view) = runAndViewPlayer(0)
-        val (_, invisible) = runAndViewPlayer(1)
+    fun playerValue() = runTest {
+        val (_, view) = runAndViewPlayer(this, 0)
+        val (_, invisible) = runAndViewPlayer(this, 1)
         Assertions.assertEquals(520, view["value"])
         Assertions.assertFalse(invisible.containsKey("value"))
     }
 
     @Test
-    fun playerEvent() {
-        val (game, view) = runAndViewPlayer(0)
+    fun playerEvent() = runTest {
+        val (game, view) = runAndViewPlayer(this, 0)
         Assertions.assertFalse(view.containsKey(game.players[0]::boosterEvent.name))
     }
 
     @Test
-    fun boosters() {
-        val (_, view) = runAndViewPlayer(0)
-        val (_, sizeOnly) = runAndViewPlayer(1)
+    fun boosters() = runTest {
+        val (_, view) = runAndViewPlayer(this, 0)
+        val (_, sizeOnly) = runAndViewPlayer(this, 1)
         Assertions.assertEquals(Booster.values().toList().minus(Booster.TEN_TIMES), view["boosters"])
         Assertions.assertEquals(3, sizeOnly["boosters"])
     }
 
     @Test
-    fun used() {
-        val (_, view) = runAndViewPlayer(0)
+    fun used() = runTest {
+        val (_, view) = runAndViewPlayer(this, 0)
         Assertions.assertEquals(listOf(Booster.TEN_TIMES), view["used"])
     }
 
     @Test
-    fun players() {
-        val view = runAndView().first
+    fun players() = runTest {
+        val view = runAndView(this).first
         Assertions.assertEquals(2, (view["players"] as List<*>).size)
     }
 
     @Test
-    fun value() {
-        val (view, _) = runAndView()
+    fun value() = runTest {
+        val (view, _) = runAndView(this)
         Assertions.assertEquals(100, view["value"])
     }
 
     @Test
-    fun globalAction() {
-        val (view, game) = runAndView()
+    fun globalAction() = runTest {
+        val (view, game) = runAndView(this)
         Assertions.assertFalse(view.containsKey(game::globalAction.name))
     }
 
     @Test
-    fun boostAction() {
-        val (view, game) = runAndView()
+    fun boostAction() = runTest {
+        val (view, game) = runAndView(this)
         Assertions.assertFalse(view.containsKey(game::boostAction.name))
     }
 
     @Test
-    fun event() {
-        val (view, game) = runAndView()
+    fun event() = runTest {
+        val (view, game) = runAndView(this)
         Assertions.assertFalse(view.containsKey(game::eventRun.name))
     }
 
     @Test
-    fun noStackOverflowView() {
-        val view = runAndView().first
+    fun noStackOverflowView() = runTest {
+        val view = runAndView(this).first
         jacksonObjectMapper().writeValueAsString(view)
     }
 
