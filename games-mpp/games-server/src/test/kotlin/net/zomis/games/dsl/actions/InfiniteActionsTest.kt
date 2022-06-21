@@ -1,16 +1,14 @@
 package net.zomis.games.dsl.actions
 
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
 import net.zomis.games.WinResult
 import net.zomis.games.api.GamesApi
 import net.zomis.games.dsl.ActionChoicesRecursiveSpecScope
 import net.zomis.games.dsl.GamesImpl
-import net.zomis.games.dsl.flow.GameFlowContext
 import net.zomis.games.dsl.flow.GameFlowImpl
 import net.zomis.games.dsl.impl.ActionSampleSize
-import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.impl.SpiceRoadDsl
 import net.zomis.games.impl.SpiceRoadGameModel
@@ -101,17 +99,20 @@ class InfiniteActionsTest {
     }
 
     @Test
-    fun splendor() {
+    fun splendor() = runTest {
         val setup = ServerGames.entrypoint("Splendor")!!.setup()
         val game = setup.createGameWithDefaultConfig(4)
+        game.start(this)
         val a = game.actions.type("takeMoney")!!.availableActions(0, null).toList()
         Assertions.assertTrue(a.isNotEmpty())
+        game.stop()
     }
 
     @Test
-    fun spiceRoad() {
+    fun spiceRoad() = runTest {
         val setup = ServerGames.entrypoint("Spice Road")!!.setup()
         val game = setup.createGameWithDefaultConfig(2) as Game<SpiceRoadGameModel>
+        game.start(this)
         val actionType = game.actions.type("play")!!
         val a = actionType.availableActions(0, null).toList().map { (it.parameter as SpiceRoadDsl.PlayParameter) }
         val b = actionType.withChosen(0, listOf(game.model.players[0].hand.cards.first { it.upgrade == 2 }, SpiceRoadGameModel.Spice.YELLOW))
@@ -122,16 +123,13 @@ class InfiniteActionsTest {
         Assertions.assertTrue(a.none { (it.add.spice[SpiceRoadGameModel.Spice.GREEN] ?: 0) > 1 })
         Assertions.assertTrue(b.any())
         Assertions.assertTrue(a.size > 2)
+        game.stop()
     }
 
     @Test
-    fun limitedEvaluation() {
+    fun limitedEvaluation() = runTest {
         val game = GamesImpl.game(game).setup().createGameWithDefaultConfig(1)
-        runBlocking {
-            withTimeout(1000) {
-                game.start(this)
-            }
-        }
+        game.start(this)
         testAvailableActions(game)
 
         val actionType = game.actions.type(combine)!!
@@ -146,17 +144,14 @@ class InfiniteActionsTest {
             Assertions.assertTrue(next.any { it.choiceValue == v })
             Assertions.assertTrue(next.any { it.choiceKey == v })
         }
+        game.stop()
     }
 
     @Test
-    fun limitedEvaluationGameFlow() {
+    fun limitedEvaluationGameFlow() = runTest {
         val game = GamesImpl.game(gameFlow).setup().createGameWithDefaultConfig(1) as GameFlowImpl<MyList>
-        runBlocking {
-            withTimeout(2000) {
-                game.start(this)
-                game.feedbackReceiverFlow().collect {  }
-            }
-        }
+        game.start(this)
+        game.feedbackReceiverFlow().collect { println("Collect: $it") }
         testAvailableActions(game)
 
         val actionType = game.actions.type(combine)!!
@@ -171,6 +166,7 @@ class InfiniteActionsTest {
             Assertions.assertTrue(next.any { it.choiceValue == v })
             Assertions.assertTrue(next.any { it.choiceKey == v })
         }
+        game.stop()
     }
 
 }
