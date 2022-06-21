@@ -62,7 +62,7 @@ class FirstReplayTest {
             )
         }
         while (!game.isGameOver()) {
-//            Thread.sleep(1000)
+            Thread.sleep(100)
             delay(1000)
         }
         println("game: $game")
