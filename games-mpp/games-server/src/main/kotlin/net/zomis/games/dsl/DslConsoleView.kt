@@ -4,6 +4,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.takeWhile
+import net.zomis.games.common.toSingleList
 import net.zomis.games.dsl.flow.GameFlowImpl
 import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
@@ -33,7 +34,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
                 listOf(
                     ConsoleViewer(g),
                     ConsoleControl(g, scanner),
-                    PlayerController(g, 0) { controller ->
+                    PlayerController(g, 0.toSingleList()) { controller ->
                         ServerAIs(AIRepository(), emptySet()).randomActionable(controller.game, controller.playerIndex)
                     }
                 )

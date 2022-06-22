@@ -51,19 +51,17 @@ class FirstReplayTest {
     fun `Game with AI and replayable randomness`() = runTest {
         val entryPoint = GamesImpl.game(DslSplendor.splendorGame)
         var replayListener: ReplayListener? = null
-        val controller = SplendorScorers.aiBuyFirst.createController()
+        val controller = SplendorScorers.aiBuyFirst.createController() as GameController<Any>
         val game = entryPoint.startGame2(this, 3) {
             replayListener = ReplayListener(entryPoint.gameType, it)
             listOf(
                 replayListener!!,
-                PlayerController(it, 0, controller as GameController<Any>),
-                PlayerController(it, 1, controller as GameController<Any>),
-                PlayerController(it, 2, controller as GameController<Any>),
+                PlayerController(it, 0..2, controller),
             )
         }
         while (!game.isGameOver()) {
             Thread.sleep(100)
-            delay(1000)
+            delay(100)
         }
         println("game: $game")
 

@@ -9,20 +9,20 @@ import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.dsl.impl.GameControllerContext
 
-class PlayerController(
-    private val game: Game<Any>,
-    private val playerIndex: Int,
-    private val controller: GameController<Any>
+class PlayerController<out T: Any>(
+    private val game: Game<T>,
+    playerIndices: Iterable<Int>,
+    private val controller: GameController<T>
 ): GameListener {
-    private val controllerContext = GameControllerContext(game, playerIndex)
+    private val controllerContexts: List<GameControllerContext<T>> = playerIndices.map { GameControllerContext(game, it) }
 
     override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
         if (step == FlowStep.AwaitInput) {
-            val action = controller.invoke(controllerContext)
-            if (action != null) {
-                println("PlayerController($playerIndex) returned $action")
+            val actions = controllerContexts.mapNotNull { controller.invoke(it) }
+            for (action in actions) {
+                println("PlayerController(${action.playerIndex}) returned $action")
                 coroutineScope.launch {
-                    println("PlayerController($playerIndex) launched coroutine")
+                    println("PlayerController(${action.playerIndex}) launched coroutine")
                     delay(500)
                     game.actionsInput.send(action)
                     println("Sent action from $this: $action")
