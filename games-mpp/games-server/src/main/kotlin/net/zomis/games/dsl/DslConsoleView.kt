@@ -2,15 +2,12 @@ package net.zomis.games.dsl
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.takeWhile
 import net.zomis.games.common.toSingleList
 import net.zomis.games.dsl.flow.GameFlowImpl
-import net.zomis.games.dsl.impl.FlowStep
-import net.zomis.games.dsl.impl.Game
 import net.zomis.games.listeners.ConsoleControl
 import net.zomis.games.listeners.ConsoleViewer
 import net.zomis.games.listeners.PlayerController
+import net.zomis.games.listeners.ReplayListener
 import net.zomis.games.server2.ServerGames
 import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.ais.ServerAIs
@@ -30,10 +27,11 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
         }
 
         runBlocking {
-            val game = entryPoint.startGame2(this, playerCount) { g ->
+            val game = entryPoint.setup().startGame(this, playerCount) { g ->
                 listOf(
                     ConsoleViewer(g),
                     ConsoleControl(g, scanner),
+                    ReplayListener(game.name, g),
                     PlayerController(g, 0.toSingleList()) { controller ->
                         ServerAIs(AIRepository(), emptySet()).randomActionable(controller.game, controller.playerIndex)
                     }
@@ -46,9 +44,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
                     }
                 }
             }
-            println("end of run blocking")
         }
-        println("Outside run blocking")
 
         if (true) return
         val replay = entryPoint.inMemoryReplay()

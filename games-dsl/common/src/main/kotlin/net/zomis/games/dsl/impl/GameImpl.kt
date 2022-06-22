@@ -3,6 +3,8 @@ package net.zomis.games.dsl.impl
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.transformWhile
 import net.zomis.games.PlayerElimination
 import net.zomis.games.PlayerEliminations
 import net.zomis.games.PlayerEliminationsWrite
@@ -52,6 +54,31 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
     }
 
     fun configs(): GameConfigs = context.configs()
+
+    suspend fun startGame(coroutineScope: CoroutineScope, playerCount: Int, flowListeners: (Game<Any>) -> Collection<GameListener>): Game<T> {
+        val game = this.createGame(playerCount)
+        val listeners = flowListeners.invoke(game as Game<Any>)
+        println("Waiting for ${listeners.size} listeners")
+        coroutineScope.launch {
+            game.feedbackFlow.transformWhile {
+                emit(it)
+                it !is FlowStep.GameEnd
+            }.collect { flowStep ->
+                withContext(Dispatchers.Default) {
+                    listeners.forEach { listener ->
+                        println("Listener $listener handling $flowStep")
+                        listener.handle(coroutineScope, flowStep)
+                        println("Listener $listener finished $flowStep")
+                    }
+                }
+            }
+        }
+        game.feedbackFlow.subscriptionCount.first { it == 1 }
+        println("Game ready to start")
+        game.start(coroutineScope)
+        println("Started, or something")
+        return game
+    }
 
 }
 

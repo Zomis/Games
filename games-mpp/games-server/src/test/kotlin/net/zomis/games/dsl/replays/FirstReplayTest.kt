@@ -3,7 +3,6 @@ package net.zomis.games.dsl.replays
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.yield
 import net.zomis.games.common.Point
 import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.flow.runBlocking
@@ -52,7 +51,7 @@ class FirstReplayTest {
         val entryPoint = GamesImpl.game(DslSplendor.splendorGame)
         var replayListener: ReplayListener? = null
         val controller = SplendorScorers.aiBuyFirst.createController() as GameController<Any>
-        val game = entryPoint.startGame2(this, 3) {
+        val game = entryPoint.setup().startGame(this, 3) {
             replayListener = ReplayListener(entryPoint.gameType, it)
             listOf(
                 replayListener!!,
@@ -62,17 +61,11 @@ class FirstReplayTest {
         while (!game.isGameOver()) {
             delay(100)
         }
-        println("game: $game")
-
-//        game.startSynchronized()
-//        game.playThroughWithControllers { controller }
 
         val replayData = replayListener!!.data()
         val view = game.view(0)
         runBlocking {
             val replay = entryPoint.replay(replayData)
-            println("Initial state: " + replayData.initialState)
-            println("Actions: ${replayData.actions}")
             Assertions.assertTrue(replayData.initialState!!.isNotEmpty()) { "No initial state" }
             Assertions.assertTrue(replayData.actions.isNotEmpty()) { "No actions!" }
             replay.game.startSynchronized()

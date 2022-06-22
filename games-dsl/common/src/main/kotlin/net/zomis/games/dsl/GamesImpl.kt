@@ -55,30 +55,6 @@ class GameEntryPoint<T : Any>(private val gameSpec: GameSpec<T>) {
     }
 
     override fun toString(): String = "EntryPoint:$gameType"
-    suspend fun startGame2(coroutineScope: CoroutineScope, playerCount: Int, flowListeners: (Game<Any>) -> Collection<GameListener>): Game<T> {
-        val game = setup().createGame(playerCount)
-        val listeners = flowListeners.invoke(game as Game<Any>)
-        println("Waiting for ${listeners.size} listeners")
-        coroutineScope.launch {
-            game.feedbackFlow.transformWhile {
-                emit(it)
-                it !is FlowStep.GameEnd
-            }.collect { flowStep ->
-                withContext(Dispatchers.Default) {
-                    listeners.forEach { listener ->
-                        println("Listener $listener handling $flowStep")
-                        listener.handle(coroutineScope, flowStep)
-                        println("Listener $listener finished $flowStep")
-                    }
-                }
-            }
-        }
-        game.feedbackFlow.subscriptionCount.first { it == 1 }
-        println("Game ready to start")
-        game.start(coroutineScope)
-        println("Started, or something")
-        return game
-    }
 
 }
 
