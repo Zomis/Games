@@ -184,7 +184,7 @@ class GameConfigImpl<E: Any>(override val key: String, override val default: () 
     }
 
 }
-class GameDslContext<T : Any> : GameDsl<T> {
+class GameDslContext<T : Any>(val gameType: String) : GameDsl<T> {
     lateinit var modelDsl: GameModelDsl<T, Any>
     var viewDsl: GameViewDsl<T>? = null
     var flowRulesDsl: GameFlowRulesDsl<T>? = null

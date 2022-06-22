@@ -28,7 +28,7 @@ typealias GameController<T> = (GameControllerScope<T>) -> Actionable<T, Any>?
 class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
 
     val gameType: String = gameSpec.name
-    internal val context = GameDslContext<T>()
+    internal val context = GameDslContext<T>(gameSpec.name)
     init {
         gameSpec(context)
         context.modelDsl(context.model)
@@ -111,6 +111,7 @@ sealed class FlowStep {
 }
 
 interface Game<T: Any> {
+    val gameType: String
     val playerCount: Int
     val playerIndices: IntRange get() = 0 until playerCount
     val config: Any
@@ -135,6 +136,7 @@ class GameImpl<T : Any>(
     val gameConfig: GameConfigs,
     override val stateKeeper: StateKeeper
 ): Game<T>, GameFactoryScope<Any>, GameEventsExecutor {
+    override val gameType: String = setupContext.gameType
 
     private var actionsInputJob: Job? = null
     override val config: Any get() = gameConfig.oldStyleValue()
