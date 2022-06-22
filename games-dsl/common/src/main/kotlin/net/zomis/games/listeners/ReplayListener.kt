@@ -3,9 +3,8 @@ package net.zomis.games.listeners
 import kotlinx.coroutines.CoroutineScope
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.FlowStep
-import net.zomis.games.dsl.impl.Game
 
-class ReplayListener(val gameType: String, val game: Game<out Any>) : GameListener {
+class ReplayListener(val gameType: String) : GameListener {
 
     private var gameStartedState: GameSituationState = null
     private val actions = mutableListOf<ActionReplay>()

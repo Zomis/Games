@@ -26,12 +26,13 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
             scanner.nextLine().toInt()
         }
 
+        val replayListener = ReplayListener(game.name)
         runBlocking {
             val game = entryPoint.setup().startGame(this, playerCount) { g ->
                 listOf(
                     ConsoleViewer(g),
                     ConsoleControl(g, scanner),
-                    ReplayListener(game.name, g),
+                    replayListener,
                     PlayerController(g, 0.toSingleList()) { controller ->
                         ServerAIs(AIRepository(), emptySet()).randomActionable(controller.game, controller.playerIndex)
                     }
