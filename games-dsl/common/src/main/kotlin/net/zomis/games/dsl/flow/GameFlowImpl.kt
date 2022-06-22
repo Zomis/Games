@@ -55,6 +55,7 @@ class GameFlowImpl<T: Any>(
             try {
                 val dsl = setupContext.flowDsl!!
                 val flowContext = GameFlowContext(this, game, "root")
+                replayable.stateKeeper.preSetup(gameConfig, model) { sendFeedback(it) }
                 setupContext.model.onStart(GameStartContext(gameConfig, model, replayable, playerCount))
                 dsl.invoke(flowContext)
                 actionDone()
@@ -126,12 +127,12 @@ class GameFlowImpl<T: Any>(
                 sendFeedback(FlowStep.AwaitInput)
                 val action = actionsInput.receive()
                 logger.info("GameFlow Coroutine Action Received: $action")
-                require(action is Actionable<*, *>)
                 val typeEntry = actions.type(action.actionType)
                 if (typeEntry == null) {
                     sendFeedback(FlowStep.IllegalAction(action.actionType, action.playerIndex, action.parameter))
                     continue
                 }
+                replayable.stateKeeper.preMove { sendFeedback(it) }
                 actions.clearAndPerform(action as Actionable<T, Any>) { this.clear() }
                 this.lastAction = FlowStep.ActionPerformed(action, typeEntry, replayable.stateKeeper.lastMoveState())
                 runRules(GameFlowRulesState.AFTER_ACTIONS)

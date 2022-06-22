@@ -47,11 +47,9 @@ class GameFlowLogicActionDelegator<T: Any, A: Any>(
         = available.actionInfoKeys(playerIndex, previouslySelected)
 
     private fun checkActionAllowed(action: Actionable<T, A>): Boolean {
-        if (!actionAllowed(action)) {
-            feedback.invoke(FlowStep.IllegalAction(action.actionType, action.playerIndex, action.parameter))
-            return false
-        }
-        return true
+        val allowed = actionAllowed(action)
+        if (!allowed) feedback.invoke(FlowStep.IllegalAction(action.actionType, action.playerIndex, action.parameter))
+        return allowed
     }
 
     override fun withChosen(playerIndex: Int, chosen: List<Any>): ActionComplexChosenStep<T, A> {

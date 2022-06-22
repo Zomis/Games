@@ -90,6 +90,7 @@ sealed class FlowStep {
     interface ActionResult
     object GameEnd: FlowStep(), ProceedStep
     data class Elimination(val elimination: PlayerElimination): FlowStep()
+    data class PreMove(val state: MutableMap<String, Any>): FlowStep()
     data class ActionPerformed<T: Any>(
         val action: Actionable<T, Any>,
         val actionImpl: ActionTypeImplEntry<T, Any>,
@@ -105,6 +106,7 @@ sealed class FlowStep {
     data class IllegalAction(val actionType: String, val playerIndex: Int, val parameter: Any): FlowStep(), ActionResult
     data class Log(val log: ActionLogEntry): FlowStep()
     data class RuleExecution(val ruleName: String, val values: Any): FlowStep()
+    data class PreSetup<out T: Any>(val gameConfig: GameConfigs, val model: T, val state: MutableMap<String, Any>) : FlowStep()
     data class GameSetup(val playerCount: Int, val config: GameConfigs, val state: Map<String, Any>): FlowStep()
     object AwaitInput: FlowStep(), ProceedStep
     object NextView : FlowStep(), ProceedStep
@@ -147,6 +149,7 @@ class GameImpl<T : Any>(
     private val rules = GameActionRulesContext(gameConfig, model, replayState, eliminationCallback)
 
     override suspend fun start(coroutineScope: CoroutineScope) {
+        replayState.stateKeeper.preSetup(gameConfig, model) { feedbackFlow.emit(it) }
         setupContext.model.onStart(GameStartContext(gameConfig, model, replayState, playerCount))
         setupContext.actionRulesDsl?.invoke(rules)
         rules.gameStart()
@@ -156,6 +159,7 @@ class GameImpl<T : Any>(
             for (action in actionsInput) {
                 println("GameImpl received action $action")
                 stateKeeper.clear()
+                replayState.stateKeeper.preMove { feedbackFlow.emit(it) }
                 val result = actions.type(action.actionType)?.perform(action.playerIndex, action.parameter)
                 if (result != null) {
                     feedbackFlow.emit(result as FlowStep)

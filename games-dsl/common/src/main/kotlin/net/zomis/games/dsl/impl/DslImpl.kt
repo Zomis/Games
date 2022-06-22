@@ -1,5 +1,6 @@
 package net.zomis.games.dsl.impl
 
+import kotlinx.coroutines.flow.MutableSharedFlow
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
@@ -121,6 +122,22 @@ class StateKeeper {
 
     fun log(log: ActionLogEntry) {
         logEntries.add(log)
+    }
+
+    suspend fun <T: Any> preSetup(gameConfig: GameConfigs, model: T, function: suspend (FlowStep.PreSetup<T>) -> Unit) {
+        val moveState = this.lastMoveState()
+        val preSetup = FlowStep.PreSetup(gameConfig, model, moveState.toMutableMap())
+        function.invoke(preSetup)
+        this.setState(preSetup.state)
+        this.replayMode = (preSetup.state != moveState)
+    }
+
+    suspend fun preMove(function: suspend (FlowStep.PreMove) -> Unit) {
+        val moveState = this.lastMoveState()
+        val preSetup = FlowStep.PreMove(moveState.toMutableMap())
+        function.invoke(preSetup)
+        this.setState(preSetup.state)
+        this.replayMode = (preSetup.state != moveState)
     }
 }
 class ReplayState(
