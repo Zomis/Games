@@ -15,6 +15,7 @@ import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.scorers.ScorerFactory
 
+@Deprecated("Replaced by GameListeners")
 class GameplayCallbacksList<T: Any>(val list: List<GameplayCallbacks<T>>): GameplayCallbacks<T>() {
     override fun startState(setStateCallback: (GameSituationState) -> Unit) = list.forEach { it.startState(setStateCallback) }
     override fun startedState(playerCount: Int, config: GameConfigs, state: GameSituationState) = list.forEach{it.startedState(playerCount, config, state)}
@@ -34,18 +35,17 @@ class GameEntryPoint<T : Any>(private val gameSpec: GameSpec<T>) {
     val gameType: String = gameSpec.name
     fun setup() = GameSetupImpl(gameSpec)
     fun scorers() = ScorerFactory(gameSpec)
+    @Deprecated("use startGame with gameListeners instead")
     fun replayable(playerCount: Int, config: GameConfigs, vararg callbacks: GameplayCallbacks<T>)
         = GameReplayableImpl(gameSpec, playerCount, config, GameplayCallbacksList(callbacks.toList()))
 
-    fun replay(replay: ReplayData,
-               postReplayMoveCallback: GameplayCallbacks<T> = GameplayCallbacks(),
-               alwaysCallback: GameplayCallbacks<T> = GameplayCallbacks()
-    ): Replay<T> {
+    fun replay(replay: ReplayData): Replay<T> {
         if (replay.gameType != gameSpec.name) {
             throw IllegalArgumentException("Mismatching gametypes: Replay data for ${replay.gameType} cannot be used on ${gameSpec.name}")
         }
-        return Replay(gameSpec, replay.playerCount, replay.config, replay, postReplayMoveCallback, alwaysCallback)
+        return Replay(gameSpec, replay.playerCount, replay.config, replay)
     }
+    @Deprecated("use startGame with ReplayListener instead")
     fun inMemoryReplay() = InMemoryReplayCallbacks<T>(gameSpec.name)
 
     suspend fun runTests() {

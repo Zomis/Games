@@ -44,6 +44,7 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
         }
     }
 
+    @Deprecated("Replaced by GameListeners")
     fun replayCallback(): GameplayCallbacks<Any> {
         return object : GameplayCallbacks<Any>() {
             override fun onPreMove(

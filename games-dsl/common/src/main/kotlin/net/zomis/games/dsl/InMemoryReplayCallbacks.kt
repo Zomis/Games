@@ -1,5 +1,6 @@
 package net.zomis.games.dsl
 
+@Deprecated("Replaced by GameListeners")
 class InMemoryReplayCallbacks<T : Any>(val gameType: String): GameplayCallbacks<T>() {
 
     private var gameStartedState: GameSituationState = null

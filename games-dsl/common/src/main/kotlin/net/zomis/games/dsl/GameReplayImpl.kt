@@ -13,6 +13,7 @@ import net.zomis.games.dsl.impl.*
 
 
 typealias GameSituationState = Map<String, Any>?
+@Deprecated("Replaced by GameListeners")
 open class GameplayCallbacks<T : Any> {
     open fun startState(setStateCallback: (GameSituationState) -> Unit) {/* empty by default */}
     open fun startedState(playerCount: Int, config: GameConfigs, state: GameSituationState) {/* empty by default */}

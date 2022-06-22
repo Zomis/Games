@@ -40,12 +40,15 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
         return createGame(playerCount, configs().also { it.set("", config) })
     }
 
+    @Deprecated("Use startGame instead", replaceWith = ReplaceWith("startGame(coroutineScope, {playerCount}) {}"))
     fun createGameWithDefaultConfig(playerCount: Int): Game<T> = createGame(playerCount, configs())
+    @Deprecated("Use startGame instead", replaceWith = ReplaceWith("startGame(coroutineScope, {playerCount}) {}"))
     fun createGame(playerCount: Int) = createGameWithState(playerCount, configs(), StateKeeper())
 
     fun createGame(playerCount: Int, config: GameConfigs): Game<T>
         = this.createGameWithState(playerCount, config, StateKeeper())
 
+    @Deprecated("Use startGame instead and inject state when needed with listeners", replaceWith = ReplaceWith("startGame(coroutineScope, {playerCount}) {}"))
     fun createGameWithState(playerCount: Int, config: GameConfigs, stateKeeper: StateKeeper): Game<T> {
         if (playerCount !in playersCount) {
             throw IllegalArgumentException("Invalid number of players: $playerCount, expected $playersCount")

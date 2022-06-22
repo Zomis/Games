@@ -2,20 +2,7 @@ package net.zomis.games.dsl
 
 import net.zomis.games.dsl.impl.Game
 
-private class PostReplayCallback<T : Any>(private val replayActionCount: Int, private val postReplayMoveCallback: GameplayCallbacks<T>): GameplayCallbacks<T>() {
-    override fun onPreMove(actionIndex: Int, action: Actionable<T, Any>, setStateCallback: (GameSituationState) -> Unit) {
-        if (actionIndex >= replayActionCount) {
-            postReplayMoveCallback.onPreMove(actionIndex, action, setStateCallback)
-        }
-    }
-
-    override fun onMove(actionIndex: Int, action: Actionable<T, Any>, actionReplay: ActionReplay) {
-        if (actionIndex >= replayActionCount) {
-            postReplayMoveCallback.onMove(actionIndex, action, actionReplay)
-        }
-    }
-}
-
+@Deprecated("Replaced by GameListeners")
 private class ReplayCallback<T : Any>(private val replayData: ReplayData) : GameplayCallbacks<T>() {
     override fun startState(setStateCallback: (GameSituationState) -> Unit) = setStateCallback(replayData.initialState)
     override fun onPreMove(actionIndex: Int, action: Actionable<T, Any>, setStateCallback: (GameSituationState) -> Unit)
@@ -27,9 +14,7 @@ class Replay<T : Any>(
     gameSpec: GameSpec<T>,
     val playerCount: Int,
     val config: GameConfigs,
-    private val replayData: ReplayData,
-    val postReplayMoveCallback: GameplayCallbacks<T>,
-    val alwaysCallback: GameplayCallbacks<T>
+    private val replayData: ReplayData
 ) {
 
     suspend fun goToStart(): Replay<T> = this.gotoPosition(0)
@@ -63,7 +48,7 @@ class Replay<T : Any>(
     }
 
     private fun restart() {
-        gameReplayable = entryPoint.replayable(playerCount, config, ReplayCallback(replayData), PostReplayCallback(replayData.actions.size, postReplayMoveCallback), alwaysCallback)
+        gameReplayable = entryPoint.replayable(playerCount, config, ReplayCallback(replayData))
         this.position = 0
     }
 
