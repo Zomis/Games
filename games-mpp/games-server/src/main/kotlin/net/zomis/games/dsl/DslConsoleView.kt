@@ -45,15 +45,10 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
                     }
                 }
             }
-        }
 
-        if (true) return
-        val replay = entryPoint.inMemoryReplay()
-        val replayable = entryPoint.replayable(playerCount, config, replay)
-        runBlocking {
-            val savedReplay = entryPoint.replay(replay.data()).goToEnd()
-            listOf<Int?>(null).plus(replayable.game.playerIndices).forEach {
-                val match = replayable.game.view(it) == savedReplay.game.view(it)
+            val savedReplay = entryPoint.replay(this, replayListener.data()).goToEnd()
+            listOf<Int?>(null).plus(game.playerIndices).forEach {
+                val match = game.view(it) == savedReplay.game.view(it)
                 println("Replay for player $it verification: $match")
             }
         }

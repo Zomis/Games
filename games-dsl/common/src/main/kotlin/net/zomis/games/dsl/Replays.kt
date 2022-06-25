@@ -1,6 +1,13 @@
 package net.zomis.games.dsl
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
+import net.zomis.games.listeners.ReplayingListener
 
 @Deprecated("Replaced by GameListeners")
 private class ReplayCallback<T : Any>(private val replayData: ReplayData) : GameplayCallbacks<T>() {
@@ -11,51 +18,103 @@ private class ReplayCallback<T : Any>(private val replayData: ReplayData) : Game
 class ReplayException(override val message: String?, override val cause: Throwable?): Exception(message, cause)
 
 class Replay<T : Any>(
+    private val coroutineScope: CoroutineScope,
     gameSpec: GameSpec<T>,
-    val playerCount: Int,
-    val config: GameConfigs,
     private val replayData: ReplayData
-) {
+): GameListener {
+    val config = replayData.config
+    val playerCount = replayData.playerCount
 
     suspend fun goToStart(): Replay<T> = this.gotoPosition(0)
     suspend fun goToEnd(): Replay<T> = this.gotoPosition(replayData.actions.size)
 
     private val entryPoint = GamesImpl.game(gameSpec)
-    lateinit var gameReplayable: GameReplayableImpl<T>
     private var position: Int = 0
-    val game: Game<T> get() = gameReplayable.game
+    private var targetPosition = 0
+    lateinit var game: Game<T>
+    lateinit var syncer: Syncer
+
+    class Syncer: GameListener {
+        val mutex = Mutex()
+        var ready = false
+
+        override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
+            mutex.withLock {
+                this.ready = step is FlowStep.ProceedStep
+                println("Set ready: $step")
+            }
+        }
+        suspend fun sync(block: suspend () -> Unit) {
+            mutex.withLock {
+                println("Sync await ready")
+                while (!ready) {
+                    delay(10)
+                }
+                println("Sync await ready done")
+            }
+            println("Performing block")
+            block.invoke()
+        }
+    }
 
     suspend fun gotoPosition(newPosition: Int): Replay<T> {
+        this.targetPosition = newPosition
         if (newPosition < this.position) {
             restart()
-        }
-        while (newPosition > this.position) {
-            stepForward()
         }
         return this
     }
 
-    private suspend fun stepForward() {
-        val action = replayData.actions[this.position]
-        try {
-            val actionable = gameReplayable.game.actions.type(action.actionType)!!
-                    .createActionFromSerialized(action.playerIndex, action.serializedParameter)
-            gameReplayable.perform(actionable)
-        } catch (e: Exception) {
-            throw ReplayException("Unable to perform action ${this.position}", e)
+    override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
+        when (step) {
+            is FlowStep.AwaitInput -> {
+                coroutineScope.launch {
+                    if (position < targetPosition) stepForward()
+                }
+            }
+            is FlowStep.ActionPerformed<*> -> {
+                this.position++
+            }
         }
-        this.position++
     }
 
-    private fun restart() {
-        gameReplayable = entryPoint.replayable(playerCount, config, ReplayCallback(replayData))
+    private suspend fun stepForward() {
+        println("Step forward $position")
+        val action = replayData.actions[this.position]
+        try {
+            syncer.sync {
+                println("Checking actionables on position $position. $action")
+                println(game.view(0))
+                val actionable = game.actions.type(action.actionType)!!
+                    .createActionFromSerialized(action.playerIndex, action.serializedParameter)
+                game.actionsInput.send(actionable)
+            }
+        } catch (e: Exception) {
+            throw ReplayException("Unable to perform action ${this.position}: $action", e)
+        }
+    }
+
+    private suspend fun restart() {
+        this.syncer = Syncer()
+        this.game = entryPoint.setup().startGameWithConfig(coroutineScope, playerCount, config) {
+            listOf(ReplayingListener(replayData), syncer, this)
+        }
         this.position = 0
     }
 
-    fun replayable(): GameReplayableImpl<T> = gameReplayable
-
-    init {
-        restart()
+    companion object {
+        suspend fun <T: Any> initReplay(
+            coroutineScope: CoroutineScope,
+            gameSpec: GameSpec<T>,
+            replayData: ReplayData
+        ): Replay<T> {
+            require(replayData.gameType == gameSpec.name) {
+                "Mismatching gametypes: Replay data for ${replayData.gameType} cannot be used on ${gameSpec.name}"
+            }
+            val replay = Replay(coroutineScope, gameSpec, replayData)
+            replay.restart()
+            return replay
+        }
     }
 
 }

@@ -2,13 +2,10 @@ package net.zomis.games.server2.games
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.withLock
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.*
-import net.zomis.games.dsl.flow.GameFlowContext
 import net.zomis.games.dsl.flow.GameFlowImpl
 import net.zomis.games.dsl.impl.*
 import net.zomis.games.server.GamesServer
@@ -25,7 +22,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
     private val logger = KLoggers.logger(this)
 
     fun perform(events: EventSystem, it: PlayerGameMoveRequest) {
-        val controller = it.game.obj!!.game as Game<T>
+        val controller = it.game.obj!! as Game<T>
         if (controller.isGameOver()) {
             events.execute(it.illegalMove("Game already finished"))
             return
@@ -61,16 +58,16 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                 println("sending actionsInput to ${gameFlow.actionsInput}")
                 gameFlow.actionsInput.send(action)
                 println("Action sent, awaiting feedback")
-                handleFeedbacks(gameFlow, events, moveRequest.game)
+                // handleFeedbacks(gameFlow, events, moveRequest.game)
             } catch (e: Exception) {
                 logger.error(e) { "Error in DSL System Coroutine: $moveRequest $gameFlow $action" }
             }
         }
     }
 
-    private suspend fun handleFeedbacks(gameFlow: GameFlowImpl<T>, events: EventSystem, game: ServerGame) {
-        for (feedback in gameFlow.feedbackReceiver) {
-            println("Feedback received: $feedback")
+    private fun handleFeedbacks(feedback: FlowStep, events: EventSystem, game: ServerGame) {
+        if (true) {
+            logger.info("Feedback received: $feedback")
             when (feedback) {
                 is FlowStep.GameEnd -> events.execute(GameEndedEvent(game))
                 is FlowStep.Elimination -> events.execute(
@@ -82,7 +79,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                     MoveEvent(game, feedback.playerIndex, feedback.actionImpl.actionType, feedback.parameter, feedback.replayState)
                 )
                 is FlowStep.AwaitInput -> {
-                    if (gameFlow.eliminations.isGameOver()) {
+                    if (game.obj!!.eliminations.isGameOver()) {
                         throw IllegalStateException("Game is over but AwaitInput was sent")
                     }
                     return
@@ -91,8 +88,10 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                 is FlowStep.RuleExecution -> logger.debug { "Rule Execution: $feedback" }
                 is FlowStep.IllegalAction -> logger.error { "Illegal action in feedback: $feedback" }
                 is FlowStep.NextView -> logger.debug { "NextView: $feedback" } // TODO: Not implemented yet, should pause a bit and then continue
+                is FlowStep.UglyHack -> {}
+                is FlowStep.PreMove -> {}
                 else -> {
-                    logger.error(IllegalArgumentException("Unsupported feedback: $feedback"))
+                    logger.warn(IllegalArgumentException("Unsupported feedback: $feedback"))
                 }
             }
         }
@@ -153,29 +152,30 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
     fun setup(events: EventSystem) {
         val entryPoint = GamesImpl.game(dsl)
         events.listen("DslGameSystem $gameTypeName Setup", GameStartedEvent::class, {it.game.gameType.type == gameTypeName}, {
+            val gameStartedEvent = it
             val dbIntegration = this.dbIntegration()
             val appropriateReplayListener =
                 if (it.game.gameMeta.database && dbIntegration != null) GamesServer.replayStorage.database<T>(dbIntegration, it.game.gameId)
                 else GameplayCallbacks()
-            it.game.obj = entryPoint.replayable(
-                it.game.playerCount,
-                it.game.gameMeta.gameOptions,
-                serverGameListener(it.game),
-                appropriateReplayListener
-            ) as GameReplayableImpl<Any>
-            val game = it.game.obj!!.game
-            GlobalScope.launch {
-                println("Call start game")
-                game.start(this)
-                if (game !is GameFlowImpl) game.actionsInput.close()
-                println("Game started")
+            val coroutineScope = CoroutineScope(Dispatchers.Default)
+            runBlocking {
+                logger.info { "Creating game: ${it.game}" }
+                val game = entryPoint.setup().startGameWithConfig(coroutineScope, it.game.playerCount, it.game.gameMeta.gameOptions) {
+                    listOf(DslGameSystemListener(gameStartedEvent.game, events))
+//                serverGameListener(it),
+//                appropriateReplayListener
+                } as Game<Any>
+                it.game.obj = game
+                logger.info { "Created game: $game" }
+                // if (game !is GameFlowImpl) game.actionsInput.close()
             }
+            val game = it.game.obj!!
             if (game is GameFlowImpl) {
-                println("Run blocking")
+                logger.info("Run blocking")
                 runBlocking {
-                    println("before handle feedbacks")
-                    handleFeedbacks(game as GameFlowImpl<T>, events, it.game)
-                    println("after handle feedbacks")
+                    logger.info("before handle feedbacks")
+//                    handleFeedbacks(game as GameFlowImpl<T>, events, it.game)
+                    logger.info("after handle feedbacks")
                 }
             }
             events.execute(GameInitializedEvent(it.game, game.stateKeeper.lastMoveState()))
@@ -217,6 +217,12 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
             "private" to entry.private,
             "parts" to entry.parts
         )
+    }
+
+    inner class DslGameSystemListener(val serverGame: ServerGame, val events: EventSystem): GameListener {
+        override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
+            handleFeedbacks(step, events, serverGame)
+        }
     }
 
 }

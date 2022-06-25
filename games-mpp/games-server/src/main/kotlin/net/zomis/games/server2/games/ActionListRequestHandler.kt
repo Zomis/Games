@@ -1,10 +1,8 @@
 package net.zomis.games.server2.games
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.games.dsl.impl.ActionInfoByKey
-import net.zomis.games.dsl.impl.Game
 import net.zomis.games.server2.Client
 import net.zomis.games.server2.ClientJsonMessage
 import net.zomis.games.server2.getTextOrDefault
@@ -29,12 +27,12 @@ class ActionListRequestHandler(private val game: ServerGame?) {
             "gameType" to game.gameType.type,
             "gameId" to game.gameId,
             "playerIndex" to actionParams.playerIndex,
-            "actions" to if (game.obj!!.game.isGameOver()) emptyMap<String, Any>() else actionParams.actions.keys.keys
+            "actions" to if (game.obj!!.isGameOver()) emptyMap<String, Any>() else actionParams.actions.keys.keys
         ))
     }
 
     private fun actionParams(message: ClientJsonMessage): ActionList {
-        val obj = game!!.obj!!.game
+        val obj = game!!.obj!!
         val playerIndex = message.data.getTextOrDefault("playerIndex", "-1").toInt()
         game.requireAccess(message.client, playerIndex, ClientPlayerAccessType.WRITE)
         val moveType = message.data.get("moveType")?.asText()

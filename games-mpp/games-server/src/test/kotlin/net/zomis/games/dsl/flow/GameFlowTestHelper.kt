@@ -12,12 +12,17 @@ import net.zomis.games.dsl.impl.GameController
 class GameFlowTestHelper<T: Any>(val gameFlow: GameFlowImpl<T>) {
     suspend fun takeUntil(condition: (FlowStep) -> Boolean): FlowStep {
         while (true) {
-            val output = gameFlow.feedbackReceiver.receive()
-            println("Test Received: $output")
+            val output = next()
             if (condition.invoke(output)) {
                 return output
             }
         }
+    }
+
+    suspend fun next(): FlowStep {
+        val output2 = gameFlow.feedbackFlow.receive()
+        println("Test Received: $output2")
+        return output2
     }
 }
 

@@ -1,9 +1,8 @@
 package net.zomis.games.server.test
 
-import net.zomis.games.dsl.GameReplayableImpl
 import java.util.Scanner
 
-class PlayTestInput(val scanner: Scanner, private val replayable: GameReplayableImpl<Any>) {
+class PlayTestInput(val scanner: Scanner) {
     fun playerIndex(): Int {
         println("Enter player index")
         return scanner.nextLine().toInt()

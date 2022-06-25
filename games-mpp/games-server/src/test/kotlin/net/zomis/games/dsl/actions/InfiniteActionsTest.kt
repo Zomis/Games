@@ -1,5 +1,6 @@
 package net.zomis.games.dsl.actions
 
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
@@ -8,6 +9,7 @@ import net.zomis.games.api.GamesApi
 import net.zomis.games.dsl.ActionChoicesRecursiveSpecScope
 import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.flow.GameFlowImpl
+import net.zomis.games.dsl.games.awaitInput
 import net.zomis.games.dsl.impl.ActionSampleSize
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.impl.SpiceRoadDsl
@@ -102,6 +104,7 @@ class InfiniteActionsTest {
     fun splendor() = runTest {
         val setup = ServerGames.entrypoint("Splendor")!!.setup()
         val game = setup.createGameWithDefaultConfig(4)
+        launch { game.awaitInput(this) }
         game.start(this)
         val a = game.actions.type("takeMoney")!!.availableActions(0, null).toList()
         Assertions.assertTrue(a.isNotEmpty())
@@ -112,6 +115,7 @@ class InfiniteActionsTest {
     fun spiceRoad() = runTest {
         val setup = ServerGames.entrypoint("Spice Road")!!.setup()
         val game = setup.createGameWithDefaultConfig(2) as Game<SpiceRoadGameModel>
+        launch { game.awaitInput(this) }
         game.start(this)
         val actionType = game.actions.type("play")!!
         val a = actionType.availableActions(0, null).toList().map { (it.parameter as SpiceRoadDsl.PlayParameter) }
@@ -129,6 +133,7 @@ class InfiniteActionsTest {
     @Test
     fun limitedEvaluation() = runTest {
         val game = GamesImpl.game(game).setup().createGameWithDefaultConfig(1)
+        launch { game.awaitInput(this) }
         game.start(this)
         testAvailableActions(game)
 
@@ -150,8 +155,9 @@ class InfiniteActionsTest {
     @Test
     fun limitedEvaluationGameFlow() = runTest {
         val game = GamesImpl.game(gameFlow).setup().createGameWithDefaultConfig(1) as GameFlowImpl<MyList>
+        val j = launch { game.awaitInput(this) }
         game.start(this)
-        game.feedbackReceiverFlow().collect { println("Collect: $it") }
+        j.join()
         testAvailableActions(game)
 
         val actionType = game.actions.type(combine)!!

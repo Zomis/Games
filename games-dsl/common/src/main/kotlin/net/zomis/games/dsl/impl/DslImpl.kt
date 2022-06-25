@@ -124,20 +124,24 @@ class StateKeeper {
         logEntries.add(log)
     }
 
-    suspend fun <T: Any> preSetup(gameConfig: GameConfigs, model: T, function: suspend (FlowStep.PreSetup<T>) -> Unit) {
+    suspend fun <T: Any> preSetup(gameConfig: GameConfigs, model: T, function: suspend (FlowStep) -> Unit) {
         val moveState = this.lastMoveState()
         val preSetup = FlowStep.PreSetup(gameConfig, model, moveState.toMutableMap())
         function.invoke(preSetup)
+        function.invoke(FlowStep.UglyHack)
         this.setState(preSetup.state)
         this.replayMode = (preSetup.state != moveState)
+        println("PreSetup set state ${preSetup.state}")
     }
 
-    suspend fun preMove(function: suspend (FlowStep.PreMove) -> Unit) {
+    suspend fun preMove(action: Actionable<*, *>, function: suspend (FlowStep) -> Unit) {
         val moveState = this.lastMoveState()
-        val preSetup = FlowStep.PreMove(moveState.toMutableMap())
+        val preSetup = FlowStep.PreMove(action, moveState.toMutableMap())
         function.invoke(preSetup)
+        function.invoke(FlowStep.UglyHack)
         this.setState(preSetup.state)
         this.replayMode = (preSetup.state != moveState)
+        println("PreMove set state $action / ${preSetup.state}")
     }
 }
 class ReplayState(

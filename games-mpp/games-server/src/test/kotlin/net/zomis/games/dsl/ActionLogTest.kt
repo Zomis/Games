@@ -1,5 +1,6 @@
 package net.zomis.games.dsl
 
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import net.zomis.games.WinResult
 import net.zomis.games.dsl.flow.runBlocking
@@ -50,11 +51,21 @@ class ActionLogTest {
     fun test() = runTest {
         val entry = GamesImpl.game(spec)
         val play = entry.replayable(2, entry.setup().configs()).runBlocking()
+        launch {
+            println("Receive: " + play.game.feedbackFlow.receive())
+            println("Receive: " + play.game.feedbackFlow.receive())
+            play.game.actionsInput.close()
+            println("closed actions input")
+            println("Receive: " + play.game.feedbackFlow.receive())
+            println("Receive: " + play.game.feedbackFlow.receive())
+        }
         play.game.start(this)
-        play.game.actionsInput.close()
+        println("a1")
         play.action(0, change, 2)
+        println("a4")
         play.action(0, change, 3)
         play.action(1, change, -2)
+        println("a2")
         val game = play.game
         val logs = game.stateKeeper.logs()
         Assertions.assertEquals(2, logs.size)
@@ -77,6 +88,7 @@ class ActionLogTest {
         play.action(0, change,1)
         play.action(1, change,-2)
         Assertions.assertTrue(game.isGameOver())
+        println("assertions done")
     }
 
 }

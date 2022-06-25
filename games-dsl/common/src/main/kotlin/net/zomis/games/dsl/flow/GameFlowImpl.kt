@@ -3,7 +3,6 @@ package net.zomis.games.dsl.flow
 import klog.KLoggers
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.*
 import net.zomis.games.PlayerEliminations
 import net.zomis.games.PlayerEliminationsWrite
@@ -25,9 +24,9 @@ class GameFlowImpl<T: Any>(
     private var lastAction: FlowStep.ActionPerformed<T>? = null
     private val mainScope = MainScope()
     val views = mutableListOf<Pair<String, ViewScope<T>.() -> Any?>>()
-    private val feedbackOutput = Channel<FlowStep>()
-    val feedbackReceiver: ReceiveChannel<FlowStep> get() = feedbackOutput
-    fun feedbackReceiverFlow() = feedbackReceiver.receiveAsFlow().transformWhile {
+    override val feedbackFlow: Channel<FlowStep> = Channel()
+
+    fun feedbackReceiverFlow() = feedbackFlow.receiveAsFlow().transformWhile {
         emit(it)
         it !is FlowStep.ProceedStep
     }
@@ -73,10 +72,12 @@ class GameFlowImpl<T: Any>(
     }
 
     suspend fun sendFeedbacks() {
-        feedbacks.forEach {
+        println("Feedbacks: $feedbacks")
+        println("Logs: ${stateKeeper.logs()}")
+        feedbacks.toList().forEach {
             sendFeedback(it)
         }
-        stateKeeper.logs().forEach {
+        stateKeeper.logs().toList().forEach {
             sendFeedback(FlowStep.Log(it))
         }
         stateKeeper.clearLogs()
@@ -132,9 +133,13 @@ class GameFlowImpl<T: Any>(
                     sendFeedback(FlowStep.IllegalAction(action.actionType, action.playerIndex, action.parameter))
                     continue
                 }
-                replayable.stateKeeper.preMove { sendFeedback(it) }
+                replayable.stateKeeper.preMove(action) { sendFeedback(it) }
+                logger.info("clear and perform: ${replayable.stateKeeper.lastMoveState()}")
                 actions.clearAndPerform(action as Actionable<T, Any>) { this.clear() }
-                this.lastAction = FlowStep.ActionPerformed(action, typeEntry, replayable.stateKeeper.lastMoveState())
+                logger.info("creating last action: ${replayable.stateKeeper.lastMoveState()}")
+                val last = FlowStep.ActionPerformed(action, typeEntry, replayable.stateKeeper.lastMoveState())
+                this.lastAction = last
+                logger.info("last action is: $last")
                 runRules(GameFlowRulesState.AFTER_ACTIONS)
                 return action
             }
@@ -162,8 +167,7 @@ class GameFlowImpl<T: Any>(
 
     suspend fun sendFeedback(feedback: FlowStep) {
         logger.info("GameFlow Coroutine sends feedback: $feedback")
-        this.feedbackOutput.send(feedback)
-        this.feedbackFlow.emit(feedback)
+        this.feedbackFlow.send(feedback)
         logger.info("GameFlow Coroutine feedback sent: $feedback, continuing coroutine...")
     }
 
@@ -194,7 +198,6 @@ class GameFlowImpl<T: Any>(
     }
 
     override fun <E : Any> config(config: GameConfig<E>): E = this.gameConfig.get(config)
-    override val feedbackFlow: MutableSharedFlow<FlowStep> = MutableSharedFlow()
 
     // current possible actions, cleared and re-filled after every step
     // a coroutine to keep the game running. Cancellable?

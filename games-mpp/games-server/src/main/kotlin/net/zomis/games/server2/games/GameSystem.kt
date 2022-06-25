@@ -1,6 +1,7 @@
 package net.zomis.games.server2.games
 
 import klog.KLoggers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import net.zomis.core.events.EventSystem
 import net.zomis.core.events.ListenerPriority
@@ -12,6 +13,7 @@ import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.GameReplayableImpl
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.GamesImpl
+import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.server.GamesServer
 import net.zomis.games.server2.*
@@ -67,7 +69,7 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
     val mutex = Mutex()
     internal val players: MutableMap<Client, ClientAccess> = mutableMapOf()
     val playerCount: Int get() = players.values.flatMap { it.access.keys }.distinct().count()
-    var obj: GameReplayableImpl<Any>? = null
+    var obj: Game<Any>? = null
     var lastMove: Long = Instant.now().toEpochMilli()
 
     fun broadcast(message: (Client) -> Any) {
@@ -143,14 +145,13 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
     }
 
     private fun view(message: ClientJsonMessage) {
-        val obj = this.obj
-        if (obj == null) {
+        val game = this.obj
+        if (game == null) {
             logger.warn { "${message.client} Requesting view before obj is initialized on $this" }
             // message.client.sendErrorMessage("Game not initialized")
             return
         }
 
-        val game = obj.game
         val viewer = message.data.get("playerIndex").asInt().takeIf { it >= 0 }
 
         val chosenActionType = message.data.get("actionType")?.asText()
@@ -174,7 +175,7 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
     private fun viewRequest(message: ClientJsonMessage) {
         val viewer = message.data.get("playerIndex").asInt().takeIf { it >= 0 }
         requireAccess(message.client, viewer, ClientPlayerAccessType.READ)
-        val viewDetailsResult = this.obj!!.game.viewRequest(viewer,
+        val viewDetailsResult = this.obj!!.viewRequest(viewer,
               message.data.getTextOrDefault("viewRequest", ""), emptyMap())
 
         message.client.send(mapOf(
@@ -265,7 +266,9 @@ class GameType(private val callback: GameCallback, val gameSpec: GameSpec<Any>, 
         val loadGameOptions = InviteOptions(false, InviteTurnOrder.ORDERED, -1, gameOptions, true)
         val serverGame = ServerGame(callback, this, gameId, loadGameOptions)
         serverGame.setMoveIndex(dbGame.moveHistory.size)
-        serverGame.obj = GamesImpl.game(gameSpec).replay(dbGame.replayData(), GamesServer.replayStorage.database(dbIntegration!!, gameId)).replayable()
+        runBlocking {
+            serverGame.obj = GamesImpl.game(gameSpec).replay(this, dbGame.replayData()).game
+        }
         runningGames[serverGame.gameId] = serverGame
 
         fun findOrCreatePlayers(playersInGame: List<PlayerInGame>): Map<Client, ClientAccess> {

@@ -40,7 +40,7 @@ data class PlayTestStepAssertView @JsonCreator constructor(
     val parameter: Any
 ) : PlayTestStep("assertView") {
 
-    fun assert(replayable: GameReplayableImpl<Any>) {
+    fun assert(replayable: PlayTests.GameWrapper) {
         println("Asserting $this")
         val actual = replayable.game.view(playerIndex)
         val value = PlayTests.viewNavigation(actual, path)
@@ -83,7 +83,7 @@ data class PlayTestStepAssertActions @JsonCreator constructor(
     val actionType: String? = null,
     val parameter: Any? = null
 ) : PlayTestStep("assertActions") {
-    fun assert(replayable: GameReplayableImpl<Any>) {
+    fun assert(replayable: PlayTests.GameWrapper) {
         println("Asserting $this")
         when (assertionType) {
             PlayTestActionAssertionType.ALLOWED -> {
@@ -103,7 +103,7 @@ data class PlayTestStepAssertActions @JsonCreator constructor(
         }
     }
 
-    private fun assertAllowed(replayable: GameReplayableImpl<Any>, expected: Boolean) {
+    private fun assertAllowed(replayable: PlayTests.GameWrapper, expected: Boolean) {
         val actionTypeEntry = replayable.game.actions.type(actionType!!)
         if (!expected && actionTypeEntry == null) return
         if (actionTypeEntry == null) {
@@ -126,7 +126,7 @@ data class PlayTestStepAssertElimination @JsonCreator constructor(
     val winResult: WinResult? = null,
     val position: Int? = null
 ) : PlayTestStep("assertEliminations") {
-    fun assert(replayable: GameReplayableImpl<Any>) {
+    fun assert(replayable: PlayTests.GameWrapper) {
         println("Asserting $this")
         val eliminations = replayable.game.eliminations
         when (this.assertionType) {

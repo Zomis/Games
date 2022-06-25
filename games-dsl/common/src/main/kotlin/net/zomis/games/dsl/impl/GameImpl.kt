@@ -2,9 +2,6 @@ package net.zomis.games.dsl.impl
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.transformWhile
 import net.zomis.games.PlayerElimination
 import net.zomis.games.PlayerEliminations
 import net.zomis.games.PlayerEliminationsWrite
@@ -58,25 +55,26 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
 
     fun configs(): GameConfigs = context.configs()
 
-    suspend fun startGame(coroutineScope: CoroutineScope, playerCount: Int, flowListeners: (Game<Any>) -> Collection<GameListener>): Game<T> {
-        val game = this.createGame(playerCount)
+    suspend fun startGame(coroutineScope: CoroutineScope, playerCount: Int, flowListeners: (Game<Any>) -> Collection<GameListener>): Game<T>
+        = startGameWithConfig(coroutineScope, playerCount, configs(), flowListeners)
+
+    suspend fun startGameWithConfig(coroutineScope: CoroutineScope, playerCount: Int, config: GameConfigs, flowListeners: (Game<Any>) -> Collection<GameListener>): Game<T> {
+        val game = this.createGame(playerCount, config)
         val listeners = flowListeners.invoke(game as Game<Any>)
         println("Waiting for ${listeners.size} listeners")
         coroutineScope.launch {
-            game.feedbackFlow.transformWhile {
-                emit(it)
-                it !is FlowStep.GameEnd
-            }.collect { flowStep ->
-                withContext(Dispatchers.Default) {
-                    listeners.forEach { listener ->
-                        println("Listener $listener handling $flowStep")
-                        listener.handle(coroutineScope, flowStep)
-                        println("Listener $listener finished $flowStep")
-                    }
+            for (flowStep in game.feedbackFlow) {
+                listeners.forEach { listener ->
+                    println("Listener $listener handling $flowStep")
+                    listener.handle(coroutineScope, flowStep)
+                    println("Listener $listener finished $flowStep")
+                }
+                if (flowStep is FlowStep.GameEnd) {
+                    println("Game end, no more listeners")
+                    break
                 }
             }
         }
-        game.feedbackFlow.subscriptionCount.first { it == 1 }
         println("Game ready to start")
         game.start(coroutineScope)
         println("Started, or something")
@@ -93,7 +91,13 @@ sealed class FlowStep {
     interface ActionResult
     object GameEnd: FlowStep(), ProceedStep
     data class Elimination(val elimination: PlayerElimination): FlowStep()
-    data class PreMove(val state: MutableMap<String, Any>): FlowStep()
+    data class PreMove(val action: Actionable<*, *>, val state: MutableMap<String, Any>): FlowStep() {
+        fun setState(newState: Map<String, Any>) {
+            state.clear()
+            state.putAll(newState)
+        }
+    }
+
     data class ActionPerformed<T: Any>(
         val action: Actionable<T, Any>,
         val actionImpl: ActionTypeImplEntry<T, Any>,
@@ -113,6 +117,7 @@ sealed class FlowStep {
     data class GameSetup(val playerCount: Int, val config: GameConfigs, val state: Map<String, Any>): FlowStep()
     object AwaitInput: FlowStep(), ProceedStep
     object NextView : FlowStep(), ProceedStep
+    object UglyHack: FlowStep() // Only to make sure that consumers have finished consuming previous message
 }
 
 interface Game<T: Any> {
@@ -125,7 +130,7 @@ interface Game<T: Any> {
     val stateKeeper: StateKeeper // TODO: Hide `stateKeeper` and use FlowSteps as much as possible
     val actions: Actions<T>
     val actionsInput: Channel<Actionable<T, out Any>>
-    val feedbackFlow: MutableSharedFlow<FlowStep>
+    val feedbackFlow: Channel<FlowStep>
     suspend fun start(coroutineScope: CoroutineScope)
     fun copy(copier: (source: T, destination: T) -> Unit): Game<T>
     fun isGameOver(): Boolean
@@ -152,26 +157,38 @@ class GameImpl<T : Any>(
     private val rules = GameActionRulesContext(gameConfig, model, replayState, eliminationCallback)
 
     override suspend fun start(coroutineScope: CoroutineScope) {
-        replayState.stateKeeper.preSetup(gameConfig, model) { feedbackFlow.emit(it) }
+        println("$this: pre-setup")
+        replayState.stateKeeper.preSetup(gameConfig, model) { feedbackFlow.send(it) }
         setupContext.model.onStart(GameStartContext(gameConfig, model, replayState, playerCount))
         setupContext.actionRulesDsl?.invoke(rules)
         rules.gameStart()
-        feedbackFlow.emit(FlowStep.GameSetup(playerCount, gameConfig, stateKeeper.lastMoveState()))
+        feedbackFlow.send(FlowStep.GameSetup(playerCount, gameConfig, stateKeeper.lastMoveState()))
+        println("$this: setup done")
 
         this.actionsInputJob = coroutineScope.launch {
+            println("$this@GameImpl: actions job")
             for (action in actionsInput) {
-                println("GameImpl received action $action")
+                println("$this@GameImpl: GameImpl received action $action")
                 stateKeeper.clear()
-                replayState.stateKeeper.preMove { feedbackFlow.emit(it) }
+                replayState.stateKeeper.preMove(action) {
+                    feedbackFlow.send(it)
+                }
                 val result = actions.type(action.actionType)?.perform(action.playerIndex, action.parameter)
                 if (result != null) {
-                    feedbackFlow.emit(result as FlowStep)
+                    feedbackFlow.send(result as FlowStep)
+                    println("$this@GameImpl: flow step sent: $result, now sending await input")
                     awaitInput()
                 }
-                if (isGameOver()) break
+                if (isGameOver()) {
+                    println("$this@GameImpl: actions job game over")
+                    break
+                }
             }
+            println("$this@GameImpl: end of actions job")
         }
+        println("$this@GameImpl: await input")
         awaitInput()
+        println("$this@GameImpl: start done")
     }
 
     override fun stop() {
@@ -180,13 +197,13 @@ class GameImpl<T : Any>(
     }
 
     private suspend fun awaitInput() {
-        feedbackFlow.emit(if (this.isGameOver()) FlowStep.GameEnd else FlowStep.AwaitInput)
+        feedbackFlow.send(if (this.isGameOver()) FlowStep.GameEnd else FlowStep.AwaitInput)
     }
 
     override val actions = ActionsImpl(model, rules, replayState)
 
     override val actionsInput: Channel<Actionable<T, out Any>> = Channel()
-    override val feedbackFlow: MutableSharedFlow<FlowStep> = MutableSharedFlow()
+    override val feedbackFlow: Channel<FlowStep> = Channel()
 
     override fun copy(copier: (source: T, destination: T) -> Unit): GameImpl<T> {
         val copy = GameImpl(setupContext, playerCount, gameConfig, stateKeeper)

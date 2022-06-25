@@ -39,12 +39,7 @@ class GameEntryPoint<T : Any>(private val gameSpec: GameSpec<T>) {
     fun replayable(playerCount: Int, config: GameConfigs, vararg callbacks: GameplayCallbacks<T>)
         = GameReplayableImpl(gameSpec, playerCount, config, GameplayCallbacksList(callbacks.toList()))
 
-    fun replay(replay: ReplayData): Replay<T> {
-        if (replay.gameType != gameSpec.name) {
-            throw IllegalArgumentException("Mismatching gametypes: Replay data for ${replay.gameType} cannot be used on ${gameSpec.name}")
-        }
-        return Replay(gameSpec, replay.playerCount, replay.config, replay)
-    }
+    suspend fun replay(coroutineScope: CoroutineScope, replay: ReplayData): Replay<T> = Replay.initReplay(coroutineScope, gameSpec, replay)
     @Deprecated("use startGame with ReplayListener instead")
     fun inMemoryReplay() = InMemoryReplayCallbacks<T>(gameSpec.name)
 

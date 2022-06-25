@@ -1,7 +1,10 @@
 package net.zomis.games.dsl
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import net.zomis.games.common.Point
+import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.impl.ttt.DslTTT
@@ -14,8 +17,17 @@ import kotlin.random.Random
 fun <T: Any> Game<T>.startSynchronized() {
     val game = this
     runBlocking {
+        launch {
+            for (i in game.feedbackFlow) {
+                println(i)
+                if (i is FlowStep.AwaitInput) break
+            }
+        }
+        println("starting game")
         game.start(this)
+        println("closing input")
         game.actionsInput.close()
+
     }
 }
 

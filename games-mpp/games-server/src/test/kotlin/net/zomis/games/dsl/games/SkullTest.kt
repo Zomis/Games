@@ -1,8 +1,11 @@
 package net.zomis.games.dsl.games
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import net.zomis.games.dsl.GameAsserts
+import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.impl.SkullCard
@@ -11,6 +14,16 @@ import net.zomis.games.impl.SkullGameModel
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+
+suspend fun Game<*>.awaitInput(coroutineScope: CoroutineScope) {
+    val game = this
+    coroutineScope.launch {
+        for (i in game.feedbackFlow) {
+            println("AwaitInput Feedback: $i")
+            if (i is FlowStep.ProceedStep) break
+        }
+    }
+}
 
 class SkullTest {
 
@@ -21,6 +34,9 @@ class SkullTest {
     suspend fun setup(coroutineScope: CoroutineScope) {
         val setup = GameSetupImpl(dsl)
         game = setup.createGameWithDefaultConfig(3)
+        coroutineScope.launch {
+            game.awaitInput(coroutineScope)
+        }
         game.start(coroutineScope)
         test = GameAsserts(game)
     }
@@ -35,6 +51,7 @@ class SkullTest {
         Assertions.assertEquals(1, actions.count { it.parameter == SkullCard.SKULL })
         Assertions.assertEquals(3, actions.count { it.parameter == SkullCard.FLOWER })
         Assertions.assertTrue(game.model.players.all { it.points == 0 })
+        println("4")
 
         test.performAction(0, "play", SkullCard.FLOWER)
         test.expectPossibleActions(2, 0)
@@ -60,6 +77,7 @@ class SkullTest {
         test.expectPossibleActions(0, 1) // choose last player
         Assertions.assertTrue(game.model.players.all { it.points == 0 })
         test.performAction(0, "choose", game.model.players[1])
+        println("1")
 
         Assertions.assertEquals(1, game.model.players[0].points)
         Assertions.assertEquals(0, game.model.currentPlayerIndex)
@@ -70,11 +88,13 @@ class SkullTest {
         test.performAction(2, "play", SkullCard.SKULL)
         test.performAction(0, "bet", 3)
         test.performAction(0, "choose", game.model.players[0])
+        println("2")
         test.performAction(0, "choose", game.model.players[1])
         Assertions.assertEquals(3, game.model.players[0].totalCards)
         // With the default options, currentPlayer should not change if you lose a bet.
         Assertions.assertEquals(0, game.model.currentPlayerIndex)
         game.stop()
+        println("3")
     }
 
 }

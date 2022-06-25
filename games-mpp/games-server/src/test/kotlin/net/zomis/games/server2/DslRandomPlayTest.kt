@@ -150,10 +150,12 @@ class DslRandomPlayTest {
         }
 
         clients.forEach {client ->
+            println("Client $client take until GameStarted")
             client.takeUntilJson { it.getText("type") == "GameStarted" }
         }
 
         // Find game
+        println("Finding game")
         val game = server!!.gameSystem.getGameType(dslGame)!!.runningGames["1"]!!
         repeat(5) {
             if (game.obj == null) {
@@ -161,8 +163,7 @@ class DslRandomPlayTest {
                 Thread.sleep(1000)
             }
         }
-        val gameObj = game.obj ?: throw IllegalStateException("Game was not started correctly: ${gameType.gameType} with $playerCount players")
-        val gameImpl = gameObj.game
+        val gameImpl = game.obj ?: throw IllegalStateException("Game was not started correctly: ${gameType.gameType} with $playerCount players")
         val players = game.playerList().mapIndexed { index, client ->
             index to clientsById.getValue(client.playerId)
         }
