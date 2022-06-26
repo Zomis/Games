@@ -7,7 +7,6 @@ import net.zomis.games.common.Point
 import net.zomis.games.dsl.GameAsserts
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
-import net.zomis.games.dsl.startSynchronized
 import net.zomis.games.impl.ttt.DslTTT
 import net.zomis.games.impl.ttt.ultimate.TTController
 import net.zomis.games.listeners.BlockingGameListener
