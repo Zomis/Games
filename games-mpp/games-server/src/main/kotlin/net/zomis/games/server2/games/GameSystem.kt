@@ -319,22 +319,6 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>, private val callback:
         events.listen("Send GameStarted", ListenerPriority.LATER, GameStartedEvent::class, {true}, {event ->
             event.game.sendGameStartedMessages()
         })
-        events.listen("Send GameEnded", GameEndedEvent::class, {true}, {
-            it.game.gameOver = true
-            it.game.broadcast { _ ->
-                it.game.toJson("GameEnded")
-            }
-        })
-        events.listen("Send Move", MoveEvent::class, {true}, {event ->
-            event.game.broadcast {
-                event.moveMessage()
-            }
-        })
-        events.listen("Send PlayerEliminated", PlayerEliminatedEvent::class, {true}, {event ->
-            event.game.broadcast {
-                event.eliminatedMessage()
-            }
-        })
         events.listen("Send IllegalMove", IllegalMoveEvent::class, {true}, {event ->
             event.client.send(
                 event.game.toJson("IllegalMove").plus("player" to event.player).plus("reason" to event.reason)
@@ -349,18 +333,4 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>, private val callback:
         val gameTypes = features[GameTypes::class]!!
         return gameTypes.gameTypes[gameType]
     }
-}
-
-fun MoveEvent<*, *>.moveMessage(): Map<String, Any?> {
-    return this.game.toJson("GameMove")
-        .plus("player" to this.player)
-        .plus("moveType" to this.actionType.name)
-}
-
-fun PlayerEliminatedEvent.eliminatedMessage(): Map<String, Any?> {
-    return this.game.toJson("PlayerEliminated")
-        .plus("player" to this.player)
-        .plus("winner" to this.winner.isWinner())
-        .plus("winResult" to this.winner.name)
-        .plus("position" to this.position)
 }

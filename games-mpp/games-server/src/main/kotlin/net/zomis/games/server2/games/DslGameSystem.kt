@@ -125,9 +125,9 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                 val game = entryPoint.setup().startGameWithConfig(coroutineScope, it.game.playerCount, it.game.gameMeta.gameOptions) {game ->
                     listOf(
                         DslGameSystemListener(gameStartedEvent.game, events, game),
+                        serverGameListener(gameStartedEvent.game, game),
                         appropriateReplayListener
                     )
-//                serverGameListener(it),
                 } as Game<Any>
                 it.game.obj = game
                 logger.info { "Created game: $game" }
@@ -149,11 +149,42 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
         })
     }
 
-    private fun serverGameListener(game: ServerGame): GameListener {
+    private fun serverGameListener(serverGame: ServerGame, game: Game<Any>): GameListener {
         return object : GameListener {
             override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
+                when (step) {
+                    is FlowStep.GameEnd -> {
+                        serverGame.gameOver = true
+                        serverGame.broadcast { _ ->
+                            serverGame.toJson("GameEnded")
+                        }
+                    }
+                    is FlowStep.ActionPerformed<*> -> {
+                        serverGame.broadcast {
+                            step.moveMessage(serverGame)
+                        }
+                    }
+                    is FlowStep.Elimination -> {
+                        serverGame.broadcast {
+                            step.eliminatedMessage(serverGame)
+                        }
+                    }
+                }
             }
         }
+    }
+    private fun FlowStep.ActionPerformed<*>.moveMessage(serverGame: ServerGame): Map<String, Any?> {
+        return serverGame.toJson("GameMove")
+            .plus("player" to this.playerIndex)
+            .plus("moveType" to this.action.actionType)
+    }
+
+    private fun FlowStep.Elimination.eliminatedMessage(serverGame: ServerGame): Map<String, Any?> {
+        return serverGame.toJson("PlayerEliminated")
+            .plus("player" to this.elimination.playerIndex)
+            .plus("winner" to this.elimination.winResult.isWinner())
+            .plus("winResult" to this.elimination.winResult.name)
+            .plus("position" to this.elimination.position)
     }
 
     private fun sendLogs(serverGame: ServerGame, log: ActionLogEntry) {
