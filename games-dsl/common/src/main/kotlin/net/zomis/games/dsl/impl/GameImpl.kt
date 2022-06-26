@@ -39,8 +39,6 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
 
     @Deprecated("Use startGame instead", replaceWith = ReplaceWith("startGame(coroutineScope, {playerCount}) {}"))
     fun createGameWithDefaultConfig(playerCount: Int): Game<T> = createGame(playerCount, configs())
-    @Deprecated("Use startGame instead", replaceWith = ReplaceWith("startGame(coroutineScope, {playerCount}) {}"))
-    fun createGame(playerCount: Int) = createGameWithState(playerCount, configs(), StateKeeper())
 
     fun createGame(playerCount: Int, config: GameConfigs): Game<T>
         = this.createGameWithState(playerCount, config, StateKeeper())
