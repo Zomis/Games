@@ -33,13 +33,6 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
 
     val playersCount: IntRange = context.model.playerCount
 
-    fun createGameWithOldConfig(playerCount: Int, config: Any): Game<T> {
-        return createGame(playerCount, configs().also { it.set("", config) })
-    }
-
-    @Deprecated("Use startGame instead", replaceWith = ReplaceWith("startGame(coroutineScope, {playerCount}) {}"))
-    fun createGameWithDefaultConfig(playerCount: Int): Game<T> = createGame(playerCount, configs())
-
     fun createGame(playerCount: Int, config: GameConfigs): Game<T>
         = this.createGameWithState(playerCount, config, StateKeeper())
 
