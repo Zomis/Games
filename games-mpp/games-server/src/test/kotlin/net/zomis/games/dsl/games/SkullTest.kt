@@ -1,21 +1,17 @@
 package net.zomis.games.dsl.games
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
-import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.GameAsserts
-import net.zomis.games.dsl.impl.ActionTypeImplEntry
 import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.impl.SkullCard
 import net.zomis.games.impl.SkullGame
 import net.zomis.games.impl.SkullGameModel
+import net.zomis.games.listeners.BlockingGameListener
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 suspend fun Game<*>.awaitInput(coroutineScope: CoroutineScope) {
@@ -28,19 +24,6 @@ suspend fun Game<*>.awaitInput(coroutineScope: CoroutineScope) {
     }
 }
 
-suspend fun <T: Any, P: Any> Game<T>.action(playerIndex: Int, actionType: ActionType<T, P>, parameter: P) {
-    val game = this
-    coroutineScope {
-        var act: ActionTypeImplEntry<T, P>? = game.actions.type(actionType)
-        while (act == null) {
-            delay(50)
-            act = game.actions.type(actionType)
-        }
-        game.actionsInput.send(act.createAction(playerIndex, parameter))
-        game.awaitInput(this)
-    }
-}
-
 class SkullTest {
 
     val dsl = SkullGame.game
@@ -49,12 +32,11 @@ class SkullTest {
 
     suspend fun setup(coroutineScope: CoroutineScope) {
         val setup = GameSetupImpl(dsl)
-        game = setup.createGameWithDefaultConfig(3)
-        coroutineScope.launch {
-            game.awaitInput(coroutineScope)
+        val blocking = BlockingGameListener()
+        game = setup.startGame(coroutineScope, 3) {
+            listOf(blocking)
         }
-        game.start(coroutineScope)
-        test = GameAsserts(game)
+        test = GameAsserts(game, blocking)
     }
 
     @Test

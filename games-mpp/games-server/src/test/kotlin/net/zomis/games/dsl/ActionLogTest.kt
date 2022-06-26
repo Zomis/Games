@@ -2,7 +2,6 @@ package net.zomis.games.dsl
 
 import kotlinx.coroutines.test.runTest
 import net.zomis.games.WinResult
-import net.zomis.games.dsl.games.action
 import net.zomis.games.dsl.impl.*
 import net.zomis.games.listeners.BlockingGameListener
 import org.junit.jupiter.api.Assertions

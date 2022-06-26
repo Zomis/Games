@@ -1,13 +1,10 @@
 package net.zomis.games.dsl
 
-import kotlinx.coroutines.runBlocking
 import net.zomis.games.dsl.impl.Game
-import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.listeners.BlockingGameListener
-import net.zomis.games.server2.ServerGames
 import org.junit.jupiter.api.Assertions
 
-class GameAsserts<T : Any>(val game: Game<T>, val blocking: BlockingGameListener? = null) {
+class GameAsserts<T : Any>(val game: Game<T>, private val blocking: BlockingGameListener) {
 
     fun expectPossibleOptions(playerIndex: Int, actionType: String, expected: Int, vararg chosen: Any) {
         val actionInfo = game.actions.type(actionType)!!.actionInfoKeys(playerIndex, chosen.toList())
@@ -25,30 +22,14 @@ class GameAsserts<T : Any>(val game: Game<T>, val blocking: BlockingGameListener
         return availableActions
     }
 
-    fun performAction(playerIndex: Int, actionType: String, parameter: Any) {
-        runBlocking {
-            blocking?.await()
-        }
-        val actionEntry = game.actions.type(actionType)!!
-        val action = actionEntry.createAction(playerIndex, parameter)
-        require(actionEntry.isAllowed(action)) { "Action is not allowed: $action" }
-        actionEntry.perform(action)
-        runBlocking {
-            blocking?.await()
-        }
+    suspend fun performAction(playerIndex: Int, actionType: String, parameter: Any) {
+        blocking.awaitAndPerform(playerIndex, actionType, parameter)
+        blocking.await()
     }
 
-    fun performActionSerialized(playerIndex: Int, actionType: String, parameter: Any) {
-        runBlocking {
-            blocking?.await()
-        }
-        val actionEntry = game.actions.type(actionType)!!
-        val action = actionEntry.createActionFromSerialized(playerIndex, parameter)
-        require(actionEntry.isAllowed(action)) { "Action is not allowed: $action" }
-        actionEntry.perform(action)
-        runBlocking {
-            blocking?.await()
-        }
+    suspend fun performActionSerialized(playerIndex: Int, actionType: String, parameter: Any) {
+        blocking.awaitAndPerformSerialized(playerIndex, actionType, parameter)
+        blocking.await()
     }
 
 }

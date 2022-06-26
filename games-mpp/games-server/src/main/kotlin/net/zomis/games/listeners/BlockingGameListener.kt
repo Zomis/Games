@@ -33,6 +33,13 @@ class BlockingGameListener: GameListener {
         game.actionsInput.send(action as Actionable<Any, out Any>)
     }
 
+    suspend fun <P: Any> awaitAndPerformSerialized(playerIndex: Int, type: String, parameter: P) {
+        await()
+        lock.lock()
+        val action = game.actions.type(type)!!.createActionFromSerialized(playerIndex, parameter)
+        game.actionsInput.send(action as Actionable<Any, out Any>)
+    }
+
     suspend fun <T: Any, P: Any> awaitAndPerform(playerIndex: Int, type: ActionType<T, P>, parameter: P) {
         await()
         lock.lock()
