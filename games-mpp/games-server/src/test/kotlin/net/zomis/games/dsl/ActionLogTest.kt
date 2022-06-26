@@ -1,10 +1,10 @@
 package net.zomis.games.dsl
 
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import net.zomis.games.WinResult
-import net.zomis.games.dsl.flow.runBlocking
+import net.zomis.games.dsl.games.action
 import net.zomis.games.dsl.impl.*
+import net.zomis.games.listeners.BlockingGameListener
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import kotlin.math.sign
@@ -12,9 +12,9 @@ import kotlin.math.sign
 class ActionLogTest {
 
     data class LogTestGame(var value: Int)
-    val factory = GameCreator(LogTestGame::class)
-    val change = factory.action("change", Int::class)
-    val spec = factory.game("LogTest") {
+    private val factory = GameCreator(LogTestGame::class)
+    private val change = factory.action("change", Int::class)
+    private val spec = factory.game("LogTest") {
         setup {
             init { LogTestGame(0) }
         }
@@ -50,23 +50,15 @@ class ActionLogTest {
     @Test
     fun test() = runTest {
         val entry = GamesImpl.game(spec)
-        val play = entry.replayable(2, entry.setup().configs()).runBlocking()
-        launch {
-            println("Receive: " + play.game.feedbackFlow.receive())
-            println("Receive: " + play.game.feedbackFlow.receive())
-            play.game.actionsInput.close()
-            println("closed actions input")
-            println("Receive: " + play.game.feedbackFlow.receive())
-            println("Receive: " + play.game.feedbackFlow.receive())
+        val blockingGame = BlockingGameListener()
+        val game = entry.setup().startGame(this, 2) {
+            listOf(blockingGame)
         }
-        play.game.start(this)
-        println("a1")
-        play.action(0, change, 2)
-        println("a4")
-        play.action(0, change, 3)
-        play.action(1, change, -2)
-        println("a2")
-        val game = play.game
+        blockingGame.awaitAndPerform(0, change, 2)
+        blockingGame.awaitAndPerform(0, change, 3)
+        blockingGame.awaitAndPerform(1, change, -2)
+        blockingGame.await()
+
         val logs = game.stateKeeper.logs()
         Assertions.assertEquals(2, logs.size)
         Assertions.assertEquals(LogPartPlayer(1), logs[0].secret!!.parts[0])
@@ -84,9 +76,11 @@ class ActionLogTest {
         Assertions.assertEquals(LogPartPlayer(1), logs[1].public!!.parts[0])
         Assertions.assertEquals(LogPartText(" changed the value in direction -1"), logs[1].public!!.parts[1])
 
-        play.action(1, change,-2)
-        play.action(0, change,1)
-        play.action(1, change,-2)
+        blockingGame.awaitAndPerform(1, change, -2)
+        blockingGame.awaitAndPerform(0, change, 1)
+        blockingGame.awaitAndPerform(1, change, -2)
+        blockingGame.await()
+
         Assertions.assertTrue(game.isGameOver())
         println("assertions done")
     }

@@ -4,19 +4,17 @@ package net.zomis.games.dsl.context
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withTimeout
 import net.zomis.games.api.GamesApi
 import net.zomis.games.context.Context
 import net.zomis.games.context.ContextHolder
 import net.zomis.games.context.Entity
 import net.zomis.games.context.HiddenValue
 import net.zomis.games.dsl.ConsoleView
-import net.zomis.games.dsl.GameReplayableImpl
 import net.zomis.games.dsl.GameSerializable
 import net.zomis.games.dsl.GamesImpl
-import net.zomis.games.dsl.flow.GameFlowImpl
+import net.zomis.games.dsl.impl.Game
+import net.zomis.games.listeners.BlockingGameListener
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -85,67 +83,72 @@ class ContextTest {
     @Test
     fun startConfig() = runTest {
         val entry = GamesImpl.game(game)
-        val replayable = entry.replayable(3, entry.setup().configs().set("startValue", 100))
-        replayable.game.start(this)
-        replayable.await()
-        Assertions.assertEquals(3, replayable.game.model.players.size)
-        Assertions.assertTrue(replayable.game.model.players.all { it.value == 100 })
-        replayable.game.stop()
+        val blocking = BlockingGameListener()
+        val game = entry.setup().startGameWithConfig(this, 3, entry.setup().configs().set("startValue", 100)) {
+            listOf(blocking)
+        }
+        blocking.await()
+        Assertions.assertEquals(3, game.model.players.size)
+        Assertions.assertTrue(game.model.players.all { it.value == 100 })
+        game.stop()
     }
 
-    private suspend fun init(coroutineScope: CoroutineScope): GameReplayableImpl<Model> {
+    private suspend fun init(coroutineScope: CoroutineScope): Pair<Game<Model>, BlockingGameListener> {
+        val blocking = BlockingGameListener()
         val entry = GamesImpl.game(game)
-        val repl = entry.replayable(2, entry.setup().configs())
-        repl.game.start(coroutineScope)
-        check(repl.game is GameFlowImpl)
-        repl.await()
-        return repl
+        val game = entry.setup().startGame(coroutineScope, 2) {
+            listOf(blocking)
+        }
+        blocking.await()
+        return game to blocking
     }
 
     private suspend fun runAndView(coroutineScope: CoroutineScope): Pair<Map<String, Any?>, Model> {
-        val replayable = init(coroutineScope)
-        replayable.doGlobal(0, 10)
-        replayable.doBoost(0, Booster.TEN_TIMES)
+        val (game, blocking) = init(coroutineScope)
+        blocking.doGlobal(0, 10)
+        blocking.doBoost(0, Booster.TEN_TIMES)
 
-        val view = replayable.game.view(0) to replayable.game.model
-        replayable.game.stop()
+        val view = game.view(0) to game.model
+        game.stop()
         return view
     }
 
     private suspend fun runAndViewPlayer(coroutineScope: CoroutineScope, viewer: Int): Pair<Model, Map<String, Any?>> {
-        val replayable = init(coroutineScope)
-        replayable.doGlobal(0, 10)
-        replayable.doBoost(0, Booster.TEN_TIMES)
-        val view = replayable.game.view(viewer)
-        ConsoleView<Model>().showView(replayable.game, viewer)
+        val (game, blocking) = init(coroutineScope)
+        blocking.doGlobal(0, 10)
+        blocking.doBoost(0, Booster.TEN_TIMES)
+        val view = game.view(viewer)
+        ConsoleView<Model>().showView(game, viewer)
         val playerViews = view["players"].let { it as List<Map<String, Any?>> }
-        val result = replayable.game.model to playerViews[0]
-        replayable.game.stop()
+        val result = game.model to playerViews[0]
+        game.stop()
         return result
     }
 
-    private suspend fun GameReplayableImpl<Model>.doGlobal(playerIndex: Int, value: Int) {
-        this.performSerialized(playerIndex, "global", value)
+    private suspend fun BlockingGameListener.doGlobal(playerIndex: Int, value: Int) {
+        this.awaitAndPerform(playerIndex, "global", value)
+        this.await()
     }
 
-    private suspend fun GameReplayableImpl<Model>.doBoost(playerIndex: Int, value: Booster) {
-        this.performSerialized(playerIndex, "boost", value.name)
+    private suspend fun BlockingGameListener.doBoost(playerIndex: Int, value: Booster) {
+        this.awaitAndPerform(playerIndex, "boost", value)
+        this.await()
     }
 
     @Test
     fun changeOnEvent() = runTest {
-        val replayable = init(this)
-        replayable.doGlobal(0, 10)
-        Assertions.assertEquals(10, replayable.game.model.inner.sum)
-        replayable.game.stop()
+        val (game, blocking) = init(this)
+        blocking.doGlobal(0, 10)
+        Assertions.assertEquals(10, game.model.inner.sum)
+        game.stop()
     }
 
     @Test
     fun onEvent() = runTest {
-        val replayable = init(this)
-        replayable.doBoost(0, Booster.RESET)
-        Assertions.assertEquals(listOf(Booster.RESET), replayable.game.model.players[0].used.cards)
-        replayable.game.stop()
+        val (game, blocking) = init(this)
+        blocking.doBoost(0, Booster.RESET)
+        Assertions.assertEquals(listOf(Booster.RESET), game.model.players[0].used.cards)
+        game.stop()
     }
 
     @Test

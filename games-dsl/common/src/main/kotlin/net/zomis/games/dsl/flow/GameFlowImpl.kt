@@ -54,19 +54,22 @@ class GameFlowImpl<T: Any>(
             try {
                 val dsl = setupContext.flowDsl!!
                 val flowContext = GameFlowContext(this, game, "root")
-                replayable.stateKeeper.preSetup(gameConfig, model) { sendFeedback(it) }
+                replayable.stateKeeper.preSetup(game) { sendFeedback(it) }
                 setupContext.model.onStart(GameStartContext(gameConfig, model, replayable, playerCount))
                 dsl.invoke(flowContext)
                 actionDone()
                 sendFeedback(FlowStep.GameEnd)
                 logger.info("GameFlow Coroutine MainScope done for $game")
+            } catch (e: CancellationException) {
+                logger.warn { "Game cancelled: $game" }
             } catch (e: Exception) {
-                KLoggers.logger(game).error(e) { "Error in Coroutine for game $game" }
+                logger.error(e) { "Error in Coroutine for game $game" }
             }
         }
     }
 
     override fun stop() {
+        this.feedbackFlow.close()
         this.job?.cancel()
         this.job = null
     }
@@ -121,7 +124,7 @@ class GameFlowImpl<T: Any>(
                     return null
                 }
                 if (!gameSetupSent) {
-                    sendFeedback(FlowStep.GameSetup(playerCount, gameConfig, replayable.stateKeeper.lastMoveState()))
+                    sendFeedback(FlowStep.GameSetup(this, gameConfig, replayable.stateKeeper.lastMoveState()))
                     gameSetupSent = true
                 }
                 replayable.stateKeeper.clear()

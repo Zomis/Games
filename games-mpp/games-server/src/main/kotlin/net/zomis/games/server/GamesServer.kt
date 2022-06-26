@@ -1,11 +1,9 @@
 package net.zomis.games.server
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import net.zomis.games.dsl.GameSpec
-import net.zomis.games.dsl.GameplayCallbacks
-import net.zomis.games.dsl.GamesImpl
-import net.zomis.games.dsl.ReplayData
-import net.zomis.games.server.db.GameplayDynamoDB
+import kotlinx.coroutines.CoroutineScope
+import net.zomis.games.dsl.*
+import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.server2.ServerGames
 import net.zomis.games.server2.db.DBIntegration
 import java.io.File
@@ -28,9 +26,16 @@ object GamesServer {
         )
     }
 
-    object replayStorage {
-        fun <T: Any> fileRecordReplay(fileName: String): GameplayCallbacks<T> = TODO()
-        fun <T: Any> database(dbIntegration: DBIntegration, gameId: String): GameplayCallbacks<T> = GameplayDynamoDB(gameId)
+    object Replays {
+        fun fileRecordReplay(fileName: String): GameListener = TODO()
+        fun database(dbIntegration: DBIntegration, gameId: String): GameListener = object : GameListener {
+            override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
+            }
+        }
+        fun noReplays(): GameListener = object : GameListener {
+            override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
+            }
+        }
     }
 
 }

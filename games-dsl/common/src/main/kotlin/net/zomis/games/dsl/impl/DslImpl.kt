@@ -124,9 +124,9 @@ class StateKeeper {
         logEntries.add(log)
     }
 
-    suspend fun <T: Any> preSetup(gameConfig: GameConfigs, model: T, function: suspend (FlowStep) -> Unit) {
+    suspend fun <T: Any> preSetup(game: Game<T>, function: suspend (FlowStep) -> Unit) {
         val moveState = this.lastMoveState()
-        val preSetup = FlowStep.PreSetup(gameConfig, model, moveState.toMutableMap())
+        val preSetup = FlowStep.PreSetup(game, moveState.toMutableMap())
         function.invoke(preSetup)
         function.invoke(FlowStep.UglyHack)
         this.setState(preSetup.state)

@@ -65,7 +65,7 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
                         step.state.clear()
                         step.state.putAll(stateLoad(node["state"])?.toMap() ?: emptyMap())
                     }
-                    is FlowStep.GameSetup -> {
+                    is FlowStep.GameSetup<*> -> {
                         stateSave(node, "state", step.state)
                     }
                 }

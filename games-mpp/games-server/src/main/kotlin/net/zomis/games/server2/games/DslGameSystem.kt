@@ -84,7 +84,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                     }
                     return
                 }
-                is FlowStep.GameSetup -> { /* SuperTable also listens for GameStartedEvent with higher priority */ }
+                is FlowStep.GameSetup<*> -> { /* SuperTable also listens for GameStartedEvent with higher priority */ }
                 is FlowStep.RuleExecution -> logger.debug { "Rule Execution: $feedback" }
                 is FlowStep.IllegalAction -> logger.error { "Illegal action in feedback: $feedback" }
                 is FlowStep.NextView -> logger.debug { "NextView: $feedback" } // TODO: Not implemented yet, should pause a bit and then continue
@@ -155,15 +155,17 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
             val gameStartedEvent = it
             val dbIntegration = this.dbIntegration()
             val appropriateReplayListener =
-                if (it.game.gameMeta.database && dbIntegration != null) GamesServer.replayStorage.database<T>(dbIntegration, it.game.gameId)
-                else GameplayCallbacks()
+                if (it.game.gameMeta.database && dbIntegration != null) GamesServer.Replays.database(dbIntegration, it.game.gameId)
+                else GamesServer.Replays.noReplays()
             val coroutineScope = CoroutineScope(Dispatchers.Default)
             runBlocking {
                 logger.info { "Creating game: ${it.game}" }
                 val game = entryPoint.setup().startGameWithConfig(coroutineScope, it.game.playerCount, it.game.gameMeta.gameOptions) {
-                    listOf(DslGameSystemListener(gameStartedEvent.game, events))
+                    listOf(
+                        DslGameSystemListener(gameStartedEvent.game, events),
+                        appropriateReplayListener
+                    )
 //                serverGameListener(it),
-//                appropriateReplayListener
                 } as Game<Any>
                 it.game.obj = game
                 logger.info { "Created game: $game" }
@@ -194,9 +196,11 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
         })
     }
 
-    private fun serverGameListener(game: ServerGame): GameplayCallbacks<T> {
-        // TODO: Use callbacks here instead of methods in ServerGame class
-        return GameplayCallbacks()
+    private fun serverGameListener(game: ServerGame): GameListener {
+        return object : GameListener {
+            override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
+            }
+        }
     }
 
     private fun sendLogs(serverGame: ServerGame, log: ActionLogEntry) {

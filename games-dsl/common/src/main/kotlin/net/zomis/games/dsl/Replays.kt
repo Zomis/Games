@@ -9,12 +9,6 @@ import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.listeners.ReplayingListener
 
-@Deprecated("Replaced by GameListeners")
-private class ReplayCallback<T : Any>(private val replayData: ReplayData) : GameplayCallbacks<T>() {
-    override fun startState(setStateCallback: (GameSituationState) -> Unit) = setStateCallback(replayData.initialState)
-    override fun onPreMove(actionIndex: Int, action: Actionable<T, Any>, setStateCallback: (GameSituationState) -> Unit)
-        = setStateCallback(replayData.actions[actionIndex].state)
-}
 class ReplayException(override val message: String?, override val cause: Throwable?): Exception(message, cause)
 
 class Replay<T : Any>(

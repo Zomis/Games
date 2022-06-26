@@ -2,9 +2,12 @@ package net.zomis.games.dsl.games
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
+import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.GameAsserts
+import net.zomis.games.dsl.impl.ActionTypeImplEntry
 import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
@@ -22,6 +25,19 @@ suspend fun Game<*>.awaitInput(coroutineScope: CoroutineScope) {
             println("AwaitInput Feedback: $i")
             if (i is FlowStep.ProceedStep) break
         }
+    }
+}
+
+suspend fun <T: Any, P: Any> Game<T>.action(playerIndex: Int, actionType: ActionType<T, P>, parameter: P) {
+    val game = this
+    coroutineScope {
+        var act: ActionTypeImplEntry<T, P>? = game.actions.type(actionType)
+        while (act == null) {
+            delay(50)
+            act = game.actions.type(actionType)
+        }
+        game.actionsInput.send(act.createAction(playerIndex, parameter))
+        game.awaitInput(this)
     }
 }
 

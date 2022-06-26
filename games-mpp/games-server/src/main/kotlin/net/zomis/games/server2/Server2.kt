@@ -30,6 +30,7 @@ import org.jetbrains.kotlin.script.jsr223.KotlinJsr223JvmLocalScriptEngineFactor
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.Executors
+import kotlin.system.exitProcess
 
 fun JsonNode.getTextOrDefault(fieldName: String, default: String): String {
     return if (this.hasNonNull(fieldName)) this.get(fieldName).asText() else default
@@ -120,7 +121,6 @@ class Server2(val events: EventSystem) {
     private val messageHandler = MessageHandler(events, this.messageRouter)
 
     fun start(config: ServerConfig): Server2 {
-        val messageFlow = MutableSharedFlow<Any>()
         val javalin = JavalinFactory.javalin(config)
             .enableCorsForOrigin(*config.clientURLs.split(';').toTypedArray())
         javalin.get("/ping") { ctx -> ctx.result("pong") }
@@ -249,14 +249,14 @@ object Main {
         } catch (e: ParameterException) {
             logger.error(e, "Unable to parse config")
             cmd.usage()
-            System.exit(1)
+            exitProcess(1)
         }
 
         try {
             Server2(EventSystem()).start(config)
         } catch (e: Exception) {
             logger.error(e) { "Unable to start server" }
-            System.exit(2)
+            exitProcess(2)
         }
     }
 }

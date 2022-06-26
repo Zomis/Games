@@ -13,7 +13,7 @@ class ConsoleControl(val game: Game<Any>, val scanner: Scanner): GameListener {
 
     override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
         if (step is FlowStep.GameEnd) job?.cancel()
-        if (step is FlowStep.GameSetup) {
+        if (step is FlowStep.GameSetup<*>) {
             println("State: " + step.state)
             job = coroutineScope.launch {
                 withContext(Dispatchers.IO) {

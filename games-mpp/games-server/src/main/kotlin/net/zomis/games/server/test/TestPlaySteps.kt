@@ -6,9 +6,6 @@ import net.zomis.games.PlayerElimination
 import net.zomis.games.WinResult
 import net.zomis.games.common.toSingleList
 import net.zomis.games.dsl.ConsoleView
-import net.zomis.games.dsl.DslConsoleView
-import net.zomis.games.dsl.GameReplayableImpl
-import kotlin.math.exp
 
 enum class PlayTestViewAssertionType {
     NOT_EQUALS,

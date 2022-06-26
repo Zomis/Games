@@ -62,8 +62,9 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
         val game = this.createGame(playerCount, config)
         val listeners = flowListeners.invoke(game as Game<Any>)
         println("Waiting for ${listeners.size} listeners")
-        coroutineScope.launch {
+        coroutineScope.launch(context = coroutineScope.coroutineContext + CoroutineName("$gameType with $playerCount players")) {
             for (flowStep in game.feedbackFlow) {
+                println("Listener feedback: $flowStep")
                 listeners.forEach { listener ->
                     println("Listener $listener handling $flowStep")
                     listener.handle(coroutineScope, flowStep)
@@ -113,8 +114,8 @@ sealed class FlowStep {
     data class IllegalAction(val actionType: String, val playerIndex: Int, val parameter: Any): FlowStep(), ActionResult
     data class Log(val log: ActionLogEntry): FlowStep()
     data class RuleExecution(val ruleName: String, val values: Any): FlowStep()
-    data class PreSetup<out T: Any>(val gameConfig: GameConfigs, val model: T, val state: MutableMap<String, Any>) : FlowStep()
-    data class GameSetup(val playerCount: Int, val config: GameConfigs, val state: Map<String, Any>): FlowStep()
+    data class PreSetup<T: Any>(val game: Game<T>, val state: MutableMap<String, Any>) : FlowStep()
+    data class GameSetup<T: Any>(val game: Game<T>, val config: GameConfigs, val state: Map<String, Any>): FlowStep()
     object AwaitInput: FlowStep(), ProceedStep
     object NextView : FlowStep(), ProceedStep
     object UglyHack: FlowStep() // Only to make sure that consumers have finished consuming previous message
@@ -158,11 +159,11 @@ class GameImpl<T : Any>(
 
     override suspend fun start(coroutineScope: CoroutineScope) {
         println("$this: pre-setup")
-        replayState.stateKeeper.preSetup(gameConfig, model) { feedbackFlow.send(it) }
+        replayState.stateKeeper.preSetup(this) { feedbackFlow.send(it) }
         setupContext.model.onStart(GameStartContext(gameConfig, model, replayState, playerCount))
         setupContext.actionRulesDsl?.invoke(rules)
         rules.gameStart()
-        feedbackFlow.send(FlowStep.GameSetup(playerCount, gameConfig, stateKeeper.lastMoveState()))
+        feedbackFlow.send(FlowStep.GameSetup(this, gameConfig, stateKeeper.lastMoveState()))
         println("$this: setup done")
 
         this.actionsInputJob = coroutineScope.launch {
@@ -192,6 +193,7 @@ class GameImpl<T : Any>(
     }
 
     override fun stop() {
+        this.feedbackFlow.close()
         this.actionsInputJob?.cancel()
         this.actionsInputJob = null
     }
