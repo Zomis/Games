@@ -156,31 +156,36 @@ class GameImpl<T : Any>(
         rules.gameStart()
         feedbackFlow.send(FlowStep.GameSetup(this, gameConfig, stateKeeper.lastMoveState()))
         println("$this: setup done")
+        val gameImpl = this
 
         this.actionsInputJob = coroutineScope.launch {
-            println("$this@GameImpl: actions job")
+            println("$gameImpl: actions job")
             for (action in actionsInput) {
-                println("$this@GameImpl: GameImpl received action $action")
+                println("$gameImpl: GameImpl received action $action")
                 stateKeeper.clear()
+                val oldEliminations = eliminations.eliminations()
                 replayState.stateKeeper.preMove(action) {
                     feedbackFlow.send(it)
                 }
                 val result = actions.type(action.actionType)?.perform(action.playerIndex, action.parameter)
                 if (result != null) {
                     feedbackFlow.send(result as FlowStep)
-                    println("$this@GameImpl: flow step sent: $result, now sending await input")
+                    eliminations.eliminations().minus(oldEliminations.toSet()).forEach {
+                        feedbackFlow.send(FlowStep.Elimination(it))
+                    }
+                    println("$gameImpl: flow step sent: $result, now sending await input")
                     awaitInput()
                 }
                 if (isGameOver()) {
-                    println("$this@GameImpl: actions job game over")
+                    println("$gameImpl: actions job game over")
                     break
                 }
             }
-            println("$this@GameImpl: end of actions job")
+            println("$gameImpl: end of actions job")
         }
-        println("$this@GameImpl: await input")
+        println("$gameImpl: await input")
         awaitInput()
-        println("$this@GameImpl: start done")
+        println("$gameImpl: start done")
     }
 
     override fun stop() {
