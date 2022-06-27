@@ -28,12 +28,10 @@ interface PlayerEliminationsWrite: PlayerEliminationsRead {
         this.eliminateRemaining(WinResult.LOSS)
     }
 }
-@Deprecated("replace with PlayerEliminationsWrite or PlayerEliminationsRead")
-interface PlayerEliminationCallback: PlayerEliminationsWrite
 
 data class PlayerElimination(val playerIndex: Int, val winResult: WinResult, val position: Int)
 
-class PlayerEliminations(override val playerCount: Int): PlayerEliminationCallback, PlayerEliminationsWrite, PlayerEliminationsRead {
+class PlayerEliminations(override val playerCount: Int): PlayerEliminationsWrite, PlayerEliminationsRead {
 
     private val eliminations = mutableListOf<PlayerElimination>()
     var callback: (PlayerElimination) -> Unit = {}
@@ -44,9 +42,7 @@ class PlayerEliminations(override val playerCount: Int): PlayerEliminationCallba
         }
     }
 
-    override fun eliminations(): List<PlayerElimination> {
-        return this.eliminations.toList()
-    }
+    override fun eliminations(): List<PlayerElimination> = this.eliminations.toList()
 
     override fun result(playerIndex: Int, winResult: WinResult) {
         val position = this.nextEliminationPosition(winResult)
@@ -72,14 +68,14 @@ class PlayerEliminations(override val playerCount: Int): PlayerEliminationCallba
 
     override fun eliminate(elimination: PlayerElimination) {
         val previousElimination = eliminations.firstOrNull { it.playerIndex == elimination.playerIndex }
-        if (previousElimination != null) {
-            throw IllegalArgumentException("Player is already eliminated: $previousElimination. Unable to eliminate $elimination")
+        require(previousElimination == null) {
+            "Player is already eliminated: $previousElimination. Unable to eliminate $elimination"
         }
-        if (elimination.position <= 0) {
-            throw IllegalArgumentException("Elimination position must be positive, but is ${elimination.position}")
+        require(elimination.position >= 0) {
+            "Elimination position must be positive, but is ${elimination.position}"
         }
-        if (elimination.position > playerCount) {
-            throw IllegalArgumentException("Elimination position ${elimination.position} must be less than or equal to playerCount $playerCount")
+        require(elimination.position <= playerCount) {
+            "Elimination position ${elimination.position} must be less than or equal to playerCount $playerCount"
         }
         this.eliminations.add(elimination)
         callback(elimination)
@@ -94,11 +90,7 @@ class PlayerEliminations(override val playerCount: Int): PlayerEliminationCallba
     }
 
     override fun <T> eliminateBy(playersAndScores: List<Pair<Int, T>>, comparator: Comparator<T>) {
-        val pairComparator = object : Comparator<Pair<Int, T>> {
-            override fun compare(a: Pair<Int, T>, b: Pair<Int, T>): Int {
-                return comparator.compare(a.second, b.second)
-            }
-        }
+        val pairComparator = Comparator<Pair<Int, T>> { a, b -> comparator.compare(a.second, b.second) }
         var playersAndScoresRemaining = playersAndScores
         var position = this.nextEliminationPosition(WinResult.WIN)
         while (playersAndScoresRemaining.isNotEmpty()) {
@@ -113,7 +105,7 @@ class PlayerEliminations(override val playerCount: Int): PlayerEliminationCallba
                 this.eliminate(PlayerElimination(it.first, winResult, position))
             }
             position += nextBatch.size
-            playersAndScoresRemaining = playersAndScoresRemaining.minus(nextBatch)
+            playersAndScoresRemaining = playersAndScoresRemaining.minus(nextBatch.toSet())
         }
     }
 

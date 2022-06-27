@@ -25,10 +25,8 @@ object HelloWorldGame {
             allActions.after {
                 0.takeIf { game.values.all { b -> b } }?.let { eliminations.eliminateRemaining(WinResult.WIN) }
             }
-        }
-        view {
-            this.value("board") { it.values }
-            this.value("scores") { game -> listOf(0).map { game.points } }
+            view("board") { game.values }
+            view("scores") { listOf(0).map { game.points } }
         }
     }
 

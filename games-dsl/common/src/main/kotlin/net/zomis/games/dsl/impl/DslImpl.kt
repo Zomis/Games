@@ -1,6 +1,5 @@
 package net.zomis.games.dsl.impl
 
-import kotlinx.coroutines.flow.MutableSharedFlow
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
@@ -131,7 +130,6 @@ class StateKeeper {
         function.invoke(FlowStep.UglyHack)
         this.setState(preSetup.state)
         this.replayMode = (preSetup.state != moveState)
-        println("PreSetup set state ${preSetup.state}")
     }
 
     suspend fun preMove(action: Actionable<*, *>, function: suspend (FlowStep) -> Unit) {
@@ -141,7 +139,6 @@ class StateKeeper {
         function.invoke(FlowStep.UglyHack)
         this.setState(preSetup.state)
         this.replayMode = (preSetup.state != moveState)
-        println("PreMove set state $action / ${preSetup.state}")
     }
 }
 class ReplayState(
