@@ -11,6 +11,7 @@ import net.zomis.games.dsl.impl.Game
 
 class BlockingGameListener: GameListener {
     val lock = Mutex(locked = true)
+    val gameEnd = Mutex(locked = true)
     lateinit var game: Game<Any>
 
     override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
@@ -20,11 +21,13 @@ class BlockingGameListener: GameListener {
         if (step is FlowStep.ProceedStep) {
             if (lock.isLocked) lock.unlock()
         }
+        if (step is FlowStep.GameEnd) {
+            if (gameEnd.isLocked) gameEnd.unlock()
+        }
     }
 
-    suspend fun await() {
-        lock.withLock {}
-    }
+    suspend fun await() = lock.withLock {}
+    suspend fun awaitGameEnd() = gameEnd.withLock {}
 
     suspend fun <P: Any> awaitAndPerform(playerIndex: Int, type: String, parameter: P) {
         await()
