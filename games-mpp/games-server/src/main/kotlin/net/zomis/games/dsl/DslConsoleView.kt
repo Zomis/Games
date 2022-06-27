@@ -4,10 +4,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import net.zomis.games.common.toSingleList
 import net.zomis.games.dsl.flow.GameFlowImpl
-import net.zomis.games.listeners.ConsoleControl
-import net.zomis.games.listeners.ConsoleViewer
-import net.zomis.games.listeners.PlayerController
-import net.zomis.games.listeners.ReplayListener
+import net.zomis.games.listeners.*
 import net.zomis.games.server2.ServerGames
 import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.ais.ServerAIs
@@ -28,23 +25,19 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
 
         val replayListener = ReplayListener(game.name)
         runBlocking {
+            val blockingGameListener = BlockingGameListener()
             val game = entryPoint.setup().startGame(this, playerCount) { g ->
                 listOf(
                     ConsoleViewer(g),
                     ConsoleControl(g, scanner),
                     replayListener,
+                    blockingGameListener,
                     PlayerController(g, 0.toSingleList()) { controller ->
                         ServerAIs(AIRepository(), emptySet()).randomActionable(controller.game, controller.playerIndex)
                     }
                 )
             }
-            if (game is GameFlowImpl<*>) {
-                while (game.isRunning()) {
-                    game.feedbackReceiverFlow().collect {
-                        println("Received feedback: $it")
-                    }
-                }
-            }
+            blockingGameListener.awaitGameEnd()
 
             val savedReplay = entryPoint.replay(this, replayListener.data()).goToEnd()
             listOf<Int?>(null).plus(game.playerIndices).forEach {
