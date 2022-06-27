@@ -18,7 +18,7 @@ class BlockingGameListener: GameListener {
             game = step.game as Game<Any>
         }
         if (step is FlowStep.ProceedStep) {
-            lock.unlock()
+            if (lock.isLocked) lock.unlock()
         }
     }
 
