@@ -1,13 +1,13 @@
 package net.zomis.games.dsl.flow
 
 import klog.KLoggers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.impl.DslUR
-import net.zomis.games.ur.RoyalGameOfUr
+import net.zomis.games.listeners.BlockingGameListener
+import net.zomis.games.listeners.SteppingGameListener
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -15,19 +15,17 @@ class RoyalGameOfUrFlowTest {
     val logger = KLoggers.logger(this)
 
     @Test
-    fun test() {
+    fun test() = runTest {
         val entryPoint = GamesImpl.game(DslUR.gameUR)
         val config = entryPoint.setup().configs().also { it.set("piecesPerPlayer", 1) }
-        val gameFlowImpl = entryPoint.setup().createGame(2, config) as GameFlowImpl<RoyalGameOfUr>
-        val test = GameFlowTestHelper(gameFlowImpl)
+        val test = SteppingGameListener()
+        val gameFlowImpl = entryPoint.setup().startGameWithConfig(this, 2, config) {
+            listOf(test)
+        }
         val model = gameFlowImpl.model
-        runBlocking {
-            val j = launch {
-                test.takeUntil { it is FlowStep.AwaitInput }
-            }
-            gameFlowImpl.start(this)
+        if (true) {
             Assertions.assertEquals(1, model.piecesCopy[0].count { it == 0 })
-            j.join()
+            test.takeUntil { it is FlowStep.AwaitInput }
 
             val view = gameFlowImpl.view(0)
             logger.info(view)

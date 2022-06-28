@@ -1,5 +1,6 @@
 package net.zomis.games.dsl.impl
 
+import kotlinx.coroutines.CompletableDeferred
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
@@ -127,18 +128,18 @@ class StateKeeper {
         val moveState = this.lastMoveState()
         val preSetup = FlowStep.PreSetup(game, moveState.toMutableMap())
         function.invoke(preSetup)
-        function.invoke(FlowStep.UglyHack)
+        preSetup.deferred.await()
         this.setState(preSetup.state)
         this.replayMode = (preSetup.state != moveState)
     }
 
     suspend fun preMove(action: Actionable<*, *>, function: suspend (FlowStep) -> Unit) {
         val moveState = this.lastMoveState()
-        val preSetup = FlowStep.PreMove(action, moveState.toMutableMap())
-        function.invoke(preSetup)
-        function.invoke(FlowStep.UglyHack)
-        this.setState(preSetup.state)
-        this.replayMode = (preSetup.state != moveState)
+        val preMove = FlowStep.PreMove(action, moveState.toMutableMap())
+        function.invoke(preMove)
+        preMove.deferred.await()
+        this.setState(preMove.state)
+        this.replayMode = (preMove.state != moveState)
     }
 }
 class ReplayState(

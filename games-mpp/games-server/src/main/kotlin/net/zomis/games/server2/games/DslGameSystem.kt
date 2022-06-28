@@ -81,7 +81,6 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                 is FlowStep.RuleExecution -> logger.debug { "Rule Execution: $feedback" }
                 is FlowStep.IllegalAction -> logger.error { "Illegal action in feedback: $feedback" }
                 is FlowStep.NextView -> logger.debug { "NextView: $feedback" } // TODO: Not implemented yet, should pause a bit and then continue
-                is FlowStep.UglyHack -> {}
                 is FlowStep.PreMove -> {}
                 else -> {
                     logger.warn(IllegalArgumentException("Unsupported feedback: $feedback"))

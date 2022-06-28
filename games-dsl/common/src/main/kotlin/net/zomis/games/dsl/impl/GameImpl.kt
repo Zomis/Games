@@ -61,6 +61,9 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
                     listener.handle(coroutineScope, flowStep)
                     println("Listener $listener finished $flowStep")
                 }
+                if (flowStep is FlowStep.Completable) {
+                    flowStep.complete()
+                }
                 if (flowStep is FlowStep.GameEnd) {
                     println("Game end, no more listeners")
                     break
@@ -81,9 +84,19 @@ annotation class GameMarker
 sealed class FlowStep {
     interface ProceedStep
     interface ActionResult
+    interface Completable {
+        fun complete()
+    }
     object GameEnd: FlowStep(), ProceedStep
     data class Elimination(val elimination: PlayerElimination): FlowStep()
-    data class PreMove(val action: Actionable<*, *>, val state: MutableMap<String, Any>): FlowStep() {
+    data class PreMove(
+        val action: Actionable<*, *>,
+        val state: MutableMap<String, Any>
+    ): FlowStep(), Completable {
+        private val completable = CompletableDeferred<Map<String, Any>>()
+        val deferred: Deferred<Map<String, Any>> = completable
+        override fun complete() { completable.complete(state) }
+
         fun setState(newState: Map<String, Any>) {
             state.clear()
             state.putAll(newState)
@@ -105,11 +118,19 @@ sealed class FlowStep {
     data class IllegalAction(val actionType: String, val playerIndex: Int, val parameter: Any): FlowStep(), ActionResult
     data class Log(val log: ActionLogEntry): FlowStep()
     data class RuleExecution(val ruleName: String, val values: Any): FlowStep()
-    data class PreSetup<T: Any>(val game: Game<T>, val state: MutableMap<String, Any>) : FlowStep()
+    // Use Deferred for PreSetup and PreMove, see https://kotlinlang.org/docs/shared-mutable-state-and-concurrency.html#actors
+    data class PreSetup<T: Any>(
+        val game: Game<T>,
+        val state: MutableMap<String, Any>
+    ): FlowStep(), Completable {
+        private val completable = CompletableDeferred<Map<String, Any>>()
+        val deferred: Deferred<Map<String, Any>> = completable
+        override fun complete() { completable.complete(state) }
+    }
     data class GameSetup<T: Any>(val game: Game<T>, val config: GameConfigs, val state: Map<String, Any>): FlowStep()
+//    class AwaitInput<T: Any>(val game: Game<T>, var deferred: Deferred<Actionable<T, out Any>?>? = null): FlowStep(), ProceedStep
     object AwaitInput: FlowStep(), ProceedStep
     object NextView : FlowStep(), ProceedStep
-    object UglyHack: FlowStep() // Only to make sure that consumers have finished consuming previous message
 }
 
 interface Game<T: Any> {
