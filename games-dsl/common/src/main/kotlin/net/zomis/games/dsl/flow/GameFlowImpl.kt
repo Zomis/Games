@@ -48,6 +48,7 @@ class GameFlowImpl<T: Any>(
     override val actionsInput: Channel<Actionable<T, out Any>> = Channel()
     var job: Job? = null
     override suspend fun start(coroutineScope: CoroutineScope) {
+        if (job != null) throw IllegalStateException("Game already started")
         val game = this
         job = coroutineScope.launch(Dispatchers.Default) {
             logger.info("GameFlow Coroutine started")

@@ -170,6 +170,7 @@ class GameImpl<T : Any>(
     private val rules = GameActionRulesContext(gameConfig, model, replayState, eliminationCallback)
 
     override suspend fun start(coroutineScope: CoroutineScope) {
+        if (this.actionsInputJob != null) throw IllegalStateException("Game already started")
         println("$this: pre-setup")
         replayState.stateKeeper.preSetup(this) { feedbackFlow.send(it) }
         setupContext.model.onStart(GameStartContext(gameConfig, model, replayState, playerCount))
