@@ -116,7 +116,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
             val gameStartedEvent = it
             val dbIntegration = this.dbIntegration()
             val appropriateReplayListener =
-                if (it.game.gameMeta.database && dbIntegration != null) GamesServer.Replays.database(dbIntegration, it.game.gameId)
+                if (it.game.gameMeta.database && dbIntegration != null) GamesServer.Replays.database(dbIntegration, it.game)
                 else GamesServer.Replays.noReplays()
             val coroutineScope = CoroutineScope(Dispatchers.Default)
             runBlocking {

@@ -14,6 +14,7 @@ import net.zomis.core.events.ListenerPriority
 import net.zomis.games.Features
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.GameSpec
+import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.server2.*
@@ -50,18 +51,6 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
             features.addData(UnfinishedGames(this.listUnfinished().toMutableSet()))
         })
         */
-        events.listen("save game in Database", ListenerPriority.LATER, GameInitializedEvent::class, { dbEnabled(it.game) }, {
-            event -> this.createGame(event.game, event.replayState)
-        })
-        events.listen("save game move in Database", MoveEvent::class, { dbEnabled(it.game) }, {event ->
-            this.addMove(event)
-        })
-        events.listen("finish game in Database", GameEndedEvent::class, { dbEnabled(it.game) }, { event ->
-            this.finishGame(event.game)
-        })
-        events.listen("eliminate player in Database", PlayerEliminatedEvent::class, { dbEnabled(it.game) }, {event ->
-            this.playerEliminated(event)
-        })
         return listOf(this.table).map { it.createTableRequest() }
     }
 
@@ -153,21 +142,20 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         }
     }
 
-    fun addMove(move: MoveEvent<*, *>) {
+    fun addMove(serverGame: ServerGame, move: FlowStep.ActionPerformed<*>) {
         val epochMilli = Instant.now().toEpochMilli()
-        val serverGame = move.game
-        move.game.lastMove = epochMilli
+        serverGame.lastMove = epochMilli
         val moveIndex = serverGame.nextMoveIndex()
 
-        val actionType = move.actionType as ActionType<Any, Any>
+        val actionType = move.actionImpl.actionType
         val dbMove = actionType.serialize(move.parameter)
 
         val moveData = convertToDBFormat(dbMove)
         val state: Any? = gameRandomnessState(move.replayState)
         val updates = mutableListOf(
             AttributeUpdate(Fields.MOVE_TIME.fieldName).put(epochMilli),
-            AttributeUpdate(Fields.MOVE_PLAYER_INDEX.fieldName).put(move.player),
-            AttributeUpdate(Fields.MOVE_TYPE.fieldName).put(move.actionType.name)
+            AttributeUpdate(Fields.MOVE_PLAYER_INDEX.fieldName).put(move.playerIndex),
+            AttributeUpdate(Fields.MOVE_TYPE.fieldName).put(move.action.actionType)
         )
         if (moveData != null) {
             updates += AttributeUpdate(Fields.MOVE.fieldName).put(moveData)
@@ -195,16 +183,16 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         })
     }
 
-    fun playerEliminated(event: PlayerEliminatedEvent) {
-        val pkValue = Prefix.GAME.sk(event.game.gameId)
+    fun playerEliminated(serverGame: ServerGame, event: FlowStep.Elimination) {
+        val pkValue = Prefix.GAME.sk(serverGame.gameId)
 
         val playerData = mapOf(
-            "Result" to event.winner.result,
-            "ResultPosition" to event.position,
+            "Result" to event.elimination.winResult.result,
+            "ResultPosition" to event.elimination.position,
             "ResultReason" to "eliminated"
         )
-        this.update("Eliminate player ${event.player} in game $pkValue", UpdateItemSpec().withPrimaryKey(this.pk, pkValue, this.sk, pkValue)
-          .withAttributeUpdate(AttributeUpdate(Fields.PLAYER_PREFIX.fieldName + event.player).put(playerData)))
+        this.update("Eliminate player ${event.elimination.playerIndex} in game $pkValue", UpdateItemSpec().withPrimaryKey(this.pk, pkValue, this.sk, pkValue)
+          .withAttributeUpdate(AttributeUpdate(Fields.PLAYER_PREFIX.fieldName + event.elimination.playerIndex).put(playerData)))
     }
 
     fun finishGame(game: ServerGame) {
