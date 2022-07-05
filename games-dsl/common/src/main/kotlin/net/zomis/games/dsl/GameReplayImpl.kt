@@ -8,4 +8,14 @@ data class ReplayData(
     val config: GameConfigs,
     val initialState: GameSituationState,
     val actions: List<ActionReplay>
-)
+) {
+    fun serialize(): Map<String, Any?> {
+        return mapOf(
+            "gameType" to gameType,
+            "playerCount" to playerCount,
+            "config" to config.toJSON(),
+            "initialState" to initialState,
+            "actions" to actions
+        )
+    }
+}
