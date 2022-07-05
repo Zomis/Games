@@ -5,8 +5,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.yield
 import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
+import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.listeners.ReplayingListener
 import kotlin.reflect.KClass
 
@@ -28,31 +30,15 @@ class Replay<T : Any>(
     private var position: Int = 0
     private var targetPosition = 0
     lateinit var game: Game<T>
-    lateinit var syncer: Syncer
+    lateinit var blockingListener: BlockingGameListener
 
-    class Syncer: GameListener {
-        val mutex = Mutex()
-        var ready = false
-
-        override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
-            mutex.withLock {
-                this.ready = step is FlowStep.ProceedStep
-                println("Set ready: $step")
-            }
+    suspend fun awaitCatchUp(): Replay<T> {
+        while (targetPosition > position) {
+            yield() // Infinite loop if we don't add this here
+            blockingListener.await()
         }
-        suspend fun sync(block: suspend () -> Unit) {
-            mutex.withLock {
-                println("Sync await ready")
-                while (!ready) {
-                    delay(10)
-                }
-                println("Sync await ready done")
-            }
-            println("Performing block")
-            block.invoke()
-        }
+        return this
     }
-
     suspend fun gotoPosition(newPosition: Int): Replay<T> {
         this.targetPosition = newPosition
         if (newPosition < this.position) {
@@ -78,25 +64,24 @@ class Replay<T : Any>(
         println("Step forward $position")
         val action = replayData.actions[this.position]
         try {
-            syncer.sync {
-                println("Checking actionables on position $position. $action")
-                println(game.view(0))
-                val actionType = game.actions.type(action.actionType)!!
-                val converted = actionConverter.invoke(actionType.actionType.serializedType, action.serializedParameter)
-                println("Converted: $converted (${converted::class}) for $actionType")
-                val actionable = actionType
-                    .createActionFromSerialized(action.playerIndex, converted)
-                game.actionsInput.send(actionable)
-            }
+            blockingListener.await()
+            println("Checking actionables on position $position. $action")
+            println(game.view(0))
+            val actionType = game.actions.type(action.actionType)!!
+            val converted = actionConverter.invoke(actionType.actionType.serializedType, action.serializedParameter)
+            println("Converted: $converted (${converted::class}) for $actionType")
+            val actionable = actionType
+                .createActionFromSerialized(action.playerIndex, converted)
+            game.actionsInput.send(actionable)
         } catch (e: Exception) {
             throw ReplayException("Unable to perform action ${this.position}: $action", e)
         }
     }
 
     private suspend fun restart() {
-        this.syncer = Syncer()
+        this.blockingListener = BlockingGameListener()
         this.game = entryPoint.setup().startGameWithConfig(coroutineScope, playerCount, config) {
-            listOf(ReplayingListener(replayData), syncer, this)
+            listOf(ReplayingListener(replayData), blockingListener, this)
         }
         this.position = 0
     }

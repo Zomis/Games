@@ -7,7 +7,7 @@ import net.zomis.bestOf
 import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.impl.words.Wordle
 import net.zomis.games.impl.words.wordlists.WordleWords
-import net.zomis.games.listeners.BlockingGameListener
+import net.zomis.games.dsl.listeners.BlockingGameListener
 
 suspend fun main() {
     val coroutineScope = CoroutineScope(Dispatchers.Default)

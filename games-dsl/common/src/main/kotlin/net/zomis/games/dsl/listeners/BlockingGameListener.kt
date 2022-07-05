@@ -1,4 +1,4 @@
-package net.zomis.games.listeners
+package net.zomis.games.dsl.listeners
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Mutex
