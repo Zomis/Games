@@ -8,13 +8,15 @@ import kotlinx.coroutines.sync.withLock
 import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.listeners.ReplayingListener
+import kotlin.reflect.KClass
 
 class ReplayException(override val message: String?, override val cause: Throwable?): Exception(message, cause)
 
 class Replay<T : Any>(
     private val coroutineScope: CoroutineScope,
     gameSpec: GameSpec<T>,
-    private val replayData: ReplayData
+    private val replayData: ReplayData,
+    private val actionConverter: (KClass<*>, Any) -> Any = { _, it -> it }
 ): GameListener {
     val config = replayData.config
     val playerCount = replayData.playerCount
@@ -79,8 +81,11 @@ class Replay<T : Any>(
             syncer.sync {
                 println("Checking actionables on position $position. $action")
                 println(game.view(0))
-                val actionable = game.actions.type(action.actionType)!!
-                    .createActionFromSerialized(action.playerIndex, action.serializedParameter)
+                val actionType = game.actions.type(action.actionType)!!
+                val converted = actionConverter.invoke(actionType.actionType.serializedType, action.serializedParameter)
+                println("Converted: $converted (${converted::class}) for $actionType")
+                val actionable = actionType
+                    .createActionFromSerialized(action.playerIndex, converted)
                 game.actionsInput.send(actionable)
             }
         } catch (e: Exception) {
@@ -100,12 +105,13 @@ class Replay<T : Any>(
         suspend fun <T: Any> initReplay(
             coroutineScope: CoroutineScope,
             gameSpec: GameSpec<T>,
-            replayData: ReplayData
+            replayData: ReplayData,
+            actionConverter: (KClass<*>, Any) -> Any = { _, it -> it }
         ): Replay<T> {
             require(replayData.gameType == gameSpec.name) {
                 "Mismatching gametypes: Replay data for ${replayData.gameType} cannot be used on ${gameSpec.name}"
             }
-            val replay = Replay(coroutineScope, gameSpec, replayData)
+            val replay = Replay(coroutineScope, gameSpec, replayData, actionConverter)
             replay.restart()
             return replay
         }
