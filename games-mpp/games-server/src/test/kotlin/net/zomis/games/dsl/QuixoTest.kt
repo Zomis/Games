@@ -7,7 +7,7 @@ import net.zomis.games.common.PointMove
 import net.zomis.games.impl.TTControllerSourceDestination
 import net.zomis.games.impl.TTSourceDestinationGames
 import net.zomis.games.impl.ttt.ultimate.TTPlayer
-import net.zomis.games.listeners.BlockingGameListener
+import net.zomis.games.dsl.listeners.BlockingGameListener
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 

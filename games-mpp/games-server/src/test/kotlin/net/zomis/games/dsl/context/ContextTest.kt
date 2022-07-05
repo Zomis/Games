@@ -14,7 +14,7 @@ import net.zomis.games.dsl.ConsoleView
 import net.zomis.games.dsl.GameSerializable
 import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.impl.Game
-import net.zomis.games.listeners.BlockingGameListener
+import net.zomis.games.dsl.listeners.BlockingGameListener
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 

@@ -9,7 +9,7 @@ import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.impl.ttt.DslTTT
 import net.zomis.games.impl.ttt.ultimate.TTController
-import net.zomis.games.listeners.BlockingGameListener
+import net.zomis.games.dsl.listeners.BlockingGameListener
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 

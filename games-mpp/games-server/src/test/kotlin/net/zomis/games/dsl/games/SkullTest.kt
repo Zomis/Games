@@ -10,7 +10,7 @@ import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.impl.SkullCard
 import net.zomis.games.impl.SkullGame
 import net.zomis.games.impl.SkullGameModel
-import net.zomis.games.listeners.BlockingGameListener
+import net.zomis.games.dsl.listeners.BlockingGameListener
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 

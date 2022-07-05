@@ -9,7 +9,7 @@ import net.zomis.games.dsl.impl.ActionSampleSize
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.impl.SpiceRoadDsl
 import net.zomis.games.impl.SpiceRoadGameModel
-import net.zomis.games.listeners.BlockingGameListener
+import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.server2.ServerGames
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test

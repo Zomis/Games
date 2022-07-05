@@ -1,7 +1,7 @@
 package net.zomis.games.dsl
 
 import net.zomis.games.dsl.impl.Game
-import net.zomis.games.listeners.BlockingGameListener
+import net.zomis.games.dsl.listeners.BlockingGameListener
 import org.junit.jupiter.api.Assertions
 
 class GameAsserts<T : Any>(val game: Game<T>, private val blocking: BlockingGameListener) {
