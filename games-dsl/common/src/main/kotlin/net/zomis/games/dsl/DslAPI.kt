@@ -54,6 +54,7 @@ interface GameConfig<E: Any> {
     var value: E
 }
 class GameConfigs(val configs: List<GameConfig<Any>>) {
+    override fun toString(): String = "Configs($configs)"
     fun <E: Any> get(config: GameConfig<E>): E = configs.first { it.key == config.key }.value as E
     fun set(key: String, value: Any): GameConfigs {
         this.configs.first { it.key == key }.value = value

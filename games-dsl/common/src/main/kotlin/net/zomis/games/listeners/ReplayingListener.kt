@@ -13,7 +13,7 @@ class ReplayingListener(private val data: ReplayData): GameListener {
             is FlowStep.IllegalAction -> throw IllegalStateException("$step was not replayed correctly after $moves moves")
             is FlowStep.PreMove -> {
                 step.state.clear()
-                step.state.putAll(data.actions[moves++].state)
+                step.state.putAll(data.actions.getOrNull(moves++)?.state ?: emptyMap())
             }
             is FlowStep.PreSetup<*> -> {
                 step.state.clear()

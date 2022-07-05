@@ -202,6 +202,8 @@ class GameConfigImpl<E: Any>(override val key: String, override val default: () 
         return this
     }
 
+    override fun toString(): String = "Config($key: $value of class $clazz)"
+
 }
 class GameDslContext<T : Any>(val gameType: String) : GameDsl<T> {
     lateinit var modelDsl: GameModelDsl<T, Any>

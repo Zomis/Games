@@ -707,13 +707,4 @@ object CoupRuleBased {
         }
     }
 
-    private suspend fun chooseAction(flow: GameFlowScope<Coup>, player: CoupPlayer) {
-        flow.step("") {
-            this.yieldAction(perform) {
-
-            }
-        }
-        TODO("Not yet implemented")
-    }
-
 }
