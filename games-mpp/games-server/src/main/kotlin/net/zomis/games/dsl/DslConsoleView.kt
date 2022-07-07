@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.coroutines.*
 import net.zomis.games.common.toSingleList
+import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.jackson.ReplayDataDeserializer
 import net.zomis.games.listeners.*
@@ -12,6 +13,7 @@ import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.ais.ServerAIs
 import java.nio.file.Path
 import java.util.Scanner
+import kotlin.io.path.deleteIfExists
 import kotlin.io.path.inputStream
 import kotlin.io.path.isRegularFile
 
@@ -20,13 +22,34 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
     fun resume(replayData: ReplayData, file: Path, scanner: Scanner) {
         val mapper = jacksonObjectMapper()
         val entryPoint = GamesImpl.game(game)
+        val replayListener = ReplayListener(game.name)
+        val blockingGameListener = BlockingGameListener()
+
         runBlocking {
-            val savedReplay = entryPoint.replay(this, replayData) { clazz, serialized ->
+            val savedReplay = entryPoint.replay(this, replayData, { clazz, serialized ->
                 println("Converting $serialized (${serialized::class}) to $clazz")
                 mapper.convertValue(serialized, clazz.java)
+            }) { g ->
+                listOf(
+                    ConsoleViewer(g as Game<Any>).postReplay(replayData),
+                    ConsoleControl(g as Game<Any>, scanner).postReplay(replayData),
+                    replayListener,
+                    FileReplay(file, replayListener).postReplay(replayData),
+                    blockingGameListener,
+                    PlayerController(g, 0.toSingleList()) { controller ->
+                        ServerAIs(AIRepository(), emptySet()).randomActionable(controller.game, controller.playerIndex)
+                    }.postReplay(replayData)
+                )
             }.goToEnd().awaitCatchUp()
-            ConsoleView<T>().showView(savedReplay.game, 0)
-            TODO(file.fileName.toString())
+            if (savedReplay.game.isGameOver()) {
+                println("Game was already finished")
+                file.deleteIfExists()
+                play(scanner, file)
+            }
+            println("Caught up")
+            blockingGameListener.awaitGameEnd()
+            println("Game over")
+//            ConsoleView<T>().showView(savedReplay.game, 0)
         }
     }
 
@@ -49,6 +72,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
                     ConsoleViewer(g),
                     ConsoleControl(g, scanner),
                     replayListener,
+                    FileReplay(file, replayListener),
                     blockingGameListener,
                     PlayerController(g, 0.toSingleList()) { controller ->
                         ServerAIs(AIRepository(), emptySet()).randomActionable(controller.game, controller.playerIndex)

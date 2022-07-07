@@ -13,7 +13,7 @@ class FileReplay(private val file: Path?, private val replayListener: ReplayList
 
     override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
         if (file == null) return
-        if (step is FlowStep.AwaitInput) {
+        if (step is FlowStep.ProceedStep) {
             mapper.writeValue(file.outputStream(), replayListener.data().serialize())
         }
     }

@@ -15,7 +15,8 @@ class Replay<T : Any>(
     private val coroutineScope: CoroutineScope,
     gameSpec: GameSpec<T>,
     private val replayData: ReplayData,
-    private val actionConverter: (KClass<*>, Any) -> Any = { _, it -> it }
+    private val actionConverter: (KClass<*>, Any) -> Any = { _, it -> it },
+    private val gameListeners: (Game<T>) -> List<GameListener>
 ): GameListener {
     val config = replayData.config
     val playerCount = replayData.playerCount
@@ -78,7 +79,7 @@ class Replay<T : Any>(
     private suspend fun restart() {
         this.blockingListener = BlockingGameListener()
         this.game = entryPoint.setup().startGameWithConfig(coroutineScope, playerCount, config) {
-            listOf(ReplayingListener(replayData), blockingListener, this)
+            listOf(ReplayingListener(replayData), blockingListener, this) + gameListeners.invoke(it as Game<T>)
         }
         this.position = 0
     }
@@ -88,12 +89,13 @@ class Replay<T : Any>(
             coroutineScope: CoroutineScope,
             gameSpec: GameSpec<T>,
             replayData: ReplayData,
-            actionConverter: (KClass<*>, Any) -> Any = { _, it -> it }
+            actionConverter: (KClass<*>, Any) -> Any = { _, it -> it },
+            gameListeners: (Game<T>) -> List<GameListener>
         ): Replay<T> {
             require(replayData.gameType == gameSpec.name) {
                 "Mismatching gametypes: Replay data for ${replayData.gameType} cannot be used on ${gameSpec.name}"
             }
-            val replay = Replay(coroutineScope, gameSpec, replayData, actionConverter)
+            val replay = Replay(coroutineScope, gameSpec, replayData, actionConverter, gameListeners)
             replay.restart()
             return replay
         }
