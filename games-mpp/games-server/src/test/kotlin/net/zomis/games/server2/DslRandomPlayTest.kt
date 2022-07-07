@@ -5,6 +5,7 @@ import klog.KLoggers
 import kotlinx.coroutines.runBlocking
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.Actionable
+import net.zomis.games.dsl.ConsoleView
 import net.zomis.games.dsl.GameEntryPoint
 import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.impl.GameController
@@ -63,10 +64,7 @@ class DslRandomPlayTest {
     companion object {
         @JvmStatic
         fun serverGames(): List<Arguments> {
-            return ServerGames.games.values.filter {
-                it.name.startsWith("DSL") || it.name in listOf("Backgammon", "Wordle") // TODO: Enable all games again, once they are tested
-            }
-            .map {
+            return ServerGames.games.values.filter { !ServerGames.beta.contains(it) }.map {
                 val entryPoint = GamesImpl.game(it)
                 val playerCount = entryPoint.setup().playersCount
                 val randomCount = playerCount.random()
@@ -209,6 +207,7 @@ class DslRandomPlayTest {
             if (actions.isEmpty()) {
                 clients[0].sendAndExpectResponse("""{ "route": "games/$dslGame/1/view", "playerIndex": 0 }""")
                 val view = clients[0].takeUntilJson { it.getText("type") == "GameView" }
+                ConsoleView<Any>().showView(gameImpl)
                 throw IllegalStateException("Game is not over but no actions available after $actionCounter actions. Is the game a draw? View is $view")
             }
             val request = actions.random() // If multiple players wants to perform an action, just do one of them

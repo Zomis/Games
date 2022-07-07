@@ -49,7 +49,6 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
             println("Caught up")
             blockingGameListener.awaitGameEnd()
             println("Game over")
-//            ConsoleView<T>().showView(savedReplay.game, 0)
         }
     }
 

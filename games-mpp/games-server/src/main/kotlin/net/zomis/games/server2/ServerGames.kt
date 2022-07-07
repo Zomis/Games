@@ -14,14 +14,17 @@ import net.zomis.games.impl.words.Wordle
 
 object ServerGames {
 
-    val games = listOf(
-        Wordle.game,
+    val beta = listOf(
         AlchemistsDelegationGame.game,
         Battleship.game,
-        Backgammon.game,
-        KingDomino.game,
         Red7.Game.game,
         LightsOut.Game.game,
+    )
+
+    val games = listOf(
+        Wordle.game,
+        Backgammon.game,
+        KingDomino.game,
         TTTUpgrade.game,
         SpiceRoadDsl.game,
         Dixit.game,
@@ -42,7 +45,7 @@ object ServerGames {
         DslTTT.gameConnect4,
         DslTTT.game,
         DslUR.gameUR
-    ).associateBy { it.name }
+    ).plus(beta).associateBy { it.name }
 
     fun setup(gameType: String): GameSetupImpl<Any>? {
         val spec = games[gameType] as GameSpec<Any>? ?: return null
