@@ -1,19 +1,24 @@
 package net.zomis.games.dsl.impl
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
 import net.zomis.games.dsl.*
-import net.zomis.games.dsl.flow.GameFlowImpl
+import net.zomis.games.dsl.listeners.BlockingGameListener
 
-class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount: Int): GameTest<T> {
-    val stateKeeper = StateKeeper()
+class GameTestContext<T: Any>(val coroutineScope: CoroutineScope, val entryPoint: GameEntryPoint<T>, val playerCount: Int): GameTest<T>, GameListener {
+    private val state = mutableMapOf<String, Any>()
     val setup = entryPoint.setup()
     var config: GameConfigs = setup.configs()
     var gameImpl: Game<T>? = null
+    private val blocking = BlockingGameListener()
     var forwards = 0
 
-    private fun initializedGame(): Game<T> {
+    private suspend fun initializedGame(): Game<T> {
         if (gameImpl == null) {
-            stateKeeper.replayMode = true
-            gameImpl = entryPoint.setup().createGameWithState(playerCount, config, stateKeeper)
+            gameImpl = entryPoint.setup().startGameWithConfig(coroutineScope, playerCount, config) {
+                listOf(blocking, this)
+            }
+            blocking.await()
         }
         return gameImpl!!
     }
@@ -21,54 +26,43 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
     override val game: T
         get() {
             if (forwards == 0) throw IllegalStateException("Rules might not have been executed. Run initialize() or perform/assert actions before accessing raw game state.")
-            return initializedGame().model
+            return gameImpl!!.model
         }
 
+    override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
+        if (step is FlowStep.PreSetup<*>) {
+            step.state.clear()
+            step.state.putAll(state)
+            state.clear()
+        }
+        if (step is FlowStep.PreMove) {
+            step.state.clear()
+            step.state.putAll(state)
+            state.clear()
+        }
+    }
+
     override fun state(key: String, value: Any) {
-        stateKeeper.save(key, value)
-        stateKeeper.replayMode = true
+        state[key] = value
     }
 
     override suspend fun <A : Any> action(playerIndex: Int, actionType: ActionType<T, A>, parameter: A) {
         initialize()
-        val game = initializedGame()
-        val actionImpl = game.actions[actionType.name]
-        requireNotNull(actionImpl) { "No such action name: ${actionType.name}, available actions are ${game.actions.actionTypes}" }
-        val action = actionImpl.createAction(playerIndex, parameter)
-        if (!actionImpl.isAllowed(action)) {
-            throw IllegalStateException("Action is not allowed: $action")
-        }
-        if (game is GameFlowImpl<*>) {
-            game.actionsInput.send(action)
-        } else {
-            actionImpl.perform(action)
-        }
+        blocking.awaitAndPerform(playerIndex, actionType, parameter)
         flowForward()
     }
 
     override suspend fun initialize() {
         if (forwards == 0) {
             forwards++
-            val game = initializedGame()
-            if (game is GameFlowImpl<*>) {
-                println("Initialize game, call flow forward")
-                flowForward()
-            }
+            initializedGame()
+            flowForward()
         }
     }
 
     private suspend fun flowForward() {
-        val game = initializedGame()
-        if (game is GameFlowImpl<*>) {
-            println("Test flow forward, awaiting feedback ${game.stateKeeper.lastMoveState()}")
-            game.feedbackReceiverFlow().collect { output ->
-                forwards++
-                println("Test flow forward $forwards: $output")
-            }
-            println("Test flow forwarded ${game.stateKeeper.lastMoveState()}")
-        } else {
-            forwards++
-        }
+        forwards++
+        blocking.await()
     }
 
     override fun expectEquals(expected: Any, actual: Any) {
@@ -89,14 +83,16 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
 
     override suspend fun <A : Any> actionNotAllowed(playerIndex: Int, actionType: ActionType<T, A>, parameter: A) {
         initialize()
+        blocking.await()
         val actionImpl = initializedGame().actions[actionType.name]
-        requireNotNull(actionImpl) { "No such action name: ${actionType.name}" }
+        checkNotNull(actionImpl) { "No such action name: ${actionType.name}" }
         val actionable = actionImpl.createAction(playerIndex, parameter)
-        require(!actionImpl.isAllowed(actionable)) { "Action is allowed when it shouldn't be: $playerIndex $actionable" }
+        check(!actionImpl.isAllowed(actionable)) { "Action is allowed when it shouldn't be: $playerIndex $actionable" }
     }
 
     override suspend fun expectNoActions(playerIndex: Int) {
         initialize()
+        blocking.await()
         for (actionType in initializedGame().actions.types()) {
             val actions = actionType.availableActions(playerIndex, null).take(5)
             if (actions.isNotEmpty()) {
@@ -114,8 +110,13 @@ class GameTestContext<T: Any>(val entryPoint: GameEntryPoint<T>, val playerCount
 class GameTestCaseContext<T: Any>(val players: Int, val testContext: GameTestDsl<T>) {
 
     suspend fun runTests(entryPoint: GameEntryPoint<T>) {
-        val context = GameTestContext(entryPoint, players)
-        testContext.invoke(context)
+        coroutineScope {
+            println("Starting coroutine scope")
+            val context = GameTestContext(this, entryPoint, players)
+            testContext.invoke(context)
+            println("Coroutine scope still running... Stopping.")
+            context.gameImpl?.stop()
+        }
     }
 
 }

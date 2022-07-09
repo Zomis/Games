@@ -130,7 +130,7 @@ sealed class FlowStep {
     data class GameSetup<T: Any>(val game: Game<T>, val config: GameConfigs, val state: Map<String, Any>): FlowStep()
 //    class AwaitInput<T: Any>(val game: Game<T>, var deferred: Deferred<Actionable<T, out Any>?>? = null): FlowStep(), ProceedStep
     object AwaitInput: FlowStep(), ProceedStep
-    object NextView : FlowStep(), ProceedStep
+    object NextView : FlowStep()
 }
 
 interface Game<T: Any> {

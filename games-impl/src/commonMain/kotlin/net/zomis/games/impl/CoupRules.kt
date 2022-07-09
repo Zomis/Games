@@ -4,6 +4,7 @@ import net.zomis.games.api.GamesApi
 import net.zomis.games.common.next
 import net.zomis.games.dsl.flow.GameFlowRule
 import net.zomis.games.dsl.flow.GameFlowScope
+import net.zomis.games.dsl.impl.Game
 import kotlin.math.min
 
 class GameStack {
@@ -464,7 +465,7 @@ object CoupRuleBased {
             // Check enforcement of Coup action
             initialize()
             expectEquals(2, game.players[0].coins)
-            suspend fun tax() {
+            suspend fun tax(game: Coup) {
                 expectTrue(game.stack.isEmpty())
                 expectEquals(0, game.currentPlayerIndex)
                 action(0, perform, CoupAction(game.players[0], CoupActionType.TAX))
@@ -474,9 +475,9 @@ object CoupRuleBased {
                 action(2, perform, CoupAction(game.players[2], CoupActionType.INCOME))
                 expectTrue(game.stack.isEmpty())
             }
-            tax()
-            tax()
-            tax()
+            tax(game)
+            tax(game)
+            tax(game)
             expectEquals(11, game.players[0].coins)
             expectTrue(game.stack.isEmpty())
             actionNotAllowed(0, perform, CoupAction(game.players[0], CoupActionType.TAX))

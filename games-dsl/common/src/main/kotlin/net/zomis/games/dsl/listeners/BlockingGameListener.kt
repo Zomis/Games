@@ -15,14 +15,14 @@ class BlockingGameListener: GameListener {
     lateinit var game: Game<Any>
 
     override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
-        if (step is FlowStep.GameSetup<*>) {
-            game = step.game as Game<Any>
-        }
-        if (step is FlowStep.ProceedStep) {
-            if (lock.isLocked) lock.unlock()
-        }
-        if (step is FlowStep.GameEnd) {
-            if (gameEnd.isLocked) gameEnd.unlock()
+        when (step) {
+            is FlowStep.GameSetup<*> -> game = step.game as Game<Any>
+            is FlowStep.ProceedStep -> {
+                if (step is FlowStep.GameEnd && gameEnd.isLocked) gameEnd.unlock()
+                if (lock.isLocked) lock.unlock()
+            }
+            is FlowStep.PreMove -> if (!lock.isLocked) lock.lock()
+            else -> {}
         }
     }
 
