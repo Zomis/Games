@@ -2,24 +2,28 @@ package me.simon.common
 
 import androidx.compose.material.Text
 import androidx.compose.material.Button
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import net.zomis.games.dsl.GamesImpl
+import net.zomis.games.dsl.impl.Game
 import net.zomis.games.impl.DslSplendor
+import net.zomis.games.impl.SplendorGame
 
 @Composable
 fun App() {
     var text by remember { mutableStateOf("Hello, World!") }
-    val game by remember {
-        val dsl = GamesImpl.game(DslSplendor.splendorGame).setup().let { it.createGame(2, it.configs()) }
-        mutableStateOf(dsl)
+    var game by remember { mutableStateOf<Game<SplendorGame>?>(null) }
+
+    LaunchedEffect(Unit) {
+        val dsl = GamesImpl.game(DslSplendor.splendorGame).setup().startGame(this, 2) {
+            emptyList()
+        }
+        game = dsl
     }
 
     Button(onClick = {
-        text = "Hello, ${game.model.board.asSequence().groupingBy { it.card.discounts.moneys.toList().first().first }.eachCount()}"
+        text = "Hello, ${game?.model?.board?.asSequence()?.groupingBy { it.card.discounts.moneys.toList().first().first }?.eachCount()}"
     }) {
         Text(text)
     }

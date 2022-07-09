@@ -29,6 +29,9 @@ class BlockingGameListener: GameListener {
     suspend fun await() = lock.withLock {}
     suspend fun awaitGameEnd() = gameEnd.withLock {}
 
+    suspend fun <T: Any, P: Any> awaitAndPerform(actionable: Actionable<T, P>)
+        = awaitAndPerform(actionable.playerIndex, actionable.actionType, actionable.parameter)
+
     suspend fun <P: Any> awaitAndPerform(playerIndex: Int, type: String, parameter: P) {
         await()
         lock.lock()

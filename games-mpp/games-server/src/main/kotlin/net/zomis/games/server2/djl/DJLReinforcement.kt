@@ -12,8 +12,11 @@ import ai.djl.training.optimizer.Optimizer
 import ai.djl.training.optimizer.learningrate.LearningRateTracker
 import ai.djl.translate.Translator
 import ai.djl.translate.TranslatorContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
+import net.zomis.games.dsl.listeners.BlockingGameListener
 import java.util.Scanner
 import kotlin.random.Random
 
@@ -132,10 +135,12 @@ class DJLReinforcement {
         val agent = LearningAgent(4, agentParameters)
 
         val actionsMade = IntCounter(0)
-        repeat(1000) {seriesNumber ->
-            val seriesAwards = playSeries(100, agent, gameSetup, actionsMade)
-            println("Series $seriesNumber done. Total series awards: $seriesAwards")
-            scanner.nextLine()
+        runBlocking {
+            repeat(1000) {seriesNumber ->
+                val seriesAwards = playSeries(this, 100, agent, gameSetup, actionsMade)
+                println("Series $seriesNumber done. Total series awards: $seriesAwards")
+                scanner.nextLine()
+            }
         }
     }
 
@@ -158,19 +163,23 @@ class DJLReinforcement {
     }
 
     data class IntCounter(var value: Int)
-    fun <T: Any> playSeries(count: Int, agent: LearningAgent, gameSetup: GameSetupImpl<T>, actionsMade: IntCounter): Float {
+    suspend fun <T: Any> playSeries(coroutineScope: CoroutineScope, count: Int, agent: LearningAgent, gameSetup: GameSetupImpl<T>, actionsMade: IntCounter): Float {
         var seriesAwards = 0f
         repeat(count) {gameNumber ->
-            val game = gameSetup.createGame(1, gameSetup.configs())
+            val blocking = BlockingGameListener()
+            val game = gameSetup.startGame(coroutineScope, 1) {
+                listOf(blocking)
+            }
             var totalReward = 0f
             val actions = mutableListOf<Int>()
+            blocking.await()
             while (!game.isGameOver()) {
                 agent.agentParameters.printConfig.state("Current state: ${game.view(0)}")
                 val stateFloats = stateToFloats(game)
                 val agentOutput = agent.runNetwork(stateFloats)
                 val moveIndex = decideMoveIndex(agent.agentParameters, agentOutput)
                 actions.add(moveIndex)
-                val reward = game.performActionObserveReward(moveIndex)
+                val reward = game.performActionObserveReward(blocking, moveIndex)
                 totalReward += reward
                 val nextState = stateToFloats(game)
                 agent.saveExperience(stateFloats, moveIndex, reward, nextState, game.isGameOver())
@@ -185,11 +194,13 @@ class DJLReinforcement {
         return seriesAwards
     }
 
-    private fun <T: Any> Game<T>.performActionObserveReward(moveIndex: Int): Float {
+    private suspend fun <T: Any> Game<T>.performActionObserveReward(blockingGameListener: BlockingGameListener, moveIndex: Int): Float {
         val playerIndex = 0
+        blockingGameListener.await()
         val move = this.actions.types()
             .sortedBy { it.name }.flatMap { it.availableActions(playerIndex, null) }[moveIndex]
-        this.actions.type(move.actionType)!!.perform(playerIndex, move.parameter)
+        blockingGameListener.awaitAndPerform(move)
+        blockingGameListener.await()
         return this.eliminations.eliminations().find { it.playerIndex == playerIndex }?.winResult?.result?.toFloat()?.times(100) ?: -0.01f
     }
 
