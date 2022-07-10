@@ -82,6 +82,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                 is FlowStep.IllegalAction -> logger.error { "Illegal action in feedback: $feedback" }
                 is FlowStep.NextView -> logger.debug { "NextView: $feedback" } // TODO: Not implemented yet, should pause a bit and then continue
                 is FlowStep.PreMove -> {}
+                is FlowStep.PreSetup<*> -> {}
                 else -> {
                     logger.warn(IllegalArgumentException("Unsupported feedback: $feedback"))
                 }
@@ -131,8 +132,6 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                 it.game.obj = game
                 logger.info { "Created game: $game" }
             }
-            val game = it.game.obj!!
-            events.execute(GameInitializedEvent(it.game, game.stateKeeper.lastMoveState()))
         })
         events.listen("DslGameSystem $gameTypeName Move", PlayerGameMoveRequest::class, {
             it.game.gameType.type == gameTypeName
@@ -149,23 +148,33 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
     }
 
     private fun serverGameListener(serverGame: ServerGame, game: Game<Any>): GameListener {
+        val performed = mutableListOf<Any>()
         return object : GameListener {
             override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
                 when (step) {
-                    is FlowStep.GameEnd -> {
-                        serverGame.gameOver = true
-                        serverGame.broadcast { _ ->
-                            serverGame.toJson("GameEnded")
+                    is FlowStep.GameSetup<*> -> {
+                        serverGame.broadcast {
+                            serverGame.toJson("UpdateView")
                         }
                     }
-                    is FlowStep.ActionPerformed<*> -> {
-                        serverGame.broadcast {
-                            step.moveMessage(serverGame)
+                    is FlowStep.ProceedStep -> {
+                        performed.forEach { e ->
+                            serverGame.broadcast { e }
                         }
+                        performed.clear()
+                    }
+                    is FlowStep.ActionPerformed<*> -> {
+                        performed.add(step.moveMessage(serverGame))
                     }
                     is FlowStep.Elimination -> {
                         serverGame.broadcast {
                             step.eliminatedMessage(serverGame)
+                        }
+                    }
+                    is FlowStep.GameEnd -> {
+                        serverGame.gameOver = true
+                        serverGame.broadcast { _ ->
+                            serverGame.toJson("GameEnded")
                         }
                     }
                 }

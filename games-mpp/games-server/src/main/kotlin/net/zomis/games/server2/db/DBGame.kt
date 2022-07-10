@@ -3,14 +3,12 @@ package net.zomis.games.server2.db
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonUnwrapped
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import klog.KLoggers
-import net.zomis.games.dsl.ActionReplay
-import net.zomis.games.dsl.GameConfigs
-import net.zomis.games.dsl.GameSpec
-import net.zomis.games.dsl.ReplayData
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
+import net.zomis.games.dsl.*
+import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
-import net.zomis.games.dsl.impl.GameSetupImpl
-import net.zomis.games.dsl.impl.StateKeeper
+import net.zomis.games.server.GamesServer
 
 enum class GameState(val value: Int) {
     HIDDEN(-1),
@@ -37,55 +35,34 @@ data class DBGameSummary(
     val timeStarted: Long
 )
 class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHistory: List<MoveHistory>) {
-    private val logger = KLoggers.logger(this)
-    private val gameSetup = GameSetupImpl(summary.gameSpec)
-    @JsonIgnore
-    val stateKeeper = StateKeeper().also { if (summary.startingState != null) it.setState(summary.startingState) }
-    @JsonIgnore
-    val game = gameSetup.createGameWithState(summary.playersInGame.size, summary.gameConfig, stateKeeper)
     val views = mutableListOf<Map<String, Any?>>()
     val errors = mutableListOf<String>()
     val timeLastAction = moveHistory.map { it.time }.maxByOrNull { it ?: 0 }
 
-    init {
-        views.add(game.view(null))
-        for (move in moveHistory.withIndex()) {
-            if (!performMove(game, move)) break
-            views.add(game.view(null))
-        }
-    }
-
-    private fun performMove(game: Game<Any>, move: IndexedValue<MoveHistory>): Boolean {
-        val it = move.value
-        val logic = game.actions[it.moveType]
-            ?: throw BadReplayException("Unable to perform $it: No such move type")
-        val actionable =
-            if (it.move == null)
-                logic.createAction(it.playerIndex, Unit)
-            else {
-                val serialized = mapper.readValue(mapper.writeValueAsString(it.move), logic.actionType.serializedType.java)
-                logic.createActionFromSerialized(it.playerIndex, serialized)
+    fun game(coroutineScope: CoroutineScope): Game<Any> {
+        class MyListener(val game: Game<Any>): GameListener {
+            override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
+                if (step is FlowStep.ProceedStep) {
+                    views.add(game.view(null))
+                }
+                if (step is FlowStep.IllegalAction) {
+                    addError("Illegal action: ${step.actionType} by ${step.playerIndex} parameter ${step.parameter}")
+                }
             }
-
-        if (!logic.isAllowed(actionable)) {
-            addError("Unable to perform $it: Move at index ${move.index} is not allowed.")
-            return false
         }
-        try {
-            logic.replayAction(actionable, it.state)
-        } catch (e: Exception) {
-            logger.error(e) { "Unable to perform move: $move." }
-            addError("Unable to perform move: $move. $e")
-            return false
+        return runBlocking {
+            GameEntryPoint(summary.gameSpec).replay(coroutineScope, replayData(), GamesServer.actionConverter) {
+                listOf(MyListener(it))
+            }.goToEnd().awaitCatchUp().game
         }
-        return true
     }
 
-    fun at(position: Int): Game<Any> {
-        val stateKeeper = StateKeeper().also { if (summary.startingState != null) it.setState(summary.startingState) }
-        val game = gameSetup.createGameWithState(summary.playersInGame.size, summary.gameConfig, stateKeeper)
-        moveHistory.slice(0 until position).withIndex().forEach { performMove(game, it) }
-        return game
+    fun at(coroutineScope: CoroutineScope, position: Int): Game<Any> {
+        return runBlocking {
+            GameEntryPoint(summary.gameSpec).replay(coroutineScope, replayData(), GamesServer.actionConverter) {
+                listOf()
+            }.gotoPosition(position).awaitCatchUp().game
+        }
     }
 
     fun addError(error: String) {

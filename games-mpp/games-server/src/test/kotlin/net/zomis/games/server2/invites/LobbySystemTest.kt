@@ -1,5 +1,9 @@
 package net.zomis.games.server2.invites
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.test.runTest
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
 import net.zomis.games.dsl.GameConfigs
@@ -81,13 +85,13 @@ class LobbySystemTest {
     }
 
     @Test
-    fun testGameStartEnd() {
+    fun testGameStartEnd() = runTest {
         val callback = GameCallback(
             gameLoader = { null },
             moveHandler = {}
         )
         val inviteOptions = InviteOptions(false, InviteTurnOrder.ORDERED, -1, GameConfigs(emptyList()), false)
-        val game = ServerGame(callback, GameType(callback, TestGames.gameTypeA as GameSpec<Any>, {null}, events, idGenerator, null), idGenerator(), inviteOptions)
+        val game = ServerGame(this, callback, GameType(this, callback, TestGames.gameTypeA as GameSpec<Any>, {null}, events, idGenerator, null), idGenerator(), inviteOptions)
         game.players[clientAB2] = ClientAccess(gameAdmin = false).addAccess(0, ClientPlayerAccessType.ADMIN)
         game.players[clientA1] = ClientAccess(gameAdmin = false).addAccess(1, ClientPlayerAccessType.ADMIN)
         events.execute(GameStartedEvent(game))

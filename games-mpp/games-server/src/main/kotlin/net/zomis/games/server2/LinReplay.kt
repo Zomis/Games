@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import io.javalin.Context
 import io.javalin.Javalin
 import klog.KLoggers
+import kotlinx.coroutines.runBlocking
 import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.db.BadReplayException
 import net.zomis.games.server2.db.DBGame
@@ -43,7 +44,7 @@ class LinReplay(private val aiRepository: AIRepository, private val dbIntegratio
                 val ignoreCache = ctx.queryParam("ignoreCache") == "true"
                 log(ctx, "analyze $gameId $position using $ai")
                 val dbGame = if (ignoreCache) fetchGame(gameId) else caffeine.get(gameId)!!
-                val game = dbGame.at(position)
+                val game = runBlocking { dbGame.at(this, position) }
                 ctx.json(aiRepository.analyze(dbGame.summary.gameType, game, ai, playerIndex)!!)
             }
         }
@@ -56,8 +57,10 @@ class LinReplay(private val aiRepository: AIRepository, private val dbIntegratio
     private fun fetchGame(gameId: String): DBGame {
         logger.info { "Fetching and caching game $gameId" }
         val game = dbIntegration.loadGameIgnoreErrors(gameId)
-        if (game != null && !game.game.isGameOver()) {
-            game.addError("Game is not finished after all ${game.moveHistory.size} moves were made. Last view was ${game.views.last()}")
+        runBlocking {
+            if (game != null && !game.game(this).isGameOver()) {
+                game.addError("Game is not finished after all ${game.moveHistory.size} moves were made. Last view was ${game.views.last()}")
+            }
         }
         return game!!
     }

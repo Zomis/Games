@@ -1,6 +1,9 @@
 package net.zomis.games.server2.games
 
 import klog.KLoggers
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import net.zomis.core.events.EventSystem
@@ -49,7 +52,9 @@ data class ClientAccess(var gameAdmin: Boolean) {
     override fun toString(): String = "Access:($gameAdmin, $access)"
 }
 
-class ServerGame(private val callback: GameCallback, val gameType: GameType, val gameId: String, val gameMeta: InviteOptions) {
+class ServerGame(
+    private val coroutineScope: CoroutineScope,
+    private val callback: GameCallback, val gameType: GameType, val gameId: String, val gameMeta: InviteOptions) {
     private val logger = KLoggers.logger(this)
 
     private val actionListHandler = ActionListRequestHandler(this)
@@ -211,8 +216,6 @@ class ServerGame(private val callback: GameCallback, val gameType: GameType, val
             .plus("access" to playerAccess(client).access).plus("players" to playerList())
     }
 
-    fun gameSetup(): GameSetupImpl<Any> = ServerGames.setup(this.gameType.type)!!
-
 }
 
 class GameTypeRegisterEvent(spec: GameSpec<*>) {
@@ -229,7 +232,6 @@ data class MoveEvent<T: Any, A: Any>(
     val replayState: Map<String, Any>
 )
 data class GameStartedEvent(val game: ServerGame)
-data class GameInitializedEvent(val game: ServerGame, val replayState: Map<String, Any>)
 data class GameEndedEvent(val game: ServerGame)
 data class PlayerEliminatedEvent(val game: ServerGame, val player: Int, val winner: WinResult, val position: Int)
 
@@ -247,8 +249,13 @@ class GameCallback(
     val gameLoader: (String) -> DBGame?,
     val moveHandler: (PlayerGameMoveRequest) -> Unit
 )
-class GameType(private val callback: GameCallback, val gameSpec: GameSpec<Any>, private val gameClients: () -> ClientList?,
-       events: EventSystem, private val idGenerator: GameIdGenerator, private val dbIntegration: DBIntegration?) {
+class GameType(
+    private val coroutineScope: CoroutineScope,
+    private val callback: GameCallback, val gameSpec: GameSpec<Any>,
+    private val gameClients: () -> ClientList?,
+    events: EventSystem, private val idGenerator: GameIdGenerator,
+    private val dbIntegration: DBIntegration?
+) {
 
     val type: String = gameSpec.name
     private val logger = KLoggers.logger(this)
@@ -262,12 +269,12 @@ class GameType(private val callback: GameCallback, val gameSpec: GameSpec<Any>, 
         val dbGame = callback.gameLoader(gameId) ?: return null
         val gameOptions = dbGame.summary.gameConfig
         val loadGameOptions = InviteOptions(false, InviteTurnOrder.ORDERED, -1, gameOptions, true)
-        val serverGame = ServerGame(callback, this, gameId, loadGameOptions)
+        val serverGame = ServerGame(coroutineScope, callback, this, gameId, loadGameOptions)
         serverGame.setMoveIndex(dbGame.moveHistory.size)
-        runBlocking {
-            serverGame.obj = GamesImpl.game(gameSpec).replay(this, dbGame.replayData()).game
+        coroutineScope.launch {
+            serverGame.obj = GamesImpl.game(gameSpec).replay(this, dbGame.replayData()).awaitCatchUp().game
+            runningGames[serverGame.gameId] = serverGame
         }
-        runningGames[serverGame.gameId] = serverGame
 
         fun findOrCreatePlayers(playersInGame: List<PlayerInGame>): Map<Client, ClientAccess> {
             return playersInGame.associate {player ->
@@ -294,7 +301,7 @@ class GameType(private val callback: GameCallback, val gameSpec: GameSpec<Any>, 
 
     fun createGame(serverGameOptions: InviteOptions): ServerGame {
         val gameId = idGenerator()
-        val game = ServerGame(callback, this, gameId, serverGameOptions)
+        val game = ServerGame(coroutineScope, callback, this, gameId, serverGameOptions)
         runningGames[game.gameId] = game
         logger.info { "Create game with id ${game.gameId} of type $type" }
         return game
@@ -305,6 +312,7 @@ class GameType(private val callback: GameCallback, val gameSpec: GameSpec<Any>, 
 class GameSystem(val gameClients: GameTypeMap<ClientList>, private val callback: GameCallback) {
 
     private val logger = KLoggers.logger(this)
+    private val coroutineScope = CoroutineScope(Dispatchers.Default) // TODO: Inject dispatchers
 
     private val dynamicRouter: MessageRouterDynamic<GameType> = { key -> this.getGameType(key)?.router ?: throw IllegalArgumentException("No such gameType: $key") }
     val router = MessageRouter(this).dynamic(dynamicRouter)
@@ -325,7 +333,7 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>, private val callback:
             )
         })
         events.listen("Register GameType", GameTypeRegisterEvent::class, {true}, {
-            gameTypes.gameTypes[it.gameType] = GameType(callback, it.gameSpec, { gameClients(it.gameType) }, events, idGenerator, dbIntegration())
+            gameTypes.gameTypes[it.gameType] = GameType(coroutineScope, callback, it.gameSpec, { gameClients(it.gameType) }, events, idGenerator, dbIntegration())
         })
     }
 
