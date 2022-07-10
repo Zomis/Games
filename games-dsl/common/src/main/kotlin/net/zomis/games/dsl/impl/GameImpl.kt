@@ -33,14 +33,6 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
 
     val playersCount: IntRange = context.model.playerCount
 
-    @Deprecated("Use startGame instead and inject state when needed with listeners", replaceWith = ReplaceWith("startGame(coroutineScope, {playerCount}) {}"))
-    fun createGameWithState(playerCount: Int, config: GameConfigs, stateKeeper: StateKeeper): Game<T> {
-        if (playerCount !in playersCount) {
-            throw IllegalArgumentException("Invalid number of players: $playerCount, expected $playersCount")
-        }
-        return context.createGame(playerCount, config, stateKeeper)
-    }
-
     fun configs(): GameConfigs = context.configs()
 
     suspend fun startGame(coroutineScope: CoroutineScope, playerCount: Int, flowListeners: (Game<Any>) -> Collection<GameListener>): Game<T>
