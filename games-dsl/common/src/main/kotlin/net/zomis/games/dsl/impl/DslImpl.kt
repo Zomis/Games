@@ -1,6 +1,5 @@
 package net.zomis.games.dsl.impl
 
-import kotlinx.coroutines.CompletableDeferred
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*

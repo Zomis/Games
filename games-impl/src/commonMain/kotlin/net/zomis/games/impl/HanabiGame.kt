@@ -11,7 +11,7 @@ import kotlin.math.min
 // RAINBOW: Either used as a sixth color, or as a wildcard (where cards can be both blue and yellow for example)
 // name the card you are playing, or get a fail token
 // only one card of multicolor
-// game ends when players are defeated or an indispensible card has been discarded
+// game ends when players are defeated or an indispensable card has been discarded
 // game normally ends one full turn after the last card drawn.
 // allow empty clues - true/false
 
@@ -65,8 +65,8 @@ data class HanabiConfig(
     private fun useRainbowColor() = rainbowExtraColor || rainbowWildcard
     private fun allowRainbowClue() = rainbowExtraColor && !rainbowWildcard
 
-    fun colors() = HanabiColor.values().toList().minus(if (useRainbowColor()) listOf() else listOf(HanabiColor.RAINBOW))
-    fun clueableColors() = HanabiColor.values().toList().minus(if (allowRainbowClue()) listOf() else listOf(HanabiColor.RAINBOW))
+    fun colors() = HanabiColor.values().toList().minus(if (useRainbowColor()) emptySet() else setOf(HanabiColor.RAINBOW))
+    fun clueableColors() = HanabiColor.values().toList().minus(if (allowRainbowClue()) setOf() else setOf(HanabiColor.RAINBOW))
 
     fun countInDeck(color: HanabiColor, value: Int): Int {
         if (rainbowOnlyOne && color == HanabiColor.RAINBOW) return 1
@@ -144,7 +144,7 @@ data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
         return config.allowEmptyClues || players[clue.player].cards.cards.any { it.matches(clue) }
     }
 
-    fun score(): Int = colors.sumBy { zone -> zone.board.size }
+    fun score(): Int = colors.sumOf { zone -> zone.board.size }
     fun possibleClues(currentPlayer: Int): List<HanabiClue> {
         return this.players.indices.toList().minus(currentPlayer).flatMap {cluePlayer ->
             colors.map { HanabiClue(cluePlayer, it.color, null) } +
@@ -164,7 +164,7 @@ data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
 }
 
 data class HanabiClue(val player: Int, val color: HanabiColor?, val value: Int?) {
-    fun text(): String = color?.name?.toLowerCase() ?: value!!.toString()
+    fun text(): String = color?.name?.lowercase() ?: value!!.toString()
 }
 
 data class PlayNamedAction(val cardIndex: Int, val color: HanabiColor)
@@ -211,7 +211,7 @@ object HanabiGame {
             action(discard).options { game.current.cards.indices }
             action(discard).requires { game.clueTokens < game.config.maxClueTokens }
             action(discard).effect {
-                val card = game.current.cards[action.parameter];
+                val card = game.current.cards[action.parameter]
                 moveCard(replayable, game, card, game.colorData(card.card).discard)
                 log {
                     "$player discarded ${viewLink(card.card.toStateString(), "card", card.card.known(true))}"
@@ -276,9 +276,9 @@ object HanabiGame {
             }
             action(giveClue).choose {
                 options({ game.players.indices.toList().minus(game.currentPlayer) }) {player ->
-                    val TEXT_COLOR = "color"
-                    options({ listOf(TEXT_COLOR, "value") }) {clueMode ->
-                        if (clueMode == TEXT_COLOR) {
+                    val textColor = "color"
+                    options({ listOf(textColor, "value") }) {clueMode ->
+                        if (clueMode == textColor) {
                             options({ game.config.clueableColors() }) {color ->
                                 parameter(HanabiClue(player, color, null))
                             }
@@ -317,10 +317,8 @@ object HanabiGame {
                 mapOf("clueOptions" to emptyList<Unit>())
             }
             view("lastAction") { game.lastAffectedCards }
-        }
-        view {
-            value("others") {
-                it.players.map { player ->
+            view("others") {
+                game.players.map { player ->
                     val cards = player.cards.map { card ->
                         card.known(player.index != viewer)
                     }
@@ -328,30 +326,31 @@ object HanabiGame {
                     mapOf("index" to player.index, "cards" to cards)
                 }.filterNotNull()
             }
-            if (this.viewer != null) {
-                value("hand") {
-                    val viewPerspective = this.viewer ?: it.currentPlayer
-                    val cards = it.players[viewPerspective].cards.map {
-                        card -> card.known(it.isGameOver())
+            view("hand") {
+                if (this.viewer != null) {
+                    val viewPerspective = this.viewer ?: game.currentPlayer
+                    val cards = game.players[viewPerspective].cards.map {
+                        card -> card.known(game.isGameOver())
                     }
                     mapOf("index" to viewPerspective, "cards" to cards)
-                }
+                } else mapOf()
             }
-            value("colors") {
-                it.colors.map {colorData ->
+            view("colors") {
+                game.colors.map {colorData ->
                     mapOf(
-                        "color" to colorData.color.name.toLowerCase(),
+                        "color" to colorData.color.name.lowercase(),
                         "board" to colorData.board.map { card -> card.known(true) },
                         "discard" to colorData.discard.toList().map { card -> card.known(true) }
                     )
                 }
             }
-            value("cardsLeft") { it.deck.size }
-            value("clues") { it.clueTokens }
-            value("score") { it.score() }
-            value("scoreDescription") { it.scoreDescription() }
-            value("fails") { it.failTokens }
-            value("maxFails") { it.config.maxFailTokens }
+            view("cardsLeft") { game.deck.size }
+            view("clues") { game.clueTokens }
+            view("score") { game.score() }
+            view("scoreDescription") { game.scoreDescription() }
+            view("fails") { game.failTokens }
+            view("maxFails") { game.config.maxFailTokens }
+            /*
             if (game.config.viewAllowCardIsNot) {
                 onRequest("canNotBe") {
                     game.players[viewer ?: game.currentPlayer].cards.cards.map {
@@ -364,6 +363,7 @@ object HanabiGame {
                     HanabiProbabilities.calculateProbabilities(game, viewer ?: game.currentPlayer)
                 }
             }
+            */
         }
     }
 
