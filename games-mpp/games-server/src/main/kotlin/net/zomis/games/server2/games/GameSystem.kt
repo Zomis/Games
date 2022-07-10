@@ -3,21 +3,15 @@ package net.zomis.games.server2.games
 import klog.KLoggers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import net.zomis.core.events.EventSystem
 import net.zomis.core.events.ListenerPriority
 import net.zomis.games.Features
-import net.zomis.games.WinResult
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.common.isObserver
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.GameSpec
-import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.impl.Game
-import net.zomis.games.dsl.impl.GameSetupImpl
-import net.zomis.games.server.GamesServer
 import net.zomis.games.server2.*
 import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.ais.ServerAIs
@@ -67,7 +61,6 @@ class ServerGame(
         .handler("actionControl", this::actionControl)
         .handler("move", this::moveRequest)
         .handler("join", this::clientJoin)
-        .handler("viewRequest", this::viewRequest)
     var gameOver: Boolean = false
     private val nextMoveIndex = AtomicInteger(0)
     val mutex = Mutex()
@@ -173,21 +166,6 @@ class ServerGame(
             "gameId" to gameId,
             "viewer" to viewer,
             "view" to view
-        ))
-    }
-
-    private fun viewRequest(message: ClientJsonMessage) {
-        val viewer = message.data.get("playerIndex").asInt().takeIf { it >= 0 }
-        requireAccess(message.client, viewer, ClientPlayerAccessType.READ)
-        val viewDetailsResult = this.obj!!.viewRequest(viewer,
-              message.data.getTextOrDefault("viewRequest", ""), emptyMap())
-
-        message.client.send(mapOf(
-            "type" to "GameViewDetails",
-            "gameType" to gameType.type,
-            "gameId" to gameId,
-            "viewer" to viewer,
-            "details" to viewDetailsResult
         ))
     }
 

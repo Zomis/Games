@@ -2,7 +2,6 @@ package net.zomis.games.dsl
 
 import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.PlayerEliminationsWrite
-import net.zomis.games.api.Games
 import net.zomis.games.dsl.flow.GameFlowRules
 import net.zomis.games.dsl.flow.GameFlowScope
 import kotlin.reflect.KClass
@@ -39,7 +38,6 @@ class GameSpec<T : Any>(val name: String, val dsl: GameDsl<T>.() -> Unit) {
 }
 typealias GameTestDsl<T> = suspend GameTest<T>.() -> Unit
 typealias GameModelDsl<T, C> = GameModel<T, C>.() -> Unit
-typealias GameViewDsl<T> = GameView<T>.() -> Unit
 typealias GameActionRulesDsl<T> = GameActionRules<T>.() -> Unit
 typealias GameFlowRulesDsl<T> = GameFlowRules<T>.() -> Unit
 typealias GameFlowDsl<T> = suspend GameFlowScope<T>.() -> Unit
@@ -85,8 +83,6 @@ interface GameDsl<T : Any> {
     @Deprecated("use GameConfig class")
     fun <C : Any> setup(configClass: KClass<C>, modelDsl: GameModelDsl<T, C>)
     fun setup(modelDsl: GameModelDsl<T, Unit>)
-    @Deprecated("use rules instead")
-    fun view(viewDsl: GameViewDsl<T>)
     fun testCase(players: Int, testDsl: GameTestDsl<T>)
     fun actionRules(actionRulesDsl: GameActionRulesDsl<T>)
     fun gameFlow(flowDsl: GameFlowDsl<T>)

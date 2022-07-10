@@ -3,9 +3,6 @@ package net.zomis.games.dsl
 import net.zomis.games.common.PlayerIndex
 import kotlin.reflect.KClass
 
-typealias GameViewOnRequestFunction<T> = GameViewOnRequestScope<T>.(request: Map<String, Any>) -> Any
-interface GameViewOnRequestScope<T: Any>: ViewScope<T>
-
 interface Viewable {
     fun toView(viewer: PlayerIndex): Any?
 }
@@ -34,10 +31,4 @@ interface ActionsView<T: Any> {
 data class ActionPlayerChoice(val actionType: String, val chosen: List<Any>)
 interface ActionsChosenView<T: Any>: ActionsView<T> {
     fun chosen(): ActionPlayerChoice?
-}
-
-@Deprecated("use other view system instead")
-interface GameView<T: Any> : ViewScope<T> {
-    fun value(key: String, value: (T) -> Any?)
-    fun onRequest(requestName: String, function: GameViewOnRequestFunction<T>)
 }

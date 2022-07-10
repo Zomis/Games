@@ -105,10 +105,6 @@ class GameFlowImpl<T: Any>(
         return this.views.associate { it.first to it.second(viewContext) }
     }
 
-    override fun viewRequest(playerIndex: PlayerIndex, key: String, params: Map<String, Any>): Any? {
-        TODO("Not yet implemented")
-    }
-
     suspend fun nextAction(): Actionable<T, Any>? {
         if (this.lastAction != null) {
             val last = this.lastAction!!

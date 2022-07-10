@@ -2,7 +2,6 @@ package net.zomis.games.dsl.impl
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import net.zomis.games.PlayerElimination
 import net.zomis.games.PlayerEliminations
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.GameEvents
@@ -90,7 +89,6 @@ interface Game<T: Any> {
     fun isGameOver(): Boolean
     fun isRunning() = !isGameOver()
     fun view(playerIndex: PlayerIndex): Map<String, Any?>
-    fun viewRequest(playerIndex: PlayerIndex, key: String, params: Map<String, Any>): Any?
     fun stop()
 }
 
@@ -179,18 +177,11 @@ class GameImpl<T : Any>(
             val map = model.toView(playerIndex) as Map<String, Any?>
             map.forEach { entry -> view.value(entry.key) { entry.value } }
         }
-        setupContext.viewDsl?.invoke(view)
         rules.view(view)
         return view.result()
     }
 
     override fun isGameOver(): Boolean = eliminationCallback.isGameOver()
-
-    override fun viewRequest(playerIndex: PlayerIndex, key: String, params: Map<String, Any>): Any? {
-        val view = GameViewContext(this, playerIndex)
-        setupContext.viewDsl?.invoke(view)
-        return view.request(playerIndex, key, params)
-    }
 
     override val events: GameEventsExecutor get() = this
     override fun <E> fire(executor: GameEvents<E>, event: E) = this.rules.fire(executor, event)

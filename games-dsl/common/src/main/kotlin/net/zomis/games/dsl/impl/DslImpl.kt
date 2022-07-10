@@ -36,38 +36,16 @@ class GameModelContext<T: Any, C>(val configs: MutableList<GameConfig<Any>>) : G
 class GameViewContext<T : Any>(
     private val gameObj: Game<T>,
     override val viewer: PlayerIndex
-) : GameView<T> {
+): ViewScope<T> {
     override val game: T = gameObj.model
-    private val requestable = mutableMapOf<String, GameViewOnRequestFunction<T>>()
     private val viewResult: MutableMap<String, Any?> = mutableMapOf()
 
     fun result(): Map<String, Any?> {
         return viewResult.toMap()
     }
 
-    override fun value(key: String, value: (T) -> Any?) {
+    fun value(key: String, value: (T) -> Any?) {
         this.viewResult[key] = value(game)
-    }
-
-    override fun onRequest(requestName: String, function: GameViewOnRequestFunction<T>) {
-        this.requestable[requestName] = function
-    }
-
-    fun request(playerIndex: PlayerIndex, key: String, params: Map<String, Any>): Any? {
-        val outerThis = this
-        val gameViewOnRequestScope = object: GameViewOnRequestScope<T> {
-            override val game: T
-                get() = gameObj.model
-            override val viewer: PlayerIndex
-                get() = playerIndex
-
-            override fun <A : Any> action(actionType: ActionType<T, A>): ActionView<T, A> = outerThis.action(actionType)
-            override fun actions(): ActionsView<T> = outerThis.actions()
-            override fun actionsChosen(): ActionsChosenView<T> = outerThis.actionsChosen()
-            override fun <A : Any> actionRaw(actionType: ActionType<T, A>): ActionView<T, A> = outerThis.actionRaw(actionType)
-            override fun <A : Any> chosenActions(actionType: ActionType<T, A>): ActionView<T, A> = outerThis.chosenActions(actionType)
-        }
-        return this.requestable[key]?.invoke(gameViewOnRequestScope, params)
     }
 
     override fun <A : Any> action(actionType: ActionType<T, A>): ActionView<T, A> = this.chosenActions(actionType)
@@ -206,7 +184,6 @@ class GameConfigImpl<E: Any>(override val key: String, override val default: () 
 }
 class GameDslContext<T : Any>(val gameType: String) : GameDsl<T> {
     lateinit var modelDsl: GameModelDsl<T, Any>
-    var viewDsl: GameViewDsl<T>? = null
     var flowRulesDsl: GameFlowRulesDsl<T>? = null
     var flowDsl: GameFlowDsl<T>? = null
     var actionRulesDsl: GameActionRulesDsl<T>? = null
@@ -221,10 +198,6 @@ class GameDslContext<T : Any>(val gameType: String) : GameDsl<T> {
 
     override fun setup(modelDsl: GameModelDsl<T, Unit>) {
         return this.setup(Unit::class, modelDsl)
-    }
-
-    override fun view(viewDsl: GameViewDsl<T>) {
-        this.viewDsl = viewDsl
     }
 
     override fun actionRules(actionRulesDsl: GameActionRulesDsl<T>) {
