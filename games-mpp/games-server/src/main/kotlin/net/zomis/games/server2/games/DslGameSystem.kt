@@ -21,13 +21,14 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
     private val logger = KLoggers.logger(this)
 
     fun perform(events: EventSystem, it: PlayerGameMoveRequest) {
-        val controller = it.game.obj!! as Game<T>
-        if (controller.isGameOver()) {
+        val serverGame = it.game
+        val game = serverGame.obj!! as Game<T>
+        if (game.isGameOver()) {
             events.execute(it.illegalMove("Game already finished"))
             return
         }
 
-        val actionType = controller.actions.type(it.moveType)
+        val actionType = game.actions.type(it.moveType)
         if (actionType == null) {
             events.execute(it.illegalMove("No such actionType: ${it.moveType}"))
             return
@@ -38,22 +39,13 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
             events.execute(it.illegalMove("Action is not allowed"))
             return
         }
-        handleGameFlow(events, it, controller, action)
-    }
 
-    private fun handleGameFlow(
-        events: EventSystem, moveRequest: PlayerGameMoveRequest,
-        gameFlow: Game<T>,
-        action: Actionable<T, Any>
-    ) {
-        GlobalScope.launch {
+        serverGame.coroutineScope.launch {
             try {
-                events.execute(PreMoveEvent(moveRequest.game, moveRequest.player, action.actionType, action.parameter))
-                println("sending actionsInput to ${gameFlow.actionsInput}")
-                gameFlow.actionsInput.send(action)
-                println("Action sent, awaiting feedback")
+                events.execute(PreMoveEvent(serverGame, it.player, action.actionType, action.parameter))
+                game.actionsInput.send(action)
             } catch (e: Exception) {
-                logger.error(e) { "Error in DSL System Coroutine: $moveRequest $gameFlow $action" }
+                logger.error(e) { "Error in DSL System Coroutine: $it $game $action" }
             }
         }
     }
@@ -63,29 +55,10 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
             logger.info("Feedback received: $feedback")
             when (feedback) {
                 is FlowStep.GameEnd -> events.execute(GameEndedEvent(game))
-                is FlowStep.Elimination -> events.execute(
-                    PlayerEliminatedEvent(game, feedback.elimination.playerIndex,
-                        feedback.elimination.winResult, feedback.elimination.position
-                    ))
-                is FlowStep.Log -> sendLogs(game, feedback.log)
                 is FlowStep.ActionPerformed<*> -> events.execute(
                     MoveEvent(game, feedback.playerIndex, feedback.actionImpl.actionType, feedback.parameter, feedback.replayState)
                 )
-                is FlowStep.AwaitInput -> {
-                    if (g.eliminations.isGameOver()) {
-                        throw IllegalStateException("Game is over but AwaitInput was sent")
-                    }
-                    return
-                }
-                is FlowStep.GameSetup<*> -> { /* SuperTable also listens for GameStartedEvent with higher priority */ }
-                is FlowStep.RuleExecution -> logger.debug { "Rule Execution: $feedback" }
-                is FlowStep.IllegalAction -> logger.error { "Illegal action in feedback: $feedback" }
-                is FlowStep.NextView -> logger.debug { "NextView: $feedback" } // TODO: Not implemented yet, should pause a bit and then continue
-                is FlowStep.PreMove -> {}
-                is FlowStep.PreSetup<*> -> {}
-                else -> {
-                    logger.warn(IllegalArgumentException("Unsupported feedback: $feedback"))
-                }
+                else -> { /* ignored */ }
             }
         }
     }
@@ -171,6 +144,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                         }
                         performed.clear()
                     }
+                    is FlowStep.Log -> sendLogs(serverGame, step.log)
                     is FlowStep.ActionPerformed<*> -> {
                         performed.add(step.moveMessage(serverGame))
                     }
