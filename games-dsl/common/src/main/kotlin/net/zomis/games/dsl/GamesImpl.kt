@@ -18,6 +18,7 @@ class PostReplayListener(replayData: ReplayData, private val delegate: GameListe
     private var targetAction = replayData.actions.size
 
     override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
+        // TODO: What if $targetAction is zero? GameSetup etc. will be delegated, is that a problem? Maybe increase on AwaitInput instead?
         if (actionIndex >= targetAction) {
             delegate.handle(coroutineScope, step)
         }

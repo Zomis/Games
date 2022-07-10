@@ -17,6 +17,7 @@ import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
+import net.zomis.games.server.GamesServer
 import net.zomis.games.server2.*
 import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.ais.ServerAIs
@@ -53,7 +54,7 @@ data class ClientAccess(var gameAdmin: Boolean) {
 }
 
 class ServerGame(
-    private val coroutineScope: CoroutineScope,
+    val coroutineScope: CoroutineScope,
     private val callback: GameCallback, val gameType: GameType, val gameId: String, val gameMeta: InviteOptions) {
     private val logger = KLoggers.logger(this)
 
@@ -231,6 +232,7 @@ data class MoveEvent<T: Any, A: Any>(
     val parameter: A,
     val replayState: Map<String, Any>
 )
+data class GameResumedEvent(val game: ServerGame, val dbGame: DBGame?)
 data class GameStartedEvent(val game: ServerGame)
 data class GameEndedEvent(val game: ServerGame)
 data class PlayerEliminatedEvent(val game: ServerGame, val player: Int, val winner: WinResult, val position: Int)
@@ -253,8 +255,8 @@ class GameType(
     private val coroutineScope: CoroutineScope,
     private val callback: GameCallback, val gameSpec: GameSpec<Any>,
     private val gameClients: () -> ClientList?,
-    events: EventSystem, private val idGenerator: GameIdGenerator,
-    private val dbIntegration: DBIntegration?
+    private val events: EventSystem,
+    private val idGenerator: GameIdGenerator
 ) {
 
     val type: String = gameSpec.name
@@ -271,10 +273,8 @@ class GameType(
         val loadGameOptions = InviteOptions(false, InviteTurnOrder.ORDERED, -1, gameOptions, true)
         val serverGame = ServerGame(coroutineScope, callback, this, gameId, loadGameOptions)
         serverGame.setMoveIndex(dbGame.moveHistory.size)
-        coroutineScope.launch {
-            serverGame.obj = GamesImpl.game(gameSpec).replay(this, dbGame.replayData()).awaitCatchUp().game
-            runningGames[serverGame.gameId] = serverGame
-        }
+        events.execute(GameResumedEvent(serverGame, dbGame))
+        runningGames[serverGame.gameId] = serverGame
 
         fun findOrCreatePlayers(playersInGame: List<PlayerInGame>): Map<Client, ClientAccess> {
             return playersInGame.associate {player ->
@@ -333,7 +333,7 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>, private val callback:
             )
         })
         events.listen("Register GameType", GameTypeRegisterEvent::class, {true}, {
-            gameTypes.gameTypes[it.gameType] = GameType(coroutineScope, callback, it.gameSpec, { gameClients(it.gameType) }, events, idGenerator, dbIntegration())
+            gameTypes.gameTypes[it.gameType] = GameType(coroutineScope, callback, it.gameSpec, { gameClients(it.gameType) }, events, idGenerator)
         })
     }
 

@@ -113,25 +113,33 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
 
     fun setup(events: EventSystem) {
         val entryPoint = GamesImpl.game(dsl)
-        events.listen("DslGameSystem $gameTypeName Setup", GameStartedEvent::class, {it.game.gameType.type == gameTypeName}, {
-            val gameStartedEvent = it
+        events.listen("DslGameSystem $gameTypeName Resume", GameResumedEvent::class, { it.game.gameType.type == gameTypeName }, { gameEvent ->
+            val serverGame = gameEvent.game
             val dbIntegration = this.dbIntegration()
-            val appropriateReplayListener =
-                if (it.game.gameMeta.database && dbIntegration != null) GamesServer.Replays.database(dbIntegration, it.game)
-                else GamesServer.Replays.noReplays()
-            val coroutineScope = CoroutineScope(Dispatchers.Default)
-            runBlocking {
-                logger.info { "Creating game: ${it.game}" }
-                val game = entryPoint.setup().startGameWithConfig(coroutineScope, it.game.playerCount, it.game.gameMeta.gameOptions) {game ->
+            serverGame.coroutineScope.launch {
+                logger.info { "Creating game: ${gameEvent.game}" }
+                val appropriateReplayListener =
+                    if (serverGame.gameMeta.database && dbIntegration != null) {
+                        val listener = GamesServer.Replays.database(dbIntegration, serverGame)
+                        if (gameEvent.dbGame != null) {
+                            PostReplayListener(gameEvent.dbGame.replayData(), listener)
+                        } else {
+                            listener
+                        }
+                    } else GamesServer.Replays.noReplays()
+                val game = entryPoint.setup().startGameWithConfig(this, serverGame.playerCount, serverGame.gameMeta.gameOptions) {game ->
                     listOf(
-                        DslGameSystemListener(gameStartedEvent.game, events, game),
-                        serverGameListener(gameStartedEvent.game, game),
+                        DslGameSystemListener(gameEvent.game, events, game),
+                        serverGameListener(gameEvent.game, game),
                         appropriateReplayListener
                     )
                 } as Game<Any>
-                it.game.obj = game
+                serverGame.obj = game
                 logger.info { "Created game: $game" }
             }
+        })
+        events.listen("DslGameSystem $gameTypeName Setup", GameStartedEvent::class, {it.game.gameType.type == gameTypeName}, {
+            events.execute(GameResumedEvent(it.game, null))
         })
         events.listen("DslGameSystem $gameTypeName Move", PlayerGameMoveRequest::class, {
             it.game.gameType.type == gameTypeName
