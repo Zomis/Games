@@ -179,11 +179,11 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                             step.eliminatedMessage(serverGame)
                         }
                     }
-                    is FlowStep.GameEnd -> {
-                        serverGame.gameOver = true
-                        serverGame.broadcast { _ ->
-                            serverGame.toJson("GameEnded")
-                        }
+                }
+                if (step is FlowStep.GameEnd) {
+                    serverGame.gameOver = true
+                    serverGame.broadcast {
+                        serverGame.toJson("GameEnded")
                     }
                 }
             }
