@@ -68,6 +68,8 @@ class DslGameTest {
             it.getText("type") == "GameStarted" && it.getText("gameType") == dslGame &&
                     it.get("access").get("1").asText() == "ADMIN"
         }
+        p1.expectJsonObject { it.getText("type") == "UpdateView" }
+        p2.expectJsonObject { it.getText("type") == "UpdateView" }
 
         p1.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view", "playerIndex": 0 }""")
         val viewResponse = p1.expectJsonObject { it.getText("type") == "GameView" }
