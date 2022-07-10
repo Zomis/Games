@@ -10,12 +10,9 @@ import klog.KLoggers
 import net.zomis.common.convertFromDBFormat
 import net.zomis.common.convertToDBFormat
 import net.zomis.core.events.EventSystem
-import net.zomis.core.events.ListenerPriority
 import net.zomis.games.Features
-import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.FlowStep
-import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.server2.*
 import net.zomis.games.server2.ais.ServerAIProvider
@@ -133,6 +130,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         val playerIndices = game.playerList()
         val players = playerIndices.withIndex().groupBy({ it.value.playerId }) { it.index }
         players.forEach { (playerId, indexes) ->
+            this.simpleUpdate(pkValue, Prefix.PLAYER.sk("$playerId:unfinished"), epochMilli)
             this.simpleUpdate(pkValue, Prefix.PLAYER.sk(playerId.toString()), epochMilli,
                 Fields.GAME_PLAYERS to indexes.map {
                     mapOf("Index" to it)
@@ -191,6 +189,15 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
             "ResultPosition" to event.elimination.position,
             "ResultReason" to "eliminated"
         )
+
+        val playerIdsToEliminate = serverGame.players.filter { it.value.index(event.elimination.playerIndex) >= ClientPlayerAccessType.WRITE } // can control eliminated player
+            // does not have access to any other non-eliminated player
+            .filter { acc -> serverGame.playerAccess(acc.key).access.none {
+                it.key != event.elimination.playerIndex && it.value >= ClientPlayerAccessType.WRITE && serverGame.obj!!.eliminations.isAlive(it.key)
+            } }.keys
+        playerIdsToEliminate.forEach {
+            this.table.table.deleteItem(pk, pkValue, sk, Prefix.PLAYER.sk(it.playerId.toString() + ":unfinished"))
+        }
         this.update("Eliminate player ${event.elimination.playerIndex} in game $pkValue", UpdateItemSpec().withPrimaryKey(this.pk, pkValue, this.sk, pkValue)
           .withAttributeUpdate(AttributeUpdate(Fields.PLAYER_PREFIX.fieldName + event.elimination.playerIndex).put(playerData)))
     }
