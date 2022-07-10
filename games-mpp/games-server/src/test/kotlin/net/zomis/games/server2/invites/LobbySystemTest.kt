@@ -91,7 +91,7 @@ class LobbySystemTest {
             moveHandler = {}
         )
         val inviteOptions = InviteOptions(false, InviteTurnOrder.ORDERED, -1, GameConfigs(emptyList()), false)
-        val game = ServerGame(this, callback, GameType(this, callback, TestGames.gameTypeA as GameSpec<Any>, {null}, events, idGenerator, null), idGenerator(), inviteOptions)
+        val game = ServerGame(this, callback, GameType(this, callback, TestGames.gameTypeA as GameSpec<Any>, {null}, events, idGenerator), idGenerator(), inviteOptions)
         game.players[clientAB2] = ClientAccess(gameAdmin = false).addAccess(0, ClientPlayerAccessType.ADMIN)
         game.players[clientA1] = ClientAccess(gameAdmin = false).addAccess(1, ClientPlayerAccessType.ADMIN)
         events.execute(GameStartedEvent(game))
