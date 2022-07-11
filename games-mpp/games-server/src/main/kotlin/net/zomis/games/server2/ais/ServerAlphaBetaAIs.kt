@@ -1,14 +1,12 @@
 package net.zomis.games.server2.ais
 
 import klog.KLoggers
-import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.impl.TTQuixoController
 import net.zomis.games.impl.ttt.TTT3D
 import net.zomis.games.impl.ttt.TTT3DPiece
 import net.zomis.games.impl.ttt.ultimate.*
 import net.zomis.games.server2.games.impl.toWinResult
-import net.zomis.games.server2.games.GameTypeRegisterEvent
 import net.zomis.games.server2.games.impl.TTConnect4AlphaBeta
 
 enum class AlphaBetaSpeedMode(val nameSuffix: String, val depthRemainingBonus: Double) {
@@ -25,11 +23,25 @@ data class AlphaBetaAIFactory<S: Any>(
     val useSpeedModes: Boolean,
     val heuristic: (Game<S>, Int) -> Double
 ) {
+
+    val configurations: List<Pair<Int, AlphaBetaSpeedMode>> = sequence {
+        (0 until maxLevel).forEach {
+            yield(it to AlphaBetaSpeedMode.NORMAL)
+        }
+        if (useSpeedModes) {
+            yield(maxLevel to AlphaBetaSpeedMode.QUICK)
+            yield(maxLevel to AlphaBetaSpeedMode.SLOW)
+        } else {
+            yield(maxLevel to AlphaBetaSpeedMode.NORMAL)
+        }
+    }.toList()
+    val names = configurations.map { aiName(it.first, it.second) }
+
     fun aiName(level: Int, speedMode: AlphaBetaSpeedMode)
-        = "#AI_${this.namePrefix}_" + this.gameType + "_" + level + speedMode.nameSuffix
+        = "#AI_${this.namePrefix}_" + level + speedMode.nameSuffix
 }
 
-class ServerAlphaBetaAIs(private val aiRepository: AIRepository) {
+object ServerAlphaBetaAIs {
     private val logger = KLoggers.logger(this)
 
     fun heuristicTTT(state: TTController, myIndex: Int): Double {
@@ -53,7 +65,7 @@ class ServerAlphaBetaAIs(private val aiRepository: AIRepository) {
     fun heuristicTTT3D(game: TTT3D, myIndex: Int): Double {
         val me = if (myIndex == 0) TTT3DPiece.X else TTT3DPiece.O
         val opp = me.opponent()
-        var result = if (game.findWinner() != null) {
+        val result = if (game.findWinner() != null) {
             if (game.findWinner() == me) 100.0 else -100.0
         } else {
             val myWins = game.winConditions.filter { it.canWin(me) }.groupBy { it.emptySpaces() }.mapValues { it.value.size }
@@ -90,7 +102,7 @@ class ServerAlphaBetaAIs(private val aiRepository: AIRepository) {
     fun <T: Any> model(modelHeuristic: (game: T, myIndex: Int) -> Double): (Game<T>, Int) -> Double =
             { gameImpl, index -> modelHeuristic(gameImpl.model, index) }
 
-    fun setup(events: EventSystem) {
+    fun ais(): List<AlphaBetaAIFactory<out Any>> {
         val ttAB: AlphaBetaCopier<TTController> = { old, copy ->
             val moves = old.saveHistory()
             copy.makeMoves(moves)
@@ -120,13 +132,6 @@ class ServerAlphaBetaAIs(private val aiRepository: AIRepository) {
             AlphaBetaAIFactory(quixoAB,"Quixo", "AlphaBeta", 3, false, model(::heuristicQuixo)),
             AlphaBetaAIFactory(tt3Dab, "DSL-TTT3D", "AlphaBeta", 5, true, model(::heuristicTTT3D))
         )
-
-        events.listen("register AlphaBeta for TTController-games", GameTypeRegisterEvent::class, { event ->
-            aiFactories.any { it.gameType == event.gameType }
-        }, {event ->
-            aiFactories.filter { it.gameType == event.gameType }.forEach {factory: AlphaBetaAIFactory<out Any> ->
-                aiRepository.createAlphaBetaAIs(events, factory)
-            }
-        })
+        return aiFactories
     }
 }

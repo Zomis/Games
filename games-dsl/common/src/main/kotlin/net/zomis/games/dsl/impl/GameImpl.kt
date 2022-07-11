@@ -177,6 +177,7 @@ class GameImpl<T : Any>(
     override fun copy(copier: (source: T, destination: T) -> Unit): GameImpl<T> {
         val copy = GameImpl(setupContext, playerCount, gameConfig, stateKeeper)
         copier(this.model, copy.model)
+        copy.setupContext.actionRulesDsl?.invoke(copy.rules) // TODO: This is a bit of an ugly hack to add the rules
         this.eliminations.eliminations().forEach { copy.eliminations.eliminate(it) }
         return copy
     }

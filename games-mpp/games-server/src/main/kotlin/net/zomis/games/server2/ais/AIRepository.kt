@@ -1,6 +1,8 @@
 package net.zomis.games.server2.ais
 
+import net.zomis.bestOf
 import net.zomis.core.events.EventSystem
+import net.zomis.games.ais.noAvailableActions
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.impl.Game
@@ -8,7 +10,6 @@ import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.dsl.impl.GameControllerContext
 import net.zomis.games.scorers.ScorerController
 import net.zomis.games.server2.Client
-import net.zomis.games.server2.games.GameTypeRegisterEvent
 import net.zomis.games.server2.games.PlayerGameMoveRequest
 import net.zomis.games.server2.games.ServerGame
 
@@ -45,28 +46,6 @@ class AIRepository {
         scoringFactory.createAI(events, factory.gameType, factory.name, factory.createController())
     }
 
-    private fun <T: Any> alphaBetaConfigurations(factory: AlphaBetaAIFactory<T>): List<Pair<Int, AlphaBetaSpeedMode>> {
-        return (0 until factory.maxLevel).map {level ->
-            level to AlphaBetaSpeedMode.NORMAL
-        }.let {
-            if (factory.useSpeedModes) {
-                it.plus(factory.maxLevel to AlphaBetaSpeedMode.QUICK)
-                  .plus(factory.maxLevel to AlphaBetaSpeedMode.SLOW)
-            } else {
-                it.plus(factory.maxLevel to AlphaBetaSpeedMode.NORMAL)
-            }
-        }
-    }
-
-    fun <T: Any> createAlphaBetaAIs(events: EventSystem, factory: AlphaBetaAIFactory<T>) {
-        val repo = repositoryForGameType<T>(factory.gameType)
-        repo.alphaBetaAIs[factory.namePrefix] = factory
-        val abFactory = AIFactoryAlphaBeta()
-        alphaBetaConfigurations(factory).forEach {
-            abFactory.createAlphaBetaAI(factory, events, it.first, it.second)
-        }
-    }
-
     fun analyze(gameType: String, game: Game<Any>, aiName: String, playerIndex: Int): AIAnalyzeResult? {
         // Find AI in all AI types
         val gameTypeRepo = repositoryForGameType<Any>(gameType)
@@ -77,7 +56,7 @@ class AIRepository {
 
         val alphaBetaConfig = gameTypeRepo.alphaBetaAIs.entries.mapNotNull {entry ->
             val factory = entry.value
-            val configs = alphaBetaConfigurations(factory)
+            val configs = factory.configurations
             val config = configs.find { factory.aiName(it.first, it.second) == aiName }
             if (config != null) {
                 AIAlphaBetaConfig(factory, config.first, config.second)
@@ -91,10 +70,7 @@ class AIRepository {
 
     fun queryableAIs(gameType: String): List<String> {
         val gameTypeRepo = repositoryForGameType<Any>(gameType)
-        val abNames = gameTypeRepo.alphaBetaAIs.flatMap {factory ->
-            val abConfig = alphaBetaConfigurations(factory.value)
-            abConfig.map { factory.value.aiName(it.first, it.second) }
-        }
+        val abNames = gameTypeRepo.alphaBetaAIs.flatMap { it.value.names }
         return gameTypeRepo.scoringAIs.keys.sorted() + abNames
     }
 
@@ -132,6 +108,24 @@ class AIRepository {
                 val action =  gameTypes.getValue(serverGame.gameType.type).invoke(controllerContext)
                 if (action != null) PlayerGameMoveRequest(client, serverGame, playerIndex, action.actionType, action.parameter, false)
                 else null
+            }.register(events)
+        }
+
+        val alphaBetas = ServerAlphaBetaAIs.ais()
+        alphaBetas.flatMap { it.names }.distinct().forEach { name ->
+            val gameTypes = alphaBetas.filter { it.names.contains(name) }.map { it.gameType }
+            ServerAI(gameTypes, name, { _, _ -> null }) {
+                val factory = alphaBetas.first { it.gameType == serverGame.gameType.type } as AlphaBetaAIFactory<Any>
+                val configuration = factory.configurations.first { factory.aiName(it.first, it.second) == name }
+                val alphaBetaConfig = AIAlphaBetaConfig(factory, configuration.first, configuration.second)
+                val model = serverGame.obj!!
+                if (noAvailableActions(model, playerIndex)) {
+                    return@ServerAI null
+                }
+
+                val options = alphaBetaConfig.evaluateActions(model, playerIndex)
+                val move = options.bestOf { it.second }.random()
+                return@ServerAI PlayerGameMoveRequest(client, serverGame, playerIndex, move.first.actionType, move.first.parameter, false)
             }.register(events)
         }
     }

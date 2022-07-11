@@ -1,15 +1,10 @@
 package net.zomis.games.server2.ais
 
-import klog.KLoggers
 import kotlinx.coroutines.runBlocking
-import net.zomis.bestBy
 import net.zomis.common.pmap
-import net.zomis.core.events.EventSystem
 import net.zomis.games.ais.AlphaBeta
-import net.zomis.games.ais.noAvailableActions
 import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.impl.Game
-import net.zomis.games.server2.games.PlayerGameMoveRequest
 
 data class AIAlphaBetaConfig<T: Any>(val factory: AlphaBetaAIFactory<T>, val level: Int, val speedMode: AlphaBetaSpeedMode) {
 
@@ -58,27 +53,6 @@ data class AIAlphaBetaConfig<T: Any>(val factory: AlphaBetaAIFactory<T>, val lev
             } else factory.heuristic(it, playerIndex)
         }
         return AlphaBeta(actions, branching, terminalState, heuristic2, speedMode.depthRemainingBonus)
-    }
-
-}
-class AIFactoryAlphaBeta {
-
-    private val logger = KLoggers.logger(this)
-
-    fun <S: Any> createAlphaBetaAI(factory: AlphaBetaAIFactory<S>, events: EventSystem, depth: Int, speedMode: AlphaBetaSpeedMode) {
-        val alphaBetaConfig = AIAlphaBetaConfig(factory, depth, speedMode)
-        ServerAI(listOf(factory.gameType), factory.aiName(depth, speedMode), listenerFactory = { _, _ -> null }) {
-            val model = serverGame.obj!! as Game<S>
-            if (noAvailableActions(model, playerIndex)) {
-                return@ServerAI null
-            }
-
-            logger.info { "Evaluating AlphaBeta options for ${factory.gameType} $depth" }
-
-            val options = alphaBetaConfig.evaluateActions(model, playerIndex)
-            val move = options.bestBy { it.second }.random()
-            return@ServerAI PlayerGameMoveRequest(client, serverGame, playerIndex, move.first.actionType, move.first.parameter, false)
-        }.register(events)
     }
 
 }
