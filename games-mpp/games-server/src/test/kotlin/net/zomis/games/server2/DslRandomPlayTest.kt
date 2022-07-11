@@ -8,14 +8,11 @@ import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.ConsoleView
 import net.zomis.games.dsl.GameEntryPoint
 import net.zomis.games.dsl.GamesImpl
-import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.dsl.impl.GameControllerContext
 import net.zomis.games.dsl.impl.GameControllerScope
 import net.zomis.games.impl.*
 import net.zomis.games.impl.words.Decrypto
 import net.zomis.games.server2.ais.ServerAIs
-import net.zomis.games.server2.ais.gamescorers.DecryptoScorers
-import net.zomis.games.server2.ais.gamescorers.SplendorScorers
 import net.zomis.games.server2.ais.serialize
 import net.zomis.games.server2.clients.WSClient
 import net.zomis.games.server2.clients.getText
@@ -29,8 +26,6 @@ import org.junit.jupiter.params.provider.MethodSource
 import java.lang.RuntimeException
 import java.net.URI
 import java.util.UUID
-import kotlin.random.Random
-import kotlin.reflect.KClass
 
 class DslRandomPlayTest {
 
@@ -38,7 +33,6 @@ class DslRandomPlayTest {
 
     var server: Server2? = null
     val config = testServerConfig()
-    val random = Random.Default
 
     @BeforeEach
     fun startServer() {
@@ -72,20 +66,10 @@ class DslRandomPlayTest {
         }
     }
 
-    fun randomSetMove(context: GameControllerScope<SetGameModel>): Actionable<SetGameModel, Any>? {
-        return if (random.nextBoolean()) {
-            context.model.findSets(context.model.board.cards).firstOrNull()?.let {
-                context.game.actions[SetGame.callSet.name]!!.createAction(context.playerIndex, SetAction(it.map { c -> c.toStateString() }))
-            }!!
-        } else {
-            ServerAIs.randomActionable(context.game, context.playerIndex)
-        }
-    }
-
-    val playingMap = mapOf<KClass<*>, GameController<*>>(
-        Decrypto.Model::class to { ctx -> DecryptoScorers.noChat.createController().invoke(ctx as GameControllerScope<Decrypto.Model>) },
-        SetGameModel::class to { context: GameControllerScope<*> -> randomSetMove(context as GameControllerScope<SetGameModel>) },
-        SplendorGame::class to { ctx -> SplendorScorers.aiBuyFirst.createController().invoke(ctx as GameControllerScope<SplendorGame>) }
+    val playingMap = mapOf(
+        Decrypto.game.name to "#AI_NoChat",
+        SetGame.game.name to "#AI_SetCheat50",
+        DslSplendor.splendorGame.name to "#AI_BuyFirst"
     )
 
     @ParameterizedTest(name = "Random play {0} with {1} players")
@@ -191,10 +175,12 @@ class DslRandomPlayTest {
             }
             val actions: List<PlayerGameMoveRequest> = players.mapNotNull {playerClient ->
                 val playerIndex = playerClient.first
-                val moveHandler = playingMap[gameImpl.model::class]
+                val moveHandler = playingMap[gameImpl.gameType]
                 if (moveHandler != null) {
                     val controllerContext = GameControllerContext(gameImpl, playerIndex)
-                    moveHandler.invoke(controllerContext)?.let {
+                    val ai = gameType.setup().findAI(moveHandler)
+                        ?: throw IllegalArgumentException("Missing AI: $moveHandler for game ${gameImpl.gameType}")
+                    ai.invoke(controllerContext)?.let {
                         val serialized = gameImpl.actions.type(it.actionType)!!.actionType.serialize(it.parameter)
                         PlayerGameMoveRequest(game.highestAccessTo(playerIndex)!!, game, playerIndex, it.actionType, serialized, true)
                     }

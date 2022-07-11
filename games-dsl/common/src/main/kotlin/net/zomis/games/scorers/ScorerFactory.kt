@@ -36,7 +36,7 @@ interface ScorerScope<T : Any, A: Any> {
 class ScorerFactory<T : Any>(val gameType: String, private val addScorer: (Scorer<T, Any>) -> Unit = {}, private val addAI: (ScorerController<T>) -> Unit = {}) {
 
     fun <A> provider(provider: (ScorerContext<T>) -> A?): ScorerAnalyzeProvider<T, A> = provider
-    fun isAction(action: ActionType<T, *>): Scorer<T, Any> = this.action(action) { 1.0 }.also(addScorer)
+    fun isAction(action: ActionType<T, *>): Scorer<T, Any> = this.action(action) { 1.0 }
     fun <A: Any> action(action: ActionType<T, A>, function: ScoreFunction<T, A>): Scorer<T, Any> {
         return Scorer<T, Any> { if (this.action.actionType == action.name) function(this as ScorerScope<T, A>) else null }.also {
             addScorer(it)

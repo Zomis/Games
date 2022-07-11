@@ -2,6 +2,7 @@ package net.zomis.games.impl
 
 import net.zomis.games.dsl.GameCreator
 import net.zomis.games.dsl.flow.GameFlowStepScope
+import net.zomis.games.impl.paths.URScorers
 import net.zomis.games.ur.RoyalGameOfUr
 
 object DslUR {
@@ -56,6 +57,7 @@ object DslUR {
                 }
             }
         }
+        URScorers(scorers).ais()
     }
 
 }

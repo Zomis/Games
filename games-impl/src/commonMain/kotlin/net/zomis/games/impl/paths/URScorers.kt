@@ -1,39 +1,35 @@
-package net.zomis.games.server2.ais.gamescorers
+package net.zomis.games.impl.paths
 
-import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.impl.DslUR
 import net.zomis.games.scorers.ScorerAnalyzeProvider
-import net.zomis.games.scorers.ScorerController
+import net.zomis.games.scorers.ScorerFactory
 import net.zomis.games.ur.RoyalGameOfUr
-import java.util.function.IntUnaryOperator
 
-object URScorers {
-
-    val scorers = GamesImpl.game(DslUR.gameUR).scorers()
+class URScorers(val scorers: ScorerFactory<RoyalGameOfUr>) {
 
     fun ais() = listOf(
-            scorers.ai("#AI_KFE521S3",
-                knockout.weight(5), gotoFlower.weight(2), gotoSafety.weight(0.1),
-                leaveSafety.weight(-0.1), riskOfBeingTakenThere.weight(-0.1), exit
-            ),
-            monteCarloSimulatingAI(),
-            scorers.ai("#AI_Horrible",
-                knockout.weight(-5), gotoFlower.weight(-2), riskOfBeingTakenThere.weight(0.1), exit.weight(-1)
-            ),
-            scorers.ai("#AI_KnockoutAndFlower",
-                knockout.weight(5), gotoFlower.weight(2)
-            )
+        scorers.ai("#AI_KFE521S3",
+            knockout.weight(5), gotoFlower.weight(2), gotoSafety.weight(0.1),
+            leaveSafety.weight(-0.1), riskOfBeingTakenThere.weight(-0.1), exit
+        ),
+        monteCarloSimulatingAI(),
+        scorers.ai("#AI_Horrible",
+            knockout.weight(-5), gotoFlower.weight(-2), riskOfBeingTakenThere.weight(0.1), exit.weight(-1)
+        ),
+        scorers.ai("#AI_KnockoutAndFlower",
+            knockout.weight(5), gotoFlower.weight(2)
+        )
 /*            scorers.ai("#AI_MonteCarlo",
                 monteCarloScorer(monteCarloProvider(1000, monteCarloSimulatingAI()))
             )*/
-        )
-/*
-    fun monteCarloProvider(fights: Int, simulatingAI: ScorerController<RoyalGameOfUr>) = scorers.provider { ctx ->
-        println("Invoking MonteCarloProvider for $fights fights")
-        val monteCarloAI = URScorerMonteCarlo(fights, simulatingAI)
-        monteCarloAI.positionToMove(ctx.model)
-    }
-*/
+    )
+    /*
+        fun monteCarloProvider(fights: Int, simulatingAI: ScorerController<RoyalGameOfUr>) = scorers.provider { ctx ->
+            println("Invoking MonteCarloProvider for $fights fights")
+            val monteCarloAI = URScorerMonteCarlo(fights, simulatingAI)
+            monteCarloAI.positionToMove(ctx.model)
+        }
+    */
     fun monteCarloScorer(provider: ScorerAnalyzeProvider<RoyalGameOfUr, Int>) = scorers.actionConditional(DslUR.move) {
         val best = require(provider)!!
         best == action.parameter
@@ -63,13 +59,13 @@ object URScorers {
         action.parameter <= 4 && next > 4
     }
     val riskOfBeingTakenHere = scorers.action(DslUR.move) {
-        val positionToTakePossible = IntUnaryOperator { roll: Int ->
+        val positionToTakePossible: (Int) -> Int = { roll: Int ->
             if (model.canKnockout(action.parameter) && model.playerOccupies(model.opponentPlayer, action.parameter - roll)) 1 else 0
         }
-        val take1 = positionToTakePossible.applyAsInt(1) * 4.0 / 16.0
-        val take2 = positionToTakePossible.applyAsInt(2) * 6.0 / 16.0
-        val take3 = positionToTakePossible.applyAsInt(3) * 4.0 / 16.0
-        val take4 = positionToTakePossible.applyAsInt(4) * 1.0 / 16.0
+        val take1 = positionToTakePossible(1) * 4.0 / 16.0
+        val take2 = positionToTakePossible(2) * 6.0 / 16.0
+        val take3 = positionToTakePossible(3) * 4.0 / 16.0
+        val take4 = positionToTakePossible(4) * 1.0 / 16.0
         take1 + take2 + take3 + take4
     }
     val riskOfBeingTakenThere = scorers.action(DslUR.move) {
@@ -83,10 +79,10 @@ object URScorers {
          * Create a copy of board and analyze risk of being taken.
          * Remember that 1/16, 4/16, 6/16, 4/16, 1/16
          */
-        val take1 = canTakeWithRoll(copy, 1) * 4.0 / 16.0;
-        val take2 = canTakeWithRoll(copy, 2) * 6.0 / 16.0;
-        val take3 = canTakeWithRoll(copy, 3) * 4.0 / 16.0;
-        val take4 = canTakeWithRoll(copy, 4) * 1.0 / 16.0;
+        val take1 = canTakeWithRoll(copy, 1) * 4.0 / 16.0
+        val take2 = canTakeWithRoll(copy, 2) * 6.0 / 16.0
+        val take3 = canTakeWithRoll(copy, 3) * 4.0 / 16.0
+        val take4 = canTakeWithRoll(copy, 4) * 1.0 / 16.0
         take1 + take2 + take3 + take4
     }
     private fun canTakeWithRoll(ur: RoyalGameOfUr, roll: Int): Double {

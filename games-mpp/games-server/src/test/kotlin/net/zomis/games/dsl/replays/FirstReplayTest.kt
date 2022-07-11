@@ -7,11 +7,11 @@ import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.impl.DslSplendor
+import net.zomis.games.impl.SplendorGame
 import net.zomis.games.impl.ttt.DslTTT
 import net.zomis.games.impl.ttt.ultimate.TTController
 import net.zomis.games.listeners.PlayerController
 import net.zomis.games.listeners.ReplayListener
-import net.zomis.games.server2.ais.gamescorers.SplendorScorers
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -69,7 +69,7 @@ class FirstReplayTest {
     fun `Game with AI and replayable randomness`() = runTest {
         val entryPoint = GamesImpl.game(DslSplendor.splendorGame)
         val replayListener = ReplayListener(entryPoint.gameType)
-        val controller = SplendorScorers.aiBuyFirst.createController() as GameController<Any>
+        val controller = entryPoint.setup().findAI("#AI_BuyFirst")!! as GameController<Any>
         println("creating game")
         val game = entryPoint.setup().startGame(this, 3) {
             println("creating listeners")

@@ -6,16 +6,16 @@ import net.zomis.games.dsl.impl.GameControllerContext
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.impl.DslSplendor
-import net.zomis.games.server2.ais.gamescorers.SplendorScorers
 
 class AIPlayTest {
 
-    suspend fun hanabi(coroutineScope: CoroutineScope) {
+    suspend fun playTest(coroutineScope: CoroutineScope) {
 //        val gameAndAI = HanabiGame.game to HanabiScorers.aiSecond()
-        val gameAndAI = DslSplendor.splendorGame to SplendorScorers.aiBuyFirst
-
-        val controller = gameAndAI.second.createController()
+        val gameAndAI = DslSplendor.splendorGame to "#AI_BuyFirst"
         val setup = GameSetupImpl(gameAndAI.first)
+        val controller = setup.findAI(gameAndAI.second)
+            ?: throw IllegalArgumentException("No AI found: ${gameAndAI.second} for game ${gameAndAI.first.name}")
+
         val blocking = BlockingGameListener()
         val game = setup.startGame(coroutineScope, 2) {
             listOf(blocking)
@@ -36,6 +36,6 @@ class AIPlayTest {
 
 suspend fun main() {
     coroutineScope {
-        AIPlayTest().hanabi(this)
+        AIPlayTest().playTest(this)
     }
 }

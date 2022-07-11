@@ -170,6 +170,11 @@ object Decrypto {
                 }
             }
         }
+        val noChatScorer = scorers.isAction(chat)
+        val giveClue = scorers.isAction(giveClue)
+        val guess = scorers.isAction(guessCode)
+
+        scorers.ai("#AI_NoChat", noChatScorer.weight(-1), giveClue, guess)
     }
 
     private fun randomCode(): List<Int> = mutableListOf(1, 2, 3, 4).shuffled().take(3)

@@ -35,8 +35,12 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
     val useRandomAI = context.useRandomAI
     val scorers: List<Scorer<T, out Any>> get() = context.createdScorers
     val scorerAIs: List<ScorerController<T>> get() = context.createdAIs
-    val ais: List<GameController<T>> get() = context.createdAIs.map { it.createController() }
+    val otherAIs: List<Pair<String, GameController<T>>> get() = context.otherAIs
     val playersCount: IntRange = context.model.playerCount
+    fun findAI(name: String): GameController<T>? {
+        return scorerAIs.find { it.name == name }?.createController()
+            ?: otherAIs.find { it.first == name }?.second
+    }
 
     fun configs(): GameConfigs = context.configs()
 

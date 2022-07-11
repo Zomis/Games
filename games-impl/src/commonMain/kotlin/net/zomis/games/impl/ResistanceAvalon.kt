@@ -358,6 +358,21 @@ object ResistanceAvalonGame {
                 }
             }
         }
+        val voteTrue = scorers.actionConditional(vote) { action.parameter }
+        val performTrue = scorers.actionConditional(performMission) { action.parameter }
+        val voteGoodCheat = scorers.actionConditional(vote) { action.parameter == model.voteTeam!!.team.all { it.character!!.good } }
+        val voteAccordinglyCheat = scorers.actionConditional(vote) {
+            val iAmGood = model.players[playerIndex].character!!.good
+            val chosenAction = model.voteTeam!!.team.all { it.character!!.good } == iAmGood
+            action.parameter == chosenAction
+        }
+        val performAccordingly = scorers.actionConditional(performMission) { action.parameter == model.players[playerIndex].character!!.good }
+
+        scorers.ai("#AI_Good", voteTrue, performTrue)
+        scorers.ai("#AI_Negative", voteTrue.weight(-1), performTrue.weight(-1))
+        scorers.ai("#AI_Good_Cheat", voteGoodCheat, performTrue)
+        scorers.ai("#AI_Accordingly_Cheat", voteAccordinglyCheat, performAccordingly)
+        scorers.ai("#AI_Accordingly_Cheat_Traitor", voteAccordinglyCheat.weight(-1), performAccordingly.weight(-1))
     }
 
 }

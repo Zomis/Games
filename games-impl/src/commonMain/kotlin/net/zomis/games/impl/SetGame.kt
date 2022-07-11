@@ -1,8 +1,11 @@
 package net.zomis.games.impl
 
 import net.zomis.games.cards.CardZone
+import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.GameCreator
 import net.zomis.games.dsl.ReplayableScope
+import net.zomis.games.dsl.impl.GameControllerScope
+import kotlin.random.Random
 
 data class SetPiece(val count: Int, val shape: String, val filling: String, val color: String) {
     fun toStateString(): String {
@@ -236,6 +239,26 @@ object SetGame {
                 game.board.map { it.toMap() }
             }
         }
+
+        val random = Random.Default
+        fun randomSetMove(context: GameControllerScope<SetGameModel>): Actionable<SetGameModel, Any> {
+            return if (random.nextBoolean()) {
+                context.model.findSets(context.model.board.cards).firstOrNull()?.let {
+                    context.game.actions[callSet.name]!!.createAction(context.playerIndex, SetAction(it.map { c -> c.toStateString() }))
+                }!!
+            } else {
+                val randoms = context.model.board.cards.shuffled(random).take(3)
+                context.game.actions[callSet.name]!!.createAction(context.playerIndex, SetAction(randoms.map { c -> c.toStateString() }))
+            }
+        }
+        val isSetScorer = scorers.actionConditional(callSet) {
+            val cards = model.stringsToCards(action.parameter.set)
+            val setResult = model.setCardsResult(cards)
+            setResult.validSet
+        }
+
+        scorers.ai("#AI_SetFinder", isSetScorer)
+        this.ai("#AI_SetCheat50") { randomSetMove(it) }
     }
 
 }

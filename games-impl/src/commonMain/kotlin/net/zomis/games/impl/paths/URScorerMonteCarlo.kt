@@ -1,4 +1,4 @@
-package net.zomis.games.server2.ais.gamescorers
+package net.zomis.games.impl.paths
 /*
 import klog.KLoggers
 import net.zomis.games.dsl.Action

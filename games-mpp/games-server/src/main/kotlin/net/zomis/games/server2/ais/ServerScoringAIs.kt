@@ -7,13 +7,6 @@ import net.zomis.games.server2.games.GameTypeRegisterEvent
 class ServerScoringAIs(private val aiRepository: AIRepository) {
     fun setup(events: EventSystem) {
         listOf(
-            CoupScorers.ais(),
-            SplendorScorers.ais(),
-            SetScorers.ais(),
-            AvalonScorers.ais(),
-            DungeonMayhemScorers.ais(), SkullScorers.ais(),
-            URScorers.ais(),
-            ArtaxScorers.ais(),
             LiarsDiceScorer.ais(),
             HanabiScorers.ais()
         ).flatten().groupBy { it.gameType }.forEach { entry ->

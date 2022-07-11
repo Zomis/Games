@@ -390,6 +390,15 @@ object DslSplendor {
                 }
             }
         }
+
+        val buyCard = scorers.isAction(buy)
+        val buyReserved = scorers.isAction(buyReserved)
+        val takeMoneyNeeded = scorers.action(takeMoney) { action.parameter.moneys.size.toDouble() }
+        val reserve = scorers.isAction(reserve)
+        val discard = scorers.isAction(discardMoney)
+
+        scorers.ai("#AI_BuyFirst",
+            buyCard, buyReserved, reserve.weight(-1), takeMoneyNeeded.weight(0.1), discard)
     }
 
     private fun replaceCard(replayable: ReplayableScope, game: SplendorGame, card: SplendorCard) {

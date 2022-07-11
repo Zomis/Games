@@ -68,7 +68,6 @@ object ServerAIs {
             }, 1000, TimeUnit.MILLISECONDS)
         })
 //        ServerAlphaBetaAIs(aiRepository).setup(events)
-//        ServerScoringAIs(aiRepository).setup(events)
     }
 
 }

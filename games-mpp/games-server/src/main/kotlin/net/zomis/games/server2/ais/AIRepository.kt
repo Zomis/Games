@@ -4,6 +4,7 @@ import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.impl.Game
+import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.dsl.impl.GameControllerContext
 import net.zomis.games.scorers.ScorerController
 import net.zomis.games.server2.Client
@@ -113,6 +114,22 @@ class AIRepository {
                 val obj = serverGame.obj!!
                 val controllerContext = GameControllerContext(obj, playerIndex)
                 val action = gameTypes.getValue(serverGame.gameType.type).invoke(controllerContext)
+                if (action != null) PlayerGameMoveRequest(client, serverGame, playerIndex, action.actionType, action.parameter, false)
+                else null
+            }.register(events)
+        }
+
+        data class OtherAI(val gameType: String, val name: String, val controller: GameController<Any>)
+        val otherAIs = setups.flatMap { setup ->
+            setup.otherAIs.map { OtherAI(setup.gameType, it.first, it.second) }
+        }
+        otherAIs.groupBy { it.name }.forEach { (name, list) ->
+            val gameTypes = list.associate { it.gameType to it.controller }
+
+            ServerAI(gameTypes.keys.toList(), name, { _, _ -> null }) {
+                val obj = serverGame.obj!!
+                val controllerContext = GameControllerContext(obj, playerIndex)
+                val action =  gameTypes.getValue(serverGame.gameType.type).invoke(controllerContext)
                 if (action != null) PlayerGameMoveRequest(client, serverGame, playerIndex, action.actionType, action.parameter, false)
                 else null
             }.register(events)

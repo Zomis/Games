@@ -429,5 +429,27 @@ object DungeonMayhemDsl {
                 }
             }
         }
+
+        fun symbolCount(symbol: DungeonMayhemSymbol) = scorers.action(play) {
+            action.parameter.symbols.count { it == symbol }.toDouble()
+        }
+        val anyTarget = scorers.isAction(target)
+        val targetWeakShields = scorers.action(target) {
+            if (action.parameter.shieldCard != null)
+                1 - 0.01 * action.game.players[action.parameter.player].shields[action.parameter.shieldCard!!].card.health.toDouble()
+            else 0.0
+        }
+        val targetHighPlayerIndex = scorers.action(target) {
+            1 + 0.01 * action.parameter.player.toDouble()
+        }
+        val targetPlayerLowHealth = scorers.action(target) {
+            1 - 0.01 * action.game.players[action.parameter.player].health.toDouble()
+        }
+        
+        scorers.ai("#AI_Play_Again", symbolCount(DungeonMayhemSymbol.PLAY_AGAIN), anyTarget)
+        scorers.ai("#AI_Attack",
+            symbolCount(DungeonMayhemSymbol.PLAY_AGAIN).weight(10), symbolCount(DungeonMayhemSymbol.ATTACK),
+            targetWeakShields, targetPlayerLowHealth.weight(10), anyTarget
+        )
     }
 }

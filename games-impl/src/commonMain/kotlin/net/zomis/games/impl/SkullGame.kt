@@ -210,6 +210,27 @@ object SkullGame {
                 }
             }
         }
+
+        val playFlower = scorers.actionConditional(play) { action.parameter == SkullCard.FLOWER }
+        val playSkull = scorers.actionConditional(play) { action.parameter == SkullCard.SKULL }
+        val betHigh = scorers.action(bet) { 1.1 + (action.parameter).toDouble() / 100 }
+        val betLow = scorers.action(bet) { 1.1 + -(action.parameter).toDouble() / 100 }
+        val betMinimal = scorers.actionConditional(bet) { action.parameter == action.game.currentBet() + 1 }
+        val play = scorers.isAction(play)
+        val chooseAny = scorers.isAction(choose)
+        val pass = scorers.isAction(pass)
+        val discardFlower = scorers.actionConditional(discard) { action.parameter == SkullCard.FLOWER }
+        val discardFirstTwoFlowers = scorers.actionConditional(discard) { action.parameter == SkullCard.FLOWER && action.game.currentPlayer.hand.size > 2 }
+        val discardSkullLast = scorers.actionConditional(discard) { action.parameter == SkullCard.SKULL && action.game.currentPlayer.hand.size == 2 }
+        val choose = scorers.action(choose) { action.parameter.index.toDouble() }
+
+        scorers.ai("#AI_Reasonable",
+            play, betMinimal, pass, discardFirstTwoFlowers, discardSkullLast, chooseAny
+        )
+        scorers.ai("#AI_Self_Destruct", playSkull, betHigh.weight(10), discardFlower)
+        scorers.ai("#AI_Play_Random_Pass", play.weight(0.1), pass, betLow)
+        scorers.ai("#AI_Flower_Pass", playFlower.weight(20), pass.weight(10), betLow)
+        scorers.ai("#AI_Keep_Playing", play.weight(10), pass.weight(0.1), betLow)
     }
 
 }
