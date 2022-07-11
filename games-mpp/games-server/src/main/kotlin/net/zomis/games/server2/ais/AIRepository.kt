@@ -8,6 +8,7 @@ import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.dsl.impl.GameControllerContext
+import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.scorers.ScorerController
 import net.zomis.games.server2.Client
 import net.zomis.games.server2.games.PlayerGameMoveRequest
@@ -76,12 +77,20 @@ class AIRepository {
 
     fun createAIs(events: EventSystem, games: Collection<GameSpec<Any>>) {
         val setups = games.map { GamesImpl.game(it).setup() }
+        createRandomAI(setups, events)
+        createScoringAIs(setups, events)
+        createOtherAIs(setups, events)
+        createAlphaBetaAIs(events)
+    }
 
+    private fun createRandomAI(setups: List<GameSetupImpl<Any>>, events: EventSystem) {
         val randomAIs = setups.filter { it.useRandomAI }
         ServerAI(randomAIs.map { it.gameType }, "#AI_Random", { _, _ -> null }) {
             ServerAIs.randomAction(serverGame, client, playerIndex)
         }.register(events)
+    }
 
+    private fun createScoringAIs(setups: List<GameSetupImpl<Any>>, events: EventSystem) {
         // Take all AIs, group by name. Then group by gameType
         setups.flatMap { it.scorerAIs }.groupBy { it.name }.forEach { (name, list) ->
             val gameTypes = list.associate { it.gameType to it.createController() }
@@ -94,7 +103,8 @@ class AIRepository {
                 else null
             }.register(events)
         }
-
+    }
+    private fun createOtherAIs(setups: List<GameSetupImpl<Any>>, events: EventSystem) {
         data class OtherAI(val gameType: String, val name: String, val controller: GameController<Any>)
         val otherAIs = setups.flatMap { setup ->
             setup.otherAIs.map { OtherAI(setup.gameType, it.first, it.second) }
@@ -110,7 +120,8 @@ class AIRepository {
                 else null
             }.register(events)
         }
-
+    }
+    private fun createAlphaBetaAIs(events: EventSystem) {
         val alphaBetas = ServerAlphaBetaAIs.ais()
         alphaBetas.flatMap { it.names }.distinct().forEach { name ->
             val gameTypes = alphaBetas.filter { it.names.contains(name) }.map { it.gameType }
