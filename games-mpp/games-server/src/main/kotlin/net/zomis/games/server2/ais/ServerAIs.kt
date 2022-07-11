@@ -5,16 +5,13 @@ import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.server2.Client
-import net.zomis.games.server2.games.GameTypeRegisterEvent
 import net.zomis.games.server2.games.PlayerGameMoveRequest
 import net.zomis.games.server2.games.ServerGame
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
-class ServerAIs(private val aiRepository: AIRepository, private val dslGameTypes: Set<String>) {
+object ServerAIs {
     private val logger = KLoggers.logger(this)
-
-    fun isDSLGameType(gameType: String) = dslGameTypes.contains(gameType)
 
     fun <T: Any> randomActionable(game: Game<T>, playerIndex: Int): Actionable<T, Any>? {
         val actionTypes = game.actions.types().filter { it.availableActions(playerIndex, null).any() }
@@ -70,17 +67,8 @@ class ServerAIs(private val aiRepository: AIRepository, private val dslGameTypes
                 }
             }, 1000, TimeUnit.MILLISECONDS)
         })
-        events.listen("register AI Random for DSL Game", GameTypeRegisterEvent::class, { isDSLGameType(it.gameType) }, {event ->
-            if (event.gameSpec.name == "Set") {
-                // Do not add Random AI for Set game because of it playing continuously
-                return@listen
-            }
-            ServerAI(event.gameType, "#AI_Random_" + event.gameType) {
-                return@ServerAI randomAction(serverGame, client, playerIndex)
-            }.register(events)
-        })
-        ServerAlphaBetaAIs(aiRepository).setup(events)
-        ServerScoringAIs(aiRepository).setup(events)
+//        ServerAlphaBetaAIs(aiRepository).setup(events)
+//        ServerScoringAIs(aiRepository).setup(events)
     }
 
 }

@@ -4,6 +4,7 @@ import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.dsl.flow.GameFlowRules
 import net.zomis.games.dsl.flow.GameFlowScope
+import net.zomis.games.scorers.ScorerFactory
 import kotlin.reflect.KClass
 
 data class ActionableOption(val actionType: String, val parameter: Any, val display: Any)
@@ -80,6 +81,7 @@ class GameConfigs(val configs: List<GameConfig<Any>>) {
 }
 
 interface GameDsl<T : Any> {
+    var useRandomAI: Boolean
     @Deprecated("use GameConfig class")
     fun <C : Any> setup(configClass: KClass<C>, modelDsl: GameModelDsl<T, C>)
     fun setup(modelDsl: GameModelDsl<T, Unit>)
@@ -88,6 +90,7 @@ interface GameDsl<T : Any> {
     fun gameFlow(flowDsl: GameFlowDsl<T>)
     fun gameFlowRules(flowRulesDsl: GameFlowRulesDsl<T>)
     fun <E: Any> config(key: String, default: () -> E): GameConfig<E>
+    val scorers: ScorerFactory<T>
 }
 
 class GameActionCreator<T : Any, A : Any>(

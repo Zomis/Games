@@ -9,7 +9,7 @@ import net.zomis.games.server2.games.PlayerGameMoveRequest
 class AIFactoryScoring {
 
     fun <T: Any> createAI(events: EventSystem, gameType: String, name: String, controller: GameController<T>) {
-        ServerAI(gameType, name) {
+        ServerAI(listOf(gameType), name, listenerFactory = { _, _ -> null }) {
             val obj = serverGame.obj!! as Game<T>
             val controllerContext = GameControllerContext(obj, playerIndex)
             val action = controller(controllerContext)

@@ -11,6 +11,11 @@ import kotlin.reflect.KClass
 interface GameListener {
     suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep)
 }
+
+fun interface GameListenerFactory {
+    fun createListener(game: Game<Any>, playerIndex: Int): GameListener?
+}
+
 fun GameListener.postReplay(replayData: ReplayData): GameListener
     = PostReplayListener(replayData, this)
 class PostReplayListener(replayData: ReplayData, private val delegate: GameListener): GameListener {
@@ -33,7 +38,7 @@ class GameEntryPoint<T : Any>(private val gameSpec: GameSpec<T>) {
 
     val gameType: String = gameSpec.name
     fun setup() = GameSetupImpl(gameSpec)
-    fun scorers() = ScorerFactory(gameSpec)
+    fun scorers() = ScorerFactory<T>(gameType)
 
     suspend fun replay(
         coroutineScope: CoroutineScope, replay: ReplayData,

@@ -706,6 +706,24 @@ object CoupRuleBased {
             expectEquals(2, game.players[1].coins)
             expectEquals(2, game.players[2].coins)
         }
+        // Scorers and AIs
+        val hasCharacter = scorers.actionConditional(perform) {
+            val claim = action.parameter.action.claim
+            claim == null || action.parameter.player.influence.cards.contains(claim)
+        }
+        val hasCharacterCounter = scorers.actionConditional(counter) {
+            val claim = action.parameter
+            action.game.players[action.playerIndex].influence.cards.contains(claim)
+        }
+        val trust = scorers.action(approve) { 1.0 }
+        val exchange = scorers.actionConditional(perform) { action.parameter.action == CoupActionType.EXCHANGE }
+        val counteract = scorers.action(counter) { 1.0 }
+        val challenge = scorers.action(challenge) { 1.0 }
+
+        scorers.ai("#AI_Truth", hasCharacter, hasCharacterCounter)
+        scorers.ai("#AI_Trust", hasCharacter, hasCharacterCounter, trust, exchange.weight(0.1))
+        scorers.ai("#AI_Good", hasCharacter, hasCharacterCounter, trust, exchange.weight(0.1), counteract.weight(-1), challenge.weight(-1))
+        scorers.ai("#AI_Trump", hasCharacter.weight(-1), hasCharacterCounter.weight(-1), trust.weight(-1), counteract.weight(1))
     }
 
 }

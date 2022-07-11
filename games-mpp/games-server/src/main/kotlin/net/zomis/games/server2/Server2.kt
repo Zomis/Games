@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
 import net.zomis.games.dsl.GameSpec
+import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.ais.TTTQLearn
@@ -173,7 +174,7 @@ class Server2(val events: EventSystem) {
         fun createGameCallback(gameType: String, options: InviteOptions): ServerGame
             = gameSystem.getGameType(gameType)!!.createGame(options)
 
-        val inviteSystem =  InviteSystem(
+        val inviteSystem = InviteSystem(
             gameClients = lobbySystem::gameClients,
             createGameCallback = ::createGameCallback,
             startGameExecutor = { events.execute(it) },
@@ -182,7 +183,7 @@ class Server2(val events: EventSystem) {
         messageRouter.route("invites", inviteSystem.router)
         messageRouter.route("testGames", TestGamesRoute(inviteSystem).router)
 
-        events.with { e -> ServerAIs(aiRepository, dslGames.keys.toSet()).register(e, executor) }
+        events.with { e -> ServerAIs.register(e, executor) }
 
         val kotlinScriptEngineFactory = KotlinJsr223JvmLocalScriptEngineFactory()
         events.listen("Kotlin script", ConsoleEvent::class, {it.input.startsWith("kt ")}, {
@@ -200,6 +201,7 @@ class Server2(val events: EventSystem) {
         events.listen("Start Javalin", StartupEvent::class, {true}, {javalin.start()})
 
         events.execute(StartupEvent(System.currentTimeMillis()))
+        aiRepository.createAIs(events, dslGames.values.map { it as GameSpec<Any> })
         return this
     }
 

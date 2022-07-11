@@ -1,9 +1,13 @@
 package net.zomis.games.server2.ais
 
 import net.zomis.core.events.EventSystem
+import net.zomis.games.dsl.GameSpec
+import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.impl.Game
+import net.zomis.games.dsl.impl.GameControllerContext
 import net.zomis.games.scorers.ScorerController
 import net.zomis.games.server2.Client
+import net.zomis.games.server2.games.GameTypeRegisterEvent
 import net.zomis.games.server2.games.PlayerGameMoveRequest
 import net.zomis.games.server2.games.ServerGame
 
@@ -91,6 +95,28 @@ class AIRepository {
             abConfig.map { factory.value.aiName(it.first, it.second) }
         }
         return gameTypeRepo.scoringAIs.keys.sorted() + abNames
+    }
+
+    fun createAIs(events: EventSystem, games: Collection<GameSpec<Any>>) {
+        val setups = games.map { GamesImpl.game(it).setup() }
+
+        val randomAIs = setups.filter { it.useRandomAI }
+        ServerAI(randomAIs.map { it.gameType }, "#AI_Random", { _, _ -> null }) {
+            ServerAIs.randomAction(serverGame, client, playerIndex)
+        }.register(events)
+
+        // Take all AIs, group by name. Then group by gameType
+        setups.flatMap { it.scorerAIs }.groupBy { it.name }.forEach { (name, list) ->
+            val gameTypes = list.associate { it.gameType to it.createController() }
+
+            ServerAI(gameTypes.keys.toList(), name, listenerFactory = { _, _ -> null }) {
+                val obj = serverGame.obj!!
+                val controllerContext = GameControllerContext(obj, playerIndex)
+                val action = gameTypes.getValue(serverGame.gameType.type).invoke(controllerContext)
+                if (action != null) PlayerGameMoveRequest(client, serverGame, playerIndex, action.actionType, action.parameter, false)
+                else null
+            }.register(events)
+        }
     }
 
 }

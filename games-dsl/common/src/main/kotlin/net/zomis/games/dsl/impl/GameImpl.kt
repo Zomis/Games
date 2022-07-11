@@ -7,6 +7,8 @@ import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.GameEvents
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
+import net.zomis.games.scorers.Scorer
+import net.zomis.games.scorers.ScorerController
 
 class GameControllerContext<T : Any>(
     override val game: Game<T>, override val playerIndex: Int
@@ -30,6 +32,10 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
         context.modelDsl(context.model)
     }
 
+    val useRandomAI = context.useRandomAI
+    val scorers: List<Scorer<T, out Any>> get() = context.createdScorers
+    val scorerAIs: List<ScorerController<T>> get() = context.createdAIs
+    val ais: List<GameController<T>> get() = context.createdAIs.map { it.createController() }
     val playersCount: IntRange = context.model.playerCount
 
     fun configs(): GameConfigs = context.configs()

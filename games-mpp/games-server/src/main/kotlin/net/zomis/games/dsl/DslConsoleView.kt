@@ -37,7 +37,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
                     FileReplay(file, replayListener).postReplay(replayData),
                     blockingGameListener,
                     PlayerController(g, 0.toSingleList()) { controller ->
-                        ServerAIs(AIRepository(), emptySet()).randomActionable(controller.game, controller.playerIndex)
+                        ServerAIs.randomActionable(controller.game, controller.playerIndex)
                     }.postReplay(replayData)
                 )
             }.goToEnd().awaitCatchUp()
@@ -74,7 +74,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
                     FileReplay(file, replayListener),
                     blockingGameListener,
                     PlayerController(g, 0.toSingleList()) { controller ->
-                        ServerAIs(AIRepository(), emptySet()).randomActionable(controller.game, controller.playerIndex)
+                        ServerAIs.randomActionable(controller.game, controller.playerIndex)
                     }
                 )
             }

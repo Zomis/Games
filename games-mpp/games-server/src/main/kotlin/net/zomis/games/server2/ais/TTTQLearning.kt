@@ -130,7 +130,9 @@ class TTTQLearn(val games: GameSystem) {
         if (true) return // Disabled until a better framework for it is in place
         learn.randomMoveProbability = 0.0
 
-        val serverAI = ServerAI(gameType, "#AI_QLearn_$gameType") {
+        val serverAI = ServerAI(listOf(gameType), "#AI_QLearn_$gameType", { game, playerIndex ->
+             null
+        }) {
             val controller = serverGame.obj!!
             val model = controller.model as TTController
             if (model.currentPlayer.index() != playerIndex) {

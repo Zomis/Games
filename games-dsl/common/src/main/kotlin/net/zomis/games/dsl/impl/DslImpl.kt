@@ -4,6 +4,9 @@ import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.flow.GameFlowImpl
+import net.zomis.games.scorers.Scorer
+import net.zomis.games.scorers.ScorerController
+import net.zomis.games.scorers.ScorerFactory
 import kotlin.reflect.KClass
 
 class GameModelContext<T: Any, C>(val configs: MutableList<GameConfig<Any>>) : GameModel<T, C> {
@@ -189,6 +192,7 @@ class GameDslContext<T : Any>(val gameType: String) : GameDsl<T> {
     var actionRulesDsl: GameActionRulesDsl<T>? = null
     private var configs = mutableListOf<GameConfig<Any>>()
     val testCases: MutableList<GameTestCaseContext<T>> = mutableListOf()
+    override var useRandomAI = true
 
     val model = GameModelContext<T, Any>(configs)
 
@@ -235,6 +239,10 @@ class GameDslContext<T : Any>(val gameType: String) : GameDsl<T> {
         this.configs.add(config as GameConfig<Any>)
         return config
     }
+
+    val createdScorers = mutableListOf<Scorer<T, out Any>>()
+    val createdAIs = mutableListOf<ScorerController<T>>()
+    override val scorers: ScorerFactory<T> = ScorerFactory(gameType, { createdScorers.add(it) }, {createdAIs.add(it) })
 
     fun configs(): GameConfigs = GameConfigs(configs.map { it.withDefaults() })
 

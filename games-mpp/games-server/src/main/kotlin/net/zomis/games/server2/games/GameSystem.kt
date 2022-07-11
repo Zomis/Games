@@ -118,9 +118,8 @@ class ServerGame(
     private fun actionControl(message: ClientJsonMessage) {
         if (message.data.get("control").asText() == "random") {
             // val playerIndex = message.data.get("playerIndex")
-            val ais = ServerAIs(AIRepository(), emptySet())
             val access = playerAccess(message.client).access.filter { it.value >= ClientPlayerAccessType.WRITE }.map { it.key }
-            val action = access.mapNotNull { ais.randomAction(this, message.client, it) }.takeIf { it.isNotEmpty() }?.random() ?: return
+            val action = access.mapNotNull { ServerAIs.randomAction(this, message.client, it) }.takeIf { it.isNotEmpty() }?.random() ?: return
             callback.moveHandler(action)
         }
     }

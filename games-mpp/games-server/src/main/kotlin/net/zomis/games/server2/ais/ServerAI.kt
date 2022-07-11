@@ -3,6 +3,7 @@ package net.zomis.games.server2.ais
 import com.fasterxml.jackson.databind.ObjectMapper
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
+import net.zomis.games.dsl.GameListenerFactory
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.server2.*
 import net.zomis.games.server2.games.*
@@ -14,7 +15,12 @@ data class DelayedAIMoves(val move: PlayerGameMoveRequest)
 
 val ServerAIProvider = "server-ai"
 
-class ServerAI(val gameType: String, val name: String, val perform: ServerGameAI) {
+class ServerAI(
+    val gameTypes: List<String>,
+    val name: String,
+    private val listenerFactory: GameListenerFactory,
+    val perform: ServerGameAI,
+) {
 
     private val logger = KLoggers.logger(this)
 
@@ -72,8 +78,9 @@ class ServerAI(val gameType: String, val name: String, val perform: ServerGameAI
         events.execute(ClientConnected(client))
         client.updateInfo(name, UUID.randomUUID())
         events.execute(ClientLoginEvent(client, name, name, ServerAIProvider, name))
+        client.listenerFactory = listenerFactory
         val interestingGames = mapper.readTree(mapper.writeValueAsString(mapOf("route" to "lobby/join",
-            "gameTypes" to listOf(gameType), "maxGames" to 100
+            "gameTypes" to gameTypes, "maxGames" to 100
         )))
         events.execute(ClientJsonMessage(client, interestingGames))
     }

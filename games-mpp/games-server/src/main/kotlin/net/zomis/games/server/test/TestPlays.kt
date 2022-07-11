@@ -310,10 +310,9 @@ object PlayTests {
                 if (replayable.game.isGameOver()) {
                     return false
                 }
-                val serverAIs = ServerAIs(AIRepository(), emptySet())
                 val players = (0 until replayable.game.playerCount).shuffled()
                 val action = players.firstNotNullOf {
-                    serverAIs.randomActionable(replayable.game, it)
+                    ServerAIs.randomActionable(replayable.game, it)
                 }
                 val serialized = replayable.game.actions.type(action.actionType)!!.actionType.serialize(action.parameter)
                 PlayTestStepPerform(action.playerIndex, action.actionType, serialized, emptyMap()) // state is filled in later

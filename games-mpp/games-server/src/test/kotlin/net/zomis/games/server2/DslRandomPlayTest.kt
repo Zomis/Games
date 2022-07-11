@@ -13,7 +13,6 @@ import net.zomis.games.dsl.impl.GameControllerContext
 import net.zomis.games.dsl.impl.GameControllerScope
 import net.zomis.games.impl.*
 import net.zomis.games.impl.words.Decrypto
-import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.ais.gamescorers.DecryptoScorers
 import net.zomis.games.server2.ais.gamescorers.SplendorScorers
@@ -39,7 +38,6 @@ class DslRandomPlayTest {
 
     var server: Server2? = null
     val config = testServerConfig()
-    val serverAIs = ServerAIs(AIRepository(), emptySet())
     val random = Random.Default
 
     @BeforeEach
@@ -80,7 +78,7 @@ class DslRandomPlayTest {
                 context.game.actions[SetGame.callSet.name]!!.createAction(context.playerIndex, SetAction(it.map { c -> c.toStateString() }))
             }!!
         } else {
-            serverAIs.randomActionable(context.game, context.playerIndex)
+            ServerAIs.randomActionable(context.game, context.playerIndex)
         }
     }
 
@@ -201,7 +199,7 @@ class DslRandomPlayTest {
                         PlayerGameMoveRequest(game.highestAccessTo(playerIndex)!!, game, playerIndex, it.actionType, serialized, true)
                     }
                 } else {
-                    serverAIs.randomAction(game, game.highestAccessTo(playerIndex)!!, playerIndex)
+                    ServerAIs.randomAction(game, game.highestAccessTo(playerIndex)!!, playerIndex)
                 }
             }.map { it.serialize(gameImpl) }
             if (actions.isEmpty()) {

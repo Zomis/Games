@@ -185,6 +185,7 @@ object SetGame {
     val factory = GameCreator(SetGameModel::class)
     val callSet = factory.action("set", SetAction::class)
     val game = factory.game("Set") {
+        useRandomAI = false
         setup(SetConfig::class) {
             players(1..16)
             defaultConfig {

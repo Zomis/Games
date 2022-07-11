@@ -18,7 +18,7 @@ class ScorerTest {
         // Unused in this test (so far)
     }
     val theGame = ScorerGame("Hello World!")
-    val testFactory = ScorerFactory<ScorerGame>(gameDsl)
+    val testFactory = ScorerFactory<ScorerGame>(gameDsl.name)
     val actionType = factory.action("Remove", String::class)
     val theAction = Action(theGame, 0, "Remove", "ae")
 
