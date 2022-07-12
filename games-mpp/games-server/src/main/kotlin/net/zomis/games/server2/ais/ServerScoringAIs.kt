@@ -9,13 +9,7 @@ class ServerScoringAIs(private val aiRepository: AIRepository) {
         listOf(
             LiarsDiceScorer.ais(),
             HanabiScorers.ais()
-        ).flatten().groupBy { it.gameType }.forEach { entry ->
-            events.listen("Register scoring AIs in ${entry.key}", GameTypeRegisterEvent::class, { it.gameType == entry.key }) {
-                entry.value.forEach {factory ->
-                    aiRepository.createScoringAI(events, factory)
-                }
-            }
-        }
+        )
     }
 
 }

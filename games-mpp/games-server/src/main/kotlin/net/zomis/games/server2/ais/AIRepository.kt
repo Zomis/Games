@@ -11,6 +11,7 @@ import net.zomis.games.dsl.impl.GameControllerContext
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.scorers.ScorerController
 import net.zomis.games.server2.Client
+import net.zomis.games.server2.ServerGames
 import net.zomis.games.server2.games.PlayerGameMoveRequest
 import net.zomis.games.server2.games.ServerGame
 
@@ -28,51 +29,31 @@ typealias ServerGameAI = ServerGameAIScope.() -> PlayerGameMoveRequest?
 
 class AIRepository {
 
-    private class AIRepositoryForGame<T: Any> {
-        val scoringAIs = mutableMapOf<String, ScorerController<T>>()
-        val alphaBetaAIs = mutableMapOf<String, AlphaBetaAIFactory<T>>()
-        val otherAIs = mutableMapOf<String, ServerGameAI>()
-    }
-    private val gameTypeAIs = mutableMapOf<String, AIRepositoryForGame<Any>>()
-
-    private fun <T: Any> repositoryForGameType(gameType: String): AIRepositoryForGame<T> {
-        gameTypeAIs.computeIfAbsent(gameType) { AIRepositoryForGame() }
-        return gameTypeAIs[gameType]!! as AIRepositoryForGame<T>
-    }
-
-    fun <T: Any> createScoringAI(events: EventSystem, factory: ScorerController<T>) {
-        val repo = repositoryForGameType<T>(factory.gameType)
-        repo.scoringAIs[factory.name] = factory
-        val scoringFactory = AIFactoryScoring()
-        scoringFactory.createAI(events, factory.gameType, factory.name, factory.createController())
-    }
-
     fun analyze(gameType: String, game: Game<Any>, aiName: String, playerIndex: Int): AIAnalyzeResult? {
         // Find AI in all AI types
-        val gameTypeRepo = repositoryForGameType<Any>(gameType)
-        val scoring = gameTypeRepo.scoringAIs[aiName]
+        val setup = ServerGames.setup(gameType) ?: return null
+
+        val scoring = setup.scorerAIs.find { it.name == aiName }
         if (scoring != null) {
             return AIAnalyze().scoring(game, scoring, playerIndex)
         }
 
-        val alphaBetaConfig = gameTypeRepo.alphaBetaAIs.entries.mapNotNull {entry ->
-            val factory = entry.value
-            val configs = factory.configurations
-            val config = configs.find { factory.aiName(it.first, it.second) == aiName }
-            if (config != null) {
-                AIAlphaBetaConfig(factory, config.first, config.second)
-            } else null
-        }.firstOrNull()
+        val alphaBetaFactory = ServerAlphaBetaAIs.ais().find { it.gameType == gameType }
+        val alphaBetaConfig = alphaBetaFactory?.configurations?.find { alphaBetaFactory.aiName(it.first, it.second) == aiName }?.let {
+            AIAlphaBetaConfig(alphaBetaFactory, it.first, it.second)
+        }
         if (alphaBetaConfig != null) {
-            return AIAnalyze().alphaBeta(game, alphaBetaConfig, playerIndex)
+            return AIAnalyze().alphaBeta(game, alphaBetaConfig as AIAlphaBetaConfig<Any>, playerIndex)
         }
         return null
     }
 
     fun queryableAIs(gameType: String): List<String> {
-        val gameTypeRepo = repositoryForGameType<Any>(gameType)
-        val abNames = gameTypeRepo.alphaBetaAIs.flatMap { it.value.names }
-        return gameTypeRepo.scoringAIs.keys.sorted() + abNames
+        val alphaBetaAIs = ServerAlphaBetaAIs.ais().filter { it.gameType == gameType }.flatMap {
+            it.configurations.map { conf -> it.aiName(conf.first, conf.second) }
+        }
+        val scoringAIs = ServerGames.setup(gameType)?.scorerAIs?.map { it.name } ?: emptyList()
+        return scoringAIs.sorted() + alphaBetaAIs.sorted()
     }
 
     fun createAIs(events: EventSystem, games: Collection<GameSpec<Any>>) {
