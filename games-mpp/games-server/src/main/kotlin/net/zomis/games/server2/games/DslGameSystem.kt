@@ -100,12 +100,18 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                             listener
                         }
                     } else GamesServer.Replays.noReplays()
+
+                val playerListeners = serverGame.players.mapValues { playerEntry ->
+                    playerEntry.value.access.filter { it.value >= ClientPlayerAccessType.WRITE }.map { it.key }
+                }.map { it.key.listenerFactory to it.value }
                 val game = entryPoint.setup().startGameWithConfig(this, serverGame.playerCount, serverGame.gameMeta.gameOptions) {game ->
                     listOf(
                         DslGameSystemListener(gameEvent.game, events, game),
                         serverGameListener(gameEvent.game, game),
                         appropriateReplayListener
-                    )
+                    ) + playerListeners.flatMap { playerListener ->
+                        playerListener.second.map { playerListener.first.createListener(game, it) }
+                    }.filterNotNull()
                 } as Game<Any>
                 serverGame.obj = game
                 logger.info { "Created game: $game" }
