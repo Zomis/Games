@@ -5,6 +5,7 @@ import net.zomis.games.api.GamesApi
 import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
+import net.zomis.games.listeners.NoOpListener
 import net.zomis.games.scorers.ScorerFactory
 import kotlin.reflect.KClass
 
@@ -61,5 +62,10 @@ object GamesImpl {
 
     val api = GamesApi
     fun <T : Any> game(gameSpec: GameSpec<T>) = GameEntryPoint(gameSpec)
+    val listeners = GameListeners
 
+}
+
+object GameListeners {
+    val noop = NoOpListener()
 }

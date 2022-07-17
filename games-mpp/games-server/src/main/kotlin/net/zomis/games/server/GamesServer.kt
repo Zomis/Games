@@ -15,7 +15,6 @@ object GamesServer {
     }
 
     object Replays {
-        fun fileRecordReplay(fileName: String): GameListener = TODO()
         fun database(dbIntegration: DBIntegration, serverGame: ServerGame): GameListener = object : GameListener {
             override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
                 when (step) {
@@ -24,10 +23,6 @@ object GamesServer {
                     is FlowStep.GameEnd -> { dbIntegration.superTable.finishGame(serverGame) }
                     is FlowStep.Elimination -> { dbIntegration.superTable.playerEliminated(serverGame, step) }
                 }
-            }
-        }
-        fun noReplays(): GameListener = object : GameListener {
-            override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
             }
         }
     }

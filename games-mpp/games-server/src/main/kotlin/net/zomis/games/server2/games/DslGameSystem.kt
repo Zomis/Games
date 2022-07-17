@@ -7,6 +7,7 @@ import kotlinx.coroutines.sync.withLock
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.*
+import net.zomis.games.listeners.NoOpListener
 import net.zomis.games.server.GamesServer
 import net.zomis.games.server2.StartupEvent
 import net.zomis.games.server2.db.DBIntegration
@@ -95,7 +96,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                         } else {
                             listener
                         }
-                    } else GamesServer.Replays.noReplays()
+                    } else GamesImpl.listeners.noop
 
                 val playerListeners = serverGame.players.mapValues { playerEntry ->
                     playerEntry.value.access.filter { it.value >= ClientPlayerAccessType.WRITE }.map { it.key }
