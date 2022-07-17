@@ -154,12 +154,11 @@ class Server2(val events: EventSystem) {
         if (config.useOAuth()) {
             LinAuth(javalin, config.githubConfig(), config.googleConfig()).register()
         }
-        val aiRepository = AIRepository()
         if (config.database) {
             val dbIntegration = DBIntegration()
             this.dbIntegration = dbIntegration
             features.add(dbIntegration::register)
-            LinReplay(aiRepository, dbIntegration).setup(javalin)
+            LinReplay(AIRepository, dbIntegration).setup(javalin)
             if (config.statsDB) {
                 LinStats(StatsDB(dbIntegration.superTable)).setup(events, javalin)
             }
@@ -201,7 +200,7 @@ class Server2(val events: EventSystem) {
         events.listen("Start Javalin", StartupEvent::class, {true}, {javalin.start()})
 
         events.execute(StartupEvent(System.currentTimeMillis()))
-        aiRepository.createAIs(events, dslGames.values.map { it as GameSpec<Any> })
+        AIRepository.createAIs(events, dslGames.values.map { it as GameSpec<Any> })
         return this
     }
 

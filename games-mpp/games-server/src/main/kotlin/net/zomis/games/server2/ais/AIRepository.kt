@@ -2,32 +2,31 @@ package net.zomis.games.server2.ais
 
 import net.zomis.bestOf
 import net.zomis.core.events.EventSystem
-import net.zomis.games.ais.noAvailableActions
+import net.zomis.games.dsl.GameListenerFactory
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.GamesImpl
-import net.zomis.games.dsl.impl.Game
-import net.zomis.games.dsl.impl.GameController
-import net.zomis.games.dsl.impl.GameControllerContext
-import net.zomis.games.dsl.impl.GameSetupImpl
-import net.zomis.games.scorers.ScorerController
+import net.zomis.games.dsl.impl.*
 import net.zomis.games.server2.Client
 import net.zomis.games.server2.ServerGames
 import net.zomis.games.server2.games.PlayerGameMoveRequest
 import net.zomis.games.server2.games.ServerGame
 
+@Deprecated("to be removed")
 interface ServerGameAIScope {
     val serverGame: ServerGame
     val playerIndex: Int
     val client: Client
 }
+@Deprecated("to be removed")
 class ServerGameAIContext(
     override val serverGame: ServerGame,
     override val playerIndex: Int,
     override val client: Client
 ): ServerGameAIScope
+@Deprecated("to be removed")
 typealias ServerGameAI = ServerGameAIScope.() -> PlayerGameMoveRequest?
 
-class AIRepository {
+object AIRepository {
 
     fun analyze(gameType: String, game: Game<Any>, aiName: String, playerIndex: Int): AIAnalyzeResult? {
         // Find AI in all AI types
@@ -65,61 +64,60 @@ class AIRepository {
     }
 
     private fun createRandomAI(setups: List<GameSetupImpl<Any>>, events: EventSystem) {
-        val randomAIs = setups.filter { it.useRandomAI }
-        ServerAI(randomAIs.map { it.gameType }, "#AI_Random", { _, _ -> null }) {
-            ServerAIs.randomAction(serverGame, client, playerIndex)
-        }.register(events)
+        val randomAI = GameAI<Any>("#AI_Random") {
+            action {
+                GameAIs.randomActionable(game, playerIndex)
+            }
+        }
+        val randomAIs = setups.filter { it.useRandomAI }.associate { it.gameType to randomAI }
+        ServerAI(randomAIs.keys.toList(), "#AI_Random", randomAIs.gameListenerFactory()).register(events)
     }
 
     private fun createScoringAIs(setups: List<GameSetupImpl<Any>>, events: EventSystem) {
         // Take all AIs, group by name. Then group by gameType
         setups.flatMap { it.scorerAIs }.groupBy { it.name }.forEach { (name, list) ->
-            val gameTypes = list.associate { it.gameType to it.createController() }
-
-            ServerAI(gameTypes.keys.toList(), name, listenerFactory = { _, _ -> null }) {
-                val obj = serverGame.obj!!
-                val controllerContext = GameControllerContext(obj, playerIndex)
-                val action = gameTypes.getValue(serverGame.gameType.type).invoke(controllerContext)
-                if (action != null) PlayerGameMoveRequest(client, serverGame, playerIndex, action.actionType, action.parameter, false)
-                else null
-            }.register(events)
+            val gameTypes = list.associate { it.gameType to GameAI<Any>(name) {
+                val controller = it.createController()
+                action {
+                    controller.invoke(this)
+                }
+            } }
+            ServerAI(gameTypes.keys.toList(), name, gameTypes.gameListenerFactory()).register(events)
         }
     }
     private fun createOtherAIs(setups: List<GameSetupImpl<Any>>, events: EventSystem) {
-        data class OtherAI(val gameType: String, val name: String, val controller: GameController<Any>)
+        data class OtherAI(val gameType: String, val name: String, val controller: GameAI<Any>)
         val otherAIs = setups.flatMap { setup ->
-            setup.otherAIs.map { OtherAI(setup.gameType, it.first, it.second) }
+            setup.otherAIs.map { OtherAI(setup.gameType, it.name, it) }
         }
         otherAIs.groupBy { it.name }.forEach { (name, list) ->
             val gameTypes = list.associate { it.gameType to it.controller }
 
-            ServerAI(gameTypes.keys.toList(), name, { _, _ -> null }) {
-                val obj = serverGame.obj!!
-                val controllerContext = GameControllerContext(obj, playerIndex)
-                val action =  gameTypes.getValue(serverGame.gameType.type).invoke(controllerContext)
-                if (action != null) PlayerGameMoveRequest(client, serverGame, playerIndex, action.actionType, action.parameter, false)
-                else null
-            }.register(events)
+            ServerAI(gameTypes.keys.toList(), name, gameTypes.gameListenerFactory()).register(events)
         }
     }
     private fun createAlphaBetaAIs(events: EventSystem) {
         val alphaBetas = ServerAlphaBetaAIs.ais()
         alphaBetas.flatMap { it.names }.distinct().forEach { name ->
-            val gameTypes = alphaBetas.filter { it.names.contains(name) }.map { it.gameType }
-            ServerAI(gameTypes, name, { _, _ -> null }) {
-                val factory = alphaBetas.first { it.gameType == serverGame.gameType.type } as AlphaBetaAIFactory<Any>
+            val gameTypes = alphaBetas.filter { it.names.contains(name) }.associate { abAI -> abAI.gameType to GameAI<Any>(name) {
+                val factory = abAI as AlphaBetaAIFactory<Any>
                 val configuration = factory.configurations.first { factory.aiName(it.first, it.second) == name }
                 val alphaBetaConfig = AIAlphaBetaConfig(factory, configuration.first, configuration.second)
-                val model = serverGame.obj!!
-                if (noAvailableActions(model, playerIndex)) {
-                    return@ServerAI null
+                action {
+                    val options = alphaBetaConfig.evaluateActions(game, playerIndex)
+                    val move = options.bestOf { it.second }.random()
+                    move.first
                 }
-
-                val options = alphaBetaConfig.evaluateActions(model, playerIndex)
-                val move = options.bestOf { it.second }.random()
-                return@ServerAI PlayerGameMoveRequest(client, serverGame, playerIndex, move.first.actionType, move.first.parameter, false)
-            }.register(events)
+            }
+            }
+            ServerAI(gameTypes.keys.toList(), name, gameTypes.gameListenerFactory()).register(events)
         }
     }
 
+}
+
+private fun Map<String, GameAI<Any>>.gameListenerFactory(): GameListenerFactory {
+    return GameListenerFactory { game, playerIndex ->
+        this[game.gameType]?.gameListener(game, playerIndex) ?: throw IllegalArgumentException("${game.gameType} is not in ${this.keys}")
+    }
 }

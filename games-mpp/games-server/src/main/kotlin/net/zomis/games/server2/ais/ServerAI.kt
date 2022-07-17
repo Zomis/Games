@@ -1,6 +1,6 @@
 package net.zomis.games.server2.ais
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.GameListenerFactory
@@ -8,7 +8,6 @@ import net.zomis.games.dsl.impl.Game
 import net.zomis.games.server2.*
 import net.zomis.games.server2.games.*
 import java.util.UUID
-import java.util.concurrent.Executors
 
 data class AIMoveRequest(val client: Client, val game: ServerGame)
 data class DelayedAIMoves(val move: PlayerGameMoveRequest)
@@ -18,14 +17,12 @@ val ServerAIProvider = "server-ai"
 class ServerAI(
     val gameTypes: List<String>,
     val name: String,
-    private val listenerFactory: GameListenerFactory,
-    val perform: ServerGameAI,
+    private val listenerFactory: GameListenerFactory
 ) {
 
     private val logger = KLoggers.logger(this)
 
-    private val executor = Executors.newSingleThreadExecutor()
-    private val mapper = ObjectMapper()
+    private val mapper = jacksonObjectMapper()
 
     class AIClient(private val response: (ClientJsonMessage) -> Unit): Client() {
         override fun sendData(data: String) {
@@ -47,15 +44,17 @@ class ServerAI(
         events.listen("ai move check $name", MoveEvent::class, {
             it.game.players.contains(client)
         }, {
-            events.execute(AIMoveRequest(client, it.game))
+            events.execute(AIMoveRequest(client, it.game)) // this should not be necessary
         })
         events.listen("ai gameStarted check $name", GameStartedEvent::class, {
             it.game.players.contains(client)
         }, {
-            events.execute(AIMoveRequest(client, it.game))
+            events.execute(AIMoveRequest(client, it.game)) // this should not be necessary
         })
+/*
         events.listen("ai move $name", AIMoveRequest::class, {it.client == client}, {event ->
             val game = event.game
+            // checking accesses should be done on setup (and when/if accesses change)
             val playerIndices = event.game.playerAccess(client).access.filter { it.value >= ClientPlayerAccessType.WRITE }.keys
             if (playerIndices.isEmpty()) {
                 return@listen
@@ -73,6 +72,7 @@ class ServerAI(
                 }
             }
         })
+*/
 
         this.client = AIClient { events.execute(it) }
         events.execute(ClientConnected(client))

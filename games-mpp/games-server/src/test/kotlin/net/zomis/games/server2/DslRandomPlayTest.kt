@@ -4,12 +4,9 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import kotlinx.coroutines.runBlocking
 import net.zomis.core.events.EventSystem
-import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.ConsoleView
 import net.zomis.games.dsl.GameEntryPoint
 import net.zomis.games.dsl.GamesImpl
-import net.zomis.games.dsl.impl.GameControllerContext
-import net.zomis.games.dsl.impl.GameControllerScope
 import net.zomis.games.impl.*
 import net.zomis.games.impl.words.Decrypto
 import net.zomis.games.server2.ais.ServerAIs
@@ -177,10 +174,9 @@ class DslRandomPlayTest {
                 val playerIndex = playerClient.first
                 val moveHandler = playingMap[gameImpl.gameType]
                 if (moveHandler != null) {
-                    val controllerContext = GameControllerContext(gameImpl, playerIndex)
                     val ai = gameType.setup().findAI(moveHandler)
                         ?: throw IllegalArgumentException("Missing AI: $moveHandler for game ${gameImpl.gameType}")
-                    ai.invoke(controllerContext)?.let {
+                    ai.simpleAction(gameImpl, playerIndex)?.let {
                         val serialized = gameImpl.actions.type(it.actionType)!!.actionType.serialize(it.parameter)
                         PlayerGameMoveRequest(game.highestAccessTo(playerIndex)!!, game, playerIndex, it.actionType, serialized, true)
                     }

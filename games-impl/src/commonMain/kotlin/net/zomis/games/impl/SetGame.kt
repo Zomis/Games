@@ -4,6 +4,7 @@ import net.zomis.games.cards.CardZone
 import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.GameCreator
 import net.zomis.games.dsl.ReplayableScope
+import net.zomis.games.dsl.impl.GameAI
 import net.zomis.games.dsl.impl.GameControllerScope
 import kotlin.random.Random
 
@@ -258,7 +259,8 @@ object SetGame {
         }
 
         scorers.ai("#AI_SetFinder", isSetScorer)
-        this.ai("#AI_SetCheat50") { randomSetMove(it) }
+        ai("#AI_SetFinderSlow") { action { delay = 20000; byScorers(isSetScorer) } }
+        ai("#AI_SetCheat50") { action { randomSetMove(this) } }
     }
 
 }

@@ -242,9 +242,9 @@ class GameDslContext<T : Any>(val gameType: String) : GameDsl<T> {
 
     val createdScorers = mutableListOf<Scorer<T, out Any>>()
     val createdAIs = mutableListOf<ScorerController<T>>()
-    val otherAIs = mutableListOf<Pair<String, GameController<T>>>()
+    val otherAIs = mutableListOf<GameAI<T>>()
     override val scorers: ScorerFactory<T> = ScorerFactory(gameType, { createdScorers.add(it) }, {createdAIs.add(it) })
-    override fun ai(name: String, controller: GameController<T>) { otherAIs.add(name to controller) }
+    override fun ai(name: String, block: GameAIScope<T>.() -> Unit): GameAI<T> = GameAI(name, block).also { otherAIs.add(it) }
 
     fun configs(): GameConfigs = GameConfigs(configs.map { it.withDefaults() })
 

@@ -4,6 +4,8 @@ import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.dsl.flow.GameFlowRules
 import net.zomis.games.dsl.flow.GameFlowScope
+import net.zomis.games.dsl.impl.GameAI
+import net.zomis.games.dsl.impl.GameAIScope
 import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.scorers.ScorerFactory
 import kotlin.reflect.KClass
@@ -91,8 +93,7 @@ interface GameDsl<T : Any> {
     fun gameFlow(flowDsl: GameFlowDsl<T>)
     fun gameFlowRules(flowRulesDsl: GameFlowRulesDsl<T>)
     fun <E: Any> config(key: String, default: () -> E): GameConfig<E>
-    fun ai(name: String, controller: GameController<T>)
-
+    fun ai(name: String, block: GameAIScope<T>.() -> Unit): GameAI<T>
     val scorers: ScorerFactory<T>
 }
 

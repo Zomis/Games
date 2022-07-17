@@ -5,6 +5,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.coroutines.*
 import net.zomis.games.common.toSingleList
 import net.zomis.games.dsl.impl.Game
+import net.zomis.games.dsl.impl.GameAIs
 import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.jackson.ReplayDataDeserializer
 import net.zomis.games.listeners.*
@@ -37,7 +38,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
                     FileReplay(file, replayListener).postReplay(replayData),
                     blockingGameListener,
                     PlayerController(g, 0.toSingleList()) { controller ->
-                        ServerAIs.randomActionable(controller.game, controller.playerIndex)
+                        GameAIs.randomActionable(controller.game, controller.playerIndex)
                     }.postReplay(replayData)
                 )
             }.goToEnd().awaitCatchUp()
@@ -74,7 +75,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
                     FileReplay(file, replayListener),
                     blockingGameListener,
                     PlayerController(g, 0.toSingleList()) { controller ->
-                        ServerAIs.randomActionable(controller.game, controller.playerIndex)
+                        GameAIs.randomActionable(controller.game, controller.playerIndex)
                     }
                 )
             }

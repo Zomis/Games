@@ -3,6 +3,8 @@ package net.zomis.games.impl.ttt
 import net.zomis.games.WinResult
 import net.zomis.games.common.Point
 import net.zomis.games.dsl.*
+import net.zomis.games.dsl.impl.GameAI
+import net.zomis.games.dsl.listeners.RememberMovesListener
 import net.zomis.games.impl.ttt.ultimate.*
 
 data class TTOptions(val m: Int, val n: Int, val k: Int)
@@ -44,6 +46,32 @@ object DslTTT {
             }
         }
         ttGame()
+        val xScorer = this.scorers.action(playAction) { action.parameter.x.toDouble() }
+        val yScorer = this.scorers.action(playAction) { action.parameter.y.toDouble() }
+        val aiBottomRight = scorers.ai("#AI_BottomRight", xScorer, yScorer.weight(10))
+        val aiTest = ai("#AI_Test") {
+            val lastMoves = listener { RememberMovesListener(1) }
+
+            action {
+                when (lastMoves.lastMoveAs(playAction).parameter.x) {
+                    0 -> byScorers(xScorer) // Right
+                    1 -> byScorers(xScorer.weight(-1), yScorer.weight(10)) // Bottom Left
+                    else -> randomAction()
+                }
+            }
+        }
+        ai("#AI_Test2") {
+            val lastMoves = listener { RememberMovesListener(1) }
+            val bottomRightAI = requiredAI { aiBottomRight.gameAI() }
+            val testAI = requiredAI { aiTest }
+            action {
+                when (lastMoves.lastMoveAs(playAction).parameter.y) {
+                    0 -> randomAction()
+                    1 -> byAI(bottomRightAI)
+                    else -> byAI(testAI)
+                }
+            }
+        }
     }
 
     val gameConnect4 = factory.game("DSL-Connect4") {

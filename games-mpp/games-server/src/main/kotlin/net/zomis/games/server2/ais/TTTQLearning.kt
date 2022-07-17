@@ -11,8 +11,8 @@ import net.zomis.games.components.GridImpl
 import net.zomis.games.components.Position
 import net.zomis.games.components.Transformation
 import net.zomis.games.components.standardizedTransformation
+import net.zomis.games.dsl.impl.GameAI
 import net.zomis.games.dsl.impl.GameImpl
-import net.zomis.games.impl.ttt.index
 import net.zomis.games.impl.ttt.ultimate.TTController
 import net.zomis.games.impl.ttt.ultimate.TTPlayer
 import net.zomis.games.server2.games.*
@@ -130,46 +130,20 @@ class TTTQLearn(val games: GameSystem) {
         if (true) return // Disabled until a better framework for it is in place
         learn.randomMoveProbability = 0.0
 
-        val serverAI = ServerAI(listOf(gameType), "#AI_QLearn_$gameType", { game, playerIndex ->
-             null
-        }) {
-            val controller = serverGame.obj!!
-            val model = controller.model as TTController
-            if (model.currentPlayer.index() != playerIndex) {
-                return@ServerAI null
-            }
-            if (model.isGameOver || isDraw(model)) {
-                return@ServerAI null
-            }
-
+        val gameAI = GameAI<TTController>("#AI_QLearn_$gameType") {
             // Always do actions based on the standardized state
             // Find possible symmetry transformations
             // Make move
             // TODO: Learn the same value for all possible symmetries of action
-
-            val action = learn.pickWeightedBestAction(model)
-            val x = action % model.game.sizeX
-            val y = action / model.game.sizeX
-            val point = Point(x, y)
-            return@ServerAI PlayerGameMoveRequest(client, serverGame, playerIndex, "play", point, true)
-
-            /*
-            Alternative approach of finding available actions to evaluate:
-            val actionTypes = controller.availableActionTypes().map {
-                it to controller.actionType<Any>(it)!!
+            action {
+                val action = learn.pickWeightedBestAction(model)
+                val x = action % model.game.sizeX
+                val y = action / model.game.sizeX
+                val point = Point(x, y)
+                game.actions.type("play")!!.createActionFromSerialized(playerIndex, point)
             }
-            val actions = actionTypes.flatMap {actionType ->
-                actionType.second.availableActions(index).map { actionType.first to it }
-            }
-            if (actions.isEmpty()) {
-                return@ServerAI listOf()
-            }
-            val chosenAction = actions.(use learner to find best action).let {
-                return@let PlayerGameMoveRequest(game, index, it.first, it.second.parameter)
-            }
-            listOf(chosenAction)
-            */
         }
+        val serverAI = ServerAI(listOf(gameType), gameAI.name, gameAI.listenerFactory())
         serverAI.register(events)
         events.listen("#AI_QLearn_$gameType pre-move", PreMoveEvent::class, {
             it.game.players.contains(serverAI.client)

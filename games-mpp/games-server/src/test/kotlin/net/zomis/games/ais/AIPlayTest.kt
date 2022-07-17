@@ -23,8 +23,7 @@ class AIPlayTest {
         blocking.await()
         var moveCount = 0
         while (!game.isGameOver()) {
-            val controllerContext = GameControllerContext(game, game.model.currentPlayerIndex)
-            val move = controller(controllerContext)!!
+            val move = controller.simpleAction(game, game.model.currentPlayerIndex)!!
             println("Move $moveCount: $move")
             blocking.awaitAndPerform(move)
             moveCount++

@@ -1,8 +1,9 @@
 package net.zomis.games.scorers
 
-import net.zomis.bestBy
+import net.zomis.bestOf
 import net.zomis.games.ais.noAvailableActions
 import net.zomis.games.dsl.Actionable
+import net.zomis.games.dsl.impl.GameAI
 import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.dsl.impl.GameControllerScope
 
@@ -44,10 +45,15 @@ class ScorerController<T : Any>(val gameType: String, val name: String, vararg c
         }
         if (!noAvailableActions(scope.game, scope.playerIndex)) {
             val scores = this.score(scope)
-            val bestScores = scores.bestBy { it.second!! }
+            val bestScores = scores.bestOf { it.second!! }
             val move = if (bestScores.isNotEmpty()) bestScores.random().first.action else this.availableActions(scope).random()
             move
         } else null
+    }
+
+    fun gameAI(): GameAI<T> = GameAI(name) {
+        val controller = createController()
+        action { controller.invoke(this) }
     }
 
 }

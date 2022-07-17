@@ -15,6 +15,7 @@ import net.zomis.games.dsl.flow.GameFlowContext
 import net.zomis.games.dsl.flow.GameFlowImpl
 import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
+import net.zomis.games.dsl.impl.GameAIs
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.server2.JacksonTools
 import net.zomis.games.server2.ServerGames
@@ -312,7 +313,7 @@ object PlayTests {
                 }
                 val players = (0 until replayable.game.playerCount).shuffled()
                 val action = players.firstNotNullOf {
-                    ServerAIs.randomActionable(replayable.game, it)
+                    GameAIs.randomActionable(replayable.game, it)
                 }
                 val serialized = replayable.game.actions.type(action.actionType)!!.actionType.serialize(action.parameter)
                 PlayTestStepPerform(action.playerIndex, action.actionType, serialized, emptyMap()) // state is filled in later

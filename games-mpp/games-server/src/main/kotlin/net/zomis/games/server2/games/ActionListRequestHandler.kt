@@ -47,14 +47,14 @@ class ActionListRequestHandler(private val game: ServerGame?) {
 
         val action = if (message.data.has("perform") && message.data["perform"].asBoolean()) frontendActionInfo[0]
             else frontendActionInfo.singleOrNull()?.takeIf { it.isParameter }
-        if (action != null) {
+        return if (action != null) {
             val actionRequest = PlayerGameMoveRequest(message.client, actionParams.game, actionParams.playerIndex,
                 action.actionType, action.serialized, true)
             callback.moveHandler(actionRequest)
-            return true
+            true
         } else {
             this.sendActionParams(message.client, actionParams)
-            return false
+            false
         }
     }
 

@@ -105,6 +105,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                     playerEntry.value.access.filter { it.value >= ClientPlayerAccessType.WRITE }.map { it.key }
                 }.map { it.key.listenerFactory to it.value }
                 val game = entryPoint.setup().startGameWithConfig(this, serverGame.playerCount, serverGame.gameMeta.gameOptions) {game ->
+                    logger.info { "Initializing game $game of type ${game.gameType} serverGame ${serverGame.gameId}" }
                     listOf(
                         DslGameSystemListener(gameEvent.game, events, game),
                         serverGameListener(gameEvent.game, game),
@@ -114,7 +115,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                     }.filterNotNull()
                 } as Game<Any>
                 serverGame.obj = game
-                logger.info { "Created game: $game" }
+                logger.info { "Created game: $game ${serverGame.gameId}" }
             }
         })
         events.listen("DslGameSystem $gameTypeName Setup", GameStartedEvent::class, {it.game.gameType.type == gameTypeName}, {

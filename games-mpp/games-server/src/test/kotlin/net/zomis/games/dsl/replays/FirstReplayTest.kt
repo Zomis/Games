@@ -5,6 +5,7 @@ import kotlinx.coroutines.test.runTest
 import net.zomis.games.common.Point
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.Game
+import net.zomis.games.dsl.impl.GameAI
 import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.impl.DslSplendor
 import net.zomis.games.impl.SplendorGame
@@ -69,13 +70,15 @@ class FirstReplayTest {
     fun `Game with AI and replayable randomness`() = runTest {
         val entryPoint = GamesImpl.game(DslSplendor.splendorGame)
         val replayListener = ReplayListener(entryPoint.gameType)
-        val controller = entryPoint.setup().findAI("#AI_BuyFirst")!! as GameController<Any>
+        val controller = entryPoint.setup().findAI("#AI_BuyFirst") as GameAI<SplendorGame>
         println("creating game")
         val game = entryPoint.setup().startGame(this, 3) {
             println("creating listeners")
             listOf(
                 replayListener,
-                PlayerController(it, 0..2, controller),
+                controller.gameListener(it as Game<SplendorGame>, 0),
+                controller.gameListener(it as Game<SplendorGame>, 1),
+                controller.gameListener(it as Game<SplendorGame>, 2)
             )
         }
         println("looping")

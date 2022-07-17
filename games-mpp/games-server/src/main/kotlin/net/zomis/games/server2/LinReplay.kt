@@ -6,7 +6,6 @@ import io.javalin.Javalin
 import klog.KLoggers
 import kotlinx.coroutines.runBlocking
 import net.zomis.games.server2.ais.AIRepository
-import net.zomis.games.server2.db.BadReplayException
 import net.zomis.games.server2.db.DBGame
 import net.zomis.games.server2.db.DBIntegration
 import java.util.concurrent.TimeUnit
