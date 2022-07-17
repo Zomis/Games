@@ -6,14 +6,10 @@ import com.beust.jcommander.ParameterException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import klog.KLoggers
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
 import net.zomis.games.dsl.GameSpec
-import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.server2.ais.AIRepository
-import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.ais.TTTQLearn
 import net.zomis.games.server2.db.DBIntegration
 import net.zomis.games.server2.db.aurora.LinStats
@@ -30,7 +26,6 @@ import net.zomis.games.server2.ws.WebsocketMessageHandler
 import org.jetbrains.kotlin.script.jsr223.KotlinJsr223JvmLocalScriptEngineFactory
 import java.io.File
 import java.util.UUID
-import java.util.concurrent.Executors
 import kotlin.system.exitProcess
 
 fun JsonNode.getTextOrDefault(fieldName: String, default: String): String {
@@ -150,7 +145,6 @@ class Server2(val events: EventSystem) {
         events.listen("Route", ClientJsonMessage::class, {it.data.has("route")}) {
             this.messageRouter.handle(it.data["route"].asText(), it)
         }
-        val executor = Executors.newScheduledThreadPool(2)
         if (config.useOAuth()) {
             LinAuth(javalin, config.githubConfig(), config.googleConfig()).register()
         }
@@ -192,13 +186,13 @@ class Server2(val events: EventSystem) {
             val result = kotlinScriptEngineFactory.scriptEngine.eval(script)
             println(result)
         })
-        events.with(TTTQLearn(gameSystem)::setup)
 
         events.listen("Stop Javalin", ShutdownEvent::class, {true}, {javalin.stop()})
         events.listen("Start Javalin", StartupEvent::class, {true}, {javalin.start()})
 
         events.execute(StartupEvent(System.currentTimeMillis()))
         AIRepository.createAIs(events, dslGames.values.map { it as GameSpec<Any> })
+        events.with(TTTQLearn(gameSystem)::setup)
         return this
     }
 
