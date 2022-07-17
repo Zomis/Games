@@ -7,16 +7,13 @@ import kotlinx.coroutines.sync.withLock
 import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.*
-import net.zomis.games.listeners.NoOpListener
-import net.zomis.games.server.GamesServer
 import net.zomis.games.server2.StartupEvent
 import net.zomis.games.server2.db.DBIntegration
 import java.lang.UnsupportedOperationException
-import kotlin.IllegalStateException
 import kotlin.reflect.full.cast
 
 class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: () -> DBIntegration?) {
-    val gameTypeName = dsl.name
+    private val gameTypeName = dsl.name
 
     private val mapper = jacksonObjectMapper()
     private val logger = KLoggers.logger(this)
@@ -46,16 +43,6 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                 game.actionsInput.send(action)
             } catch (e: Exception) {
                 logger.error(e) { "Error in DSL System Coroutine: $it $game $action" }
-            }
-        }
-    }
-
-    private fun handleFeedbacks(feedback: FlowStep, events: EventSystem, game: ServerGame, g: Game<Any>) {
-        if (true) {
-            logger.info("Feedback received: $feedback")
-            when (feedback) {
-                is FlowStep.GameEnd -> events.execute(GameEndedEvent(game))
-                else -> { /* ignored */ }
             }
         }
     }
@@ -104,7 +91,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                 val game = entryPoint.setup().startGameWithConfig(this, serverGame.playerCount, serverGame.gameMeta.gameOptions) {game ->
                     logger.info { "Initializing game $game of type ${game.gameType} serverGame ${serverGame.gameId}" }
                     listOf(
-                        DslGameSystemListener(gameEvent.game, events, game),
+                        DslGameSystemListener(gameEvent.game, events),
                         serverGameListener(gameEvent.game, game),
                         appropriateReplayListener
                     ) + playerListeners.flatMap { playerListener ->
@@ -157,8 +144,9 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                             step.eliminatedMessage(serverGame)
                         }
                     }
+                    else -> {}
                 }
-                if (step is FlowStep.GameEnd) {
+                if (step is FlowStep.GameEnd) { // needs to be separate because of ProceedStep being checked
                     serverGame.gameOver = true
                     serverGame.broadcast {
                         serverGame.toJson("GameEnded")
@@ -201,9 +189,9 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
         )
     }
 
-    inner class DslGameSystemListener(val serverGame: ServerGame, val events: EventSystem, val game: Game<Any>): GameListener {
+    class DslGameSystemListener(private val serverGame: ServerGame, private val events: EventSystem): GameListener {
         override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
-            handleFeedbacks(step, events, serverGame, game)
+            if (step is FlowStep.GameEnd) events.execute(GameEndedEvent(serverGame))
         }
     }
 
