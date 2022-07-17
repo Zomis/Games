@@ -12,6 +12,8 @@ import net.zomis.games.scorers.Scorer
 import net.zomis.games.scorers.ScorerController
 
 interface GameAIScope<T: Any> {
+    val game: Game<T>
+    val playerIndex: Int
     fun <L: GameListener> listener(gameListener: () -> L): L
     fun requiredAI(ai: () -> GameAI<T>): GameAIDependency<T>
     fun action(block: GameAIActionScope<T>.() -> Actionable<T, out Any>?)
@@ -64,7 +66,7 @@ interface GameAIActionScope<T: Any> : GameControllerScope<T> {
     fun randomAction(): Actionable<T, Any>?
 }
 
-class GameAIContext<T: Any>(val game: Game<T>, val playerIndex: Int): GameAIScope<T> {
+class GameAIContext<T: Any>(override val game: Game<T>, override val playerIndex: Int): GameAIScope<T> {
 
     private val listeners = mutableListOf<GameListener>()
     internal var actionBlock: GameAIActionScope<T>.() -> Actionable<T, out Any>? = {
