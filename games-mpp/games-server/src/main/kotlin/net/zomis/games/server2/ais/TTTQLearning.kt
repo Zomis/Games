@@ -1,6 +1,7 @@
 package net.zomis.games.server2.ais
 
 import klog.KLoggers
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -11,8 +12,12 @@ import net.zomis.games.components.GridImpl
 import net.zomis.games.components.Position
 import net.zomis.games.components.Transformation
 import net.zomis.games.components.standardizedTransformation
+import net.zomis.games.dsl.GameListener
+import net.zomis.games.dsl.impl.FlowStep
+import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameAI
 import net.zomis.games.dsl.impl.GameImpl
+import net.zomis.games.impl.ttt.ultimate.TTBase
 import net.zomis.games.impl.ttt.ultimate.TTController
 import net.zomis.games.impl.ttt.ultimate.TTPlayer
 import net.zomis.games.server2.games.*
@@ -88,36 +93,6 @@ class TTTQLearn(val games: GameSystem) {
         return Position(x, y, environment.game.sizeX, environment.game.sizeY)
     }
 
-    fun isDraw(tt: TTController): Boolean {
-        for (yy in 0 until tt.game.sizeY) {
-            for (xx in 0 until tt.game.sizeX) {
-                val sub = tt.game.getSub(xx, yy)
-                if (!sub!!.isWon) {
-                    return false
-                }
-            }
-        }
-        return true
-    }
-
-    fun observeReward(game: GameImpl<TTController>, action: Int, myIndex: PlayerIndex): MyQLearning.Rewarded<TTController> {
-        val tt = game.model
-        val player = if (myIndex == 0) TTPlayer.X else TTPlayer.O
-
-        // Observe reward
-        var reward = if (tt.isGameOver && tt.wonBy.isExactlyOnePlayer) {
-            (if (tt.wonBy.`is`(player)) 1 else -1).toDouble()
-        } else {
-            -0.01
-        }
-        if (isDraw(tt)) {
-            reward = 0.0
-        }
-        return MyQLearning.Rewarded(tt, reward)
-    }
-
-    private val mutex = Mutex()
-    private val awaitingResults = mutableMapOf<Pair<ServerGame, PlayerIndex>, QAwaitingReward<*>>()
     private val learn = this.newLearner(QStoreMap())
 
     fun setup(events: EventSystem) {
@@ -126,8 +101,43 @@ class TTTQLearn(val games: GameSystem) {
         })
     }
 
+    class QLearnListener(val game: Game<TTController>, val myPlayerIndex: Int, val learn: MyQLearning<TTController, String>): GameListener {
+        private var awaitingResult: QAwaitingReward<String>? = null
+
+        fun isDraw(tt: TTController): Boolean = tt.game.all().all { it.value.isWon }
+        fun observeReward(game: Game<TTController>, action: Int, myIndex: PlayerIndex): MyQLearning.Rewarded<TTController> {
+            val tt = game.model
+            val player = if (myIndex == 0) TTPlayer.X else TTPlayer.O
+
+            // Observe reward
+            var reward = if (tt.isGameOver && tt.wonBy.isExactlyOnePlayer) {
+                (if (tt.wonBy.`is`(player)) 1 else -1).toDouble()
+            } else {
+                -0.01
+            }
+            if (isDraw(tt)) {
+                reward = 0.0
+            }
+            return MyQLearning.Rewarded(tt, reward)
+        }
+
+        override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
+            if (step is FlowStep.PreMove) {
+                val point = step.action.parameter as TTBase
+                val action = point.y * game.model.game.sizeX + point.x
+                val awaitingReward = learn.prepareReward(game.model, action)
+                this.awaitingResult = awaitingReward
+            }
+            if (step is FlowStep.ActionPerformed<*>) {
+                val entry = awaitingResult!!
+                this.awaitingResult = null
+                val reward = observeReward(game, entry.action, myPlayerIndex)
+                learn.performReward(entry, reward)
+            }
+        }
+    }
+
     fun registerAI(events: EventSystem) {
-        if (true) return // Disabled until a better framework for it is in place
         learn.randomMoveProbability = 0.0
 
         val gameAI = GameAI<TTController>("#AI_QLearn_$gameType") {
@@ -135,8 +145,10 @@ class TTTQLearn(val games: GameSystem) {
             // Find possible symmetry transformations
             // Make move
             // TODO: Learn the same value for all possible symmetries of action
+            val learnListener = listener { QLearnListener(this.game, this.playerIndex, learn) }
+
             action {
-                val action = learn.pickWeightedBestAction(model)
+                val action = learnListener.learn.pickWeightedBestAction(model)
                 val x = action % model.game.sizeX
                 val y = action / model.game.sizeX
                 val point = Point(x, y)
@@ -145,38 +157,6 @@ class TTTQLearn(val games: GameSystem) {
         }
         val serverAI = ServerAI(listOf(gameType), gameAI.name, gameAI.listenerFactory())
         serverAI.register(events)
-        events.listen("#AI_QLearn_$gameType pre-move", PreMoveEvent::class, {
-            it.game.players.contains(serverAI.client)
-        }, {
-            val game = it.game.obj!! as GameImpl<TTController>
-            val point = it.move as Point
-
-            val action = it.move.y * game.model.game.sizeX + it.move.x
-            val awaitingReward = learn.prepareReward(game.model, action)
-            runBlocking {
-                mutex.withLock { awaitingResults[Pair(it.game, it.player)] = awaitingReward }
-            }
-        })
-        events.listen("#AI_QLearn_$gameType post-move", MoveEvent::class, {
-            it.game.players.contains(serverAI.client)
-        }, {event ->
-            runBlocking {
-                mutex.withLock {
-                    val entry = awaitingResults.entries.find {
-                        it.key.first == event.game
-                    }
-                    if (entry == null) {
-                        logger.error("No entry found for server game ${event.game}")
-                        return@runBlocking
-                    }
-                    awaitingResults.entries.remove(entry)
-
-                    val reward = observeReward(event.game.obj!! as GameImpl<TTController>,
-                            entry.value.action, entry.key.second)
-                    learn.performReward(entry.value as QAwaitingReward<String>, reward)
-                }
-            }
-        })
     }
 
 }

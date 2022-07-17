@@ -201,16 +201,6 @@ class GameTypeRegisterEvent(spec: GameSpec<*>) {
     val gameType: String = gameSpec.name
 }
 
-@Deprecated("replace with GameListener")
-data class PreMoveEvent(val game: ServerGame, val player: Int, val moveType: String, val move: Any)
-@Deprecated("replace with GameListener")
-data class MoveEvent<T: Any, A: Any>(
-    val game: ServerGame,
-    val player: Int,
-    val actionType: ActionType<T, A>,
-    val parameter: A,
-    val replayState: Map<String, Any>
-)
 data class GameResumedEvent(val game: ServerGame, val dbGame: DBGame?)
 data class GameStartedEvent(val game: ServerGame)
 data class GameEndedEvent(val game: ServerGame)

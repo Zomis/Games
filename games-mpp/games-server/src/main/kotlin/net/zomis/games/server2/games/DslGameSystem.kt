@@ -42,7 +42,6 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
 
         serverGame.coroutineScope.launch {
             try {
-                events.execute(PreMoveEvent(serverGame, it.player, action.actionType, action.parameter))
                 game.actionsInput.send(action)
             } catch (e: Exception) {
                 logger.error(e) { "Error in DSL System Coroutine: $it $game $action" }
@@ -55,9 +54,6 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
             logger.info("Feedback received: $feedback")
             when (feedback) {
                 is FlowStep.GameEnd -> events.execute(GameEndedEvent(game))
-                is FlowStep.ActionPerformed<*> -> events.execute(
-                    MoveEvent(game, feedback.playerIndex, feedback.actionImpl.actionType, feedback.parameter, feedback.replayState)
-                )
                 else -> { /* ignored */ }
             }
         }
