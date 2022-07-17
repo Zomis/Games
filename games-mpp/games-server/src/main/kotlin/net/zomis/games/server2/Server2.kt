@@ -12,6 +12,7 @@ import net.zomis.games.dsl.GameSpec
 import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.ais.TTTQLearn
 import net.zomis.games.server2.db.DBIntegration
+import net.zomis.games.server2.db.DBInterface
 import net.zomis.games.server2.db.aurora.LinStats
 import net.zomis.games.server2.db.aurora.StatsDB
 import net.zomis.games.server2.debug.AIGames
@@ -109,7 +110,7 @@ class Server2(val events: EventSystem) {
         moveHandler = { events.execute(it) }
     )
     val gameSystem = GameSystem(lobbySystem::gameClients, gameCallback)
-    var dbIntegration: DBIntegration? = null
+    var dbIntegration: DBInterface? = null
 
     val messageRouter = MessageRouter(this)
         .route("games", gameSystem.router)
@@ -132,7 +133,7 @@ class Server2(val events: EventSystem) {
             events.execute(ClientJsonMessage(it.client, mapper.readTree(it.message)))
         })
 
-        features.add { feat, ev -> gameSystem.setup(feat, ev, config.idGenerator) { dbIntegration } }
+        features.add { feat, ev -> gameSystem.setup(feat, ev, config.idGenerator) }
 
         dslGames.values.forEach { spec ->
             val dslGameSystem = DslGameSystem(spec as GameSpec<Any>) { dbIntegration }
@@ -157,7 +158,7 @@ class Server2(val events: EventSystem) {
                 LinStats(StatsDB(dbIntegration.superTable)).setup(events, javalin)
             }
         }
-        val authCallback = AuthorizationCallback { dbIntegration?.superTable?.cookieAuth(it) }
+        val authCallback = AuthorizationCallback { dbIntegration?.cookieAuth(it) }
         messageRouter.route("auth", AuthorizationSystem(events, authCallback).router)
 
         events.with(lobbySystem::setup)

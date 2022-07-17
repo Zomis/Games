@@ -11,6 +11,7 @@ import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
 import net.zomis.games.dsl.impl.FlowStep
+import net.zomis.games.server2.PlayerDatabaseInfo
 import net.zomis.games.server2.games.ServerGame
 import java.time.Instant
 import kotlin.system.measureNanoTime
@@ -52,6 +53,7 @@ class DBIntegration: DBInterface {
         = superTable.playerEliminated(serverGame, event)
     override fun finishGame(game: ServerGame) = superTable.finishGame(game)
     override fun listUnfinished(): Set<DBGameSummary> = superTable.listUnfinished()
+    override fun cookieAuth(cookie: String): PlayerDatabaseInfo? = superTable.cookieAuth(cookie)
 
     override fun loadGame(gameId: String): DBGame? {
         val summary = this.superTable.getGameSummary(SuperTable.Prefix.GAME.sk(gameId)) ?: return null

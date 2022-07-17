@@ -9,15 +9,12 @@ import net.zomis.core.events.ListenerPriority
 import net.zomis.games.Features
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.common.isObserver
-import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.server2.*
-import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.clients.FakeClient
 import net.zomis.games.server2.db.DBGame
-import net.zomis.games.server2.db.DBIntegration
 import net.zomis.games.server2.db.PlayerInGame
 import net.zomis.games.server2.invites.*
 import java.time.Instant
@@ -288,7 +285,7 @@ class GameSystem(val gameClients: GameTypeMap<ClientList>, private val callback:
     data class GameTypes(val gameTypes: MutableMap<String, GameType> = mutableMapOf())
     private lateinit var features: Features
 
-    fun setup(features: Features, events: EventSystem, idGenerator: GameIdGenerator, dbIntegration: () -> DBIntegration? = { null }) {
+    fun setup(features: Features, events: EventSystem, idGenerator: GameIdGenerator) {
         this.features = features
         val gameTypes = features.addData(GameTypes())
 

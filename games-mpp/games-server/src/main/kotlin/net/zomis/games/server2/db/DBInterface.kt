@@ -3,6 +3,7 @@ package net.zomis.games.server2.db
 import kotlinx.coroutines.CoroutineScope
 import net.zomis.games.dsl.GameListener
 import net.zomis.games.dsl.impl.FlowStep
+import net.zomis.games.server2.PlayerDatabaseInfo
 import net.zomis.games.server2.games.ServerGame
 
 interface DBInterface {
@@ -27,5 +28,7 @@ interface DBInterface {
             }
         }
     }
+
+    fun cookieAuth(cookie: String): PlayerDatabaseInfo?
 
 }

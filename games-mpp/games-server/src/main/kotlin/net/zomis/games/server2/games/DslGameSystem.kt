@@ -8,11 +8,11 @@ import net.zomis.core.events.EventSystem
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.*
 import net.zomis.games.server2.StartupEvent
-import net.zomis.games.server2.db.DBIntegration
+import net.zomis.games.server2.db.DBInterface
 import java.lang.UnsupportedOperationException
 import kotlin.reflect.full.cast
 
-class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: () -> DBIntegration?) {
+class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: () -> DBInterface?) {
     private val gameTypeName = dsl.name
 
     private val mapper = jacksonObjectMapper()
