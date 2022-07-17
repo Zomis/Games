@@ -182,8 +182,6 @@ class Server2(val events: EventSystem) {
         messageRouter.route("invites", inviteSystem.router)
         messageRouter.route("testGames", TestGamesRoute(inviteSystem).router)
 
-        events.with { e -> ServerAIs.register(e, executor) }
-
         val kotlinScriptEngineFactory = KotlinJsr223JvmLocalScriptEngineFactory()
         events.listen("Kotlin script", ConsoleEvent::class, {it.input.startsWith("kt ")}, {
             val jarFile = "games-1.0-SNAPSHOT-all.jar"

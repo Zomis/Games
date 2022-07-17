@@ -9,6 +9,7 @@ import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.dsl.impl.GameControllerContext
 
+@Deprecated("Can be replaced with GameAI")
 class PlayerController<out T: Any>(
     private val game: Game<T>,
     playerIndices: Iterable<Int>,

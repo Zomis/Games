@@ -10,8 +10,6 @@ import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.jackson.ReplayDataDeserializer
 import net.zomis.games.listeners.*
 import net.zomis.games.server2.ServerGames
-import net.zomis.games.server2.ais.AIRepository
-import net.zomis.games.server2.ais.ServerAIs
 import java.nio.file.Path
 import java.util.Scanner
 import kotlin.io.path.deleteIfExists
