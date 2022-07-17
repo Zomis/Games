@@ -43,7 +43,7 @@ class ServerConfig {
         return OAuthConfig(this.googleClientId, this.googleClientSecret)
     }
 
-    @Parameter(names = arrayOf("-wsPort"), description = "Port for websockets and API")
+    @Parameter(names = ["-wsPort"], description = "Port for websockets and API")
     var webSocketPort = 8081
 
     @Parameter(names = ["-db"], description = "Use database")
@@ -52,13 +52,13 @@ class ServerConfig {
     @Parameter(names = ["-statsDB"], description = "Use statistics database (requires database as well)")
     var statsDB = false
 
-    @Parameter(names = arrayOf("-wsPortSSL"), description = "Port for websockets and API with SSL (only used if certificate options are set)")
+    @Parameter(names = ["-wsPortSSL"], description = "Port for websockets and API with SSL (only used if certificate options are set)")
     var webSocketPortSSL = 0
 
-    @Parameter(names = arrayOf("-certificate"), description = "Path to Let's Encrypt certificate. Leave empty if none.")
+    @Parameter(names = ["-certificate"], description = "Path to Let's Encrypt certificate. Leave empty if none.")
     var certificatePath: String? = null
 
-    @Parameter(names = arrayOf("-keypassword"), description = "Password for Java keystore for certificate")
+    @Parameter(names = ["-keypassword"], description = "Password for Java keystore for certificate")
     var certificatePassword: String? = null
 
     @Parameter(names = ["-githubClient"], description = "Github Client Id")
