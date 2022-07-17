@@ -10,6 +10,8 @@ import com.amazonaws.services.dynamodbv2.model.*
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
+import net.zomis.games.dsl.impl.FlowStep
+import net.zomis.games.server2.games.ServerGame
 import java.time.Instant
 import kotlin.system.measureNanoTime
 
@@ -17,7 +19,7 @@ fun timeStamp(): AttributeValue {
     return AttributeValue().withN(Instant.now().epochSecond.toString())
 }
 
-class DBIntegration {
+class DBIntegration: DBInterface {
 
     private val logger = KLoggers.logger(this)
     val dynamoDB = AmazonDynamoDBClientBuilder.standard()
@@ -42,7 +44,16 @@ class DBIntegration {
         }
     }
 
-    fun loadGame(gameId: String): DBGame? {
+    override fun createGame(game: ServerGame, replayState: Map<String, Any>)
+        = superTable.createGame(game, replayState)
+    override fun addMove(serverGame: ServerGame, move: FlowStep.ActionPerformed<*>)
+        = superTable.addMove(serverGame, move)
+    override fun playerEliminated(serverGame: ServerGame, event: FlowStep.Elimination)
+        = superTable.playerEliminated(serverGame, event)
+    override fun finishGame(game: ServerGame) = superTable.finishGame(game)
+    override fun listUnfinished(): Set<DBGameSummary> = superTable.listUnfinished()
+
+    override fun loadGame(gameId: String): DBGame? {
         val summary = this.superTable.getGameSummary(SuperTable.Prefix.GAME.sk(gameId)) ?: return null
         val game = superTable.getGame(summary)
         if (game.hasErrors()) {
@@ -52,7 +63,7 @@ class DBIntegration {
         return game
     }
 
-    fun loadGameIgnoreErrors(gameId: String): DBGame? {
+    override fun loadGameIgnoreErrors(gameId: String): DBGame? {
         val summary = this.superTable.getGameSummary(SuperTable.Prefix.GAME.sk(gameId)) ?: return null
         return superTable.getGame(summary)
     }

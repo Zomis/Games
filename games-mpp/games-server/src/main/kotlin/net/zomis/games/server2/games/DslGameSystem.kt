@@ -90,7 +90,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                 logger.info { "Creating game: ${gameEvent.game}" }
                 val appropriateReplayListener =
                     if (serverGame.gameMeta.database && dbIntegration != null) {
-                        val listener = GamesServer.Replays.database(dbIntegration, serverGame)
+                        val listener = dbIntegration.gameListener(serverGame)
                         if (gameEvent.dbGame != null) {
                             PostReplayListener(gameEvent.dbGame.replayData(), listener)
                         } else {
