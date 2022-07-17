@@ -16,8 +16,6 @@ interface GameRulePresets<T: Any> {
     interface Players<T: Any> {
         fun singleWinner(winner: GameRuleScope<T>.() -> Int?)
         fun lastPlayerStanding()
-        @Deprecated("non-optimal API, use 'losing' instead")
-        fun losingPlayers(playerIndices: GameRuleScope<T>.() -> Iterable<Int>)
         fun losing(isLoss: GameRuleScope<T>.(Int) -> Boolean)
         fun skipEliminated(property: GameRuleScope<T>.() -> KMutableProperty0<Int>)
     }
@@ -78,17 +76,6 @@ class GameRulePresetsImpl<T: Any>(private val context: GameFlowRulesContext<T>):
         context.rule("last player standing wins") {
             appliesWhen { eliminations.remainingPlayers().size == 1 }
             effect { eliminations.eliminateRemaining(WinResult.WIN) }
-        }
-    }
-
-    override fun losingPlayers(playerIndices: GameRuleScope<T>.() -> Iterable<Int>) {
-        context.rule("eliminate losing players") {
-            appliesWhen { playerIndices().filter { eliminations.isAlive(it) }.any() }
-            effect {
-                val eliminating = playerIndices().filter { eliminations.isAlive(it) }
-                println("Eliminate losing players: $eliminating")
-                eliminations.eliminateMany(eliminating, WinResult.LOSS)
-            }
         }
     }
 
