@@ -202,13 +202,6 @@ class GameActionRuleContext<T : Any, A : Any>(
         this.choices = options
     }
 
-    override fun forceUntil(rule: ActionOptionsScope<T>.() -> Boolean) {
-        val myActionType = actionType
-        globalRules.preconditions.add {
-            actionType == myActionType.name || rule(this)
-        }
-    }
-
     override fun forceWhen(rule: ActionOptionsScope<T>.() -> Boolean) {
         val myActionType = actionType
         globalRules.preconditions.add {

@@ -66,8 +66,6 @@ interface GameActionSpecificationScope<T : Any, A : Any> {
     fun requires(rule: ActionRuleScope<T, A>.() -> Boolean)
     fun options(rule: ActionOptionsScope<T>.() -> Iterable<A>)
     fun forceWhen(rule: ActionOptionsScope<T>.() -> Boolean)
-    @Deprecated("prefer forceWhen")
-    fun forceUntil(rule: ActionOptionsScope<T>.() -> Boolean)
     fun choose(options: ActionChoicesScope<T, A>.() -> Unit)
 }
 

@@ -107,6 +107,8 @@ class CardZone<T>(val cards: MutableList<T> = mutableListOf()) {
         return seq + refilled
     }
 
+    inline fun isNotEmpty(): Boolean = !isEmpty()
+
 }
 fun <T: Replayable> CardZone<T>.random(replayable: ReplayableScope, count: Int, stateKey: String): Sequence<Card<T>> {
     return this.random(replayable, count, stateKey) { it.toStateString() }

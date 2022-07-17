@@ -98,10 +98,15 @@ object SkullGame {
 
             action(play).options { game.currentPlayer.hand.cards }
             action(play).effect { game.currentPlayer.hand.card(action.parameter).moveTo(game.currentPlayer.played) }
-            action(play).forceUntil { game.currentPlayer.played.size + game.currentPlayer.chosen.size > 0 || game.choseOwnSkull }
+            allActions.precondition {
+                actionType == play.name
+                    || game.currentPlayer.played.isNotEmpty()
+                    || game.currentPlayer.chosen.isNotEmpty()
+                    || game.choseOwnSkull
+            }
             action(play).requires { game.players.all { it.bet == 0 } }
             action(bet).effect { game.currentPlayer.bet = action.parameter }
-            action(bet).options { (game.players.maxOf { it.bet } + 1)..game.players.map { it.played.size }.sum() }
+            action(bet).options { (game.players.maxOf { it.bet } + 1)..game.players.sumOf { it.played.size } }
             action(pass).requires { game.players.any { it.bet > 0 } }
             action(pass).requires { game.players.count { !it.pass } > 1 }
             action(pass).effect { game.currentPlayer.pass = true }

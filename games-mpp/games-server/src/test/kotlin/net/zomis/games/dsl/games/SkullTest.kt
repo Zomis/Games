@@ -57,6 +57,8 @@ class SkullTest {
         test.performAction(1, "play", SkullCard.FLOWER)
         Assertions.assertEquals(2, game.model.currentPlayerIndex)
         test.performAction(2, "play", SkullCard.FLOWER)
+        Assertions.assertTrue(game.model.players.all { it.bet == 0 })
+        Assertions.assertEquals(1, game.model.currentPlayer.played.size)
         test.expectPossibleActions(0, 1 + 2 + 3) // Play 1 skull, play 2 flowers, 3 different bets
         test.performAction(0, "bet", 1)
         test.expectPossibleActions(1, 2 + 1) // bet 2, bet 3, pass
