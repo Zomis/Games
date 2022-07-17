@@ -11,21 +11,6 @@ import net.zomis.games.server2.ServerGames
 import net.zomis.games.server2.games.PlayerGameMoveRequest
 import net.zomis.games.server2.games.ServerGame
 
-@Deprecated("to be removed")
-interface ServerGameAIScope {
-    val serverGame: ServerGame
-    val playerIndex: Int
-    val client: Client
-}
-@Deprecated("to be removed")
-class ServerGameAIContext(
-    override val serverGame: ServerGame,
-    override val playerIndex: Int,
-    override val client: Client
-): ServerGameAIScope
-@Deprecated("to be removed")
-typealias ServerGameAI = ServerGameAIScope.() -> PlayerGameMoveRequest?
-
 object AIRepository {
 
     fun analyze(gameType: String, game: Game<Any>, aiName: String, playerIndex: Int): AIAnalyzeResult? {

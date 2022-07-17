@@ -9,9 +9,6 @@ import net.zomis.games.server2.*
 import net.zomis.games.server2.games.*
 import java.util.UUID
 
-data class AIMoveRequest(val client: Client, val game: ServerGame)
-data class DelayedAIMoves(val move: PlayerGameMoveRequest)
-
 val ServerAIProvider = "server-ai"
 
 class ServerAI(
@@ -41,39 +38,6 @@ class ServerAI(
     lateinit var client: AIClient
 
     fun register(events: EventSystem) {
-        events.listen("ai move check $name", MoveEvent::class, {
-            it.game.players.contains(client)
-        }, {
-            events.execute(AIMoveRequest(client, it.game)) // this should not be necessary
-        })
-        events.listen("ai gameStarted check $name", GameStartedEvent::class, {
-            it.game.players.contains(client)
-        }, {
-            events.execute(AIMoveRequest(client, it.game)) // this should not be necessary
-        })
-/*
-        events.listen("ai move $name", AIMoveRequest::class, {it.client == client}, {event ->
-            val game = event.game
-            // checking accesses should be done on setup (and when/if accesses change)
-            val playerIndices = event.game.playerAccess(client).access.filter { it.value >= ClientPlayerAccessType.WRITE }.keys
-            if (playerIndices.isEmpty()) {
-                return@listen
-            }
-            executor.submit {
-                try {
-                    val aiMoves = playerIndices.map {
-                        perform.invoke(ServerGameAIContext(game, it, client))
-                    }
-                    aiMoves.filterNotNull().forEach {singleAIMoves ->
-                        events.execute(DelayedAIMoves(singleAIMoves))
-                    }
-                } catch (e: Exception) {
-                    logger.error(e) { "Unable to make move for $this in $game" }
-                }
-            }
-        })
-*/
-
         this.client = AIClient { events.execute(it) }
         events.execute(ClientConnected(client))
         client.updateInfo(name, UUID.randomUUID())
