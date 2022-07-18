@@ -102,6 +102,10 @@ data class Money(val moneys: MutableMap<MoneyType, Int> = mutableMapOf(), val wi
         return Money(result.moneys.toMutableMap(), wildcardsMapping(wildcards))
     }
 
+    fun filter(entry: (Map.Entry<MoneyType, Int>) -> Boolean): Money {
+        return Money(moneys.entries.filter(entry).associate { it.key to it.value }.toMutableMap(), wildcards)
+    }
+
     fun negativeAmount(): Int = moneys.values.filter { it < 0 }.sum().absoluteValue
 
     operator fun minus(other: Money): Money {
@@ -396,6 +400,66 @@ object DslSplendor {
         val takeMoneyNeeded = scorers.action(takeMoney) { action.parameter.moneys.size.toDouble() }
         val reserve = scorers.isAction(reserve)
         val discard = scorers.isAction(discardMoney)
+
+        data class CardDesiredness(val round: Int, val points: Int, val discountUsefulness: Int, val nobles: Int) {
+            val value = (points - 0.5) * (0.05 * round) + discountUsefulness * 0.2 + nobles * 0.3
+        }
+        val cardDesiredness = scorers.provider { ctx ->
+            // card desiredness -- points, discount needed, usefulness for nobles
+            val player = ctx.model.players[ctx.playerIndex]
+            ctx.model.board.cards.associateWith { card ->
+                val discount = card.discounts.moneys.entries.single()
+                check(discount.value == 1)
+                val discountType = discount.key
+                val playerHas = player.owned.cards.sumOf { it.discounts.moneys.getOrElse(discountType) { 0 } }
+                val otherCardsRequiresDiscountType = ctx.model.board.cards.minus(card).count {
+                    val money = player.discounts() + player.chips
+                    val remaining = it.costs - money
+                    remaining.moneys.getOrElse(discountType) { 0 } > 0
+                }
+                val nobles = ctx.model.nobles.cards.count { noble ->
+                    val requires = noble.requirements.moneys.getOrElse(discountType) { 0 }
+                    requires > playerHas
+                }
+                CardDesiredness(ctx.model.roundNumber, card.points, otherCardsRequiresDiscountType, nobles)
+            }
+        }
+
+        data class CardObtainability(val remainingCost: Money) {
+            fun turnsLeftUntilBuy(): Int {
+                val remainingTotal = remainingCost.count / 3
+                val remainingMax = remainingCost.moneys.maxOfOrNull { it.value } ?: 0
+                return maxOf(remainingTotal, remainingMax)
+            }
+            val value = (1.0 - (turnsLeftUntilBuy() / 10.0)).let { it * it }
+        }
+        val cardObtainability = scorers.provider { ctx ->
+            // card obtainability. number of money remaining. number of money totally available (how much of the money will I be able to obtain?). requires wildcards?
+            val player = ctx.model.players[ctx.playerIndex]
+            val playerHas = player.discounts() + player.chips
+            ctx.model.board.cards.associateWith { card ->
+                CardObtainability(card.costs.minus(playerHas).filter { it.value >= 0 })
+            }
+        }
+        val buyObtainable = scorers.action(buy) {
+            val desiredness = require(cardDesiredness)!![action.parameter]!!
+            val obtainability = require(cardObtainability)!![action.parameter]!!
+            desiredness.value * obtainability.value
+        }
+        val takeMoneyToObtain = scorers.action(takeMoney) {
+            // Check obtainability and desiredness of cards, and calculate which money to take from that.
+            val desiredness = require(cardDesiredness)!!
+            val obtainability = require(cardObtainability)!!
+            val chosen = action.parameter.toMoney()
+            this.model.board.cards.sumOf {
+                CardObtainability(obtainability.getValue(it).remainingCost - chosen).value * desiredness.getValue(it).value
+            }
+        }
+        scorers.ai("#AI_Hard_Dev", buyObtainable.weight(100), takeMoneyToObtain, reserve.weight(-1), discard)
+
+        // wildcards desiredness combined with card desiredness, combined with sabotage potential, leads to possible reservation
+        // have lots of money --> less desire to take more money
+        // have little money --> want money
 
         scorers.ai("#AI_BuyFirst",
             buyCard, buyReserved, reserve.weight(-1), takeMoneyNeeded.weight(0.1), discard)
