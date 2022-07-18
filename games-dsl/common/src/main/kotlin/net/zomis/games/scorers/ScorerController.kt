@@ -7,6 +7,12 @@ import net.zomis.games.dsl.impl.GameAI
 import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.dsl.impl.GameControllerScope
 
+class ScorerResult<T: Any>(context: ScorerContext<T>, val score: Double?) {
+    val action: Actionable<T, Any> = context.action
+}
+
+class ScorerResults<T: Any>(val providers: Map<ScorerAnalyzeProvider<T, Any>, Any?>, val scores: List<ScorerResult<T>>)
+
 class ScorerController<T : Any>(val gameType: String, val name: String, vararg configArr: Scorer<T, Any>) {
     val config = configArr.toList()
 
@@ -21,7 +27,7 @@ class ScorerController<T : Any>(val gameType: String, val name: String, vararg c
     fun scoreSelected(
             model: T, playerIndex: Int,
             availableActions: List<Actionable<T, Any>>
-    ): List<Pair<ScorerContext<T>, Double?>> {
+    ): ScorerResults<T> {
         val providers = mutableMapOf<ScorerAnalyzeProvider<T, Any>, Any?>()
         val scoreContext = availableActions.map {action ->
             ScorerContext(model, playerIndex, action, providers)
@@ -29,12 +35,12 @@ class ScorerController<T : Any>(val gameType: String, val name: String, vararg c
         val scores = scoreContext.map {scorerContext ->
             val scored = config.mapNotNull { it.score(scorerContext) }
             val sum = if (scored.isEmpty()) null else scored.sum()
-            scorerContext to sum
-        }.filter { it.second != null }
-        return scores
+            ScorerResult(scorerContext, sum)
+        }.filter { it.score != null }
+        return ScorerResults(providers.toMap(), scores)
     }
 
-    fun score(scope: GameControllerScope<T>): List<Pair<ScorerContext<T>, Double?>> {
+    fun score(scope: GameControllerScope<T>): ScorerResults<T> {
         val availableActions = this.availableActions(scope)
         return scoreSelected(scope.model, scope.playerIndex, availableActions)
     }
@@ -45,8 +51,8 @@ class ScorerController<T : Any>(val gameType: String, val name: String, vararg c
         }
         if (!noAvailableActions(scope.game, scope.playerIndex)) {
             val scores = this.score(scope)
-            val bestScores = scores.bestOf { it.second!! }
-            val move = if (bestScores.isNotEmpty()) bestScores.random().first.action else this.availableActions(scope).random()
+            val bestScores = scores.scores.bestOf { it.score!! }
+            val move = if (bestScores.isNotEmpty()) bestScores.random().action else this.availableActions(scope).random()
             move
         } else null
     }

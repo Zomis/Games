@@ -10,8 +10,8 @@ data class ActionAnalyze(val moveType: String, val parameter: Any, val score: Do
 class AIAnalyze {
     fun scoring(game: Game<Any>, scoring: ScorerController<Any>, playerIndex: Int): AIAnalyzeResult? {
         val scores = scoring.score(GameControllerContext(game, playerIndex))
-        val scoreResults = scores.map {
-            ActionAnalyze(it.first.action.actionType, it.first.action.parameter, it.second ?: 0.0)
+        val scoreResults = scores.scores.map {
+            ActionAnalyze(it.action.actionType, it.action.parameter, it.score ?: 0.0)
         }
         return AIAnalyzeResult(scoreResults, null)
     }

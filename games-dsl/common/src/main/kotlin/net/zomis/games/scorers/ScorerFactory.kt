@@ -15,7 +15,7 @@ class ScorerContext<T : Any>(
 
     override fun <Z> require(analyzeProvider: ScorerAnalyzeProvider<T, Z>): Z? {
         if (providersInvoked.containsKey(analyzeProvider)) {
-            return providersInvoked.get(analyzeProvider) as Z?
+            return providersInvoked[analyzeProvider] as Z?
         }
         val value = analyzeProvider(this)
         providersInvoked[analyzeProvider] = value
