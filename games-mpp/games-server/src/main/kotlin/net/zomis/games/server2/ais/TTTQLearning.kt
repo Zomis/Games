@@ -161,6 +161,9 @@ class TTTQLearn(val file: Path) {
                     mapper.writeValue(file.outputStream(), qStore.map)
                 }
             }
+            queryable {
+                learnListener.learn.getActionScores(game.model)
+            }
             action {
                 val action = learnListener.learn.pickWeightedBestAction(model)
                 val x = action % model.game.sizeX
