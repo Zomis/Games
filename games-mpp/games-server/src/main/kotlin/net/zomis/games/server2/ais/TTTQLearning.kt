@@ -1,10 +1,9 @@
 package net.zomis.games.server2.ais
 
+import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import net.zomis.core.events.EventSystem
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.common.Point
@@ -16,22 +15,33 @@ import net.zomis.games.dsl.GameListener
 import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameAI
-import net.zomis.games.dsl.impl.GameImpl
 import net.zomis.games.impl.ttt.ultimate.TTBase
 import net.zomis.games.impl.ttt.ultimate.TTController
 import net.zomis.games.impl.ttt.ultimate.TTPlayer
 import net.zomis.games.server2.games.*
+import java.nio.file.Path
+import kotlin.io.path.inputStream
+import kotlin.io.path.isRegularFile
+import kotlin.io.path.outputStream
 
-class TTTQLearn(val games: GameSystem) {
+class TTTQLearn(val file: Path) {
     val gameType = "DSL-TTT"
 
     val logger = KLoggers.logger(this)
+    private val mapper = jacksonObjectMapper()
+
+    private val qStore = QStoreMap<String>().also { qStore ->
+        if (!file.isRegularFile()) return@also
+        val tree = mapper.readTree(file.inputStream()) as ObjectNode
+        qStore.map.putAll(tree.fieldNames().asSequence().map { it to tree[it].asDouble() })
+    }
 
     val actionPossible: ActionPossible<TTController> = { tt, action ->
         val pos = actionToPosition(tt, action)
         tt.isAllowedPlay(tt.game.getSub(pos.x, pos.y)!!)
     }
 
+    private val learn = this.newLearner(qStore)
     fun newLearner(qStore: QStore<String>): MyQLearning<TTController, String> {
         return newLearner(9, qStore)
     }
@@ -93,15 +103,13 @@ class TTTQLearn(val games: GameSystem) {
         return Position(x, y, environment.game.sizeX, environment.game.sizeY)
     }
 
-    private val learn = this.newLearner(QStoreMap())
-
     fun setup(events: EventSystem) {
         events.listen("register ServerAIs for DSL Game", GameTypeRegisterEvent::class, { it.gameType == gameType }, {
             registerAI(events)
         })
     }
 
-    class QLearnListener(val game: Game<TTController>, val myPlayerIndex: Int, val learn: MyQLearning<TTController, String>): GameListener {
+    class QLearnListener(val game: Game<TTController>, val myPlayerIndex: Int, val learn: MyQLearning<TTController, String>, val save: () -> Unit): GameListener {
         private var awaitingResult: QAwaitingReward<String>? = null
 
         fun isDraw(tt: TTController): Boolean = tt.game.all().all { it.value.isWon }
@@ -134,6 +142,9 @@ class TTTQLearn(val games: GameSystem) {
                 val reward = observeReward(game, entry.action, myPlayerIndex)
                 learn.performReward(entry, reward)
             }
+            if (step is FlowStep.GameEnd) {
+                save.invoke()
+            }
         }
     }
 
@@ -145,8 +156,11 @@ class TTTQLearn(val games: GameSystem) {
             // Find possible symmetry transformations
             // Make move
             // TODO: Learn the same value for all possible symmetries of action
-            val learnListener = listener { QLearnListener(this.game, this.playerIndex, learn) }
-
+            val learnListener = listener {
+                QLearnListener(this.game, this.playerIndex, learn) {
+                    mapper.writeValue(file.outputStream(), qStore.map)
+                }
+            }
             action {
                 val action = learnListener.learn.pickWeightedBestAction(model)
                 val x = action % model.game.sizeX

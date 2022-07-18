@@ -28,6 +28,7 @@ import net.zomis.games.server2.ws.WebsocketMessageHandler
 import org.jetbrains.kotlin.script.jsr223.KotlinJsr223JvmLocalScriptEngineFactory
 import java.io.File
 import java.util.UUID
+import kotlin.io.path.Path
 import kotlin.system.exitProcess
 
 fun JsonNode.getTextOrDefault(fieldName: String, default: String): String {
@@ -198,9 +199,9 @@ class Server2(val events: EventSystem) {
         events.listen("Stop Javalin", ShutdownEvent::class, {true}, {javalin.stop()})
         events.listen("Start Javalin", StartupEvent::class, {true}, {javalin.start()})
 
+        events.with(TTTQLearn(Path("db/QLearn-ttt.json"))::setup)
         events.execute(StartupEvent(System.currentTimeMillis()))
         AIRepository.createAIs(events, dslGames.values.map { it as GameSpec<Any> })
-        events.with(TTTQLearn(gameSystem)::setup)
         return this
     }
 

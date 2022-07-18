@@ -11,7 +11,7 @@ interface QStore<S> {
 }
 
 class QStoreMap<S>: QStore<S> {
-    private val map: MutableMap<S, Double> = mutableMapOf()
+    val map: MutableMap<S, Double> = mutableMapOf()
 
     override fun getOrDefault(key: S, defaultValue: Double): Double {
         return map.getOrDefault(key, defaultValue)
@@ -76,8 +76,7 @@ class MyQLearning<T, S>(val maxActions: Int,
 
     fun pickRandomAction(environment: T): Int {
         val possibleActions = getPossibleActions(environment)
-        val actionIndex = random.nextInt(possibleActions.size)
-        return possibleActions[actionIndex]
+        return possibleActions.random(random)
     }
 
     fun prepareReward(environment: T, action: Int): QAwaitingReward<S> {
