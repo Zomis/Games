@@ -190,7 +190,7 @@ const gameStore = {
         context.dispatch('requestView', context.state.games[data.gameId].gameInfo)
         context.dispatch('requestActions', { gameInfo: data })
       }
-      if (data.type === "GameInfo") {
+      if (data.type === "GameInfo" || data.type === "GameReady") { // TODO: Remove "GameInfo" from here
         context.commit("resetActions", { gameInfo: data })
         context.dispatch('requestView', context.state.games[data.gameId].gameInfo)
         context.dispatch('requestActions', { gameInfo: data })
