@@ -72,6 +72,9 @@ class DslGameTest {
         p2.expectJsonObject { it.getText("type") == "UpdateView" }
 
         p1.sendAndExpectResponse("""{ "route": "games/$dslGame/1/view", "playerIndex": 0 }""")
+        p1.expectJsonObject { it.getText("type") == "GameReady" }
+        p2.expectJsonObject { it.getText("type") == "GameReady" }
+
         val viewResponse = p1.expectJsonObject { it.getText("type") == "GameView" }
         Assertions.assertEquals(3, viewResponse["view"]["board"]["grid"].size())
         Assertions.assertEquals(3, viewResponse["view"]["board"]["grid"][0].size())
