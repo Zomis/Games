@@ -17,6 +17,7 @@ interface GameAIScope<T: Any> {
     fun <L: GameListener> listener(gameListener: () -> L): L
     fun requiredAI(ai: () -> GameAI<T>): GameAIDependency<T>
     fun action(block: GameAIActionScope<T>.() -> Actionable<T, out Any>?)
+    fun queryable(block: (GameControllerScope<T>) -> Any)
 }
 
 object GameAIs {
@@ -69,6 +70,7 @@ interface GameAIActionScope<T: Any> : GameControllerScope<T> {
 class GameAIContext<T: Any>(override val game: Game<T>, override val playerIndex: Int): GameAIScope<T> {
 
     private val listeners = mutableListOf<GameListener>()
+    internal var queryBlock: (GameControllerScope<T>) -> Any = {  }
     internal var actionBlock: GameAIActionScope<T>.() -> Actionable<T, out Any>? = {
         throw UnsupportedOperationException("action block missing")
     }
@@ -88,6 +90,10 @@ class GameAIContext<T: Any>(override val game: Game<T>, override val playerIndex
 
     override fun action(block: GameAIActionScope<T>.() -> Actionable<T, out Any>?) {
         this.actionBlock = block
+    }
+
+    override fun queryable(block: (GameControllerScope<T>) -> Any) {
+        this.queryBlock = block
     }
 
     fun gimmeAction(): Actionable<T, out Any>? {
@@ -157,6 +163,12 @@ class GameAI<T: Any>(
         val context = GameAIContext(game, playerIndex)
         block.invoke(context)
         return context.aiListener
+    }
+
+    fun query(game: Game<T>, playerIndex: Int): Any {
+        val context = GameAIContext(game, playerIndex)
+        block.invoke(context)
+        return context.queryBlock.invoke(GameControllerContext(game, playerIndex))
     }
 
     fun listenerFactory(): GameListenerFactory = GameListenerFactory { game, playerIndex -> gameListener(game as Game<T>, playerIndex) }

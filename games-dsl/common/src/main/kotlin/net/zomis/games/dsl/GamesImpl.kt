@@ -17,8 +17,8 @@ fun interface GameListenerFactory {
     fun createListener(game: Game<Any>, playerIndex: Int): GameListener?
 }
 
-fun GameListener.postReplay(replayData: ReplayData): GameListener
-    = PostReplayListener(replayData, this)
+fun GameListener.postReplay(replayData: ReplayData?): GameListener
+    = if (replayData == null) this else PostReplayListener(replayData, this)
 class PostReplayListener(replayData: ReplayData, private val delegate: GameListener): GameListener {
     private var actionIndex = 0
     private var targetAction = replayData.actions.size
@@ -67,5 +67,5 @@ object GamesImpl {
 }
 
 object GameListeners {
-    val noop = NoOpListener()
+    val noop = NoOpListener
 }

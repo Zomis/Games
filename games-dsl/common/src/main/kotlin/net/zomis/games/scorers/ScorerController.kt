@@ -59,6 +59,15 @@ class ScorerController<T : Any>(val gameType: String, val name: String, vararg c
 
     fun gameAI(): GameAI<T> = GameAI(name) {
         val controller = createController()
+        queryable { scope ->
+            val scoreResult = this@ScorerController.score(scope)
+            mapOf(
+                "providers" to scoreResult.providers,
+                "scores" to scoreResult.scores.map {
+                    mapOf("actionType" to it.action.actionType, "action" to it.action.parameter, "score" to it.score)
+                }.sortedBy { it["score"] as Double }
+            )
+        }
         action { controller.invoke(this) }
     }
 

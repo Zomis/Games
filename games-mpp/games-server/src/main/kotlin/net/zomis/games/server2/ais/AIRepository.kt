@@ -61,12 +61,7 @@ object AIRepository {
     private fun createScoringAIs(setups: List<GameSetupImpl<Any>>, events: EventSystem) {
         // Take all AIs, group by name. Then group by gameType
         setups.flatMap { it.scorerAIs }.groupBy { it.name }.forEach { (name, list) ->
-            val gameTypes = list.associate { it.gameType to GameAI<Any>(name) {
-                val controller = it.createController()
-                action {
-                    controller.invoke(this)
-                }
-            } }
+            val gameTypes = list.associate { it.gameType to it.gameAI() }
             ServerAI(gameTypes.keys.toList(), name, gameTypes.gameListenerFactory()).register(events)
         }
     }
@@ -88,6 +83,9 @@ object AIRepository {
                 val factory = abAI as AlphaBetaAIFactory<Any>
                 val configuration = factory.configurations.first { factory.aiName(it.first, it.second) == name }
                 val alphaBetaConfig = AIAlphaBetaConfig(factory, configuration.first, configuration.second)
+                queryable { scope ->
+                    alphaBetaConfig.evaluateActions(scope.game, scope.playerIndex).sortedByDescending { it.second }
+                }
                 action {
                     val options = alphaBetaConfig.evaluateActions(game, playerIndex)
                     val move = options.bestOf { it.second }.random()

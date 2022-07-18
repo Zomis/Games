@@ -2,7 +2,6 @@ package net.zomis.games.scorers
 
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.Actionable
-import net.zomis.games.dsl.GameSpec
 
 typealias ScorerAnalyzeProvider<T, Z> = (ScorerContext<T>) -> Z?
 

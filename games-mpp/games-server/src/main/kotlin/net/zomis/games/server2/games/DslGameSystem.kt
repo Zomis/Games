@@ -10,9 +10,11 @@ import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.*
 import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.dsl.listeners.CombinedListener
+import net.zomis.games.listeners.NoOpListener
 import net.zomis.games.listeners.ReplayListener
 import net.zomis.games.server.GamesServer
 import net.zomis.games.server2.StartupEvent
+import net.zomis.games.server2.ais.AIDebugListener
 import net.zomis.games.server2.db.DBGame
 import net.zomis.games.server2.db.DBInterface
 import java.lang.UnsupportedOperationException
@@ -92,13 +94,24 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                     playerEntry.value.access.filter { it.value >= ClientPlayerAccessType.WRITE }.map { it.key }
                 }.map { it.key.listenerFactory to it.value }
 
+                fun listeners(game: Game<Any>, replayData: ReplayData?): List<GameListener> {
+                    val aiDebug = serverGame.players.mapNotNull { it.key.name }.filter { it.lowercase().endsWith("_dev") }.mapNotNull { aiName ->
+                        entryPoint.setup().findAI(aiName)?.let { AIDebugListener(it, game as Game<T>) }
+                    }
+                    return listOf(
+                        DslGameSystemListener(serverGame, events).postReplay(replayData),
+                        serverGameListener(serverGame, game).postReplay(replayData)
+                    ) + playerListeners.flatMap { playerListener ->
+                        playerListener.second.map { playerListener.first.createListener(game, it)?.postReplay(replayData) }
+                    }.filterNotNull() + appropriateReplayListener + replayListener + aiDebug
+                }
+
                 if (gameEvent.dbGame != null) {
                     val replayData = gameEvent.dbGame.replayData()
                     println("DbGame contains ${replayData.actions}")
                     GamesImpl.game(dsl).replay(serverGame.coroutineScope, replayData, GamesServer.actionConverter) {
                         serverGame.obj = it as Game<Any>
-                        val list = listeners(gameEvent.game, events, it, playerListeners) + appropriateReplayListener
-                        replayListener.toSingleList() + PostReplayListener(replayData, CombinedListener(*list.toTypedArray())).toSingleList()
+                        listeners(it, replayData)
                     }.goToEnd().awaitCatchUp()
                     gameEvent.game.sendGameReady()
                     ConsoleView<T>().showView(serverGame.obj!! as Game<T>)
@@ -107,7 +120,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                     entryPoint.setup().startGameWithConfig(this, serverGame.playerCount, serverGame.gameMeta.gameOptions) {game ->
                         logger.info { "Initializing game $game of type ${game.gameType} serverGame ${serverGame.gameId}" }
                         serverGame.obj = game
-                        replayListener.toSingleList() + blocking + listeners(gameEvent.game, events, game, playerListeners) + appropriateReplayListener
+                        listeners(game, null) + blocking
                     }
                     blocking.await()
                     gameEvent.game.sendGameReady()
@@ -130,20 +143,6 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
         events.listen("DslGameSystem register $gameTypeName", StartupEvent::class, {true}, {
             events.execute(GameTypeRegisterEvent(dsl))
         })
-    }
-
-    private fun listeners(
-        serverGame: ServerGame,
-        events: EventSystem,
-        game: Game<Any>,
-        playerListeners: List<Pair<GameListenerFactory, List<Int>>>
-    ): List<GameListener> {
-        return listOf(
-            DslGameSystemListener(serverGame, events),
-            serverGameListener(serverGame, game)
-        ) + playerListeners.flatMap { playerListener ->
-            playerListener.second.map { playerListener.first.createListener(game, it) }
-        }.filterNotNull()
     }
 
     private fun serverGameListener(serverGame: ServerGame, game: Game<Any>): GameListener {
