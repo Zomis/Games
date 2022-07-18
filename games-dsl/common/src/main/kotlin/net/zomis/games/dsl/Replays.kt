@@ -1,7 +1,10 @@
 package net.zomis.games.dsl
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.yield
 import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
@@ -29,6 +32,8 @@ class Replay<T : Any>(
     private var targetPosition = 0
     lateinit var game: Game<T>
     lateinit var blockingListener: BlockingGameListener
+    private val stepLock = Mutex()
+    private var stepJob: Job? = null
 
     suspend fun awaitCatchUp(): Replay<T> {
         while (targetPosition > position) {
@@ -42,21 +47,30 @@ class Replay<T : Any>(
         if (newPosition < this.position) {
             restart()
         }
-        if (newPosition > position) stepForward()
+        possiblyStepForward()
         return this
     }
 
     override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
         when (step) {
             is FlowStep.AwaitInput -> {
-                coroutineScope.launch {
-                    if (position < targetPosition) {
-                        stepForward()
-                    }
-                }
+                possiblyStepForward()
             }
             is FlowStep.ActionPerformed<*> -> {
                 this.position++
+            }
+        }
+    }
+
+    private suspend fun possiblyStepForward() {
+        stepLock.withLock {
+            val job = stepJob
+            if (job != null && job.isActive) return@withLock
+            if (position < targetPosition) {
+                stepJob = coroutineScope.launch {
+                    println("Calling stepForward from replay launched coroutine")
+                    stepForward()
+                }
             }
         }
     }

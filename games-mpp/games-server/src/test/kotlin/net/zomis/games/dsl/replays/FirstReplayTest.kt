@@ -7,6 +7,7 @@ import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameAI
 import net.zomis.games.dsl.impl.GameController
+import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.impl.DslSplendor
 import net.zomis.games.impl.SplendorGame
 import net.zomis.games.impl.ttt.DslTTT
@@ -26,12 +27,10 @@ class FirstReplayTest {
     @Test
     fun `Deterministic Tic-Tac-Toe game`() = runTest {
         val entryPoint = GamesImpl.game(DslTTT.game)
-        println("creating game")
-        val replayListener = ReplayListener(DslTTT.game.name)
+        val replayListener = ReplayListener(entryPoint.gameType)
         val gameplay = entryPoint.setup().startGame(this, 2) {
             listOf(replayListener)
         }
-        println("creating game2")
         gameplay.actionSerialized(0, DslTTT.playAction, Point(0, 0))
         gameplay.actionSerialized(1, DslTTT.playAction, Point(1, 1))
         gameplay.actionSerialized(0, DslTTT.playAction, Point(2, 2))
@@ -45,25 +44,13 @@ class FirstReplayTest {
 
         ConsoleView<TTController>().showView(gameplay, 0)
         val view = gameplay.view(0)
-        println(replayListener.data().actions)
-        Assertions.assertTrue(gameplay.isGameOver())
 
+        Assertions.assertTrue(gameplay.isGameOver())
         Assertions.assertEquals(9, replayListener.data().actions.size)
 
-        val replay = entryPoint.replay(this, replayListener.data())
-        println("before go to end")
-        replay.goToEnd()
-        println("after go to end")
-        while (replay.game.isRunning()) {
-            println("running...")
-            delay(100)
-            Thread.sleep(100)
-            println("running...2")
-        }
-        println("assertions")
+        val replay = entryPoint.replay(this, replayListener.data()).goToEnd().awaitCatchUp()
         Assertions.assertTrue(replay.game.isGameOver())
         Assertions.assertEquals(view, replay.game.view(0))
-        println("game over")
     }
 
     @Test
@@ -71,22 +58,19 @@ class FirstReplayTest {
         val entryPoint = GamesImpl.game(DslSplendor.splendorGame)
         val replayListener = ReplayListener(entryPoint.gameType)
         val controller = entryPoint.setup().findAI("#AI_BuyFirst") as GameAI<SplendorGame>
-        println("creating game")
+        val blocking = BlockingGameListener()
         val game = entryPoint.setup().startGame(this, 3) {
-            println("creating listeners")
             listOf(
+                blocking,
                 replayListener,
                 controller.gameListener(it as Game<SplendorGame>, 0),
                 controller.gameListener(it as Game<SplendorGame>, 1),
                 controller.gameListener(it as Game<SplendorGame>, 2)
             )
         }
-        println("looping")
-        while (!game.isGameOver()) {
-            delay(1000)
-        }
-        println("end loop")
+        blocking.awaitGameEnd()
 
+        Assertions.assertTrue(game.isGameOver())
         val replayData = replayListener.data()
         Assertions.assertTrue(replayData.initialState!!.isNotEmpty())
         Assertions.assertTrue(replayData.actions.any { it.state.isNotEmpty() })
@@ -97,13 +81,7 @@ class FirstReplayTest {
         Assertions.assertTrue(replayData.initialState!!.isNotEmpty()) { "No initial state" }
         Assertions.assertTrue(replayData.actions.isNotEmpty()) { "No actions!" }
         println("Cards on start: " + replay.game.model.board.cards)
-        replay.goToEnd()
-        while (replay.game.isRunning()) {
-            println("running...")
-            delay(100)
-            Thread.sleep(100)
-            println("running...2")
-        }
+        replay.goToEnd().awaitCatchUp()
 
         Assertions.assertTrue(replay.game.isGameOver()) { "Replayed game didn't finish properly" }
         Assertions.assertEquals(view, replay.game.view(0))

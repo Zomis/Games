@@ -96,7 +96,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                     println("DbGame contains ${replayData.actions}")
                     GamesImpl.game(dsl).replay(serverGame.coroutineScope, replayData, GamesServer.actionConverter) {
                         serverGame.obj = it as Game<Any>
-                        val list = listeners(gameEvent.game, events, it, gameEvent.dbGame, playerListeners) + appropriateReplayListener
+                        val list = listeners(gameEvent.game, events, it, playerListeners) + appropriateReplayListener
                         replayListener.toSingleList() + PostReplayListener(replayData, CombinedListener(*list.toTypedArray())).toSingleList()
                     }.goToEnd().awaitCatchUp()
                     ConsoleView<T>().showView(serverGame.obj!! as Game<T>)
@@ -104,7 +104,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                     entryPoint.setup().startGameWithConfig(this, serverGame.playerCount, serverGame.gameMeta.gameOptions) {game ->
                         logger.info { "Initializing game $game of type ${game.gameType} serverGame ${serverGame.gameId}" }
                         serverGame.obj = game
-                        listeners(gameEvent.game, events, game, gameEvent.dbGame, playerListeners) + appropriateReplayListener
+                        replayListener.toSingleList() + listeners(gameEvent.game, events, game, playerListeners) + appropriateReplayListener
                     } as Game<Any>
                 }
                 logger.info { "Created game ${serverGame.gameId}" }
@@ -131,7 +131,6 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
         serverGame: ServerGame,
         events: EventSystem,
         game: Game<Any>,
-        dbGame: DBGame?,
         playerListeners: List<Pair<GameListenerFactory, List<Int>>>
     ): List<GameListener> {
         return listOf(
