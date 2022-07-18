@@ -35,10 +35,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         return game.gameMeta.database
     }
 
-    fun setup(features: Features, events: EventSystem): List<CreateTableRequest> {
-        events.listen("Auth", ClientLoginEvent::class, {true}, {
-            this.authenticate(it)
-        })
+    fun createTableRequests(): List<CreateTableRequest> {
         /*
         Should be refactored to query for each player instead of when game starts
         game:<uuid>     player:<playerId>:unfinished    <player indices access>
@@ -314,7 +311,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
 
         val sks = this.queryTable(query).associateBy {
             it[this.sk] as String
-        }
+        }.filter { !it.key.endsWith(":unfinished") }
 
         val gameDetails = sks.getValue(gameId)
         logger.info { "Game Details for game $gameId: $gameDetails" }

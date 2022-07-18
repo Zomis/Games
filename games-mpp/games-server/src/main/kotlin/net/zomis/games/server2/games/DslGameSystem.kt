@@ -5,9 +5,14 @@ import klog.KLoggers
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.withLock
 import net.zomis.core.events.EventSystem
+import net.zomis.games.common.toSingleList
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.*
+import net.zomis.games.dsl.listeners.CombinedListener
+import net.zomis.games.listeners.ReplayListener
+import net.zomis.games.server.GamesServer
 import net.zomis.games.server2.StartupEvent
+import net.zomis.games.server2.db.DBGame
 import net.zomis.games.server2.db.DBInterface
 import java.lang.UnsupportedOperationException
 import kotlin.reflect.full.cast
@@ -73,33 +78,36 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
         events.listen("DslGameSystem $gameTypeName Resume", GameResumedEvent::class, { it.game.gameType.type == gameTypeName }, { gameEvent ->
             val serverGame = gameEvent.game
             val dbIntegration = this.dbIntegration()
+
             serverGame.coroutineScope.launch {
                 logger.info { "Creating game: ${gameEvent.game}" }
+                val replayListener = ReplayListener(serverGame.gameType.type)
                 val appropriateReplayListener =
                     if (serverGame.gameMeta.database && dbIntegration != null) {
-                        val listener = dbIntegration.gameListener(serverGame)
-                        if (gameEvent.dbGame != null) {
-                            PostReplayListener(gameEvent.dbGame.replayData(), listener)
-                        } else {
-                            listener
-                        }
+                        dbIntegration.gameListener(serverGame, replayListener)
                     } else GamesImpl.listeners.noop
 
                 val playerListeners = serverGame.players.mapValues { playerEntry ->
                     playerEntry.value.access.filter { it.value >= ClientPlayerAccessType.WRITE }.map { it.key }
                 }.map { it.key.listenerFactory to it.value }
-                val game = entryPoint.setup().startGameWithConfig(this, serverGame.playerCount, serverGame.gameMeta.gameOptions) {game ->
-                    logger.info { "Initializing game $game of type ${game.gameType} serverGame ${serverGame.gameId}" }
-                    listOf(
-                        DslGameSystemListener(gameEvent.game, events),
-                        serverGameListener(gameEvent.game, game),
-                        appropriateReplayListener
-                    ) + playerListeners.flatMap { playerListener ->
-                        playerListener.second.map { playerListener.first.createListener(game, it) }
-                    }.filterNotNull()
-                } as Game<Any>
-                serverGame.obj = game
-                logger.info { "Created game: $game ${serverGame.gameId}" }
+
+                if (gameEvent.dbGame != null) {
+                    val replayData = gameEvent.dbGame.replayData()
+                    println("DbGame contains ${replayData.actions}")
+                    GamesImpl.game(dsl).replay(serverGame.coroutineScope, replayData, GamesServer.actionConverter) {
+                        serverGame.obj = it as Game<Any>
+                        val list = listeners(gameEvent.game, events, it, gameEvent.dbGame, playerListeners) + appropriateReplayListener
+                        replayListener.toSingleList() + PostReplayListener(replayData, CombinedListener(*list.toTypedArray())).toSingleList()
+                    }.goToEnd().awaitCatchUp()
+                    ConsoleView<T>().showView(serverGame.obj!! as Game<T>)
+                } else {
+                    entryPoint.setup().startGameWithConfig(this, serverGame.playerCount, serverGame.gameMeta.gameOptions) {game ->
+                        logger.info { "Initializing game $game of type ${game.gameType} serverGame ${serverGame.gameId}" }
+                        serverGame.obj = game
+                        listeners(gameEvent.game, events, game, gameEvent.dbGame, playerListeners) + appropriateReplayListener
+                    } as Game<Any>
+                }
+                logger.info { "Created game ${serverGame.gameId}" }
             }
         })
         events.listen("DslGameSystem $gameTypeName Setup", GameStartedEvent::class, {it.game.gameType.type == gameTypeName}, {
@@ -117,6 +125,21 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
         events.listen("DslGameSystem register $gameTypeName", StartupEvent::class, {true}, {
             events.execute(GameTypeRegisterEvent(dsl))
         })
+    }
+
+    private fun listeners(
+        serverGame: ServerGame,
+        events: EventSystem,
+        game: Game<Any>,
+        dbGame: DBGame?,
+        playerListeners: List<Pair<GameListenerFactory, List<Int>>>
+    ): List<GameListener> {
+        return listOf(
+            DslGameSystemListener(serverGame, events),
+            serverGameListener(serverGame, game)
+        ) + playerListeners.flatMap { playerListener ->
+            playerListener.second.map { playerListener.first.createListener(game, it) }
+        }.filterNotNull()
     }
 
     private fun serverGameListener(serverGame: ServerGame, game: Game<Any>): GameListener {

@@ -7,10 +7,10 @@ import klog.KLoggers
 import kotlinx.coroutines.runBlocking
 import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.db.DBGame
-import net.zomis.games.server2.db.DBIntegration
+import net.zomis.games.server2.db.DBInterface
 import java.util.concurrent.TimeUnit
 
-class LinReplay(private val aiRepository: AIRepository, private val dbIntegration: DBIntegration) {
+class LinReplay(private val aiRepository: AIRepository, private val dbIntegration: DBInterface) {
 
     private val caffeine = Caffeine.newBuilder()
         .maximumSize(10_000)

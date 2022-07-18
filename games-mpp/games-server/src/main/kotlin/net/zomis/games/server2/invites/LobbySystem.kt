@@ -12,7 +12,7 @@ data class ClientInterestingGames(val interestingGames: Set<String>, val maxGame
 data class ClientList(private val clients: MutableSet<Client> = mutableSetOf()) {
     fun findPlayerId(playerId: String) = clients.firstOrNull { it.playerId.toString() == playerId }
     fun add(client: Client) {
-        clients.removeAll(clients.filter { it.playerId == client.playerId })
+        clients.removeAll(clients.filter { it.playerId == client.playerId }.toSet())
         clients.add(client)
     }
     fun remove(client: Client) = clients.remove(client)

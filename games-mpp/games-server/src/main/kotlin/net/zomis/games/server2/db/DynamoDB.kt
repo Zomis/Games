@@ -8,9 +8,13 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec
 import com.amazonaws.services.dynamodbv2.model.*
 import klog.KLoggers
+import kotlinx.coroutines.CoroutineScope
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
+import net.zomis.games.dsl.GameListener
 import net.zomis.games.dsl.impl.FlowStep
+import net.zomis.games.listeners.ReplayListener
+import net.zomis.games.server2.ClientLoginEvent
 import net.zomis.games.server2.PlayerDatabaseInfo
 import net.zomis.games.server2.games.ServerGame
 import java.time.Instant
@@ -28,9 +32,8 @@ class DBIntegration: DBInterface {
         .build()
     val superTable = SuperTable(dynamoDB)
 
-    fun register(features: Features, events: EventSystem) {
-        val tables = listOf<CreateTableRequest>() +
-            superTable.setup(features, events)
+    fun createTables() {
+        val tables = listOf<CreateTableRequest>() + superTable.createTableRequests()
         createTables(dynamoDB, tables)
     }
 
@@ -45,13 +48,6 @@ class DBIntegration: DBInterface {
         }
     }
 
-    override fun createGame(game: ServerGame, replayState: Map<String, Any>)
-        = superTable.createGame(game, replayState)
-    override fun addMove(serverGame: ServerGame, move: FlowStep.ActionPerformed<*>)
-        = superTable.addMove(serverGame, move)
-    override fun playerEliminated(serverGame: ServerGame, event: FlowStep.Elimination)
-        = superTable.playerEliminated(serverGame, event)
-    override fun finishGame(game: ServerGame) = superTable.finishGame(game)
     override fun listUnfinished(): Set<DBGameSummary> = superTable.listUnfinished()
     override fun cookieAuth(cookie: String): PlayerDatabaseInfo? = superTable.cookieAuth(cookie)
 
@@ -69,6 +65,22 @@ class DBIntegration: DBInterface {
         val summary = this.superTable.getGameSummary(SuperTable.Prefix.GAME.sk(gameId)) ?: return null
         return superTable.getGame(summary)
     }
+
+    override fun gameListener(serverGame: ServerGame, replayListener: ReplayListener): GameListener {
+        return object : GameListener {
+            override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
+                when (step) {
+                    is FlowStep.GameSetup<*> -> { superTable.createGame(serverGame, step.state) }
+                    is FlowStep.ActionPerformed<*> -> { superTable.addMove(serverGame, step) }
+                    is FlowStep.GameEnd -> { superTable.finishGame(serverGame) }
+                    is FlowStep.Elimination -> { superTable.playerEliminated(serverGame, step) }
+                    else -> {}
+                }
+            }
+        }
+    }
+
+    override fun authenticate(event: ClientLoginEvent) = superTable.authenticate(event)
 
 }
 

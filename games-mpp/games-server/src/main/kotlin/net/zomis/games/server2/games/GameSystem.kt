@@ -10,12 +10,12 @@ import net.zomis.games.Features
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.common.isObserver
 import net.zomis.games.dsl.GameSpec
+import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.server2.*
 import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.clients.FakeClient
-import net.zomis.games.server2.db.DBGame
-import net.zomis.games.server2.db.PlayerInGame
+import net.zomis.games.server2.db.*
 import net.zomis.games.server2.invites.*
 import java.time.Instant
 import java.util.UUID
@@ -47,6 +47,7 @@ data class ClientAccess(var gameAdmin: Boolean) {
 class ServerGame(
     val coroutineScope: CoroutineScope,
     private val callback: GameCallback, val gameType: GameType, val gameId: String, val gameMeta: InviteOptions) {
+    private val timeStarted: Long = System.currentTimeMillis()
     private val logger = KLoggers.logger(this)
 
     private val actionListHandler = ActionListRequestHandler(this)
@@ -191,6 +192,20 @@ class ServerGame(
             .plus("access" to playerAccess(client).access).plus("players" to playerList())
     }
 
+    fun toDBSummary(): DBGameSummary {
+        val playerIndices = this.players.flatMap { it.value.access.keys }.distinct().sorted()
+
+        val eliminations = this.obj!!.eliminations.eliminations().associate {
+            it.playerIndex to PlayerInGameResults(it.winResult.result, it.position, "eliminated", emptyMap())
+        }
+        val playersInGame = playerIndices.map {
+            val client = highestAccessTo(it)!!
+            PlayerInGame(PlayerView(client.playerId.toString(), client.name!!), it, eliminations[it])
+        }
+        return DBGameSummary(this.gameType.gameSpec, this.gameMeta.gameOptions, this.gameId,
+            playersInGame, this.gameType.type, GameState.UNFINISHED.value, null, this.timeStarted)
+    }
+
 }
 
 class GameTypeRegisterEvent(spec: GameSpec<*>) {
@@ -238,7 +253,6 @@ class GameType(
         val loadGameOptions = InviteOptions(false, InviteTurnOrder.ORDERED, -1, gameOptions, true)
         val serverGame = ServerGame(coroutineScope, callback, this, gameId, loadGameOptions)
         serverGame.setMoveIndex(dbGame.moveHistory.size)
-        events.execute(GameResumedEvent(serverGame, dbGame))
         runningGames[serverGame.gameId] = serverGame
 
         fun findOrCreatePlayers(playersInGame: List<PlayerInGame>): Map<Client, ClientAccess> {
@@ -252,6 +266,7 @@ class GameType(
             }
         }
         serverGame.players.putAll(findOrCreatePlayers(dbGame.summary.playersInGame))
+        events.execute(GameResumedEvent(serverGame, dbGame))
         serverGame.sendGameStartedMessages()
         // Do NOT call GameStartedEvent as that will trigger database save
 

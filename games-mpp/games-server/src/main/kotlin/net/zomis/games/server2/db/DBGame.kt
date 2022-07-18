@@ -2,7 +2,6 @@ package net.zomis.games.server2.db
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonUnwrapped
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 import net.zomis.games.dsl.*
@@ -19,9 +18,7 @@ enum class GameState(val value: Int) {
 data class PlayerInGameResults(val result: Double,
    val resultPosition: Int, val resultReason: String, val score: Map<String, Any?>)
 data class PlayerInGame(val player: PlayerView?, val playerIndex: Int, val results: PlayerInGameResults?)
-class BadReplayException(message: String): Exception(message)
 
-private val mapper = jacksonObjectMapper()
 data class DBGameSummary(
     @JsonIgnore
     val gameSpec: GameSpec<Any>,
@@ -33,7 +30,17 @@ data class DBGameSummary(
     @JsonIgnore
     val startingState: Map<String, Any>?,
     val timeStarted: Long
-)
+) {
+    fun serialize() = mapOf(
+        "gameType" to gameType,
+        "config" to gameConfig.toJSON(),
+        "gameId" to gameId,
+        "players" to playersInGame,
+        "gameState" to gameState,
+        "startingState" to startingState,
+        "timeStarted" to timeStarted
+    )
+}
 class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHistory: List<MoveHistory>) {
     val views = mutableListOf<Map<String, Any?>>()
     val errors = mutableListOf<String>()

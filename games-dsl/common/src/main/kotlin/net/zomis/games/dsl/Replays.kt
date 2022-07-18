@@ -42,6 +42,7 @@ class Replay<T : Any>(
         if (newPosition < this.position) {
             restart()
         }
+        if (newPosition > position) stepForward()
         return this
     }
 
@@ -49,7 +50,9 @@ class Replay<T : Any>(
         when (step) {
             is FlowStep.AwaitInput -> {
                 coroutineScope.launch {
-                    if (position < targetPosition) stepForward()
+                    if (position < targetPosition) {
+                        stepForward()
+                    }
                 }
             }
             is FlowStep.ActionPerformed<*> -> {

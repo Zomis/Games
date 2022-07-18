@@ -1,5 +1,7 @@
 server2.conf
 *.log
+/console-view.json
+/db
 
 .idea/
 */build/

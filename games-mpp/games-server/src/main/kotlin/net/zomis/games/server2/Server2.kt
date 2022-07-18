@@ -15,6 +15,7 @@ import net.zomis.games.server2.db.DBIntegration
 import net.zomis.games.server2.db.DBInterface
 import net.zomis.games.server2.db.aurora.LinStats
 import net.zomis.games.server2.db.aurora.StatsDB
+import net.zomis.games.server2.db.files.FileDB
 import net.zomis.games.server2.debug.AIGames
 import net.zomis.games.server2.games.*
 import net.zomis.games.server2.invites.InviteOptions
@@ -47,8 +48,11 @@ class ServerConfig {
     @Parameter(names = ["-wsPort"], description = "Port for websockets and API")
     var webSocketPort = 8081
 
-    @Parameter(names = ["-db"], description = "Use database")
+    @Parameter(names = ["-db"], description = "Use database (has priority over -dbfs")
     var database = false
+
+    @Parameter(names = ["-dbfs"], description = "Use file database")
+    var databaseFiles = false
 
     @Parameter(names = ["-statsDB"], description = "Use statistics database (requires database as well)")
     var statsDB = false
@@ -151,15 +155,18 @@ class Server2(val events: EventSystem) {
         }
         if (config.database) {
             val dbIntegration = DBIntegration()
-            this.dbIntegration = dbIntegration
-            features.add(dbIntegration::register)
+            this.dbIntegration = dbIntegration.also { it.createTables() }
             LinReplay(AIRepository, dbIntegration).setup(javalin)
             if (config.statsDB) {
                 LinStats(StatsDB(dbIntegration.superTable)).setup(events, javalin)
             }
+        } else if (config.databaseFiles) {
+            val dbIntegration = FileDB().also { this.dbIntegration = it }
+            LinReplay(AIRepository, dbIntegration).setup(javalin)
         }
         val authCallback = AuthorizationCallback { dbIntegration?.cookieAuth(it) }
         messageRouter.route("auth", AuthorizationSystem(events, authCallback).router)
+        events.listen("Authenticate login with dbIntegration", ClientLoginEvent::class, {true}) { dbIntegration?.authenticate(it) }
 
         events.with(lobbySystem::setup)
         messageRouter.route("lobby", lobbySystem.router)
