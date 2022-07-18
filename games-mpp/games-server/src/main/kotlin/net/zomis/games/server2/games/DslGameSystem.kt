@@ -8,6 +8,7 @@ import net.zomis.core.events.EventSystem
 import net.zomis.games.common.toSingleList
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.*
+import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.dsl.listeners.CombinedListener
 import net.zomis.games.listeners.ReplayListener
 import net.zomis.games.server.GamesServer
@@ -99,13 +100,17 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                         val list = listeners(gameEvent.game, events, it, playerListeners) + appropriateReplayListener
                         replayListener.toSingleList() + PostReplayListener(replayData, CombinedListener(*list.toTypedArray())).toSingleList()
                     }.goToEnd().awaitCatchUp()
+                    gameEvent.game.sendGameReady()
                     ConsoleView<T>().showView(serverGame.obj!! as Game<T>)
                 } else {
+                    val blocking = BlockingGameListener()
                     entryPoint.setup().startGameWithConfig(this, serverGame.playerCount, serverGame.gameMeta.gameOptions) {game ->
                         logger.info { "Initializing game $game of type ${game.gameType} serverGame ${serverGame.gameId}" }
                         serverGame.obj = game
-                        replayListener.toSingleList() + listeners(gameEvent.game, events, game, playerListeners) + appropriateReplayListener
-                    } as Game<Any>
+                        replayListener.toSingleList() + blocking + listeners(gameEvent.game, events, game, playerListeners) + appropriateReplayListener
+                    }
+                    blocking.await()
+                    gameEvent.game.sendGameReady()
                 }
                 logger.info { "Created game ${serverGame.gameId}" }
             }

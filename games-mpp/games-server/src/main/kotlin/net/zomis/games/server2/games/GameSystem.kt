@@ -206,6 +206,11 @@ class ServerGame(
             playersInGame, this.gameType.type, GameState.UNFINISHED.value, null, this.timeStarted)
     }
 
+    fun sendGameReady() {
+        val message = this.toJson("GameReady")
+        this.broadcast { message }
+    }
+
 }
 
 class GameTypeRegisterEvent(spec: GameSpec<*>) {
