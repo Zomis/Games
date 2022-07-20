@@ -31,6 +31,8 @@ fun main() {
             groupByAndTotal(metrics.points) { ai }.displayIntStats("points per AI")
             groupByAndTotal(metrics.noblesGotten) { ai }.displayIntStats("nobles per AI")
             groupByAndTotal(metrics.gamesWon) { ai }.displayCount("games won") { it.winResult == WinResult.WIN }
+            groupByAndTotalActions(metrics.discarded) { ai }.groupByKeyAndTotal().displayIntStats("discarded")
+
             groupByAndTotalActions(metrics.moneyTaken) { ai }.groupByKeyAndTotal().displayIntStats("moneyTaken")
             groupByAndTotalActions(metrics.cardCosts) { ai }.groupByKeyAndTotal().displayIntStats("cardCosts")
             groupByAndTotalActions(metrics.moneyPaid) { ai }.groupByKeyAndTotal().displayIntStats("moneyPaid")

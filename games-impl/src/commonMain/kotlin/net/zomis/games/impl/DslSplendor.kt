@@ -486,6 +486,9 @@ object DslSplendor {
         val gamesWon = builder.endGamePlayerMetric {
             eliminations.eliminationFor(playerIndex)!!
         }
+        val discarded = builder.actionMetric(discardMoney) {
+            action.parameter.toMoney(1).moneys
+        }
     }
 
     private fun replaceCard(replayable: ReplayableScope, game: SplendorGame, card: SplendorCard) {
