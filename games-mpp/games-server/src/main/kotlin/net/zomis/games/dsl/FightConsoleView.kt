@@ -41,10 +41,10 @@ fun main() {
         }
         grouping {
             // possibly `display` later if more display options are added
-            displayIntStats(pointsDiff)
-            groupByAndTotal(points) { playerIndex }.displayIntStats()
-            groupByAndTotal(points) { ai }.displayIntStats()
-            groupByAndTotal(gamesWon) { ai }.displayCount { it.winResult == WinResult.WIN }
+            displayIntStats(pointsDiff, "pointsDiff")
+            groupByAndTotal(points) { playerIndex }.displayIntStats("points per playerIndex")
+            groupByAndTotal(points) { ai }.displayIntStats("points per AI")
+            groupByAndTotal(gamesWon) { ai }.displayCount("games won") { it.winResult == WinResult.WIN }
 //            groupByAndTotal(moneyTaken) { ai }.groupByKeyAndTotal().displayIntStats()
 
             // always group Map keys?

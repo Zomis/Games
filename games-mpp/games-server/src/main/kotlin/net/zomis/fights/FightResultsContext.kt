@@ -24,20 +24,20 @@ class IntermediateFightResult<T: Any, E>(
     val result: MutableMap<String, Any>,
     val values: Map<Any, List<MetricData<T, E>>>
 ) {
-    fun displayCount(function: (E) -> Boolean) {
-        result[this.toString()] = values.entries.associate {
+    fun displayCount(name: String, function: (E) -> Boolean) {
+        result[name] = values.entries.associate {
             it.key to it.value.count { metricData -> function.invoke(metricData.data) }
         }
     }
 }
-fun <T: Any> IntermediateFightResult<T, Int>.displayIntStats() {
-    result[this.toString()] = values.entries.associate {
+fun <T: Any> IntermediateFightResult<T, Int>.displayIntStats(name: String) {
+    result[name] = values.entries.associate {
         it.key to it.value.toIntSummaryStatistics()
     }
 }
 
 interface FightGroupingScope<T: Any> {
-    fun displayIntStats(metric: FightMetric<T, Int>)
+    fun displayIntStats(metric: FightMetric<T, Int>, name: String)
     fun <R> groupByAndTotal(metric: FightPlayerMetric<T, R>, groupBy: MetricGroupingPlayerScope<T>.() -> Any): IntermediateFightResult<T, R>
 }
 
@@ -48,8 +48,8 @@ class FightResultsContext<T: Any>: FightGroupingScope<T> {
         return result.toMap()
     }
 
-    override fun displayIntStats(metric: FightMetric<T, Int>) {
-        this.result[metric.toString()] = metric.values.toIntSummaryStatistics()
+    override fun displayIntStats(metric: FightMetric<T, Int>, name: String) {
+        this.result[name] = metric.values.toIntSummaryStatistics()
     }
 
     override fun <R> groupByAndTotal(
