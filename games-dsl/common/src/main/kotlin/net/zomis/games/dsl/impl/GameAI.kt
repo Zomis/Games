@@ -68,6 +68,7 @@ interface GameAIActionScope<T: Any> : GameControllerScope<T> {
 }
 
 class GameAIContext<T: Any>(override val game: Game<T>, override val playerIndex: Int): GameAIScope<T> {
+    var delayOverride: Long? = null
 
     private val listeners = mutableListOf<GameListener>()
     internal var queryBlock: (GameControllerScope<T>) -> Any = {  }
@@ -101,7 +102,7 @@ class GameAIContext<T: Any>(override val game: Game<T>, override val playerIndex
         return actionBlock.invoke(actionContext)
     }
 
-    val aiListener = GameAIListener(this)
+    val aiListener = GameAIListener(this) { delayOverride }
 }
 
 class GameAIActionContext<T: Any>(
@@ -125,7 +126,7 @@ class GameAIActionContext<T: Any>(
 
 }
 
-class GameAIListener<T: Any>(val context: GameAIContext<T>): GameListener {
+class GameAIListener<T: Any>(val context: GameAIContext<T>, val delayOverride: () -> Long?): GameListener {
     var enabled = true
     var job: Job? = null
 
@@ -142,7 +143,8 @@ class GameAIListener<T: Any>(val context: GameAIContext<T>): GameListener {
             job?.cancel()
             job = coroutineScope.launch {
                 println("GameAIListener(${action.playerIndex}) launched coroutine")
-                delay(actionContext.delay.toLong())
+                val sleepDelay = delayOverride.invoke() ?: actionContext.delay.toLong()
+                delay(sleepDelay)
                 if (context.game.actions.type(action.actionType)?.isAllowed(action as Actionable<T, Any>) == true) {
                     context.game.actionsInput.send(action)
                     println("Sent action from $this: $action")
@@ -158,25 +160,25 @@ class GameAI<T: Any>(
     val name: String,
     val block: GameAIScope<T>.() -> Unit
 ) {
-
-    fun gameListener(game: Game<T>, playerIndex: Int): GameAIListener<T> {
-        val context = GameAIContext(game, playerIndex)
-        block.invoke(context)
+    fun invokedContext(game: Game<T>, playerIndex: Int): GameAIContext<T> = GameAIContext(game, playerIndex).also(block)
+    fun gameListener(game: Game<T>, playerIndex: Int, delayOverride: Long? = null): GameAIListener<T> {
+        val context = invokedContext(game, playerIndex)
+        context.delayOverride = delayOverride
         return context.aiListener
     }
 
     fun query(game: Game<T>, playerIndex: Int): Any {
-        val context = GameAIContext(game, playerIndex)
-        block.invoke(context)
+        val context = invokedContext(game, playerIndex)
         return context.queryBlock.invoke(GameControllerContext(game, playerIndex))
     }
 
     fun listenerFactory(): GameListenerFactory = GameListenerFactory { game, playerIndex -> gameListener(game as Game<T>, playerIndex) }
 
     fun simpleAction(game: Game<T>, playerIndex: Int): Actionable<T, out Any>? {
-        val context = GameAIContext(game, playerIndex)
-        block.invoke(context)
+        val context = invokedContext(game, playerIndex)
         return context.aiListener.context.gimmeAction()
     }
+
+    override fun toString(): String = "GameAI:$name"
 
 }
