@@ -47,7 +47,7 @@ interface FightSourceScope<T: Any> {
 interface FightScope<T: Any> {
     val gameType: GameEntryPoint<T>
     fun gameSource(block: FightSourceScope<T>.() -> Unit)
-    fun <A: Any> actionMetric(actionType: ActionType<T, A>, block: MetricActionScope<T, A>.() -> Unit) // automatically group by player
+    fun <A: Any, E> actionMetric(actionType: ActionType<T, A>, block: MetricActionScope<T, A>.() -> E): FightActionMetric<T, A, E>
     fun <E> endGameMetric(block: MetricGameScope<T>.() -> E): FightMetric<T, E>
     fun <E> endGamePlayerMetric(block: MetricPlayerScope<T>.() -> E): FightPlayerMetric<T, E>
     fun grouping(function: FightGroupingScope<T>.() -> Unit)
@@ -75,6 +75,7 @@ class Fight<T: Any>(val fightSetup: FightSetup<T>, val metricsListener: MetricsL
 
 typealias MetricDsl<T, E> = MetricGameScope<T>.() -> E
 typealias MetricPlayerDsl<T, E> = MetricPlayerScope<T>.() -> E
+typealias MetricActionDsl<T, A, E> = MetricActionScope<T, A>.() -> E
 
 class FightContext<T: Any>(override val gameType: GameEntryPoint<T>): FightScope<T> {
     lateinit var results: FightGroupingScope<T>.() -> Unit
@@ -85,9 +86,11 @@ class FightContext<T: Any>(override val gameType: GameEntryPoint<T>): FightScope
         this.sourceContext = FightSourceContext(gameType).also(block)
     }
 
-    override fun <A : Any> actionMetric(actionType: ActionType<T, A>, block: MetricActionScope<T, A>.() -> Unit) {
-    }
-    // group metrics per game, possibly by player, and optionally per additional thingy (MoneyType, Position on board, etc)
+    override fun <A : Any, E> actionMetric(
+        actionType: ActionType<T, A>,
+        block: MetricActionScope<T, A>.() -> E
+    ): FightActionMetric<T, A, E>
+        = metricsListener.actionMetric(actionType, block)
 
     override fun <E> endGameMetric(block: MetricDsl<T, E>): FightMetric<T, E>
         = metricsListener.endGameMetric(block)
@@ -116,10 +119,10 @@ class FightFlow<T: Any>(val gameType: GameEntryPoint<T>) {
     *     metrics for action or game state. Int/Double/Map<Any, Double> collectors
     *   end metrics
     */
-    fun fight(block: FightScope<T>.() -> Unit) {
+    fun fight(block: FightScope<T>.() -> Unit): Map<String, Any> {
         val context = FightContext(gameType)
         block.invoke(context)
-        val r = runBlocking {
+        return runBlocking {
             context.fights().collect {
                 it.start()
                 it.awaitEnd()
@@ -128,7 +131,6 @@ class FightFlow<T: Any>(val gameType: GameEntryPoint<T>) {
             }
             context.produceResults()
         }
-        println(r)
     }
 
 }
