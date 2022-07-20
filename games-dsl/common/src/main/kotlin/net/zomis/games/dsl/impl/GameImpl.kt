@@ -10,6 +10,12 @@ import net.zomis.games.dsl.*
 import net.zomis.games.scorers.Scorer
 import net.zomis.games.scorers.ScorerController
 
+const val DEBUG = false
+
+inline fun debugPrint(message: String) {
+    if (DEBUG) println(message)
+}
+
 class GameControllerContext<T : Any>(
     override val game: Game<T>, override val playerIndex: Int
 ): GameControllerScope<T> {
@@ -54,27 +60,27 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
         val game = context.createGame(playerCount, config, StateKeeper())
 
         val listeners = flowListeners.invoke(game as Game<Any>)
-        println("Waiting for ${listeners.size} listeners")
+        debugPrint("Waiting for ${listeners.size} listeners")
         coroutineScope.launch(context = coroutineScope.coroutineContext + CoroutineName("$gameType with $playerCount players")) {
             for (flowStep in game.feedbackFlow) {
-                println("Listener feedback: $flowStep")
+                debugPrint("Listener feedback: $flowStep")
                 listeners.forEach { listener ->
-                    println("Listener $listener handling $flowStep")
+                    debugPrint("Listener $listener handling $flowStep")
                     listener.handle(coroutineScope, flowStep)
-                    println("Listener $listener finished $flowStep")
+                    debugPrint("Listener $listener finished $flowStep")
                 }
                 if (flowStep is FlowStep.Completable) {
                     flowStep.complete()
                 }
                 if (flowStep is FlowStep.GameEnd) {
-                    println("Game end, no more listeners")
+                    debugPrint("Game end, no more listeners")
                     break
                 }
             }
         }
-        println("Game ready to start")
+        debugPrint("Game ready to start")
         game.start(coroutineScope)
-        println("Started, or something")
+        debugPrint("Started, or something")
         return game
     }
 
