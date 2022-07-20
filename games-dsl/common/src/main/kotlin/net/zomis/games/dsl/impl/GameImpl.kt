@@ -43,6 +43,7 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
     val scorerAIs: List<ScorerController<T>> get() = context.createdAIs
     val otherAIs: List<GameAI<T>> get() = context.otherAIs
     val playersCount: IntRange = context.model.playerCount
+    fun ais(): List<GameAI<T>> = scorerAIs.map { it.gameAI() } + otherAIs
     fun findAI(name: String): GameAI<T>? {
         return scorerAIs.find { it.name == name }?.gameAI()
             ?: otherAIs.find { it.name == name }
