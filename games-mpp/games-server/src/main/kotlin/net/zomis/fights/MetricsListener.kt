@@ -58,12 +58,6 @@ class MetricsListener<T: Any> {
     }
 
     fun produceResults(function: FightGroupingScope<T>.() -> Unit): Map<String, Any> {
-        endGameMetrics.forEach {
-            println(it)
-            it.values.forEach { data -> println("${data.fight}: ${data.data}") }
-            println()
-        }
-
         val context = FightResultsContext<T>()
         function.invoke(context)
         return context.results()
