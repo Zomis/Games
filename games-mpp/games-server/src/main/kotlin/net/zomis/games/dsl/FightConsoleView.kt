@@ -1,14 +1,9 @@
 package net.zomis.games.dsl
 
 import net.zomis.fights.FightFlow
+import net.zomis.fights.displayIntStats
+import net.zomis.games.WinResult
 import net.zomis.games.impl.DslSplendor
-
-class FightConsoleView {
-
-
-
-}
-
 
 fun main() {
     /*
@@ -46,18 +41,13 @@ fun main() {
         }
         grouping {
             // possibly `display` later if more display options are added
-            
-//                gamesWon.groupByAndTotal { ai }.sumOf { it.winResult == WinResult.WIN }.withPercentDistribution()
-//                points.groupByAndTotal { ai }
-//                moneyTaken.groupByAndTotal { ai }.groupByKeyAndTotal().displayIntStats()
-//                pointsDiff.displayIntStats()
+            displayIntStats(pointsDiff)
+            groupByAndTotal(points) { playerIndex }.displayIntStats()
+            groupByAndTotal(points) { ai }.displayIntStats()
+            groupByAndTotal(gamesWon) { ai }.displayCount { it.winResult == WinResult.WIN }
+//            groupByAndTotal(moneyTaken) { ai }.groupByKeyAndTotal().displayIntStats()
 
-            // gameAIs()
-            mapOf("ai" to mapOf("games won" to 1, "points" to mapOf("avg" to 2)))
-
-            // metric()
-
-            // always group Map keys
+            // always group Map keys?
 
             /*
             *                #AI_Hard      #AI_BuyFirst     Total
@@ -96,4 +86,6 @@ fun main() {
             // type(MoneyType::class)
         }
     }
+    // After displaying results, add a way to search for a specific game/player/action by filtering on metrics.
+    //   Such as maximum pointsDiff, then save the replay(s) for those games
 }

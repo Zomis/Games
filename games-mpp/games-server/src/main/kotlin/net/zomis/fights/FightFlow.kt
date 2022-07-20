@@ -43,15 +43,13 @@ interface FightSourceScope<T: Any> {
     val gameType: GameEntryPoint<T>
     fun fightEvenly(playersCount: Int, gamesPerCombination: Int, ais: List<GameAI<T>>)
 }
-interface FightGroupingScope<T: Any> {
-}
 
 interface FightScope<T: Any> {
     val gameType: GameEntryPoint<T>
     fun gameSource(block: FightSourceScope<T>.() -> Unit)
     fun <A: Any> actionMetric(actionType: ActionType<T, A>, block: MetricActionScope<T, A>.() -> Unit) // automatically group by player
     fun <E> endGameMetric(block: MetricGameScope<T>.() -> E): FightMetric<T, E>
-    fun endGamePlayerMetric(block: MetricPlayerScope<T>.() -> Unit)
+    fun <E> endGamePlayerMetric(block: MetricPlayerScope<T>.() -> E): FightPlayerMetric<T, E>
     fun grouping(function: FightGroupingScope<T>.() -> Unit)
 }
 
@@ -76,6 +74,8 @@ class Fight<T: Any>(val fightSetup: FightSetup<T>, val metricsListener: MetricsL
 }
 
 typealias MetricDsl<T, E> = MetricGameScope<T>.() -> E
+typealias MetricPlayerDsl<T, E> = MetricPlayerScope<T>.() -> E
+
 class FightContext<T: Any>(override val gameType: GameEntryPoint<T>): FightScope<T> {
     lateinit var results: FightGroupingScope<T>.() -> Unit
     lateinit var sourceContext: FightSourceContext<T>
@@ -92,8 +92,8 @@ class FightContext<T: Any>(override val gameType: GameEntryPoint<T>): FightScope
     override fun <E> endGameMetric(block: MetricDsl<T, E>): FightMetric<T, E>
         = metricsListener.endGameMetric(block)
 
-    override fun endGamePlayerMetric(block: MetricPlayerScope<T>.() -> Unit) {
-    }
+    override fun <E> endGamePlayerMetric(block: MetricPlayerScope<T>.() -> E): FightPlayerMetric<T, E>
+        = metricsListener.endGamePlayerMetric(block)
 
     fun fights(): Flow<Fight<T>> {
         return sourceContext.flow.map {
@@ -119,7 +119,7 @@ class FightFlow<T: Any>(val gameType: GameEntryPoint<T>) {
     fun fight(block: FightScope<T>.() -> Unit) {
         val context = FightContext(gameType)
         block.invoke(context)
-        runBlocking {
+        val r = runBlocking {
             context.fights().collect {
                 it.start()
                 it.awaitEnd()
@@ -128,6 +128,7 @@ class FightFlow<T: Any>(val gameType: GameEntryPoint<T>) {
             }
             context.produceResults()
         }
+        println(r)
     }
 
 }
