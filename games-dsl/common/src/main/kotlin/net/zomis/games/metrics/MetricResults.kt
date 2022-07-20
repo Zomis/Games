@@ -1,4 +1,4 @@
-package net.zomis.fights
+package net.zomis.games.metrics
 
 import net.zomis.games.common.toSingleList
 import net.zomis.games.dsl.impl.GameAI

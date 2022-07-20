@@ -2,10 +2,10 @@ package net.zomis.games.dsl
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import net.zomis.fights.FightFlow
-import net.zomis.fights.displayIntStats
-import net.zomis.fights.groupByKeyAndTotal
 import net.zomis.games.WinResult
 import net.zomis.games.impl.DslSplendor
+import net.zomis.games.metrics.displayIntStats
+import net.zomis.games.metrics.groupByKeyAndTotal
 
 fun main() {
     /*
@@ -22,35 +22,18 @@ fun main() {
         gameSource {
             fightEvenly(playersCount = 2, gamesPerCombination = 30, ais = gameType.setup().ais())
         }
-        val pointsDiff = endGameMetric { game.players.maxOf { it.points } - game.players.minOf { it.points } }
-        val points = endGamePlayerMetric {
-            game.players[playerIndex].points
-        }
-        val moneyTaken = actionMetric(DslSplendor.takeMoney) {
-            action.parameter.toMoney().moneys
-        }
-        val cardCosts = actionMetric(DslSplendor.buy) {
-            action.parameter.costs.moneys
-        }
-        val moneyPaid = actionMetric(DslSplendor.buy) {
-            (action.parameter.costs - game.players[action.playerIndex].discounts()).filter { it.value >= 0 }.moneys
-        } // + actionMetric(DslSplendor.buyReserved)...?
-        val noblesGotten = endGamePlayerMetric {
-            game.players[playerIndex].nobles.size
-        }
-        val gamesWon = endGamePlayerMetric {
-            eliminations.eliminationFor(playerIndex)!!
-        }
+        val metrics = DslSplendor.Metrics(this)
         grouping {
+
             // possibly `display` later if more display options are added
-            displayIntStats(pointsDiff, "pointsDiff")
-            groupByAndTotal(points) { playerIndex }.displayIntStats("points per playerIndex")
-            groupByAndTotal(points) { ai }.displayIntStats("points per AI")
-            groupByAndTotal(noblesGotten) { ai }.displayIntStats("nobles per AI")
-            groupByAndTotal(gamesWon) { ai }.displayCount("games won") { it.winResult == WinResult.WIN }
-            groupByAndTotalActions(moneyTaken) { ai }.groupByKeyAndTotal().displayIntStats("moneyTaken")
-            groupByAndTotalActions(cardCosts) { ai }.groupByKeyAndTotal().displayIntStats("cardCosts")
-            groupByAndTotalActions(moneyPaid) { ai }.groupByKeyAndTotal().displayIntStats("moneyPaid")
+            displayIntStats(metrics.pointsDiff, "pointsDiff")
+            groupByAndTotal(metrics.points) { playerIndex }.displayIntStats("points per playerIndex")
+            groupByAndTotal(metrics.points) { ai }.displayIntStats("points per AI")
+            groupByAndTotal(metrics.noblesGotten) { ai }.displayIntStats("nobles per AI")
+            groupByAndTotal(metrics.gamesWon) { ai }.displayCount("games won") { it.winResult == WinResult.WIN }
+            groupByAndTotalActions(metrics.moneyTaken) { ai }.groupByKeyAndTotal().displayIntStats("moneyTaken")
+            groupByAndTotalActions(metrics.cardCosts) { ai }.groupByKeyAndTotal().displayIntStats("cardCosts")
+            groupByAndTotalActions(metrics.moneyPaid) { ai }.groupByKeyAndTotal().displayIntStats("moneyPaid")
 
             // always group Map keys?
 

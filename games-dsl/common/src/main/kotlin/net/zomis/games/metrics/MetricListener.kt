@@ -1,4 +1,4 @@
-package net.zomis.fights
+package net.zomis.games.metrics
 
 import kotlinx.coroutines.CoroutineScope
 import net.zomis.games.dsl.ActionType
@@ -6,18 +6,6 @@ import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.GameListener
 import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
-
-class MetricData<T: Any, E>(val fight: FightSetup<T>, val data: E)
-
-class FightMetric<T: Any, E>(val block: MetricDsl<T, E>) {
-    internal val values = mutableListOf<MetricData<T, E>>()
-}
-class FightPlayerMetric<T: Any, E>(val block: MetricPlayerDsl<T, E>) {
-    internal val values = mutableListOf<MetricData<T, List<E>>>()
-}
-class FightActionMetric<T: Any, A: Any, E>(val actionType: ActionType<T, A>, val block: MetricActionDsl<T, A, E>) {
-    internal val byPlayer = mutableMapOf<Int, MutableList<MetricData<T, E>>>()
-}
 
 class MetricsListener<T: Any> {
 

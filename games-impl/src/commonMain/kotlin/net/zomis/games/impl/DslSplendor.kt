@@ -6,6 +6,7 @@ import net.zomis.games.common.mergeWith
 import net.zomis.games.common.next
 import net.zomis.games.dsl.GameCreator
 import net.zomis.games.dsl.ReplayableScope
+import net.zomis.games.metrics.MetricBuilder
 import kotlin.math.absoluteValue
 import kotlin.math.max
 
@@ -463,6 +464,28 @@ object DslSplendor {
 
         scorers.ai("#AI_BuyFirst",
             buyCard, buyReserved, reserve.weight(-1), takeMoneyNeeded.weight(0.1), discard)
+    }
+
+    class Metrics(builder: MetricBuilder<SplendorGame>) {
+        val pointsDiff = builder.endGameMetric { game.players.maxOf { it.points } - game.players.minOf { it.points } }
+        val points = builder.endGamePlayerMetric {
+            game.players[playerIndex].points
+        }
+        val moneyTaken = builder.actionMetric(takeMoney) {
+            action.parameter.toMoney().moneys
+        }
+        val cardCosts = builder.actionMetric(buy) {
+            action.parameter.costs.moneys
+        }
+        val moneyPaid = builder.actionMetric(buy) {
+            (action.parameter.costs - game.players[action.playerIndex].discounts()).filter { it.value >= 0 }.moneys
+        } // + actionMetric(DslSplendor.buyReserved)...?
+        val noblesGotten = builder.endGamePlayerMetric {
+            game.players[playerIndex].nobles.size
+        }
+        val gamesWon = builder.endGamePlayerMetric {
+            eliminations.eliminationFor(playerIndex)!!
+        }
     }
 
     private fun replaceCard(replayable: ReplayableScope, game: SplendorGame, card: SplendorCard) {
