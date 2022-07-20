@@ -42,20 +42,9 @@ object AIRepository {
 
     fun createAIs(events: EventSystem, games: Collection<GameSpec<Any>>) {
         val setups = games.map { GamesImpl.game(it).setup() }
-        createRandomAI(setups, events)
-        createScoringAIs(setups, events)
         createOtherAIs(setups, events)
+        createScoringAIs(setups, events)
         createAlphaBetaAIs(events)
-    }
-
-    private fun createRandomAI(setups: List<GameSetupImpl<Any>>, events: EventSystem) {
-        val randomAI = GameAI<Any>("#AI_Random") {
-            action {
-                GameAIs.randomActionable(game, playerIndex)
-            }
-        }
-        val randomAIs = setups.filter { it.useRandomAI }.associate { it.gameType to randomAI }
-        ServerAI(randomAIs.keys.toList(), "#AI_Random", randomAIs.gameListenerFactory()).register(events)
     }
 
     private fun createScoringAIs(setups: List<GameSetupImpl<Any>>, events: EventSystem) {

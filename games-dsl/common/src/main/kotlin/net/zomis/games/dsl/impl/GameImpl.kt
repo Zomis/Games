@@ -36,9 +36,15 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
     init {
         gameSpec(context)
         context.modelDsl(context.model)
+        if (context.useRandomAI) {
+            context.ai("#AI_Random") {
+                action {
+                    GameAIs.randomActionable(game, playerIndex)
+                }
+            }
+        }
     }
 
-    val useRandomAI = context.useRandomAI
     val scorers: List<Scorer<T, out Any>> get() = context.createdScorers
     val scorerAIs: List<ScorerController<T>> get() = context.createdAIs
     val otherAIs: List<GameAI<T>> get() = context.otherAIs
