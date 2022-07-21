@@ -27,7 +27,6 @@ interface GameControllerScope<T : Any> {
     val model: T
     val playerIndex: Int
 }
-typealias GameController<T> = (GameControllerScope<T>) -> Actionable<T, Any>?
 
 class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
 

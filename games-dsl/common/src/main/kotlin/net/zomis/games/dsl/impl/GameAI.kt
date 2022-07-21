@@ -113,7 +113,7 @@ class GameAIActionContext<T: Any>(
 
     override fun byScorers(vararg scorers: Scorer<T, out Any>): Actionable<T, out Any>? {
         return ScorerController(game.gameType, "_", *(scorers as Array<out Scorer<T, Any>>))
-            .createController().invoke(this)
+            .gameAI().simpleAction(game, playerIndex)
     }
 
     override fun byAI(ai: GameAIDependency<T>): Actionable<T, out Any>? {

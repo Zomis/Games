@@ -3,8 +3,8 @@ package net.zomis.games.dsl
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.coroutines.*
-import net.zomis.games.common.toSingleList
 import net.zomis.games.dsl.impl.Game
+import net.zomis.games.dsl.impl.GameAI
 import net.zomis.games.dsl.impl.GameAIs
 import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.jackson.ReplayDataDeserializer
@@ -17,6 +17,11 @@ import kotlin.io.path.inputStream
 import kotlin.io.path.isRegularFile
 
 class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
+    val ai = GameAI<T>("#AI_Random") {
+        action {
+            GameAIs.randomActionable(game, playerIndex)
+        }
+    }
 
     fun resume(replayData: ReplayData, file: Path, scanner: Scanner) {
         val mapper = jacksonObjectMapper()
@@ -35,9 +40,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
                     replayListener,
                     FileReplay(file, replayListener).postReplay(replayData),
                     blockingGameListener,
-                    PlayerController(g, 0.toSingleList()) { controller ->
-                        GameAIs.randomActionable(controller.game, controller.playerIndex)
-                    }.postReplay(replayData)
+                    ai.gameListener(g, 0).postReplay(replayData)
                 )
             }.goToEnd().awaitCatchUp()
             if (savedReplay.game.isGameOver()) {
@@ -72,9 +75,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
                     replayListener,
                     FileReplay(file, replayListener),
                     blockingGameListener,
-                    PlayerController(g, 0.toSingleList()) { controller ->
-                        GameAIs.randomActionable(controller.game, controller.playerIndex)
-                    }
+                    ai.gameListener(g as Game<T>, 0)
                 )
             }
             blockingGameListener.awaitGameEnd()

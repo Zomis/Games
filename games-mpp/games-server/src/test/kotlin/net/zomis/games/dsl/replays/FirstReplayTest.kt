@@ -6,13 +6,11 @@ import net.zomis.games.common.Point
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameAI
-import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.impl.DslSplendor
 import net.zomis.games.impl.SplendorGame
 import net.zomis.games.impl.ttt.DslTTT
 import net.zomis.games.impl.ttt.ultimate.TTController
-import net.zomis.games.listeners.PlayerController
 import net.zomis.games.listeners.ReplayListener
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -20,7 +18,7 @@ import org.junit.jupiter.api.Test
 class FirstReplayTest {
 
     private suspend fun <T: Any, P: Any> Game<T>.actionSerialized(playerIndex: Int, actionType: ActionType<T, P>, param: Any) {
-        val action = this.actions.type(actionType)!!.createActionFromSerialized(playerIndex, param) as Actionable<T, P>
+        val action = this.actions.type(actionType)!!.createActionFromSerialized(playerIndex, param)
         this.actionsInput.send(action)
     }
 
@@ -57,16 +55,13 @@ class FirstReplayTest {
     fun `Game with AI and replayable randomness`() = runTest {
         val entryPoint = GamesImpl.game(DslSplendor.splendorGame)
         val replayListener = ReplayListener(entryPoint.gameType)
-        val controller = entryPoint.setup().findAI("#AI_BuyFirst") as GameAI<SplendorGame>
+        val gameAI = entryPoint.setup().findAI("#AI_BuyFirst") as GameAI<SplendorGame>
         val blocking = BlockingGameListener()
         val game = entryPoint.setup().startGame(this, 3) {
             listOf(
                 blocking,
                 replayListener,
-                controller.gameListener(it as Game<SplendorGame>, 0),
-                controller.gameListener(it as Game<SplendorGame>, 1),
-                controller.gameListener(it as Game<SplendorGame>, 2)
-            )
+            ) + (it.playerIndices).map { playerIndex -> gameAI.gameListener(it as Game<SplendorGame>, playerIndex) }
         }
         blocking.awaitGameEnd()
 

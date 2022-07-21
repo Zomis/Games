@@ -6,7 +6,6 @@ import net.zomis.games.dsl.flow.GameFlowRules
 import net.zomis.games.dsl.flow.GameFlowScope
 import net.zomis.games.dsl.impl.GameAI
 import net.zomis.games.dsl.impl.GameAIScope
-import net.zomis.games.dsl.impl.GameController
 import net.zomis.games.scorers.ScorerFactory
 import kotlin.reflect.KClass
 

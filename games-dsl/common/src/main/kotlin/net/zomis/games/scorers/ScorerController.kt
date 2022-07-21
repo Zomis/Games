@@ -4,7 +4,7 @@ import net.zomis.bestOf
 import net.zomis.games.ais.noAvailableActions
 import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.impl.GameAI
-import net.zomis.games.dsl.impl.GameController
+import net.zomis.games.dsl.impl.GameControllerContext
 import net.zomis.games.dsl.impl.GameControllerScope
 
 class ScorerResult<T: Any>(context: ScorerContext<T>, val score: Double?) {
@@ -45,20 +45,7 @@ class ScorerController<T : Any>(val gameType: String, val name: String, vararg c
         return scoreSelected(scope.model, scope.playerIndex, availableActions)
     }
 
-    fun createController(): GameController<T> = {scope ->
-        if (config.isEmpty()) {
-            throw IllegalArgumentException("All controllers must have at least one scorer (even if it just returns zero for everything)")
-        }
-        if (!noAvailableActions(scope.game, scope.playerIndex)) {
-            val scores = this.score(scope)
-            val bestScores = scores.scores.bestOf { it.score!! }
-            val move = if (bestScores.isNotEmpty()) bestScores.random().action else this.availableActions(scope).random()
-            move
-        } else null
-    }
-
     fun gameAI(): GameAI<T> = GameAI(name) {
-        val controller = createController()
         queryable { scope ->
             val scoreResult = this@ScorerController.score(scope)
             mapOf(
@@ -68,7 +55,18 @@ class ScorerController<T : Any>(val gameType: String, val name: String, vararg c
                 }.sortedBy { it["score"] as Double }
             )
         }
-        action { controller.invoke(this) }
+        action {
+            val context = GameControllerContext(game, playerIndex)
+            if (config.isEmpty()) {
+                throw IllegalArgumentException("All controllers must have at least one scorer (even if it just returns zero for everything)")
+            }
+            if (!noAvailableActions(game, playerIndex)) {
+                val scores = score(context)
+                val bestScores = scores.scores.bestOf { it.score!! }
+                val move = if (bestScores.isNotEmpty()) bestScores.random().action else availableActions(context).random()
+                move
+            } else null
+        }
     }
 
 }
