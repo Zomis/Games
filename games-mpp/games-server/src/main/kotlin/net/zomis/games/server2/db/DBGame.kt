@@ -46,7 +46,7 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
     val errors = mutableListOf<String>()
     val timeLastAction = moveHistory.map { it.time }.maxByOrNull { it ?: 0 }
 
-    fun game(coroutineScope: CoroutineScope): Game<Any> {
+    suspend fun game(coroutineScope: CoroutineScope): Game<Any> {
         class MyListener(val game: Game<Any>): GameListener {
             override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
                 if (step is FlowStep.ProceedStep) {
@@ -57,11 +57,9 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
                 }
             }
         }
-        return runBlocking {
-            GameEntryPoint(summary.gameSpec).replay(coroutineScope, replayData(), GamesServer.actionConverter) {
-                listOf(MyListener(it))
-            }.goToEnd().awaitCatchUp().game
-        }
+        return GamesImpl.game(summary.gameSpec).replay(coroutineScope, replayData(), GamesServer.actionConverter) {
+            listOf(MyListener(it))
+        }.goToEnd().awaitCatchUp().game
     }
 
     fun at(coroutineScope: CoroutineScope, position: Int): Game<Any> {
@@ -87,5 +85,7 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
             moveHistory.map { ActionReplay(it.moveType, it.playerIndex, it.move ?: Unit, it.state ?: emptyMap()) }
         )
     }
+
+    fun toJSON(): Map<String, Any> = mapOf("summary" to summary.serialize(), "views" to views, "errors" to errors, "timeLastAction" to (timeLastAction ?: 0L))
 
 }

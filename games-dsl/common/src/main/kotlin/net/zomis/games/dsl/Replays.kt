@@ -1,11 +1,8 @@
 package net.zomis.games.dsl
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.yield
 import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.listeners.BlockingGameListener
@@ -30,8 +27,9 @@ class Replay<T : Any>(
     private val entryPoint = GamesImpl.game(gameSpec)
     private var position: Int = 0
     private var targetPosition = 0
-    lateinit var game: Game<T>
-    lateinit var blockingListener: BlockingGameListener
+    private var internalGame: Game<T>? = null
+    val game get() = internalGame!!
+    private var blockingListener: BlockingGameListener = BlockingGameListener()
     private val stepLock = Mutex()
     private var stepJob: Job? = null
 
@@ -95,7 +93,8 @@ class Replay<T : Any>(
 
     private suspend fun restart() {
         this.blockingListener = BlockingGameListener()
-        this.game = entryPoint.setup().startGameWithConfig(coroutineScope, playerCount, config) {
+        this.internalGame?.stop()
+        this.internalGame = entryPoint.setup().startGameWithConfig(coroutineScope, playerCount, config) {
             listOf(ReplayingListener(replayData), blockingListener, this) + gameListeners.invoke(it as Game<T>)
         }
         this.position = 0
