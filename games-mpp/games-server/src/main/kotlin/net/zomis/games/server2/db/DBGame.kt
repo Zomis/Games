@@ -35,7 +35,7 @@ data class DBGameSummary(
         "gameType" to gameType,
         "config" to gameConfig.toJSON(),
         "gameId" to gameId,
-        "players" to playersInGame,
+        "playersInGame" to playersInGame,
         "gameState" to gameState,
         "startingState" to startingState,
         "timeStarted" to timeStarted
@@ -62,12 +62,10 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
         }.goToEnd().awaitCatchUp().game
     }
 
-    fun at(coroutineScope: CoroutineScope, position: Int): Game<Any> {
-        return runBlocking {
-            GameEntryPoint(summary.gameSpec).replay(coroutineScope, replayData(), GamesServer.actionConverter) {
-                listOf()
-            }.gotoPosition(position).awaitCatchUp().game
-        }
+    suspend fun at(coroutineScope: CoroutineScope, position: Int): Game<Any> {
+        return GameEntryPoint(summary.gameSpec).replay(coroutineScope, replayData(), GamesServer.actionConverter) {
+            listOf()
+        }.gotoPosition(position).awaitCatchUp().game
     }
 
     fun addError(error: String) {
@@ -86,6 +84,10 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
         )
     }
 
-    fun toJSON(): Map<String, Any> = mapOf("summary" to summary.serialize(), "views" to views, "errors" to errors, "timeLastAction" to (timeLastAction ?: 0L))
+    fun toJSON(): Map<String, Any?> = mapOf(
+        "views" to views,
+        "errors" to errors,
+        "timeLastAction" to timeLastAction
+    ) + summary.serialize()
 
 }

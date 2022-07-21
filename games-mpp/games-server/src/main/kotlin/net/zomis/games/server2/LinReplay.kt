@@ -22,11 +22,16 @@ class LinReplay(private val aiRepository: AIRepository, private val dbIntegratio
     fun setup(javalin: Javalin) {
         javalin.apply {
             get("/games/:gameid/replay") {ctx ->
-                val gameId = ctx.pathParam("gameid")
-                log(ctx, "fetch replay for $gameId")
-                val dbGame = caffeine.get(gameId)!!
-                // For debugging: dbGame.views.map { it["board"] as List<List<Map<String, Any>>> }.map { it.joinToString("\n") { it.joinToString("") { it["owner"].toString()?.takeIf { it != "null" } ?: "_" } } }
-                ctx.json(dbGame)
+                try {
+                    val gameId = ctx.pathParam("gameid")
+                    log(ctx, "fetch replay for $gameId")
+                    val dbGame = caffeine.get(gameId)!!
+                    // For debugging: dbGame.views.map { it["board"] as List<List<Map<String, Any>>> }.map { it.joinToString("\n") { it.joinToString("") { it["owner"].toString()?.takeIf { it != "null" } ?: "_" } } }
+                    ctx.json(dbGame.toJSON())
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    ctx.json(e.toString())
+                }
             }
             get("/games/:gameid/analyze/ais") {ctx ->
                 val gameId = ctx.pathParam("gameid")

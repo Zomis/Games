@@ -240,7 +240,7 @@ export default {
       return this.actions.chosen;
     },
     otherPlayers() {
-      if (!this.view.hand) return this.view.others;
+      if (Object.keys(this.view.hand).length === 0) return this.view.others;
       let myIndex = this.view.hand.index;
       return [...this.view.others.slice(myIndex), ...this.view.others.slice(0, myIndex)]
     },

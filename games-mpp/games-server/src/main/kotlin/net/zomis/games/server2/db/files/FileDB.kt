@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.coroutines.CoroutineScope
 import net.zomis.games.dsl.GameListener
+import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.listeners.CombinedListener
 import net.zomis.games.jackson.ReplayDataDeserializer
@@ -13,11 +14,9 @@ import net.zomis.games.listeners.ReplayListener
 import net.zomis.games.server2.ClientLoginEvent
 import net.zomis.games.server2.PlayerDatabaseInfo
 import net.zomis.games.server2.ServerGames
-import net.zomis.games.server2.db.DBGame
-import net.zomis.games.server2.db.DBGameSummary
-import net.zomis.games.server2.db.DBInterface
-import net.zomis.games.server2.db.MoveHistory
+import net.zomis.games.server2.db.*
 import net.zomis.games.server2.games.ServerGame
+import java.time.Instant
 import java.util.*
 import kotlin.io.path.*
 
@@ -37,6 +36,24 @@ class FileDB: DBInterface {
     }
 
     override fun loadGame(gameId: String): DBGame {
+        val gameTypeLookup: (String) -> GameSpec<out Any> = { ServerGames.games.getValue(it) }
+        val fullFile = path("$gameId-full")
+        if (fullFile.isRegularFile()) {
+            val fullTree = mapper.readTree(fullFile.inputStream()) as ObjectNode
+            val replayData = ReplayDataDeserializer.deserialize(fullTree, gameTypeLookup)
+            val summary = DBGameSummary(
+                gameTypeLookup.invoke(replayData.gameType) as GameSpec<Any>,
+                replayData.config,
+                gameId,
+                (0 until replayData.playerCount).map { PlayerInGame(PlayerView("replay-$gameId-$it", "Player $it"), it, null) },
+                replayData.gameType,
+                0,
+                replayData.initialState,
+                Instant.now().toEpochMilli()
+            )
+            val moveHistory = replayData.actions.map { MoveHistory(it.actionType, it.playerIndex, it.serializedParameter, it.state) }
+            return DBGame(summary, moveHistory)
+        }
         val treeSummary = mapper.readTree(path("$gameId-summary").inputStream()) as ObjectNode
         val summary = ReplayDataDeserializer.deserializeDBSummary(treeSummary) { ServerGames.games[it] }
         val tree: ObjectNode = jacksonObjectMapper().readTree(path(gameId).inputStream()) as ObjectNode
