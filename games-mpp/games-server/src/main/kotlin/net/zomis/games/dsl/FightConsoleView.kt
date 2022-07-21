@@ -2,23 +2,21 @@ package net.zomis.games.dsl
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import net.zomis.fights.FightFlow
+import net.zomis.fights.FightScope
 import net.zomis.games.WinResult
 import net.zomis.games.impl.DslSplendor
+import net.zomis.games.impl.HanabiGame
 import net.zomis.games.metrics.displayIntStats
 import net.zomis.games.metrics.groupByKeyAndTotal
 
-fun main() {
-    /*
-    * Fight modes:
-    * - Competitive games: fight evenly A/B/C/D/...
-    * - All games: X games with just some random AIs from a pool
-    * - Cooporative games: X players of AI A/B/C/D/...
-    * - Different config
-    *
-    * Stats:
-    * Backgammon/UR: Total steps left for each player over time
-    */
-    val results = FightFlow(GamesImpl.game(DslSplendor.splendorGame)).fight {
+class FightConsoleView<T: Any>(val entryPoint: GameEntryPoint<T>) {
+
+    fun fight(block: FightScope<T>.() -> Unit) = FightFlow(entryPoint).fight(block)
+
+}
+
+fun splendorFight(): Map<String, Any> {
+    return FightConsoleView(GamesImpl.game(DslSplendor.splendorGame)).fight {
         gameSource {
             fightEvenly(playersCount = 2, gamesPerCombination = 30, ais = gameType.setup().ais())
         }
@@ -76,6 +74,35 @@ fun main() {
             // type(MoneyType::class)
         }
     }
+}
+
+fun hanabiFight(): Map<String, Any> {
+    return FightConsoleView(GamesImpl.game(HanabiGame.game)).fight {
+        gameSource {
+            collaborative(playersCount = 3, gamesPerCombination = 30, ais = this.gameType.setup().ais())
+        }
+        val metrics = HanabiGame.Metrics(this)
+        this.grouping {
+            groupBy(metrics.fails) { fightSetup.players.first().name }.displayIntStats("fails")
+            groupByAndTotalActions(metrics.discarded) { ai.name }.displayIntStats("discard count")
+            groupByAndTotalActions(metrics.cluesUsed) { ai.name }.displayIntStats("cards given clues about")
+            groupBy(metrics.points) { fightSetup.players.first().name }.displayIntStats("points")
+        }
+    }
+}
+
+fun main() {
+    /*
+    * Fight modes:
+    * x Competitive games: fight evenly A/B/C/D/...
+    * x Cooporative games: X players of AI A/B/C/D/...
+    * - All games: X games with just some random AIs from a pool
+    * - Different config (or other things?)
+    *
+    * Stats:
+    * Backgammon/UR: Total steps left for each player over time
+    */
+    val results = hanabiFight()
     jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(results).also { println(it) }
     // After displaying results, add a way to search for a specific game/player/action by filtering on metrics.
     //   Such as maximum pointsDiff, then save the replay(s) for those games

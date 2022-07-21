@@ -1,6 +1,7 @@
 package net.zomis.games.metrics
 
 import net.zomis.games.common.toSingleList
+import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameAI
 
 data class IntSummaryStatistics(
@@ -14,6 +15,9 @@ data class IntSummaryStatistics(
     )
 }
 
+interface MetricGroupingScope<T: Any> {
+    val fightSetup: FightSetup<T>
+}
 interface MetricGroupingPlayerScope<T: Any> {
     val ai: GameAI<T>
     val playerIndex: Int
@@ -21,6 +25,8 @@ interface MetricGroupingPlayerScope<T: Any> {
 class MetricGroupingPlayerContext<T: Any>(private val fightSetup: FightSetup<T>, override val playerIndex: Int): MetricGroupingPlayerScope<T> {
     override val ai: GameAI<T> get() = fightSetup.players[playerIndex]
 }
+class MetricGroupingContext<T: Any>(override val fightSetup: FightSetup<T>): MetricGroupingScope<T>
+
 class IntermediateFightResult<T: Any, E>(
     val result: MutableMap<String, Any>,
     val values: Map<List<Any>, List<MetricData<T, E>>>
@@ -56,6 +62,7 @@ interface FightGroupingScope<T: Any> {
     fun displayIntStats(metric: FightMetric<T, Int>, name: String)
     fun <R> groupByAndTotal(metric: FightPlayerMetric<T, R>, groupBy: MetricGroupingPlayerScope<T>.() -> Any): IntermediateFightResult<T, R>
     fun <A: Any, E> groupByAndTotalActions(metric: FightActionMetric<T, A, E>, groupBy: MetricGroupingPlayerScope<T>.() -> Any): IntermediateFightResult<T, E>
+    fun <E> groupBy(metric: FightMetric<T, E>, function: MetricGroupingScope<T>.() -> Any): IntermediateFightResult<T, E>
 }
 
 class FightResultsContext<T: Any>: FightGroupingScope<T> {
@@ -114,6 +121,20 @@ class FightResultsContext<T: Any>: FightGroupingScope<T> {
         return IntermediateFightResult<T, E>(this.result, categorization)
     }
 
+    override fun <E> groupBy(
+        metric: FightMetric<T, E>,
+        function: MetricGroupingScope<T>.() -> Any
+    ): IntermediateFightResult<T, E> {
+        val categorization = mutableMapOf<List<Any>, MutableList<MetricData<T, E>>>()
+
+        metric.values.forEach { data ->
+            // loop through games and players and put in the appropriate categorization
+            val groupContext = MetricGroupingContext(data.fight)
+            val category = function.invoke(groupContext).toSingleList()
+            categorization.getOrPut(category) { mutableListOf() }.add(MetricData(data.fight, data.data))
+        }
+        return IntermediateFightResult<T, E>(this.result, categorization)
+    }
 }
 
 private fun List<MetricData<*, Int>>.toIntSummaryStatistics(): IntSummaryStatistics {

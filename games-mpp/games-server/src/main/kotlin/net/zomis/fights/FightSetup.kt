@@ -30,4 +30,16 @@ class FightSourceContext<T: Any>(override val gameType: GameEntryPoint<T>): Figh
             }
         }
     }
+
+    override fun collaborative(playersCount: Int, gamesPerCombination: Int, ais: List<GameAI<T>>) {
+        val config = gameType.setup().configs()
+        this.flow = flow {
+            ais.asSequence().forEach { gameAI ->
+                repeat(gamesPerCombination) {
+                    println("FIGHT COLLABORATIVELY! $gameAI iteration $it")
+                    emit(FightSetup(gameType, config, List(playersCount) { gameAI }, it))
+                }
+            }
+        }
+    }
 }

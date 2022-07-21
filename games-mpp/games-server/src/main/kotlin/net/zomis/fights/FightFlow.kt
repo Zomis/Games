@@ -15,6 +15,7 @@ import net.zomis.games.metrics.*
 interface FightSourceScope<T: Any> {
     val gameType: GameEntryPoint<T>
     fun fightEvenly(playersCount: Int, gamesPerCombination: Int, ais: List<GameAI<T>>)
+    fun collaborative(playersCount: Int, gamesPerCombination: Int, ais: List<GameAI<T>>)
 }
 
 interface FightScope<T: Any>: MetricBuilder<T> {

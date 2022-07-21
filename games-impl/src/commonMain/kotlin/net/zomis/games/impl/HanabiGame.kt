@@ -6,6 +6,7 @@ import net.zomis.games.cards.Card
 import net.zomis.games.cards.CardZone
 import net.zomis.games.cards.random
 import net.zomis.games.dsl.*
+import net.zomis.games.metrics.MetricBuilder
 import kotlin.math.min
 
 // RAINBOW: Either used as a sixth color, or as a wildcard (where cards can be both blue and yellow for example)
@@ -105,12 +106,8 @@ data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
 
     val deck = CardZone(config.createCards().shuffled().toMutableList()).also { it.cards.forEachIndexed { index, hanabiCard -> hanabiCard.id = index } }
 
-    fun reveal(clue: HanabiClue): List<HanabiCard> {
-        val player = players[clue.player]
-        val affectedCards = player.cards.toList().filter { it.matches(clue) }
-        player.cards.forEach { it.reveal(clue) }
-        return affectedCards
-    }
+    fun affectedCards(clue: HanabiClue): List<HanabiCard> = players[clue.player].cards.cards.filter { it.matches(clue) }
+    fun reveal(clue: HanabiClue): List<HanabiCard> = affectedCards(clue).onEach { it.reveal(clue) }
 
     fun nextTurn() {
         if (turnsLeft > 0) turnsLeft--
@@ -365,6 +362,15 @@ object HanabiGame {
             }
             */
         }
+    }
+
+    class Metrics(builder: MetricBuilder<Hanabi>) {
+        val points = builder.endGameMetric {
+            game.score()
+        }
+        val fails = builder.endGameMetric { game.failTokens }
+        val cluesUsed = builder.actionMetric(giveClue) { game.affectedCards(action.parameter).size }
+        val discarded = builder.actionMetric(discard) { 1 }
     }
 
     private fun playCardTo(playCard: Card<HanabiCard>, playArea: CardZone<HanabiCard>?,
