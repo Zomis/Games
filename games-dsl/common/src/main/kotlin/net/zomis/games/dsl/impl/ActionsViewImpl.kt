@@ -13,7 +13,8 @@ class ActionsViewImpl<T: Any>(
     private val useChosen: Boolean
 ) : ActionsView<T>, ActionsChosenView<T> {
     override fun chosen(): ActionPlayerChoice? {
-        return if (useChosen) game.actions.choices.getChosen(viewer.playerIndex!!) else null
+        if (viewer.playerIndex == null) return null
+        return if (useChosen) game.actions.choices.getChosen(viewer.playerIndex) else null
     }
 
     override fun <E : Any> nextSteps(clazz: KClass<E>): List<E> {
