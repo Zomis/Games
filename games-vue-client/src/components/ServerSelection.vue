@@ -11,11 +11,7 @@
     <h3><a href="https://discord.gg/GfXFUvc">Join us on Discord!</a></h3>
 
     <p>
-      The server "zomis" should be up and running always.<br>
-      If you want to start a local server, <a href="https://github.com/Zomis/Server2">clone my project on GitHub</a>.<br>
-      You can also <router-link to="/local">
-        play games locally without connecting to the server (but this is boring, don't do this)
-      </router-link>
+      See <a href="https://github.com/Zomis/Games">my project on GitHub</a> for how to host your own local server.<br>
     </p>
   </div>
 </template>
