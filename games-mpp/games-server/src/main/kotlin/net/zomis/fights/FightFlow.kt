@@ -22,9 +22,22 @@ interface FightScope<T: Any>: MetricBuilder<T> {
     val gameType: GameEntryPoint<T>
     fun gameSource(block: FightSourceScope<T>.() -> Unit)
     fun grouping(function: FightGroupingScope<T>.() -> Unit)
+    fun extraGameListeners(function: FightExtraListenersScope<T>.() -> Unit)
 }
 
-class Fight<T: Any>(val fightSetup: FightSetup<T>, val metricsListener: MetricsListener<T>) {
+interface FightExtraListenersScope<T: Any> {
+    fun <L: GameListener> listener(gameListener: () -> L): L
+    val fightSetup: FightSetup<T>
+    val game: Game<T>
+}
+class FightExtraListenersContext<T: Any>(override val fightSetup: FightSetup<T>, override val game: Game<T>): FightExtraListenersScope<T> {
+    val listeners = mutableListOf<GameListener>()
+    override fun <L : GameListener> listener(gameListener: () -> L): L {
+        return gameListener.invoke().also { listeners.add(it) }
+    }
+}
+
+class Fight<T: Any>(val fightSetup: FightSetup<T>, val extraListeners: (Game<T>) -> List<GameListener>) {
     lateinit var game: Game<T>
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
     private val blockingGameListener = BlockingGameListener()
@@ -33,7 +46,7 @@ class Fight<T: Any>(val fightSetup: FightSetup<T>, val metricsListener: MetricsL
         this.game = fightSetup.gameType.setup().startGame(coroutineScope, fightSetup.players.size) { game ->
             fightSetup.players.mapIndexed { index: Int, gameAI: GameAI<T> ->
                 gameAI.gameListener(game as Game<T>, index, delayOverride = 0)
-            } + blockingGameListener + metricsListener.fight(fightSetup, game as Game<T>)
+            } + blockingGameListener + extraListeners.invoke(game as Game<T>)
         }
     }
 
@@ -48,6 +61,9 @@ class FightContext<T: Any>(override val gameType: GameEntryPoint<T>): FightScope
     lateinit var results: FightGroupingScope<T>.() -> Unit
     lateinit var sourceContext: FightSourceContext<T>
     val metricsListener = MetricsListener<T>()
+    var extraListeners: FightExtraListenersScope<T>.() -> Unit = {
+        listener { metricsListener.fight(fightSetup, game) }
+    }
 
     override fun gameSource(block: FightSourceScope<T>.() -> Unit) {
         this.sourceContext = FightSourceContext(gameType).also(block)
@@ -66,13 +82,25 @@ class FightContext<T: Any>(override val gameType: GameEntryPoint<T>): FightScope
         = metricsListener.endGamePlayerMetric(block)
 
     fun fights(): Flow<Fight<T>> {
-        return sourceContext.flow.map {
-            Fight(it, metricsListener)
+        return sourceContext.flow.map { fightSetup ->
+            Fight(fightSetup) { game ->
+                val context = FightExtraListenersContext(fightSetup, game)
+                extraListeners.invoke(context)
+                context.listeners.toList()
+            }
         }
     }
 
     override fun grouping(function: FightGroupingScope<T>.() -> Unit) {
         this.results = function
+    }
+
+    override fun extraGameListeners(function: FightExtraListenersScope<T>.() -> Unit) {
+        val previous = this.extraListeners
+        this.extraListeners = {
+            previous.invoke(this)
+            function.invoke(this)
+        }
     }
 
     fun produceResults() = metricsListener.produceResults(results)
@@ -94,7 +122,6 @@ class FightFlow<T: Any>(val gameType: GameEntryPoint<T>) {
                 it.start()
                 it.awaitEnd()
                 println(it.game.view(0))
-
             }
             context.produceResults()
         }

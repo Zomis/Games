@@ -6,8 +6,15 @@ import net.zomis.fights.FightScope
 import net.zomis.games.WinResult
 import net.zomis.games.impl.DslSplendor
 import net.zomis.games.impl.HanabiGame
+import net.zomis.games.listeners.FileReplayOnEnd
+import net.zomis.games.listeners.ReplayListener
 import net.zomis.games.metrics.displayIntStats
 import net.zomis.games.metrics.groupByKeyAndTotal
+import java.time.Instant
+import kotlin.io.path.Path
+import kotlin.io.path.createDirectories
+
+val fightSaves = Path("db/fights").also { it.createDirectories() }
 
 class FightConsoleView<T: Any>(val entryPoint: GameEntryPoint<T>) {
 
@@ -76,10 +83,20 @@ fun splendorFight(): Map<String, Any> {
     }
 }
 
-fun hanabiFight(): Map<String, Any> {
+fun hanabiFight(saveReplays: Boolean): Map<String, Any> {
     return FightConsoleView(GamesImpl.game(HanabiGame.game)).fight {
         gameSource {
             collaborative(playersCount = 3, gamesPerCombination = 30, ais = this.gameType.setup().ais())
+        }
+        if (saveReplays) {
+            extraGameListeners {
+                val replay = listener { ReplayListener(HanabiGame.game.name) }
+                listener {
+                    val timeStamp = Instant.now().epochSecond.toString()
+                    val fileName = "$timeStamp -- ${fightSetup.players.first().name} - ${fightSetup.iteration}.json"
+                    FileReplayOnEnd(fightSaves.resolve(fileName), replay)
+                }
+            }
         }
         val metrics = HanabiGame.Metrics(this)
         this.grouping {
@@ -102,7 +119,7 @@ fun main() {
     * Stats:
     * Backgammon/UR: Total steps left for each player over time
     */
-    val results = hanabiFight()
+    val results = hanabiFight(saveReplays = false)
     jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(results).also { println(it) }
     // After displaying results, add a way to search for a specific game/player/action by filtering on metrics.
     //   Such as maximum pointsDiff, then save the replay(s) for those games
