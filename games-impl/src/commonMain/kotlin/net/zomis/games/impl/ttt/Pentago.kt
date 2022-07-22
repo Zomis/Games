@@ -5,7 +5,6 @@ import net.zomis.games.WinResult
 import net.zomis.games.api.Games
 import net.zomis.games.api.GamesApi
 import net.zomis.games.api.components
-import net.zomis.games.common.Direction8
 import net.zomis.games.common.Point
 import net.zomis.games.common.next
 import net.zomis.games.components.*
@@ -18,15 +17,17 @@ import net.zomis.games.impl.ttt.ultimate.TTPlayer
 object Pentago {
     const val SIZE = 3
 
-    data class Turning(val direction: Direction8, val clockwise: Boolean): GameSerializable {
-        override fun serialize(): Any = "${direction.serialize()}-$clockwise"
+    data class PentagoConfig(val turnDifferent: Boolean, val turnBothDirections: Boolean)
+    data class Turning(val topLeft: Point, val clockwise: Boolean): GameSerializable {
+        override fun serialize(): Any = "${topLeft.serialize()}-$clockwise"
     }
 
-    class Model(override val ctx: Context): Entity(ctx), ContextHolder {
+    class Model(override val ctx: Context, val config: PentagoConfig): Entity(ctx), ContextHolder {
         var currentPlayer by component { 0 }
         val grid by component {
             Games.components.grid(2*SIZE, 2*SIZE) { _, _ -> TTPlayer.NONE }
         }.publicView { map -> map.view { it } }
+        var lastPlacement: Point = Point(0, 0)
 
         val place = actionSerializable<Model, Point>("place", Point::class) {
             precondition { playerIndex == currentPlayer }
@@ -34,27 +35,31 @@ object Pentago {
             options { grid.points() }
             perform {
                 grid.set(action.parameter.x, action.parameter.y, TTPlayer.forIndex(currentPlayer))
+                lastPlacement = action.parameter
             }
         }
         val turn = actionSerializable<Model, Turning>("turn", Turning::class) {
             precondition { playerIndex == currentPlayer }
             choose {
-                options({ Direction8.diagonals() }) {direction ->
-                    options({ listOf(true, false) }) { clockwise ->
+                options({
+                    listOf(
+                        Point(0, 0),
+                        Point(SIZE, 0),
+                        Point(0, SIZE),
+                        Point(SIZE, SIZE)
+                    ).filter {
+                        val placementInside = lastPlacement.x in it.x until it.x+SIZE && lastPlacement.y in it.y until it.y + SIZE
+                        config.turnDifferent || placementInside
+                    }
+                }) {direction ->
+                    options({ listOf(true, false).filter { config.turnBothDirections || it } }) { clockwise ->
                         parameter(Turning(direction, clockwise))
                     }
                 }
             }
             perform {
                 val apply = if (action.parameter.clockwise) Transformation.ROTATE_90_CLOCKWISE else Transformation.ROTATE_90_ANTI_CLOCKWISE
-                val point = when (action.parameter.direction) {
-                    Direction8.NE -> Point(1, 0)
-                    Direction8.NW -> Point(0, 0)
-                    Direction8.SW -> Point(0, 1)
-                    Direction8.SE -> Point(1, 1)
-                    else -> throw IllegalArgumentException("Invalid direction: ${action.parameter.direction}")
-                }.times(SIZE)
-                grid.subGrid(point.x, point.y, SIZE, SIZE).transform(apply)
+                grid.subGrid(action.parameter.topLeft.x, action.parameter.topLeft.y, SIZE, SIZE).transform(apply)
                 winCheck(eliminations)
                 currentPlayer = currentPlayer.next(2)
             }
@@ -73,7 +78,9 @@ object Pentago {
     val game = GamesApi.gameContext("Pentago", Model::class) {
         val turnDifferent = this.config("turnDifferent") { true }
         val turnBothDirections = this.config("turnBothDirections") { true }
-        this.init { Model(ctx) }
+        this.init {
+            Model(ctx, PentagoConfig(turnDifferent = turnDifferent.value, turnBothDirections = turnBothDirections.value))
+        }
         this.players(2..2)
         this.gameFlow {
             this.loop {
