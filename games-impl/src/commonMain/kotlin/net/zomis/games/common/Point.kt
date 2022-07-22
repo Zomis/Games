@@ -11,6 +11,7 @@ data class Point(val x: Int, val y: Int): GameSerializable {
     operator fun minus(other: Point): Point = Point(x - other.x, y - other.y)
     fun toStateString(): String = "${x},${y}"
     override fun serialize(): Any = toStateString()
+    operator fun times(multiplier: Int): Point = Point(x * multiplier, y * multiplier)
 }
 
 data class Rect(val top: Int, val left: Int, val right: Int, val bottom: Int) {

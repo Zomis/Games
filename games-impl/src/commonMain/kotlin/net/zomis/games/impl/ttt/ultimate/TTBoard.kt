@@ -385,6 +385,12 @@ enum class TTPlayer {
         fun isExactlyOnePlayer(winner: TTPlayer?): Boolean {
             return winner != null && winner.isExactlyOnePlayer
         }
+
+        fun forIndex(playerIndex: Int): TTPlayer = when (playerIndex) {
+            0 -> X
+            1 -> O
+            else -> throw IllegalArgumentException("playerIndex must be 0 or 1, was $playerIndex")
+        }
     }
 
 }

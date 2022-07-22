@@ -112,3 +112,18 @@ class GridImpl<T>(override val sizeX: Int, override val sizeY: Int, val factory:
     override fun get(x: Int, y: Int): T = grid[y][x]
 
 }
+
+class GridSubView<T>(private val original: Grid<T>, val origin: Point, override val sizeX: Int, override val sizeY: Int): Grid<T> {
+    override fun set(x: Int, y: Int, value: T) {
+        require(this.isOnMap(x, y))
+        return original.set(x + origin.x, y + origin.y, value)
+    }
+
+    override fun get(x: Int, y: Int): T {
+        require(this.isOnMap(x, y))
+        return original.get(x + origin.x, y + origin.y)
+    }
+}
+
+fun <T> Grid<T>.subGrid(x: Int, y: Int, subSizeX: Int, subSizeY: Int): Grid<T>
+    = GridSubView(this, Point(x, y), subSizeX, subSizeY)

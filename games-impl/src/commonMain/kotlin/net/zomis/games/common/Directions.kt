@@ -1,5 +1,7 @@
 package net.zomis.games.common
 
+import net.zomis.games.dsl.GameSerializable
+
 enum class Direction4(val deltaX: Int, val deltaY: Int) {
     LEFT(-1, 0),
     RIGHT(1, 0),
@@ -28,7 +30,7 @@ enum class Direction4(val deltaX: Int, val deltaY: Int) {
     fun delta(): Point = Point(deltaX, deltaY)
 }
 
-enum class Direction8 constructor(val deltaX: Int, val deltaY: Int) {
+enum class Direction8 constructor(val deltaX: Int, val deltaY: Int): GameSerializable {
     W(-1, 0),
     NW(-1, -1),
     N(0, -1),
@@ -61,5 +63,11 @@ enum class Direction8 constructor(val deltaX: Int, val deltaY: Int) {
         S -> N
         NE -> SW
         SW -> NE
+    }
+
+    override fun serialize(): Any = delta().serialize()
+
+    companion object {
+        fun diagonals() = listOf(NW, NE, SW, SE)
     }
 }
