@@ -93,6 +93,10 @@ class DelegateFactory<E, P: ReadOnlyProperty<Entity?, E>>(
     fun <T: Any> changeOn(event: Event<T>, handler: HandlerScope<E, T>.() -> E): DelegateFactory<E, P>
         = changeOn(event, EventPriority.NORMAL, handler)
 
+    fun view(viewFunction: (ViewScope<Any>).(E) -> Any): DelegateFactory<E, P> {
+        this.publicView = { viewFunction.invoke(it, getter.invoke(delegate)) }
+        return this
+    }
     fun privateView(playerIndices: List<Int>, view: (E) -> Any): DelegateFactory<E, P> {
         playerIndices.forEach { index ->
             privateViews[index] = { view.invoke(getter.invoke(delegate)) }
@@ -144,6 +148,7 @@ open class Entity(protected open val ctx: Context) {
     fun <E> component(function: ContextHolder.() -> E): DelegateFactory<E, ComponentDelegate<E>> {
         return delegate { ComponentDelegate(function.invoke(ContextHolderImpl(it))) }
     }
+    fun <T: Any> viewOnly(viewFunction: (ViewScope<T>).() -> Any) = dynamicValue {}.view { viewFunction.invoke(this as ViewScope<T>) }
     fun <E> value(function: ContextHolder.() -> E): DelegateFactory<E, ComponentDelegate<E>> = component(function)
     fun <E> dynamicValue(function: ContextHolder.() -> E): DelegateFactory<E, DynamicValueDelegate<E>> {
         val delegate = DynamicValueDelegate { function.invoke(ContextHolderImpl(ctx)) }
