@@ -9,8 +9,6 @@ import com.amazonaws.services.dynamodbv2.model.*
 import klog.KLoggers
 import net.zomis.common.convertFromDBFormat
 import net.zomis.common.convertToDBFormat
-import net.zomis.core.events.EventSystem
-import net.zomis.games.Features
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.GameSetupImpl
@@ -30,10 +28,6 @@ data class PlayerView(val playerId: String, val name: String)
 class SuperTable(private val dynamoDB: AmazonDynamoDB) {
 
     private val logger = KLoggers.logger(this)
-
-    private fun dbEnabled(game: ServerGame): Boolean {
-        return game.gameMeta.database
-    }
 
     fun createTableRequests(): List<CreateTableRequest> {
         /*
@@ -165,9 +159,8 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
     }
 
     private fun gameRandomnessState(state: Map<String, Any>): Any? {
-        val lastMoveState = state
-        if (lastMoveState.isNotEmpty()) {
-            return convertToDBFormat(lastMoveState)
+        if (state.isNotEmpty()) {
+            return convertToDBFormat(state)
         }
         return null
     }
