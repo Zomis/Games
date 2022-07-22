@@ -38,7 +38,6 @@ class Replay<T : Any>(
             yield() // Infinite loop if we don't add this here
             blockingListener.await()
         }
-        internalGame?.stop()
         return this
     }
     suspend fun gotoPosition(newPosition: Int): Replay<T> {
