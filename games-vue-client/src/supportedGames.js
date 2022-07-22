@@ -358,10 +358,6 @@ export default {
         }
         return a
     },
-    stateModules(state) {
-        let modules = this.storeModules()
-        return Object.keys(modules).map(moduleName => state[moduleName]);
-    },
     enabledGameKeys() {
         return enabledGames()
     },

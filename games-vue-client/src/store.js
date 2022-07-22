@@ -24,11 +24,7 @@ const store = new Vuex.Store({
   },
   getters: {
     activeGames: state => {
-      let modules = { DslGameState: DslGameState }
-      let mod2 = Object.keys(modules).map(moduleName => state[moduleName]);
-
-      return mod2
-        .flatMap(m => m.games)
+      return state.DslGameState.games
         .map(i => Object.values(i))
         .flat();
     }
