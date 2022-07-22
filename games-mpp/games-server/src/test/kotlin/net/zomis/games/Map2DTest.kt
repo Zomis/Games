@@ -19,11 +19,17 @@ class Map2DTest {
             row(6, 7, 8)
         }
 
-        map.transform(Transformation.ROTATE_90)
+        map.transform(Transformation.ROTATE_90_CLOCKWISE)
         assertMapValues(map) {
             row(6, 3, 0)
             row(7, 4, 1)
             row(8, 5, 2)
+        }
+        val transformedAgain = map.transformed(Transformation.ROTATE_90_CLOCKWISE)
+        assertMapValues(transformedAgain) {
+            row(8, 7, 6)
+            row(5, 4, 3)
+            row(2, 1, 0)
         }
     }
 
@@ -42,6 +48,23 @@ class Map2DTest {
         val assertion = MapAssertion(map)
         assertions(assertion)
         Assertions.assertNull(assertion.position)
+    }
+
+    @Test
+    fun consecutiveTransformations() {
+        var transformation = Transformation.NO_CHANGE
+        transformation = transformation.apply(Transformation.ROTATE_90_CLOCKWISE)
+        Assertions.assertEquals(Transformation.ROTATE_90_CLOCKWISE, transformation)
+        transformation = transformation.apply(Transformation.ROTATE_90_CLOCKWISE)
+        Assertions.assertEquals(Transformation.ROTATE_180, transformation)
+        transformation = transformation.apply(Transformation.ROTATE_90_ANTI_CLOCKWISE)
+        Assertions.assertEquals(Transformation.ROTATE_90_CLOCKWISE, transformation)
+        transformation = transformation.apply(Transformation.ROTATE_90_CLOCKWISE)
+        Assertions.assertEquals(Transformation.ROTATE_180, transformation)
+        transformation = transformation.apply(Transformation.ROTATE_90_CLOCKWISE)
+        Assertions.assertEquals(Transformation.ROTATE_90_ANTI_CLOCKWISE, transformation)
+        transformation = transformation.apply(Transformation.ROTATE_90_CLOCKWISE)
+        Assertions.assertEquals(Transformation.NO_CHANGE, transformation)
     }
 
     @Test

@@ -31,9 +31,9 @@ enum class Transformation(private val transformations: List<TransformationType>)
     NO_CHANGE(listOf()),
     FLIP_X(listOf(TransformationType.FLIP_X)),
     FLIP_Y(listOf(TransformationType.FLIP_Y)),
-    ROTATE_90(listOf(TransformationType.ROTATE)),
+    ROTATE_90_CLOCKWISE(listOf(TransformationType.ROTATE)),
     ROTATE_180(listOf(TransformationType.ROTATE, TransformationType.ROTATE)),
-    ROTATE_270(listOf(TransformationType.ROTATE, TransformationType.ROTATE, TransformationType.ROTATE)),
+    ROTATE_90_ANTI_CLOCKWISE(listOf(TransformationType.ROTATE, TransformationType.ROTATE, TransformationType.ROTATE)),
     ROTATE_90_FLIP_X(listOf(TransformationType.ROTATE, TransformationType.FLIP_X)),
     ROTATE_90_FLIP_Y(listOf(TransformationType.ROTATE, TransformationType.FLIP_Y)),
     ;
@@ -63,8 +63,8 @@ private fun <T> Grid<T>.originalPossibleTransformations(): MutableSet<Transforma
     val possibleTransformations = Transformation.values().toMutableSet()
     if (sizeX != sizeY) {
         // Rotating 90 or 270 degrees only works if both width or height is the same
-        possibleTransformations.remove(Transformation.ROTATE_90)
-        possibleTransformations.remove(Transformation.ROTATE_270)
+        possibleTransformations.remove(Transformation.ROTATE_90_CLOCKWISE)
+        possibleTransformations.remove(Transformation.ROTATE_90_ANTI_CLOCKWISE)
     }
     return possibleTransformations
 }
@@ -106,17 +106,19 @@ fun <T> Grid<T>.symmetryTransformations(equalsFunction: (T, T) -> Boolean): Set<
         }
     }.toSet()
 }
-
-fun <T> Grid<T>.transform(transformation: Transformation) {
-    val rotated = GridImpl(sizeX, sizeY) { x, y ->
+fun <T> Grid<T>.transformed(transformation: Transformation): Grid<T> {
+    return GridImpl(sizeX, sizeY) { x, y ->
         val pos = Position(x, y, sizeX, sizeY)
         val oldPos = transformation.reverseTransform(pos)
         get(oldPos.x, oldPos.y)
     }
+}
 
+fun <T> Grid<T>.transform(transformation: Transformation) {
+    val rotated = transformed(transformation)
     (0 until sizeY).forEach {y ->
         (0 until sizeX).forEach {x ->
-            set(x, y, rotated.grid[y][x])
+            set(x, y, rotated.get(x, y))
         }
     }
 }
