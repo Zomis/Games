@@ -40,7 +40,8 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
                     replayListener,
                     FileReplay(file, replayListener).postReplay(replayData),
                     blockingGameListener,
-                    ai.gameListener(g, 0).postReplay(replayData)
+                    ai.gameListener(g, 0).postReplay(replayData),
+                    SanityCheckListener(g)
                 )
             }.goToEnd().awaitCatchUp()
             if (savedReplay.game.isGameOver()) {
@@ -75,7 +76,8 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
                     replayListener,
                     FileReplay(file, replayListener),
                     blockingGameListener,
-                    ai.gameListener(g as Game<T>, 0)
+                    ai.gameListener(g as Game<T>, 0),
+                    SanityCheckListener(g)
                 )
             }
             blockingGameListener.awaitGameEnd()
