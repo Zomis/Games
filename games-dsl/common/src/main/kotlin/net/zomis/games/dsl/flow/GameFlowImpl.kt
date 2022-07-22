@@ -14,9 +14,9 @@ import net.zomis.games.dsl.impl.*
 class GameFlowImpl<T: Any>(
     private val setupContext: GameDslContext<T>,
     override val playerCount: Int,
-    val gameConfig: GameConfigs,
-    override val stateKeeper: StateKeeper
+    val gameConfig: GameConfigs
 ): Game<T>, GameFactoryScope<Any>, GameEventsExecutor, GameFlowRuleCallbacks<T> {
+    private val stateKeeper = StateKeeper()
     override val gameType: String = setupContext.gameType
 
     override val config: Any get() = gameConfig.oldStyleValue()

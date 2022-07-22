@@ -216,7 +216,7 @@ class GameDslContext<T : Any>(val gameType: String) : GameDsl<T> {
         this.flowDsl = flowDsl
     }
 
-    fun createGame(playerCount: Int, config: GameConfigs, stateKeeper: StateKeeper): Game<T> {
+    fun createGame(playerCount: Int, config: GameConfigs): Game<T> {
         val flowDslNull = this.flowDsl == null
         val flowRulesNull = this.flowRulesDsl == null
         if (listOf(flowDslNull, flowRulesNull).distinct().size > 1) {
@@ -224,9 +224,9 @@ class GameDslContext<T : Any>(val gameType: String) : GameDsl<T> {
         }
 
         return if (this.flowDsl == null) {
-            GameImpl(this, playerCount, config, stateKeeper)
+            GameImpl(this, playerCount, config)
         } else {
-            GameFlowImpl(this, playerCount, config, stateKeeper)
+            GameFlowImpl(this, playerCount, config)
         }
     }
 

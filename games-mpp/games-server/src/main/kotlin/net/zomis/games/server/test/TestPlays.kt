@@ -168,7 +168,6 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
                 }
                 runBlocking {
                     replayable.game.actionsInput.send(actionable)
-                    println("LAST MOVE STATE: " + replayable.game.stateKeeper.lastMoveState())
                 }
             }
             is PlayTestStepAssertActions -> step.assert(replayable)

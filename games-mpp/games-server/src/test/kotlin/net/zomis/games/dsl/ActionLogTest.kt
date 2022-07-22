@@ -4,6 +4,7 @@ import kotlinx.coroutines.test.runTest
 import net.zomis.games.WinResult
 import net.zomis.games.dsl.impl.*
 import net.zomis.games.dsl.listeners.BlockingGameListener
+import net.zomis.games.dsl.listeners.LogKeeper
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import kotlin.math.sign
@@ -50,16 +51,19 @@ class ActionLogTest {
     fun test() = runTest {
         val entry = GamesImpl.game(spec)
         val blockingGame = BlockingGameListener()
+        val logKeeper = LogKeeper()
         val game = entry.setup().startGame(this, 2) {
-            listOf(blockingGame)
+            listOf(blockingGame, logKeeper)
         }
         blockingGame.awaitAndPerform(0, change, 2)
         blockingGame.awaitAndPerform(0, change, 3)
+        blockingGame.await()
+        logKeeper.clearLogs()
         blockingGame.awaitAndPerform(1, change, -2)
         blockingGame.await()
 
-        val logs = game.stateKeeper.logs()
-        Assertions.assertEquals(2, logs.size)
+        val logs = logKeeper.logs
+        Assertions.assertEquals(2, logs.size) { "Logs found are: $logs" }
         Assertions.assertEquals(LogPartPlayer(1), logs[0].secret!!.parts[0])
         Assertions.assertTrue(logs[0].secret!!.private)
         Assertions.assertEquals(LogPartText(" changed the value with "), logs[0].secret!!.parts[1])

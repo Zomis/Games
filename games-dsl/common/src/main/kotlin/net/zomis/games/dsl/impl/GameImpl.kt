@@ -63,7 +63,7 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
         if (playerCount !in playersCount) {
             throw IllegalArgumentException("Invalid number of players: $playerCount, expected $playersCount")
         }
-        val game = context.createGame(playerCount, config, StateKeeper())
+        val game = context.createGame(playerCount, config)
 
         val listeners = flowListeners.invoke(game as Game<Any>)
         debugPrint("Waiting for ${listeners.size} listeners")
@@ -102,7 +102,6 @@ interface Game<T: Any> {
     val config: Any
     val eliminations: PlayerEliminationsWrite
     val model: T
-    val stateKeeper: StateKeeper // TODO: Hide `stateKeeper` and use FlowSteps as much as possible
     val actions: Actions<T>
     val actionsInput: Channel<Actionable<T, out Any>>
     val feedbackFlow: Channel<FlowStep>
@@ -117,9 +116,9 @@ interface Game<T: Any> {
 class GameImpl<T : Any>(
     private val setupContext: GameDslContext<T>,
     override val playerCount: Int,
-    val gameConfig: GameConfigs,
-    override val stateKeeper: StateKeeper
+    val gameConfig: GameConfigs
 ): Game<T>, GameFactoryScope<Any>, GameEventsExecutor {
+    private val stateKeeper = StateKeeper()
     override val gameType: String = setupContext.gameType
 
     private var actionsInputJob: Job? = null
@@ -178,6 +177,10 @@ class GameImpl<T : Any>(
     }
 
     private suspend fun awaitInput() {
+        stateKeeper.logs().toList().forEach {
+            feedbackFlow.send(FlowStep.Log(it))
+        }
+        stateKeeper.clearLogs()
         feedbackFlow.send(if (this.isGameOver()) FlowStep.GameEnd else FlowStep.AwaitInput)
     }
 
@@ -187,7 +190,7 @@ class GameImpl<T : Any>(
     override val feedbackFlow: Channel<FlowStep> = Channel()
 
     override fun copy(copier: (source: T, destination: T) -> Unit): GameImpl<T> {
-        val copy = GameImpl(setupContext, playerCount, gameConfig, stateKeeper)
+        val copy = GameImpl(setupContext, playerCount, gameConfig)
         copier(this.model, copy.model)
         copy.setupContext.actionRulesDsl?.invoke(copy.rules) // TODO: This is a bit of an ugly hack to add the rules
         this.eliminations.eliminations().forEach { copy.eliminations.eliminate(it) }
