@@ -1,10 +1,10 @@
 import Vue from "vue";
 import Vuex from "vuex";
-import supportedGames from "@/supportedGames"
 import Socket from "@/socket";
 import lobbyStore from "./components/lobby/lobbyStore";
 import router from "@/router/index";
 import settingsStore from "./components/settings/settingsStore";
+import DslGameState from "./components/games/DslGameState";
 
 // const debug = process.env.NODE_ENV !== "production";
 Vue.use(Vuex);
@@ -14,7 +14,7 @@ const store = new Vuex.Store({
   modules: {
     lobby: lobbyStore,
     settings: settingsStore,
-    ...supportedGames.storeModules()
+    DslGameState: DslGameState
   },
   state: {
     titlePrefix: titlePrefix,
@@ -24,8 +24,10 @@ const store = new Vuex.Store({
   },
   getters: {
     activeGames: state => {
-      let modules = supportedGames.stateModules(state);
-      return modules
+      let modules = { DslGameState: DslGameState }
+      let mod2 = Object.keys(modules).map(moduleName => state[moduleName]);
+
+      return mod2
         .flatMap(m => m.games)
         .map(i => Object.values(i))
         .flat();
@@ -98,12 +100,7 @@ const store = new Vuex.Store({
         context.dispatch("lobby/onSocketMessage", data);
       }
       if (data.gameType) {
-        let game = supportedGames.games[data.gameType]
-        if (game.dsl) {
-          context.dispatch("DslGameState/onSocketMessage", data);
-        } else if (game.store) {
-          context.dispatch(data.gameType + "/onSocketMessage", data);
-        }
+        context.dispatch("DslGameState/onSocketMessage", data);
       }
     }
   }

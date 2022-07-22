@@ -61,7 +61,7 @@ export default {
   name: "LobbyCompactList",
   props: [],
   data() {
-    const enabledGames = supportedGames.enabledGameKeys().filter(game => supportedGames.games[game].dsl);
+    const enabledGames = supportedGames.enabledGameKeys();
     return {
       amountOfPlayers: '',
       playTime: '',

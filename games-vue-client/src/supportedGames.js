@@ -45,7 +45,6 @@ import SplendorNoble from "@/components/games/splendor/SplendorNoble"
 import HanabiCard from "@/components/games/HanabiCard"
 import DungeonMayhemCard from "@/components/games/dungeon-mayhem/DungeonMayhemCard"
 
-import DslGameState from "./components/games/DslGameState";
 const defaultRouteProps = route => ({
     gameInfo: route.params.gameInfo,
     showRules: true
@@ -96,25 +95,21 @@ function upgradeSpice(spice) {
 
 const supportedGames = {
     "Alchemists": {
-        dsl: true,
         component: Alchemists,
         playTime: '60',
         amountOfPlayers: '2-4'
     },
     "Backgammon": {
-        dsl: true,
         component: Backgammon,
         playTime: '15',
         amountOfPlayers: '2'
     },
     "King Domino": {
-        dsl: true,
         component: KingDomino,
         playTime: '45',
         amountOfPlayers: '2-4'
     },
     "Dixit": {
-        dsl: true,
         viewTypes: {
             round: { component: DixitRound, binds: (v) => ({ results: v }) }
         },
@@ -123,7 +118,6 @@ const supportedGames = {
         amountOfPlayers: '3-12',
     },
     "TTTUpgrade": {
-        dsl: true,
         component: TTTUpgrade
     },
     "Avalon": {
@@ -141,7 +135,6 @@ const supportedGames = {
     },
     "Decrypto": {
         enabled: false,
-        dsl: true,
         actions: {
             chat: () => "chat",
             guessCode: () => "guessCode",
@@ -152,7 +145,6 @@ const supportedGames = {
         amountOfPlayers: '3-8',
     },
     "Coup": {
-        dsl: true,
         component: Coup,
         playTime: '15',
         amountOfPlayers: '2-6',
@@ -179,7 +171,6 @@ const supportedGames = {
         amountOfPlayers: '2-5',
     },
     "Set": {
-        dsl: true,
         resetActions: false,
         component: SetGame,
         playTime: '30',
@@ -197,7 +188,6 @@ const supportedGames = {
         amountOfPlayers: '2-4',
     },
     "Spice Road": {
-        dsl: true,
         actions: {
             play: (card) => ({
                 key: card,
@@ -311,18 +301,6 @@ export default {
     },
     enabledGamesTextValue() {
         return this.enabledGameKeys().map(gameType => ({ text: this.displayName(gameType), value: `type/${gameType}`}))
-    },
-    storeModules() {
-        let modules = {}
-        for (let key of enabledGames()) {
-            let game = supportedGames[key]
-            if (game.dsl) {
-                modules["DslGameState"] = DslGameState
-            } else if (game.store) {
-                modules[key] = game.store
-            }
-        }
-        return modules
     },
     routes() {
         return enabledGames().map(key => {
