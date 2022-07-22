@@ -62,7 +62,7 @@ class GameFlowImpl<T: Any>(
                 sendFeedback(FlowStep.GameEnd)
                 logger.info("GameFlow Coroutine MainScope done for $game")
             } catch (e: CancellationException) {
-                logger.warn { "Game cancelled: $game" }
+                logger.warn(e) { "Game cancelled: $game" }
             } catch (e: Exception) {
                 logger.error(e) { "Error in Coroutine for game $game" }
             }
