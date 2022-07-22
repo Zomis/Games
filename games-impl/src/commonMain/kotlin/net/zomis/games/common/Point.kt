@@ -12,6 +12,7 @@ data class Point(val x: Int, val y: Int): GameSerializable {
     fun toStateString(): String = "${x},${y}"
     override fun serialize(): Any = toStateString()
     operator fun times(multiplier: Int): Point = Point(x * multiplier, y * multiplier)
+    fun topLeftOfRect(sizeX: Int, sizeY: Int): Rect = Rect(y, x, x + sizeX - 1, y + sizeY - 1)
 }
 
 data class Rect(val top: Int, val left: Int, val right: Int, val bottom: Int) {

@@ -48,7 +48,8 @@ object Pentago {
                         Point(0, SIZE),
                         Point(SIZE, SIZE)
                     ).filter {
-                        val placementInside = lastPlacement.x in it.x until it.x+SIZE && lastPlacement.y in it.y until it.y + SIZE
+                        val placementInside = it.topLeftOfRect(SIZE, SIZE)
+                            .contains(lastPlacement.x, lastPlacement.y)
                         config.turnDifferent || placementInside
                     }
                 }) {direction ->
