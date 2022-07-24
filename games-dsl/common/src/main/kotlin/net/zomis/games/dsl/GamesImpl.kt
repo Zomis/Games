@@ -44,9 +44,10 @@ class GameEntryPoint<T : Any>(private val gameSpec: GameSpec<T>) {
     suspend fun replay(
         coroutineScope: CoroutineScope, replay: ReplayData,
         actionConverter: (KClass<*>, Any) -> Any = { _, it -> it },
-        gameListeners: (Game<T>) -> List<GameListener> = { emptyList() }
+        gameListeners: (Game<T>) -> List<GameListener> = { emptyList() },
+        fork: Boolean = false,
     ): Replay<T>
-        = Replay.initReplay(coroutineScope, gameSpec, replay, actionConverter, gameListeners)
+        = Replay.initReplay(coroutineScope, gameSpec, replay, actionConverter, gameListeners, fork = {fork})
 
     suspend fun runTests() {
         setup().context.testCases.forEach {

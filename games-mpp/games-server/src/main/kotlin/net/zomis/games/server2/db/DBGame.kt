@@ -57,15 +57,15 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
                 }
             }
         }
-        return GamesImpl.game(summary.gameSpec).replay(coroutineScope, replayData(), GamesServer.actionConverter) {
+        return GamesImpl.game(summary.gameSpec).replay(coroutineScope, replayData(), GamesServer.actionConverter, {
             listOf(MyListener(it))
-        }.goToEnd().awaitCatchUp().game
+        }, fork = false).goToEnd().awaitCatchUp().game
     }
 
     suspend fun at(coroutineScope: CoroutineScope, position: Int): Game<Any> {
-        return GameEntryPoint(summary.gameSpec).replay(coroutineScope, replayData(), GamesServer.actionConverter) {
+        return GameEntryPoint(summary.gameSpec).replay(coroutineScope, replayData(), GamesServer.actionConverter, {
             listOf()
-        }.gotoPosition(position).awaitCatchUp().game
+        }, fork = false).gotoPosition(position).awaitCatchUp().game
     }
 
     fun addError(error: String) {

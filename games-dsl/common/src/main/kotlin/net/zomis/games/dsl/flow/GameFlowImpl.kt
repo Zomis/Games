@@ -14,14 +14,16 @@ import net.zomis.games.dsl.impl.*
 class GameFlowImpl<T: Any>(
     private val setupContext: GameDslContext<T>,
     override val playerCount: Int,
-    val gameConfig: GameConfigs
+    val gameConfig: GameConfigs,
+    private val copier: suspend (FlowStep.ActionPerformed<T>?) -> GameForkResult<T>,
+    val forkedGame: () -> Boolean
 ): Game<T>, GameFactoryScope<Any>, GameEventsExecutor, GameFlowRuleCallbacks<T> {
     private val stateKeeper = StateKeeper()
     override val gameType: String = setupContext.gameType
 
     override val config: Any get() = gameConfig.oldStyleValue()
     private val logger = KLoggers.logger(this)
-    private var lastAction: FlowStep.ActionPerformed<T>? = null
+    internal var lastAction: FlowStep.ActionPerformed<T>? = null
     private val mainScope = MainScope()
     val views = mutableListOf<Pair<String, ViewScope<T>.() -> Any?>>()
     override val feedbackFlow: Channel<FlowStep> = Channel()
@@ -38,7 +40,6 @@ class GameFlowImpl<T: Any>(
     override val model: T = setupContext.model.factory(this)
     val replayable = ReplayState(stateKeeper, eliminations, gameConfig)
     override val actions = GameFlowActionsImpl({ feedbacks.add(it) }, model, eliminations, replayable)
-    private var gameSetupSent = false
     override val feedback: (FlowStep) -> Unit = { feedbacks.add(it) }
 
     override val actionsInput: Channel<Actionable<T, out Any>> = Channel()
@@ -46,11 +47,11 @@ class GameFlowImpl<T: Any>(
     override suspend fun start(coroutineScope: CoroutineScope) {
         if (job != null) throw IllegalStateException("Game already started")
         val game = this
-        job = coroutineScope.launch(Dispatchers.Default) {
-            logger.info("GameFlow Coroutine started")
+        job = coroutineScope.launch(Dispatchers.Default + CoroutineName("Job for game $this")) {
+            logger.info("GameFlow Coroutine started: ${this@GameFlowImpl}")
             try {
                 val dsl = setupContext.flowDsl!!
-                val flowContext = GameFlowContext(this, game, "root")
+                val flowContext = GameFlowContext(this, game, "root", true)
                 replayable.stateKeeper.preSetup(game) { sendFeedback(it) }
                 setupContext.model.onStart(GameStartContext(gameConfig, model, replayable, playerCount))
                 dsl.invoke(flowContext)
@@ -58,7 +59,8 @@ class GameFlowImpl<T: Any>(
                 sendFeedback(FlowStep.GameEnd)
                 logger.info("GameFlow Coroutine MainScope done for $game")
             } catch (e: CancellationException) {
-                logger.warn(e) { "Game cancelled: $game" }
+                if (e.cause != null) logger.warn(e) { "Game cancelled: $game" }
+                else logger.info { "Game cancelled (no cause): $game" }
             } catch (e: Exception) {
                 logger.error(e) { "Error in Coroutine for game $game" }
             }
@@ -66,6 +68,7 @@ class GameFlowImpl<T: Any>(
     }
 
     override fun stop() {
+        println("Stopping game $this")
         this.feedbackFlow.close()
         this.job?.cancel()
         this.job = null
@@ -88,8 +91,8 @@ class GameFlowImpl<T: Any>(
         mainScope.cancel()
     }
 
-    override fun copy(copier: (source: T, destination: T) -> Unit): Game<T> {
-        TODO("Not yet implemented")
+    override suspend fun copy(): GameForkResult<T> {
+        return copier.invoke(lastAction?.copy(replayState = replayable.stateKeeper.lastMoveState()))
     }
 
     override fun isGameOver(): Boolean = eliminations.isGameOver()
@@ -116,10 +119,6 @@ class GameFlowImpl<T: Any>(
                 if (isGameOver()) {
                     return null
                 }
-                if (!gameSetupSent) {
-                    sendFeedback(FlowStep.GameSetup(this, gameConfig, replayable.stateKeeper.lastMoveState()))
-                    gameSetupSent = true
-                }
                 replayable.stateKeeper.clear()
                 sendFeedback(FlowStep.AwaitInput)
                 val action = actionsInput.receive()
@@ -131,7 +130,10 @@ class GameFlowImpl<T: Any>(
                 }
                 replayable.stateKeeper.preMove(action) { sendFeedback(it) }
                 logger.info("clear and perform: ${replayable.stateKeeper.lastMoveState()}")
-                actions.clearAndPerform(action as Actionable<T, Any>) { this.clear() }
+                actions.clearAndPerform(action as Actionable<T, Any>) {
+                    Exception("Clearing $this with model ${this.model} and elims $eliminations").printStackTrace()
+                    this.clear()
+                }
                 logger.info("creating last action: ${replayable.stateKeeper.lastMoveState()}")
                 val last = FlowStep.ActionPerformed(action, typeEntry, replayable.stateKeeper.lastMoveState())
                 this.lastAction = last
@@ -142,6 +144,7 @@ class GameFlowImpl<T: Any>(
         } else {
             logger.info("GameFlow Coroutine No Available Actions")
             sendFeedback(FlowStep.NextView)
+            Exception("Clearing $this because NextView with model ${this.model} and elims $eliminations").printStackTrace()
             clear()
             runRules(GameFlowRulesState.AFTER_ACTIONS)
             return null
@@ -152,6 +155,7 @@ class GameFlowImpl<T: Any>(
         runRules(GameFlowRulesState.BEFORE_RETURN)
         sendFeedbacks()
         lastAction?.also { sendFeedback(it) }
+        lastAction = null
     }
 
     private fun anyPlayerHasAction(): Boolean {
@@ -209,11 +213,28 @@ class GameFlowImpl<T: Any>(
 class GameFlowContext<T: Any>(
     private val coroutineScope: CoroutineScope,
     val flow: GameFlowImpl<T>,
-    private val name: String
+    private val name: String,
+    rootContext: Boolean
 ): GameFlowScope<T>, GameFlowStepScope<T> {
+    private var shouldSendStart = rootContext
     override val game: T get() = flow.model
     override val eliminations: PlayerEliminationsWrite get() = flow.eliminations
     override val replayable: ReplayState get() = flow.replayable
+
+    override suspend fun forkGame(actions: suspend GameForkScope<T>.() -> Unit): GameFork<T>? {
+        if (flow.forkedGame.invoke()) {
+            println("Fork $flow (${flow.model}) is a forked game, preventing further forks.")
+            return null
+        }
+        val copy = flow.copy()
+        val fork = GameForkContext(copy)
+        actions.invoke(fork)
+        copy.blockingGameListener.await()
+        copy.allowForks = true
+        println("Flow $flow (${flow.model} created fork ${copy.game} (${copy.game.model}), now stopping the fork. Last move was ${flow.lastAction}")
+        copy.game.stop()
+        return copy.game
+    }
 
     override suspend fun loop(function: suspend GameFlowScope<T>.() -> Unit) {
         while (!flow.isGameOver()) {
@@ -222,6 +243,10 @@ class GameFlowContext<T: Any>(
     }
 
     override suspend fun step(name: String, step: suspend GameFlowStepScope<T>.() -> Unit): GameFlowStep<T> {
+        if (shouldSendStart) {
+            flow.sendFeedback(FlowStep.GameSetup(flow, flow.gameConfig, replayable.stateKeeper.lastMoveState()))
+            shouldSendStart = false
+        }
         val impl = GameFlowStepImpl(flow, coroutineScope, "${this.name}/$name", step)
         impl.runDsl()
         return impl
@@ -267,6 +292,7 @@ interface GameFlowStepScope<T: Any> {
     val game: T
     val eliminations: PlayerEliminationsWrite
     val replayable: ReplayableScope
+    suspend fun forkGame(actions: suspend GameForkScope<T>.() -> Unit = {}): GameFork<T>?
     fun <A: Any> enableAction(actionDefinition: ActionDefinition<T, A>)
     fun <A: Any> yieldAction(action: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>)
     fun yieldView(key: String, value: ViewScope<T>.() -> Any?)

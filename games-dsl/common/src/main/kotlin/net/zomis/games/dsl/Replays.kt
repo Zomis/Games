@@ -5,6 +5,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
+import net.zomis.games.dsl.impl.GameStartInfo
 import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.listeners.ReplayingListener
 import kotlin.reflect.KClass
@@ -16,7 +17,8 @@ class Replay<T : Any>(
     gameSpec: GameSpec<T>,
     private val replayData: ReplayData,
     private val actionConverter: (KClass<*>, Any) -> Any = { _, it -> it },
-    private val gameListeners: (Game<T>) -> List<GameListener>
+    private val gameListeners: (Game<T>) -> List<GameListener>,
+    private val fork: () -> Boolean
 ): GameListener {
     val config = replayData.config
     val playerCount = replayData.playerCount
@@ -94,7 +96,7 @@ class Replay<T : Any>(
     private suspend fun restart() {
         this.blockingListener = BlockingGameListener()
         this.internalGame?.stop()
-        this.internalGame = entryPoint.setup().startGameWithConfig(coroutineScope, playerCount, config) {
+        this.internalGame = entryPoint.setup().startGameWithInfo(coroutineScope, GameStartInfo(playerCount, config, fork)) {
             listOf(ReplayingListener(replayData), blockingListener, this) + gameListeners.invoke(it as Game<T>)
         }
         this.position = 0
@@ -106,12 +108,13 @@ class Replay<T : Any>(
             gameSpec: GameSpec<T>,
             replayData: ReplayData,
             actionConverter: (KClass<*>, Any) -> Any = { _, it -> it },
-            gameListeners: (Game<T>) -> List<GameListener>
+            gameListeners: (Game<T>) -> List<GameListener>,
+            fork: () -> Boolean,
         ): Replay<T> {
             require(replayData.gameType == gameSpec.name) {
                 "Mismatching gametypes: Replay data for ${replayData.gameType} cannot be used on ${gameSpec.name}"
             }
-            val replay = Replay(coroutineScope, gameSpec, replayData, actionConverter, gameListeners)
+            val replay = Replay(coroutineScope, gameSpec, replayData, actionConverter, gameListeners, fork)
             replay.restart()
             return replay
         }

@@ -2,6 +2,7 @@ package net.zomis.games.dsl.replays
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
+import net.zomis.games.api.GamesApi
 import net.zomis.games.common.Point
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.Game
@@ -49,6 +50,41 @@ class FirstReplayTest {
         val replay = entryPoint.replay(this, replayListener.data()).goToEnd().awaitCatchUp()
         Assertions.assertTrue(replay.game.isGameOver())
         Assertions.assertEquals(view, replay.game.view(0))
+    }
+
+    @Test
+    fun `Randomness without actions should also work`() = runTest {
+        var times = 1
+        data class RandomnessWithoutActions(var value: Int)
+        val factory = GamesApi.gameCreator(RandomnessWithoutActions::class).game("RandomnessTest") {
+            setup {
+                playersFixed(1)
+                init { RandomnessWithoutActions(0) }
+                onStart {
+                    game.value = this.replayable.int("start") { times++ }
+                }
+            }
+        }
+        val blocking = BlockingGameListener()
+        val replay = ReplayListener("RandomnessTest")
+        val game = GamesImpl.game(factory).setup().startGame(this, 1) {
+            listOf(replay, blocking)
+        }
+        blocking.await()
+        println("Game ready: ${game.model}")
+
+        val replayData = replay.data()
+        println("Replay data: $replayData")
+        val blocking2 = BlockingGameListener()
+        val copy = GamesImpl.game(factory).replay(this, replayData, gameListeners = {
+            listOf(blocking2)
+        }).goToEnd().awaitCatchUp()
+        println("Game Copy ready: ${copy.game.model}")
+        blocking2.await()
+        println("Game Copy ready2: ${copy.game.model}")
+        Assertions.assertEquals(game.model.value, copy.game.model.value)
+        game.stop()
+        copy.game.stop()
     }
 
     @Test

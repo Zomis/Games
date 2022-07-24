@@ -34,7 +34,9 @@ data class AIAlphaBetaConfig<T: Any>(val factory: AlphaBetaAIFactory<T>, val lev
     }
 
     private val branching: (Game<T>, Actionable<T, Any>) -> Game<T> = { oldGame, action ->
-        val copy = oldGame.copy(factory.copier)
+        val copy = runBlocking {
+            oldGame.copy()
+        }.game
         val actionType = copy.actions.type(action.actionType)!!
         val serializedAction = actionType.actionType.serialize(action.parameter)
         val actionCopy = actionType.createActionFromSerialized(action.playerIndex, serializedAction)

@@ -109,10 +109,10 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                 if (gameEvent.dbGame != null) {
                     val replayData = gameEvent.dbGame.replayData()
                     println("DbGame contains ${replayData.actions}")
-                    GamesImpl.game(dsl).replay(serverGame.coroutineScope, replayData, GamesServer.actionConverter) {
+                    GamesImpl.game(dsl).replay(serverGame.coroutineScope, replayData, GamesServer.actionConverter, {
                         serverGame.obj = it as Game<Any>
                         listeners(it, replayData)
-                    }.goToEnd().awaitCatchUp()
+                    }, fork = false).goToEnd().awaitCatchUp()
                     gameEvent.game.sendGameReady()
                     ConsoleView<T>().showView(serverGame.obj!! as Game<T>)
                 } else {

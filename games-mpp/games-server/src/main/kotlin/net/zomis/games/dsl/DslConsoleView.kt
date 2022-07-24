@@ -33,7 +33,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
             val savedReplay = entryPoint.replay(this, replayData, { clazz, serialized ->
                 println("Converting $serialized (${serialized::class}) to $clazz")
                 mapper.convertValue(serialized, clazz.java)
-            }) { g ->
+            }, { g ->
                 listOf(
                     ConsoleViewer(g as Game<Any>).postReplay(replayData),
                     ConsoleControl(g as Game<Any>, scanner).postReplay(replayData),
@@ -43,7 +43,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
                     ai.gameListener(g, 0).postReplay(replayData),
                     SanityCheckListener(g)
                 )
-            }.goToEnd().awaitCatchUp()
+            }, fork = false).goToEnd().awaitCatchUp()
             if (savedReplay.game.isGameOver()) {
                 println("Game was already finished")
                 file.deleteIfExists()
