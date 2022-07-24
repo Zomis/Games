@@ -15,7 +15,7 @@ import net.zomis.games.listeners.ReplayListener
 import net.zomis.games.scorers.Scorer
 import net.zomis.games.scorers.ScorerController
 
-const val DEBUG = true
+const val DEBUG = false
 
 inline fun debugPrint(message: String) {
     if (DEBUG) println(message)
@@ -73,7 +73,13 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
         }
         val replayListener = ReplayListener(context.gameType)
         val game = context.createGame(startInfo) { mostRecentAction ->
-            val replayData = replayListener.data().addAction(mostRecentAction?.toActionReplay())
+            val replayData = when (mostRecentAction) {
+                null -> replayListener.data()
+                is FlowStep.ActionPerformed<*> -> replayListener.data().addAction(mostRecentAction.toActionReplay())
+                is FlowStep.GameSetup<*> -> replayListener.data().copy(initialState = mostRecentAction.state)
+                else -> throw IllegalArgumentException("Copier was called with unknown parameter: $mostRecentAction of type (${mostRecentAction::class})")
+            }
+
             println("Copier invoked! Replay data is $replayData")
             val blockingGameListener = BlockingGameListener()
             val replay = GamesImpl.game(context.gameSpec).replay(coroutineScope, replayData, gameListeners = {
@@ -158,13 +164,12 @@ class GameImpl<T : Any>(
 
     override suspend fun start(coroutineScope: CoroutineScope) {
         if (this.actionsInputJob != null) throw IllegalStateException("Game already started")
-        println("$this: pre-setup")
+        feedbackFlow.send(FlowStep.GameStarted(this, gameConfig))
         replayState.stateKeeper.preSetup(this) { feedbackFlow.send(it) }
         setupContext.model.onStart(GameStartContext(gameConfig, model, replayState, playerCount))
         setupContext.actionRulesDsl?.invoke(rules)
         rules.gameStart()
         feedbackFlow.send(FlowStep.GameSetup(this, gameConfig, stateKeeper.lastMoveState()))
-        println("$this: setup done")
         val gameImpl = this
 
         this.actionsInputJob = coroutineScope.launch(CoroutineName("Actions job for $this")) {

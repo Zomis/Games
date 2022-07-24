@@ -66,9 +66,7 @@ class GameFlowLogicActionAvailable<T: Any, A: Any>(
         }
 
         val context = GameFlowActionContextOptions<T, A>()
-        val actionDslsCopy = actionDsls.invoke()
-        println("ActionDslsCopy: $actionDslsCopy being processed on $context")
-        actionDslsCopy.forEach { it.invoke(context) }
+        actionDsls.invoke().forEach { it.invoke(context) }
         return when {
             context.optionsRule != null -> context.optionsRule!!.invoke(createOptionsContext(playerIndex))
             context.choicesRule != null -> {

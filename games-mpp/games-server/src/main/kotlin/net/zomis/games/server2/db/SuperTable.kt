@@ -140,7 +140,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         val dbMove = actionType.serialize(move.parameter)
 
         val moveData = convertToDBFormat(dbMove)
-        val state: Any? = gameRandomnessState(move.replayState)
+        val state: Any? = gameRandomnessState(move.state)
         val updates = mutableListOf(
             AttributeUpdate(Fields.MOVE_TIME.fieldName).put(epochMilli),
             AttributeUpdate(Fields.MOVE_PLAYER_INDEX.fieldName).put(move.playerIndex),

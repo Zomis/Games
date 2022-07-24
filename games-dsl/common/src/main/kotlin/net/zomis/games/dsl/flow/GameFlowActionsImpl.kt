@@ -35,7 +35,6 @@ class GameFlowActionsImpl<T: Any>(
     fun findAction(actionType: String): ActionTypeImplEntry<T, Any> = actions.single { it.name == actionType }
 
     fun <A: Any> add(actionType: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>) {
-        Exception("Elims $eliminations with model ${this.model} -- Adding DSL for ${actionType.name}: $actionDsl").printStackTrace()
         if (actionDsls.any { it.key == actionType.name && it.value.contains(actionDsl as GameFlowActionDsl<T, Any>) }) {
             logger.info { "Ignoring duplicate DSL for action ${actionType.name}" }
             return

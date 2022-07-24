@@ -99,7 +99,7 @@ class SanityCheckListener(val game: Game<out Any>): GameListener {
             }
             if (step is FlowStep.PreMove) {
                 step.state.clear()
-                step.state.putAll(lastAction!!.replayState)
+                step.state.putAll(lastAction!!.state)
             }
         }
 

@@ -222,7 +222,7 @@ class GameDslContext<T : Any>(val gameSpec: GameSpec<T>) : GameDsl<T> {
         this.flowDsl = flowDsl
     }
 
-    fun createGame(startInfo: GameStartInfo, copier: suspend (FlowStep.ActionPerformed<T>?) -> GameForkResult<T>): Game<T> {
+    fun createGame(startInfo: GameStartInfo, copier: suspend (FlowStep.RandomnessResult?) -> GameForkResult<T>): Game<T> {
         val flowDslNull = this.flowDsl == null
         val flowRulesNull = this.flowRulesDsl == null
         if (listOf(flowDslNull, flowRulesNull).distinct().size > 1) {

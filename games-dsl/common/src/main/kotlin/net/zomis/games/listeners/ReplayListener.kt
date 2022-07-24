@@ -21,9 +21,11 @@ class ReplayListener(val gameType: String) : GameListener {
             println("Adding action ${actions.size}: ${step.action}")
             this.actions.add(step.toActionReplay())
         }
-        if (step is FlowStep.GameSetup<*>) {
+        if (step is FlowStep.GameStarted<*>) {
             this.playerCount = step.game.playerCount
             this.config = step.config
+        }
+        if (step is FlowStep.GameSetup<*>) {
             this.gameStartedState = step.state
         }
     }

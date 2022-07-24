@@ -85,13 +85,9 @@ class ForkTest {
             }
             gameFlow {
                 loop {
-                    // TODO: Add support for the below "randomness" to be remembered across forks:
-                    /*game.change(replayable.int("stepLoop") {
-                        val sl = forksCreated.get()
-                        println("STEPLOOP: " + sl)
-                        sl
-                    })*/
-                    //  Randomness here causes problems with forks as randomness here is not fully persisted at least not from GameSetup
+                    game.change(replayable.int("stepLoop") {
+                        (forksCreated.get() - 1).also { println(it) }
+                    })
                     step("step") {
                         val options = listOf(-1, 1) // 42 is not an option, but allowed as parameter
                         val forks = options.associateWith {
@@ -103,10 +99,8 @@ class ForkTest {
                             println("Fork ended up with $g model ${g?.model} after evaluating option $it with current $game")
                             g
                         }
-                        // TODO: Add support for game.change(replayable.int("stepLoop") { Random.Default.nextInt(-2, 2 + 1) })
-                        //  Randomness here causes problems with forks as fork is created before this line.
+                        // NOTE: Randomness placed here causes problems with forks as fork is created before this line.
                         yieldAction(changeValue) {
-                            Exception("Yielding action $this").printStackTrace()
                             requires {
                                 println("Evaluating requirement for $action (sign ${action.parameter.sign}) with forks $forks models ${forks.map { it.value?.model }}")
                                 if (forks.any { it.value == null }) return@requires true // is fork, ignore requirement from forks
