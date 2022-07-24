@@ -26,10 +26,6 @@ class GameFlowImpl<T: Any>(
     val views = mutableListOf<Pair<String, ViewScope<T>.() -> Any?>>()
     override val feedbackFlow: Channel<FlowStep> = Channel()
 
-    fun feedbackReceiverFlow() = feedbackFlow.receiveAsFlow().transformWhile {
-        emit(it)
-        it !is FlowStep.ProceedStep
-    }
     private val feedbacks = mutableListOf<FlowStep>()
 
     override val eliminations: PlayerEliminations = PlayerEliminations(playerCount).also {
