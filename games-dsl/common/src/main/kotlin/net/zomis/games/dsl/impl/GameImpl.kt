@@ -214,6 +214,14 @@ class GameImpl<T : Any>(
 
     override suspend fun copy(): GameForkResult<T> = copier.invoke()
 
+    fun quickCopy(quickCopier: (source: T, destination: T) -> Unit): GameImpl<T> {
+        val copy = GameImpl(setupContext, playerCount, gameConfig, copier)
+        quickCopier.invoke(this.model, copy.model)
+        copy.setupContext.actionRulesDsl?.invoke(copy.rules) // TODO: This is a bit of an ugly hack to add the rules
+        this.eliminations.eliminations().forEach { copy.eliminations.eliminate(it) }
+        return copy
+    }
+
     override fun view(playerIndex: PlayerIndex): Map<String, Any?> {
         val view = GameViewContext(this, playerIndex)
         if (model is Viewable) {

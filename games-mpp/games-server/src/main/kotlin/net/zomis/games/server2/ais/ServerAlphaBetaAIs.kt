@@ -16,7 +16,7 @@ enum class AlphaBetaSpeedMode(val nameSuffix: String, val depthRemainingBonus: D
 }
 typealias AlphaBetaCopier<S> = (old: S, copy: S) -> Unit
 data class AlphaBetaAIFactory<S: Any>(
-    val copier: AlphaBetaCopier<S>,
+    val copier: AlphaBetaCopier<S>?,
     val gameType: String,
     val namePrefix: String,
     val maxLevel: Int,

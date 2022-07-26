@@ -1,10 +1,10 @@
 package net.zomis.games.server2.ais
 
-import kotlinx.coroutines.runBlocking
 import net.zomis.common.pmap
 import net.zomis.games.ais.AlphaBeta
 import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.impl.Game
+import net.zomis.games.dsl.impl.GameImpl
 
 data class AIAlphaBetaConfig<T: Any>(val factory: AlphaBetaAIFactory<T>, val level: Int, val speedMode: AlphaBetaSpeedMode) {
 
@@ -32,21 +32,36 @@ data class AIAlphaBetaConfig<T: Any>(val factory: AlphaBetaAIFactory<T>, val lev
     }
 
     private val branching: suspend (Game<T>, Actionable<T, Any>) -> Game<T> = { oldGame, action ->
-        val fork = oldGame.copy()
-        val forkedGame = fork.game
-        fork.blockingGameListener.await()
-        val actionType = forkedGame.actions.type(action.actionType)!!
-        val serializedAction = actionType.actionType.serialize(action.parameter)
-        val actionCopy = actionType.createActionFromSerialized(action.playerIndex, serializedAction)
-        if (!actionType.isAllowed(actionCopy)) {
-            val allowed = actionType.isAllowed(actionCopy)
-            println("Not allowed ($allowed) from $oldGame in $fork to perform $action in ${forkedGame.view(null)}")
-            throw Exception("Not allowed ($allowed) from $oldGame to perform $action in ${forkedGame.view(null)}")
+        if (factory.copier != null) {
+            // This method of copying is a lot quicker
+            require(oldGame is GameImpl<*>)
+            val oldG = oldGame as GameImpl<T>
+            val copiedGame = oldG.quickCopy(factory.copier)
+            val actionType = copiedGame.actions.type(action.actionType)!!
+            val serializedAction = actionType.actionType.serialize(action.parameter)
+            val actionCopy = actionType.createActionFromSerialized(action.playerIndex, serializedAction)
+            if (!actionType.isAllowed(actionCopy)) {
+                throw Exception("Not allowed to perform $action in ${copiedGame.view(null)}")
+            }
+            actionType.perform(actionCopy)
+            copiedGame
+        } else {
+            val fork = oldGame.copy()
+            val forkedGame = fork.game
+            fork.blockingGameListener.await()
+            val actionType = forkedGame.actions.type(action.actionType)!!
+            val serializedAction = actionType.actionType.serialize(action.parameter)
+            val actionCopy = actionType.createActionFromSerialized(action.playerIndex, serializedAction)
+            if (!actionType.isAllowed(actionCopy)) {
+                val allowed = actionType.isAllowed(actionCopy)
+                println("Not allowed ($allowed) from $oldGame in $fork to perform $action in ${forkedGame.view(null)}")
+                throw Exception("Not allowed ($allowed) from $oldGame to perform $action in ${forkedGame.view(null)}")
+            }
+            fork.blockingGameListener.awaitAndPerform(actionCopy)
+            fork.blockingGameListener.await()
+            forkedGame.stop()
+            forkedGame
         }
-        fork.blockingGameListener.awaitAndPerform(actionCopy)
-        fork.blockingGameListener.await()
-        forkedGame.stop()
-        forkedGame
     }
 
     fun createAlphaBeta(playerIndex: Int): AlphaBeta<Game<T>, Actionable<T, Any>> {

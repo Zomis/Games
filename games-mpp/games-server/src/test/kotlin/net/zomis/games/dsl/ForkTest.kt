@@ -9,6 +9,7 @@ import net.zomis.games.dsl.listeners.IllegalActionListener
 import net.zomis.games.impl.ttt.DslTTT
 import net.zomis.games.server2.ais.AIAlphaBetaConfig
 import net.zomis.games.server2.ais.AIRepository
+import net.zomis.games.server2.ais.AlphaBetaAIFactory
 import net.zomis.games.server2.ais.ServerAlphaBetaAIs
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -74,10 +75,12 @@ class ForkTest {
 
     @Test
     fun alphaBeta() = runTest {
-        val aiConfig = ServerAlphaBetaAIs.ais().first { it.gameType == DslTTT.game.name }
-
-        val config = aiConfig.toAlphaBetaConfig(aiConfig.configurations.first { it.first == 6 })
-        val gameAI = AIRepository.createAlphaBetaAI("", config as AIAlphaBetaConfig<Any>)
+        val level = 6
+        val aiConfig = AlphaBetaAIFactory(null,"DSL-TTT", "AlphaBeta",
+            level, false, ServerAlphaBetaAIs.model(ServerAlphaBetaAIs::heuristicTTT)
+        )
+        val config = aiConfig.toAlphaBetaConfig(aiConfig.configurations.first { it.first == level })
+        val gameAI = AIRepository.createAlphaBetaAI("AlphaBetaTest", config as AIAlphaBetaConfig<Any>)
         val blocking = BlockingGameListener()
         val game = GamesImpl.game(DslTTT.game).setup().startGame(this, 2) {
             listOf(
