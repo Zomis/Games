@@ -10,14 +10,12 @@ data class AIAlphaBetaConfig<T: Any>(val factory: AlphaBetaAIFactory<T>, val lev
 
     private val terminalState: (Game<T>) -> Boolean = { it.isGameOver() }
 
-    fun evaluateActions(game: Game<T>, playerIndex: Int): List<Pair<Actionable<T, Any>, Double>> {
+    suspend fun evaluateActions(game: Game<T>, playerIndex: Int): List<Pair<Actionable<T, Any>, Double>> {
         val alphaBeta = createAlphaBeta(playerIndex)
-        return runBlocking {
-            actions(game).pmap { action ->
-                val newState = branching(game, action)
-                action to alphaBeta.score(newState, level)
-            }.toList()
-        }
+        return actions(game).pmap { action ->
+            val newState = branching(game, action)
+            action to alphaBeta.score(newState, level)
+        }.toList()
     }
 
     fun evaluateState(game: Game<T>, playerIndex: Int): Double {
@@ -33,18 +31,22 @@ data class AIAlphaBetaConfig<T: Any>(val factory: AlphaBetaAIFactory<T>, val lev
         }
     }
 
-    private val branching: (Game<T>, Actionable<T, Any>) -> Game<T> = { oldGame, action ->
-        val copy = runBlocking {
-            oldGame.copy()
-        }.game
-        val actionType = copy.actions.type(action.actionType)!!
+    private val branching: suspend (Game<T>, Actionable<T, Any>) -> Game<T> = { oldGame, action ->
+        val fork = oldGame.copy()
+        val forkedGame = fork.game
+        fork.blockingGameListener.await()
+        val actionType = forkedGame.actions.type(action.actionType)!!
         val serializedAction = actionType.actionType.serialize(action.parameter)
         val actionCopy = actionType.createActionFromSerialized(action.playerIndex, serializedAction)
         if (!actionType.isAllowed(actionCopy)) {
-            throw Exception("Not allowed to perform $action in ${copy.view(null)}")
+            val allowed = actionType.isAllowed(actionCopy)
+            println("Not allowed ($allowed) from $oldGame in $fork to perform $action in ${forkedGame.view(null)}")
+            throw Exception("Not allowed ($allowed) from $oldGame to perform $action in ${forkedGame.view(null)}")
         }
-        actionType.perform(actionCopy)
-        copy
+        fork.blockingGameListener.awaitAndPerform(actionCopy)
+        fork.blockingGameListener.await()
+        forkedGame.stop()
+        forkedGame
     }
 
     fun createAlphaBeta(playerIndex: Int): AlphaBeta<Game<T>, Actionable<T, Any>> {

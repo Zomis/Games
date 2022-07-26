@@ -1,9 +1,6 @@
 package net.zomis.games.dsl.impl
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import net.zomis.games.ais.noAvailableActions
 import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.GameListener
@@ -16,8 +13,8 @@ interface GameAIScope<T: Any> {
     val playerIndex: Int
     fun <L: GameListener> listener(gameListener: () -> L): L
     fun requiredAI(ai: () -> GameAI<T>): GameAIDependency<T>
-    fun action(block: GameAIActionScope<T>.() -> Actionable<T, out Any>?)
-    fun queryable(block: (GameControllerScope<T>) -> Any)
+    fun action(block: suspend GameAIActionScope<T>.() -> Actionable<T, out Any>?)
+    fun queryable(block: suspend (GameControllerScope<T>) -> Any)
 }
 
 object GameAIs {
@@ -62,8 +59,8 @@ class GameAIDependency<T: Any>(val gameAIListener: GameAIListener<T>)
 
 interface GameAIActionScope<T: Any> : GameControllerScope<T> {
     var delay: Int
-    fun byScorers(vararg scorers: Scorer<T, out Any>): Actionable<T, out Any>?
-    fun byAI(ai: GameAIDependency<T>): Actionable<T, out Any>?
+    suspend fun byScorers(vararg scorers: Scorer<T, out Any>): Actionable<T, out Any>?
+    suspend fun byAI(ai: GameAIDependency<T>): Actionable<T, out Any>?
     fun randomAction(): Actionable<T, Any>?
 }
 
@@ -71,8 +68,8 @@ class GameAIContext<T: Any>(override val game: Game<T>, override val playerIndex
     var delayOverride: Long? = null
 
     private val listeners = mutableListOf<GameListener>()
-    internal var queryBlock: (GameControllerScope<T>) -> Any = {  }
-    internal var actionBlock: GameAIActionScope<T>.() -> Actionable<T, out Any>? = {
+    internal var queryBlock: suspend (GameControllerScope<T>) -> Any = {  }
+    internal var actionBlock: suspend GameAIActionScope<T>.() -> Actionable<T, out Any>? = {
         throw UnsupportedOperationException("action block missing")
     }
 
@@ -89,15 +86,15 @@ class GameAIContext<T: Any>(override val game: Game<T>, override val playerIndex
         return GameAIDependency(listener)
     }
 
-    override fun action(block: GameAIActionScope<T>.() -> Actionable<T, out Any>?) {
+    override fun action(block: suspend GameAIActionScope<T>.() -> Actionable<T, out Any>?) {
         this.actionBlock = block
     }
 
-    override fun queryable(block: (GameControllerScope<T>) -> Any) {
+    override fun queryable(block: suspend (GameControllerScope<T>) -> Any) {
         this.queryBlock = block
     }
 
-    fun gimmeAction(): Actionable<T, out Any>? {
+    suspend fun gimmeAction(): Actionable<T, out Any>? {
         val actionContext = GameAIActionContext(game, playerIndex)
         return actionBlock.invoke(actionContext)
     }
@@ -111,12 +108,12 @@ class GameAIActionContext<T: Any>(
 ) : GameAIActionScope<T> {
     override var delay: Int = 500
 
-    override fun byScorers(vararg scorers: Scorer<T, out Any>): Actionable<T, out Any>? {
+    override suspend fun byScorers(vararg scorers: Scorer<T, out Any>): Actionable<T, out Any>? {
         return ScorerController(game.gameType, "_", *(scorers as Array<out Scorer<T, Any>>))
             .gameAI().simpleAction(game, playerIndex)
     }
 
-    override fun byAI(ai: GameAIDependency<T>): Actionable<T, out Any>? {
+    override suspend fun byAI(ai: GameAIDependency<T>): Actionable<T, out Any>? {
         return ai.gameAIListener.context.gimmeAction()
     }
 
@@ -141,11 +138,12 @@ class GameAIListener<T: Any>(val context: GameAIContext<T>, val delayOverride: (
 
             println("GameAIListener(${action.playerIndex}) returned $action")
             job?.cancel()
-            job = coroutineScope.launch {
+            job = coroutineScope.launch(CoroutineName("GameAIListener $this gonna do $action in ${context.game}")) {
                 println("GameAIListener(${action.playerIndex}) launched coroutine")
                 val sleepDelay = delayOverride.invoke() ?: actionContext.delay.toLong()
                 delay(sleepDelay)
                 if (context.game.actions.type(action.actionType)?.isAllowed(action as Actionable<T, Any>) == true) {
+                    println("Sending action from ${this@GameAIListener} to ${context.game}: $action")
                     context.game.actionsInput.send(action)
                     println("Sent action from $this: $action")
                 } else {
@@ -167,14 +165,14 @@ class GameAI<T: Any>(
         return context.aiListener
     }
 
-    fun query(game: Game<T>, playerIndex: Int): Any {
+    suspend fun query(game: Game<T>, playerIndex: Int): Any {
         val context = invokedContext(game, playerIndex)
         return context.queryBlock.invoke(GameControllerContext(game, playerIndex))
     }
 
     fun listenerFactory(): GameListenerFactory = GameListenerFactory { game, playerIndex -> gameListener(game as Game<T>, playerIndex) }
 
-    fun simpleAction(game: Game<T>, playerIndex: Int): Actionable<T, out Any>? {
+    suspend fun simpleAction(game: Game<T>, playerIndex: Int): Actionable<T, out Any>? {
         val context = invokedContext(game, playerIndex)
         return context.aiListener.context.gimmeAction()
     }

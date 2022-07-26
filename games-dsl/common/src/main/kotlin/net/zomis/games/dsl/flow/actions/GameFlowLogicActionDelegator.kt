@@ -34,7 +34,7 @@ class GameFlowLogicActionDelegator<T: Any, A: Any>(
         = performer.replay(action, state)
 
     override fun performAction(action: Actionable<T, A>): FlowStep.ActionResult {
-        if (!checkActionAllowed(action)) return FlowStep.IllegalAction(action.actionType, action.playerIndex, action.parameter)
+        if (!checkActionAllowed(action)) return FlowStep.IllegalAction(gameData.game, action.actionType, action.playerIndex, action.parameter)
         performer.perform(action)
         return FlowStep.ActionPerformed(action as Actionable<T, Any>,
             actionTypeImplEntry.invoke() as ActionTypeImplEntry<T, Any>, gameData.replayable.stateKeeper.lastMoveState())
@@ -48,7 +48,7 @@ class GameFlowLogicActionDelegator<T: Any, A: Any>(
 
     private fun checkActionAllowed(action: Actionable<T, A>): Boolean {
         val allowed = actionAllowed(action)
-        if (!allowed) feedback.invoke(FlowStep.IllegalAction(action.actionType, action.playerIndex, action.parameter))
+        if (!allowed) feedback.invoke(FlowStep.IllegalAction(gameData.game, action.actionType, action.playerIndex, action.parameter))
         return allowed
     }
 

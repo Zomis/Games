@@ -1,14 +1,19 @@
 package net.zomis.games.dsl
 
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import net.zomis.games.WinResult
 import net.zomis.games.api.GamesApi
 import net.zomis.games.dsl.listeners.BlockingGameListener
+import net.zomis.games.dsl.listeners.IllegalActionListener
+import net.zomis.games.impl.ttt.DslTTT
+import net.zomis.games.server2.ais.AIAlphaBetaConfig
+import net.zomis.games.server2.ais.AIRepository
+import net.zomis.games.server2.ais.ServerAlphaBetaAIs
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.sign
-import kotlin.random.Random
 
 class ForkTest {
 
@@ -65,6 +70,36 @@ class ForkTest {
         blockingGameListener.await()
         println(game.model.value)
         game.stop()
+    }
+
+    @Test
+    fun alphaBeta() = runTest {
+        val aiConfig = ServerAlphaBetaAIs.ais().first { it.gameType == DslTTT.game.name }
+        // level 2 is shaky -- sometimes error performing action, sometimes a Replay stepJob coroutine not finishing
+        // level 3 is shaky -- replay stepJob coroutine not finishing
+        // level 6 is shaky -- often fails with error performing action, or takes a ridiculous amount of time (possibly because of prints) but with replay StepJob not finishing
+
+        val config = aiConfig.toAlphaBetaConfig(aiConfig.configurations.first { it.first == 6 })
+        val gameAI = AIRepository.createAlphaBetaAI("", config as AIAlphaBetaConfig<Any>)
+        val blocking = BlockingGameListener()
+        val game = GamesImpl.game(DslTTT.game).setup().startGame(this, 2) {
+            listOf(
+                blocking,
+                IllegalActionListener(exception = false),
+                gameAI.gameListener(it, 0, delayOverride = 100),
+                gameAI.gameListener(it, 1, delayOverride = 100),
+            )
+        }
+        blocking.awaitGameEnd()
+        while (!game.isGameOver()) {
+            delay(2000)
+            blocking.await()
+            println("SOMEONE MADE A MOVE!")
+            println(game.view(0))
+        }
+        println("GAME OVER!")
+        println(game.view(0))
+        Assertions.assertTrue(game.isGameOver())
     }
 
     @Test

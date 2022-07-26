@@ -1,11 +1,10 @@
 package net.zomis.games.ais
 
-import kotlinx.coroutines.runBlocking
-import net.zomis.Best
+import net.zomis.BestSuspending
 
 class AlphaBeta<S, A>(
     private val actions: (S) -> List<A>,
-    val branching: (S, A) -> S,
+    val branching: suspend (S, A) -> S,
     val terminalState: (S) -> Boolean,
     val heuristic: (S) -> Double,
     private val depthRemainingBonus: Double = 0.0
@@ -23,30 +22,26 @@ class AlphaBeta<S, A>(
             throw IllegalStateException("No available actions but not terminal? $state")
         }
         if (maximizingPlayer) {
-            val best = Best<A> {action ->
-                return@Best runBlocking {
-                    val child = branching(state, action)
-                    alphaBeta(child, depth - 1, newAlpha, newBeta, !maximizingPlayer).second
-                }
+            val best = BestSuspending<A> {action ->
+                val child = branching(state, action)
+                alphaBeta(child, depth - 1, newAlpha, newBeta, !maximizingPlayer).second
             }
             for (action in availableActions) {
                 best.next(action)
-                newAlpha = Math.max(newAlpha, best.getBestValue())
+                newAlpha = maxOf(newAlpha, best.getBestValue())
                 if (newAlpha >= newBeta) {
                     break
                 }
             }
             return best.getBest().random() to best.getBestValue()
         } else {
-            val best = Best<A> {action ->
-                return@Best runBlocking {
-                    val child = branching(state, action)
-                    -alphaBeta(child, depth - 1, newAlpha, newBeta, !maximizingPlayer).second
-                }
+            val best = BestSuspending<A> {action ->
+                val child = branching(state, action)
+                -alphaBeta(child, depth - 1, newAlpha, newBeta, !maximizingPlayer).second
             }
             for (action in availableActions) {
                 best.next(action)
-                newBeta = Math.min(newBeta, -best.getBestValue())
+                newBeta = minOf(newBeta, -best.getBestValue())
                 if (newAlpha >= newBeta) {
                     break
                 }

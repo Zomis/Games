@@ -3,7 +3,6 @@ package net.zomis.games.server2.db
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonUnwrapped
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.runBlocking
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game

@@ -16,7 +16,7 @@ class AIAnalyze {
         return AIAnalyzeResult(scoreResults, null)
     }
 
-    fun alphaBeta(game: Game<Any>, alphaBetaConfig: AIAlphaBetaConfig<Any>, playerIndex: Int): AIAnalyzeResult? {
+    suspend fun alphaBeta(game: Game<Any>, alphaBetaConfig: AIAlphaBetaConfig<Any>, playerIndex: Int): AIAnalyzeResult? {
         val options = alphaBetaConfig.evaluateActions(game, playerIndex).map {
             ActionAnalyze(it.first.actionType, it.first.parameter, it.second)
         }

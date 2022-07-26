@@ -138,7 +138,7 @@ class GameFlowImpl<T: Any>(
                 logger.info("GameFlow Coroutine Action Received: $action")
                 val typeEntry = actions.type(action.actionType)
                 if (typeEntry == null) {
-                    sendFeedback(FlowStep.IllegalAction(action.actionType, action.playerIndex, action.parameter))
+                    sendFeedback(FlowStep.IllegalAction(model, action.actionType, action.playerIndex, action.parameter))
                     continue
                 }
                 replayable.stateKeeper.preMove(action) { sendFeedback(it) }

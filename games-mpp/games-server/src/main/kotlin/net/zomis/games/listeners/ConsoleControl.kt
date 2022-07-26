@@ -15,14 +15,12 @@ class ConsoleControl(val game: Game<Any>, val scanner: Scanner): GameListener {
         if (step is FlowStep.GameEnd) job?.cancel()
         val jobNeedsStarting = step is FlowStep.AwaitInput && job == null
         if (step is FlowStep.GameSetup<*> || jobNeedsStarting) {
-            job = coroutineScope.launch {
-                withContext(Dispatchers.IO) {
-                    while (game.isRunning()) {
-                        val action = controller.inputRepeat { controller.queryInput(game, scanner) }
-                        println("Sending action from ${this@ConsoleControl}")
-                        game.actionsInput.send(action)
-                        println("Sent action from ${this@ConsoleControl}")
-                    }
+            job = coroutineScope.launch(CoroutineName(this::class.simpleName.toString()) + Dispatchers.IO) {
+                while (game.isRunning()) {
+                    val action = controller.inputRepeat { controller.queryInput(game, scanner) }
+                    println("Sending action from ${this@ConsoleControl}")
+                    game.actionsInput.send(action)
+                    println("Sent action from ${this@ConsoleControl}")
                 }
             }
         }

@@ -23,7 +23,9 @@ data class AlphaBetaAIFactory<S: Any>(
     val useSpeedModes: Boolean,
     val heuristic: (Game<S>, Int) -> Double
 ) {
-
+    fun toAlphaBetaConfig(configuration: Pair<Int, AlphaBetaSpeedMode>): AIAlphaBetaConfig<S> {
+        return AIAlphaBetaConfig(this, configuration.first, configuration.second)
+    }
     val configurations: List<Pair<Int, AlphaBetaSpeedMode>> = sequence {
         (0 until maxLevel).forEach {
             yield(it to AlphaBetaSpeedMode.NORMAL)

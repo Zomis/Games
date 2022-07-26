@@ -1,10 +1,7 @@
 package net.zomis.common
 
 import klog.KLoggers
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import net.zomis.games.server2.JacksonTools
 import java.math.BigDecimal
 
@@ -12,11 +9,11 @@ object Utils
 private val logger = KLoggers.logger(Utils)
 suspend fun <A, B> List<A>.pmap(f: suspend (A) -> B): List<B> = coroutineScope {
     map {
-        async(Dispatchers.Default) {
+        async(Dispatchers.Default + CoroutineName("pmap for $it")) {
             try {
                 f(it)
             } catch (e: Exception) {
-                logger.error(e) { "Error in bmap" }
+                logger.error(e) { "Error in pmap" }
                 throw e
             }
         }

@@ -15,6 +15,7 @@ import net.zomis.games.impl.words.Wordle
 object ServerGames {
 
     val beta = listOf(
+        Pentago.game,
         AlchemistsDelegationGame.game,
         Battleship.game,
         Red7.Game.game,
@@ -22,7 +23,6 @@ object ServerGames {
     )
 
     val games = listOf(
-        Pentago.game,
         Wordle.game,
         Backgammon.game,
         KingDomino.game,

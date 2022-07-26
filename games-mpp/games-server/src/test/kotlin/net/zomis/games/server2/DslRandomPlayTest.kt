@@ -176,9 +176,11 @@ class DslRandomPlayTest {
                 if (moveHandler != null) {
                     val ai = gameType.setup().findAI(moveHandler)
                         ?: throw IllegalArgumentException("Missing AI: $moveHandler for game ${gameImpl.gameType}")
-                    ai.simpleAction(gameImpl, playerIndex)?.let {
-                        val serialized = gameImpl.actions.type(it.actionType)!!.actionType.serialize(it.parameter)
-                        PlayerGameMoveRequest(game.highestAccessTo(playerIndex)!!, game, playerIndex, it.actionType, serialized, true)
+                    runBlocking {
+                        ai.simpleAction(gameImpl, playerIndex)?.let {
+                            val serialized = gameImpl.actions.type(it.actionType)!!.actionType.serialize(it.parameter)
+                            PlayerGameMoveRequest(game.highestAccessTo(playerIndex)!!, game, playerIndex, it.actionType, serialized, true)
+                        }
                     }
                 } else {
                     ServerAIs.randomAction(game, game.highestAccessTo(playerIndex)!!, playerIndex)

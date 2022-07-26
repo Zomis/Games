@@ -14,16 +14,6 @@ import net.zomis.games.dsl.listeners.BlockingGameListener
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
-suspend fun Game<*>.awaitInput(coroutineScope: CoroutineScope) {
-    val game = this
-    coroutineScope.launch {
-        for (i in game.feedbackFlow) {
-            println("AwaitInput Feedback: $i")
-            if (i is FlowStep.ProceedStep) break
-        }
-    }
-}
-
 class SkullTest {
 
     val dsl = SkullGame.game

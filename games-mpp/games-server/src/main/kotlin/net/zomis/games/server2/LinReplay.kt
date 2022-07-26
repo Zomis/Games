@@ -49,7 +49,9 @@ class LinReplay(private val aiRepository: AIRepository, private val dbIntegratio
                 log(ctx, "analyze $gameId $position using $ai")
                 val dbGame = if (ignoreCache) fetchGame(gameId) else caffeine.get(gameId)!!
                 val game = runBlocking { dbGame.at(this, position) }
-                ctx.json(aiRepository.analyze(dbGame.summary.gameType, game, ai, playerIndex)!!)
+                runBlocking {
+                    ctx.json(aiRepository.analyze(dbGame.summary.gameType, game, ai, playerIndex)!!)
+                }
             }
         }
     }

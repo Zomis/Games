@@ -88,7 +88,7 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
 
             val gameCopy = replay.game
             println("Replay data $replayData created game $gameCopy with model ${gameCopy.model}")
-            GameForkResult(gameCopy, blockingGameListener)
+            GameForkResult(gameCopy, blockingGameListener, replayData = replayData)
         }
         println("Created game $game with elims ${game.eliminations}")
 

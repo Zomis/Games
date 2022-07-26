@@ -46,7 +46,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
             return
         }
 
-        serverGame.coroutineScope.launch {
+        serverGame.coroutineScope.launch(CoroutineName("DslGameSystem: Send action $action")) {
             try {
                 game.actionsInput.send(action)
             } catch (e: Exception) {
@@ -82,7 +82,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
             val serverGame = gameEvent.game
             val dbIntegration = this.dbIntegration()
 
-            serverGame.coroutineScope.launch {
+            serverGame.coroutineScope.launch(CoroutineName("DslGameSystem: Setup game for $serverGame")) {
                 logger.info { "Creating game: ${gameEvent.game}" }
                 val replayListener = ReplayListener(serverGame.gameType.type)
                 val appropriateReplayListener =

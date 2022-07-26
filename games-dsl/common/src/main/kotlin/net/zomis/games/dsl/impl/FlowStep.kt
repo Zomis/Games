@@ -47,7 +47,7 @@ sealed class FlowStep {
                 = ActionReplay(actionImpl.actionType.name, playerIndex, serializedParameter, state)
     }
     // TODO: Add reason for why Action is not allowed, of some form... name of rule(s)?
-    data class IllegalAction(val actionType: String, val playerIndex: Int, val parameter: Any): FlowStep(), ActionResult
+    data class IllegalAction(val model: Any, val actionType: String, val playerIndex: Int, val parameter: Any): FlowStep(), ActionResult
     data class Log(val log: ActionLogEntry): FlowStep()
     data class RuleExecution(val ruleName: String, val values: Any): FlowStep()
     // Use Deferred for PreSetup and PreMove, see https://kotlinlang.org/docs/shared-mutable-state-and-concurrency.html#actors

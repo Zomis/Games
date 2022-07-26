@@ -72,3 +72,27 @@ class Best<T>(private val valueFunction: (T) -> Double) {
     fun getBestValue(): Double = bestValue
 
 }
+
+class BestSuspending<T>(private val valueFunction: suspend (T) -> Double) {
+
+    private var bestValue: Double = Double.NEGATIVE_INFINITY
+    private var bestElements: MutableList<T> = mutableListOf()
+
+    suspend fun next(element: T) {
+        val value = valueFunction(element)
+        if (value > bestValue) {
+            bestValue = value
+            bestElements = mutableListOf(element)
+        } else if (value >= bestValue) {
+            bestElements.add(element)
+        }
+    }
+
+    fun asCollection(): Collection<T> = bestElements.toList()
+
+    fun getBest(): List<T> = bestElements.toList()
+    fun firstBest(): T = bestElements.first()
+    fun isBest(element: T): Boolean = bestElements.contains(element)
+    fun getBestValue(): Double = bestValue
+
+}

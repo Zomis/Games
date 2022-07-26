@@ -6,16 +6,15 @@ import net.zomis.games.dsl.GameListenerFactory
 import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.impl.*
-import net.zomis.games.server2.Client
 import net.zomis.games.server2.ServerGames
-import net.zomis.games.server2.games.PlayerGameMoveRequest
-import net.zomis.games.server2.games.ServerGame
 
 object AIRepository {
 
-    fun analyze(gameType: String, game: Game<Any>, aiName: String, playerIndex: Int): AIAnalyzeResult? {
+    suspend fun analyze(gameType: String, game: Game<Any>, aiName: String, playerIndex: Int): AIAnalyzeResult? {
         // Find AI in all AI types
         val setup = ServerGames.setup(gameType) ?: return null
+
+        // TODO: Use queryable results?
 
         val scoring = setup.scorerAIs.find { it.name == aiName }
         if (scoring != null) {
@@ -65,22 +64,26 @@ object AIRepository {
             ServerAI(gameTypes.keys.toList(), name, gameTypes.gameListenerFactory()).register(events)
         }
     }
+    fun createAlphaBetaAI(name: String, alphaBetaConfig: AIAlphaBetaConfig<Any>): GameAI<Any> {
+        return GameAI(name) {
+            queryable { scope ->
+                alphaBetaConfig.evaluateActions(scope.game, scope.playerIndex).sortedByDescending { it.second }
+            }
+            action {
+                val options = alphaBetaConfig.evaluateActions(game, playerIndex)
+                val move = options.bestOf { it.second }.random()
+                move.first
+            }
+        }
+    }
     private fun createAlphaBetaAIs(events: EventSystem) {
         val alphaBetas = ServerAlphaBetaAIs.ais()
         alphaBetas.flatMap { it.names }.distinct().forEach { name ->
-            val gameTypes = alphaBetas.filter { it.names.contains(name) }.associate { abAI -> abAI.gameType to GameAI<Any>(name) {
+            val gameTypes = alphaBetas.filter { it.names.contains(name) }.associate { abAI ->
                 val factory = abAI as AlphaBetaAIFactory<Any>
-                val configuration = factory.configurations.first { factory.aiName(it.first, it.second) == name }
-                val alphaBetaConfig = AIAlphaBetaConfig(factory, configuration.first, configuration.second)
-                queryable { scope ->
-                    alphaBetaConfig.evaluateActions(scope.game, scope.playerIndex).sortedByDescending { it.second }
-                }
-                action {
-                    val options = alphaBetaConfig.evaluateActions(game, playerIndex)
-                    val move = options.bestOf { it.second }.random()
-                    move.first
-                }
-            }
+                abAI.gameType to createAlphaBetaAI(name,
+                    abAI.toAlphaBetaConfig(factory.configurations.first { factory.aiName(it.first, it.second) == name })
+                )
             }
             ServerAI(gameTypes.keys.toList(), name, gameTypes.gameListenerFactory()).register(events)
         }
