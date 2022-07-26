@@ -48,18 +48,16 @@ class GameFlowImpl<T: Any>(
         if (job != null) throw IllegalStateException("Game already started")
         val game = this
         job = coroutineScope.launch(Dispatchers.Default + CoroutineName("Job for game $this")) {
-            logger.info("GameFlow Coroutine started: ${this@GameFlowImpl}")
             try {
                 sendFeedback(FlowStep.GameStarted(game, gameConfig))
                 val dsl = setupContext.flowDsl!!
-                val flowContext = GameFlowContext(this, game, "root", true)
+                val flowContext = GameFlowContext(this, game, "root")
                 replayable.stateKeeper.preSetup(game) { sendFeedback(it) }
                 setupContext.model.onStart(GameStartContext(gameConfig, model, replayable, playerCount))
                 game.unfinishedFeedback = FlowStep.GameSetup(game, gameConfig, replayable.stateKeeper.lastMoveState())
                 dsl.invoke(flowContext)
                 actionDone()
                 sendFeedback(FlowStep.GameEnd)
-                logger.info("GameFlow Coroutine MainScope done for $game")
             } catch (e: CancellationException) {
                 if (e.cause != null) logger.warn(e) { "Game cancelled: $game" }
                 else logger.info { "Game cancelled (no cause): $game" }
@@ -70,15 +68,12 @@ class GameFlowImpl<T: Any>(
     }
 
     override fun stop() {
-        println("Stopping game $this")
         this.feedbackFlow.close()
         this.job?.cancel()
         this.job = null
     }
 
     suspend fun sendFeedbacks() {
-        println("Feedbacks: $feedbacks")
-        println("Logs: ${stateKeeper.logs()}")
         feedbacks.toList().forEach {
             sendFeedback(it)
         }
@@ -224,8 +219,7 @@ class GameFlowImpl<T: Any>(
 class GameFlowContext<T: Any>(
     private val coroutineScope: CoroutineScope,
     val flow: GameFlowImpl<T>,
-    private val name: String,
-    rootContext: Boolean
+    private val name: String
 ): GameFlowScope<T>, GameFlowStepScope<T> {
     override val game: T get() = flow.model
     override val eliminations: PlayerEliminationsWrite get() = flow.eliminations
@@ -241,7 +235,6 @@ class GameFlowContext<T: Any>(
         actions.invoke(fork)
         copy.blockingGameListener.await()
         copy.allowForks = true
-        println("Flow $flow (${flow.model} created fork ${copy.game} (${copy.game.model}), now stopping the fork. Last move was ${flow.unfinishedFeedback}")
         copy.game.stop()
         return copy.game
     }

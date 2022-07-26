@@ -45,7 +45,7 @@ object GameAIs {
                 if (actionType.isAllowed(actionable)) {
                     return actionable
                 } else {
-                    println("Reset after $playerIndex ${actionType.name}: $chosen")
+                    println("randomActionable reset for player $playerIndex ${actionType.name}: $chosen")
                     chosen.clear()
                 }
             } else {
@@ -136,16 +136,12 @@ class GameAIListener<T: Any>(val context: GameAIContext<T>, val delayOverride: (
             val actionContext = GameAIActionContext(context.game, context.playerIndex)
             val action = context.actionBlock.invoke(actionContext) ?: return
 
-            println("GameAIListener(${action.playerIndex}) returned $action")
             job?.cancel()
             job = coroutineScope.launch(CoroutineName("GameAIListener $this gonna do $action in ${context.game}")) {
-                println("GameAIListener(${action.playerIndex}) launched coroutine")
                 val sleepDelay = delayOverride.invoke() ?: actionContext.delay.toLong()
                 delay(sleepDelay)
                 if (context.game.actions.type(action.actionType)?.isAllowed(action as Actionable<T, Any>) == true) {
-                    println("Sending action from ${this@GameAIListener} to ${context.game}: $action")
                     context.game.actionsInput.send(action)
-                    println("Sent action from $this: $action")
                 } else {
                     println("Skipping action from $this: $action as it is no longer allowed")
                 }

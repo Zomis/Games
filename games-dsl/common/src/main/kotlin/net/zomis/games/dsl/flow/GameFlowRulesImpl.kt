@@ -105,7 +105,6 @@ class GameFlowRuleContextRun<T: Any>(
         rule.invoke(activeCheck)
         if (!activeCheck.result) return
 
-        println("Execute rule: $name")
         callbacks.feedback.invoke(FlowStep.RuleExecution(name, Unit))
         val execution = GameFlowRuleContextExecution(context, callbacks, eventsMap)
         rule.invoke(execution)

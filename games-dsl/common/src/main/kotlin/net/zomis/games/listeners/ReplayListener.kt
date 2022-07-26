@@ -18,7 +18,6 @@ class ReplayListener(val gameType: String) : GameListener {
             if (actionIndex++ != expectedActionIndex) {
                 throw IllegalStateException("ActionIndex $actionIndex was received but expected $expectedActionIndex")
             }
-            println("Adding action ${actions.size}: ${step.action}")
             this.actions.add(step.toActionReplay())
         }
         if (step is FlowStep.GameStarted<*>) {

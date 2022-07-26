@@ -80,23 +80,21 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
                 else -> throw IllegalArgumentException("Copier was called with unknown parameter: $mostRecentAction of type (${mostRecentAction::class})")
             }
 
-            println("Copier invoked! Replay data is $replayData")
             val blockingGameListener = BlockingGameListener()
             val replay = GamesImpl.game(context.gameSpec).replay(coroutineScope, replayData, gameListeners = {
                 listOf(blockingGameListener)
             }, fork = true).goToEnd().awaitCatchUp()
 
             val gameCopy = replay.game
-            println("Replay data $replayData created game $gameCopy with model ${gameCopy.model}")
             GameForkResult(gameCopy, blockingGameListener, replayData = replayData)
         }
-        println("Created game $game with elims ${game.eliminations}")
 
         val listeners = replayListener.toSingleList() + flowListeners.invoke(game as Game<Any>)
         debugPrint("Waiting for ${listeners.size} listeners")
-        coroutineScope.launch(context = coroutineScope.coroutineContext + CoroutineName("Listeners for $game")) {
+        coroutineScope.launch(CoroutineName("Listeners for $game")) {
+            debugPrint("[${this.coroutineContext[CoroutineName]!!.name}] Started")
             for (flowStep in game.feedbackFlow) {
-                debugPrint("Listener feedback: $flowStep")
+                debugPrint("[${this.coroutineContext[CoroutineName]!!.name}] Listener feedback: $flowStep")
                 listeners.forEach { listener ->
                     debugPrint("Listener $listener handling $flowStep")
                     listener.handle(coroutineScope, flowStep)
@@ -173,9 +171,7 @@ class GameImpl<T : Any>(
         val gameImpl = this
 
         this.actionsInputJob = coroutineScope.launch(CoroutineName("Actions job for $this")) {
-            println("$gameImpl: actions job")
             for (action in actionsInput) {
-                println("$gameImpl: GameImpl received action $action")
                 stateKeeper.clear()
                 val oldEliminations = eliminations.eliminations()
                 replayState.stateKeeper.preMove(action) {
@@ -187,19 +183,14 @@ class GameImpl<T : Any>(
                     eliminations.eliminations().minus(oldEliminations.toSet()).forEach {
                         feedbackFlow.send(FlowStep.Elimination(it))
                     }
-                    println("$gameImpl: flow step sent: $result, now sending await input")
                     awaitInput()
                 }
                 if (isGameOver()) {
-                    println("$gameImpl: actions job game over")
                     break
                 }
             }
-            println("$gameImpl: end of actions job")
         }
-        println("$gameImpl: await input")
         awaitInput()
-        println("$gameImpl: start done")
     }
 
     override fun stop() {

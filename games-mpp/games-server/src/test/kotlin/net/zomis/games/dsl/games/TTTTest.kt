@@ -30,9 +30,7 @@ class TTTTest {
     @Test
     fun draw() = runTest {
         setup(this)
-        println("setup done")
         blocking.await()
-        println("waited")
         val play = DslTTT.playAction.name
         test.performActionSerialized(0, play, Point(1, 1))
         test.performActionSerialized(1, play, Point(0, 0))

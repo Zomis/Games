@@ -39,7 +39,6 @@ class SkullTest {
         Assertions.assertEquals(1, actions.count { it.parameter == SkullCard.SKULL })
         Assertions.assertEquals(3, actions.count { it.parameter == SkullCard.FLOWER })
         Assertions.assertTrue(game.model.players.all { it.points == 0 })
-        println("4")
 
         test.performAction(0, "play", SkullCard.FLOWER)
         test.expectPossibleActions(2, 0)
@@ -67,7 +66,6 @@ class SkullTest {
         test.expectPossibleActions(0, 1) // choose last player
         Assertions.assertTrue(game.model.players.all { it.points == 0 })
         test.performAction(0, "choose", game.model.players[1])
-        println("1")
 
         Assertions.assertEquals(1, game.model.players[0].points)
         Assertions.assertEquals(0, game.model.currentPlayerIndex)
@@ -78,13 +76,11 @@ class SkullTest {
         test.performAction(2, "play", SkullCard.SKULL)
         test.performAction(0, "bet", 3)
         test.performAction(0, "choose", game.model.players[0])
-        println("2")
         test.performAction(0, "choose", game.model.players[1])
         Assertions.assertEquals(3, game.model.players[0].totalCards)
         // With the default options, currentPlayer should not change if you lose a bet.
         Assertions.assertEquals(0, game.model.currentPlayerIndex)
         game.stop()
-        println("3")
     }
 
 }

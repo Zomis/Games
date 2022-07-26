@@ -20,12 +20,9 @@ class GameFlowStepImpl<T: Any>(
     suspend fun runDsl() {
         // Run step at least once
         // Return GameFlowStep with the possibility of running it again, or just returning the action performed
-        println("GameFlow Coroutine step $name")
-        val child = GameFlowContext(coroutineScope, gameFlow, "${this.name}/$name", false)
+        val child = GameFlowContext(coroutineScope, gameFlow, "${this.name}/$name")
         step.invoke(child)
-        println("GameFlow Coroutine step sendFeedbacks")
         gameFlow.sendFeedbacks()
-        println("GameFlow Coroutine step send AwaitInput")
         action = gameFlow.nextAction()
     }
 

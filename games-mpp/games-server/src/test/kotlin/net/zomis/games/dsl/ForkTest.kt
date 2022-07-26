@@ -75,9 +75,6 @@ class ForkTest {
     @Test
     fun alphaBeta() = runTest {
         val aiConfig = ServerAlphaBetaAIs.ais().first { it.gameType == DslTTT.game.name }
-        // level 2 is shaky -- sometimes error performing action, sometimes a Replay stepJob coroutine not finishing
-        // level 3 is shaky -- replay stepJob coroutine not finishing
-        // level 6 is shaky -- often fails with error performing action, or takes a ridiculous amount of time (possibly because of prints) but with replay StepJob not finishing
 
         val config = aiConfig.toAlphaBetaConfig(aiConfig.configurations.first { it.first == 6 })
         val gameAI = AIRepository.createAlphaBetaAI("", config as AIAlphaBetaConfig<Any>)
@@ -91,13 +88,6 @@ class ForkTest {
             )
         }
         blocking.awaitGameEnd()
-        while (!game.isGameOver()) {
-            delay(2000)
-            blocking.await()
-            println("SOMEONE MADE A MOVE!")
-            println(game.view(0))
-        }
-        println("GAME OVER!")
         println(game.view(0))
         Assertions.assertTrue(game.isGameOver())
     }

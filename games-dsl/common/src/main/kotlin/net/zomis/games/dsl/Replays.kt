@@ -47,7 +47,6 @@ class Replay<T : Any>(
     }
 
     suspend fun gotoPosition(newPosition: Int): Replay<T> {
-        println("Replay targeting $newPosition, current is $targetPosition sent $actionsSent performed $actionsPerformed")
         if (newPosition != this.actionsPerformed) {
             if (!this.replayCompleteLock.isLocked) this.replayCompleteLock.lock()
         }
@@ -86,13 +85,11 @@ class Replay<T : Any>(
     private suspend fun restart() {
         this.blockingListener = BlockingGameListener()
         this.internalGame?.stop()
-        println("Restarting replay $this with scope $coroutineScope")
         this.actionsSent = 0
         this.actionsPerformed = 0
         this.internalGame = entryPoint.setup().startGameWithInfo(coroutineScope, GameStartInfo(playerCount, config, fork)) {
             listOf(ReplayingListener(replayData), blockingListener, this) + gameListeners.invoke(it as Game<T>)
         }
-        println("Restarted replay $this")
     }
 
     companion object {
@@ -104,7 +101,6 @@ class Replay<T : Any>(
             gameListeners: (Game<T>) -> List<GameListener>,
             fork: () -> Boolean,
         ): Replay<T> {
-            println("Creating replay using $replayData")
             require(replayData.gameType == gameSpec.name) {
                 "Mismatching gametypes: Replay data for ${replayData.gameType} cannot be used on ${gameSpec.name}"
             }
