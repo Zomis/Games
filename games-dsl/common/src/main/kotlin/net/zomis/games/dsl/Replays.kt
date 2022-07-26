@@ -1,6 +1,8 @@
 package net.zomis.games.dsl
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import net.zomis.games.dsl.impl.FlowStep
@@ -33,85 +35,51 @@ class Replay<T : Any>(
     private var internalGame: Game<T>? = null
     val game get() = internalGame!!
     private var blockingListener: BlockingGameListener = BlockingGameListener()
-    private val stepLock = Mutex()
     private val replayCompleteLock = Mutex(locked = true)
-    private var stepJob: Job? = null
 
     suspend fun awaitCatchUp(): Replay<T> {
-//        while (targetPosition > position) {
-//            yield() // Infinite loop if we don't add this here
-//            blockingListener.await()
-//        }
         replayCompleteLock.withLock {  }
         return this
     }
+
+    private fun remainingActions(fromIndex: Int, toIndex: Int): Flow<ActionReplay> {
+        return replayData.actions.subList(fromIndex, toIndex).asFlow()
+    }
+
     suspend fun gotoPosition(newPosition: Int): Replay<T> {
         println("Replay targeting $newPosition, current is $targetPosition sent $actionsSent performed $actionsPerformed")
-        this.targetPosition = newPosition
-        if (newPosition < this.actionsPerformed) {
-            restart()
-        }
-        if (targetPosition != this.actionsPerformed) {
+        if (newPosition != this.actionsPerformed) {
             if (!this.replayCompleteLock.isLocked) this.replayCompleteLock.lock()
         }
-        possiblyStepForward()
+        this.targetPosition = newPosition
+        coroutineScope.launch(CoroutineName("Replay $this gotoPosition $newPosition")) {
+            val previousActionsSent = actionsSent
+            val actionsFlow = if (newPosition < previousActionsSent) {
+                restart()
+                remainingActions(0, newPosition)
+            } else {
+                remainingActions(actionsSent, newPosition)
+            }
+            actionsFlow.collect { action ->
+                blockingListener.await()
+                val actionType = game.actions.type(action.actionType)!!
+                val converted = actionConverter.invoke(actionType.actionType.serializedType, action.serializedParameter)
+                val actionable = actionType.createActionFromSerialized(action.playerIndex, converted)
+                actionsSent++
+                blockingListener.awaitAndPerform(actionable)
+                blockingListener.await()
+            }
+            if (replayCompleteLock.isLocked) {
+                replayCompleteLock.unlock()
+            }
+        }
         return this
     }
 
     override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
-        when (step) {
-            is FlowStep.AwaitInput -> {
-                possiblyStepForward()
-                blockingListener.await()
-                println("sent $actionsSent performed $actionsPerformed is maybe caught up with $targetPosition, fippling with lock $replayCompleteLock $this with game ${this.internalGame}")
-                if (this.actionsSent == actionsPerformed && this.actionsPerformed == targetPosition) {
-                    if (this.replayCompleteLock.isLocked) this.replayCompleteLock.unlock()
-                } else {
-                    if (!this.replayCompleteLock.isLocked) this.replayCompleteLock.lock()
-                }
-            }
-            is FlowStep.ActionPerformed<*> -> {
-                actionsPerformed++
-            }
-        }
-    }
-
-    private suspend fun possiblyStepForward() {
-        println("Awaiting stepLock to step forward $stepLock")
-        stepLock.withLock {
-
-            val job = stepJob
-            println("Steplock acquired $stepLock. Job is $job")
-            if (job != null && job.isActive) return@withLock
-            if (actionsSent < targetPosition) {
-                println("Stepping forward in $this")
-                stepJob = coroutineScope.launch(CoroutineName("stepJob for replay $this ($internalGame) sent $actionsSent target $targetPosition performed $actionsPerformed")) {
-                    println("Calling stepForward from replay launched coroutine")
-                    stepForward()
-                }
-            }
-        }
-    }
-
-    private suspend fun stepForward() {
-        println("Step forward sent $actionsSent performed $actionsPerformed target $targetPosition")
-        val actionIndex = this.actionsSent
-        val action = replayData.actions[actionIndex]
-        try {
-            blockingListener.await()
-            println("Checking actionables on position $actionsSent. $action")
-            println(game.view(0))
-            val actionType = game.actions.type(action.actionType)!!
-            val converted = actionConverter.invoke(actionType.actionType.serializedType, action.serializedParameter)
-            println("Converted: $converted (${converted::class}) for $actionType")
-            val actionable = actionType
-                .createActionFromSerialized(action.playerIndex, converted)
-            println("Sending action from $this to $game: $action")
-            actionsSent++
-            ///blockingListener.awaitAndPerform(actionable) // this line instead of the one below only makes things worse, and makes it hang (probably deadlock?)
-            game.actionsInput.send(actionable)
-        } catch (e: Exception) {
-            throw ReplayException("Unable to perform action $actionIndex: $action", e)
+        if (step is FlowStep.ActionPerformed<*>) actionsPerformed++
+        if (step is FlowStep.IllegalAction) {
+            throw ReplayException("Action is not allowed: $step after $actionsPerformed successfully performed actions.", null)
         }
     }
 
