@@ -217,7 +217,10 @@ object SetGame {
                         }
                     }
                 }
-                requires { action.parameter.set.distinct().size == action.parameter.set.size && action.parameter.set.size == 3 }
+                requires {
+                    action.parameter.set.distinct().size == action.parameter.set.size && action.parameter.set.size == 3
+                        && game.setCardsResult(game.stringsToCards(action.parameter.set)).cards.all { game.board.cards.contains(it) }
+                }
                 effect {
                     val cardsResult = game.setCardsResult(game.stringsToCards(action.parameter.set))
                     game.players[action.playerIndex].chooseSet(cardsResult, game.config)
