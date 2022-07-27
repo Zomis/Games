@@ -8,7 +8,7 @@ import kotlin.random.Random
 
 object Backgammon {
 
-    class PiecePosition(var playerIndex: Int, var count: Int) {
+    data class PiecePosition(var playerIndex: Int, var count: Int) {
         fun set(playerIndex: Int, count: Int) {
             this.playerIndex = playerIndex
             this.count = count
