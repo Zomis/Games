@@ -24,8 +24,9 @@ const store = new Vuex.Store({
   },
   getters: {
     activeGames: state => {
-      return state.DslGameState.games
-        .map(i => Object.values(i))
+      let obj = state.DslGameState.games
+      return Object.keys(obj)
+        .map(i => obj[i])
         .flat();
     }
   },
