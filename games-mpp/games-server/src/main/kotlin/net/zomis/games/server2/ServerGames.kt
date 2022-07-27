@@ -18,6 +18,7 @@ object ServerGames {
         Pentago.game,
         AlchemistsDelegationGame.game,
         Battleship.game,
+        Decrypto.game,
         Red7.Game.game,
         LightsOut.Game.game,
     )
@@ -29,7 +30,6 @@ object ServerGames {
         TTTUpgrade.game,
         SpiceRoadDsl.game,
         Dixit.game,
-        Decrypto.game,
         CoupRuleBased.game,
         SetGame.game,
         ResistanceAvalonGame.game,
