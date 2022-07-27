@@ -3,12 +3,18 @@ package net.zomis.games.server2
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import net.zomis.core.events.EventSystem
+import net.zomis.games.common.toSingleList
 import net.zomis.games.dsl.ConsoleView
 import net.zomis.games.dsl.GameEntryPoint
 import net.zomis.games.dsl.GamesImpl
+import net.zomis.games.dsl.impl.GameAI
+import net.zomis.games.dsl.impl.GameAIs
+import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.impl.*
 import net.zomis.games.impl.words.Decrypto
+import net.zomis.games.listeners.SanityCheckListener
 import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.ais.serialize
 import net.zomis.games.server2.clients.WSClient
@@ -75,6 +81,25 @@ class DslRandomPlayTest {
         runBlocking {
             gameType.runTests()
         }
+    }
+
+    @ParameterizedTest(name = "Sanity Check {0} with {1} players")
+    @MethodSource("serverGames")
+    fun sanityCheck(gameType: GameEntryPoint<Any>, playerCount: Int) = runTest {
+        val ai = playingMap[gameType.gameType]?.let { gameType.setup().findAI(it) } ?: GameAI("#AI_Random") {
+            action {
+                GameAIs.randomActionable(game, playerIndex)
+            }
+        }
+        val awaiting = BlockingGameListener()
+        val game = gameType.setup().startGame(this, playerCount) { game ->
+            val aiListeners = game.playerIndices.map {
+                ai.gameListener(game, it)
+            }
+            SanityCheckListener(game).toSingleList() + aiListeners + awaiting
+        }
+        awaiting.awaitGameEnd()
+        Assertions.assertTrue(game.isGameOver())
     }
 
     @ParameterizedTest(name = "Random play {0} with {1} players")
