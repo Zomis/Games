@@ -288,10 +288,10 @@ object KingDomino {
                 view("actions") {
                     mapOf(
                         "chosen" to actionsChosen().chosen(),
-                        "dominoOptions" to action(chooseDomino).options().associate { it.value to chooseDomino.serialize(it) },
+                        "dominoOptions" to chosenActions(chooseDomino).options().associate { it.value to chooseDomino.serialize(it) },
                         "place" to mapOf(
-                            "tile" to action(place).nextSteps(Tile::class).map { it.type?.name },
-                            "point" to action(place).nextSteps(Point::class).associateBy { it.toStateString() }
+                            "tile" to chosenActions(place).nextSteps(Tile::class).map { it.type?.name },
+                            "point" to chosenActions(place).nextSteps(Point::class).associateBy { it.toStateString() }
                         )
                     )
                 }
