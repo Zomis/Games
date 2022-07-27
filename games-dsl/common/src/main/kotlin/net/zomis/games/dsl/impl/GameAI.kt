@@ -123,22 +123,25 @@ class GameAIActionContext<T: Any>(
 
 }
 
-class GameAIListener<T: Any>(val context: GameAIContext<T>, val delayOverride: () -> Long?): GameListener {
+class GameAIListener<T: Any>(val context: GameAIContext<T>, private val delayOverride: () -> Long?): GameListener {
     var enabled = true
     var job: Job? = null
 
     override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
         context.runListeners(coroutineScope, step)
-        if (step == FlowStep.AwaitInput) {
+        if (step is FlowStep.GameEnd) {
+            job?.cancel()
+        }
+        if (step is FlowStep.AwaitInput) {
             if (!enabled) return
             if (noAvailableActions(context.game, context.playerIndex)) return
 
             val actionContext = GameAIActionContext(context.game, context.playerIndex)
             val action = context.actionBlock.invoke(actionContext) ?: return
+            val sleepDelay = delayOverride.invoke() ?: actionContext.delay.toLong()
 
             job?.cancel()
-            job = coroutineScope.launch(CoroutineName("GameAIListener $this gonna do $action in ${context.game}")) {
-                val sleepDelay = delayOverride.invoke() ?: actionContext.delay.toLong()
+            job = coroutineScope.launch(CoroutineName("GameAIListener $this gonna do $action in ${context.game} after $sleepDelay ms")) {
                 delay(sleepDelay)
                 if (context.game.actions.type(action.actionType)?.isAllowed(action as Actionable<T, Any>) == true) {
                     context.game.actionsInput.send(action)
