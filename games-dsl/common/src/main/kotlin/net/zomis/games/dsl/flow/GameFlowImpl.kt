@@ -89,8 +89,7 @@ class GameFlowImpl<T: Any>(
     }
 
     override suspend fun copy(): GameForkResult<T> {
-        val unfinished = this.unfinishedFeedback
-        return when (unfinished) {
+        return when (val unfinished = this.unfinishedFeedback) {
             null -> copier.invoke(null)
             is FlowStep.GameSetup<*> -> copier.invoke(unfinished.copy(state = replayable.stateKeeper.lastMoveState()))
             is FlowStep.ActionPerformed<*> -> copier.invoke(unfinished.copy(state = replayable.stateKeeper.lastMoveState()))
@@ -138,8 +137,13 @@ class GameFlowImpl<T: Any>(
                 }
                 replayable.stateKeeper.preMove(action) { sendFeedback(it) }
                 logger.info("clear and perform: ${replayable.stateKeeper.lastMoveState()}")
-                actions.clearAndPerform(action as Actionable<T, Any>) {
+                val performed = actions.clearAndPerform(action as Actionable<T, Any>) {
                     this.clear()
+                }
+                if (!performed) {
+                    sendFeedback(FlowStep.IllegalAction(this, action.actionType, action.playerIndex, action.parameter))
+                    logger.warn { "Action not allowed: $action" }
+                    return null
                 }
                 logger.info("creating last action: ${replayable.stateKeeper.lastMoveState()}")
                 val last = FlowStep.ActionPerformed(action, typeEntry, replayable.stateKeeper.lastMoveState())
