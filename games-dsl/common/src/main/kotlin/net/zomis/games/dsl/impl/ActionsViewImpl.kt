@@ -33,11 +33,12 @@ class ActionViewImpl<T: Any, A: Any>(
     private val chosen: List<Any> = emptyList()
 ) : ActionView<T, A> {
     private val actionEntry = game.actions.type(actionType)
-    private val playerIndex: Int = viewer.playerIndex!!
+    private val playerIndex: Int? = viewer.playerIndex
 
     override fun anyAvailable(): Boolean {
+        if (playerIndex == null) return false
         if (chosen.isEmpty()) {
-            val availableActions = actionEntry?.availableActions(viewer.playerIndex!!, null) ?: emptyList()
+            val availableActions = actionEntry?.availableActions(playerIndex, null) ?: emptyList()
             return availableActions.any { actionEntry?.isAllowed(it) ?: false }
         }
         return actionEntry?.withChosen(playerIndex, chosen)
@@ -47,10 +48,11 @@ class ActionViewImpl<T: Any, A: Any>(
     }
 
     override fun <E : Any> nextSteps(clazz: KClass<E>): List<E> {
+        if (playerIndex == null) return emptyList()
         if (actionEntry == null) return emptyList()
 
         val next = game.actions.type(actionType)
-            ?.withChosen(viewer.playerIndex!!, chosen)?.nextOptions() ?: return emptyList()
+            ?.withChosen(playerIndex, chosen)?.nextOptions() ?: return emptyList()
         return next.filter { clazz.isInstance(it.choiceValue) }.map { it.choiceValue }.toList() as List<E>
     }
 
@@ -59,10 +61,11 @@ class ActionViewImpl<T: Any, A: Any>(
     }
 
     override fun options(): List<A> {
+        if (playerIndex == null) return emptyList()
         if (this.chosen.isEmpty()) {
-            return actionEntry?.availableActions(viewer.playerIndex!!, null)?.map { it.parameter } ?: emptyList()
+            return actionEntry?.availableActions(playerIndex, null)?.map { it.parameter } ?: emptyList()
         }
-        val next = actionEntry?.withChosen(viewer.playerIndex!!, chosen)
+        val next = actionEntry?.withChosen(playerIndex, chosen)
             ?.depthFirstActions(null)
         return next?.map { it.parameter }?.toList() ?: emptyList()
     }

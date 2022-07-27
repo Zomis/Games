@@ -63,6 +63,9 @@ class GameViewContext<T : Any>(
     }
 
     override fun <A : Any> chosenActions(actionType: ActionType<T, A>): ActionView<T, A> {
+        if (viewer == null) {
+            return ActionViewImpl(gameObj, actionType, PlayerViewer(null), emptyList())
+        }
         val chosen = gameObj.actions.choices.getChosen(viewer ?: -1)
         val chosenList = if (chosen?.actionType == actionType.name) chosen.chosen else emptyList()
         return ActionViewImpl(gameObj, actionType, PlayerViewer(playerIndex = viewer), chosenList)
