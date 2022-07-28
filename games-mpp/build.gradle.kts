@@ -12,6 +12,7 @@ version = "1.0-SNAPSHOT"
 val jacksonVersion = "2.13.1"
 val jupiterVersion = "5.7.1"
 val coroutinesVersion = "1.6.3"
+val ktorVersion = "2.0.3"
 
 kotlin {
     jvm {
@@ -69,6 +70,19 @@ kotlin {
                 implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
                 implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
 
+                // Ktor
+                implementation("io.ktor:ktor-server-core-jvm:$ktorVersion")
+                implementation("io.ktor:ktor-server-websockets-jvm:$ktorVersion")
+                implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktorVersion")
+                implementation("io.ktor:ktor-serialization-jackson-jvm:$ktorVersion")
+                implementation("io.ktor:ktor-server-http-redirect-jvm:$ktorVersion")
+                implementation("io.ktor:ktor-server-default-headers-jvm:$ktorVersion")
+                implementation("io.ktor:ktor-server-cors-jvm:$ktorVersion")
+                implementation("io.ktor:ktor-server-compression-jvm:$ktorVersion")
+                implementation("io.ktor:ktor-server-netty-jvm:$ktorVersion")
+                implementation("io.ktor:ktor-client-core:$ktorVersion")
+                implementation("io.ktor:ktor-client-cio:$ktorVersion")
+
                 implementation("com.beust:jcommander:1.81")
                 implementation("org.java-websocket:Java-WebSocket:1.5.2")
                 implementation("org.apache.logging.log4j:log4j-slf4j-impl:2.16.0")
@@ -96,6 +110,7 @@ kotlin {
                 implementation("org.junit.jupiter:junit-jupiter-params:$jupiterVersion")
                 runtimeOnly("org.junit.jupiter:junit-jupiter-engine:$jupiterVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion")
+                implementation("io.ktor:ktor-server-tests-jvm:$ktorVersion")
             }
         }
         val jsMain by getting {
