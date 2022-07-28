@@ -23,6 +23,7 @@ import net.zomis.games.server2.games.PlayerGameMoveRequest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
@@ -77,10 +78,8 @@ class DslRandomPlayTest {
 
     @ParameterizedTest(name = "Random play {0} with {1} players")
     @MethodSource("serverGames")
-    fun gameTests(gameType: GameEntryPoint<Any>, playerCount: Int) {
-        runBlocking {
-            gameType.runTests()
-        }
+    fun gameTests(gameType: GameEntryPoint<Any>, playerCount: Int) = runTest {
+        gameType.runTests()
     }
 
     @ParameterizedTest(name = "Sanity Check {0} with {1} players")
@@ -104,6 +103,7 @@ class DslRandomPlayTest {
 
     @ParameterizedTest(name = "Random play {0} with {1} players")
     @MethodSource("serverGames")
+    @Disabled
     fun dsl(gameType: GameEntryPoint<Any>, playerCount: Int) {
         val dslGame = gameType.gameType
 
