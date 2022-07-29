@@ -1,8 +1,11 @@
 package net.zomis.games.server2
 
 import com.github.benmanes.caffeine.cache.Caffeine
-import io.javalin.Context
-import io.javalin.Javalin
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import io.ktor.util.pipeline.*
 import klog.KLoggers
 import kotlinx.coroutines.runBlocking
 import net.zomis.games.server2.ais.AIRepository
@@ -19,45 +22,43 @@ class LinReplay(private val aiRepository: AIRepository, private val dbIntegratio
         .build { key: String -> fetchGame(key) }
 
     private val logger = KLoggers.logger(this)
-    fun setup(javalin: Javalin) {
-        javalin.apply {
-            get("/games/:gameid/replay") {ctx ->
+    fun setup(routing: Routing) {
+        if (true) {
+            routing.get("/games/{gameid}/replay") {
                 try {
-                    val gameId = ctx.pathParam("gameid")
-                    log(ctx, "fetch replay for $gameId")
-                    val dbGame = caffeine.get(gameId)!!
+                    val gameId = call.parameters["gameid"]
+                    log(this, "fetch replay for $gameId")
+                    val dbGame = caffeine.get(gameId!!)!!
                     // For debugging: dbGame.views.map { it["board"] as List<List<Map<String, Any>>> }.map { it.joinToString("\n") { it.joinToString("") { it["owner"].toString()?.takeIf { it != "null" } ?: "_" } } }
-                    ctx.json(dbGame.toJSON())
+                    call.respond(dbGame.toJSON())
                 } catch (e: Exception) {
-                    e.printStackTrace()
-                    ctx.json(e.toString())
+                    logger.error(e) { "Error with replay for game ${call.parameters["gameid"]}" }
+                    call.respond(HttpStatusCode.InternalServerError)
                 }
             }
-            get("/games/:gameid/analyze/ais") {ctx ->
-                val gameId = ctx.pathParam("gameid")
-                log(ctx, "get queryable AIs for $gameId")
-                val dbGame = caffeine.get(gameId)!!
-                ctx.json(aiRepository.queryableAIs(dbGame.summary.gameType))
+            routing.get("/games/{gameid}/analyze/ais") {
+                val gameId = call.parameters["gameid"]
+                log(this, "get queryable AIs for $gameId")
+                val dbGame = caffeine.get(gameId!!)!!
+                call.respond(aiRepository.queryableAIs(dbGame.summary.gameType))
                 // Get queryable AIs
             }
-            get("/games/:gameid/analyze/:ai/:position/:playerindex") {ctx ->
-                val gameId = ctx.pathParam("gameid")
-                val playerIndex = ctx.pathParam("playerindex").toInt()
-                val ai = ctx.pathParam("ai")
-                val position = ctx.pathParam("position").toInt()
-                val ignoreCache = ctx.queryParam("ignoreCache") == "true"
-                log(ctx, "analyze $gameId $position using $ai")
+            routing.get("/games/{gameid}/analyze/{ai}/{position}/{playerindex}") {
+                val gameId = call.parameters["gameid"]!!
+                val playerIndex = call.parameters["playerindex"]!!.toInt()
+                val ai = call.parameters["ai"]!!
+                val position = call.parameters["position"]!!.toInt()
+                val ignoreCache = call.request.queryParameters["ignoreCache"] == "true"
+                log(this, "analyze $gameId $position using $ai")
                 val dbGame = if (ignoreCache) fetchGame(gameId) else caffeine.get(gameId)!!
                 val game = runBlocking { dbGame.at(this, position) }
-                runBlocking {
-                    ctx.json(aiRepository.analyze(dbGame.summary.gameType, game, ai, playerIndex)!!)
-                }
+                call.respond(aiRepository.analyze(dbGame.summary.gameType, game, ai, playerIndex)!!)
             }
         }
     }
 
-    private fun log(ctx: Context, message: String) {
-        logger.info("Request to $message from IP: ${ctx.ip()}")
+    private fun log(ctx: PipelineContext<Unit, ApplicationCall>, message: String) {
+        logger.info("Request to $message from: $ctx")
     }
 
     private fun fetchGame(gameId: String): DBGame {

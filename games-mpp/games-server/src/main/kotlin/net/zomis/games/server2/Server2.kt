@@ -9,6 +9,7 @@ import klog.KLoggers
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
 import net.zomis.games.dsl.GameSpec
+import net.zomis.games.ktor.KtorApplication
 import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.ais.TTTQLearn
 import net.zomis.games.server2.db.DBIntegration
@@ -21,9 +22,7 @@ import net.zomis.games.server2.games.*
 import net.zomis.games.server2.invites.InviteOptions
 import net.zomis.games.server2.invites.InviteSystem
 import net.zomis.games.server2.invites.LobbySystem
-import net.zomis.games.server2.javalin.auth.JavalinFactory
 import net.zomis.games.server2.javalin.auth.LinAuth
-import net.zomis.games.server2.ws.Server2WS
 import net.zomis.games.server2.ws.WebsocketMessageHandler
 import org.jetbrains.kotlin.script.jsr223.KotlinJsr223JvmLocalScriptEngineFactory
 import java.io.File
@@ -46,8 +45,8 @@ class ServerConfig {
         return OAuthConfig(this.googleClientId, this.googleClientSecret)
     }
 
-    @Parameter(names = ["-wsPort"], description = "Port for websockets and API")
-    var webSocketPort = 8081
+    @Parameter(names = ["-port"], description = "Port for websockets and API")
+    var port = 8081
 
     @Parameter(names = ["-db"], description = "Use database (has priority over -dbfs")
     var database = false
@@ -57,15 +56,6 @@ class ServerConfig {
 
     @Parameter(names = ["-statsDB"], description = "Use statistics database (requires database as well)")
     var statsDB = false
-
-    @Parameter(names = ["-wsPortSSL"], description = "Port for websockets and API with SSL (only used if certificate options are set)")
-    var webSocketPortSSL = 0
-
-    @Parameter(names = ["-certificate"], description = "Path to Let's Encrypt certificate. Leave empty if none.")
-    var certificatePath: String? = null
-
-    @Parameter(names = ["-keypassword"], description = "Password for Java keystore for certificate")
-    var certificatePassword: String? = null
 
     @Parameter(names = ["-githubClient"], description = "Github Client Id")
     var githubClient: String = ""
@@ -83,10 +73,6 @@ class ServerConfig {
     var clientURLs = "http://localhost:8080;https://games.zomis.net"
 
     var idGenerator: GameIdGenerator = { UUID.randomUUID().toString() }
-
-    fun useSecureWebsockets(): Boolean {
-        return certificatePath != null
-    }
 
     fun useOAuth(): Boolean = this.githubClient.isNotEmpty() || this.googleClientId.isNotEmpty()
 }
@@ -123,14 +109,8 @@ class Server2(val events: EventSystem) {
     private val messageHandler = MessageHandler(events, this.messageRouter)
 
     fun start(config: ServerConfig): Server2 {
-        val javalin = JavalinFactory.javalin(config)
-            .enableCorsForOrigin(*config.clientURLs.split(';').toTypedArray())
-        javalin.get("/ping") { ctx -> ctx.result("pong") }
-        logger.info("Configuring Javalin at port ${config.webSocketPort} (SSL ${config.webSocketPortSSL})")
-
         Runtime.getRuntime().addShutdownHook(Thread { events.execute(ShutdownEvent("runtime shutdown hook")) })
         logger.info("$this has features $features")
-        Server2WS(javalin, messageHandler).setup()
 
         events.listen("JSON Message", ClientMessage::class, {
             it.message.trimStart().startsWith("{")
@@ -151,19 +131,14 @@ class Server2(val events: EventSystem) {
         events.listen("Route", ClientJsonMessage::class, {it.data.has("route")}) {
             this.messageRouter.handle(it.data["route"].asText(), it)
         }
-        if (config.useOAuth()) {
-            LinAuth(javalin, config.githubConfig(), config.googleConfig()).register()
-        }
         if (config.database) {
             val dbIntegration = DBIntegration()
             this.dbIntegration = dbIntegration.also { it.createTables() }
-            LinReplay(AIRepository, dbIntegration).setup(javalin)
             if (config.statsDB) {
-                LinStats(StatsDB(dbIntegration.superTable)).setup(events, javalin)
+//                LinStats(StatsDB(dbIntegration.superTable)).setup(events, javalin)
             }
         } else if (config.databaseFiles) {
             val dbIntegration = FileDB().also { this.dbIntegration = it }
-            LinReplay(AIRepository, dbIntegration).setup(javalin)
         }
         val authCallback = AuthorizationCallback { dbIntegration?.cookieAuth(it) }
         messageRouter.route("auth", AuthorizationSystem(events, authCallback).router)
@@ -196,12 +171,13 @@ class Server2(val events: EventSystem) {
             println(result)
         })
 
-        events.listen("Stop Javalin", ShutdownEvent::class, {true}, {javalin.stop()})
-        events.listen("Start Javalin", StartupEvent::class, {true}, {javalin.start()})
-
         events.with(TTTQLearn(Path("db/QLearn-ttt.json"))::setup)
         events.execute(StartupEvent(System.currentTimeMillis()))
         AIRepository.createAIs(events, dslGames.values.map { it as GameSpec<Any> })
+        val app = KtorApplication(messageHandler).main(config, dbIntegration)
+        events.listen("Stop App", ShutdownEvent::class, {true}, {
+            app.stop()
+        })
         return this
     }
 
@@ -211,11 +187,7 @@ class Server2(val events: EventSystem) {
 
 }
 
-typealias IncomingMessageHandler = (ClientJsonMessage) -> Unit
-
 class MessageHandler<T>(private val backup: EventSystem, router: MessageRouter<T>): WebsocketMessageHandler {
-    private val mapper = ObjectMapper()
-
     override fun connected(client: Client) {
         backup.execute(ClientConnected(client))
     }
@@ -225,7 +197,6 @@ class MessageHandler<T>(private val backup: EventSystem, router: MessageRouter<T
     }
 
     override fun incomingMessage(client: Client, message: String) {
-        val jsonMessage = mapper.readTree(message)
         backup.execute(ClientMessage(client, message))
     }
 

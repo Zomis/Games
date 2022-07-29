@@ -21,7 +21,7 @@ import Socket from "../socket";
 import AuthChoice from "./AuthChoice";
 const serverOptions = [
   {
-    url: "wss://games.zomis.net:42638/websocket",
+    url: "wss://games.zomis.net/backend/websocket",
     name: "zomis"
   },
   {

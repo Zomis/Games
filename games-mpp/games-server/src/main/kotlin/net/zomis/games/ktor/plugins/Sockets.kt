@@ -7,27 +7,19 @@ import java.time.Duration
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.request.*
-import io.ktor.server.routing.*
+import net.zomis.games.server2.ws.WebsocketMessageHandler
 
-fun Application.configureSockets() {
+fun Application.configureSockets(handler: WebsocketMessageHandler) {
     install(WebSockets) {
         pingPeriod = Duration.ofSeconds(15)
-        timeout = Duration.ofSeconds(15)
+        timeout = Duration.ofMinutes(30)
         maxFrameSize = Long.MAX_VALUE
         masking = false
     }
 
     routing {
-        webSocket("/ws") { // websocketSession
-            for (frame in incoming) {
-                if (frame is Frame.Text) {
-                    val text = frame.readText()
-                    outgoing.send(Frame.Text("YOU SAID: $text"))
-                    if (text.equals("bye", ignoreCase = true)) {
-                        close(CloseReason(CloseReason.Codes.NORMAL, "Client said BYE"))
-                    }
-                }
-            }
+        webSocket("/websocket") {
+            KtorClient(this).processIncoming(handler)
         }
     }
 }

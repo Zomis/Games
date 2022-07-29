@@ -1,7 +1,14 @@
 package net.zomis.games.server2
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.github.kittinunf.fuel.Fuel
+import com.fasterxml.jackson.databind.node.ObjectNode
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.request.*
+import io.ktor.serialization.jackson.*
+import kotlinx.coroutines.runBlocking
 import net.zomis.core.events.EventSystem
 import org.slf4j.LoggerFactory
 import java.net.URL
@@ -22,7 +29,7 @@ fun URL.lines(): List<String> {
     return this.readText(Charsets.UTF_8).split("\n")
         .map { it.trim() }
         .filter { it.isNotEmpty() }.distinct()
-        .map { it[0].toUpperCase() + it.substring(1) }
+        .map { it[0].uppercase() + it.substring(1) }
 }
 
 class AuthorizationCallback(
@@ -36,6 +43,11 @@ class AuthorizationSystem(private val events: EventSystem, private val callback:
         .handler("guest", this::handleGuest)
         .handler("github", this::handleGitHub)
         .handler("google", this::handleGoogle)
+    private val httpClient = HttpClient(CIO) {
+        install(ContentNegotiation) {
+            jackson()
+        }
+    }
 
     private val logger = LoggerFactory.getLogger(AuthorizationSystem::class.java)
     private val mapper = ObjectMapper()
@@ -87,9 +99,11 @@ class AuthorizationSystem(private val events: EventSystem, private val callback:
     private fun handleGitHub(message: ClientJsonMessage) {
         val client = message.client
         val token = message.data.getTextOrDefault("token", "")
-        val api =
-                Fuel.get("https://api.github.com/user").header(Pair("Authorization", "token $token")).responseString()
-        val jsonResult = mapper.readTree(api.third.get())
+        val jsonResult = runBlocking {
+            httpClient.get("https://api.github.com/user") {
+                header("Authorization", "token $token")
+            }.body<ObjectNode>()
+        }
 
         val loginName = jsonResult.get("login").asText()
         val avatarUrl = jsonResult.getTextOrDefault("avatar_url", "").takeIf { it.isNotEmpty() }
@@ -103,11 +117,11 @@ class AuthorizationSystem(private val events: EventSystem, private val callback:
         val client = message.client
         val token = message.data.getTextOrDefault("token", "")
 
-        val headers = mapOf("Authorization" to "Bearer $token")
-        val result = Fuel.get("https://www.googleapis.com/userinfo/v2/me", emptyList())
-            .header(headers)
-            .responseString()
-        val tree = mapper.readTree(result.third.get())
+        val tree = runBlocking {
+            httpClient.get("https://www.googleapis.com/userinfo/v2/me") {
+                header("Authorization", "Bearer $token")
+            }.body<ObjectNode>()
+        }
 
         val providerName = tree.get("given_name").asText() + " " + tree.get("family_name").asText()
         val avatarUrl = tree.get("picture").asText()

@@ -3,68 +3,73 @@ package net.zomis.games.server2.javalin.auth
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.github.kittinunf.fuel.Fuel
-import io.javalin.Context
-import io.javalin.Javalin
-import io.javalin.json.JavalinJackson
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.request.forms.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import io.ktor.util.pipeline.*
+import klog.KLoggers
 import net.zomis.games.server2.OAuthConfig
-import org.slf4j.LoggerFactory
 
 data class GithubAuthRequest(val clientId: String, val redirectUri: String, val code: String, val state: String?)
 
-class LinAuth(val javalin: Javalin, val githubConfig: OAuthConfig, val googleConfig: OAuthConfig) {
+class LinAuth(val githubConfig: OAuthConfig, val googleConfig: OAuthConfig) {
 
-    private val logger = LoggerFactory.getLogger(LinAuth::class.java)
+    private val logger = KLoggers.logger(this)
     private val mapper = jacksonObjectMapper()
+    private val client = HttpClient(CIO)
 
-    fun register() {
+    fun register(routing: Routing) {
         logger.info("LinAuth starting")
+        routing.post("/auth/github") {
+            val params = call.receive<GithubAuthRequest>()
+            val result = client.submitForm(
+                url = "https://github.com/login/oauth/access_token",
+                formParameters = Parameters.build {
+                    append("client_id", githubConfig.clientId)
+                    append("client_secret", githubConfig.clientSecret)
+                    append("code", params.code)
+                    append("redirect_uri", params.redirectUri)
+                    params.state?.also { append("state", params.state) }
+                    append("grant_type", "authorization_code")
+                }
+            )
 
-        JavalinJackson.configure(mapper)
-        val app = javalin
-            .apply {
-                post("/auth/github") {
-                    val params = it.bodyAsClass(GithubAuthRequest::class.java)
-                    val result = Fuel.post("https://github.com/login/oauth/access_token", listOf(
-                        Pair("client_id", githubConfig.clientId),
-                        Pair("client_secret", githubConfig.clientSecret),
-                        Pair("code", params.code),
-                        Pair("redirect_uri", params.redirectUri),
-                        Pair("state", params.state),
-                        Pair("grant_type", "authorization_code")
-                    )).responseString()
-
-                    logger.info("Result: " + result.third.get())
-                    val resultJson = queryStringToJsonNode(mapper, result.third.get())
-                    it.result(mapper.writeValueAsString(resultJson))
-                }
-                post("/auth/google") {
-                    googleHandler(it, googleConfig)
-                }
-                get("/auth/ping") {
-                    it.result("auth pong")
-                }
-            }
-        logger.info("LinAuth started: $app")
+            logger.info { "Result: $result" }
+            val resultJson = queryStringToJsonNode(mapper, result.bodyAsText())
+            call.respond(resultJson)
+        }
+        routing.post("/auth/google") {
+            val request = call.receive<ObjectNode>()
+            googleHandler(this, request, googleConfig)
+        }
+        routing.get("/auth/ping") {
+            call.respondText("auth pong")
+        }
     }
 
-    private fun googleHandler(context: Context, clientAndSecret: OAuthConfig) {
-        val request: String = context.body()
+    private suspend fun googleHandler(context: PipelineContext<Unit, ApplicationCall>, tree: ObjectNode, clientAndSecret: OAuthConfig) {
         try {
-            val tree = mapper.readTree(request)
-            val parameters = listOf(
-                "client_id" to clientAndSecret.clientId,
-                "client_secret" to clientAndSecret.clientSecret,
-                "code" to tree.get("code").asText(),
-                "redirect_uri" to tree.get("redirectUri").asText(),
-                "grant_type" to "authorization_code"
+            val response = client.submitForm(
+                url = "https://accounts.google.com/o/oauth2/token",
+                formParameters = Parameters.build {
+                    append("client_id", clientAndSecret.clientId)
+                    append("client_secret", clientAndSecret.clientSecret)
+                    append("code", tree.get("code").asText())
+                    append("redirect_uri", tree.get("redirectUri").asText())
+                    append("grant_type", "authorization_code")
+                }
             )
-            val fuel = Fuel.post("https://accounts.google.com/o/oauth2/token", parameters)
-            val result = fuel.responseString()
-            context.contentType("application/json").result(result.third.get())
+            context.call.respond(response.body<ObjectNode>())
         } catch (e: Exception) {
-            context.status(500)
-            logger.error("Authentication Failure for $request", e)
+            context.call.respond(HttpStatusCode.InternalServerError)
+            logger.error(e) { "Authentication Failure for $tree" }
         }
     }
 

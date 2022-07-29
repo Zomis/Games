@@ -8,14 +8,11 @@ import io.ktor.server.plugins.compression.*
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.request.*
+import net.zomis.games.server2.ServerConfig
 
-fun Application.configureHTTP() {
-    install(HttpsRedirect) {
-        sslPort = 443
-        permanentRedirect = true
-    }
+fun Application.configureHTTP(config: ServerConfig) {
     install(DefaultHeaders) {
-        header("X-Engine", "Ktor") // will send this header with each response
+        header("X-Author", "Zomis")
     }
     install(CORS) {
         allowMethod(HttpMethod.Options)
@@ -23,8 +20,13 @@ fun Application.configureHTTP() {
         allowMethod(HttpMethod.Delete)
         allowMethod(HttpMethod.Patch)
         allowHeader(HttpHeaders.Authorization)
-        allowHeader("MyCustomHeader")
-        anyHost() // @TODO: Don't do this in production if possible. Try to limit it.
+        //allowHeader("MyCustomHeader")
+
+//        allowHost("localhost:8080", schemes = listOf("http", "https"))
+//        config.clientURLs.split(';').forEach {
+//            allowHost(it, schemes = listOf("http", "https"))
+//        }
+        anyHost()
     }
     install(Compression) {
         gzip {
