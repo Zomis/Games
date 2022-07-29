@@ -13,9 +13,6 @@ class ServerConsole {
     fun register(events: EventSystem) {
         events.listen("start Server Console", StartupEvent::class, {true}, { start(events) })
         events.listen("print all stack traces", ConsoleEvent::class, {it.input == "threads"}, { printAllThreads() })
-        events.listen("stop", ConsoleEvent::class, {it.input == "stop"}, {
-            events.execute(ShutdownEvent("stop called"))
-        })
     }
 
     private fun printAllThreads() {
