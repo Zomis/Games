@@ -41,10 +41,10 @@ class DslGameTest {
 
     @Test
     fun dsl() {
-        val p1 = WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket"))
+        val p1 = WSClient(URI("ws://127.0.0.1:${config.port}/websocket"))
         p1.connectBlocking()
 
-        val p2 = WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket"))
+        val p2 = WSClient(URI("ws://127.0.0.1:${config.port}/websocket"))
         p2.connectBlocking()
 
         p1.send("""{ "route": "auth/guest" }""")

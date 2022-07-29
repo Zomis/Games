@@ -107,7 +107,7 @@ class DslRandomPlayTest {
     fun dsl(gameType: GameEntryPoint<Any>, playerCount: Int) {
         val dslGame = gameType.gameType
 
-        val clients = (0 until playerCount).map { WSClient(URI("ws://127.0.0.1:${config.webSocketPort}/websocket")) }
+        val clients = (0 until playerCount).map { WSClient(URI("ws://127.0.0.1:${config.port}/websocket")) }
         clients.forEach { it.connectBlocking() }
 
         val clientsById = clients.associateBy {client ->
