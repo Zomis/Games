@@ -14,6 +14,8 @@ import net.zomis.games.dsl.impl.GameAIs
 import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.impl.*
 import net.zomis.games.impl.words.Decrypto
+import net.zomis.games.listeners.LimitedNextViews
+import net.zomis.games.listeners.MaxMoves
 import net.zomis.games.listeners.SanityCheckListener
 import net.zomis.games.server2.ais.ServerAIs
 import net.zomis.games.server2.ais.serialize
@@ -96,7 +98,7 @@ class DslRandomPlayTest {
             val aiListeners = game.playerIndices.map {
                 ai.gameListener(game, it)
             }
-            SanityCheckListener(game).toSingleList() + aiListeners + awaiting
+            listOf(SanityCheckListener(game), LimitedNextViews(10), MaxMoves(10000)) + aiListeners + awaiting
         }
         awaiting.awaitGameEnd()
         Assertions.assertTrue(game.isGameOver())
