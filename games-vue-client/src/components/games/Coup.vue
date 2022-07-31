@@ -73,6 +73,9 @@
     </v-row>
     <v-row :key="'buttons'">
       <v-col>
+        <!-- Show what you are approving or challenging here! -->
+        <!-- Show if you can counteract later -->
+        <!-- Check if switching of cards works properly, it's very often that the same card is returned back -->
         <v-btn
           v-if="view.buttons.approve"
           @click="actions.actionParameter('approve', null)"
