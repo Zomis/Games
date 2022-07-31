@@ -6,6 +6,7 @@ import net.zomis.games.dsl.impl.FlowStep
 
 class ReplayListener(val gameType: String) : GameListener {
 
+    val actionsCount: Int get() = actions.size
     private var gameStartedState: GameSituationState = null
     private val actions = mutableListOf<ActionReplay>()
     private var playerCount: Int? = null
