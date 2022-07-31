@@ -6,6 +6,7 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
 import io.ktor.serialization.jackson.*
 import kotlinx.coroutines.runBlocking
@@ -37,17 +38,17 @@ class AuthorizationCallback(
 )
 data class PlayerDatabaseInfo(val name: String, val playerId: PlayerId)
 
-class AuthorizationSystem(private val events: EventSystem, private val callback: AuthorizationCallback = AuthorizationCallback()) {
+class AuthorizationSystem(
+    private val events: EventSystem,
+    httpClientFactory: () -> HttpClient = { HttpClient() },
+    private val callback: AuthorizationCallback = AuthorizationCallback(),
+) {
     private val secureRandom: SecureRandom = SecureRandom()
     val router = MessageRouter(this)
         .handler("guest", this::handleGuest)
         .handler("github", this::handleGitHub)
         .handler("google", this::handleGoogle)
-    private val httpClient = HttpClient(CIO) {
-        install(ContentNegotiation) {
-            jackson()
-        }
-    }
+    private val httpClient = httpClientFactory.invoke()
 
     private val logger = LoggerFactory.getLogger(AuthorizationSystem::class.java)
     private val mapper = ObjectMapper()
@@ -117,10 +118,15 @@ class AuthorizationSystem(private val events: EventSystem, private val callback:
         val client = message.client
         val token = message.data.getTextOrDefault("token", "")
 
-        val tree = runBlocking {
+        val result = runBlocking {
             httpClient.get("https://www.googleapis.com/userinfo/v2/me") {
                 header("Authorization", "Bearer $token")
-            }.body<ObjectNode>()
+            }
+        }
+        logger.info(result.toString())
+
+        val tree = runBlocking {
+            result.body<ObjectNode>()
         }
 
         val providerName = tree.get("given_name").asText() + " " + tree.get("family_name").asText()

@@ -1,5 +1,7 @@
 package net.zomis.games.ktor
 
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -14,7 +16,7 @@ class KtorTest {
     @Test
     fun testRoot() = testApplication {
         application {
-            configureRouting(testServerConfig(), dbInterface = null)
+            configureRouting(testServerConfig(), dbInterface = null, httpClientFactory = { HttpClient(CIO) })
         }
         client.get("/ping").apply {
             assertEquals(HttpStatusCode.OK, status)

@@ -5,6 +5,11 @@ import com.beust.jcommander.Parameter
 import com.beust.jcommander.ParameterException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.logging.*
+import io.ktor.serialization.jackson.*
 import klog.KLoggers
 import net.zomis.common.substr
 import net.zomis.core.events.EventSystem
@@ -107,6 +112,14 @@ class Server2(val events: EventSystem) {
         .route("games", gameSystem.router)
 
     private val messageHandler = MessageHandler(events, this.messageRouter)
+    private val httpClientFactory: () -> HttpClient = {
+        HttpClient(CIO) {
+            install(ContentNegotiation) {
+                jackson()
+            }
+            install(Logging)
+        }
+    }
 
     fun start(config: ServerConfig): Server2 {
         Runtime.getRuntime().addShutdownHook(Thread { events.execute(ShutdownEvent("runtime shutdown hook")) })
@@ -141,7 +154,7 @@ class Server2(val events: EventSystem) {
             val dbIntegration = FileDB().also { this.dbIntegration = it }
         }
         val authCallback = AuthorizationCallback { dbIntegration?.cookieAuth(it) }
-        messageRouter.route("auth", AuthorizationSystem(events, authCallback).router)
+        messageRouter.route("auth", AuthorizationSystem(events, httpClientFactory, authCallback).router)
         events.listen("Authenticate login with dbIntegration", ClientLoginEvent::class, {true}) { dbIntegration?.authenticate(it) }
 
         events.with(lobbySystem::setup)
@@ -174,7 +187,7 @@ class Server2(val events: EventSystem) {
         events.with(TTTQLearn(Path("db/QLearn-ttt.json"))::setup)
         events.execute(StartupEvent(System.currentTimeMillis()))
         AIRepository.createAIs(events, dslGames.values.map { it as GameSpec<Any> })
-        val app = KtorApplication(messageHandler).main(config, dbIntegration)
+        val app = KtorApplication(messageHandler).main(config, dbIntegration, httpClientFactory)
         events.listen("Stop App", ShutdownEvent::class, {true}, {
             app.stop()
         })

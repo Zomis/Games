@@ -1,6 +1,7 @@
 package net.zomis.games.ktor
 
 import com.fasterxml.jackson.databind.SerializationFeature
+import io.ktor.client.*
 import io.ktor.serialization.jackson.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -14,7 +15,7 @@ import net.zomis.games.server2.db.DBInterface
 import net.zomis.games.server2.ws.WebsocketMessageHandler
 
 class KtorApplication(private val handler: WebsocketMessageHandler) {
-    fun main(config: ServerConfig, dbInterface: DBInterface?): NettyApplicationEngine {
+    fun main(config: ServerConfig, dbInterface: DBInterface?, httpClientFactory: () -> HttpClient): NettyApplicationEngine {
         return embeddedServer(Netty, port = config.port, host = "0.0.0.0") {
             install(ContentNegotiation) {
                 jackson {
@@ -24,7 +25,7 @@ class KtorApplication(private val handler: WebsocketMessageHandler) {
 
             configureSockets(handler)
             configureHTTP(config)
-            configureRouting(config, dbInterface)
+            configureRouting(config, httpClientFactory, dbInterface)
         }.start(wait = config.wait)
     }
 }

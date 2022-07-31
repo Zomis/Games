@@ -1,5 +1,6 @@
 package net.zomis.games.ktor.plugins
 
+import io.ktor.client.*
 import io.ktor.server.routing.*
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -11,11 +12,12 @@ import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.db.DBInterface
 import net.zomis.games.server2.javalin.auth.LinAuth
 
-fun Application.configureRouting(config: ServerConfig, dbInterface: DBInterface?) {
+fun Application.configureRouting(config: ServerConfig, httpClientFactory: () -> HttpClient, dbInterface: DBInterface?) {
 
     routing {
         if (config.useOAuth()) {
-            LinAuth(config.githubConfig(), config.googleConfig()).register(this)
+            LinAuth(config.githubConfig(), config.googleConfig(), httpClientFactory)
+                .register(this)
         }
         if (dbInterface != null) {
             LinReplay(AIRepository, dbInterface).setup(this)

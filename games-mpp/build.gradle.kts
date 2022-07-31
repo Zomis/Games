@@ -83,6 +83,7 @@ kotlin {
                 implementation("io.ktor:ktor-client-core:$ktorVersion")
                 implementation("io.ktor:ktor-client-cio:$ktorVersion")
                 implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+                implementation("io.ktor:ktor-client-logging:$ktorVersion")
 
                 implementation("com.beust:jcommander:1.81")
                 implementation("org.java-websocket:Java-WebSocket:1.5.2")

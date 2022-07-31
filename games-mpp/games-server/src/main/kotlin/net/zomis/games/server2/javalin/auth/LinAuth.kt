@@ -1,5 +1,6 @@
 package net.zomis.games.server2.javalin.auth
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -19,11 +20,15 @@ import net.zomis.games.server2.OAuthConfig
 
 data class GithubAuthRequest(val clientId: String, val redirectUri: String, val code: String, val state: String?)
 
-class LinAuth(val githubConfig: OAuthConfig, val googleConfig: OAuthConfig) {
+class LinAuth(
+    val githubConfig: OAuthConfig,
+    val googleConfig: OAuthConfig,
+    httpClientFactory: () -> HttpClient
+) {
 
     private val logger = KLoggers.logger(this)
     private val mapper = jacksonObjectMapper()
-    private val client = HttpClient(CIO)
+    private val client = httpClientFactory.invoke()
 
     fun register(routing: Routing) {
         logger.info("LinAuth starting")
@@ -41,9 +46,8 @@ class LinAuth(val githubConfig: OAuthConfig, val googleConfig: OAuthConfig) {
                 }
             )
 
-            logger.info { "Result: $result" }
-            val resultJson = queryStringToJsonNode(mapper, result.bodyAsText())
-            call.respond(resultJson)
+            logger.info { "Result: $result/${result.bodyAsText()}" }
+            call.respond(result.body<JsonNode>())
         }
         routing.post("/auth/google") {
             val request = call.receive<ObjectNode>()

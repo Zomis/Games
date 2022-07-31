@@ -17,9 +17,14 @@ fun Application.configureHTTP(config: ServerConfig) {
     install(CORS) {
         allowMethod(HttpMethod.Options)
         allowMethod(HttpMethod.Put)
+        allowMethod(HttpMethod.Post)
         allowMethod(HttpMethod.Delete)
         allowMethod(HttpMethod.Patch)
         allowHeader(HttpHeaders.Authorization)
+        allowHeader(HttpHeaders.ContentType)
+        allowHeader(HttpHeaders.AccessControlRequestHeaders)
+        allowHeader(HttpHeaders.AccessControlRequestMethod)
+        allowHeader(HttpHeaders.AccessControlAllowOrigin)
         //allowHeader("MyCustomHeader")
 
 //        allowHost("localhost:8080", schemes = listOf("http", "https"))
