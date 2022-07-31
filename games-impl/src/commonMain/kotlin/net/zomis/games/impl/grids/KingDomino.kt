@@ -264,8 +264,8 @@ object KingDomino {
                             // points, most extended property, most crowns
                             compareBy(
                                 { it.points() },
-                                { player -> player.connectedAreas().map { it.points.size }.maxOrNull()!! },
-                                { player -> player.grid.all().map { it.value.crowns }.sum() }
+                                { player -> player.connectedAreas().maxOf { it.points.size } },
+                                { player -> player.grid.all().sumOf { it.value.crowns } }
                             )
                         )
                     }
