@@ -273,6 +273,7 @@ object CoupRuleBased {
                 action(ambassadorPutBack) {
                     precondition { playerIndex == (game.stack.peek() as CoupPlayerExchangeCards).player.playerIndex }
                     options { game.players[playerIndex].influence.cards.toSet() }
+                    requires { action.parameter in game.players[playerIndex].influence.cards }
                     perform {
                         val exchangeTask = game.stack.peek() as CoupPlayerExchangeCards
                         game.players[playerIndex].influence.card(action.parameter).moveTo(game.deck)

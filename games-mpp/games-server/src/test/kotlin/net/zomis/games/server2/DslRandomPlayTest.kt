@@ -79,7 +79,7 @@ class DslRandomPlayTest {
         DslSplendor.splendorGame.name to "#AI_BuyFirst"
     )
 
-    @ParameterizedTest(name = "Random play {0} with {1} players")
+    @ParameterizedTest(name = "Run tests for {0} with {1} players")
     @MethodSource("serverGames")
     fun gameTests(gameType: GameEntryPoint<Any>, playerCount: Int) = runTest {
         gameType.runTests()
