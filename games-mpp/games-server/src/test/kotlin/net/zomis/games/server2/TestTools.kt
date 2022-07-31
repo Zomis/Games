@@ -11,6 +11,7 @@ fun testServerConfig(): ServerConfig {
     val config = ServerConfig()
     config.port = randomPort()
     config.idGenerator = { "1" }
+    config.wait = false
     return config
 }
 

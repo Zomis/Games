@@ -15,15 +15,12 @@ import net.zomis.games.server2.ais.AIRepository
 import net.zomis.games.server2.ais.TTTQLearn
 import net.zomis.games.server2.db.DBIntegration
 import net.zomis.games.server2.db.DBInterface
-import net.zomis.games.server2.db.aurora.LinStats
-import net.zomis.games.server2.db.aurora.StatsDB
 import net.zomis.games.server2.db.files.FileDB
 import net.zomis.games.server2.debug.AIGames
 import net.zomis.games.server2.games.*
 import net.zomis.games.server2.invites.InviteOptions
 import net.zomis.games.server2.invites.InviteSystem
 import net.zomis.games.server2.invites.LobbySystem
-import net.zomis.games.server2.javalin.auth.LinAuth
 import net.zomis.games.server2.ws.WebsocketMessageHandler
 import org.jetbrains.kotlin.script.jsr223.KotlinJsr223JvmLocalScriptEngineFactory
 import java.io.File
@@ -45,6 +42,8 @@ class ServerConfig {
     fun googleConfig(): OAuthConfig {
         return OAuthConfig(this.googleClientId, this.googleClientSecret)
     }
+
+    var wait: Boolean = true
 
     @Parameter(names = ["-port"], description = "Port for websockets and API")
     var port = 8081

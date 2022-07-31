@@ -25,6 +25,6 @@ class KtorApplication(private val handler: WebsocketMessageHandler) {
             configureSockets(handler)
             configureHTTP(config)
             configureRouting(config, dbInterface)
-        }.start(wait = false)
+        }.start(wait = config.wait)
     }
 }
