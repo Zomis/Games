@@ -31,3 +31,26 @@ fun Double.toPercent(decimals: Int): String {
     val value = round(this * power * 100) / power
     return value.toString()
 }
+
+class CurrentPlayer<T>(val players: List<T>) {
+    var index: Int = 0
+
+    var player: T
+        get() = players[index]
+        set(value) { index = players.indexOf(value) }
+
+    fun changeBy(offset: Int) {
+        this.index = (this.index + offset + players.size) % players.size
+    }
+
+    fun next() = changeBy(1)
+    fun getOffset(offset: Int): T {
+        val index = (this.index + offset + players.size) % players.size
+        return players[index]
+    }
+
+    fun nextMatching(filter: (T) -> Boolean) {
+        do { changeBy(1) } while (!filter(player))
+    }
+
+}
