@@ -10,6 +10,7 @@ import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.*
 import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.dsl.listeners.CombinedListener
+import net.zomis.games.listeners.LimitedNextViews
 import net.zomis.games.listeners.NoOpListener
 import net.zomis.games.listeners.ReplayListener
 import net.zomis.games.server.GamesServer
@@ -99,6 +100,7 @@ class DslGameSystem<T : Any>(val dsl: GameSpec<T>, private val dbIntegration: ()
                         entryPoint.setup().findAI(aiName)?.let { AIDebugListener(it, game as Game<T>) }
                     }
                     return listOf(
+                        LimitedNextViews(10),
                         DslGameSystemListener(serverGame, events).postReplay(replayData),
                         serverGameListener(serverGame, game).postReplay(replayData)
                     ) + playerListeners.flatMap { playerListener ->
