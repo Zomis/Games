@@ -96,7 +96,7 @@ enum class DungeonMayhemSymbol {
     fun resolve(game: DungeonMayhem, scope: GameRuleTriggerScope<DungeonMayhem, DungeonMayhemEffect>, playEffect: GameRuleTrigger<DungeonMayhem, DungeonMayhemPlayCard>) {
         val target = scope.trigger.target
         val player: DungeonMayhemPlayer = game.players[target.player]
-        return when (this) {
+        when (this) {
             ATTACK -> {
                 if (target.shieldCard != null) player.shields[target.shieldCard].card.health -= scope.trigger.count
                 else player.damage(scope.trigger.count)
@@ -108,9 +108,12 @@ enum class DungeonMayhemSymbol {
                 game.currentPlayer.health = player.health
                 player.health = temp
             }
-            STEAL_CARD -> playEffect(DungeonMayhemPlayCard(game.config, game.currentPlayer, player,
-                player.deck.random(scope.replayable, 1, "topCard").first()
-            )).let {  }
+            STEAL_CARD -> {
+                if (player.deck.isEmpty()) player.discard.moveAllTo(player.deck)
+                playEffect(DungeonMayhemPlayCard(game.config, game.currentPlayer, player,
+                    player.deck.random(scope.replayable, 1, "topCard").first()
+                ))
+            }
             PICK_UP_CARD -> player.discard[target.discardedCard!!].moveTo(player.hand)
             else -> throw IllegalStateException("No targets required for $this")
         }
