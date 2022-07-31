@@ -170,6 +170,8 @@ object SpiceRoadDsl {
                 }
             }
         }
+        val buyScorer = scorers.isAction(claim)
+        scorers.ai("#AI_BuyFirst", buyScorer)
     }
 }
 

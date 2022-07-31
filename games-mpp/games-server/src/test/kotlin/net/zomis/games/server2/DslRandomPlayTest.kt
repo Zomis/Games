@@ -71,6 +71,7 @@ class DslRandomPlayTest {
     }
 
     val playingMap = mapOf(
+        SpiceRoadDsl.game.name to "#AI_BuyFirst",
         Decrypto.game.name to "#AI_NoChat",
         SetGame.game.name to "#AI_SetCheat50",
         DslSplendor.splendorGame.name to "#AI_BuyFirst"
