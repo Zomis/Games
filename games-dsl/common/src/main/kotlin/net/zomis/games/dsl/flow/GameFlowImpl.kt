@@ -20,6 +20,7 @@ class GameFlowImpl<T: Any>(
 ): Game<T>, GameFactoryScope<Any>, GameEventsExecutor, GameFlowRuleCallbacks<T> {
     private val stateKeeper = StateKeeper()
     override val gameType: String = setupContext.gameType
+    override fun toString(): String = "${super.toString()}-$gameType"
 
     override val config: Any get() = gameConfig.oldStyleValue()
     private val logger = KLoggers.logger(this)

@@ -151,6 +151,7 @@ class GameImpl<T : Any>(
 ): Game<T>, GameFactoryScope<Any>, GameEventsExecutor {
     private val stateKeeper = StateKeeper()
     override val gameType: String = setupContext.gameType
+    override fun toString(): String = "${super.toString()}-$gameType"
 
     private var actionsInputJob: Job? = null
     override val config: Any get() = gameConfig.oldStyleValue()
