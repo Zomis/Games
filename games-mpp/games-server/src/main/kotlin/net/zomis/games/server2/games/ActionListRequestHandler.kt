@@ -9,7 +9,7 @@ import net.zomis.games.server2.getTextOrDefault
 
 class FrontendActionInfo(val keys: ActionInfoByKey)
 class ActionList(val playerIndex: Int, val game: ServerGame, val actions: FrontendActionInfo)
-class ActionListRequestHandler(private val game: ServerGame?) {
+class ActionListRequestHandler(private val game: ServerGame) {
     private val logger = KLoggers.logger(this)
     private val mapper = jacksonObjectMapper()
 
@@ -20,6 +20,10 @@ class ActionListRequestHandler(private val game: ServerGame?) {
 
     private fun sendActionParams(client: Client, actionParams: ActionList) {
         val game = actionParams.game
+        if (game.obj == null) {
+            logger.warn { "Game object not initialized yet for game ${game.gameId}" }
+            return
+        }
         game.requireAccess(client, actionParams.playerIndex, ClientPlayerAccessType.READ)
         logger.info { "Sending action list data for ${game.gameId} of type ${game.gameType.type} to ${actionParams.playerIndex}" }
         client.send(mapOf(
@@ -32,7 +36,10 @@ class ActionListRequestHandler(private val game: ServerGame?) {
     }
 
     private fun actionParams(message: ClientJsonMessage): ActionList {
-        val obj = game!!.obj!!
+        if (game.obj == null) {
+            return ActionList(-1, game, FrontendActionInfo(ActionInfoByKey(emptyMap())))
+        }
+        val obj = game.obj!!
         val playerIndex = message.data.getTextOrDefault("playerIndex", "-1").toInt()
         game.requireAccess(message.client, playerIndex, ClientPlayerAccessType.WRITE)
         val moveType = message.data.get("moveType")?.asText()

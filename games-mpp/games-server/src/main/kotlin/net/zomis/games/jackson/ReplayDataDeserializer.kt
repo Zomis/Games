@@ -38,7 +38,7 @@ object ReplayDataDeserializer {
 
     fun deserializeDBSummary(tree: ObjectNode, gameSpecLookup: (String) -> GameSpec<out Any>?): DBGameSummary {
         val gameType = tree["gameType"].asText()
-        val players = mapper.convertValue(tree["players"], jacksonTypeRef<List<PlayerInGame>>())
+        val players = mapper.convertValue(tree["playersInGame"], jacksonTypeRef<List<PlayerInGame>>())
         val initialState = mapper.convertValue(tree["startingState"], jacksonTypeRef<GameSituationState>())
         val gameId = tree["gameId"].asText()
         val gameState = tree["gameState"].asInt()
