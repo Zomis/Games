@@ -6,6 +6,7 @@ import com.beust.jcommander.ParameterException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import klog.KLoggers
+import net.zomis.common.substr
 import net.zomis.core.events.EventSystem
 import net.zomis.games.Features
 import net.zomis.games.dsl.GameSpec
@@ -214,6 +215,7 @@ object Main {
                 logger.info("Using config file $configFile")
                 val fileArgs = configFile.readLines(Charsets.UTF_8).joinToString(" ")
                     .trim().split(" ").toTypedArray()
+                logger.info("Args (with substring 0..6) are ${fileArgs.map { it.substr(0, 6) }}")
                 cmd.parse(*fileArgs)
             } else {
                 logger.info("${configFile.name} not found, using config from command line")

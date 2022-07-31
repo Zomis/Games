@@ -60,3 +60,18 @@ fun convertFromDBFormat(obj: Any?): Any? {
         else -> throw UnsupportedOperationException("Unable to handle " + obj.javaClass)
     }
 }
+
+fun String.substr(index: Int, length: Int): String {
+    if (index < 0) return substr(this.length + index, length)
+    if (length < 0) return substr(index, this.length + length)
+    if (index > this.length) return ""
+    var endIndex = index + length
+    endIndex = minOf(endIndex, this.length)
+    return this.substring(index, endIndex)
+}
+
+fun String.substr(index: Int): String {
+    return if (index >= 0)
+        this.substr(index, this.length - index)
+    else this.substr(index, -index)
+}
