@@ -238,13 +238,6 @@ class GameActionRuleContext<T : Any, A : Any>(
         return checkPreconditions(context) && allowed.all { it(context) }
     }
 
-    override fun replayAction(action: Actionable<T, A>, state: Map<String, Any>?) {
-        if (state != null) {
-            replayable.setReplayState(state)
-        }
-        this.performAction(action)
-    }
-
     override fun performAction(action: Actionable<T, A>): FlowStep.ActionResult {
         if (!actionAllowed(action)) {
             return FlowStep.IllegalAction(model, action.actionType, action.playerIndex, action.parameter)

@@ -29,13 +29,6 @@ class GameFlowLogicActionPerform<T: Any, A: Any>(
     private fun createContext(action: Actionable<T, A>)
         = ActionRuleContext(gameData.game, action, gameData.eliminations, gameData.replayable)
 
-    fun replay(action: Actionable<T, A>, state: Map<String, Any>?) {
-        if (state != null) {
-            gameData.replayable.setReplayState(state)
-        }
-        this.perform(action)
-    }
-
     fun perform(action: Actionable<T, A>) {
         val context = GameFlowActionContextPerform(createContext(action))
         actionDsls().forEach { it.invoke(context) }

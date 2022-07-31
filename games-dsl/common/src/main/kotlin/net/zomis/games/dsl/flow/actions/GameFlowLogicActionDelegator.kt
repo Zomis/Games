@@ -4,7 +4,6 @@ import net.zomis.games.dsl.Action
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.flow.GameFlowActionScope
-import net.zomis.games.dsl.flow.GameFlowContext
 import net.zomis.games.dsl.impl.*
 
 class GameFlowLogicActionDelegator<T: Any, A: Any>(
@@ -29,9 +28,6 @@ class GameFlowLogicActionDelegator<T: Any, A: Any>(
             .asIterable()
 
     override fun actionAllowed(action: Actionable<T, A>): Boolean = available.actionAllowed(action)
-
-    override fun replayAction(action: Actionable<T, A>, state: Map<String, Any>?)
-        = performer.replay(action, state)
 
     override fun performAction(action: Actionable<T, A>): FlowStep.ActionResult {
         if (!checkActionAllowed(action)) return FlowStep.IllegalAction(gameData.game, action.actionType, action.playerIndex, action.parameter)
