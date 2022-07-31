@@ -28,10 +28,10 @@ fun Application.configureHTTP(config: ServerConfig) {
         //allowHeader("MyCustomHeader")
 
 //        allowHost("localhost:8080", schemes = listOf("http", "https"))
-//        config.clientURLs.split(';').forEach {
-//            allowHost(it, schemes = listOf("http", "https"))
-//        }
-        anyHost()
+        config.clientURLs.split(';').forEach {
+            allowHost(it, schemes = listOf("http", "https"))
+        }
+//        anyHost()
     }
     install(Compression) {
         gzip {

@@ -75,7 +75,7 @@ class ServerConfig {
     var googleClientSecret: String = ""
 
     @Parameter(names = ["-clients"], description = "Client URLs, can take multiple values separated by semicolon ';'")
-    var clientURLs = "http://localhost:8080;https://games.zomis.net"
+    var clientURLs = "localhost:8080;games.zomis.net"
 
     var idGenerator: GameIdGenerator = { UUID.randomUUID().toString() }
 
