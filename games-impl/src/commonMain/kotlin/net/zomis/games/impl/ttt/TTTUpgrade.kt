@@ -1,5 +1,6 @@
 package net.zomis.games.impl.ttt
 
+import net.zomis.games.WinResult
 import net.zomis.games.api.Games
 import net.zomis.games.api.GamesApi
 import net.zomis.games.api.components
@@ -63,6 +64,12 @@ object TTTUpgrade {
                 }.effect {
                     val winner = it.items.first().player.index()
                     eliminations.singleWinner(winner)
+                }
+            }
+            afterActionRule("draw check") {
+                appliesWhen { game.players.all { it.isEmpty() } }
+                effect {
+                    eliminations.eliminateRemaining(WinResult.DRAW)
                 }
             }
             beforeReturnRule("view") {
