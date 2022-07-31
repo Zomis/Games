@@ -178,7 +178,7 @@ class GameFlowImpl<T: Any>(
     suspend fun sendFeedback(feedback: FlowStep) {
         logger.info("GameFlow Coroutine sends feedback: $feedback")
         this.feedbackFlow.send(feedback)
-        logger.info("GameFlow Coroutine feedback sent: $feedback, continuing coroutine...")
+        // logger.info("GameFlow Coroutine feedback sent: $feedback, continuing coroutine...") // Possible ConcurrentModificationExceptions
     }
 
     private fun runRules(state: GameFlowRulesState) {
