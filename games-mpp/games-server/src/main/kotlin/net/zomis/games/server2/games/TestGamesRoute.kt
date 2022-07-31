@@ -1,6 +1,8 @@
 package net.zomis.games.server2.games
 
 import com.github.benmanes.caffeine.cache.Caffeine
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.server2.ClientJsonMessage
 import net.zomis.games.server2.MessageRouter
@@ -50,6 +52,10 @@ class TestGamesRoute(private val inviteSystem: InviteSystem) {
         if (game.gameOver) {
             caffeine.invalidate(key)
             return game(message)
+        }
+
+        runBlocking {
+            while (game.obj == null) delay(200)
         }
 
         val playerCount = game.obj!!.playerCount
