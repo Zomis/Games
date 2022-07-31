@@ -143,11 +143,8 @@ class GameAIListener<T: Any>(val context: GameAIContext<T>, private val delayOve
             job?.cancel()
             job = coroutineScope.launch(CoroutineName("GameAIListener $this gonna do $action in ${context.game} after $sleepDelay ms")) {
                 delay(sleepDelay)
-                if (context.game.actions.type(action.actionType)?.isAllowed(action as Actionable<T, Any>) == true) {
-                    context.game.actionsInput.send(action)
-                } else {
-                    println("Skipping action from $this: $action as it is no longer allowed")
-                }
+                // Doesn't matter if action is allowed or not, if it is not allowed it will just cause an `IllegalAction` feedback
+                context.game.actionsInput.send(action)
             }
         }
     }
