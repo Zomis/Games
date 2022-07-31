@@ -4,6 +4,7 @@ import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import klog.KLoggers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import net.zomis.games.server2.Client
 import net.zomis.games.server2.ws.WebsocketMessageHandler
 
@@ -36,7 +37,7 @@ class KtorClient(private val wss: DefaultWebSocketServerSession): Client() {
     }
 
     override fun sendData(data: String) {
-        wss.launch {
+        runBlocking {
             wss.outgoing.send(Frame.Text(data))
         }
     }
