@@ -160,9 +160,12 @@ class InviteSystem(
 ) {
 
     private val logger = KLoggers.logger(this)
+    private val emptyRouter = MessageRouter<Invite>(null).handler<ClientJsonMessage>("view") {}
 
     val invites = mutableMapOf<String, Invite>()
-    private val dynamicRouter: MessageRouterDynamic<Invite> = { key -> this.invites[key]?.router ?: throw IllegalArgumentException("No such invite: $key") }
+    private val dynamicRouter: MessageRouterDynamic<Invite> = { key ->
+        this.invites[key]?.router ?: emptyRouter.also { logger.warn { "No such invite: $key" } }
+    }
     val router = MessageRouter(this)
         .dynamic(dynamicRouter)
         .handler("start", this::inviteStart)

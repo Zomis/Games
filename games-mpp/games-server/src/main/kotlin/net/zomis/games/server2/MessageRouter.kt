@@ -4,7 +4,7 @@ typealias MessageRouterDynamic<T> = (String) -> MessageRouter<T>
 typealias MessageRouterHandler<T> = (T) -> Unit
 
 private const val DELIMITER = '/'
-class MessageRouter<T>(owner: T) {
+class MessageRouter<T>(owner: T?) {
 
     private var dynamic: MessageRouterDynamic<Any>? = null
     private val routes: MutableMap<String, MessageRouter<Any>> = mutableMapOf()
