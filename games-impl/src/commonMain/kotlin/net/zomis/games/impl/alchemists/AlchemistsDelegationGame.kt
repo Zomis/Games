@@ -35,7 +35,7 @@ object AlchemistsDelegationGame {
                 replayable.randomFromList("solution", list.shuffled(), list.size, Ingredient::toString)
             }
         val alchemySolution get() = Alchemists.solutionWith(solution)
-        inner class TurnOrder(
+        data class TurnOrder(
             val gold: Int, val favors: Int, val ingredients: Int,
             val choosable: Boolean = true, var chosenBy: Int? = null
         ): GameSerializable {
@@ -168,7 +168,7 @@ object AlchemistsDelegationGame {
             val ingredients by cards<Ingredient>()
                 .on(gameInit) {
                     val startingIngredients = if (master) 2 else 3
-                    model.ingredients.deck.random(replayable, startingIngredients, "startingIngredients-$playerIndex") { it.toString() }
+                    model.ingredients.deck.random(replayable, startingIngredients, "startingIngredients-$playerIndex") { it.serialize() }
                         .forEach { it.moveTo(value) }
                 }
                 .on(playerMixPotion) {

@@ -1,7 +1,5 @@
 package net.zomis.games.dsl
 
-import net.zomis.games.dsl.impl.FlowStep
-
 typealias GameSituationState = Map<String, Any>?
 data class ActionReplay(val actionType: String, val playerIndex: Int, val serializedParameter: Any, val state: Map<String, Any>)
 data class ReplayData(

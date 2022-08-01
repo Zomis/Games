@@ -72,14 +72,16 @@ class ActionRecursiveImpl<T: Any, C: Any, P: Any>(
         options: ActionChoicesRecursiveScope<T, C>.() -> Iterable<E>,
         next: ActionChoicesRecursiveSpecScope<T, C, P>.(E) -> Unit
     ) {
-        return this.internalOptions({ options(recursiveContext).map { it to it } }, next)
+        val outer = this
+        return this.internalOptions({ options(outer.recursiveContext).map { it to it } }, next)
     }
 
     override fun <E : Any> optionsWithIds(
         options: ActionChoicesRecursiveScope<T, C>.() -> Iterable<Pair<String, E>>,
         next: ActionChoicesRecursiveSpecScope<T, C, P>.(E) -> Unit
     ) {
-        return this.internalOptions({ options(recursiveContext).map { it.first to it.second } }, next)
+        val outer = this
+        return this.internalOptions({ options(outer.recursiveContext).map { it.first to it.second } }, next)
     }
 
     override fun <E : Any> recursion(chosen: E, operation: (C, E) -> C) {

@@ -6,6 +6,7 @@ import net.zomis.games.dsl.flow.GameFlowRules
 import net.zomis.games.dsl.flow.GameFlowScope
 import net.zomis.games.dsl.impl.GameAI
 import net.zomis.games.dsl.impl.GameAIScope
+import net.zomis.games.dsl.impl.GameMarker
 import net.zomis.games.scorers.ScorerFactory
 import kotlin.reflect.KClass
 
@@ -82,6 +83,7 @@ class GameConfigs(val configs: List<GameConfig<Any>>) {
     }
 }
 
+@GameMarker
 interface GameDsl<T : Any> {
     var useRandomAI: Boolean
     @Deprecated("use GameConfig class")

@@ -7,6 +7,7 @@ import net.zomis.games.dsl.flow.ActionDefinition
 import net.zomis.games.dsl.flow.GameFlowActionScope
 import net.zomis.games.dsl.flow.GameFlowScope
 import net.zomis.games.dsl.impl.GameConfigImpl
+import net.zomis.games.dsl.impl.GameMarker
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
@@ -36,6 +37,7 @@ class DynamicValueDelegate<E>(val function: () -> E): ReadOnlyProperty<Entity?, 
 }
 
 interface HandlerScope<E, T> {
+    // Do not mark with @GameMarker as it should be allowed to reference event from nested calls.
     val replayable: ReplayableScope
     val value: E
     val event: T
@@ -261,11 +263,11 @@ class GameCreatorContext<T: ContextHolder>(val gameName: String, val function: G
     fun toDsl(): GameDsl<T>.() -> Unit {
         this.function.invoke(this)
         return {
-            for (config in configs) {
+            for (config in this@GameCreatorContext.configs) {
                 this.config(config.key, config.default)
             }
             setup {
-                players(playerRange)
+                players(this@GameCreatorContext.playerRange)
                 onStart {
                     this.game.ctx.gameContext.onSetup.forEach { it.invoke(this as GameStartScope<Any>) }
                 }
@@ -275,7 +277,7 @@ class GameCreatorContext<T: ContextHolder>(val gameName: String, val function: G
                     context.view = {
                         context.children.associate { it.name to it.view }
                     }
-                    init.invoke(ContextHolderImpl(context))
+                    this@GameCreatorContext.init.invoke(ContextHolderImpl(context))
                 }
             }
             gameFlow {
@@ -291,6 +293,7 @@ class GameCreatorContext<T: ContextHolder>(val gameName: String, val function: G
         }
     }
 }
+@GameMarker
 interface GameCreatorContextScope<T: Any> {
     fun players(players: IntRange)
     fun init(function: ContextHolder.() -> T)

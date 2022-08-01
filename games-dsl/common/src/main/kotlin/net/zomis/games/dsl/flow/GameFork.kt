@@ -3,6 +3,7 @@ package net.zomis.games.dsl.flow
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.ReplayData
 import net.zomis.games.dsl.impl.Game
+import net.zomis.games.dsl.impl.GameMarker
 import net.zomis.games.dsl.listeners.BlockingGameListener
 
 class GameForkContext<T: Any>(val gameFork: GameForkResult<T>): GameForkScope<T> {
@@ -20,6 +21,7 @@ class GameForkResult<T: Any>(
     override fun toString(): String = "GameForkResult($game $blockingGameListener $replayData)"
 }
 
+@GameMarker
 interface GameForkScope<T: Any> {
     suspend fun <A: Any> performAction(actionType: ActionType<T, A>, playerIndex: Int, parameter: A)
 }

@@ -140,7 +140,7 @@ object LiarsDiceGame {
             action(bet) {
                 choose {
                     val bet = context.game.bet?.second ?: LiarsDiceBet(1, 0)
-                    options({ bet.amount..context.game.diceCount }) {amount ->
+                    options({ bet.amount..game.diceCount }) {amount ->
                         val min = if (amount == bet.amount) bet.value + 1 else 1
                         options({ min..6 }) {value ->
                             parameter(LiarsDiceBet(amount, value))

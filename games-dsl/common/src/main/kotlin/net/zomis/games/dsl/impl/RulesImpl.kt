@@ -25,7 +25,7 @@ class GameActionRulesContext<T : Any>(
     private val actionRules = mutableMapOf<String, GameActionRuleContext<T, Any>>()
     private val gameRules = mutableListOf<GameRuleImpl<T>>()
     init {
-        allActionRules.after { stateCheck() }
+        allActionRules.after { this@GameActionRulesContext.stateCheck() }
     }
 
     override val allActions: GameAllActionsRule<T>

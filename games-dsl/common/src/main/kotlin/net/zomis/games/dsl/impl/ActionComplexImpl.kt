@@ -81,11 +81,13 @@ class ActionComplexBlockRun<T: Any, P: Any>(
     }
 
     override fun <E : Any> options(options: ActionOptionsScope<T>.() -> Iterable<E>, next: ActionChoicesScope<T, P>.(E) -> Unit) {
-        return this.internalOptions({ options(context).map { it to it } }, next)
+        val outerThis = this
+        return this.internalOptions({ options(outerThis.context).map { it to it } }, next)
     }
 
     override fun <E : Any> optionsWithIds(options: ActionOptionsScope<T>.() -> Iterable<Pair<String, E>>, next: ActionChoicesScope<T, P>.(E) -> Unit) {
-        return this.internalOptions({ options(context).map { it.first to it.second } }, next)
+        val outerThis = this
+        return this.internalOptions({ options(outerThis.context).map { it.first to it.second } }, next)
     }
 
     override fun <C : Any> recursive(base: C, options: ActionChoicesRecursiveSpecScope<T, C, P>.() -> Unit) {

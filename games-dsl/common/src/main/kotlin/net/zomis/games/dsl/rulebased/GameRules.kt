@@ -1,6 +1,5 @@
 package net.zomis.games.dsl.rulebased
 
-import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.GameEvents
 import net.zomis.games.dsl.*
@@ -47,6 +46,7 @@ interface GameRuleEvents<T: Any, E> {
     fun perform(perform: GameRuleEventScope<T, E>.() -> Unit)
 }
 
+@GameMarker
 interface GameRuleAction<T : Any, A: Any> {
     fun appliesForActions(condition: ActionRuleScope<T, A>.() -> Boolean)
     fun after(rule: ActionRuleScope<T, A>.() -> Unit)

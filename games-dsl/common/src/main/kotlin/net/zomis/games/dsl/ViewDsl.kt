@@ -1,12 +1,14 @@
 package net.zomis.games.dsl
 
 import net.zomis.games.common.PlayerIndex
+import net.zomis.games.dsl.impl.GameMarker
 import kotlin.reflect.KClass
 
 interface Viewable {
     fun toView(viewer: PlayerIndex): Any?
 }
 
+@GameMarker
 interface ViewScope<T: Any> {
     fun actions(): ActionsView<T>
     fun actionsChosen(): ActionsChosenView<T>

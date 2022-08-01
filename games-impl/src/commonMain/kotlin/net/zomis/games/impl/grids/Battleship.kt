@@ -124,10 +124,10 @@ object Battleship {
                             val previousValue = target.value
                             val result = if (previousValue != "") "HIT" else "MISS"
                             target.value = "x"
-                            log { "${player(playerIndex)} attacked player ${player(action.targetPlayer)} at ${action.x},${action.y} which was a $result" }
+                            log { "$player attacked player ${player(action.targetPlayer)} at ${action.x},${action.y} which was a $result" }
                             if (previousValue != "" && config(revealExplodedShips)) {
                                 game.players[action.parameter.targetPlayer].field.all().count { it.value == previousValue }
-                                log { "${player(playerIndex)}'s $previousValue has been destroyed" }
+                                log { "${player(action.targetPlayer)}'s $previousValue has been destroyed" }
                             }
                         }
                     }

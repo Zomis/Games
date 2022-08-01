@@ -5,6 +5,7 @@ import net.zomis.games.common.mergeWith
 import net.zomis.games.dsl.*
 import kotlin.reflect.KClass
 
+@GameMarker
 interface GameLogicActionTypeChosen<T: Any, P: Any> {
     val actionType: ActionType<T, P>
     val playerIndex: Int

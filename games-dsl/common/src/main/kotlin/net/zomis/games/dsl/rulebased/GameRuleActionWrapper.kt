@@ -1,8 +1,6 @@
 package net.zomis.games.dsl.rulebased
 
 import net.zomis.games.dsl.*
-import net.zomis.games.dsl.impl.ActionOptionsContext
-import net.zomis.games.dsl.impl.ActionRuleContext
 import net.zomis.games.dsl.impl.GameRuleContext
 import net.zomis.games.dsl.impl.ReplayState
 
@@ -30,13 +28,13 @@ class GameRuleActionWrapper<T: Any, A: Any>(
 
     override fun after(rule: ActionRuleScope<T, A>.() -> Unit) {
         action.after {
-            if (appliesTo(this)) rule.invoke(this)
+            if (this@GameRuleActionWrapper.appliesTo(this)) rule.invoke(this)
         }
     }
 
     override fun perform(rule: ActionRuleScope<T, A>.() -> Unit) {
         action.effect {
-            if (appliesTo(this)) rule.invoke(this)
+            if (this@GameRuleActionWrapper.appliesTo(this)) rule.invoke(this)
         }
     }
 
@@ -44,26 +42,29 @@ class GameRuleActionWrapper<T: Any, A: Any>(
         if (this.appliesForActions != null) {
             throw IllegalStateException("Unable to use precondition together with appliesForActions")
         }
+        val outerThis = this
         action.precondition {
-            if (parentRule.isActive(this as GameRuleScope<T>)) rule.invoke(this) else true
+            if (outerThis.parentRule.isActive(this as GameRuleScope<T>)) rule.invoke(this) else true
         }
     }
 
     override fun requires(rule: ActionRuleScope<T, A>.() -> Boolean) {
         action.requires {
-            if (appliesTo(this)) rule.invoke(this) else true
+            if (this@GameRuleActionWrapper.appliesTo(this)) rule.invoke(this) else true
         }
     }
 
     override fun options(rule: ActionOptionsScope<T>.() -> Iterable<A>) {
+        val outerThis = this
         action.options {
-            if (parentRule.isActive(this as GameRuleScope<T>)) rule.invoke(this) else emptyList()
+            if (outerThis.parentRule.isActive(this as GameRuleScope<T>)) rule.invoke(this) else emptyList()
         }
     }
 
     override fun choose(options: ActionChoicesScope<T, A>.() -> Unit) {
+        val outerThis = this
         action.choose {
-            if (parentRule.isActive(this.context)) options.invoke(this)
+            if (outerThis.parentRule.isActive(this.context)) options.invoke(this)
         }
     }
 

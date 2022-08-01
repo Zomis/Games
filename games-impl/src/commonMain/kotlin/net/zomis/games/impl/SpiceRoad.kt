@@ -136,7 +136,7 @@ object SpiceRoadDsl {
                                 .map { it.toStateString() to it }
                     }) { card ->
                         recursive(emptyList<SpiceRoadGameModel.Spice>()) {
-                            until { chosen.size == context.game.visibleActionCards.card(card).index }
+                            until { chosen.size == game.visibleActionCards.card(card).index }
                             options({ (game.currentPlayer.caravan - chosen.toCaravan()).spice.filter { it.value > 0 }.keys }) {
                                 recursion(it) { list, e -> list + e }
                             }

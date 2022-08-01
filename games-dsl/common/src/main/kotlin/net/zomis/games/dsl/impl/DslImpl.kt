@@ -138,13 +138,6 @@ class ReplayState(
     override val replayable: ReplayableScope get() = this
     override fun <E : Any> config(gameConfig: GameConfig<E>): E = config.get(gameConfig)
 
-    fun setReplayState(state: Map<String, Any>?) {
-        stateKeeper.clear()
-        if (state != null) {
-            stateKeeper.setState(state)
-        }
-    }
-
     private fun <T: Any> replayable(key: String, default: () -> T): T {
         if (stateKeeper.containsKey(key)) {
             check(stateKeeper.replayMode) { "State was already saved once for key $key. Use a different key" }

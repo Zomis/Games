@@ -2,6 +2,7 @@ package net.zomis.games.dsl
 
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.GameEvents
+import net.zomis.games.dsl.impl.GameMarker
 
 interface GameEventsExecutor {
     fun <E> fire(executor: GameEvents<E>, event: E)
@@ -15,6 +16,7 @@ interface GameFactoryScope<C> {
     @Deprecated("use config method instead")
     val config: C
 }
+@GameMarker
 interface GameModel<T: Any, C> {
     fun players(playerCount: IntRange)
     fun playersFixed(playerCount: Int)

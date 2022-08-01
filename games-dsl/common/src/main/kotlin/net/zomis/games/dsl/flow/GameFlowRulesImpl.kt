@@ -16,10 +16,6 @@ interface GameFlowRule<T : Any>: GameCommonRule<T> {
 
     fun view(key: String, value: ViewScope<T>.() -> Any?)
     fun <A: Any> action(actionType: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>)
-//    suspend fun loop(function: suspend GameFlowScope<T>.() -> Unit)
-//    suspend fun step(name: String, step: suspend GameFlowStepScope<T>.() -> Unit)
-//    suspend fun log(logging: LogScope<T>.() -> String)
-//    suspend fun logSecret(playerIndex: Int, logging: LogScope<T>.() -> String): LogSecretScope<T>
 }
 
 @GameMarker

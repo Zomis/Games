@@ -1,9 +1,12 @@
 package net.zomis.games.dsl
 
+import net.zomis.games.dsl.impl.GameMarker
+
 interface GameTestBranches<T: Any> {
     fun branch(name: String, block: GameTest<T>.() -> Unit)
 }
 
+@GameMarker
 interface GameTest<T: Any> {
     val game: T
     fun state(key: String, value: Any)
