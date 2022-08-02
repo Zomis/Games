@@ -67,9 +67,23 @@ object TTTUpgrade {
                 }
             }
             afterActionRule("draw check") {
-                appliesWhen { game.players.all { it.isEmpty() } }
+                appliesWhen {
+                    val gameSmallest = game.board.all().minOf { p -> p.value.level }
+                    game.players.all { player ->
+                        player.all { it <= gameSmallest }
+                    } && game.board.all().all { it.value.level > 0 } && !eliminations.isGameOver()
+                }
                 effect {
                     eliminations.eliminateRemaining(WinResult.DRAW)
+                }
+            }
+            afterActionRule("player cannot move") {
+                appliesWhen {
+                    val gameSmallest = game.board.all().minOf { p -> p.value.level }
+                    game.players[game.currentPlayer.index()].all { it <= gameSmallest }
+                }
+                effect {
+                    game.currentPlayer = game.currentPlayer.next()
                 }
             }
             beforeReturnRule("view") {
