@@ -22,16 +22,22 @@ class KtorClient(private val wss: DefaultWebSocketServerSession): Client() {
                     continue
                 }
                 val text = frame.readText()
-                logger.info("Message from $this connection $wss: $text")
-                handler.incomingMessage(this, text)
+                try {
+                    logger.info("Message from $this connection $wss: $text")
+                    handler.incomingMessage(this, text)
+                } catch (e: Exception) {
+                    logger.error(e) { "Unable to handle frame text: $text" }
+                    wss.outgoing.send(Frame.Text("""{ "type": "error", "error": "unable to handle message" }"""))
+                }
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
 //            if (message.contains("Connection timed out") || message.contains("No route to host") || message.contains("Connection reset by peer")) {
 //                logger.debug("Expected message: $client connection $conn message $message")
 //                return
 //            }
             logger.warn(e) { "Connection error in $this" }
         } finally {
+            logger.info { "Disconnected $this $wss" }
             handler.disconnected(this)
         }
     }
