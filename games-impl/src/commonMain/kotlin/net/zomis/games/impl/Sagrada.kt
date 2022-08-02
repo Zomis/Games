@@ -100,7 +100,7 @@ object Sagrada {
             val map2d = Games.components.grid(5, 4) { x, y ->
                 val ch = rows[y][x]
                 when (ch) {
-                    in '1'..'6' -> WindowSlot(restrictedValue = ch.toInt())
+                    in '1'..'6' -> WindowSlot(restrictedValue = ch.digitToInt())
                     in colors.keys -> WindowSlot(restrictedColor = colors.getValue(ch))
                     else -> WindowSlot()
                 }
