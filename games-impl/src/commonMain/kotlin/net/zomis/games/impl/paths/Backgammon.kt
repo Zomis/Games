@@ -1,9 +1,11 @@
 package net.zomis.games.impl.paths
 
 import net.zomis.games.api.GamesApi
+import net.zomis.games.common.Path
 import net.zomis.games.common.Paths
 import net.zomis.games.common.next
 import net.zomis.games.common.toSingleList
+import net.zomis.games.dsl.Actionable
 import kotlin.random.Random
 
 object Backgammon {
@@ -184,6 +186,25 @@ object Backgammon {
                 }
             }
         }
+        val roll = scorers.isAction(roll)
+        val moveFromSafe = scorers.actionConditional(move) {
+            pieceInfo(action).source.count >= 3
+        }
+        val moveToProtect = scorers.actionConditional(move) {
+            pieceInfo(action).destination.let { it.count == 1 && it.playerIndex == action.playerIndex }
+        }
+        val knockout = scorers.actionConditional(move) {
+            pieceInfo(action).destination.let { it.count == 1 && it.playerIndex != action.playerIndex }
+        }
+        val moveFromBack = scorers.action(move) { 1 - action.parameter.piece.toDouble() / 30 }
+        scorers.ai("#AI_Simple", roll, moveFromBack, moveFromSafe, moveToProtect)
+        scorers.ai("#AI_Knockout", roll, moveFromBack, moveFromSafe, moveToProtect, knockout)
+    }
+    data class PieceInfo(val path: Path<PiecePosition>, val source: PiecePosition, val destination: PiecePosition)
+    fun pieceInfo(action: Actionable<Model, PieceMove>): PieceInfo {
+        val path = action.game.paths[action.playerIndex]
+        val destination = action.parameter.piece + action.parameter.steps
+        return PieceInfo(path, path.pos[action.parameter.piece], path.pos[destination.coerceAtMost(path.pos.size - 1)])
     }
 
 }
