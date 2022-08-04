@@ -95,6 +95,7 @@ function upgradeSpice(spice) {
 
 const supportedGames = {
     "Alchemists": {
+        enabled: false,
         component: Alchemists,
         playTime: '60',
         amountOfPlayers: '2-4'
