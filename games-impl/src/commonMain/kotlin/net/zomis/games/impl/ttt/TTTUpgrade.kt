@@ -62,6 +62,7 @@ object TTTUpgrade {
 //                        winLine.items.map { it.player }.distinct().let { it.size == 1 && it.first().isExactlyOnePlayer }
 //                    }.asIterable()
                 }.effect {
+                    if (eliminations.isGameOver()) return@effect // Avoid problem when winning at two lines at the same time
                     val winner = it.items.first().player.index()
                     eliminations.singleWinner(winner)
                 }
