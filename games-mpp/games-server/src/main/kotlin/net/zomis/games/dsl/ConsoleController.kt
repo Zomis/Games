@@ -1,9 +1,8 @@
 package net.zomis.games.dsl
 
-import net.zomis.games.common.Point
+import net.zomis.games.components.Point
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameControllerScope
-import net.zomis.games.server2.games.ActionListRequestHandler
 import net.zomis.games.server2.games.JsonChoices
 import java.util.*
 import kotlin.coroutines.cancellation.CancellationException

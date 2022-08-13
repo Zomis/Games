@@ -1,9 +1,8 @@
 package net.zomis.games.impl.ttt
 
 import net.zomis.games.WinResult
-import net.zomis.games.common.Point
+import net.zomis.games.components.Point
 import net.zomis.games.dsl.*
-import net.zomis.games.dsl.impl.GameAI
 import net.zomis.games.dsl.listeners.RememberMovesListener
 import net.zomis.games.impl.ttt.ultimate.*
 

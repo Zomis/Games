@@ -2,8 +2,8 @@ package net.zomis.games.dsl
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.runTest
-import net.zomis.games.common.Point
-import net.zomis.games.common.PointMove
+import net.zomis.games.components.Point
+import net.zomis.games.components.PointMove
 import net.zomis.games.impl.TTControllerSourceDestination
 import net.zomis.games.impl.TTSourceDestinationGames
 import net.zomis.games.impl.ttt.ultimate.TTPlayer

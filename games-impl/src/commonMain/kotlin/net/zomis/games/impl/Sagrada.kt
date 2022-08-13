@@ -5,7 +5,7 @@ import net.zomis.games.api.GamesApi
 import net.zomis.games.api.components
 import net.zomis.games.cards.CardZone
 import net.zomis.games.common.shifted
-import net.zomis.games.components.Grid
+import net.zomis.games.components.grids.Grid
 import net.zomis.games.dsl.flow.GameFlowScope
 
 object Sagrada {

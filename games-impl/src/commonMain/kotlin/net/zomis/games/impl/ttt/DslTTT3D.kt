@@ -1,8 +1,8 @@
 package net.zomis.games.impl.ttt
 
 import net.zomis.games.WinResult
-import net.zomis.games.common.Grid2D
-import net.zomis.games.common.Point
+import net.zomis.games.components.Grid2D
+import net.zomis.games.components.Point
 import net.zomis.games.dsl.GameCreator
 
 object TTT3DGame {

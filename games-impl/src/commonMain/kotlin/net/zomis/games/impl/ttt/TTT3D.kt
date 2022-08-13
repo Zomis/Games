@@ -1,8 +1,8 @@
 package net.zomis.games.impl.ttt
 
-import net.zomis.games.common.Point
-import net.zomis.games.components.Grid
-import net.zomis.games.components.standardize
+import net.zomis.games.components.Point
+import net.zomis.games.components.grids.Grid
+import net.zomis.games.components.grids.standardize
 
 typealias TTT3DAI = (TTT3D) -> Pair<Int, Int>
 private val RANGE: IntRange = (0 until 4)

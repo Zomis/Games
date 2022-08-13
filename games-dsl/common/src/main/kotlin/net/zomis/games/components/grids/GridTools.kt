@@ -1,6 +1,6 @@
-package net.zomis.games.components
+package net.zomis.games.components.grids
 
-import net.zomis.games.common.Point
+import net.zomis.games.components.Point
 
 fun <T> Grid<T>.mnkLines(includeDiagonals: Boolean): Sequence<GridLine<T>> {
     fun loopAdd(board: Grid<T>, xxStart: Int, yyStart: Int, dx: Int, dy: Int): List<T> {

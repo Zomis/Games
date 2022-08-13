@@ -1,7 +1,7 @@
-package net.zomis.games.components
+package net.zomis.games.components.grids
 
-import net.zomis.games.common.Point
-import net.zomis.games.common.Rect
+import net.zomis.games.components.Point
+import net.zomis.games.components.Rect
 
 class ExpandableGrid<T>(val chunkSize: Int = 16): Grid<T> {
     // start centered around middle of first chunk (0, 0 --> 8, 8)

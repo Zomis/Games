@@ -3,7 +3,7 @@ package net.zomis.games.server2
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
-import net.zomis.games.common.Point
+import net.zomis.games.components.Point
 import net.zomis.games.server2.clients.WSClient
 import net.zomis.games.server2.clients.getInt
 import net.zomis.games.server2.clients.getText

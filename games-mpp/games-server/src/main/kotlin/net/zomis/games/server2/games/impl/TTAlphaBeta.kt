@@ -5,7 +5,7 @@ import kotlinx.coroutines.runBlocking
 import net.zomis.bestBy
 import net.zomis.common.pmap
 import net.zomis.games.ais.AlphaBeta
-import net.zomis.games.common.Point
+import net.zomis.games.components.Point
 import net.zomis.games.impl.ttt.ultimate.*
 
 object TTConnect4AlphaBeta {

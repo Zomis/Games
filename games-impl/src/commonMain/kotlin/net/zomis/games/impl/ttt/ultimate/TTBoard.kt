@@ -1,7 +1,6 @@
 package net.zomis.games.impl.ttt.ultimate
 
-import net.zomis.games.common.Grid2D
-import net.zomis.games.components.Grid
+import net.zomis.games.components.grids.Grid
 
 data class TTMNKParameters(val width: Int, val height: Int, val consecutiveRequired: Int)
 

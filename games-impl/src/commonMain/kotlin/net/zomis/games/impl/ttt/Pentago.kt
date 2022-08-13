@@ -5,9 +5,12 @@ import net.zomis.games.WinResult
 import net.zomis.games.api.Games
 import net.zomis.games.api.GamesApi
 import net.zomis.games.api.components
-import net.zomis.games.common.Point
+import net.zomis.games.components.Point
 import net.zomis.games.common.next
-import net.zomis.games.components.*
+import net.zomis.games.components.grids.Transformation
+import net.zomis.games.components.grids.mnkLines
+import net.zomis.games.components.grids.subGrid
+import net.zomis.games.components.grids.transform
 import net.zomis.games.context.Context
 import net.zomis.games.context.ContextHolder
 import net.zomis.games.context.Entity

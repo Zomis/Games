@@ -1,8 +1,8 @@
-package net.zomis.games.components
+package net.zomis.games.components.grids
 
-import net.zomis.games.common.Point
-import net.zomis.games.common.Rect
 import net.zomis.games.common.fmod
+import net.zomis.games.components.Point
+import net.zomis.games.components.Rect
 
 // Artax, TTT, Othello...
 // rules.grid.move/place
@@ -113,7 +113,8 @@ class GridImpl<T>(override val sizeX: Int, override val sizeY: Int, val factory:
 
 }
 
-class GridSubView<T>(private val original: Grid<T>, val origin: Point, override val sizeX: Int, override val sizeY: Int): Grid<T> {
+class GridSubView<T>(private val original: Grid<T>, val origin: Point, override val sizeX: Int, override val sizeY: Int):
+    Grid<T> {
     override fun set(x: Int, y: Int, value: T) {
         require(this.isOnMap(x, y))
         return original.set(x + origin.x, y + origin.y, value)

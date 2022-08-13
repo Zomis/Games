@@ -6,11 +6,11 @@ import klog.KLoggers
 import kotlinx.coroutines.CoroutineScope
 import net.zomis.core.events.EventSystem
 import net.zomis.games.common.PlayerIndex
-import net.zomis.games.common.Point
-import net.zomis.games.components.GridImpl
-import net.zomis.games.components.Position
-import net.zomis.games.components.Transformation
-import net.zomis.games.components.standardizedTransformation
+import net.zomis.games.components.Point
+import net.zomis.games.components.grids.GridImpl
+import net.zomis.games.components.grids.Position
+import net.zomis.games.components.grids.Transformation
+import net.zomis.games.components.grids.standardizedTransformation
 import net.zomis.games.dsl.GameListener
 import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game

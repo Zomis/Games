@@ -1,4 +1,4 @@
-package net.zomis.games.components
+package net.zomis.games.components.grids
 
 import net.zomis.Best
 
@@ -51,7 +51,7 @@ enum class Transformation(private val transformations: List<TransformationType>)
         Position(4, 0, 5, 5)
     )
     fun apply(transformation: Transformation): Transformation {
-        val simplestTransformation = Transformation.values().filter {result ->
+        val simplestTransformation = Transformation.values().filter { result ->
             referencePoints.all {p -> transformation.transform(this.transform(p)) == result.transform(p) }
         }
         return simplestTransformation.single()

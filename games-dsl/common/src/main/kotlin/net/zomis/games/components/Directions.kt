@@ -1,4 +1,4 @@
-package net.zomis.games.common
+package net.zomis.games.components
 
 import net.zomis.games.dsl.GameSerializable
 

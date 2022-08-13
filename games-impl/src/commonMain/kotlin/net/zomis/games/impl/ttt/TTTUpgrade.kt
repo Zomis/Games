@@ -4,8 +4,8 @@ import net.zomis.games.WinResult
 import net.zomis.games.api.Games
 import net.zomis.games.api.GamesApi
 import net.zomis.games.api.components
-import net.zomis.games.common.Point
-import net.zomis.games.components.mnkLines
+import net.zomis.games.components.Point
+import net.zomis.games.components.grids.mnkLines
 import net.zomis.games.impl.ttt.ultimate.TTPlayer
 
 object TTTUpgrade {

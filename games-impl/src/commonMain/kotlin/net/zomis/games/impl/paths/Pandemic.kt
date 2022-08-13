@@ -1,8 +1,8 @@
 package net.zomis.games.impl.paths
 
 import net.zomis.games.api.GamesApi
-import net.zomis.games.common.Graph
-import net.zomis.games.common.Paths
+import net.zomis.games.components.Graph
+import net.zomis.games.components.Paths
 
 object Pandemic {
 

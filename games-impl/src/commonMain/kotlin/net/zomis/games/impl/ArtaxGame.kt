@@ -3,11 +3,10 @@ package net.zomis.games.impl
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.WinResult
 import net.zomis.games.api.Games
-import net.zomis.games.api.components
-import net.zomis.games.common.Direction8
-import net.zomis.games.common.Point
-import net.zomis.games.common.PointMove
-import net.zomis.games.components.GridPoint
+import net.zomis.games.components.Direction8
+import net.zomis.games.components.Point
+import net.zomis.games.components.PointMove
+import net.zomis.games.components.grids.GridPoint
 import net.zomis.games.dsl.*
 import kotlin.math.abs
 import kotlin.math.max

@@ -3,10 +3,10 @@ package net.zomis.games.impl.grids
 import net.zomis.games.api.Games
 import net.zomis.games.api.components
 import net.zomis.games.cards.CardZone
-import net.zomis.games.common.Direction4
-import net.zomis.games.common.Point
+import net.zomis.games.components.Direction4
+import net.zomis.games.components.Point
 import net.zomis.games.common.toSingleList
-import net.zomis.games.components.connected
+import net.zomis.games.components.grids.connected
 import net.zomis.games.dsl.ReplayableScope
 
 object KingDomino {

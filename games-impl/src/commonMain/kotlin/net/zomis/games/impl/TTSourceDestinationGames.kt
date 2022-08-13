@@ -1,9 +1,9 @@
 package net.zomis.games.impl
 
 import net.zomis.games.WinResult
-import net.zomis.games.common.Direction8
-import net.zomis.games.common.Point
-import net.zomis.games.common.PointMove
+import net.zomis.games.components.Direction8
+import net.zomis.games.components.Point
+import net.zomis.games.components.PointMove
 import net.zomis.games.dsl.*
 import net.zomis.games.impl.ttt.TTOptions
 import net.zomis.games.impl.ttt.index

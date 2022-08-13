@@ -1,8 +1,8 @@
 package net.zomis.games.impl.paths
 
 import net.zomis.games.api.GamesApi
-import net.zomis.games.common.Path
-import net.zomis.games.common.Paths
+import net.zomis.games.components.Path
+import net.zomis.games.components.Paths
 import net.zomis.games.common.next
 import net.zomis.games.common.toSingleList
 import net.zomis.games.dsl.Actionable

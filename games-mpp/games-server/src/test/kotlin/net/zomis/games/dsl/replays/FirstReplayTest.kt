@@ -3,7 +3,7 @@ package net.zomis.games.dsl.replays
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import net.zomis.games.api.GamesApi
-import net.zomis.games.common.Point
+import net.zomis.games.components.Point
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameAI

@@ -1,4 +1,6 @@
-package net.zomis.games.common
+package net.zomis.games.components
+
+import net.zomis.games.common.toSingleList
 
 class Node<T>(val value: T)
 class Vertex<T, E>(val data: E, val from: Node<T>, val to: Node<T>)

@@ -1,6 +1,6 @@
 package net.zomis.games.impl.ttt.ultimate
 
-import net.zomis.games.common.Direction8
+import net.zomis.games.components.Direction8
 
 open class TTClassicController(board: TTBase) : TTController(board) {
 

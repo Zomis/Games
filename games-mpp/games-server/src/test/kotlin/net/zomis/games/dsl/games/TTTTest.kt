@@ -3,7 +3,7 @@ package net.zomis.games.dsl.games
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.runTest
 import net.zomis.games.WinResult
-import net.zomis.games.common.Point
+import net.zomis.games.components.Point
 import net.zomis.games.dsl.GameAsserts
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl

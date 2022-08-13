@@ -2,9 +2,9 @@ package net.zomis.games.server2.djl
 
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.WinResult
-import net.zomis.games.common.Direction4
-import net.zomis.games.components.Grid
-import net.zomis.games.components.GridImpl
+import net.zomis.games.components.Direction4
+import net.zomis.games.components.grids.Grid
+import net.zomis.games.components.grids.GridImpl
 import net.zomis.games.dsl.GameCreator
 
 object GridWorldGame {

@@ -1,7 +1,7 @@
 package net.zomis.games.dsl
 
 import kotlinx.coroutines.test.runTest
-import net.zomis.games.common.Point
+import net.zomis.games.components.Point
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.impl.ttt.DslTTT
