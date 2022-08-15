@@ -59,7 +59,11 @@ interface ECSComponent<E> {
     val tags: List<ECSTag>
     var component: E?
 }
-fun ECSComponent<Int>.nextPlayer() { TODO() }
+fun ECSComponent<Int>.nextPlayer() {
+    val eliminations = owner.root[ECSEliminations]
+    if (eliminations.isGameOver()) return
+    this.component = eliminations.nextPlayer(this.component!!)
+}
 
 class ECSComponentImpl<E>(override val owner: ECSEntity, override val name: String): ECSComponent<E> {
     override var component: E? = null
@@ -73,25 +77,35 @@ interface ECSEntity {
     val parent: ECSEntity? // or ECSComponent?
     val root: ECSEntity
     fun path(): String // things like `/players/0/hand/6` or `/grid/3/5/`. A unique ID/path for where this entity exists.
-    operator fun <T: Any> get(accessor: ECSAccessor<T>): T = components.getValue(accessor).component!! as T
-
-    operator fun <T: Any> set(accessor: ECSAccessor<T>, value: T) {
-        components[accessor as ECSAccessor<Any>]!!.component = value
+    operator fun <T: Any> get(accessor: ECSAccessor<T>): T {
+        if (!has(accessor.key)) {
+            throw IllegalArgumentException("Key ${accessor.key.name} is missing in component list for entity $this")
+        }
+        return components.getValue(accessor.key).component!! as T
     }
 
-    fun <T: Any> component(accessor: ECSAccessor<T>): ECSComponent<T> = components.getValue(accessor) as ECSComponent<T>
+    operator fun <T: Any> set(accessor: ECSAccessor<T>, value: T) {
+        components[accessor.key as ECSAccessor<Any>]!!.component = value
+    }
 
-    fun has(accessor: ECSAccessor<*>): Boolean = components.containsKey(accessor)
-    fun doesNotHave(accessor: ECSAccessor<*>): Boolean = !has(accessor)
+    fun <T: Any> component(accessor: ECSAccessor<T>): ECSComponent<T> = components.getValue(accessor.key) as ECSComponent<T>
+
+    fun has(accessor: ECSAccessor<*>): Boolean {
+        return components.containsKey(accessor.key) && components[accessor.key]?.component != null
+    }
+    fun doesNotHave(accessor: ECSAccessor<*>): Boolean = !has(accessor.key)
     fun allChildren(includingSelf: Boolean): Sequence<ECSEntity> = sequence {
         if (includingSelf) yield(this@ECSEntity)
         yieldAll(components.values.mapNotNull { it.component }.filterIsInstance<ECSEntityContainer>().flatMap { it.entities() })
     }
 
     fun <T: Any> getOrNull(accessor: ECSAccessor<T>): T? = components[accessor]?.component as T?
-    fun view(viewScope: ViewScope<ECSEntity>) {
 
-        TODO("Not yet implemented")
+    fun view(viewScope: ViewScope<ECSEntity>): Any? {
+        return mapOf(
+            "path" to path(),
+            "components" to components.map { it.key.name to it.value.component }
+        )
     }
 
 }
@@ -102,7 +116,7 @@ class ECSSimpleEntity(override val parent: ECSEntity?, override val container: E
 
     override fun path(): String {
         return if (container == null) "/" else {
-            container.owner.path() + container.name + "/" + container.component!!.pathFor(this)
+            container.owner.path() + container.name + "/" + container.component?.pathFor(this)
         }
     }
 
@@ -113,11 +127,15 @@ class ECSSimpleEntity(override val parent: ECSEntity?, override val container: E
 
     override fun <T: Any> has(component: ECSComponentBuilder<T>) {
         components[component.key] =
-            ECSComponentImpl<T>(this, component.name).also { it.component = component.default.invoke(it) } as ECSComponent<Any>
+            ECSComponentImpl<T>(this, component.name).also {
+                it.component = component.default.invoke(it)
+            } as ECSComponent<Any>
         // TODO: Use an `ECSCombinableComponent` interface to combine multiple components of the same type (ECSActions, ECSRules...)
     }
 
     override fun mayHave(component: ECSComponentBuilder<out Any>) = has(component)
+
+    override fun toString(): String = "Entity('${path()}')"
 
 }
 

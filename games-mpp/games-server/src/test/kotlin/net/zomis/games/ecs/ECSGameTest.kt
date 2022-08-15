@@ -6,7 +6,6 @@ import net.zomis.games.components.grids.mnkLines
 import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.listeners.LimitedNextViews
-import net.zomis.games.listeners.SanityCheckListener
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -29,17 +28,23 @@ class ECSGameTest {
                 tile has action(play)
             }
             game has actionRule(play) {
+                val (entity, root) = (entity to root)
                 precondition { playerIndex == root[activePlayer] }
-                requires { entity.doesNotHave(PlayerIndex) }
-                effect { entity[PlayerIndex] = playerIndex }
-                effect {
+                requires {
+                    entity.doesNotHave(PlayerIndex)
+                }
+                perform {
+                    entity[PlayerIndex] = playerIndex
+                    println("Set playerIndex to $playerIndex for $entity")
+                }
+                perform {
                     root[Grid].mnkLines(includeDiagonals = true).find {
-                        it.hasConsecutive(config(k)) { entity.getOrNull(PlayerIndex) } != null
-                    }?.hasConsecutive(config(k)) { entity.getOrNull(PlayerIndex) }?.also {
+                        it.hasConsecutive(config(k)) { e -> e.getOrNull(PlayerIndex) } != null
+                    }?.hasConsecutive(config(k)) { e -> e.getOrNull(PlayerIndex) }?.also {
                         eliminations.singleWinner(it)
                     }
                 }
-                effect { root.component(activePlayer).nextPlayer() }
+                perform { root.component(activePlayer).nextPlayer() }
             }
         }
     }
@@ -49,6 +54,7 @@ class ECSGameTest {
         defaultConfigs(listOf(m to 7, n to 6, k to 4))
         root {
             game has actionRule(play) {
+                val (entity, root) = (entity to root)
                 requires {
                     root[Grid].getOrNull(entity[Point].x, entity[Point].y + 1)?.has(PlayerIndex) ?: true
                 }
@@ -93,7 +99,8 @@ class ECSGameTest {
         Assertions.assertEquals(9, game.actions.actionTypes.size)
         blocking.awaitAndPerform(0, "/grid/2,0/play", Unit)
         blocking.await()
-        Assertions.assertEquals(8, game.actions.actionTypes.size)
+        Assertions.assertEquals(0, game.actions.types().sumOf { it.availableActions(0, null).count() })
+        Assertions.assertEquals(8, game.actions.types().sumOf { it.availableActions(1, null).count() })
         blocking.awaitAndPerform(0, "/grid/1,1/play", Unit)
         blocking.await()
 

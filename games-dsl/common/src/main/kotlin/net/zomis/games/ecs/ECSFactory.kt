@@ -30,6 +30,8 @@ class ECSFactoryContext(val function: ECSGameFactoryScope.() -> Unit) : ECSGameF
                 init {
                     ECSSimpleEntity(null, null)
                         .also { it has ECSComponentBuilder("configs", ECSConfigs) { configs } }
+                        .also { it has ECSComponentBuilder("eliminations", ECSEliminations) { eliminationCallback } }
+                        .also { it has ECSComponentBuilder("events", ECSEvents) { events } }
                         .build(rootBuilder)
                 }
             }
@@ -52,10 +54,16 @@ class ECSFactoryContext(val function: ECSGameFactoryScope.() -> Unit) : ECSGameF
                             .forEach { entity ->
                                 println("Found actions: $entity")
                                 entity[ECSActions].createActions(entity).forEach { action ->
-                                    yieldAction(action as ActionType<ECSEntity, Unit>) {
-                                        precondition { true }
-                                        requires { true }
-                                        options { listOf(Unit) }
+                                    yieldAction(action as ActionType<ECSEntity, Any>) {
+                                        entity.root.allChildren(true)
+                                            .mapNotNull { it.getOrNull(ECSRules) }
+                                            .flatMap { it.rules }
+                                            .filterIsInstance<ECSActionRule<*>>()
+                                            .filter { it.isRuleForAction(entity, action) }
+                                            .forEach {
+                                                val actionRule = it as ECSActionRule<Any>
+                                                actionRule.rule.invoke(ECSActionContextAdapter(entity, action, this))
+                                            }
                                     }
                                 }
                             }

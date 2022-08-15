@@ -1,8 +1,10 @@
 package net.zomis.games.ecs
 
+import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.components.Point
 import net.zomis.games.components.grids.Grid
 import net.zomis.games.dsl.GameConfigs
+import net.zomis.games.dsl.GameEventsExecutor
 
 object PlayerIndex: ECSAccessor<Int>("playerIndex")
 object Point: ECSAccessor<Point>("point") {
@@ -12,6 +14,8 @@ object Point: ECSAccessor<Point>("point") {
 }
 object Grid: ECSAccessor<ECSGrid>("grid")
 object ECSConfigs: ECSAccessor<GameConfigs>("configs")
+object ECSEliminations: ECSAccessor<PlayerEliminationsRead>("eliminations")
+object ECSEvents: ECSAccessor<GameEventsExecutor>("events")
 
 open class ECSAccessor<T>(val name: String) {
     open val key: ECSAccessor<T> get() = this
