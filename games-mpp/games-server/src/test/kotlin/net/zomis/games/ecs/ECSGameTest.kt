@@ -108,8 +108,14 @@ class ECSGameTest {
         val player1 = mapOf("playerIndex" to 1, "actions" to mapOf("play" to false))
         Assertions.assertEquals(
             mapOf(
-                "activePlayer" to 0,
-                "grid" to listOf(listOf(empty, empty, empty), listOf(empty, player1, empty), listOf(player0, empty, empty)),
+                "activePlayer" to 1,
+                "grid" to mapOf(
+                    "left" to 0,
+                    "top" to 0,
+                    "width" to 3,
+                    "height" to 3,
+                    "grid" to listOf(listOf(empty, empty, empty), listOf(empty, player1, empty), listOf(player0, empty, empty))
+                ),
             ),
             view
         )
