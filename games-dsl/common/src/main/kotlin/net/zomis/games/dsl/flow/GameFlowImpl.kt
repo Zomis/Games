@@ -18,6 +18,7 @@ class GameFlowImpl<T: Any>(
     private val copier: suspend (FlowStep.RandomnessResult?) -> GameForkResult<T>,
     val forkedGame: () -> Boolean
 ): Game<T>, GameFactoryScope<Any>, GameEventsExecutor, GameFlowRuleCallbacks<T> {
+    override val configs: GameConfigs get() = gameConfig
     private val stateKeeper = StateKeeper()
     override val gameType: String = setupContext.gameType
     override fun toString(): String = "${super.toString()}-$gameType"
@@ -97,8 +98,6 @@ class GameFlowImpl<T: Any>(
             else -> throw UnsupportedOperationException("Unsupported unfinished feedback: $unfinished")
         }
     }
-
-    override fun isGameOver(): Boolean = eliminations.isGameOver()
 
     override fun view(playerIndex: PlayerIndex): Map<String, Any?> {
         val duplicates = views.map { it.first }.groupingBy { it }.eachCount().filter { it.value > 1 }

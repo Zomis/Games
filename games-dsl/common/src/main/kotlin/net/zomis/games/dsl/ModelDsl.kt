@@ -15,6 +15,7 @@ interface GameFactoryScope<C> {
     val playerCount: Int
     @Deprecated("use config method instead")
     val config: C
+    val configs: GameConfigs
 }
 @GameMarker
 interface GameModel<T: Any, C> {

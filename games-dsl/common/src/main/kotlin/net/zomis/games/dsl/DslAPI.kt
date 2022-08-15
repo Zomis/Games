@@ -109,6 +109,8 @@ class GameActionCreator<T : Any, A : Any>(
     override fun serialize(parameter: A): Any = serializer(parameter)
     override fun deserialize(scope: ActionOptionsScope<T>, serialized: Any): A? = deserializer?.invoke(scope, serialized)
 
+    fun withName(name: String) = GameActionCreator(name, parameterType, serializedType, serializer, deserializer)
+
     inline fun <reified S2: Any> serialization(noinline serializer: (A) -> S2, noinline deserializer: ActionOptionsScope<T>.(S2) -> A): GameActionCreator<T, A> {
         return GameActionCreator(name, parameterType, S2::class, serializer, deserializer as ActionOptionsScope<T>.(Any) -> A)
     }

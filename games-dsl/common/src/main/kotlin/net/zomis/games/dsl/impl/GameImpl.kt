@@ -134,12 +134,12 @@ interface GameFork<T: Any> {
 }
 
 interface Game<T: Any>: GameFork<T> {
-    val config: Any
     override val eliminations: PlayerEliminationsWrite
     val actions: Actions<T>
     val actionsInput: Channel<Actionable<T, out Any>>
     val feedbackFlow: Channel<FlowStep>
     suspend fun start(coroutineScope: CoroutineScope)
+    override fun isGameOver(): Boolean = eliminations.isGameOver()
     fun stop()
 }
 
@@ -149,6 +149,7 @@ class GameImpl<T : Any>(
     val gameConfig: GameConfigs,
     private val copier: suspend () -> GameForkResult<T>
 ): Game<T>, GameFactoryScope<Any>, GameEventsExecutor {
+    override val configs: GameConfigs get() = gameConfig
     private val stateKeeper = StateKeeper()
     override val gameType: String = setupContext.gameType
     override fun toString(): String = "${super.toString()}-$gameType"
@@ -169,7 +170,6 @@ class GameImpl<T : Any>(
         setupContext.actionRulesDsl?.invoke(rules)
         rules.gameStart()
         feedbackFlow.send(FlowStep.GameSetup(this, gameConfig, stateKeeper.lastMoveState()))
-        val gameImpl = this
 
         this.actionsInputJob = coroutineScope.launch(CoroutineName("Actions job for $this")) {
             for (action in actionsInput) {
@@ -232,8 +232,6 @@ class GameImpl<T : Any>(
         rules.view(view)
         return view.result()
     }
-
-    override fun isGameOver(): Boolean = eliminationCallback.isGameOver()
 
     override val events: GameEventsExecutor get() = this
     override fun <E> fire(executor: GameEvents<E>, event: E) = this.rules.fire(executor, event)
