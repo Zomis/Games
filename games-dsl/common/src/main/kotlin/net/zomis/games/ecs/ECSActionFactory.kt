@@ -21,8 +21,6 @@ class ECSRules(val rules: List<ECSRule>) {
 open class ECSRule
 class ECSActionRule<A: Any>(val action: ActionType<ECSEntity, A>, val rule: ECSActionScope<A>.() -> Unit) : ECSRule() {
     fun isRuleForAction(entity: ECSEntity, entityAction: ActionType<ECSEntity, Any>): Boolean {
-
-
         if (entityAction.parameterType != action.parameterType) return false
         if (entityAction.serializedType != action.serializedType) return false
         return entityAction.name.substringAfterLast('/') == action.name

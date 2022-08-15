@@ -16,16 +16,22 @@ interface ECSComponentFactory {
         return ECSComponentBuilder("grid", Grid) { parent ->
             ECSGrid(GridImpl(width, height) { x, y ->
                 ECSSimpleEntity(parent.owner, parent).also {
-                    it has Point.withValue(net.zomis.games.components.Point(x, y))
+                    it has Point.withValue(net.zomis.games.components.Point(x, y)).hiddenView()
                 }.also { tileFactory.invoke(ECSEntityFactory(it)) }
             })
+        }.view {
+            it.grid.view { e -> e.view(this) }
         }
     }
     fun action(action: ActionType<ECSEntity, out Any>): ECSComponentBuilder<ECSActions>
-        = ECSComponentBuilder("actions", ECSActions) { ECSActions(listOf(action)) }
+        = ECSComponentBuilder("actions", ECSActions) {
+            ECSActions(listOf(action))
+        }.view {
+//            this.actions()
+        }.hiddenView()
     fun <A: Any> actionRule(action: ActionType<ECSEntity, A>, rule: ECSActionScope<A>.() -> Unit): ECSComponentBuilder<ECSRules> {
         return ECSComponentBuilder("rules", ECSRules) {
             ECSRules(listOf(ECSActionRule(action, rule)))
-        }
+        }.hiddenView()
     }
 }

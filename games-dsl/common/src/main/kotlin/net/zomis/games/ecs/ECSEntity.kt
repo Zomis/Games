@@ -58,6 +58,7 @@ interface ECSComponent<E> {
     val name: String
     val tags: List<ECSTag>
     var component: E?
+    fun view(viewScope: ViewScope<ECSEntity>): Any?
 }
 fun ECSComponent<Int>.nextPlayer() {
     val eliminations = owner.root[ECSEliminations]
@@ -66,7 +67,16 @@ fun ECSComponent<Int>.nextPlayer() {
 }
 
 class ECSComponentImpl<E>(override val owner: ECSEntity, override val name: String): ECSComponent<E> {
+    lateinit var publicView: ECSViewFunction<E>
+    lateinit var privateViews: MutableMap<Int, ECSViewFunction<E>>
+
     override var component: E? = null
+    override fun view(viewScope: ViewScope<ECSEntity>): Any? {
+        val value = component ?: return null
+        val viewFunction = privateViews[viewScope.viewer] ?: publicView
+        return viewFunction.invoke(viewScope, value)
+    }
+
     override val tags: List<ECSTag> get() = TODO("Not yet implemented")
 }
 
@@ -101,13 +111,7 @@ interface ECSEntity {
 
     fun <T: Any> getOrNull(accessor: ECSAccessor<T>): T? = components[accessor]?.component as T?
 
-    fun view(viewScope: ViewScope<ECSEntity>): Any? {
-        return mapOf(
-            "path" to path(),
-            "components" to components.map { it.key.name to it.value.component }
-        )
-    }
-
+    fun view(viewScope: ViewScope<ECSEntity>): Any?
 }
 class ECSSimpleEntity(override val parent: ECSEntity?, override val container: ECSComponent<out ECSEntityContainer>?): ECSEntity, ECSEntityCreating {
     override val tags: List<ECSTag> get() = TODO("Not yet implemented")
@@ -126,17 +130,18 @@ class ECSSimpleEntity(override val parent: ECSEntity?, override val container: E
     }
 
     override fun <T: Any> has(component: ECSComponentBuilder<T>) {
-        components[component.key] =
-            ECSComponentImpl<T>(this, component.name).also {
-                it.component = component.default.invoke(it)
-            } as ECSComponent<Any>
-        // TODO: Use an `ECSCombinableComponent` interface to combine multiple components of the same type (ECSActions, ECSRules...)
+        components[component.key] = component.buildFor(this) as ECSComponent<Any>
     }
 
     override fun mayHave(component: ECSComponentBuilder<out Any>) = has(component)
 
     override fun toString(): String = "Entity('${path()}')"
 
+    override fun view(viewScope: ViewScope<ECSEntity>): Any? { // Should this ever return null?
+        return components.entries.associate {
+            it.key.name to it.value.view(viewScope)
+        }.filterValues { it != HiddenECSValue }
+    }
 }
 
 

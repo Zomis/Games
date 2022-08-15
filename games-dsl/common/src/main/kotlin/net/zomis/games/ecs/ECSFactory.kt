@@ -29,9 +29,9 @@ class ECSFactoryContext(val function: ECSGameFactoryScope.() -> Unit) : ECSGameF
                 players(playerRange)
                 init {
                     ECSSimpleEntity(null, null)
-                        .also { it has ECSComponentBuilder("configs", ECSConfigs) { configs } }
-                        .also { it has ECSComponentBuilder("eliminations", ECSEliminations) { eliminationCallback } }
-                        .also { it has ECSComponentBuilder("events", ECSEvents) { events } }
+                        .also { it has ECSComponentBuilder("configs", ECSConfigs) { configs }.hiddenView() }
+                        .also { it has ECSComponentBuilder("eliminations", ECSEliminations) { eliminationCallback }.hiddenView() }
+                        .also { it has ECSComponentBuilder("events", ECSEvents) { events }.hiddenView() }
                         .build(rootBuilder)
                 }
             }
@@ -48,11 +48,9 @@ class ECSFactoryContext(val function: ECSGameFactoryScope.() -> Unit) : ECSGameF
                         // Loop through all child entities of root (including root itself) and yield all actions
                         // Create ECSActionTypes for all of them, with their path and action name as the name
                         // and inheriting the rest from the action spec.
-                        println("game loop step")
                         game.allChildren(includingSelf = true)
-                            .onEach { println(it.path()) }.filter { it.has(ECSActions) }
+                            .filter { it.has(ECSActions) }
                             .forEach { entity ->
-                                println("Found actions: $entity")
                                 entity[ECSActions].createActions(entity).forEach { action ->
                                     yieldAction(action as ActionType<ECSEntity, Any>) {
                                         entity.root.allChildren(true)
