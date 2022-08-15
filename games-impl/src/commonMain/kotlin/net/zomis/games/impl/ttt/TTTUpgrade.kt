@@ -72,7 +72,7 @@ object TTTUpgrade {
                     val gameSmallest = game.board.all().minOf { p -> p.value.level }
                     game.players.all { player ->
                         player.all { it <= gameSmallest }
-                    } && game.board.all().all { it.value.level > 0 } && !eliminations.isGameOver()
+                    } && !eliminations.isGameOver()
                 }
                 effect {
                     eliminations.eliminateRemaining(WinResult.DRAW)
