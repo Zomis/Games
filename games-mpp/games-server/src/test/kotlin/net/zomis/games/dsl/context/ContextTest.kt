@@ -41,6 +41,7 @@ class ContextTest {
         val eventRun = event<EventClass>()
         val players by playerComponent { Player(this.ctx, it) }
         var value by value { 0 }
+        val hidden by value { 42 }.hiddenView()
         val inner by component { Inner(this@Model, this.ctx) }
         val globalAction = action<Model, Int>("global", Int::class) {
             precondition { true }
@@ -197,6 +198,13 @@ class ContextTest {
     fun players() = runTest {
         val view = runAndView(this).first
         Assertions.assertEquals(2, (view["players"] as List<*>).size)
+    }
+
+    @Test
+    fun hidden() = runTest {
+        val (view, model) = runAndView(this)
+        Assertions.assertNull(view["hidden"])
+        Assertions.assertEquals(42, model.hidden)
     }
 
     @Test
