@@ -1,6 +1,7 @@
 package net.zomis.games.ecs
 
 import kotlinx.coroutines.test.runTest
+import net.zomis.games.WinResult
 import net.zomis.games.api.GamesApi
 import net.zomis.games.components.grids.mnkLines
 import net.zomis.games.dsl.GamesImpl
@@ -30,18 +31,15 @@ class ECSGameTest {
             game has actionRule(play) {
                 val (entity, root) = (entity to root)
                 precondition { playerIndex == root[activePlayer] }
-                requires {
-                    entity.doesNotHave(PlayerIndex)
-                }
+                requires { entity.doesNotHave(PlayerIndex) }
+                perform { entity[PlayerIndex] = playerIndex }
                 perform {
-                    entity[PlayerIndex] = playerIndex
-                    println("Set playerIndex to $playerIndex for $entity")
-                }
-                perform {
-                    root[Grid].mnkLines(includeDiagonals = true).find {
-                        it.hasConsecutive(config(k)) { e -> e.getOrNull(PlayerIndex) } != null
-                    }?.hasConsecutive(config(k)) { e -> e.getOrNull(PlayerIndex) }?.also {
-                        eliminations.singleWinner(it)
+                    val winners = root[Grid].mnkLines(includeDiagonals = true).map { line ->
+                        line.hasConsecutive(config(k)) { it.getOrNull(PlayerIndex) }
+                    }.filterNotNull().toList()
+                    if (winners.isNotEmpty()) {
+                        eliminations.eliminateMany(winners, WinResult.WIN)
+                        eliminations.eliminateRemaining(WinResult.LOSS)
                     }
                 }
                 perform { root.component(activePlayer).nextPlayer() }
