@@ -55,7 +55,7 @@ class GameFlowActionsImpl<T: Any>(
     override fun types(): Set<ActionTypeImplEntry<T, Any>> = actions.toSet()
     override fun get(actionType: String): ActionTypeImplEntry<T, Any>? = actions.find { it.name == actionType }
     override fun <A : Any> type(actionType: ActionType<T, A>): ActionTypeImplEntry<T, A>?
-        = actions.find { it.actionType == actionType } as ActionTypeImplEntry<T, A>?
+        = actions.find { it.actionType.name == actionType.name } as ActionTypeImplEntry<T, A>?
 
     override fun type(actionType: String): ActionTypeImplEntry<T, Any>? = actions.find { it.name == actionType }
     override fun <P : Any> type(actionType: String, clazz: KClass<P>): ActionTypeImplEntry<T, P>? {

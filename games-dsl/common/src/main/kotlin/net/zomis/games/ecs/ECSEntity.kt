@@ -58,7 +58,7 @@ interface ECSComponent<E> {
     val name: String
     val tags: List<ECSTag>
     var component: E?
-    fun view(viewScope: ViewScope<ECSEntity>): Any?
+    fun view(viewScope: ECSViewScope): Any?
 }
 fun ECSComponent<Int>.nextPlayer() {
     val eliminations = owner.root[ECSEliminations]
@@ -71,7 +71,7 @@ class ECSComponentImpl<E>(override val owner: ECSEntity, override val name: Stri
     lateinit var privateViews: MutableMap<Int, ECSViewFunction<E>>
 
     override var component: E? = null
-    override fun view(viewScope: ViewScope<ECSEntity>): Any? {
+    override fun view(viewScope: ECSViewScope): Any? {
         val value = component ?: return null
         val viewFunction = privateViews[viewScope.viewer] ?: publicView
         return viewFunction.invoke(viewScope, value)
@@ -139,7 +139,7 @@ class ECSSimpleEntity(override val parent: ECSEntity?, override val container: E
 
     override fun view(viewScope: ViewScope<ECSEntity>): Any? { // Should this ever return null?
         return components.entries.associate {
-            it.key.name to it.value.view(viewScope)
+            it.key.name to it.value.view(ECSViewContext(this, viewScope))
         }.filterValues { it != HiddenECSValue }
     }
 }

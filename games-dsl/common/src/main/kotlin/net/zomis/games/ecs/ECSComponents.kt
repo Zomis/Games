@@ -4,7 +4,6 @@ import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.components.Point
 import net.zomis.games.dsl.GameConfigs
 import net.zomis.games.dsl.GameEventsExecutor
-import net.zomis.games.dsl.ViewScope
 
 object PlayerIndex: ECSAccessor<Int>("playerIndex")
 object Point: ECSAccessor<Point>("point") {
@@ -22,7 +21,7 @@ open class ECSAccessor<T>(val name: String) {
 }
 
 internal object HiddenECSValue
-typealias ECSViewFunction<T> = (ViewScope<ECSEntity>).(T) -> Any?
+typealias ECSViewFunction<T> = (ECSViewScope).(T) -> Any?
 
 class ECSComponentBuilder<T>(
     name: String,
@@ -45,7 +44,7 @@ class ECSComponentBuilder<T>(
         return ECSComponentBuilder(key, accessor)
     }
 
-    fun view(viewFunction: (ViewScope<ECSEntity>).(T) -> Any): ECSComponentBuilder<T> {
+    fun view(viewFunction: ECSViewScope.(T) -> Any): ECSComponentBuilder<T> {
         this.publicView = { viewFunction.invoke(this, it) }
         return this
     }

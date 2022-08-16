@@ -26,9 +26,11 @@ interface ECSComponentFactory {
     fun action(action: ActionType<ECSEntity, out Any>): ECSComponentBuilder<ECSActions>
         = ECSComponentBuilder("actions", ECSActions) {
             ECSActions(listOf(action))
-        }.view {
-//            this.actions()
-        }.hiddenView()
+        }.view { actions ->
+            actions.createActions(entity).associate {
+                action.name to actionRaw(it).anyAvailable()
+            }
+        }
     fun <A: Any> actionRule(action: ActionType<ECSEntity, A>, rule: ECSActionScope<A>.() -> Unit): ECSComponentBuilder<ECSRules> {
         return ECSComponentBuilder("rules", ECSRules) {
             ECSRules(listOf(ECSActionRule(action, rule)))

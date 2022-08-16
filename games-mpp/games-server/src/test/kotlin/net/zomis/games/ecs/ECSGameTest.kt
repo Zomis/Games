@@ -99,8 +99,12 @@ class ECSGameTest {
         blocking.await()
         Assertions.assertEquals(0, game.actions.types().sumOf { it.availableActions(0, null).count() })
         Assertions.assertEquals(8, game.actions.types().sumOf { it.availableActions(1, null).count() })
-        blocking.awaitAndPerform(0, "/grid/1,1/play", Unit)
+//        blocking.awaitAndPerform(0, "/grid/1,1/play", Unit) // IllegalAction
+//        blocking.await()
+//        Assertions.assertEquals(8, game.actions.types().sumOf { it.availableActions(1, null).count() })
+        blocking.awaitAndPerform(1, "/grid/1,1/play", Unit)
         blocking.await()
+        Assertions.assertEquals(7, game.actions.types().sumOf { it.availableActions(0, null).count() })
 
         val view = game.view(0)
         val empty = mapOf("playerIndex" to null, "actions" to mapOf("play" to true))
@@ -108,7 +112,7 @@ class ECSGameTest {
         val player1 = mapOf("playerIndex" to 1, "actions" to mapOf("play" to false))
         Assertions.assertEquals(
             mapOf(
-                "activePlayer" to 1,
+                "activePlayer" to 0,
                 "grid" to mapOf(
                     "left" to 0,
                     "top" to 0,
@@ -119,6 +123,10 @@ class ECSGameTest {
             ),
             view
         )
+        blocking.awaitAndPerform(0, "/grid/0,0/play", Unit)
+        blocking.awaitAndPerform(1, "/grid/1,2/play", Unit)
+        blocking.awaitAndPerform(0, "/grid/1,0/play", Unit)
+        blocking.await()
         Assertions.assertTrue(game.isGameOver())
     }
 

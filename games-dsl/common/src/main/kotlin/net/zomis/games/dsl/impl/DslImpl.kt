@@ -54,8 +54,6 @@ class GameViewContext<T : Any>(
         this.viewResult[key] = value(game)
     }
 
-    override fun <A : Any> action(actionType: ActionType<T, A>): ActionView<T, A> = this.chosenActions(actionType)
-
     override fun actions(): ActionsView<T> = ActionsViewImpl(gameObj, PlayerViewer(playerIndex = viewer), false)
     override fun actionsChosen(): ActionsChosenView<T> = ActionsViewImpl(gameObj, PlayerViewer(playerIndex = viewer), true)
     override fun <A : Any> actionRaw(actionType: ActionType<T, A>): ActionView<T, A> {
