@@ -119,6 +119,19 @@ class GameActionCreator<T : Any, A : Any>(
         return GameActionCreator(name, parameterType, S2::class, serializer, null)
     }
 
+    override fun hashCode(): Int {
+        var i = 0
+        for (obj in listOf(name, parameterType, serializedType)) i = i * 31 + obj.hashCode()
+        return i
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (other == null) return false
+        if (other::class != this::class) return false
+        val o = other as GameActionCreator<*, *>
+        return this.name == o.name && this.parameterType == o.parameterType && this.serializedType == o.serializedType
+    }
+
 }
 
 class GameCreator<T : Any>(val modelClass: KClass<T>) {
