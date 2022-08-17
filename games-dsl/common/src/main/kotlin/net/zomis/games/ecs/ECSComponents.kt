@@ -23,7 +23,7 @@ open class ECSAccessor<T>(val name: String) {
 internal object HiddenECSValue
 typealias ECSViewFunction<T> = (ECSViewScope).(T) -> Any?
 
-class ECSComponentBuilder<T>(
+class ECSComponentBuilder<T: Any>(
     name: String,
     override val key: ECSAccessor<T>,
     var default: (parent: ECSComponent<T>) -> T? = {null}
@@ -33,6 +33,9 @@ class ECSComponentBuilder<T>(
     }
     private val privateViews = mutableMapOf<Int, ECSViewFunction<T>>()
     private var publicView: ECSViewFunction<T> = { it }
+    private var combiner: (old: T, new: T) -> T = { _, _ ->
+        throw IllegalStateException("Unable to combine components for $name with key $key")
+    }
 
     fun value(value: T): ECSComponentBuilder<T> {
         default = { value }
@@ -65,12 +68,24 @@ class ECSComponentBuilder<T>(
         return this
     }
 
-    fun buildFor(owner: ECSSimpleEntity): Any {
+    fun combiner(combiner: (old: T, new: T) -> T): ECSComponentBuilder<T> {
+        this.combiner = combiner
+        return this
+    }
+
+    fun buildFor(owner: ECSSimpleEntity): ECSComponent<T> {
         // TODO: Use an `ECSCombinableComponent` interface to combine multiple components of the same type (ECSActions, ECSRules...)
+        val old = owner.getOrNull(key)
         return ECSComponentImpl<T>(owner, this.name).also {
             it.privateViews = this.privateViews
             it.publicView = this.publicView
-            it.component = this.default.invoke(it)
+            val new = this.default.invoke(it)
+            if (old == null) {
+                it.component = new
+            } else {
+                checkNotNull(new) { "Unable to combine component $name with key $key with an old value $old but new value null" }
+                it.component = combiner.invoke(old, new)
+            }
         }
     }
 }

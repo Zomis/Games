@@ -10,14 +10,14 @@ interface ECSEntityBuilder {
     val entity: ECSEntityCreating
 }
 interface ECSRootEntityBuilder: ECSComponentFactory {
-    val game: ECSEntityCreating
+    val game: ECSEntity
 }
 interface ECSTileFactoryScope: ECSComponentFactory {
     val tile: ECSEntityCreating
 }
 
-class ECSEntityFactory(override val entity: ECSEntityCreating): ECSRootEntityBuilder, ECSTileFactoryScope, ECSEntityBuilder {
-    override val game: ECSEntityCreating get() = entity
+class ECSEntityFactory(override val entity: ECSEntity): ECSRootEntityBuilder, ECSTileFactoryScope, ECSEntityBuilder {
+    override val game: ECSEntity get() = entity
     override val tile: ECSEntityCreating get() = entity
     override fun <E : Any> config(config: GameConfig<E>): E = (entity as ECSSimpleEntity).root[ECSConfigs].get(config)
 }

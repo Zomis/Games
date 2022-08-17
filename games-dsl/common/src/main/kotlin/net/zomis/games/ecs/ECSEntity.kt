@@ -80,7 +80,7 @@ class ECSComponentImpl<E>(override val owner: ECSEntity, override val name: Stri
     override val tags: List<ECSTag> get() = TODO("Not yet implemented")
 }
 
-interface ECSEntity {
+interface ECSEntity: ECSEntityCreating {
     val tags: List<ECSTag>
     val components: Map<ECSAccessor<out Any>, ECSComponent<Any>>
     val container: ECSComponent<out ECSEntityContainer>?
@@ -113,7 +113,7 @@ interface ECSEntity {
 
     fun view(viewScope: ViewScope<ECSEntity>): Any?
 }
-class ECSSimpleEntity(override val parent: ECSEntity?, override val container: ECSComponent<out ECSEntityContainer>?): ECSEntity, ECSEntityCreating {
+class ECSSimpleEntity(override val parent: ECSEntity?, override val container: ECSComponent<out ECSEntityContainer>?): ECSEntity {
     override val tags: List<ECSTag> get() = TODO("Not yet implemented")
     override val components: MutableMap<ECSAccessor<out Any>, ECSComponent<Any>> = mutableMapOf()
     override val root: ECSEntity get() = parent?.root ?: this

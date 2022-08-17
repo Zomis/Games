@@ -34,6 +34,8 @@ interface ECSComponentFactory {
     fun <A: Any> actionRule(action: ActionType<ECSEntity, A>, rule: ECSActionScope<A>.() -> Unit): ECSComponentBuilder<ECSRules> {
         return ECSComponentBuilder("rules", ECSRules) {
             ECSRules(listOf(ECSActionRule(action, rule)))
+        }.combiner { old, new ->
+            ECSRules(old.rules + new.rules)
         }.hiddenView()
     }
 }
