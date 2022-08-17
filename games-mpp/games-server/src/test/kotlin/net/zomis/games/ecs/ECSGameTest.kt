@@ -125,6 +125,27 @@ class ECSGameTest {
     }
 
     @Test
+    fun connect4() = runTest {
+        val blocking = BlockingGameListener()
+        val game = GamesImpl.game(connect4.toDsl()).setup().startGame(this, 2) {
+            listOf(blocking)
+        }
+        blocking.await()
+        Assertions.assertEquals(42, game.actions.actionTypes.size)
+        Assertions.assertEquals(7, game.actions.allAvailableActions(0).count())
+        Assertions.assertEquals(0, game.actions.allAvailableActions(1).count())
+        blocking.awaitAndPerform(0, "/grid/3,5/play", Unit)
+        blocking.await()
+        println(game.view(0))
+        Assertions.assertEquals(0, game.actions.allAvailableActions(0).count())
+        Assertions.assertEquals(7, game.actions.allAvailableActions(1).count())
+        blocking.awaitAndPerform(1, "/grid/3,4/play", Unit)
+        blocking.await()
+        Assertions.assertEquals(7, game.actions.allAvailableActions(0).count())
+        game.stop()
+    }
+
+    @Test
     fun uttt() {
         // Implement UTTT as ECS.
     }
