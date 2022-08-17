@@ -17,7 +17,7 @@ class ECSGameSpec(val name: String, val function: ECSGameFactoryScope.() -> Unit
 }
 
 class ECSFactoryContext(val function: ECSGameFactoryScope.() -> Unit) : ECSGameFactoryScope {
-    private var configs: MutableList<Pair<GameConfig<*>, Any>> = mutableListOf()
+    private var configs: MutableMap<GameConfig<*>, Any> = mutableMapOf()
     private var playerRange: IntRange = 0..0
     private var rootBuilder: ECSEntityBuilder.() -> Unit = {}
 
@@ -35,8 +35,8 @@ class ECSFactoryContext(val function: ECSGameFactoryScope.() -> Unit) : ECSGameF
                         .build(rootBuilder)
                 }
             }
-            configs.forEach {
-                this.config(it.first.key) { it.second }
+            configs.forEach { (config, value) ->
+                this.config(config.key) { value }
             }
             gameFlow {
                 println("game flow")
@@ -84,7 +84,9 @@ class ECSFactoryContext(val function: ECSGameFactoryScope.() -> Unit) : ECSGameF
         this.playerRange = range
     }
 
-    override fun defaultConfigs(configs: Iterable<Pair<GameConfig<*>, Any>>) = this.configs.addAll(configs).let {}
+    override fun defaultConfigs(configs: Iterable<Pair<GameConfig<*>, Any>>) {
+        this.configs.putAll(configs)
+    }
 
     override fun root(builder: ECSRootEntityBuilder.() -> Unit) {
         val oldBuilder = this.rootBuilder
