@@ -111,6 +111,11 @@ interface Actions<T: Any> {
             acc + next.actionInfoKeys(playerIndex, previouslySelected)
         }
     }
+
+    fun allAvailableActions(playerIndex: Int, sampleSize: ActionSampleSize? = null): Sequence<Actionable<T, Any>> = types()
+        .asSequence()
+        .flatMap { it.availableActions(playerIndex, sampleSize).asSequence() }
+
     val choices: ActionChoices
 }
 
