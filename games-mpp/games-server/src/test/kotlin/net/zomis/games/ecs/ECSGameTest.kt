@@ -99,9 +99,9 @@ class ECSGameTest {
         blocking.await()
         Assertions.assertEquals(0, game.actions.types().sumOf { it.availableActions(0, null).count() })
         Assertions.assertEquals(8, game.actions.types().sumOf { it.availableActions(1, null).count() })
-//        blocking.awaitAndPerform(0, "/grid/1,1/play", Unit) // IllegalAction
-//        blocking.await()
-//        Assertions.assertEquals(8, game.actions.types().sumOf { it.availableActions(1, null).count() })
+        blocking.awaitAndPerform(0, "/grid/1,1/play", Unit) // IllegalAction (wrong playerIndex)
+        blocking.await()
+        Assertions.assertEquals(8, game.actions.types().sumOf { it.availableActions(1, null).count() })
         blocking.awaitAndPerform(1, "/grid/1,1/play", Unit)
         blocking.await()
         Assertions.assertEquals(7, game.actions.types().sumOf { it.availableActions(0, null).count() })

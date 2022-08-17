@@ -139,14 +139,13 @@ class GameFlowImpl<T: Any>(
                     continue
                 }
                 replayable.stateKeeper.preMove(action) { sendFeedback(it) }
-                logger.info("clear and perform: ${replayable.stateKeeper.lastMoveState()}")
                 val performed = actions.clearAndPerform(action as Actionable<T, Any>) {
                     this.clear()
                 }
                 if (!performed) {
                     sendFeedback(FlowStep.IllegalAction(this, action.actionType, action.playerIndex, action.parameter))
                     logger.warn { "Action not allowed: $action" }
-                    return null
+                    continue
                 }
                 logger.info("creating last action: ${replayable.stateKeeper.lastMoveState()}")
                 val last = FlowStep.ActionPerformed(action, typeEntry, replayable.stateKeeper.lastMoveState())
