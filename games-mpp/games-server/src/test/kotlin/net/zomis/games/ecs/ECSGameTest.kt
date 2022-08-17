@@ -83,21 +83,15 @@ class ECSGameTest {
 
     @Test
     fun play() = runTest {
-        // Implement a simple TTT game
-        // Start game
-        // Verify view and actions
-        // Make some moves
-        // Verify view
-        // Make some winning moves
         val blocking = BlockingGameListener()
         val game = GamesImpl.game(ttt.toDsl()).setup().startGame(this, 2) {
             listOf(blocking, LimitedNextViews(10)) // + SanityCheckListener(it)
         }
         blocking.await()
         Assertions.assertEquals(9, game.actions.actionTypes.size)
-        blocking.awaitAndPerform(0, "/grid/2,0/play", Unit)
+        blocking.awaitAndPerform(0, "/grid/0,2/play", Unit)
         blocking.await()
-        Assertions.assertEquals(0, game.actions.types().sumOf { it.availableActions(0, null).count() })
+        Assertions.assertEquals(0, game.actions.allAvailableActions(0, null).count())
         Assertions.assertEquals(8, game.actions.types().sumOf { it.availableActions(1, null).count() })
         blocking.awaitAndPerform(0, "/grid/1,1/play", Unit) // IllegalAction (wrong playerIndex)
         blocking.await()
@@ -124,8 +118,8 @@ class ECSGameTest {
             view
         )
         blocking.awaitAndPerform(0, "/grid/0,0/play", Unit)
-        blocking.awaitAndPerform(1, "/grid/1,2/play", Unit)
-        blocking.awaitAndPerform(0, "/grid/1,0/play", Unit)
+        blocking.awaitAndPerform(1, "/grid/2,1/play", Unit)
+        blocking.awaitAndPerform(0, "/grid/0,1/play", Unit)
         blocking.await()
         Assertions.assertTrue(game.isGameOver())
     }

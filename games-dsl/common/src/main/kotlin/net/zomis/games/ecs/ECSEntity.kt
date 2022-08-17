@@ -37,13 +37,13 @@ class ECSGrid(val grid: Grid<ECSEntity>): Grid<ECSEntity> by grid, ECSEntityCont
     override fun entities(): List<ECSEntity> = grid.all().map { it.value }
     override fun pathFor(entity: ECSEntity): String {
         return grid.all().find { it.value == entity }?.let {
-            "${it.y},${it.x}"
+            "${it.x},${it.y}"
         } ?: throw IllegalStateException("Unable to find $entity in $this")
     }
 
     override fun get(path: String): ECSEntity {
         val coordinates = path.split(",").map { it.toInt() }
-        return grid.get(coordinates[1], coordinates[0])
+        return grid.get(coordinates[0], coordinates[1])
     }
 }
 
