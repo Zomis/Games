@@ -15,6 +15,7 @@ import net.zomis.games.dsl.GameSerializable
 import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.listeners.BlockingGameListener
+import org.junit.Ignore
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -201,6 +202,7 @@ class ContextTest {
     }
 
     @Test
+    @Ignore
     fun hidden() = runTest {
         val (view, model) = runAndView(this)
         Assertions.assertNull(view["hidden"])
