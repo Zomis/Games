@@ -110,3 +110,31 @@ Advantages:
 Disadvantages:
 - Very abstract
 - No type-safety guarantees
+
+## ?. The most optimal approach
+
+Model:
+- Readable, and writable, code
+- Type-safe
+- Moddable and flexible, easy to "plug-and-play" to change different aspects of the game
+- Allows scoring AIs and other AIs
+
+Rules:
+- "Ignore all X effects until Y" (e.g. Dungeon Mayhem)
+- "When you do X, it costs Y less" (e.g. Design Town)
+- "When you do X, it deals double damage" (e.g. Castle Wars)
+- "Whenever X happens, you may do Y, if you do - do Z"
+- "Whenever X happens, do Y instead" (e.g. Cardshifter, Alchemists' Magic Mortar)
+- Allows adding of more options to actions (e.g. TTT --> TTTUpgrade)
+- "Until end of turn, you have X" (e.g. Design Town)
+- "Until end of turn, your X cannot be reduced below Y" (e.g. Cardshifter)
+- "Until end of turn, all X have Y" (e.g. Cardshifter)
+- Do actions again under certain conditions (e.g. Alchemists' Boots of Speed)
+- "You may choose to leave in discard pile when you shuffle your deck" (e.g. Design Town)
+- If this is on top of deck, you must play it (e.g. Design Town)
+
+View:
+- Makes it easy to make shiny GUI, with animations and action-highlighting and action-preparation
+- Allows GUI to highlight influences from other things, e.g. "Get 1 X for every Y"
+- View is able to only show what changed, don't need to send full view every time
+- ViewOptions, like rotation? Probabilities (Hanabi) and more details
