@@ -103,7 +103,7 @@ class GameFlowImpl<T: Any>(
         val duplicates = views.map { it.first }.groupingBy { it }.eachCount().filter { it.value > 1 }
         if (duplicates.isNotEmpty()) logger.warn {  "Multiple keys detected in view of: $duplicates" }
         val viewContext = GameViewContext(this, playerIndex)
-        val result = this.views.associate { it.first to it.second(viewContext) }
+        val result = this.views.associate { it.first to it.second(viewContext) }.filterValues { it !is HiddenValue }
 
         return if (result.size == 1 && result.containsKey("")) result.getValue("") as Map<String, Any?>
         else result

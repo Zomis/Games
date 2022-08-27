@@ -9,10 +9,10 @@ import net.zomis.games.api.GamesApi
 import net.zomis.games.context.Context
 import net.zomis.games.context.ContextHolder
 import net.zomis.games.context.Entity
-import net.zomis.games.context.HiddenValue
 import net.zomis.games.dsl.ConsoleView
 import net.zomis.games.dsl.GameSerializable
 import net.zomis.games.dsl.GamesImpl
+import net.zomis.games.dsl.HiddenValue
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.listeners.BlockingGameListener
 import org.junit.Ignore
@@ -202,7 +202,6 @@ class ContextTest {
     }
 
     @Test
-    @Ignore
     fun hidden() = runTest {
         val (view, model) = runAndView(this)
         Assertions.assertNull(view["hidden"])

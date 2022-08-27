@@ -7,6 +7,7 @@ import kotlin.reflect.KClass
 interface Viewable {
     fun toView(viewer: PlayerIndex): Any?
 }
+object HiddenValue
 
 @GameMarker
 interface ViewScope<T: Any> {
