@@ -101,3 +101,12 @@ Advantages:
 
 Disadvantages:
 - Not easily moddable or configurable to change different aspects, such as making a variant with a color property on all players and pieces
+
+## 6. DSL with Entity-Component-System approach
+
+Advantages:
++ Very moddable and flexible
+
+Disadvantages:
+- Very abstract
+- No type-safety guarantees
