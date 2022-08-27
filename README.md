@@ -111,3 +111,7 @@ I wrote my own tool to generate documentation for how the client and server comm
 - Undo button (opponents needs to agree, naturally)
 - Reinforcement Learning AI: Given a game state, learn what the best move is.
 - More games!
+
+## Build issues?
+
+Run `gradlew :games-mpp:shadowJar`
