@@ -27,7 +27,7 @@ class KtorClient(private val wss: DefaultWebSocketServerSession): Client() {
                     handler.incomingMessage(this, text)
                 } catch (e: Exception) {
                     logger.error(e) { "Unable to handle frame text: $text" }
-                    wss.outgoing.send(Frame.Text("""{ "type": "error", "error": "unable to handle message" }"""))
+                    sendData("""{ "type": "error", "error": "unable to handle message: ${e::class}" }""")
                 }
             }
         } catch (e: Throwable) {
@@ -44,7 +44,11 @@ class KtorClient(private val wss: DefaultWebSocketServerSession): Client() {
 
     override fun sendData(data: String) {
         runBlocking {
-            wss.outgoing.send(Frame.Text(data))
+            if (!wss.outgoing.isClosedForSend) {
+                wss.outgoing.send(Frame.Text(data))
+            } else {
+                logger.info { "$this is closed for sending. Ignoring: $data" }
+            }
         }
     }
 }

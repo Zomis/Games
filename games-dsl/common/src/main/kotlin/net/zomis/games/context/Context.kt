@@ -13,7 +13,6 @@ import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 
-object HiddenValue
 enum class EventPriority {
     EARLIEST,
     EARLIER,
