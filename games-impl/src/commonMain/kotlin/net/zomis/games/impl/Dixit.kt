@@ -175,6 +175,7 @@ object Dixit {
             step("vote for cards") {
                 yieldAction(vote) {
                     precondition { game.players[playerIndex].vote == null }
+                    precondition { game.storyteller.playerIndex != playerIndex }
                     options {
                         game.board.cards.minus(game.players[playerIndex].placedCard!!).map { ActionVote(it, null) }
                     }
