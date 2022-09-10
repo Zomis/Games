@@ -12,14 +12,14 @@ import net.zomis.games.dsl.flow.ActionDefinition
 object Favors {
 
     enum class FavorType(val count: Int): GameSerializable {
-        ASSISTANT(4), // Add a cube, allow play multiple
-        HERBALIST(4), // Draw 3 ingredients, discard 2, resolve one at a time
-        ASSOCIATE(3), // Place cubes on top row, can use one per action space
-        CUSTODIAN(3), // Drink potion before sell to hero, allow use multiple, can also be used in round 6
-        SHOPKEEPER(2), // Discount by 1 gold when buying an artifact
-        BARMAID(2), // If you mix an exact match, gain 1 reputation. Otherwise count potion as 1 step better. Stacks when playing multiple
-        MERCHANT(2), // Allow selling potion on any slot or gain 1 gold if you go first. Stacks when playing multiple
-        SAGE(2), // Transmute gives 1 extra gold
+        ASSISTANT(4), // Add a cube, allow play multiple // TODO: Rule modification
+        HERBALIST(4), // Draw 3 ingredients, discard 2, resolve one at a time // TODO: Rule modification? Interject steps
+        ASSOCIATE(3), // Place cubes on top row, can use one per action space // TODO: Rule modification
+        CUSTODIAN(3), // Drink potion before sell to hero, allow use multiple, can also be used in round 6 // TODO: Rule modification
+        SHOPKEEPER(2), // Discount by 1 gold when buying an artifact // TODO: Rule modification
+        BARMAID(2), // If you mix an exact match, gain 1 reputation. Otherwise count potion as 1 step better. Stacks when playing multiple // TODO: Rule modification
+        MERCHANT(2), // Allow selling potion on any slot or gain 1 gold if you go first. Stacks when playing multiple // TODO: Rule modification
+        SAGE(2), // Transmute gives 1 extra gold // TODO: Rule modification
         ;
         override fun serialize(): String = this.name
     }
@@ -42,6 +42,7 @@ object Favors {
         fun allowFavors(vararg favorType: FavorType): ActionDefinition<AlchemistsDelegationGame.Model, FavorType> {
             return action("favor", FavorType::class) {
                 precondition { game.players[playerIndex].favors.cards.any { favorType.contains(it) } }
+                // TODO: options, requires...
                 perform {
                     game.players[playerIndex].favors.card(action.parameter).moveTo(favorsPlayed)
                     log { "$player uses $action" }

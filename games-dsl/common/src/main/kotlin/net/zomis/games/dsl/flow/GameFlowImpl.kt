@@ -9,6 +9,9 @@ import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.GameEvents
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
+import net.zomis.games.dsl.flow.actions.SmartActionBuilder
+import net.zomis.games.dsl.flow.actions.SmartActionContext
+import net.zomis.games.dsl.flow.actions.SmartActionScope
 import net.zomis.games.dsl.impl.*
 
 class GameFlowImpl<T: Any>(
@@ -262,6 +265,17 @@ class GameFlowContext<T: Any>(
         flow.actions.add(action, actionDsl)
     }
 
+    override fun <A : Any> actionHandler(action: ActionType<T, A>, dsl: SmartActionScope<T, A>.() -> Unit) {
+        val smartActionContext = SmartActionContext(action, GameRuleContext(game, eliminations, replayable))
+//            flow.actions.smartAction(action.name).asSequence() as Sequence<SmartActionBuilder<T, A>>
+        dsl.invoke(smartActionContext)
+        flow.actions.add(action, smartActionContext)
+    }
+
+    override fun <A : Any> actionHandler(action: ActionType<T, A>, handler: SmartActionBuilder<T, A>) {
+        flow.actions.add(action, handler)
+    }
+
     override fun yieldView(key: String, value: ViewScope<T>.() -> Any?) { flow.view(key, value) }
 
     override suspend fun log(logging: LogScope<T>.() -> String) {
@@ -301,6 +315,8 @@ interface GameFlowStepScope<T: Any> {
     suspend fun forkGame(actions: suspend GameForkScope<T>.() -> Unit = {}): GameFork<T>?
     fun <A: Any> enableAction(actionDefinition: ActionDefinition<T, A>)
     fun <A: Any> yieldAction(action: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>)
+    fun <A: Any> actionHandler(action: ActionType<T, A>, handler: SmartActionBuilder<T, A>)
+    fun <A: Any> actionHandler(action: ActionType<T, A>, dsl: SmartActionScope<T, A>.() -> Unit)
     fun yieldView(key: String, value: ViewScope<T>.() -> Any?)
     suspend fun log(logging: LogScope<T>.() -> String)
     suspend fun logSecret(player: PlayerIndex, logging: LogScope<T>.() -> String): LogSecretScope<T>

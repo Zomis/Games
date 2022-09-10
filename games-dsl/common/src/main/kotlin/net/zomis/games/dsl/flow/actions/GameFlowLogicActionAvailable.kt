@@ -74,7 +74,7 @@ class GameFlowLogicActionAvailable<T: Any, A: Any>(
                         .depthFirstActions(sampleSize).map { it.parameter }.asIterable()
             }
             else -> {
-                logger.warn { "Action '${actionType.name}' has neither optionsRule or choicesRule set" }
+                logger.warn { "Action '${actionType.name}' in game with model ${gameData.game} has neither optionsRule or choicesRule set" }
                 emptyList()
             }
         }

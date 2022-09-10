@@ -20,7 +20,7 @@ object ArtifactActions {
     val altarOfGold = Artifact("Altar of Gold", "Immediate effect: Pay 1 to 8 gold pieces. Gain that many points of reputation.", 3, 1, 0)
     val amuletOfRhetoric = Artifact("Amulet of Rhetoric", "Immediate effect: Gain 5 points of reputation.", 2, 4, 0)
     val bootsOfSpeed = Artifact("Boots of Speed", "On an action space where you have at least one cube, you can perform that action again after everyone is done. Limit once per round. Can't be used to Sell Potions.",
-            1, 4, 2)
+            1, 4, 2) // TODO: Could be rule modification
     val bronzeCup = Artifact("Bronze Cup", "This artifact has no special effect, but will earn you victory points.", 3, 4, 4)
     val crystalCabinet = Artifact("Crystal Cabinet", "When scoring artifacts, this is worth 2 points for each artifact you own, including this one.", 3, 5, null)
     val discountCard = Artifact("Discount Card", "Your next artifact costs 2 gold less. After that, artifacts cost you 1 gold less.", 1, 3, 1) // TODO: Could be rule modification

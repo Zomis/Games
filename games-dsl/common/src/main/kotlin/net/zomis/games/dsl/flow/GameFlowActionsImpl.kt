@@ -3,7 +3,10 @@ package net.zomis.games.dsl.flow
 import klog.KLoggers
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.dsl.*
-import net.zomis.games.dsl.flow.actions.GameFlowLogicActionDelegator
+import net.zomis.games.dsl.flow.actions.SmartAction
+import net.zomis.games.dsl.flow.actions.SmartActionBuilder
+import net.zomis.games.dsl.flow.actions.SmartActionLogic
+import net.zomis.games.dsl.flow.actions.SmartActions
 import net.zomis.games.dsl.impl.*
 import kotlin.reflect.KClass
 
@@ -26,56 +29,49 @@ class GameFlowActionsImpl<T: Any>(
     override val choices = ActionChoices()
     private val logger = KLoggers.logger(this)
 
-    private val actions = mutableListOf<ActionTypeImplEntry<T, Any>>()
-    private val actionDsls = mutableMapOf<String, MutableList<GameFlowActionDsl<T, Any>>>()
+    private val actions = mutableMapOf<String, ActionTypeImplEntry<T, Any>>()
     fun clear() {
         this.actions.clear()
-        this.actionDsls.clear()
     }
-    fun findAction(actionType: String): ActionTypeImplEntry<T, Any> = actions.single { it.name == actionType }
+    fun findAction(actionType: String): ActionTypeImplEntry<T, Any> = actions.getValue(actionType)
 
-    fun <A: Any> add(actionType: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>) {
-        if (actionDsls.any { it.key == actionType.name && it.value.contains(actionDsl as GameFlowActionDsl<T, Any>) }) {
-            logger.info { "Ignoring duplicate DSL for action ${actionType.name}" }
-            return
-        }
+    fun <A: Any> add(actionType: ActionType<T, A>, handler: SmartActionBuilder<T, A>) {
         val gameRuleContext = GameRuleContext(model, eliminations, replayable)
-        val entry = ActionTypeImplEntry(model, replayable, eliminations, actionType,
-            GameFlowLogicActionDelegator(gameRuleContext, actionType, feedback, {findAction(actionType.name) as ActionTypeImplEntry<T, A>}) {
-                actionDsls[actionType.name] as List<GameFlowActionDsl<T, A>>? ?: emptyList()
-            }
-        )
-        if (!actions.any { it.actionType == actionType }) {
-            actions.add(entry as ActionTypeImplEntry<T, Any>)
+        val entry = actions.getOrPut(actionType.name) {
+            val smartAction = SmartActionLogic(gameRuleContext, actionType)
+            ActionTypeImplEntry(model, replayable, eliminations, actionType, smartAction) as ActionTypeImplEntry<T, Any>
         }
-        actionDsls.getOrPut(actionType.name) { mutableListOf() }.add(actionDsl as GameFlowActionDsl<T, Any>)
+        (entry.impl as SmartActionLogic<T, A>).add(handler)
     }
 
-    override val actionTypes: Set<String> get() = actions.map { it.name }.toSet()
-    override fun types(): Set<ActionTypeImplEntry<T, Any>> = actions.toSet()
-    override fun get(actionType: String): ActionTypeImplEntry<T, Any>? = actions.find { it.name == actionType }
-    override fun <A : Any> type(actionType: ActionType<T, A>): ActionTypeImplEntry<T, A>?
-        = actions.find { it.actionType == actionType } as ActionTypeImplEntry<T, A>?
+    fun <A: Any> add(actionType: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>)
+        = add(actionType, SmartActions.handlerFromDsl(actionDsl))
 
-    override fun type(actionType: String): ActionTypeImplEntry<T, Any>? = actions.find { it.name == actionType }
+    override val actionTypes: Set<String> get() = actions.keys.toSet()
+    override fun types(): Set<ActionTypeImplEntry<T, Any>> = actions.values.toSet()
+    override fun get(actionType: String): ActionTypeImplEntry<T, Any>? = actions[actionType]
+    override fun <A : Any> type(actionType: ActionType<T, A>): ActionTypeImplEntry<T, A>?
+        = actions.values.find { it.actionType == actionType } as ActionTypeImplEntry<T, A>?
+
+    override fun type(actionType: String): ActionTypeImplEntry<T, Any>? = get(actionType)
     override fun <P : Any> type(actionType: String, clazz: KClass<P>): ActionTypeImplEntry<T, P>? {
-        val entry = actions.find { it.name == actionType }
+        val entry = actions.values.find { it.name == actionType }
         return if (entry?.parameterClass == clazz) entry as ActionTypeImplEntry<T, P> else null
     }
 
     fun clearAndPerform(action: Actionable<T, Any>, clearer: () -> Unit): Boolean {
         val gameRuleContext = GameRuleContext(model, eliminations, replayable)
-        val existing = this.actions.find { it.name == action.actionType }
+        val existing = this.type(action.actionType)
         if (existing == null) {
             logger.warn { "No existing actionType definition found for $action" }
             return false
         }
         // Save DSLs so that they don't get reset before performing action
-        val dsls = actionDsls[action.actionType] ?: emptyList<GameFlowActionDsl<T, Any>>()
-        val delegator = GameFlowLogicActionDelegator(gameRuleContext, existing.actionType, feedback, {existing}) { dsls }
-        return if (delegator.actionAllowed(action)) {
+
+        // val delegator = GameFlowLogicActionDelegator(gameRuleContext, existing.actionType, feedback, {existing}) { dsls }
+        return if (existing.isAllowed(action)) {
             clearer.invoke()
-            delegator.performAction(action)
+            existing.perform(action)
             true
         } else {
             false

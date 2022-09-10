@@ -50,7 +50,7 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
     private val replayState: ReplayState,
     private val eliminations: PlayerEliminationsWrite,
     val actionType: ActionType<T, P>,
-    private val impl: GameLogicActionType<T, P>
+    val impl: GameLogicActionType<T, P>
 ) {
     override fun toString(): String = "ActionType:${actionType.name}"
     fun availableActions(playerIndex: Int, sampleSize: ActionSampleSize?): Iterable<Actionable<T, P>> = impl.availableActions(playerIndex, sampleSize)

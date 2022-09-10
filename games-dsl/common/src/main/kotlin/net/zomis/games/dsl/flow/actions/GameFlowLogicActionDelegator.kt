@@ -6,6 +6,7 @@ import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.flow.GameFlowActionScope
 import net.zomis.games.dsl.impl.*
 
+@Deprecated("Replace with GameFlow and SmartAction")
 class GameFlowLogicActionDelegator<T: Any, A: Any>(
     private val gameData: GameRuleContext<T>,
     override val actionType: ActionType<T, A>,
@@ -16,7 +17,7 @@ class GameFlowLogicActionDelegator<T: Any, A: Any>(
     // Keep a list of all ActionDsls here for this specific actionType
     // When asked about something, create one of the following:
     // - GameFlowLogicActionAvailable -- handles availableActions, actionAllowed, actionInfoKeys
-    // - GameFlowLogicActionPerform -- handles replayAction and performAction
+    // - GameFlowLogicActionPerform -- handles performAction
 
     private val available = GameFlowLogicActionAvailable(gameData, actionType, actionDsls)
     private val performer = GameFlowLogicActionPerform(gameData, actionDsls, feedback)

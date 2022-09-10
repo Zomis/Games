@@ -171,6 +171,7 @@ class ActionRuleContext<T : Any, A : Any>(
     override fun <E : Any> config(gameConfig: GameConfig<E>): E = replayable.config(gameConfig)
 }
 
+@Deprecated("Replace with GameFlow and SmartAction")
 class GameActionRuleContext<T : Any, A : Any>(
     val model: T,
     val replayable: ReplayState,

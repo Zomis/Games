@@ -67,6 +67,7 @@ interface GameAllActionsRule<T : Any> {
 }
 
 @GameMarker
+@Deprecated("Too similar to GameFlowActionScope")
 interface GameActionSpecificationScope<T : Any, A : Any> {
     fun after(rule: ActionRuleScope<T, A>.() -> Unit)
     fun effect(rule: ActionRuleScope<T, A>.() -> Unit)
