@@ -26,13 +26,13 @@ class SmartActionLogic<T: Any, A: Any>(
         val choice = choices.single().value
         check(!choice.optional) { "Optional choices not supported yet" }
 
-        return ActionComplexImpl(actionType, createContext(playerIndex), choice.options).start().depthFirstActions(sampleSize).map { it.parameter }.asIterable()
+        return ActionComplexImpl(actionType, createOptionsContext(playerIndex), choice.options).start().depthFirstActions(sampleSize).map { it.parameter }.asIterable()
             .map { createAction(playerIndex, it) }
             .filter { this.actionAllowed(it) }
             .asIterable()
     }
 
-    private fun createContext(playerIndex: Int): ActionOptionsContext<T> {
+    private fun createOptionsContext(playerIndex: Int): ActionOptionsContext<T> {
         return ActionOptionsContext(gameContext.game, actionType.name, playerIndex, gameContext.eliminations, gameContext.replayable)
     }
     private fun createActionContext(playerIndex: Int, parameter: A): ActionRuleContext<T, A> {
@@ -40,10 +40,15 @@ class SmartActionLogic<T: Any, A: Any>(
     }
 
     override fun withChosen(playerIndex: Int, chosen: List<Any>): ActionComplexChosenStep<T, A> {
-        // Parallelize choices, so that you can choose key:"x", key:"y", number:123, number:456, in any order
-
-        TODO("Not yet implemented")
+        // TODO: Parallelize choices, so that you can choose key:"x", key:"y", number:123, number:456, in any order
+        if (!checkPreconditions(playerIndex)) {
+            return ActionComplexChosenStepEmpty(actionType, playerIndex, chosen)
+        }
+        val choiceRule = _handlers.flatMap { it.choices.values }.single()
+        return ActionComplexImpl(actionType, createOptionsContext(playerIndex), choiceRule.options).withChosen(chosen)
     }
+
+    private fun checkPreconditions(playerIndex: Int): Boolean = true
 
     override fun createAction(playerIndex: Int, parameter: A): Actionable<T, A>
         = Action(gameContext.game, playerIndex, actionType.name, parameter)
