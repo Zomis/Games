@@ -4,6 +4,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import net.zomis.games.PlayerElimination
 import net.zomis.games.dsl.ActionReplay
+import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.GameConfigs
 
@@ -37,14 +38,14 @@ sealed class FlowStep {
 
     data class ActionPerformed<T: Any>(
         val action: Actionable<T, Any>,
-        val actionImpl: ActionTypeImplEntry<T, Any>,
+        val actionType: ActionType<T, Any>,
         override val state: Map<String, Any>
     ): FlowStep(), ActionResult, RandomnessResult {
-        val serializedParameter: Any get() = actionImpl.actionType.serialize(action.parameter)
+        val serializedParameter: Any get() = actionType.serialize(action.parameter)
         val playerIndex: Int get() = action.playerIndex
         val parameter: Any get() = action.parameter
         fun toActionReplay(): ActionReplay
-                = ActionReplay(actionImpl.actionType.name, playerIndex, serializedParameter, state)
+                = ActionReplay(actionType.name, playerIndex, serializedParameter, state)
     }
     // TODO: Add reason for why Action is not allowed, of some form... name of rule(s)?
     data class IllegalAction(val model: Any, val actionType: String, val playerIndex: Int, val parameter: Any): FlowStep(), ActionResult

@@ -54,8 +54,7 @@ class SmartActionLogic<T: Any, A: Any>(
                 it.perform(createActionContext(action.playerIndex, action.parameter))
             }
         }
-        return FlowStep.IllegalAction(0, "", action.playerIndex, action.parameter)
-//        return FlowStep.ActionPerformed(action)
+        return FlowStep.ActionPerformed(action as Actionable<T, Any>, actionType as ActionType<T, Any>, gameContext.replayable.stateKeeper.lastMoveState())
     }
 
     override fun actionAllowed(action: Actionable<T, A>): Boolean {

@@ -136,7 +136,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         serverGame.lastMove = epochMilli
         val moveIndex = serverGame.nextMoveIndex()
 
-        val actionType = move.actionImpl.actionType
+        val actionType = move.actionType
         val dbMove = actionType.serialize(move.parameter)
 
         val moveData = convertToDBFormat(dbMove)

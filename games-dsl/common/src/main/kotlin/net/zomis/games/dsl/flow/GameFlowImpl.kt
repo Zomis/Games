@@ -153,7 +153,7 @@ class GameFlowImpl<T: Any>(
                     return null
                 }
                 logger.info("creating last action: ${replayable.stateKeeper.lastMoveState()}")
-                val last = FlowStep.ActionPerformed(action, typeEntry, replayable.stateKeeper.lastMoveState())
+                val last = FlowStep.ActionPerformed(action, typeEntry.actionType, replayable.stateKeeper.lastMoveState())
                 this.unfinishedFeedback = last
                 logger.info("last action is: $last")
                 runRules(GameFlowRulesState.AFTER_ACTIONS)
