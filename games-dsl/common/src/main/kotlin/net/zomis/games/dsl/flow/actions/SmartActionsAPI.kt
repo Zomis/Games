@@ -39,10 +39,10 @@ object SmartActions {
         val handler = SmartActionBuilder<T, A>()
 
         override fun precondition(rule: ActionOptionsScope<T>.() -> Boolean) {
-            handler._preconditions.add(ActionPrecondition())
+            handler._preconditions.add(ActionPrecondition(rule))
         }
         override fun requires(rule: ActionRuleScope<T, A>.() -> Boolean) {
-            handler._requires.add(ActionRequirement())
+            handler._requires.add(ActionRequirement(rule))
         }
         override fun choose(options: ActionChoicesScope<T, A>.() -> Unit) {
             handler._choices[""] = ActionChoice("", optional = false, exhaustive = true, options)

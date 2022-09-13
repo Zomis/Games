@@ -48,7 +48,10 @@ class SmartActionLogic<T: Any, A: Any>(
         return ActionComplexImpl(actionType, createOptionsContext(playerIndex), choiceRule.options).withChosen(chosen)
     }
 
-    private fun checkPreconditions(playerIndex: Int): Boolean = true
+    private fun checkPreconditions(playerIndex: Int): Boolean {
+        val context = createOptionsContext(playerIndex)
+        return _handlers.flatMap { it.preconditions }.all { precond -> precond.fulfilled(context) }
+    }
 
     override fun createAction(playerIndex: Int, parameter: A): Actionable<T, A>
         = Action(gameContext.game, playerIndex, actionType.name, parameter)
@@ -63,8 +66,8 @@ class SmartActionLogic<T: Any, A: Any>(
     }
 
     override fun actionAllowed(action: Actionable<T, A>): Boolean {
-        return true
-//        _handlers.flatMap { it.requires }.all { it.or() }
+        val context = createActionContext(action.playerIndex, action.parameter)
+        return checkPreconditions(action.playerIndex) && _handlers.flatMap { it.requires }.all { it.fulfilled(context) }
     }
 
     override fun ruleChecks() {
@@ -145,11 +148,19 @@ private fun <K, V> MutableMap<K, V>.putSingle(key: K, v: V) {
     this[key] = v
 }
 
-class ActionPrecondition<T: Any, E> {
+class ActionPrecondition<T: Any, E>(val rule: ActionOptionsScope<T>.() -> Boolean) {
     fun or(other: ActionPrecondition<T, E>) {}
+
+    fun fulfilled(context: ActionOptionsContext<T>): Boolean {
+        return rule.invoke(context)
+    }
 }
-class ActionRequirement<T: Any, A: Any, E> {
+class ActionRequirement<T: Any, A: Any, E>(val rule: ActionRuleScope<T, A>.() -> Boolean) {
     fun or(other: ActionRequirement<T, A, E>) {}
+
+    fun fulfilled(context: ActionRuleContext<T, A>): Boolean {
+        return rule.invoke(context)
+    }
 }
 class ActionCost<T: Any, A: Any, E> {
     // Choose how to pay some costs? (Colored mana, coins with wildcards, "you may do X instead of paying Y"...)
