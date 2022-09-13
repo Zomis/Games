@@ -63,6 +63,9 @@ class SmartActionLogic<T: Any, A: Any>(
     }
 
     override fun ruleChecks() {
+        if (this.actionType.parameterType == Unit::class && this._handlers.all { it.choices.isEmpty() }) {
+            this._handlers.add(SmartActionBuilder<T, A>().also { it.choice("", false) { listOf(Unit) as List<A> } })
+        }
         // Apply modifiers
         this.handlers.forEach { handler ->
             handler._modifiers.forEach { modifier ->
