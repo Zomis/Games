@@ -26,6 +26,7 @@ interface GameLogicActionType<T : Any, P : Any> {
     fun createAction(playerIndex: Int, parameter: P): Actionable<T, P>
     fun actionInfoKeys(playerIndex: Int, previouslySelected: List<Any>): List<ActionInfoKey> = withChosen(playerIndex, previouslySelected).actionKeys()
     fun withChosen(playerIndex: Int, chosen: List<Any>): ActionComplexChosenStep<T, P>
+    fun ruleChecks() {}
 }
 
 @Deprecated("Use an ActionComplexImpl-related class instead")

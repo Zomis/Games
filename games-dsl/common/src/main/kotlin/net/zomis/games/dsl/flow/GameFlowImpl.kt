@@ -126,6 +126,7 @@ class GameFlowImpl<T: Any>(
             this.actionDone()
             return null
         }
+        actions.types().forEach { it.impl.ruleChecks() }
         if (anyPlayerHasAction()) {
             this.actionDone()
             while (true) {

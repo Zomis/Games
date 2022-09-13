@@ -13,9 +13,9 @@ import kotlin.reflect.KClass
 class SmartActionLogic<T: Any, A: Any>(
     val gameContext: GameRuleContext<T>,
     override val actionType: ActionType<T, A>
-) : GameLogicActionType<T, A> {
+) : GameLogicActionType<T, A>, SmartActionChangeScope<T, A> {
     private val _handlers = mutableListOf<SmartActionBuilder<T, A>>()
-    val handlers get() = _handlers.toList()
+    override val handlers get() = _handlers.toList().asSequence()
 
     override fun isComplex(): Boolean = true
 
@@ -63,6 +63,15 @@ class SmartActionLogic<T: Any, A: Any>(
 //        _handlers.flatMap { it.requires }.all { it.or() }
     }
 
+    override fun ruleChecks() {
+        // Apply modifiers
+        this.handlers.forEach { handler ->
+            handler._modifiers.forEach { modifier ->
+                modifier.invoke(this)
+            }
+        }
+    }
+
     fun add(handler: SmartActionBuilder<T, A>) {
         this._handlers.add(handler)
     }
@@ -88,6 +97,7 @@ open class SmartActionBuilder<T: Any, A: Any>: SmartActionScope<T, A> {
     internal val _choices = mutableMapOf<String, ActionChoice<T, A, out Any>>()
     internal val _effect = mutableListOf<ActionEffect<T, A, out Any>>()
     internal val _postEffect = mutableListOf<ActionEffect<T, A, out Any>>()
+    internal val _modifiers = mutableListOf<SmartActionChangeScope<T, A>.() -> Unit>()
     val preconditions get() = _preconditions.toList()
     val requires get() = _requires.toList()
     val choices get() = _choices
@@ -110,7 +120,7 @@ open class SmartActionBuilder<T: Any, A: Any>: SmartActionScope<T, A> {
     }
 
     override fun change(block: SmartActionChangeScope<T, A>.() -> Unit) {
-        TODO()
+        this._modifiers.add(block)
     }
 
     internal fun iterableToChoices(rule: ActionOptionsScope<T>.() -> Iterable<A>): ActionChoicesScope<T, A>.() -> Unit {
