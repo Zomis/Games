@@ -3,7 +3,6 @@ package net.zomis.games.dsl.flow
 import klog.KLoggers
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.dsl.*
-import net.zomis.games.dsl.flow.actions.SmartAction
 import net.zomis.games.dsl.flow.actions.SmartActionBuilder
 import net.zomis.games.dsl.flow.actions.SmartActionLogic
 import net.zomis.games.dsl.flow.actions.SmartActions

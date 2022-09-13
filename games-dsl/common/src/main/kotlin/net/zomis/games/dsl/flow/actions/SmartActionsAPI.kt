@@ -1,15 +1,21 @@
 package net.zomis.games.dsl.flow.actions
 
+import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.dsl.ActionChoicesScope
 import net.zomis.games.dsl.ActionOptionsScope
 import net.zomis.games.dsl.ActionRuleScope
+import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.flow.GameFlowActionContext
 import net.zomis.games.dsl.flow.GameFlowActionDsl
 
 interface SmartActionChoice<E>
 interface SmartActionUsingScope<T: Any, A: Any> {
-    fun <E> chosen(choice: SmartActionChoice<E>): E
-    fun <E> chosenOptional(choice: SmartActionChoice<E>): E?
+    val game: T
+    val action: Actionable<T, A>
+    val eliminations: PlayerEliminationsRead
+
+//    fun <E> chosen(choice: SmartActionChoice<E>): E
+//    fun <E> chosenOptional(choice: SmartActionChoice<E>): E?
 }
 
 
@@ -18,8 +24,8 @@ interface SmartActionUsingBuilder<T: Any, A: Any, E> {
 }
 
 interface SmartActionScope<T: Any, A: Any> {
-    fun <E> exampleChoices(name: String, optional: Boolean = false, function: () -> Iterable<E>): SmartActionChoice<E>
-    fun <E> choice(name: String, optional: Boolean = false, function: () -> Iterable<E>): SmartActionChoice<E>
+    fun exampleChoices(name: String, optional: Boolean, function: ActionOptionsScope<T>.() -> Iterable<A>): SmartActionChoice<A>
+    fun choice(name: String, optional: Boolean, function: ActionOptionsScope<T>.() -> Iterable<A>): SmartActionChoice<A>
     fun <E> using(function: SmartActionUsingScope<T, A>.() -> E): SmartActionUsingBuilder<T, A, E>
     fun change(block: SmartActionChangeScope<T, A>.() -> Unit)
 }
@@ -39,16 +45,16 @@ object SmartActions {
             handler._requires.add(ActionRequirement())
         }
         override fun choose(options: ActionChoicesScope<T, A>.() -> Unit) {
-            handler._choices[""] = ActionChoice("", optional = false, exhaustive = true)
+            handler._choices[""] = ActionChoice("", optional = false, exhaustive = true, options)
         }
         override fun options(rule: ActionOptionsScope<T>.() -> Iterable<A>) {
-            handler._choices[""] = ActionChoice("", optional = false, exhaustive = true)
+            handler._choices[""] = ActionChoice("", optional = false, exhaustive = true, handler.iterableToChoices(rule))
         }
         override fun perform(rule: ActionRuleScope<T, A>.() -> Unit) {
-            handler._effect.add(ActionEffect())
+            handler._effect.add(ActionEffect({  }, { rule.invoke(this) }))
         }
         override fun after(rule: ActionRuleScope<T, A>.() -> Unit) {
-            handler._postEffect.add(ActionEffect())
+            handler._postEffect.add(ActionEffect({  }, { rule.invoke(this) }))
         }
     }
     fun <T: Any, A: Any> handlerFromDsl(actionDsl: GameFlowActionDsl<T, A>): SmartActionBuilder<T, A> {

@@ -1,5 +1,6 @@
 package net.zomis.games.dsl.flow.actions
 
+import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.*
 import kotlin.properties.PropertyDelegateProvider
@@ -7,7 +8,7 @@ import kotlin.reflect.KClass
 
 // TODO: Decide on choices -- ephemeral, or saved? If saved, then action saving will be dramatically refactored and replays broken
 
-data class SmartAction(val choices: Map<String, Any>)
+//data class SmartAction(val choices: Map<String, Any>)
 
 class SmartActionLogic<T: Any, A: Any>(
     val gameContext: GameRuleContext<T>,
@@ -19,20 +20,28 @@ class SmartActionLogic<T: Any, A: Any>(
     override fun isComplex(): Boolean = true
 
     override fun availableActions(playerIndex: Int, sampleSize: ActionSampleSize?): Iterable<Actionable<T, A>> {
-        // Find optionalChoices, start with those
-        // Then go to required choices and just do the first one recursively
+        // TODO: For multiple options, find optionalChoices, start with those and then go to required choices and just do the first one recursively
         val choices = _handlers.flatMap { it._choices.entries }
         check(choices.size == 1) { "Only single choices supported so far" }
-        TODO()
-//        return choices.single().value.let { choice ->
-//            choice.allChoices(emptyList()).asSequence().map {
-//                SmartAction(mapOf(choice.key to it))
-//            }.map { createAction(playerIndex, it) }.asIterable()
-//        }
+        val choice = choices.single().value
+        check(!choice.optional) { "Optional choices not supported yet" }
+
+        return ActionComplexImpl(actionType, createContext(playerIndex), choice.options).start().depthFirstActions(sampleSize).map { it.parameter }.asIterable()
+            .map { createAction(playerIndex, it) }
+            .filter { this.actionAllowed(it) }
+            .asIterable()
+    }
+
+    private fun createContext(playerIndex: Int): ActionOptionsContext<T> {
+        return ActionOptionsContext(gameContext.game, actionType.name, playerIndex, gameContext.eliminations, gameContext.replayable)
+    }
+    private fun createActionContext(playerIndex: Int, parameter: A): ActionRuleContext<T, A> {
+        return ActionRuleContext(gameContext.game, createAction(playerIndex, parameter), gameContext.eliminations, gameContext.replayable)
     }
 
     override fun withChosen(playerIndex: Int, chosen: List<Any>): ActionComplexChosenStep<T, A> {
         // Parallelize choices, so that you can choose key:"x", key:"y", number:123, number:456, in any order
+
         TODO("Not yet implemented")
     }
 
@@ -40,11 +49,18 @@ class SmartActionLogic<T: Any, A: Any>(
         = Action(gameContext.game, playerIndex, actionType.name, parameter)
 
     override fun performAction(action: Actionable<T, A>): FlowStep.ActionResult {
-        TODO("Not yet implemented")
+        _handlers.forEach { handler ->
+            handler.effect.forEach {
+                it.perform(createActionContext(action.playerIndex, action.parameter))
+            }
+        }
+        return FlowStep.IllegalAction(0, "", action.playerIndex, action.parameter)
+//        return FlowStep.ActionPerformed(action)
     }
 
     override fun actionAllowed(action: Actionable<T, A>): Boolean {
-        TODO("Not yet implemented")
+        return true
+//        _handlers.flatMap { it.requires }.all { it.or() }
     }
 
     fun add(handler: SmartActionBuilder<T, A>) {
@@ -57,9 +73,12 @@ class SmartActionContext<T: Any, A: Any>(
     action: ActionType<T, A>, gameRuleContext: GameRuleContext<T>,
 ): SmartActionBuilder<T, A>()
 
-class ActionUsingBuilder<T: Any, A: Any, E>(private val handler: SmartActionBuilder<T, A>): SmartActionUsingBuilder<T, A, E> {
+class ActionUsingBuilder<T: Any, A: Any, E>(
+    private val handler: SmartActionBuilder<T, A>,
+    private val converter: SmartActionUsingScope<T, A>.() -> E
+): SmartActionUsingBuilder<T, A, E> {
     override fun perform(function: ActionRuleScope<T, A>.(E) -> Unit): ActionEffect<T, A, E> {
-        return ActionEffect<T, A, E>().also { handler._effect.add(it as ActionEffect<T, A, out Any>) }
+        return ActionEffect(converter, function).also { handler._effect.add(it as ActionEffect<T, A, out Any>) }
     }
 }
 
@@ -69,29 +88,37 @@ open class SmartActionBuilder<T: Any, A: Any>: SmartActionScope<T, A> {
     internal val _choices = mutableMapOf<String, ActionChoice<T, A, out Any>>()
     internal val _effect = mutableListOf<ActionEffect<T, A, out Any>>()
     internal val _postEffect = mutableListOf<ActionEffect<T, A, out Any>>()
-    val preconditions = _preconditions.toList()
-    val requires = _requires.toList()
-    val choices = _choices
-    val effect = _effect.toList()
-    val postEffect = _postEffect.toList()
+    val preconditions get() = _preconditions.toList()
+    val requires get() = _requires.toList()
+    val choices get() = _choices
+    val effect get() = _effect.toList()
+    val postEffect get() = _postEffect.toList()
 
     override fun <E> using(function: SmartActionUsingScope<T, A>.() -> E): SmartActionUsingBuilder<T, A, E> {
-        return ActionUsingBuilder(this)
+        return ActionUsingBuilder(this, function)
     }
-    override fun <E> exampleChoices(name: String, optional: Boolean, function: () -> Iterable<E>): SmartActionChoice<E> {
-        return ActionChoice<T, A, E>(name, optional, exhaustive = false).also {
+    override fun exampleChoices(name: String, optional: Boolean, function: ActionOptionsScope<T>.() -> Iterable<A>): SmartActionChoice<A> {
+        return ActionChoice<T, A, A>(name, optional, exhaustive = false, iterableToChoices(function)).also {
             _choices.putSingle(name, it as ActionChoice<T, A, out Any>)
         }
     }
 
-    override fun <E> choice(name: String, optional: Boolean, function: () -> Iterable<E>): SmartActionChoice<E> {
-        return ActionChoice<T, A, E>(name, optional, exhaustive = true).also {
+    override fun choice(name: String, optional: Boolean, function: ActionOptionsScope<T>.() -> Iterable<A>): SmartActionChoice<A> {
+        return ActionChoice<T, A, A>(name, optional, exhaustive = true, iterableToChoices(function)).also {
             _choices.putSingle(name, it as ActionChoice<T, A, out Any>)
         }
     }
 
     override fun change(block: SmartActionChangeScope<T, A>.() -> Unit) {
+        TODO()
+    }
 
+    internal fun iterableToChoices(rule: ActionOptionsScope<T>.() -> Iterable<A>): ActionChoicesScope<T, A>.() -> Unit {
+        return {
+            options(rule) {
+                parameter(it)
+            }
+        }
     }
 
 }
@@ -110,17 +137,35 @@ class ActionRequirement<T: Any, A: Any, E> {
 class ActionCost<T: Any, A: Any, E> {
     // Choose how to pay some costs? (Colored mana, coins with wildcards, "you may do X instead of paying Y"...)
 }
-class ActionEffect<T: Any, A: Any, E> {
+class ActionEffect<T: Any, A: Any, E>(
+    private val converter: SmartActionUsingScope<T, A>.() -> E,
+    val function: ActionRuleScope<T, A>.(E) -> Unit
+) {
+    private val modifiers = mutableListOf<(E) -> E>()
+
     fun modify(function: (E) -> E) {
+        this.modifiers.add(function)
     }
 
-    fun <K: Any> ofType(e: KClass<K>): ActionEffect<T, A, K> = this as ActionEffect<T, A, K>
+    fun perform(context: ActionRuleContext<T, A>) {
+        val scope = object : SmartActionUsingScope<T, A> {
+            override val game: T get() = context.game
+            override val action: Actionable<T, A> = context.action
+            override val eliminations: PlayerEliminationsRead = context.eliminations
+        }
+        val value = converter.invoke(scope)
+        val modifiedValue = modifiers.fold(value) { old, func -> func.invoke(old) }
+        function.invoke(context, modifiedValue)
+    }
+
+    fun <K: Any> ofType(type: KClass<K>): ActionEffect<T, A, K> = this as ActionEffect<T, A, K>
 
 }
 class ActionChoice<T: Any, A: Any, E>(
     val key: String,
     val optional: Boolean,
-    val exhaustive: Boolean
+    val exhaustive: Boolean,
+    val options: ActionChoicesScope<T, A>.() -> Unit
 ): SmartActionChoice<E> {
     fun allChoices(chosen: List<Any>): Iterable<E> {
         TODO("Not yet implemented")
