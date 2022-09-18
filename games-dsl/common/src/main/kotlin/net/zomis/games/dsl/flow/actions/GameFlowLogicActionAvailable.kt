@@ -30,7 +30,7 @@ private class GameFlowActionContextOptions<T: Any, A: Any>(): GameFlowActionCont
         check(this.optionsRule == null) { "options and/or choices can only be defined once" }
         check(this.choicesRule == null) { "options and/or choices can only be defined once" }
     }
-    override fun options(rule: ActionOptionsScope<T>.() -> Iterable<A>) {
+    override fun exampleOptions(rule: ActionOptionsScope<T>.() -> Iterable<A>) {
         initialize()
         this.optionsRule = rule
     }
@@ -45,7 +45,7 @@ class GameFlowLogicActionAvailable<T: Any, A: Any>(
     private val gameData: GameRuleContext<T>,
     private val actionType: ActionType<T, A>,
     private val actionDsls: () -> List<GameFlowActionDsl<T, A>>
-): GameFlowActionContext<T, A>() {
+) {
     private val logger = KLoggers.logger(this)
     private fun createContext(action: Actionable<T, A>)
         = ActionRuleContext(gameData.game, action, gameData.eliminations, gameData.replayable)

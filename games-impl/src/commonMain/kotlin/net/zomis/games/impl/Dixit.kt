@@ -134,7 +134,7 @@ object Dixit {
             step("tell story") {
                 yieldAction(story) {
                     precondition { playerIndex == game.storyteller.playerIndex }
-                    options {
+                    exampleOptions {
                         check(game.storyteller.cards.size > 0)
                         game.storyteller.cards.cards.map { ActionStory(it, "random") }
                     }

@@ -14,7 +14,8 @@ open class GameFlowActionContext<T: Any, A: Any>: GameFlowActionScope<T, A> {
     override fun perform(rule: ActionRuleScope<T, A>.() -> Unit) {}
     override fun precondition(rule: ActionOptionsScope<T>.() -> Boolean) {}
     override fun requires(rule: ActionRuleScope<T, A>.() -> Boolean) {}
-    override fun options(rule: ActionOptionsScope<T>.() -> Iterable<A>) {}
+    override fun options(rule: ActionOptionsScope<T>.() -> Iterable<A>) = exampleOptions(rule)
+    override fun exampleOptions(rule: ActionOptionsScope<T>.() -> Iterable<A>) {}
     override fun choose(options: ActionChoicesScope<T, A>.() -> Unit) {}
 }
 

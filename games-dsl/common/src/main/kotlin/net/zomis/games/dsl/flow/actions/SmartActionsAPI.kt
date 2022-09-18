@@ -50,6 +50,9 @@ object SmartActions {
         override fun choose(options: ActionChoicesScope<T, A>.() -> Unit) {
             handler._choices.putSingle("", ActionChoice("", optional = false, exhaustive = true, options))
         }
+        override fun exampleOptions(rule: ActionOptionsScope<T>.() -> Iterable<A>) {
+            handler._choices.putSingle("", ActionChoice("", optional = false, exhaustive = false, handler.iterableToChoices(rule)))
+        }
         override fun options(rule: ActionOptionsScope<T>.() -> Iterable<A>) {
             handler._choices.putSingle("", ActionChoice("", optional = false, exhaustive = true, handler.iterableToChoices(rule)))
         }
