@@ -150,7 +150,7 @@ class GameFlowImpl<T: Any>(
                 if (!performed) {
                     sendFeedback(FlowStep.IllegalAction(this, action.actionType, action.playerIndex, action.parameter))
                     logger.warn { "Action not allowed: $action" }
-                    return null
+                    continue
                 }
                 logger.info("creating last action: ${replayable.stateKeeper.lastMoveState()}")
                 val last = FlowStep.ActionPerformed(action, typeEntry.actionType, replayable.stateKeeper.lastMoveState())
