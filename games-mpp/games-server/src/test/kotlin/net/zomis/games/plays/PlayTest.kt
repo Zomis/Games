@@ -1,5 +1,6 @@
 package net.zomis.games.plays
 
+import kotlinx.coroutines.test.runTest
 import net.zomis.games.server.test.PlayTests
 import net.zomis.games.server.test.TestPlayMenu
 import org.junit.jupiter.api.DynamicContainer
@@ -20,8 +21,10 @@ class PlayTest {
 
     fun file(file: File): DynamicNode {
         return DynamicTest.dynamicTest(file.name) {
-            if (file.name.endsWith("json")) {
-                PlayTests.fullJsonTest(file, TestPlayMenu.choices, false)
+            runTest {
+                if (file.name.endsWith("json")) {
+                    PlayTests.fullJsonTest(this, file, TestPlayMenu.choices, false)
+                }
             }
         }
     }

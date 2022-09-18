@@ -1,5 +1,7 @@
 package net.zomis.games.server.test
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
 import net.zomis.games.dsl.DslConsoleSetup
 import net.zomis.games.server2.ServerGames
 import java.io.File
@@ -14,17 +16,17 @@ object TestPlayMenu {
         config = { it.setup().configs() }
     )
 
-    fun main(game: String? = null) {
+    suspend fun main(coroutineScope: CoroutineScope, game: String? = null) {
         val f = root
         f.walk().filter { it.isFile && it.name.endsWith(".json") }.forEach {
             if (game == null || it.absolutePath.contains(game)) {
                 println(it.absolutePath)
-                PlayTests.fullJsonTest(it, choices, true)
+                PlayTests.fullJsonTest(coroutineScope, it, choices, true)
             }
         }
     }
 
-    fun menu() {
+    suspend fun menu(coroutineScope: CoroutineScope) {
         println("Choose your option")
         println("C: Create new test")
         println("F: Run a file test")
@@ -43,7 +45,7 @@ object TestPlayMenu {
                     }
                     f = File(f, scanner.nextLine())
                 }
-                PlayTests.fullJsonTest(f, choices, true)
+                PlayTests.fullJsonTest(coroutineScope, f, choices, true)
             }
             "c", "C" -> {
                 val gameSpec = DslConsoleSetup().chooseGame(scanner)
@@ -52,7 +54,7 @@ object TestPlayMenu {
 
                 println("Enter players (${setup.playersCount})")
                 val playersCount = scanner.nextLine().toInt()
-                PlayTests.createNew(File("playthroughs", "t.json"), gameSpec.name, playersCount, null)
+                PlayTests.createNew(coroutineScope, File("playthroughs", "t.json"), gameSpec.name, playersCount, null)
             }
             "a", "A" -> main()
             "g", "G" -> {
@@ -60,7 +62,7 @@ object TestPlayMenu {
                 println("Enter game name")
                 val chosenGame = scanner.nextLine()
 
-                main(chosenGame)
+                main(coroutineScope, chosenGame)
             }
         }
     }
@@ -69,10 +71,12 @@ object TestPlayMenu {
 
 }
 
-fun main() {
+suspend fun main() {
 //    PlayTests.fullJsonTest(TestPlayMenu.file("TTTUpgrade.json"), TestPlayMenu.choices, true)
 //    PlayTests.fullJsonTest(TestPlayMenu.file("UR.json"), TestPlayMenu.choices, true)
 //    PlayTests.fullJsonTest(TestPlayMenu.file("Backgammon.json"), TestPlayMenu.choices, true)
 //    PlayTests.fullJsonTest(TestPlayMenu.file("KingDomino.json"), TestPlayMenu.choices, true)
-    TestPlayMenu.menu()
+    coroutineScope {
+        TestPlayMenu.menu(this)
+    }
 }
