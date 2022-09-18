@@ -63,6 +63,11 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
 
     fun createActionFromSerialized(playerIndex: Int, serialized: Any): Actionable<T, P> {
         val actionOptionsContext = actionOptionsContext(playerIndex)
+        if (actionType.parameterType == Unit::class) {
+            // Deserialization may create a new `Unit` object, despite Unit being a singleton
+            check(serialized is Unit)
+            return createAction(actionOptionsContext.playerIndex, Unit as P)
+        }
         if (actionType.parameterType == actionType.serializedType) {
             return createAction(actionOptionsContext.playerIndex, serialized as P)
         }
