@@ -2,9 +2,8 @@ package net.zomis.games.impl
 
 import net.zomis.games.api.GamesApi
 import net.zomis.games.common.next
+import net.zomis.games.common.safeCast
 import net.zomis.games.dsl.flow.GameFlowRule
-import net.zomis.games.dsl.flow.GameFlowScope
-import net.zomis.games.dsl.impl.Game
 import kotlin.math.min
 
 class GameStack {
@@ -443,8 +442,7 @@ object CoupRuleBased {
                     }
                 }
                 action(challenge) {
-                    precondition { game.stack.peek() is CoupClaim }
-                    precondition { (game.stack.peek() as CoupClaim).awaitingPlayers.contains(playerIndex) }
+                    precondition { game.stack.peek()?.safeCast<CoupClaim>()?.awaitingPlayers?.contains(playerIndex) == true }
                     perform {
                         val claim = game.stack.pop() as CoupClaim
                         game.stack.add(CoupChallengedClaim(claim, playerIndex))

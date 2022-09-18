@@ -13,3 +13,7 @@ fun <K, V> MutableMap<K, V>.putSingle(key: K, v: V) {
     check(!this.containsKey(key))
     this[key] = v
 }
+
+inline fun <reified R: Any> Any?.safeCast(): R? {
+    return if (this is R) this else null
+}
