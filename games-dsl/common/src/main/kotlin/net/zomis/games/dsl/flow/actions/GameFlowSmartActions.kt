@@ -21,6 +21,9 @@ class SmartActionLogic<T: Any, A: Any>(
     override fun isComplex(): Boolean = true
 
     override fun availableActions(playerIndex: Int, sampleSize: ActionSampleSize?): Iterable<Actionable<T, A>> {
+        if (!checkPreconditions(playerIndex)) {
+            return emptyList()
+        }
         // TODO: For multiple options, find optionalChoices, start with those and then go to required choices and just do the first one recursively
         val choices = _handlers.flatMap { it._choices.entries }
         check(choices.size == 1) { "Only single choices supported so far" }
