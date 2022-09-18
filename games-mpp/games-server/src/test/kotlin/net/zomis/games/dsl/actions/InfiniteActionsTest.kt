@@ -23,9 +23,6 @@ class InfiniteActionsTest {
             parameter { MyList(chosen.toMutableList()) }
             options({ 1..10 }) { add ->
                 recursion(add) { list, e -> list + e }
-//                            options({ -4..-1 }) { remove ->
-//                                recursion(add + remove) { list, e -> list + e }
-//                            }
             }
         }
     }

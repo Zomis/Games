@@ -30,7 +30,7 @@ class SmartActionLogic<T: Any, A: Any>(
         val choice = choices.single().value
         check(!choice.optional) { "Optional choices not supported yet" }
 
-        return ActionComplexImpl(actionType, createOptionsContext(playerIndex), choice.options).start().depthFirstActions(sampleSize).map { it.parameter }.asIterable()
+        return ActionComplexImpl(actionType, createOptionsContext(playerIndex), choice.options).start().depthFirstActions(sampleSize).map { it.parameter }
             .map { createAction(playerIndex, it) }
             .filter { this.actionAllowed(it) }
             .asIterable()
