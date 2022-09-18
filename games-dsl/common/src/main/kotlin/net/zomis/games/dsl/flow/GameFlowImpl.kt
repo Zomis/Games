@@ -28,7 +28,7 @@ class GameFlowImpl<T: Any>(
 
     override val config: Any get() = gameConfig.oldStyleValue()
     private val logger = KLoggers.logger(this)
-    internal var unfinishedFeedback: FlowStep.RandomnessResult? = null
+    private var unfinishedFeedback: FlowStep.RandomnessResult? = null
     private val mainScope = MainScope()
     val views = mutableListOf<Pair<String, ViewScope<T>.() -> Any?>>()
     override val feedbackFlow: Channel<FlowStep> = Channel()

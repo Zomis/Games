@@ -24,13 +24,12 @@ object NimGame {
     val factory = GameCreator(Nim::class)
     val nimAction = factory.action("Take", NimMove::class)
     val game = factory.game("Nim") {
-        setup(NimConfig::class) {
-            players(2..2)
-            defaultConfig {
-                NimConfig(listOf(21), true, 3)
-            }
+        val nimConfig = config("nim") { NimConfig(listOf(21), true, 3) }
+        setup {
+            playersFixed(2)
             init {
-                Nim(this.config.piles.toMutableList(), this.playerCount, this.config.lastWins, this.config.maxPerTurn)
+                val config = config(nimConfig)
+                Nim(config.piles.toMutableList(), this.playerCount, config.lastWins, config.maxPerTurn)
             }
         }
         actionRules {
