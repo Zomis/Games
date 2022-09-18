@@ -59,23 +59,19 @@ class GameFlowActionsImpl<T: Any>(
         return if (entry?.parameterClass == clazz) entry as ActionTypeImplEntry<T, P> else null
     }
 
-    fun clearAndPerform(action: Actionable<T, Any>, clearer: () -> Unit): Boolean {
+    fun clearAndPerform(action: Actionable<T, Any>, clearer: () -> Unit): ActionResult<T, out Any> {
         val gameRuleContext = GameRuleContext(model, eliminations, replayable)
         val existing = this.type(action.actionType)
         if (existing == null) {
             logger.warn { "No existing actionType definition found for $action" }
-            return false
+            return ActionResult(action).also { it.addPrecondition("actionType", null, false) }
         }
-        // Save DSLs so that they don't get reset before performing action
-
-        // val delegator = GameFlowLogicActionDelegator(gameRuleContext, existing.actionType, feedback, {existing}) { dsls }
-        return if (existing.isAllowed(action)) {
+        val allowed = existing.checkAllowed(action)
+        if (allowed.allowed) {
             clearer.invoke()
             existing.perform(action)
-            true
-        } else {
-            false
         }
+        return allowed
     }
 
 }

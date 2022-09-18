@@ -3,10 +3,7 @@ package net.zomis.games.dsl.impl
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import net.zomis.games.PlayerElimination
-import net.zomis.games.dsl.ActionReplay
-import net.zomis.games.dsl.ActionType
-import net.zomis.games.dsl.Actionable
-import net.zomis.games.dsl.GameConfigs
+import net.zomis.games.dsl.*
 
 sealed class FlowStep {
     interface ProceedStep
@@ -39,7 +36,8 @@ sealed class FlowStep {
     data class ActionPerformed<T: Any>(
         val action: Actionable<T, Any>,
         val actionType: ActionType<T, Any>,
-        override val state: Map<String, Any>
+        override val state: Map<String, Any>,
+        val result: ActionResult<T, out Any>? = null
     ): FlowStep(), ActionResultStep, RandomnessResult {
         val serializedParameter: Any get() = actionType.serialize(action.parameter)
         val playerIndex: Int get() = action.playerIndex
@@ -47,8 +45,7 @@ sealed class FlowStep {
         fun toActionReplay(): ActionReplay
                 = ActionReplay(actionType.name, playerIndex, serializedParameter, state)
     }
-    // TODO: Add reason for why Action is not allowed, of some form... name of rule(s)?
-    data class IllegalAction(val model: Any, val actionType: String, val playerIndex: Int, val parameter: Any): FlowStep(), ActionResultStep
+    data class IllegalAction(val action: Actionable<out Any, out Any>, val results: ActionResult<out Any, out Any>?): FlowStep(), ActionResultStep
     data class Log(val log: ActionLogEntry): FlowStep()
     data class RuleExecution(val ruleName: String, val values: Any): FlowStep()
     // Use Deferred for PreSetup and PreMove, see https://kotlinlang.org/docs/shared-mutable-state-and-concurrency.html#actors

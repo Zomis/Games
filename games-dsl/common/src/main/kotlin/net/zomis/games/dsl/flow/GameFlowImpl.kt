@@ -139,7 +139,7 @@ class GameFlowImpl<T: Any>(
                 logger.info("GameFlow Coroutine Action Received: $action")
                 val typeEntry = actions.type(action.actionType)
                 if (typeEntry == null) {
-                    sendFeedback(FlowStep.IllegalAction(model, action.actionType, action.playerIndex, action.parameter))
+                    sendFeedback(FlowStep.IllegalAction(action, ActionResult(action).also { it.addPrecondition("actionType entry exists", null, false) }))
                     continue
                 }
                 replayable.stateKeeper.preMove(action) { sendFeedback(it) }
@@ -147,8 +147,8 @@ class GameFlowImpl<T: Any>(
                 val performed = actions.clearAndPerform(action as Actionable<T, Any>) {
                     this.clear()
                 }
-                if (!performed) {
-                    sendFeedback(FlowStep.IllegalAction(this, action.actionType, action.playerIndex, action.parameter))
+                if (!performed.allowed) {
+                    sendFeedback(FlowStep.IllegalAction(action, typeEntry.impl.checkAllowed(action)))
                     logger.warn { "Action not allowed: $action" }
                     continue
                 }

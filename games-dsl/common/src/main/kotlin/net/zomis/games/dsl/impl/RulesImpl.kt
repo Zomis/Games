@@ -239,8 +239,9 @@ class GameActionRuleContext<T : Any, A : Any>(
     }
 
     override fun performAction(action: Actionable<T, A>): FlowStep.ActionResultStep {
-        if (!actionAllowed(action)) {
-            return FlowStep.IllegalAction(model, action.actionType, action.playerIndex, action.parameter)
+        val result = checkAllowed(action)
+        if (!result.allowed) {
+            return FlowStep.IllegalAction(action, result)
         }
         val context = ActionRuleContext(model, action, eliminations, replayable)
         this.effects.forEach { it.invoke(context) }

@@ -52,7 +52,7 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
                     views.add(game.view(null))
                 }
                 if (step is FlowStep.IllegalAction) {
-                    addError("Illegal action: ${step.actionType} by ${step.playerIndex} parameter ${step.parameter}")
+                    addError("Illegal action: ${step.action}")
                 }
             }
         }

@@ -24,7 +24,6 @@ class GameFlowActionContextAfter<T: Any, A: Any>(val context: ActionRuleContext<
 class GameFlowLogicActionPerform<T: Any, A: Any>(
     private val gameData: GameRuleContext<T>,
     private val actionDsls: () -> List<GameFlowActionDsl<T, A>>,
-    private val feedback: (FlowStep) -> Unit
 ) {
     private fun createContext(action: Actionable<T, A>)
         = ActionRuleContext(gameData.game, action, gameData.eliminations, gameData.replayable)

@@ -75,6 +75,9 @@ class ActionResultPart<E>(
 
 class ActionResult<T: Any, A: Any>(val actionable: Actionable<T, A>) {
     private val results = mutableListOf<ActionResultPart<out Any?>>()
+    val allowed: Boolean get()
+        = results.filter { it.type == ActionCheckType.Precondition || it.type == ActionCheckType.Requires }
+            .all { it.approved }
 
     fun add(resultPart: ActionResultPart<out Any?>) {
         results.add(resultPart)

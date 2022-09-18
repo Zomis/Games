@@ -12,7 +12,7 @@ class ReplayingListener(private val data: ReplayData): GameListener {
     override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
         if (nextActionState >= replayActionsCount) return
         when (step) {
-            is FlowStep.IllegalAction -> throw IllegalStateException("$step was not replayed correctly in ${step.model} after $nextActionState actions. Full replay data is $data")
+            is FlowStep.IllegalAction -> throw IllegalStateException("$step was not replayed correctly in ${step.action.game} after $nextActionState actions. Full replay data is $data")
             is FlowStep.PreMove -> {
                 step.setState(data.actions.getOrNull(nextActionState++)?.state ?: emptyMap())
             }
