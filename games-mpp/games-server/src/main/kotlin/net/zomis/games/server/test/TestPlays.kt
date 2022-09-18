@@ -16,6 +16,7 @@ import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameAIs
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.dsl.listeners.BlockingGameListener
+import net.zomis.games.listeners.LimitedNextViews
 import net.zomis.games.server2.JacksonTools
 import net.zomis.games.server2.ServerGames
 import java.io.File
@@ -125,14 +126,14 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
         save()
     }
 
-    suspend fun nextStep(replayable: PlayTests.GameWrapper): PlayTestStep? {
+    suspend fun nextStep(blocking: BlockingGameListener, replayable: PlayTests.GameWrapper): PlayTestStep? {
         if (node.get("steps") == null) {
             node.set<ObjectNode>("steps", ArrayNode(mapper.nodeFactory))
             modified = true
         }
         val steps = node.get("steps") as ArrayNode
         val step = readStep(steps[nextStep], replayable) ?: return null
-        handleStep(step, replayable)
+        handleStep(blocking, step, replayable)
         nextStep++
         return step
     }
@@ -156,7 +157,7 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
         }
     }
 
-    suspend fun handleStep(step: PlayTestStep, replayable: PlayTests.GameWrapper) {
+    suspend fun handleStep(blocking: BlockingGameListener, step: PlayTestStep, replayable: PlayTests.GameWrapper) {
         when (step) {
             is PlayTestStepPerform -> {
                 if (step.state.isNotEmpty()) {
@@ -168,7 +169,7 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
                 if (!actionType.isAllowed(actionable)) {
                     throw IllegalStateException("Action is not allowed: $actionable")
                 }
-                replayable.game.actionsInput.send(actionable)
+                blocking.awaitAndPerform(actionable)
             }
             is PlayTestStepAssertActions -> step.assert(replayable)
             is PlayTestStepAssertView -> step.assert(replayable)
@@ -208,26 +209,6 @@ object PlayTests {
     }
 
     data class GameWrapper(val game: Game<Any>)
-    private class FeedbackHandler(val scanner: Scanner?, val tree: TestPlayRoot, val replayable: GameWrapper): GameListener {
-        private var nextViews = 0
-
-        override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
-            val a = step
-            println("feedback $a")
-            logger.info { a }
-            if (a is FlowStep.NextView) {
-                if (nextViews++ > 10) throw IllegalStateException("Too many next views")
-            }
-            if (a is FlowStep.AwaitInput) {
-                nextViews = 0
-                println("--- Await Input")
-                nextSteps(tree, replayable, scanner)
-            }
-            if (a is FlowStep.GameEnd) {
-                nextSteps(tree, replayable, scanner)
-            }
-        }
-    }
 
     suspend fun fullJsonTest(coroutineScope: CoroutineScope, file: File, choices: TestPlayChoices, interactive: Boolean) {
         val tree = TestPlayRoot(mapper, file)
@@ -241,14 +222,18 @@ object PlayTests {
         val config = tree.configOrDefault(entry.setup())
         val game: Game<Any>
         val s = Scanner(System.`in`).takeIf { interactive }
+        val blocking = BlockingGameListener()
         game = entry.setup().startGameWithConfig(coroutineScope, playersCount, config) {
-            listOf(tree.replayCallback(), FeedbackHandler(s, tree, GameWrapper(it)))
+            listOf(tree.replayCallback(), LimitedNextViews(10), blocking)
         }
         val replayable = GameWrapper(game)
-        println(replayable.game)
+        blocking.await()
+
         while (game.isRunning() && tree.running) {
-            yield()
+            blocking.await()
+            nextSteps(blocking, tree, replayable, s)
         }
+        println(replayable.game)
 
         tree.save()
         if (!interactive) game.stop()
@@ -265,9 +250,9 @@ object PlayTests {
         return current
     }
 
-    private suspend fun nextSteps(tree: TestPlayRoot, replayable: GameWrapper, scanner: Scanner?): Boolean {
+    private suspend fun nextSteps(blocking: BlockingGameListener, tree: TestPlayRoot, replayable: GameWrapper, scanner: Scanner?): Boolean {
         do {
-            val nextStep = tree.nextStep(replayable)
+            val nextStep = tree.nextStep(blocking, replayable)
             println("Performing saved step: $nextStep")
             if (nextStep is PlayTestStepPerform) {
                 return true
@@ -409,7 +394,7 @@ object PlayTests {
                     }
                 }
             }
-            else -> return nextSteps(tree, replayable, scanner)
+            else -> return nextSteps(blocking, tree, replayable, scanner)
         }
         tree.addStep(step)
 
@@ -417,10 +402,10 @@ object PlayTests {
             println("TREE MODIFIED")
             tree.save()
         }
-        tree.nextStep(replayable)
+        tree.nextStep(blocking, replayable)
 
         if (step !is PlayTestStepPerform) {
-            return nextSteps(tree, replayable, scanner)
+            return nextSteps(blocking, tree, replayable, scanner)
         }
         return true
     }
