@@ -246,11 +246,9 @@ object CoupRuleBased {
             }
             afterActionRule("reveal card") {
                 action(reveal) {
-                    precondition { game.stack.peek() is CoupChallengedClaim }
-                    precondition { playerIndex == (game.stack.peek() as CoupChallengedClaim).player.playerIndex }
+                    precondition { playerIndex == (game.stack.peek().safeCast<CoupChallengedClaim>()?.player?.playerIndex ?: -10) }
                     precondition {
-                        val challengedClaim = game.stack.peek() as CoupChallengedClaim
-                        challengedClaim.claim.canReveal()
+                        game.stack.peek().safeCast<CoupChallengedClaim>()?.claim?.canReveal() ?: false
                     }
                     perform {
                         // Put back card, draw a new one
