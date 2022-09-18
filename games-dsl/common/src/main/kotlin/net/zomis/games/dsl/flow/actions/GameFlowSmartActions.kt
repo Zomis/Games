@@ -167,6 +167,13 @@ class SmartActionUsingContext<T: Any, A: Any>(
 }
 
 class ActionPrecondition<T: Any, E>(val rule: ActionOptionsScope<T>.() -> Boolean) {
+    // If modifiers were supported here, use other scope than `SmartActionUsingScope` as it contains actions parameter
+
+    fun check(context: ActionOptionsContext<T>): ActionCheckResult<E> {
+        return ActionCheckResult(this, null, rule.invoke(context))
+    }
+
+    @Deprecated("use check instead", replaceWith = ReplaceWith("check"))
     fun fulfilled(context: ActionOptionsContext<T>): Boolean {
         return rule.invoke(context)
     }
@@ -181,11 +188,15 @@ class ActionRequirement<T: Any, A: Any, E>(
         this.modifiers.add(function)
     }
 
-    fun fulfilled(context: ActionRuleContext<T, A>): Boolean {
+    fun check(context: ActionRuleContext<T, A>): ActionCheckResult<E> {
         val value = converter.invoke(SmartActionUsingContext(context))
         val modifiedValue = modifiers.fold(value) { old, func -> func.invoke(old) }
-        return rule.invoke(context, modifiedValue)
+        val result = rule.invoke(context, modifiedValue)
+        return ActionCheckResult(this, modifiedValue, result)
     }
+
+    @Deprecated("use check instead to get detailed results", replaceWith = ReplaceWith("check"))
+    fun fulfilled(context: ActionRuleContext<T, A>): Boolean = check(context).approved
 }
 class ActionCost<T: Any, A: Any, E> {
     // Choose how to pay some costs? (Colored mana, coins with wildcards, "you may do X instead of paying Y"...)
@@ -248,7 +259,11 @@ interface ActionThingy<E> {
     fun execute(): ActionCheckResult<E>
 }
 
-class ActionCheckResult<E>(val value: E, result: Any?) {
+class ActionCheckResult<E>(
+    val rule: Any,
+    val value: E?,
+    val result: Any?
+) {
     val approved = when (result) {
         null -> true
         Unit -> true
