@@ -1,6 +1,7 @@
 package net.zomis.games.dsl.flow.actions
 
 import net.zomis.games.PlayerEliminationsRead
+import net.zomis.games.common.putSingle
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.*
 import kotlin.properties.PropertyDelegateProvider
@@ -141,11 +142,6 @@ open class SmartActionBuilder<T: Any, A: Any>: SmartActionScope<T, A> {
         }
     }
 
-}
-
-private fun <K, V> MutableMap<K, V>.putSingle(key: K, v: V) {
-    check(!this.containsKey(key))
-    this[key] = v
 }
 
 class ActionPrecondition<T: Any, E>(val rule: ActionOptionsScope<T>.() -> Boolean) {

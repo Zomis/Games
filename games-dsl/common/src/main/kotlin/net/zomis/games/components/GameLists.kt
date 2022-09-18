@@ -8,3 +8,8 @@ fun <T> List<T>.shifted(steps: Int): List<T> {
 }
 operator fun <T> List<T>.times(multiplier: Int): List<T> = (1 until multiplier)
     .fold(this.toList()) { acc, _ -> acc + this.toList() }
+
+fun <K, V> MutableMap<K, V>.putSingle(key: K, v: V) {
+    check(!this.containsKey(key))
+    this[key] = v
+}

@@ -1,6 +1,7 @@
 package net.zomis.games.dsl.flow.actions
 
 import net.zomis.games.PlayerEliminationsRead
+import net.zomis.games.common.putSingle
 import net.zomis.games.dsl.ActionChoicesScope
 import net.zomis.games.dsl.ActionOptionsScope
 import net.zomis.games.dsl.ActionRuleScope
@@ -45,10 +46,10 @@ object SmartActions {
             handler._requires.add(ActionRequirement(rule))
         }
         override fun choose(options: ActionChoicesScope<T, A>.() -> Unit) {
-            handler._choices[""] = ActionChoice("", optional = false, exhaustive = true, options)
+            handler._choices.putSingle("", ActionChoice("", optional = false, exhaustive = true, options))
         }
         override fun options(rule: ActionOptionsScope<T>.() -> Iterable<A>) {
-            handler._choices[""] = ActionChoice("", optional = false, exhaustive = true, handler.iterableToChoices(rule))
+            handler._choices.putSingle("", ActionChoice("", optional = false, exhaustive = true, handler.iterableToChoices(rule)))
         }
         override fun perform(rule: ActionRuleScope<T, A>.() -> Unit) {
             handler._effect.add(ActionEffect({  }, { rule.invoke(this) }))
