@@ -103,6 +103,14 @@ class ActionUsingBuilder<T: Any, A: Any, E>(
     override fun perform(function: ActionRuleScope<T, A>.(E) -> Unit): ActionEffect<T, A, E> {
         return ActionEffect(converter, function).also { handler._effect.add(it as ActionEffect<T, A, out Any>) }
     }
+
+    override fun precondition(rule: ActionOptionsScope<T>.() -> Boolean): ActionPrecondition<T, E> {
+        return ActionPrecondition<T, E>(rule).also { handler._preconditions.add(it as ActionPrecondition<T, out Any>) }
+    }
+
+    override fun requires(rule: ActionRuleScope<T, A>.(E) -> Boolean): ActionRequirement<T, A, E> {
+        return ActionRequirement(converter, rule).also { handler._requires.add(it as ActionRequirement<T, A, out Any>) }
+    }
 }
 
 open class SmartActionBuilder<T: Any, A: Any>: SmartActionScope<T, A> {
@@ -147,18 +155,33 @@ open class SmartActionBuilder<T: Any, A: Any>: SmartActionScope<T, A> {
 
 }
 
-class ActionPrecondition<T: Any, E>(val rule: ActionOptionsScope<T>.() -> Boolean) {
-    fun or(other: ActionPrecondition<T, E>) {}
+class SmartActionUsingContext<T: Any, A: Any>(
+    val context: ActionRuleScope<T, A>
+): SmartActionUsingScope<T, A> {
+    override val game: T get() = context.game
+    override val action: Actionable<T, A> get() = context.action
+    override val eliminations: PlayerEliminationsRead get() = context.eliminations
+}
 
+class ActionPrecondition<T: Any, E>(val rule: ActionOptionsScope<T>.() -> Boolean) {
     fun fulfilled(context: ActionOptionsContext<T>): Boolean {
         return rule.invoke(context)
     }
 }
-class ActionRequirement<T: Any, A: Any, E>(val rule: ActionRuleScope<T, A>.() -> Boolean) {
-    fun or(other: ActionRequirement<T, A, E>) {}
+class ActionRequirement<T: Any, A: Any, E>(
+    private val converter: SmartActionUsingScope<T, A>.() -> E,
+    val rule: ActionRuleScope<T, A>.(E) -> Boolean
+) {
+    private val modifiers = mutableListOf<(E) -> E>()
+
+    fun modify(function: (E) -> E) {
+        this.modifiers.add(function)
+    }
 
     fun fulfilled(context: ActionRuleContext<T, A>): Boolean {
-        return rule.invoke(context)
+        val value = converter.invoke(SmartActionUsingContext(context))
+        val modifiedValue = modifiers.fold(value) { old, func -> func.invoke(old) }
+        return rule.invoke(context, modifiedValue)
     }
 }
 class ActionCost<T: Any, A: Any, E> {
@@ -175,11 +198,7 @@ class ActionEffect<T: Any, A: Any, E>(
     }
 
     fun perform(context: ActionRuleContext<T, A>) {
-        val scope = object : SmartActionUsingScope<T, A> {
-            override val game: T get() = context.game
-            override val action: Actionable<T, A> = context.action
-            override val eliminations: PlayerEliminationsRead = context.eliminations
-        }
+        val scope = SmartActionUsingContext(context)
         val value = converter.invoke(scope)
         val modifiedValue = modifiers.fold(value) { old, func -> func.invoke(old) }
         function.invoke(context, modifiedValue)

@@ -21,6 +21,8 @@ interface SmartActionUsingScope<T: Any, A: Any> {
 
 
 interface SmartActionUsingBuilder<T: Any, A: Any, E> {
+    fun precondition(rule: ActionOptionsScope<T>.() -> Boolean): ActionPrecondition<T, E>
+    fun requires(rule: ActionRuleScope<T, A>.(E) -> Boolean): ActionRequirement<T, A, E>
     fun perform(function: ActionRuleScope<T, A>.(E) -> Unit): ActionEffect<T, A, E>
 }
 
@@ -43,7 +45,7 @@ object SmartActions {
             handler._preconditions.add(ActionPrecondition(rule))
         }
         override fun requires(rule: ActionRuleScope<T, A>.() -> Boolean) {
-            handler._requires.add(ActionRequirement(rule))
+            handler._requires.add(ActionRequirement({}, { rule.invoke(this) }))
         }
         override fun choose(options: ActionChoicesScope<T, A>.() -> Unit) {
             handler._choices.putSingle("", ActionChoice("", optional = false, exhaustive = true, options))
