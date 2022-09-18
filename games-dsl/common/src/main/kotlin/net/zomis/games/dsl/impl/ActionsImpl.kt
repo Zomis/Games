@@ -20,8 +20,21 @@ interface ActionComplexChosenStep<T: Any, P: Any> : GameLogicActionTypeChosen<T,
 interface GameLogicActionType<T : Any, P : Any> {
     val actionType: ActionType<T, P>
     fun isComplex(): Boolean
+    fun allActions(playerIndex: Int, sampleSize: ActionSampleSize?): Sequence<ActionResult<T, P>> {
+        return availableActions(playerIndex, sampleSize).asSequence().map { action ->
+            ActionResult(action).also { it.addRequires("(deprecated allActions)", Unit, true) }
+        }
+    }
     fun availableActions(playerIndex: Int, sampleSize: ActionSampleSize?): Iterable<Actionable<T, P>>
+    fun checkAllowed(actionable: Actionable<T, P>): ActionResult<T, P> {
+        return ActionResult(actionable).also { it.addRequires("(deprecated)", Unit, actionAllowed(actionable)) }
+    }
     fun actionAllowed(action: Actionable<T, P>): Boolean
+    fun perform(action: Actionable<T, P>): ActionResult<T, P> {
+        return ActionResult(action).also {
+            it.addRequires("(deprecated)", Unit, performAction(action) is FlowStep.ActionPerformed<*>)
+        }
+    }
     fun performAction(action: Actionable<T, P>): FlowStep.ActionResultStep
     fun createAction(playerIndex: Int, parameter: P): Actionable<T, P>
     fun actionInfoKeys(playerIndex: Int, previouslySelected: List<Any>): List<ActionInfoKey> = withChosen(playerIndex, previouslySelected).actionKeys()
@@ -98,6 +111,7 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
     }
 
     fun withChosen(playerIndex: Int, chosen: List<Any>) = impl.withChosen(playerIndex, chosen)
+    fun checkAllowed(actionable: Actionable<T, P>): ActionResult<T, P> = impl.checkAllowed(actionable)
 
     val name: String
         get() = actionType.name

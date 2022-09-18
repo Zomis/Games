@@ -74,9 +74,21 @@ class SmartActionLogic<T: Any, A: Any>(
         return checkPreconditions(action.playerIndex) && _handlers.flatMap { it.requires }.all { it.fulfilled(context) }
     }
 
+    override fun checkAllowed(actionable: Actionable<T, A>): ActionResult<T, A> {
+        val context = createActionContext(actionable.playerIndex, actionable.parameter)
+        val result = ActionResult(actionable)
+        _handlers.flatMap { it.preconditions }.forEach {
+            result.add(it.check(context))
+        }
+        _handlers.flatMap { it.requires }.forEach {
+            result.add(it.check(context))
+        }
+        return result
+    }
+
     override fun ruleChecks() {
         if (this.actionType.parameterType == Unit::class && this._handlers.all { it.choices.isEmpty() }) {
-            this._handlers.add(SmartActionBuilder<T, A>().also { it.choice("", false) { listOf(Unit) as List<A> } })
+            this._handlers.add(SmartActionBuilder<T, A>().also { it.choice("", false) { listOf(Unit as A) } })
         }
         // Apply modifiers
         this.handlers.forEach { handler ->
@@ -169,12 +181,12 @@ class SmartActionUsingContext<T: Any, A: Any>(
 class ActionPrecondition<T: Any, E>(val rule: ActionOptionsScope<T>.() -> Boolean) {
     // If modifiers were supported here, use other scope than `SmartActionUsingScope` as it contains actions parameter
 
-    fun check(context: ActionOptionsContext<T>): ActionResultPart<E> {
+    fun check(context: ActionOptionsScope<T>): ActionResultPart<E> {
         return ActionResultPart(ActionCheckType.Precondition, this, null, rule.invoke(context))
     }
 
     @Deprecated("use check instead", replaceWith = ReplaceWith("check"))
-    fun fulfilled(context: ActionOptionsContext<T>): Boolean {
+    fun fulfilled(context: ActionOptionsScope<T>): Boolean {
         return rule.invoke(context)
     }
 }
