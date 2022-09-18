@@ -10,7 +10,7 @@ import net.zomis.games.dsl.GameConfigs
 
 sealed class FlowStep {
     interface ProceedStep
-    interface ActionResult
+    interface ActionResultStep
     interface Completable {
         fun complete()
     }
@@ -40,7 +40,7 @@ sealed class FlowStep {
         val action: Actionable<T, Any>,
         val actionType: ActionType<T, Any>,
         override val state: Map<String, Any>
-    ): FlowStep(), ActionResult, RandomnessResult {
+    ): FlowStep(), ActionResultStep, RandomnessResult {
         val serializedParameter: Any get() = actionType.serialize(action.parameter)
         val playerIndex: Int get() = action.playerIndex
         val parameter: Any get() = action.parameter
@@ -48,7 +48,7 @@ sealed class FlowStep {
                 = ActionReplay(actionType.name, playerIndex, serializedParameter, state)
     }
     // TODO: Add reason for why Action is not allowed, of some form... name of rule(s)?
-    data class IllegalAction(val model: Any, val actionType: String, val playerIndex: Int, val parameter: Any): FlowStep(), ActionResult
+    data class IllegalAction(val model: Any, val actionType: String, val playerIndex: Int, val parameter: Any): FlowStep(), ActionResultStep
     data class Log(val log: ActionLogEntry): FlowStep()
     data class RuleExecution(val ruleName: String, val values: Any): FlowStep()
     // Use Deferred for PreSetup and PreMove, see https://kotlinlang.org/docs/shared-mutable-state-and-concurrency.html#actors

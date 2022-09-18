@@ -60,7 +60,7 @@ class SmartActionLogic<T: Any, A: Any>(
     override fun createAction(playerIndex: Int, parameter: A): Actionable<T, A>
         = Action(gameContext.game, playerIndex, actionType.name, parameter)
 
-    override fun performAction(action: Actionable<T, A>): FlowStep.ActionResult {
+    override fun performAction(action: Actionable<T, A>): FlowStep.ActionResultStep {
         _handlers.forEach { handler ->
             handler.effect.forEach {
                 it.perform(createActionContext(action.playerIndex, action.parameter))
@@ -169,8 +169,8 @@ class SmartActionUsingContext<T: Any, A: Any>(
 class ActionPrecondition<T: Any, E>(val rule: ActionOptionsScope<T>.() -> Boolean) {
     // If modifiers were supported here, use other scope than `SmartActionUsingScope` as it contains actions parameter
 
-    fun check(context: ActionOptionsContext<T>): ActionCheckResult<E> {
-        return ActionCheckResult(this, null, rule.invoke(context))
+    fun check(context: ActionOptionsContext<T>): ActionResultPart<E> {
+        return ActionResultPart(ActionCheckType.Precondition, this, null, rule.invoke(context))
     }
 
     @Deprecated("use check instead", replaceWith = ReplaceWith("check"))
@@ -188,11 +188,11 @@ class ActionRequirement<T: Any, A: Any, E>(
         this.modifiers.add(function)
     }
 
-    fun check(context: ActionRuleContext<T, A>): ActionCheckResult<E> {
+    fun check(context: ActionRuleContext<T, A>): ActionResultPart<E> {
         val value = converter.invoke(SmartActionUsingContext(context))
         val modifiedValue = modifiers.fold(value) { old, func -> func.invoke(old) }
         val result = rule.invoke(context, modifiedValue)
-        return ActionCheckResult(this, modifiedValue, result)
+        return ActionResultPart(ActionCheckType.Requires, this, modifiedValue, result)
     }
 
     @Deprecated("use check instead to get detailed results", replaceWith = ReplaceWith("check"))
@@ -256,23 +256,5 @@ interface ActionThingy<E> {
     val value: E
     fun modify(modifier: (E) -> E)
     fun disable()
-    fun execute(): ActionCheckResult<E>
-}
-
-class ActionCheckResult<E>(
-    val rule: Any,
-    val value: E?,
-    val result: Any?
-) {
-    val approved = when (result) {
-        null -> true
-        Unit -> true
-        is String -> result.isNotBlank()
-        is Collection<*> -> result.isNotEmpty()
-        is Array<*> -> result.isNotEmpty()
-        is Boolean -> result
-        else -> false
-    }
-    val deniedResult = if (approved) null else result
-
+    fun execute(): ActionResultPart<E>
 }

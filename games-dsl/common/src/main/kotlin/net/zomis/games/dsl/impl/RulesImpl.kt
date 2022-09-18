@@ -238,7 +238,7 @@ class GameActionRuleContext<T : Any, A : Any>(
         return checkPreconditions(context) && allowed.all { it(context) }
     }
 
-    override fun performAction(action: Actionable<T, A>): FlowStep.ActionResult {
+    override fun performAction(action: Actionable<T, A>): FlowStep.ActionResultStep {
         if (!actionAllowed(action)) {
             return FlowStep.IllegalAction(model, action.actionType, action.playerIndex, action.parameter)
         }

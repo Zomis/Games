@@ -29,7 +29,7 @@ class GameFlowLogicActionDelegator<T: Any, A: Any>(
 
     override fun actionAllowed(action: Actionable<T, A>): Boolean = available.actionAllowed(action)
 
-    override fun performAction(action: Actionable<T, A>): FlowStep.ActionResult {
+    override fun performAction(action: Actionable<T, A>): FlowStep.ActionResultStep {
         if (!checkActionAllowed(action)) return FlowStep.IllegalAction(gameData.game, action.actionType, action.playerIndex, action.parameter)
         performer.perform(action)
         return FlowStep.ActionPerformed(action as Actionable<T, Any>,
