@@ -24,13 +24,13 @@ object Dixit {
     val vote = factory.action("vote", ActionVote::class).serializer { it.toStateString() }
 
     class Config(val cardSet: String)
-    class ActionStory(val card: String, val clue: String): Replayable {
+    data class ActionStory(val card: String, val clue: String): Replayable {
         override fun toStateString(): String = "$card:$clue"
     }
-    class ActionPlaceCard(val card: String): Replayable {
+    data class ActionPlaceCard(val card: String): Replayable {
         override fun toStateString(): String = "$card:null"
     }
-    class ActionVote(val first: String, val second: String?): Replayable {
+    data class ActionVote(val first: String, val second: String?): Replayable {
         override fun toStateString(): String = "$first:$second"
         fun asList(): List<String> = listOfNotNull(first, second)
     }
