@@ -241,16 +241,13 @@ object PlayTests {
         val config = tree.configOrDefault(entry.setup())
         val game: Game<Any>
         val s = Scanner(System.`in`).takeIf { interactive }
-        val blocking = BlockingGameListener()
         game = entry.setup().startGameWithConfig(coroutineScope, playersCount, config) {
-            listOf(tree.replayCallback(), FeedbackHandler(s, tree, GameWrapper(it)), blocking)
+            listOf(tree.replayCallback(), FeedbackHandler(s, tree, GameWrapper(it)))
         }
         val replayable = GameWrapper(game)
         println(replayable.game)
         while (game.isRunning() && tree.running) {
-            println("zzz")
-            delay(100)
-            blocking.await()
+            yield()
         }
 
         tree.save()
