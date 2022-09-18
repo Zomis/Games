@@ -138,6 +138,9 @@ open class SmartActionBuilder<T: Any, A: Any>: SmartActionScope<T, A> {
     override fun choice(name: String, optional: Boolean, function: ActionOptionsScope<T>.() -> Iterable<A>): SmartActionChoice<A> {
         return ActionChoice<T, A, A>(name, optional, exhaustive = true, iterableToChoices(function)).also {
             _choices.putSingle(name, it as ActionChoice<T, A, out Any>)
+            _requires.add(ActionRequirement({}, {
+                action.parameter in function.invoke(this)
+            }))
         }
     }
 

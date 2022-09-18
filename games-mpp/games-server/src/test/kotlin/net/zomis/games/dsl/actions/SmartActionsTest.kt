@@ -1,11 +1,16 @@
 package net.zomis.games.dsl.actions
 
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import net.zomis.games.api.GamesApi
 import net.zomis.games.dsl.GamesImpl
 import net.zomis.games.dsl.flow.actions.SmartActionBuilder
+import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.listeners.BlockingGameListener
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 class SmartActionsTest {
@@ -23,13 +28,15 @@ class SmartActionsTest {
         gameFlow {
             step("change") {
                 class MyActionHandler : SmartActionBuilder<ModelSimple, Int>() {
-                    //                    val bonusChoice = choice("multiplier", optional = true) { 1..4 }
+                    // val bonusChoice = choice("multiplier", optional = true) { 1..4 }
                     val number =
                         exampleChoices("number", optional = false) { 6..10 } // Does not require to be within range
+                    val requirement = using { action.parameter }.requires {
+                        it in 1..10
+                    }
                     val changeEffect = using { action.parameter }.perform {
                         game.value += it //.first * (it.second ?: 1)
                     }
-                    // TODO: Figure out if and how this can affect other handlers. Does anything need to be injected? Or can the lambdas have access to stuff?
                 }
                 actionHandler(change) {
                     val number = choice("number", optional = false) { 1..10 }
@@ -39,7 +46,6 @@ class SmartActionsTest {
                     }
                 }
                 actionHandler(change2, MyActionHandler())
-                // TODO: Change perform by +1
                 // TODO: If something is an option 1..10, allow only those options in actual action (But remember Dixit story!)
                 // TODO: Add `exampleOptions { 1..10 }` (without automatic requires) (choices must have either examples or actual options)
                 // TODO: Add/Remove/Limit options
@@ -67,17 +73,94 @@ class SmartActionsTest {
         }
     }
 
-    @Test
-    fun modifyingEffect() = runTest {
-        val blocking = BlockingGameListener()
-        val g = GamesImpl.game(simpleModifyGame).setup().startGame(this, 1) {
+    lateinit var g: Game<ModelSimple>
+    lateinit var blocking: BlockingGameListener
+
+    suspend fun initializeGame(testScope: TestScope) {
+        blocking = BlockingGameListener()
+        g = GamesImpl.game(simpleModifyGame).setup().startGame(testScope, 1) {
             listOf(blocking)
         }
         blocking.await()
-        Assertions.assertEquals(0, g.model.value)
-        blocking.awaitAndPerform(0, change, 2)
-        blocking.await()
-        Assertions.assertEquals(3, g.model.value)
+    }
+
+    @Nested
+    @DisplayName("using handler class")
+    inner class UsingHandler {
+        val actionType = change2
+        @Test
+        fun modifyingEffect() = runTest {
+            initializeGame(this)
+            Assertions.assertEquals(0, g.model.value)
+            blocking.awaitAndPerform(0, actionType, 2)
+            blocking.await()
+            Assertions.assertEquals(3, g.model.value)
+        }
+
+        @Test
+        fun listExampleOptions() = runTest {
+            initializeGame(this)
+            val available = g.actions.type(actionType)!!.availableActions(0, null).map { it.parameter }
+            Assertions.assertEquals(listOf(6, 7, 8, 9, 10), available)
+            g.stop()
+        }
+
+        @Test
+        fun performOutsideOptions() = runTest {
+            initializeGame(this)
+            blocking.awaitAndPerform(0, actionType, 2)
+            blocking.await()
+            Assertions.assertEquals(3, g.model.value)
+        }
+
+        @Test
+        fun performIllegal() = runTest {
+            initializeGame(this)
+            blocking.awaitAndPerform(0, actionType, -2)
+            blocking.await()
+            Assertions.assertEquals(0, g.model.value)
+            g.stop()
+        }
+    }
+
+    @Nested
+    @DisplayName("using direct handler dsl")
+    inner class UsingDsl {
+        val actionType = change
+        @Test
+        fun modifyingEffect() = runTest {
+            initializeGame(this)
+            Assertions.assertEquals(0, g.model.value)
+            blocking.awaitAndPerform(0, actionType, 2)
+            blocking.await()
+            Assertions.assertEquals(3, g.model.value)
+        }
+
+        @Test
+        fun listExampleOptions() = runTest {
+            initializeGame(this)
+            val available = g.actions.type(actionType)!!.availableActions(0, null).map { it.parameter }
+            Assertions.assertEquals(listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), available)
+            g.stop()
+        }
+
+        @Test
+        fun `perform outside options should be denied`() = runTest {
+            initializeGame(this)
+            blocking.awaitAndPerform(0, actionType, 15)
+            blocking.await()
+            Assertions.assertEquals(0, g.model.value)
+            g.stop()
+        }
+
+        @Test
+        fun performIllegal() = runTest {
+            initializeGame(this)
+            blocking.awaitAndPerform(0, actionType, -2)
+            blocking.await()
+            Assertions.assertEquals(0, g.model.value)
+            g.stop()
+        }
     }
 
 }
