@@ -243,7 +243,7 @@ object PlayTests {
         val s = Scanner(System.`in`).takeIf { interactive }
         val blocking = BlockingGameListener()
         game = entry.setup().startGameWithConfig(coroutineScope, playersCount, config) {
-            listOf(blocking, tree.replayCallback(), FeedbackHandler(s, tree, GameWrapper(it)))
+            listOf(tree.replayCallback(), FeedbackHandler(s, tree, GameWrapper(it)), blocking)
         }
         val replayable = GameWrapper(game)
         println(replayable.game)
