@@ -74,7 +74,7 @@ class ForkTest {
 
     @Test
     fun alphaBeta() = runTest {
-        val level = 6
+        val level = 5
         val aiConfig = AlphaBetaAIFactory(null,"DSL-TTT", "AlphaBeta",
             level, false, ServerAlphaBetaAIs.model(ServerAlphaBetaAIs::heuristicTTT)
         )
