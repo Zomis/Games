@@ -156,7 +156,7 @@ object Backgammon {
         gameFlowRules {
             beforeReturnRule("view") {
                 view("currentPlayer") { game.currentPlayerIndex }
-                view("dice") { game.dice.toList() }
+                view("dice") { game.dice }
                 view("viewer") { viewer ?: 0 }
                 view("board") {
                     game.paths[0].pos.drop(1).take(24).map {
@@ -169,7 +169,7 @@ object Backgammon {
                 view("middle") {
                     (0..1).map { game.paths[it].pos[0] }
                 }
-                view("discardedDice") { game.discardedDice.toList() }
+                view("discardedDice") { game.discardedDice }
                 view("actions") {
                     val noChoices = actionsChosen().chosen()?.chosen?.isEmpty() ?: true
                     mapOf(

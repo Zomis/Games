@@ -2,6 +2,8 @@ package net.zomis.games.server2.db
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonUnwrapped
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import kotlinx.coroutines.CoroutineScope
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.FlowStep
@@ -41,7 +43,8 @@ data class DBGameSummary(
     )
 }
 class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHistory: List<MoveHistory>) {
-    val views = mutableListOf<Map<String, Any?>>()
+    private val mapper = jacksonObjectMapper()
+    val views = mutableListOf<JsonNode>()
     val errors = mutableListOf<String>()
     val timeLastAction = moveHistory.map { it.time }.maxByOrNull { it ?: 0 }
 
@@ -49,7 +52,7 @@ class DBGame(@JsonUnwrapped val summary: DBGameSummary, @JsonIgnore val moveHist
         class MyListener(val game: Game<Any>): GameListener {
             override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
                 if (step is FlowStep.ProceedStep) {
-                    views.add(game.view(null))
+                    views.add(mapper.valueToTree(game.view(null)))
                 }
                 if (step is FlowStep.IllegalAction) {
                     addError("Illegal action: ${step.action}")

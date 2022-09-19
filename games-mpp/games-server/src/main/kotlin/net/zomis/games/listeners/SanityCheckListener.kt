@@ -14,7 +14,7 @@ import kotlin.reflect.KClass
 * - Game actions should be replayable
 *   - Prevent situations where a deserialized object is not the same object as the one in game, causing updates on something else
 *   - Replaying actions should generate the same view as when the original action was made.
-* - No Kotlin-specific data sent to frontend
+* - Possibly in the future: No Kotlin-specific data sent to frontend
 */
 class SanityCheckListener(val game: Game<out Any>): GameListener {
     private val logger = KLoggers.logger(this)
@@ -43,10 +43,7 @@ class SanityCheckListener(val game: Game<out Any>): GameListener {
                 ?: throw IllegalStateException("LiveReplay did not find actionType for: ${step.action}")
             liveReplayingListener.lastAction = step as FlowStep.ActionPerformed<Any>
             val replayAction = actionType.createActionFromSerialized(step.playerIndex, step.serializedParameter)
-
-            println("Sending actionsInput $replayAction")
             blockingListener.awaitAndPerform(replayAction)
-            println("Awaited result")
         }
 
         if (step is FlowStep.AwaitInput) {

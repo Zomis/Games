@@ -46,8 +46,6 @@ class SmartActionsTest {
                     }
                 }
                 actionHandler(change2, MyActionHandler())
-                // TODO: If something is an option 1..10, allow only those options in actual action (But remember Dixit story!)
-                // TODO: Add `exampleOptions { 1..10 }` (without automatic requires) (choices must have either examples or actual options)
                 // TODO: Add/Remove/Limit options
                 // TODO: Support complex choices, and multiple choices
                 // TODO: Recursive/Nested options is same as before, it's just that that's just *one* choice of potentially many. `finalizeChoice()` in DSL?
