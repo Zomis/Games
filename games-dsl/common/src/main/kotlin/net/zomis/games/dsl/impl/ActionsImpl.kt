@@ -22,17 +22,17 @@ interface GameLogicActionType<T : Any, P : Any> {
     fun isComplex(): Boolean
     fun allActions(playerIndex: Int, sampleSize: ActionSampleSize?): Sequence<ActionResult<T, P>> {
         return availableActions(playerIndex, sampleSize).asSequence().map { action ->
-            ActionResult(action).also { it.addRequires("(deprecated allActions)", Unit, true) }
+            ActionResult(action, actionType).also { it.addRequires("(deprecated allActions)", Unit, true) }
         }
     }
     fun availableActions(playerIndex: Int, sampleSize: ActionSampleSize?): Iterable<Actionable<T, P>>
     fun checkAllowed(actionable: Actionable<T, P>): ActionResult<T, P> {
-        return ActionResult(actionable).also { it.addRequires("(deprecated)", Unit, actionAllowed(actionable)) }
+        return ActionResult(actionable, actionType).also { it.addRequires("(deprecated)", Unit, actionAllowed(actionable)) }
     }
     fun actionAllowed(action: Actionable<T, P>): Boolean
     fun perform(action: Actionable<T, P>): ActionResult<T, P> {
-        return ActionResult(action).also {
-            it.addRequires("(deprecated)", Unit, performAction(action) is FlowStep.ActionPerformed<*>)
+        return ActionResult(action, actionType).also {
+            it.addEffect("(deprecated perform)", Unit, performAction(action) is FlowStep.ActionPerformed<*>)
         }
     }
     fun performAction(action: Actionable<T, P>): FlowStep.ActionResultStep
@@ -69,7 +69,7 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
     override fun toString(): String = "ActionType:${actionType.name}"
     fun availableActions(playerIndex: Int, sampleSize: ActionSampleSize?): Iterable<Actionable<T, P>> = impl.availableActions(playerIndex, sampleSize)
     fun perform(playerIndex: Int, parameter: P) = this.perform(this.createAction(playerIndex, parameter))
-    fun perform(action: Actionable<T, P>): FlowStep.ActionResultStep = impl.performAction(action)
+    fun perform(action: Actionable<T, P>) = impl.perform(action)
     fun createAction(playerIndex: Int, parameter: P): Actionable<T, P> = impl.createAction(playerIndex, parameter)
     fun isAllowed(action: Actionable<T, P>): Boolean = impl.actionAllowed(action)
     fun isComplex(): Boolean = impl.isComplex()
@@ -177,6 +177,12 @@ class ActionsImpl<T : Any>(
             return this.type(actionType) as ActionTypeImplEntry<T, P>
         }
         return null
+    }
+
+    fun <A: Any> perform(action: Actionable<T, A>): ActionResult<T, A> {
+        val entry = type(action.actionType) as ActionTypeImplEntry<T, A>?
+            ?: return ActionResult(action, null).also { it.addPrecondition("(actionType)", null, false) }
+        return entry.perform(action)
     }
 
 }

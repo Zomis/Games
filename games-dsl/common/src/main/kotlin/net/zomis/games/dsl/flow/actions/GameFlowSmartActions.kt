@@ -76,7 +76,7 @@ class SmartActionLogic<T: Any, A: Any>(
 
     override fun checkAllowed(actionable: Actionable<T, A>): ActionResult<T, A> {
         val context = createActionContext(actionable.playerIndex, actionable.parameter)
-        val result = ActionResult(actionable)
+        val result = ActionResult(actionable, actionType)
         _handlers.flatMap { it.preconditions }.forEach {
             result.add(it.check(context))
         }

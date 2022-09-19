@@ -73,7 +73,10 @@ class ActionResultPart<E>(
     override fun toString(): String = "Key $key. Value $value returned $result"
 }
 
-class ActionResult<T: Any, A: Any>(val actionable: Actionable<T, A>) {
+class ActionResult<T: Any, A: Any>(
+    val actionable: Actionable<T, A>,
+    val actionType: ActionType<T, A>?
+) {
     private val results = mutableListOf<ActionResultPart<out Any?>>()
     val allowed: Boolean get()
         = results.filter { it.type == ActionCheckType.Precondition || it.type == ActionCheckType.Requires }
@@ -96,4 +99,7 @@ class ActionResult<T: Any, A: Any>(val actionable: Actionable<T, A>) {
         = add(ActionCheckType.Effect, key, value, result)
 
     override fun toString(): String = "Results for $actionable: ${results.groupBy { it.type }}"
+    fun addAll(other: ActionResult<T, A>) {
+        this.results.addAll(other.results)
+    }
 }

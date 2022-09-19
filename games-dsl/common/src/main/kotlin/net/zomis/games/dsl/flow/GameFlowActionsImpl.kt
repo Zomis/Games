@@ -60,16 +60,15 @@ class GameFlowActionsImpl<T: Any>(
     }
 
     fun clearAndPerform(action: Actionable<T, Any>, clearer: () -> Unit): ActionResult<T, out Any> {
-        val gameRuleContext = GameRuleContext(model, eliminations, replayable)
         val existing = this.type(action.actionType)
         if (existing == null) {
             logger.warn { "No existing actionType definition found for $action" }
-            return ActionResult(action).also { it.addPrecondition("actionType", null, false) }
+            return ActionResult(action, null).also { it.addPrecondition("actionType", null, false) }
         }
         val allowed = existing.checkAllowed(action)
         if (allowed.allowed) {
             clearer.invoke()
-            existing.perform(action)
+            allowed.addAll(existing.perform(action))
         }
         return allowed
     }

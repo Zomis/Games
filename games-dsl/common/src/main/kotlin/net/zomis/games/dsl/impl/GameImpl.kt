@@ -173,19 +173,22 @@ class GameImpl<T : Any>(
 
         this.actionsInputJob = coroutineScope.launch(CoroutineName("Actions job for $this")) {
             for (action in actionsInput) {
+                check(action.game == model)
                 stateKeeper.clear()
                 val oldEliminations = eliminations.eliminations()
                 replayState.stateKeeper.preMove(action) {
                     feedbackFlow.send(it)
                 }
-                val result = actions.type(action.actionType)?.perform(action.playerIndex, action.parameter)
-                if (result != null) {
-                    feedbackFlow.send(result as FlowStep)
-                    eliminations.eliminations().minus(oldEliminations.toSet()).forEach {
-                        feedbackFlow.send(FlowStep.Elimination(it))
-                    }
-                    awaitInput()
+                val result = actions.perform(action)
+                feedbackFlow.send(
+                    if (result.allowed) FlowStep.ActionPerformed(action as Actionable<T, Any>, result.actionType as ActionType<T, Any>, replayState.stateKeeper.lastMoveState(), result)
+                    else FlowStep.IllegalAction(action, result)
+                )
+
+                eliminations.eliminations().minus(oldEliminations.toSet()).forEach {
+                    feedbackFlow.send(FlowStep.Elimination(it))
                 }
+                awaitInput()
                 if (isGameOver()) {
                     break
                 }
