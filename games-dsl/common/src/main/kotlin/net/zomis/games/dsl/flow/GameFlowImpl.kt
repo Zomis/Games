@@ -43,8 +43,9 @@ class GameFlowImpl<T: Any>(
     override val events: GameEventsExecutor = this
     override val eliminationCallback: PlayerEliminationsWrite = eliminations
     override val model: T = setupContext.model.factory(this)
-    val replayable = ReplayState(stateKeeper, eliminations, gameConfig)
-    override val actions = GameFlowActionsImpl({ feedbacks.add(it) }, model, eliminations, replayable)
+    val replayable = ReplayState(stateKeeper)
+    private val context = GameRuleContext(model, eliminations, replayable, configs)
+    override val actions = GameFlowActionsImpl({ feedbacks.add(it) }, context)
     override val feedback: (FlowStep) -> Unit = { feedbacks.add(it) }
 
     override val actionsInput: Channel<Actionable<T, out Any>> = Channel()
@@ -189,12 +190,12 @@ class GameFlowImpl<T: Any>(
     }
 
     private fun runRules(state: GameFlowRulesState) {
-        val ruleContext = GameRuleContext(model, eliminations, replayable)
+        val ruleContext = GameRuleContext(model, eliminations, replayable, configs)
         setupContext.flowRulesDsl?.invoke(GameFlowRulesContext(ruleContext, state, null, this))
     }
 
     override fun <E> fire(executor: GameEvents<E>, event: E) {
-        val ruleContext = GameRuleContext(model, eliminations, replayable)
+        val ruleContext = GameRuleContext(model, eliminations, replayable, configs)
         val context = GameFlowRulesContext(ruleContext, GameFlowRulesState.FIRE_EVENT,
         executor as GameEvents<*> to event as Any, this)
         setupContext.flowRulesDsl?.invoke(context)
@@ -267,7 +268,7 @@ class GameFlowContext<T: Any>(
     }
 
     override fun <A : Any> actionHandler(action: ActionType<T, A>, dsl: SmartActionScope<T, A>.() -> Unit) {
-        val smartActionContext = SmartActionContext(action, GameRuleContext(game, eliminations, replayable))
+        val smartActionContext = SmartActionContext(action, GameRuleContext(game, eliminations, replayable, flow.configs))
 //            flow.actions.smartAction(action.name).asSequence() as Sequence<SmartActionBuilder<T, A>>
         dsl.invoke(smartActionContext)
         flow.actions.add(action, smartActionContext)

@@ -159,8 +159,9 @@ class GameImpl<T : Any>(
     override val eliminationCallback = PlayerEliminations(playerCount)
     override val eliminations: PlayerEliminationsWrite get() = eliminationCallback
     override val model = setupContext.model.factory(this)
-    private val replayState = ReplayState(stateKeeper, eliminationCallback, gameConfig)
-    private val rules = GameActionRulesContext(gameConfig, model, replayState, eliminationCallback)
+    private val replayState = ReplayState(stateKeeper)
+    private val gameContext = GameRuleContext(model, eliminations, replayState, gameConfig)
+    private val rules = GameActionRulesContext(gameContext)
 
     override suspend fun start(coroutineScope: CoroutineScope) {
         if (this.actionsInputJob != null) throw IllegalStateException("Game already started")

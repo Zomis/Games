@@ -15,6 +15,7 @@ interface GameRuleScope<T : Any> {
     val game: T
     val eliminations: PlayerEliminationsWrite
     val replayable: ReplayableScope
+    fun <E: Any> config(gameConfig: GameConfig<E>): E
 }
 
 interface GameRuleEventScope<T: Any, E>: GameRuleScope<T> {

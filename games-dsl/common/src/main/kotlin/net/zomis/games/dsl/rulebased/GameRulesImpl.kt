@@ -3,6 +3,7 @@ package net.zomis.games.dsl.rulebased
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.GameEvents
 import net.zomis.games.dsl.ActionType
+import net.zomis.games.dsl.GameConfig
 import net.zomis.games.dsl.ReplayableScope
 import net.zomis.games.dsl.impl.GameActionRulesContext
 import net.zomis.games.dsl.impl.GameRuleContext
@@ -67,6 +68,7 @@ class GameRuleEventContext<T: Any, E>(
     override val game: T get() = context.game
     override val eliminations: PlayerEliminationsWrite get() = context.eliminations
     override val replayable: ReplayableScope get() = context.replayable
+    override fun <E : Any> config(gameConfig: GameConfig<E>): E = context.config(gameConfig)
 }
 class GameRuleEventListenerImpl<T: Any, E>(
     private val events: GameRuleScope<T>.() -> Iterable<GameEvents<E>>
@@ -123,7 +125,7 @@ class GameRuleImpl<T: Any>(
     }
 
     override fun <A : Any> action(actionType: ActionType<T, A>, actionRule: GameRuleAction<T, A>.() -> Unit) {
-        val ruleActionWrapper = GameRuleActionWrapper(actionRulesContext.action(actionType), this)
+        val ruleActionWrapper = GameRuleActionWrapper(actionRulesContext.gameContext, actionRulesContext.action(actionType), this)
         actionRule.invoke(ruleActionWrapper)
     }
 

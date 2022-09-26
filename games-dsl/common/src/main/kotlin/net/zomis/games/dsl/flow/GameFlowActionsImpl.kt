@@ -1,7 +1,6 @@
 package net.zomis.games.dsl.flow
 
 import klog.KLoggers
-import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.flow.actions.SmartActionBuilder
 import net.zomis.games.dsl.flow.actions.SmartActionLogic
@@ -22,9 +21,7 @@ open class GameFlowActionContext<T: Any, A: Any>: GameFlowActionScope<T, A> {
 typealias GameFlowActionDsl<T, A> = GameFlowActionScope<T, A>.() -> Unit
 class GameFlowActionsImpl<T: Any>(
     private val feedback: (FlowStep) -> Unit,
-    private val model: T,
-    private val eliminations: PlayerEliminationsWrite,
-    private val replayable: ReplayState
+    private val gameContext: GameRuleContext<T>,
 ) : Actions<T> {
     override val choices = ActionChoices()
     private val logger = KLoggers.logger(this)
@@ -36,10 +33,9 @@ class GameFlowActionsImpl<T: Any>(
     fun findAction(actionType: String): ActionTypeImplEntry<T, Any> = actions.getValue(actionType)
 
     fun <A: Any> add(actionType: ActionType<T, A>, handler: SmartActionBuilder<T, A>) {
-        val gameRuleContext = GameRuleContext(model, eliminations, replayable)
         val entry = actions.getOrPut(actionType.name) {
-            val smartAction = SmartActionLogic(gameRuleContext, actionType)
-            ActionTypeImplEntry(model, replayable, eliminations, actionType, smartAction) as ActionTypeImplEntry<T, Any>
+            val smartAction = SmartActionLogic(gameContext, actionType)
+            ActionTypeImplEntry(gameContext, actionType, smartAction) as ActionTypeImplEntry<T, Any>
         }
         (entry.impl as SmartActionLogic<T, A>).add(handler)
     }

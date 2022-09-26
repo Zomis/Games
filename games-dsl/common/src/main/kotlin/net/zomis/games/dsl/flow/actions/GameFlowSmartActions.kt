@@ -37,10 +37,10 @@ class SmartActionLogic<T: Any, A: Any>(
     }
 
     private fun createOptionsContext(playerIndex: Int): ActionOptionsContext<T> {
-        return ActionOptionsContext(gameContext.game, actionType.name, playerIndex, gameContext.eliminations, gameContext.replayable)
+        return ActionOptionsContext(gameContext, actionType.name, playerIndex)
     }
     private fun createActionContext(playerIndex: Int, parameter: A): ActionRuleContext<T, A> {
-        return ActionRuleContext(gameContext.game, createAction(playerIndex, parameter), gameContext.eliminations, gameContext.replayable)
+        return ActionRuleContext(gameContext, createAction(playerIndex, parameter))
     }
 
     override fun withChosen(playerIndex: Int, chosen: List<Any>): ActionComplexChosenStep<T, A> {

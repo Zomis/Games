@@ -130,13 +130,8 @@ class StateKeeper {
 }
 class ReplayState(
     val stateKeeper: StateKeeper,
-    override val eliminations: PlayerEliminationsWrite,
-    val config: GameConfigs
-): EffectScope, ReplayableScope {
+): ReplayableScope {
     private val mostRecent = mutableMapOf<String, Any>()
-
-    override val replayable: ReplayableScope get() = this
-    override fun <E : Any> config(gameConfig: GameConfig<E>): E = config.get(gameConfig)
 
     private fun <T: Any> replayable(key: String, default: () -> T): T {
         if (stateKeeper.containsKey(key)) {

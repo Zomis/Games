@@ -47,8 +47,7 @@ class GameFlowLogicActionAvailable<T: Any, A: Any>(
     private val actionDsls: () -> List<GameFlowActionDsl<T, A>>
 ) {
     private val logger = KLoggers.logger(this)
-    private fun createContext(action: Actionable<T, A>)
-        = ActionRuleContext(gameData.game, action, gameData.eliminations, gameData.replayable)
+    private fun createContext(action: Actionable<T, A>) = ActionRuleContext(gameData, action)
 
     private fun checkPreconditions(playerIndex: Int): Boolean {
         val precondition = GameFlowActionContextPrecondition<T, A>(createOptionsContext(playerIndex))
@@ -57,7 +56,7 @@ class GameFlowLogicActionAvailable<T: Any, A: Any>(
     }
 
     private fun createOptionsContext(playerIndex: Int)
-        = ActionOptionsContext(gameData.game, actionType.name, playerIndex, gameData.eliminations, gameData.replayable)
+        = ActionOptionsContext(gameData, actionType.name, playerIndex)
 
     fun availableActions(playerIndex: Int, sampleSize: ActionSampleSize?): Iterable<A> {
         if (!checkPreconditions(playerIndex)) return emptyList()

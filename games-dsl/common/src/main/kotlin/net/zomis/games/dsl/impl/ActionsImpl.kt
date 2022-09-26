@@ -60,9 +60,8 @@ data class ActionSampleSize(val sampleSizes: List<Int>) {
     }
 }
 
-class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
-    private val replayState: ReplayState,
-    private val eliminations: PlayerEliminationsWrite,
+class ActionTypeImplEntry<T : Any, P : Any>(
+    val gameContext: GameRuleContext<T>,
     val actionType: ActionType<T, P>,
     val impl: GameLogicActionType<T, P>
 ) {
@@ -103,7 +102,7 @@ class ActionTypeImplEntry<T : Any, P : Any>(private val model: T,
     }
 
     fun actionOptionsContext(playerIndex: Int): ActionOptionsContext<T>
-        = ActionOptionsContext(model, this.actionType.name, playerIndex, eliminations, replayState)
+        = ActionOptionsContext(gameContext, this.actionType.name, playerIndex)
 
     @Deprecated("to be removed")
     fun actionInfoKeys(playerIndex: Int, previouslySelected: List<Any>): ActionInfoByKey {
