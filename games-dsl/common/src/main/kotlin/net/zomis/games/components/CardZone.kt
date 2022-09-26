@@ -3,29 +3,37 @@ package net.zomis.games.cards
 import net.zomis.games.dsl.Replayable
 import net.zomis.games.dsl.ReplayableScope
 
-data class Card<T>(val zone: CardZone<T>, val index: Int, val card: T) {
-    fun moveAndReplace(moveTo: CardZone<T>, replaceWith: Card<T>): T {
-        moveTo.cards.add(this.zone.cards[index])
-        val newCard = replaceWith.remove()
-        this.zone.cards[index] = newCard
-        return newCard
-    }
+enum class DeckDirection {
+    TOP, BOTTOM
+}
 
+interface CardZoneI<T> {
+    var name: String?
+    val size: Int
+    val indices: IntRange
+    fun card(value: T): Card<T>
+    fun isEmpty(): Boolean = size == 0
+    fun isNotEmpty(): Boolean = !isEmpty()
+    fun add(card: T)
+    fun remove(card: Card<T>): T
+}
+
+data class Card<T>(val zone: CardZoneI<T>, val index: Int, val card: T) {
     fun remove(): T {
-        val value = this.zone.cards.removeAt(this.index)
+        val value = this.zone.remove(this)
         if (value != this.card) throw IllegalStateException("Card $card has moved away from index $index in zone $zone")
         return value
     }
 
-    fun moveTo(destination: CardZone<T>) {
+    fun moveTo(destination: CardZoneI<T>) {
         val card = this.remove()
-        destination.cards.add(card)
+        destination.add(card)
     }
 }
 
-class CardZone<T>(val cards: MutableList<T> = mutableListOf()) {
+class CardZone<T>(val cards: MutableList<T> = mutableListOf()): CardZoneI<T> {
 
-    var name: String? = null
+    override var name: String? = null
 
     operator fun get(index: Int): Card<T> {
         return Card(this, index, cards[index])
@@ -63,10 +71,10 @@ class CardZone<T>(val cards: MutableList<T> = mutableListOf()) {
 
     fun top(i: Int): List<T> = this.cards.take(i)
 
-    fun card(card: T): Card<T> {
-        val index = this.cards.indexOf(card)
-        if (index < 0) throw IllegalStateException("card $card is not in zone $this")
-        return Card(this, index, card)
+    override fun card(value: T): Card<T> {
+        val index = this.cards.indexOf(value)
+        if (index < 0) throw IllegalStateException("card $value is not in zone $this")
+        return Card(this, index, value)
     }
 
     fun first(count: Int, filter: (T) -> Boolean): List<T> {
@@ -77,15 +85,24 @@ class CardZone<T>(val cards: MutableList<T> = mutableListOf()) {
         return filtered.take(count)
     }
 
-    val size: Int get() = cards.size
-    val indices: IntRange get() = cards.indices
+    override val size: Int get() = cards.size
+    override val indices: IntRange get() = cards.indices
 
-    fun isEmpty(): Boolean = size == 0
+    override fun isEmpty(): Boolean = size == 0
     override fun toString(): String {
         return name ?: super.toString()
     }
 
     fun asSequence(): Sequence<Card<T>> = this.cards.toList().asSequence().map { card(it) }
+    override fun remove(card: Card<T>): T {
+        val value = this.cards.removeAt(card.index)
+        check(value == card.card) { "Card $card has moved away from index ${card.index} in zone $this" }
+        return value
+    }
+
+    override fun add(card: T) {
+        this.cards.add(card)
+    }
 
     fun moveAllTo(destination: CardZone<T>) {
         while (this.cards.isNotEmpty()) {
@@ -107,7 +124,7 @@ class CardZone<T>(val cards: MutableList<T> = mutableListOf()) {
         return seq + refilled
     }
 
-    inline fun isNotEmpty(): Boolean = !isEmpty()
+    override fun isNotEmpty(): Boolean = !isEmpty()
 
 }
 fun <T: Replayable> CardZone<T>.random(replayable: ReplayableScope, count: Int, stateKey: String): Sequence<Card<T>> {
