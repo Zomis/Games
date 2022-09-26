@@ -1,7 +1,5 @@
 package net.zomis.games.dsl
 
-import net.zomis.games.PlayerEliminationsWrite
-
 fun <T> Iterable<T>.withIds(idFunction: (T) -> String) = this.map { idFunction(it) to it }
 
 interface Replayable {
@@ -15,9 +13,4 @@ interface ReplayableScope {
     fun strings(key: String, default: () -> List<String>): List<String>
     fun list(key: String, default: () -> List<Map<String, Any>>): List<Map<String, Any>>
     fun <E> randomFromList(key: String, list: List<E>, count: Int, stringMapper: (E) -> String): List<E>
-}
-
-interface EffectScope : GameUtils {
-    override val eliminations: PlayerEliminationsWrite
-    override val replayable: ReplayableScope
 }
