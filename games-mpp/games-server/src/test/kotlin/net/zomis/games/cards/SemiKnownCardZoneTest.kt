@@ -4,6 +4,7 @@ import net.zomis.games.components.SemiKnownCardZone
 import net.zomis.games.dsl.impl.ReplayState
 import net.zomis.games.dsl.impl.StateKeeper
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -38,7 +39,10 @@ class SemiKnownCardZoneTest {
         @Nested
         @DisplayName("when cards are shuffled")
         inner class WhenShuffled {
-            val zone = this@GivenTenCards.zone.shuffle()
+            @BeforeEach
+            fun setup() {
+                zone.shuffle()
+            }
 
             @Test
             fun `nothing is known`() {
@@ -112,8 +116,10 @@ class SemiKnownCardZoneTest {
             @Nested
             @DisplayName("and when top card is chosen with replay data 'value-4'")
             inner class ReplayTop {
-                val replayable = ReplayState(StateKeeper())
-                init {
+                private val replayable = ReplayState(StateKeeper())
+
+                @BeforeEach
+                fun setup() {
                     replayable.stateKeeper.setState(mapOf("top" to listOf("value-4")))
                     replayable.stateKeeper.replayMode = true
                 }
@@ -132,7 +138,4 @@ class SemiKnownCardZoneTest {
 moving top card to another card zone should remove it from this and add it to the other
 shuffling and inserting a known value somewhere should make it known
 */
-
-
-
 }
