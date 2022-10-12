@@ -32,11 +32,11 @@ interface MutableResourceMap: ResourceMap {
     /**
      * Moves all resources that are possible to move. Ignores any modifiers on this object.
      */
-    fun payTo(resources: ResourceMap, destination: ResourceMap): Boolean
+    fun payTo(resources: ResourceMap, destination: MutableResourceMap): Boolean
 }
 
-// move (values) to (other)
-// "For the next 5 turns, you always have one wildcard to spend" --> How to move it? Probably don't force it to be moved
+// "For the next 5 turns, you always have one wildcard to spend" --> Doesn't make sense if it would be moved, as it doesn't really exist.
+// "For the next 5 turns, cards you buy costs one less of any color" --> Makes a lot more sense, has the same effect.
 
 // Resource aliases (not immediate problem)
 
@@ -46,7 +46,7 @@ interface MutableResourceMap: ResourceMap {
 
 class ResourceMapImpl(
     private val resources: MutableMap<GameResource, ResourceEntryImpl> = mutableMapOf()
-): ResourceMap {
+): MutableResourceMap, ResourceMap {
 
     override fun get(resource: GameResource): Int? = resources[resource]?.value
     override fun getOrDefault(resource: GameResource): Int = resources[resource]?.value ?: resource.defaultValue()
@@ -91,6 +91,41 @@ class ResourceMapImpl(
     }
 
     override fun unaryMinus(): ResourceMap = this.map { it.resource to -it.value }
+
+    private inline fun enforceResource(resource: GameResource): ResourceEntryImpl = this.resources.getOrPut(resource) { ResourceEntryImpl(resource, resource.defaultValue()) }
+
+    override fun set(resource: GameResource, value: Int) {
+        enforceResource(resource).value = value
+    }
+
+    override fun plusAssign(other: ResourceMap) {
+        other.entries().forEach {
+            this.enforceResource(it.resource) += it.value
+        }
+    }
+
+    override fun minusAssign(other: ResourceMap) {
+        other.entries().forEach {
+            this.enforceResource(it.resource) -= it.value
+        }
+    }
+
+    override fun timesAssign(value: Int) {
+        entries().map { it as MutableResourceEntry }.forEach {
+            it.value *= value
+        }
+    }
+
+    override fun clear(resource: GameResource) {
+        this.resources.remove(resource)
+    }
+
+    override fun payTo(resources: ResourceMap, destination: MutableResourceMap): Boolean {
+        if (!this.has(resources)) return false
+        this -= resources
+        destination += resources
+        return true
+    }
 
 }
 
