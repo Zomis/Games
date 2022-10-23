@@ -26,9 +26,9 @@ class SmartActionLogic<T: Any, A: Any>(
         }
         // TODO: For multiple options, find optionalChoices, start with those and then go to required choices and just do the first one recursively
         val choices = _handlers.flatMap { it._choices.entries }
-        check(choices.size == 1) { "Only single choices supported so far" }
+        check(choices.size == 1) { "Only single choices supported so far, found $choices (actionType $actionType)" }
         val choice = choices.single().value
-        check(!choice.optional) { "Optional choices not supported yet" }
+        check(!choice.optional) { "Optional choices not supported yet (actionType $actionType)" }
 
         return ActionComplexImpl(actionType, createOptionsContext(playerIndex), choice.options).start().depthFirstActions(sampleSize).map { it.parameter }
             .map { createAction(playerIndex, it) }
