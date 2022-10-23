@@ -151,6 +151,7 @@ class ReplayState(
     override fun strings(key: String, default: () -> List<String>): List<String> = replayable(key, default)
     override fun list(key: String, default: () -> List<Map<String, Any>>): List<Map<String, Any>> = replayable(key, default)
     override fun <E> randomFromList(key: String, list: List<E>, count: Int, stringMapper: (E) -> String): List<E> {
+        require(count >= 0) { "randomFromList count cannot be less than zero, was $count" }
         if (count == 0) return emptyList()
         val remainingList = list.toMutableList()
         val strings = strings(key) { remainingList.shuffled().take(count).map(stringMapper) }.toMutableList()

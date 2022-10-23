@@ -42,7 +42,8 @@ object Favors {
         fun allowFavors(vararg favorType: FavorType): ActionDefinition<AlchemistsDelegationGame.Model, FavorType> {
             return action("favor", FavorType::class) {
                 precondition { game.players[playerIndex].favors.cards.any { favorType.contains(it) } }
-                // TODO: options, requires...
+                options { game.players[playerIndex].favors.cards.distinct() }
+                // TODO: proper options, requires...
                 perform {
                     game.players[playerIndex].favors.card(action.parameter).moveTo(favorsPlayed)
                     log { "$player uses $action" }

@@ -70,7 +70,7 @@ object SellAction {
             .setup { it.initialize(listOf(2), playerCount) }
         override val action = actionSerializable<AlchemistsDelegationGame.Model, SellAction>("sell", SellAction::class) {
             if (discounts.size < playerCount && playerCount >= 2) {
-                precondition { playerIndex in actionSpace.rows.map { it?.first } } // player is selling
+                precondition { playerIndex in actionSpace.rows.map { it?.playerIndex } } // player is selling
                 precondition { playerIndex !in discounts.map { it.first } } // player has not chosen discount
                 options { (0..3).map { SellAction(it, null, null, null) } }
                 requires { action.parameter.discount != null }
@@ -80,7 +80,7 @@ object SellAction {
                     if (discounts.size == playerCount) {
                         actionSpace.rows.sortBy { row ->
                             if (row == null) -1
-                            else discounts.first { it.first == row.first }.second
+                            else discounts.first { it.first == row.playerIndex }.second
                         }
                         sellOrder = discounts.sortedBy { it.second }.map { it.first }
                     }

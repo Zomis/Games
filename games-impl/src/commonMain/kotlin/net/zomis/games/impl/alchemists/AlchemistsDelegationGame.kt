@@ -83,10 +83,18 @@ object AlchemistsDelegationGame {
         }
         val turnPicker by component { TurnPicker(ctx) }
 
+        data class PlayerActionCube(val cubes: Int, var used: Boolean = false)
+        class PlayerActionRow(val playerIndex: Int, val cubes: MutableList<PlayerActionCube> = mutableListOf()) {
+            fun useNext(): Int {
+                val usedCubes = cubes.withIndex().first { it.value.used.not() }.value
+                usedCubes.used = true
+                return usedCubes.cubes
+            }
+        }
+
         inner class ActionSpace(ctx: Context, val name: String, val cost: Favors.FavorType? = null): Entity(ctx) {
             val spaces by component { mutableListOf<Int>() }
-            val rows by component { mutableListOf<Pair<Int, MutableList<Int?>>?>() }
-                // cubes in each row. Row 3 to [1, 2] means that player 3 has 1 cube, then 2 cubes in that row.
+            val rows by component { mutableListOf<PlayerActionRow?>() }
                 .on(newRound) { value.indices.forEach { value[it] = null } }
 
             fun initialize(count: List<Int>, playerCount: Int): ActionSpace {
@@ -105,19 +113,19 @@ object AlchemistsDelegationGame {
                 val spacesLeft = this.spaces.toMutableList()
                 check(spacesLeft.take(cubes.size) == cubes)
                 if (choice.any { it.associate }) {
-                    rows.add(0, playerIndex to cubes.toMutableList())
+                    rows.add(0, PlayerActionRow(playerIndex, cubes.map { PlayerActionCube(it) }.toMutableList()))
                     rows.removeAt(rows.indexOf(null))
                 } else {
                     val rowIndex = rows.lastIndexOf(null)
-                    rows[rowIndex] = playerIndex to cubes.toMutableList()
+                    rows[rowIndex] = PlayerActionRow(playerIndex, cubes.map { PlayerActionCube(it) }.toMutableList())
                 }
             }
 
             private fun nextIndex(): Pair<Int, Int>? {
-                for (index in 0..rows.maxOf { it?.second?.size ?: 0 }) {
+                for (index in 0..rows.maxOf { it?.cubes?.size ?: 0 }) {
                     for (rowIndex in rows.indices) {
                         val row = rows[rowIndex]
-                        if (row != null && row.second.size > index && row.second[index] != null) {
+                        if (row != null && row.cubes.size > index && !row.cubes[index].used) {
                             return rowIndex to index
                         }
                     }
@@ -128,26 +136,22 @@ object AlchemistsDelegationGame {
                 val index = nextIndex() ?: return null
                 val (rowIndex, actionListIndex) = index
                 val row = rows[rowIndex]!!
-                return row.first to row.second[actionListIndex]!!
+                return row.playerIndex to row.cubes[actionListIndex].cubes
             }
 
             fun resolveNext(playerIndex: Int): Int {
-                val list = rows.first { it?.first == playerIndex }!!.second
-                val value = list.first { it != null }!!
-                list.remove(value)
-                return value
+                val list = rows.first { it?.playerIndex == playerIndex }!!
+                return list.useNext()
             }
             fun has(playerIndex: Int): Boolean {
-                val list = rows.find { it?.first == playerIndex }?.second ?: return false
-                return list.any { it != null }
+                val list = rows.find { it?.playerIndex == playerIndex }?.cubes ?: return false
+                return list.any { !it.used }
             }
             fun resolveNext(): Int {
                 val index = nextIndex()!!
                 val (rowIndex, actionListIndex) = index
                 val row = rows[rowIndex]!!
-                val count = row.second[actionListIndex]
-                row.second[actionListIndex] = null
-                return count!!
+                return row.useNext()
             }
 
             fun nextPlayerIndex(): Int? = this.next()?.first
@@ -337,7 +341,7 @@ object AlchemistsDelegationGame {
                     }.loopUntil {
                         action?.parameter !is Favors.FavorType
                             && game.queue.isEmpty()
-                            && space.actionSpace.rows.all { it == null || it.second.all { i -> i == null } }
+                            && space.actionSpace.rows.all { it == null || it.cubes.all { cubes -> cubes.used } }
                     }
                     game.spaceDone.invoke(this, space)
                 }
