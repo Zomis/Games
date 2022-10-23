@@ -118,9 +118,10 @@ class CardZone<T>(val cards: MutableList<T> = mutableListOf()): CardZoneI<T> {
         if (count <= this.size) {
             return random(replayable, count, stateKey, matcher)
         }
-        val seq = asSequence()
+        val oldSize = this.size
+        val seq = cards.toList().map { card(it) }.asSequence()
         refill.asSequence().forEach { it.moveTo(this) }
-        val refilled = refill.random(replayable, count - this.size, stateKey, matcher)
+        val refilled = refill.random(replayable, count - oldSize, stateKey, matcher)
         return seq + refilled
     }
 
