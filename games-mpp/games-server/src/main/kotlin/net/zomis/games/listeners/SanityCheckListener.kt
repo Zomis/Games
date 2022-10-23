@@ -1,5 +1,6 @@
 package net.zomis.games.listeners
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import klog.KLoggers
 import kotlinx.coroutines.CoroutineScope
 import net.zomis.games.common.PlayerIndex
@@ -23,6 +24,7 @@ class SanityCheckListener(val game: Game<out Any>): GameListener {
     private val liveReplayingListener = LiveReplayingListener()
     private val blockingListener = BlockingGameListener()
     private val enumsFound = mutableSetOf<KClass<*>>()
+    private val mapper = jacksonObjectMapper()
 
     override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
         replayListener.handle(coroutineScope, step)
@@ -54,7 +56,7 @@ class SanityCheckListener(val game: Game<out Any>): GameListener {
 
             // make sure that view in this game is the same as in live replay game, for all players
             // also check view for all players for Kotlin-specific data
-            for (playerIndex in game.playerIndices.toList()+null) {
+            for (playerIndex in game.playerIndices.toList() + null) {
                 val originalView = game.view(playerIndex)
                 val replayView = replayGame.view(playerIndex)
                 // checkViewTypes(originalView) // Allow all view types for now. There's a lot of data classes being used.
@@ -110,8 +112,15 @@ class SanityCheckListener(val game: Game<out Any>): GameListener {
                 result
             }
             else -> {
-                val result = a == b
-                if (!result) println("Mismatch at $path: $a vs. $b")
+                val (first, second) = a to b
+                val jacksonSerialized = mapper.writeValueAsString(first) to mapper.writeValueAsString(second)
+                val jacksonMatch = jacksonSerialized.first == jacksonSerialized.second
+                val result = first == second
+                if (jacksonMatch && !result) {
+                    println("Match using jackson but not object equals at $path: $first vs. $second (${jacksonSerialized.first})")
+                    return true
+                }
+                if (!result) println("Mismatch at $path: $first vs. $second. Jackson values ${jacksonSerialized.first} vs. ${jacksonSerialized.second}")
                 result
             }
         }

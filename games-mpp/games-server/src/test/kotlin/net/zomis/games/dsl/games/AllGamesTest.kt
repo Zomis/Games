@@ -3,6 +3,7 @@ package net.zomis.games.dsl.games
 import kotlinx.coroutines.test.runTest
 import net.zomis.games.dsl.GameEntryPoint
 import net.zomis.games.dsl.GamesImpl
+import net.zomis.games.dsl.ReplayException
 import net.zomis.games.dsl.impl.GameAI
 import net.zomis.games.dsl.impl.GameAIs
 import net.zomis.games.dsl.listeners.BlockingGameListener
@@ -10,14 +11,13 @@ import net.zomis.games.impl.DslSplendor
 import net.zomis.games.impl.SetGame
 import net.zomis.games.impl.SpiceRoadDsl
 import net.zomis.games.impl.words.Decrypto
-import net.zomis.games.listeners.LimitedNextViews
-import net.zomis.games.listeners.MaxMoves
-import net.zomis.games.listeners.SanityCheckListener
+import net.zomis.games.listeners.*
 import net.zomis.games.server2.ServerGames
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
+import java.nio.file.Path
 
 class AllGamesTest {
 
@@ -57,14 +57,26 @@ class AllGamesTest {
             }
         }
         val awaiting = BlockingGameListener()
-        val game = gameType.setup().startGame(this, playerCount) { game ->
-            val aiListeners = game.playerIndices.map {
-                ai.gameListener(game, it)
+        val replay = ReplayListener(gameType.gameType)
+        try {
+            val game = gameType.setup().startGame(this, playerCount) { game ->
+                val aiListeners = game.playerIndices.map {
+                    ai.gameListener(game, it)
+                }
+                listOf(
+                    LimitedNextViews(10),
+                    replay,
+                    SanityCheckListener(game),
+                    MaxMoves(10000)
+                ) + aiListeners + awaiting
             }
-            listOf(SanityCheckListener(game), LimitedNextViews(10), MaxMoves(10000)) + aiListeners + awaiting
+            awaiting.awaitGameEnd()
+            Assertions.assertTrue(game.isGameOver())
+        } catch (ex: Exception) {
+            val filename = "failed-game-${gameType.gameType}-${System.currentTimeMillis()}.json"
+            FileReplay(Path.of(filename), replay).save()
+            throw ReplayException("Sanity check failed for game ${gameType.gameType}. Saved replay to $filename", ex)
         }
-        awaiting.awaitGameEnd()
-        Assertions.assertTrue(game.isGameOver())
     }
 
 }
