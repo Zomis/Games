@@ -16,17 +16,22 @@ data class SplendorPlayer(val index: Int) {
     val reserved: CardZone<SplendorCard> = CardZone()
 
     val nobles = CardZone<SplendorNoble>()
-    val points: Int get() = owned.cards.sumBy { it.points } + nobles.cards.sumBy { it.points }
+    val points: Int get() = owned.cards.sumOf { it.points } + nobles.cards.sumOf { it.points }
 
     fun total(): Money = this.discounts() + this.chips
 
-    fun canBuy(card: SplendorCard): Boolean = this.total().hasWithWildcards(card.costs)
+    fun canBuy(card: SplendorCard): Boolean {
+        val have = this.total()
+        val diff = have - card.costs
+        val wildcardsNeeded = diff.negativeAmount()
+        return have.moneys.getOrElse(MoneyType.WILDCARD) { 0 } >= wildcardsNeeded
+    }
 
     fun pay(costs: Money): Money {
-        val chipCosts = (costs - this.discounts()).map({ it.first to max(it.second, 0) }) { it }
+        val chipCosts = (costs - this.discounts()).map { it.first to max(it.second, 0) }
         val remaining = (this.chips - chipCosts)
         val wildcardsNeeded = remaining.negativeAmount()
-        val actualCosts = this.chips - remaining.map({ it.first to max(it.second, 0) }) { it - wildcardsNeeded }
+        val actualCosts = this.chips - remaining.map { it.first to max(it.second, 0) } + MoneyType.WILDCARD.toMoney(wildcardsNeeded)
 
         val tokensExpected = chipCosts.count
         val oldMoney = this.chips
@@ -61,7 +66,7 @@ data class SplendorCard(val level: Int, val discounts: Money, val costs: Money, 
 
 data class SplendorNoble(val points: Int, val requirements: Money) {
     fun requirementsFulfilled(player: SplendorPlayer): Boolean {
-        return player.discounts().hasWithoutWildcards(requirements)
+        return player.discounts().has(requirements)
     }
 
     fun toStateString(): String {
@@ -70,52 +75,52 @@ data class SplendorNoble(val points: Int, val requirements: Money) {
 }
 
 enum class MoneyType(val char: Char) {
-    WHITE('W'), BLUE('U'), BLACK('B'), RED('R'), GREEN('G');
+    WHITE('W'), BLUE('U'), BLACK('B'), RED('R'), GREEN('G'),
+    WILDCARD('*');
 
     fun toMoney(count: Int): Money {
         return Money(mutableMapOf(this to count))
     }
+
+    companion object {
+        fun withoutWildcard(): List<MoneyType> = MoneyType.values().toList().minus(WILDCARD)
+    }
 }
-data class Money(val moneys: MutableMap<MoneyType, Int> = mutableMapOf(), val wildcards: Int = 0) {
-    val count: Int = moneys.values.sum() + wildcards
+data class Money(val moneys: MutableMap<MoneyType, Int> = mutableMapOf()) {
+    val count: Int = moneys.values.sum()
 
     constructor(vararg money: Pair<MoneyType, Int>) : this(mutableMapOf<MoneyType, Int>(*money))
 
     operator fun plus(other: Money): Money {
         val result = moneys.mergeWith(other.moneys) {a, b -> (a ?: 0) + (b ?: 0)}
-        return Money(result.toMutableMap(), wildcards + other.wildcards)
+        return Money(result.toMutableMap())
     }
 
-    fun hasWithWildcards(costs: Money): Boolean {
-        val diff = this - costs
-        val wildcardsNeeded = diff.negativeAmount()
-        return this.wildcards >= wildcardsNeeded
-    }
 
-    fun hasWithoutWildcards(costs: Money): Boolean {
-        val diff = this - costs
-        return diff.wildcards >= 0 && diff.moneys.all { it.value >= 0 }
-    }
-
-    fun map(mapping: (Pair<MoneyType, Int>) -> Pair<MoneyType, Int>, wildcardsMapping: (Int) -> Int): Money {
+    fun map(mapping: (Pair<MoneyType, Int>) -> Pair<MoneyType, Int>): Money {
         var result = Money()
         moneys.forEach { pair -> result += Money(mutableMapOf(mapping(pair.key to pair.value))) }
-        return Money(result.moneys.toMutableMap(), wildcardsMapping(wildcards))
+        return Money(result.moneys.toMutableMap())
     }
 
     fun filter(entry: (Map.Entry<MoneyType, Int>) -> Boolean): Money {
-        return Money(moneys.entries.filter(entry).associate { it.key to it.value }.toMutableMap(), wildcards)
+        return Money(moneys.entries.filter(entry).associate { it.key to it.value }.toMutableMap())
     }
 
     fun negativeAmount(): Int = moneys.values.filter { it < 0 }.sum().absoluteValue
 
     operator fun minus(other: Money): Money {
         val result = moneys.mergeWith(other.moneys) {a, b -> (a ?: 0) - (b ?: 0)}
-        return Money(result.toMutableMap(), wildcards - other.wildcards)
+        return Money(result.toMutableMap())
     }
 
     fun toStateString(): String {
         return moneys.entries.sortedBy { it.key.char }.joinToString("") { it.key.char.toString().repeat(it.value) }
+    }
+
+    fun has(requirements: Money): Boolean {
+        val diff = this - requirements
+        return diff.negativeAmount() == 0
     }
 }
 
@@ -157,10 +162,9 @@ class SplendorGame(val config: SplendorConfig, val eliminations: PlayerEliminati
             throw IllegalStateException("Player has negative amount of chips")
         }
         if (this.currentPlayer.discounts().negativeAmount() > 0) throw IllegalStateException("Player has negative amount of discounts")
-        if (this.currentPlayer.chips.wildcards < 0) throw IllegalStateException("Player has negative amount of wildcards")
         val totalChipsInGame = this.stock + this.players.fold(Money()) { a, b -> a.plus(b.chips) }
-        if (totalChipsInGame.wildcards != 5) throw IllegalStateException("Wrong amount of total wildcards: $totalChipsInGame")
-        if (totalChipsInGame.moneys.any { it.value != startingStockForPlayerCount(players.size) }) {
+        if (totalChipsInGame.moneys[MoneyType.WILDCARD] != 5) throw IllegalStateException("Wrong amount of total wildcards: $totalChipsInGame")
+        if (totalChipsInGame.moneys.any { it.key != MoneyType.WILDCARD && it.value != startingStockForPlayerCount(players.size) }) {
             throw IllegalStateException("Wrong amount of total chips: $totalChipsInGame")
         }
 
@@ -196,7 +200,7 @@ class SplendorGame(val config: SplendorConfig, val eliminations: PlayerEliminati
     val playerCount = eliminations.playerCount
     val players: List<SplendorPlayer> = (0 until playerCount).map { SplendorPlayer(it) }
     val board: CardZone<SplendorCard> = CardZone(mutableListOf())
-    var stock: Money = MoneyType.values().fold(Money()) { money, type -> money + type.toMoney(startingStockForPlayerCount(playerCount))}.plus(Money(mutableMapOf(), 5))
+    var stock: Money = MoneyType.withoutWildcard().fold(Money()) { money, type -> money + type.toMoney(startingStockForPlayerCount(playerCount))}.plus(MoneyType.WILDCARD.toMoney(5))
     var currentPlayerIndex: Int = 0
 
     val currentPlayer: SplendorPlayer
@@ -214,8 +218,7 @@ data class SplendorConfig(
 object DslSplendor {
 
     fun viewMoney(money: Money): Map<String, Int> {
-        return money.moneys.entries.sortedBy { it.key.name }.map { it.key.name to it.value }
-                .let { if (money.wildcards > 0) it.plus("wildcards" to money.wildcards) else it }.toMap()
+        return money.moneys.entries.sortedBy { it.key.name }.associate { it.key.name to it.value }
     }
     fun viewNoble(game: SplendorGame, noble: SplendorNoble): Map<String, Any?> = mapOf(
         "points" to 3,
@@ -301,7 +304,7 @@ object DslSplendor {
             action(discardMoney) {
                 forceWhen { game.currentPlayer.chips.count > game.config.maxMoney }
                 options { MoneyType.values().toList() }
-                requires { game.currentPlayer.chips.hasWithoutWildcards(action.parameter.toMoney(1)) }
+                requires { game.currentPlayer.chips.has(action.parameter.toMoney(1)) }
                 effect {
                     val money = action.parameter.toMoney(1)
                     game.currentPlayer.chips -= money
@@ -315,7 +318,7 @@ object DslSplendor {
             action(reserve).effect {
                 val card = game.board.card(action.parameter)
                 game.currentPlayer.reserved.cards.add(card.card)
-                val wildcardIfAvailable = if (game.stock.wildcards > 0) Money(mutableMapOf(), 1) else Money()
+                val wildcardIfAvailable = if (game.stock.moneys.getOrElse(MoneyType.WILDCARD) { 0 } > 0) MoneyType.WILDCARD.toMoney(1) else Money()
                 game.stock -= wildcardIfAvailable
                 game.currentPlayer.chips += wildcardIfAvailable
                 replaceCard(replayable, game, card.card)
@@ -326,7 +329,7 @@ object DslSplendor {
             action(takeMoney).choose {
                 recursive(emptyList<MoneyType>()) {
                     options({
-                        val all = MoneyType.values().asIterable()
+                        val all = MoneyType.withoutWildcard().asIterable()
                         if (chosen.distinct().size == 2) all - chosen.toSet() else all
                     }) { moneyType ->
                         recursion(moneyType) { list, e -> list + e }
@@ -338,13 +341,14 @@ object DslSplendor {
             }
             action(takeMoney).requires {
                 val moneyChosen = action.parameter.toMoney()
-                if (!game.stock.hasWithoutWildcards(moneyChosen)) {
+                if (moneyChosen.moneys.getOrElse(MoneyType.WILDCARD) { 0 } >= 1) return@requires false
+                if (!game.stock.has(moneyChosen)) {
                     return@requires false
                 }
                 val chosen = action.parameter.moneys
                 return@requires when (chosen.size) {
                     1 -> true
-                    2 -> chosen.distinct().size != 1 || game.stock.hasWithoutWildcards(moneyChosen.plus(moneyChosen))
+                    2 -> chosen.distinct().size != 1 || game.stock.has(moneyChosen.plus(moneyChosen))
                     3 -> chosen.distinct().size == chosen.size
                     else -> false
                 }
@@ -374,7 +378,7 @@ object DslSplendor {
                 }.values.toList()
             }
             view("stock") {
-                MoneyType.values().associate { it to game.stock.moneys[it] }.plus("wildcards" to game.stock.wildcards)
+                MoneyType.values().associateWith { game.stock.moneys[it] }
             }
             view("nobles") {
                 val allNobles = game.players.flatMap { pl -> pl.nobles.cards } + game.nobles.cards

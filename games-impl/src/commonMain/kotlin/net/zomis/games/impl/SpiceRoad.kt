@@ -3,6 +3,7 @@ package net.zomis.games.impl
 import net.zomis.games.cards.CardZone
 import net.zomis.games.common.mergeWith
 import net.zomis.games.common.next
+import net.zomis.games.components.resources.GameResource
 import net.zomis.games.dsl.*
 import kotlin.math.absoluteValue
 
@@ -265,12 +266,8 @@ class SpiceRoadGameModel(val playerCount: Int) {
         }
     }
 
-    enum class Spice(val char: Char) {
+    enum class Spice(val char: Char): GameResource {
         YELLOW('Y'), RED('R'), GREEN('G'), BROWN('B');
-
-        operator fun plus(upgrade: Int): Spice {
-            return values()[minOf(this.ordinal + upgrade, BROWN.ordinal)]
-        }
 
         fun toCaravan(count: Int = 1): Caravan {
             return Caravan(mutableMapOf(this to count))
