@@ -1,6 +1,5 @@
 package net.zomis.games.dsl.impl
 
-import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.mergeWith
 import net.zomis.games.dsl.*
 import kotlin.reflect.KClass
@@ -91,11 +90,11 @@ class ActionTypeImplEntry<T : Any, P : Any>(
             val actions = availableActions(actionOptionsContext.playerIndex, null).filter { action2 ->
                 actionType.serialize(action2.parameter) == serialized
             }.distinct()
-            if (actions.size != 1) {
+            if (actions.isEmpty()) {
                 throw IllegalStateException("Actions available: ${actions.size} for player $playerIndex " +
                         "actionType '${this.actionType.name}' serialized parameter: $serialized")
             }
-            actions.single()
+            actions.random() // Sanity checks will detect if this is okay or not.
         } else {
             createAction(actionOptionsContext.playerIndex, parameter)
         }
