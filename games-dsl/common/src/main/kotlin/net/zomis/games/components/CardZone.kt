@@ -111,10 +111,12 @@ class CardZone<T>(val cards: MutableList<T> = mutableListOf()): CardZoneI<T> {
     }
 
     fun random(replayable: ReplayableScope, count: Int, stateKey: String, matcher: (T) -> String): Sequence<Card<T>> {
+        if (count == 0) return emptySequence()
         require(count <= this.size) { "Requesting more cards $count than what exists in zone $size" }
         return replayable.randomFromList(stateKey, this.cards, count, matcher).asSequence().map { card(it) }
     }
     fun randomWithRefill(refill: CardZone<T>, replayable: ReplayableScope, count: Int, stateKey: String, matcher: (T) -> String): Sequence<Card<T>> {
+        if (count == 0) return emptySequence()
         if (count <= this.size) {
             return random(replayable, count, stateKey, matcher)
         }
