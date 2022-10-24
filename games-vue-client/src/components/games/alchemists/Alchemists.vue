@@ -5,14 +5,29 @@
         <v-card>
           <div class="board" :class="'players-' + context.players.length">
             <!--
-              <img v-for="(turnOrder, turnOrderIndex) in view.turnPicker.options" :key="'turn-' + turnOrderIndex"
-             :src="`${path}cube_${turnOrder.chosenBy}.png`"
-             :style="{ left: '1063px', top: (33 + 30*turnOrderIndex) + 'px' }" :class="{ hidden: turnOrder.chosenBy == null }" />
             <img v-for="(cube, cubeIndex) in actionCubes" :key="'cube-' + cubeIndex"
              :src="`${path}cube_${cube.player}.png`"
              :style="{ left: cube.x + 'px', top: cube.y + 'px' }" :class="{ grayed: !cube.visible }" />
              -->
 
+            <div class="turn-order-placement">
+              <template v-for="(turnOrder, turnOrderIndex) in view.turnPicker.options">
+                <img v-if="turnOrder.chosenBy != null"
+                  class="chosen"
+                  :key="'turn-' + turnOrderIndex"
+                  :src="`${path}cube_${turnOrder.chosenBy}.png`"
+                  :style="{ top: (30*turnOrderIndex) + 'px' }"
+                />
+                <div v-else-if="turnOrder.choosable" :key="'turn-' + turnOrderIndex"
+                  class="choosable"
+                  :style="{ top: (30*turnOrderIndex) + 'px' }"
+                  @click="chooseTurnOrder(turnOrder.key)"
+                />
+                <img v-else class="hidden" :key="'turn-' + turnOrderIndex"
+                  :style="{ top: (30*turnOrderIndex) + 'px' }"
+                />
+              </template>
+            </div>
             <div class="artifacts-favor-flexbox d-flex">
               <img v-for="(artifact, artifactIndex) in artifacts" :key="'artifact-' + artifactIndex"
                class="gamecard" :src="`${path}artifact_${artifact}.jpg`" />
@@ -87,6 +102,9 @@ export default {
     AlchemistsActionCubesRow
   },
   methods: {
+    chooseTurnOrder(key) {
+      this.actions.actionParameter("turn", key)
+    }
   },
   watch: {
   },
@@ -259,6 +277,26 @@ export default {
   top: 71px;
   width: 100px;
   height: 100px;
+}
+
+.turn-order-placement {
+  left: 1066px;
+  top: 34px;
+  width: 28px;
+  height: 247px;
+  background-color: #7fffff80;
+  position: absolute;
+}
+
+.turn-order-placement * {
+  position: absolute;
+  width: 33px;
+  height: 33px;
+  left: 0px;
+}
+
+.turn-order-placement .choosable {
+  background-color: lime;
 }
 
 .top-areas {

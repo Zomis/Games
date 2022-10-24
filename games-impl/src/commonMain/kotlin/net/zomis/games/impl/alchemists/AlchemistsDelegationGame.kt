@@ -39,6 +39,7 @@ object AlchemistsDelegationGame {
             val gold: Int, val favors: Int, val ingredients: Int,
             val choosable: Boolean = true, var chosenBy: Int? = null
         ): GameSerializable {
+            val key = toStateString()
             fun toStateString(): String = "$gold/$favors/$ingredients"
             override fun serialize(): Any = this.toStateString()
         }
@@ -53,7 +54,7 @@ object AlchemistsDelegationGame {
                     add(TurnOrder(0, 1, 1))
                     add(TurnOrder(0, 2, 0))
                     if (playerCount == 4) add(TurnOrder(0, 0, 3))
-                    if (playerCount >= 3) add(TurnOrder(0, 1, 2))
+                    else add(TurnOrder(0, 1, 2, choosable = playerCount >= 3))
                     add(TurnOrder(0, 1, 1, false))
                 }
             }.on(newRound) { value.filter { it.choosable }.forEach { it.chosenBy = null } }
