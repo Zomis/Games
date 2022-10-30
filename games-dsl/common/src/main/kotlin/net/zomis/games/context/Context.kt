@@ -86,6 +86,12 @@ class DelegateFactory<E, P: ReadOnlyProperty<Entity?, E>>(
         }
         return this
     }
+    fun onSetup(init: GameStartScope<Any>.(E) -> Unit): DelegateFactory<E, P> {
+        ctx.gameContext.onSetup.add {
+            init.invoke(this, getter.invoke(delegate))
+        }
+        return this
+    }
 
     fun <T: Any> changeOn(event: Event<T>, priority: EventPriority, handler: HandlerScope<E, T>.() -> E): DelegateFactory<E, P> {
         ctx.onEvent(event, priority, handler, { getter.invoke(delegate) }, { setter.invoke(delegate, it) })

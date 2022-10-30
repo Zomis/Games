@@ -104,7 +104,7 @@ class CardZone<T>(val cards: MutableList<T> = mutableListOf()): CardZoneI<T> {
         this.cards.add(card)
     }
 
-    fun moveAllTo(destination: CardZone<T>) {
+    fun moveAllTo(destination: CardZoneI<T>) {
         while (this.cards.isNotEmpty()) {
             this.card(this.cards.first()).moveTo(destination)
         }

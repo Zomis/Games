@@ -24,6 +24,15 @@ fun Int.next(playerCount: Int, eliminations: PlayerEliminationsRead): Int {
     } while (eliminations.isEliminated(next))
     return next
 }
+fun Int.next(playerCount: Int, accept: (Int) -> Boolean): Int? {
+    for (attempt in 1..playerCount) {
+        val next = (this + attempt) % playerCount
+        if (accept.invoke(next)) {
+            return next
+        }
+    }
+    return null
+}
 fun Int.nextReversed(playerCount: Int): Int = (this - 1 + playerCount) % playerCount
 
 fun Double.toPercent(decimals: Int): String {

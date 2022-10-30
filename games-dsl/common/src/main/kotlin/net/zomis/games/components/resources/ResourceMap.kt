@@ -1,11 +1,16 @@
 package net.zomis.games.components.resources
 
-interface ResourceMap {
-    // val owner: T // TODO: Does this make any sense? Considering the messes of generics that would occur below? What would the concrete use-case be?
+import net.zomis.games.dsl.Replayable
+
+interface ResourceMap: Replayable {
+    companion object {
+        fun empty(): ResourceMap = ResourceMapImpl(mutableMapOf())
+    }
     operator fun get(resource: GameResource): Int?
     fun getOrDefault(resource: GameResource): Int
     fun getValue(resource: GameResource): Int
     operator fun plus(other: ResourceMap): ResourceMap
+    operator fun plus(other: GameResource): ResourceMap
     operator fun minus(other: ResourceMap): ResourceMap
     operator fun times(value: Int): ResourceMap
     fun has(resource: GameResource, value: Int): Boolean
@@ -20,6 +25,7 @@ interface ResourceMap {
     fun <R> fold(initial: R, operation: (acc: R, ResourceEntry) -> R): R
 
     operator fun unaryMinus(): ResourceMap
+    fun any(): Boolean = entries().any { it.value != 0 }
 }
 
 interface MutableResourceMap: ResourceMap {
@@ -56,6 +62,8 @@ class ResourceMapImpl(
         (owned ?: 0) + (otherValue ?: 0)
     }
 
+    override fun plus(other: GameResource): ResourceMap = this.plus(other.toResourceMap())
+
     override fun minus(other: ResourceMap): ResourceMap = this.merge(other) { owned, otherValue ->
         (owned ?: 0) - (otherValue ?: 0)
     }
@@ -91,6 +99,9 @@ class ResourceMapImpl(
     }
 
     override fun unaryMinus(): ResourceMap = this.map { it.resource to -it.value }
+    override fun toStateString(): String = this.resources.entries.sortedBy { it.key.toString() }.joinToString(",") {
+        "${it.key}/${it.value.value}"
+    }
 
     private inline fun enforceResource(resource: GameResource): ResourceEntryImpl = this.resources.getOrPut(resource) { ResourceEntryImpl(resource, resource.defaultValue()) }
 
