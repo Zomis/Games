@@ -1,6 +1,7 @@
 package net.zomis.games.metrics
 
 import net.zomis.games.PlayerEliminationsRead
+import net.zomis.games.api.UsageScope
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.Actionable
 
@@ -8,7 +9,7 @@ typealias MetricDsl<T, E> = MetricGameScope<T>.() -> E
 typealias MetricPlayerDsl<T, E> = MetricPlayerScope<T>.() -> E
 typealias MetricActionDsl<T, A, E> = MetricActionScope<T, A>.() -> E
 
-interface MetricGameScope<T: Any> {
+interface MetricGameScope<T: Any> : UsageScope {
     val game: T
     val eliminations: PlayerEliminationsRead
 }

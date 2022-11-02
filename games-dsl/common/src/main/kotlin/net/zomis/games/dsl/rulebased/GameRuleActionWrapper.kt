@@ -7,7 +7,7 @@ class GameRuleActionWrapper<T: Any, A: Any>(
     private val gameContext: GameRuleContext<T>,
     private val action: GameActionRule<T, A>,
     private val parentRule: GameRuleImpl<T>
-) : GameRuleAction<T, A> {
+) : GameRuleActionScope<T, A> {
 
     private var appliesForActions: (ActionRuleScope<T, A>.() -> Boolean)? = null
 

@@ -5,7 +5,7 @@ fun <T> Iterable<T>.withIds(idFunction: (T) -> String) = this.map { idFunction(i
 interface Replayable {
     fun toStateString(): String
 }
-interface ReplayableScope {
+interface ReplayStateI {
     fun map(key: String, default: () -> Map<String, Any>): Map<String, Any>
     fun int(key: String, default: () -> Int): Int
     fun ints(key: String, default: () -> List<Int>): List<Int>

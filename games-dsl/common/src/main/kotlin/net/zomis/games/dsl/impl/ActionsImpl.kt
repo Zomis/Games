@@ -1,11 +1,12 @@
 package net.zomis.games.dsl.impl
 
+import net.zomis.games.api.UsageScope
 import net.zomis.games.common.mergeWith
 import net.zomis.games.dsl.*
 import kotlin.reflect.KClass
 
 @GameMarker
-interface GameLogicActionTypeChosen<T: Any, P: Any> {
+interface GameLogicActionTypeChosenScope<T: Any, P: Any> : UsageScope {
     val actionType: ActionType<T, P>
     val playerIndex: Int
     val chosen: List<Any>
@@ -14,7 +15,7 @@ interface GameLogicActionTypeChosen<T: Any, P: Any> {
     fun depthFirstActions(sampling: ActionSampleSize?): Sequence<ActionNextParameter<T, P>>
     fun actionKeys(): List<ActionInfoKey>
 }
-interface ActionComplexChosenStep<T: Any, P: Any> : GameLogicActionTypeChosen<T, P>
+interface ActionComplexChosenStep<T: Any, P: Any> : GameLogicActionTypeChosenScope<T, P>
 
 interface GameLogicActionType<T : Any, P : Any> {
     val actionType: ActionType<T, P>

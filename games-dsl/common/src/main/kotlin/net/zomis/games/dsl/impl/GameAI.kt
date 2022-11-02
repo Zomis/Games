@@ -2,15 +2,18 @@ package net.zomis.games.dsl.impl
 
 import kotlinx.coroutines.*
 import net.zomis.games.ais.noAvailableActions
+import net.zomis.games.api.GameScope
+import net.zomis.games.api.PlayerIndexScope
+import net.zomis.games.api.UsageScope
 import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.GameListener
 import net.zomis.games.dsl.GameListenerFactory
 import net.zomis.games.scorers.Scorer
 import net.zomis.games.scorers.ScorerController
 
-interface GameAIScope<T: Any> {
-    val game: Game<T>
-    val playerIndex: Int
+interface GameAIScope<T: Any>: UsageScope, GameScope<T>, PlayerIndexScope {
+    override val game: Game<T>
+    override val playerIndex: Int
     fun <L: GameListener> listener(gameListener: () -> L): L
     fun requiredAI(ai: () -> GameAI<T>): GameAIDependency<T>
     fun action(block: suspend GameAIActionScope<T>.() -> Actionable<T, out Any>?)
@@ -57,7 +60,7 @@ object GameAIs {
 
 class GameAIDependency<T: Any>(val gameAIListener: GameAIListener<T>)
 
-interface GameAIActionScope<T: Any> : GameControllerScope<T> {
+interface GameAIActionScope<T: Any> : GameControllerScope<T>, UsageScope {
     var delay: Int
     suspend fun byScorers(vararg scorers: Scorer<T, out Any>): Actionable<T, out Any>?
     suspend fun byAI(ai: GameAIDependency<T>): Actionable<T, out Any>?

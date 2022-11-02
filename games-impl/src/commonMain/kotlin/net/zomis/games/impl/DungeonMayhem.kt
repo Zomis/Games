@@ -62,7 +62,7 @@ enum class DungeonMayhemSymbol {
         }
     }
 
-    fun autoResolve(count: Int, game: DungeonMayhem, trigger: DungeonMayhemPlayCard, replayable: ReplayableScope): Boolean {
+    fun autoResolve(count: Int, game: DungeonMayhem, trigger: DungeonMayhemPlayCard, replayable: ReplayStateI): Boolean {
         val player = game.players[trigger.player.index].takeUnless { it.protectedFrom(trigger) }
         val targets = this.availableTargets(game)
         if (targets?.isEmpty() == true) return true
@@ -131,7 +131,7 @@ data class DungeonMayhemShield(val discard: CardZone<DungeonMayhemCard>, val car
 }
 
 class DungeonMayhemPlayer(val index: Int) {
-    fun drawCard(replayable: ReplayableScope, keyPrefix: String, count: Int) {
+    fun drawCard(replayable: ReplayStateI, keyPrefix: String, count: Int) {
         val state = replayable.strings("$keyPrefix-$index") {
             val beforeReshuffle = min(deck.size, count)
             val fromDeck = deck.cards.shuffled().take(beforeReshuffle)

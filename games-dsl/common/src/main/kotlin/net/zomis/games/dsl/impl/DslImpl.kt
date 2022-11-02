@@ -1,18 +1,15 @@
 package net.zomis.games.dsl.impl
 
-import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.flow.GameFlowImpl
 import net.zomis.games.dsl.flow.GameForkResult
-import net.zomis.games.dsl.listeners.BlockingGameListener
-import net.zomis.games.listeners.ReplayListener
 import net.zomis.games.scorers.Scorer
 import net.zomis.games.scorers.ScorerController
 import net.zomis.games.scorers.ScorerFactory
 import kotlin.reflect.KClass
 
-class GameModelContext<T: Any, C>(val configs: MutableList<GameConfig<Any>>) : GameModel<T, C> {
+class GameModelContext<T: Any, C>(val configs: MutableList<GameConfig<Any>>) : GameModelScope<T, C> {
     var playerCount: IntRange = 2..2
     lateinit var factory: GameFactoryScope<C>.() -> T
     var onStart: GameStartScope<T>.() -> Unit = {}
@@ -130,7 +127,7 @@ class StateKeeper {
 }
 class ReplayState(
     val stateKeeper: StateKeeper,
-): ReplayableScope {
+): ReplayStateI {
     private val mostRecent = mutableMapOf<String, Any>()
 
     private fun <T: Any> replayable(key: String, default: () -> T): T {
@@ -183,7 +180,7 @@ class GameConfigImpl<E: Any>(override val key: String, override val default: () 
 }
 class GameStartInfo(val playerCount: Int, val config: GameConfigs, val fork: () -> Boolean)
 
-class GameDslContext<T : Any>(val gameSpec: GameSpec<T>) : GameDsl<T> {
+class GameDslContext<T : Any>(val gameSpec: GameSpec<T>) : GameDslScope<T> {
     val gameType = gameSpec.name
     lateinit var modelDsl: GameModelDsl<T, Any>
     var flowRulesDsl: GameFlowRulesDsl<T>? = null

@@ -1,5 +1,6 @@
 package net.zomis.games.dsl
 
+import net.zomis.games.api.UsageScope
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.impl.GameMarker
 import kotlin.reflect.KClass
@@ -10,7 +11,7 @@ interface Viewable {
 object HiddenValue
 
 @GameMarker
-interface ViewScope<T: Any> {
+interface ViewScope<T: Any> : UsageScope {
     fun actions(): ActionsView<T>
     fun actionsChosen(): ActionsChosenView<T>
     @Deprecated("use actionRaw or chosenActions instead")

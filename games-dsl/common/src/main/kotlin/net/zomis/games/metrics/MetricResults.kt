@@ -1,5 +1,6 @@
 package net.zomis.games.metrics
 
+import net.zomis.games.api.UsageScope
 import net.zomis.games.common.toSingleList
 import net.zomis.games.dsl.impl.Game
 import net.zomis.games.dsl.impl.GameAI
@@ -15,10 +16,10 @@ data class IntSummaryStatistics(
     )
 }
 
-interface MetricGroupingScope<T: Any> {
+interface MetricGroupingScope<T: Any> : UsageScope {
     val fightSetup: FightSetup<T>
 }
-interface MetricGroupingPlayerScope<T: Any> {
+interface MetricGroupingPlayerScope<T: Any> : UsageScope {
     val ai: GameAI<T>
     val playerIndex: Int
 }
@@ -58,7 +59,7 @@ fun <T: Any, K: Any, E> IntermediateFightResult<T, out Map<K, E>>.groupByKeyAndT
     return IntermediateFightResult(this.result, categorization)
 }
 
-interface FightGroupingScope<T: Any> {
+interface FightGroupingScope<T: Any> : UsageScope {
     fun displayIntStats(metric: FightMetric<T, Int>, name: String)
     fun <R> groupByAndTotal(metric: FightPlayerMetric<T, R>, groupBy: MetricGroupingPlayerScope<T>.() -> Any): IntermediateFightResult<T, R>
     fun <A: Any, E> groupByAndTotalActions(metric: FightActionMetric<T, A, E>, groupBy: MetricGroupingPlayerScope<T>.() -> Any): IntermediateFightResult<T, E>

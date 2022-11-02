@@ -1,6 +1,10 @@
 package net.zomis.games.context
 
 import net.zomis.games.PlayerEliminationsWrite
+import net.zomis.games.api.ConfigScope
+import net.zomis.games.api.EventScope
+import net.zomis.games.api.UsageScope
+import net.zomis.games.api.ValueScope
 import net.zomis.games.cards.CardZone
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.flow.ActionDefinition
@@ -35,12 +39,8 @@ class DynamicValueDelegate<E>(val function: () -> E): ReadOnlyProperty<Entity?, 
     override fun getValue(thisRef: Entity?, property: KProperty<*>): E = function.invoke()
 }
 
-interface HandlerScope<E, T> {
+interface HandlerScope<E, T>: UsageScope, ValueScope<E>, EventScope<T>, ConfigScope, net.zomis.games.api.ReplayableScope {
     // Do not mark with @GameMarker as it should be allowed to reference event from nested calls.
-    val replayable: ReplayableScope
-    val value: E
-    val event: T
-    fun <E: Any> config(config: GameConfig<E>): E
 }
 
 typealias ViewFunction = (ViewScope<Any>) -> Any?
@@ -230,7 +230,7 @@ class EventListener(
         if (this.event == event) {
             val value = getter.invoke()
             val result = this.handler.invoke(object : HandlerScope<Any, Any> {
-                override val replayable: ReplayableScope get() = c.replayable
+                override val replayable: ReplayStateI get() = c.replayable
                 override val value: Any get() = value
                 override val event: Any get() = eventValue
                 override fun <E : Any> config(config: GameConfig<E>): E {
@@ -265,7 +265,7 @@ class GameCreatorContext<T: ContextHolder>(val gameName: String, val function: G
         return config
     }
 
-    fun toDsl(): GameDsl<T>.() -> Unit {
+    fun toDsl(): GameDslScope<T>.() -> Unit {
         this.function.invoke(this)
         return {
             for (config in this@GameCreatorContext.configs) {
@@ -299,7 +299,7 @@ class GameCreatorContext<T: ContextHolder>(val gameName: String, val function: G
     }
 }
 @GameMarker
-interface GameCreatorContextScope<T: Any> {
+interface GameCreatorContextScope<T: Any>: UsageScope {
     fun players(players: IntRange)
     fun init(function: ContextHolder.() -> T)
     fun gameFlow(function: suspend GameFlowScope<T>.() -> Unit)

@@ -3,8 +3,7 @@ package net.zomis.games.impl
 import net.zomis.games.cards.CardZone
 import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.GameCreator
-import net.zomis.games.dsl.ReplayableScope
-import net.zomis.games.dsl.impl.GameAI
+import net.zomis.games.dsl.ReplayStateI
 import net.zomis.games.dsl.impl.GameControllerScope
 import kotlin.random.Random
 
@@ -167,7 +166,7 @@ object SetGame {
         return SetPiece(count, shape, filling, color)
     }
 
-    fun setCheck(game: SetGameModel, replayableScope: ReplayableScope): Boolean {
+    fun setCheck(game: SetGameModel, replayableScope: ReplayStateI): Boolean {
         val additionalCardsIncrement = 3
 
         var allExtra = listOf<SetPiece>()

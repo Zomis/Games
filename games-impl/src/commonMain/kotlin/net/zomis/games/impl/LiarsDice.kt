@@ -5,7 +5,7 @@ import net.zomis.games.common.PlayerIndex
 import net.zomis.games.common.next
 import net.zomis.games.dsl.ActionRuleScope
 import net.zomis.games.dsl.GameCreator
-import net.zomis.games.dsl.ReplayableScope
+import net.zomis.games.dsl.ReplayStateI
 import net.zomis.games.dsl.Viewable
 import kotlin.random.Random
 
@@ -74,7 +74,7 @@ data class LiarsDiceConfig(
 
 object LiarsDiceGame {
     val random = Random.Default
-    fun newRound(game: LiarsDice, replayable: ReplayableScope) {
+    fun newRound(game: LiarsDice, replayable: ReplayStateI) {
         game.bet = null
         game.players.forEach {
             it.dice = replayable.ints("player-" + it.index) { it.dice.map { random.nextInt(6) + 1 } }.toMutableList()

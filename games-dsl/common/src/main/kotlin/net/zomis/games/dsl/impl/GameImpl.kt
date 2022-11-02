@@ -5,6 +5,8 @@ import kotlinx.coroutines.channels.Channel
 import net.zomis.games.PlayerEliminations
 import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.PlayerEliminationsWrite
+import net.zomis.games.api.*
+import net.zomis.games.api.GameModelScope
 import net.zomis.games.common.GameEvents
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.common.toSingleList
@@ -27,11 +29,7 @@ class GameControllerContext<T : Any>(
     override val model: T get() = game.model
     fun view(): Map<String, Any?> = game.view(playerIndex)
 }
-interface GameControllerScope<T : Any> {
-    val game: Game<T>
-    val model: T
-    val playerIndex: Int
-}
+interface GameControllerScope<T : Any>: UsageScope, CompoundScope, GameScope<T>, GameModelScope<T>, PlayerIndexScope
 
 class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
 

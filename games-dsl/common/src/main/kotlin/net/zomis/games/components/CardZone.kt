@@ -1,7 +1,7 @@
 package net.zomis.games.cards
 
 import net.zomis.games.dsl.Replayable
-import net.zomis.games.dsl.ReplayableScope
+import net.zomis.games.dsl.ReplayStateI
 
 enum class DeckDirection {
     TOP, BOTTOM
@@ -110,12 +110,12 @@ class CardZone<T>(val cards: MutableList<T> = mutableListOf()): CardZoneI<T> {
         }
     }
 
-    fun random(replayable: ReplayableScope, count: Int, stateKey: String, matcher: (T) -> String): Sequence<Card<T>> {
+    fun random(replayable: ReplayStateI, count: Int, stateKey: String, matcher: (T) -> String): Sequence<Card<T>> {
         if (count == 0) return emptySequence()
         require(count <= this.size) { "Requesting more cards $count than what exists in zone $size" }
         return replayable.randomFromList(stateKey, this.cards, count, matcher).asSequence().map { card(it) }
     }
-    fun randomWithRefill(refill: CardZone<T>, replayable: ReplayableScope, count: Int, stateKey: String, matcher: (T) -> String): Sequence<Card<T>> {
+    fun randomWithRefill(refill: CardZone<T>, replayable: ReplayStateI, count: Int, stateKey: String, matcher: (T) -> String): Sequence<Card<T>> {
         if (count == 0) return emptySequence()
         if (count <= this.size) {
             return random(replayable, count, stateKey, matcher)
@@ -130,6 +130,6 @@ class CardZone<T>(val cards: MutableList<T> = mutableListOf()): CardZoneI<T> {
     override fun isNotEmpty(): Boolean = !isEmpty()
 
 }
-fun <T: Replayable> CardZone<T>.random(replayable: ReplayableScope, count: Int, stateKey: String): Sequence<Card<T>> {
+fun <T: Replayable> CardZone<T>.random(replayable: ReplayStateI, count: Int, stateKey: String): Sequence<Card<T>> {
     return this.random(replayable, count, stateKey) { it.toStateString() }
 }

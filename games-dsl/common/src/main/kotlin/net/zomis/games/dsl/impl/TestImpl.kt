@@ -7,7 +7,7 @@ import kotlinx.coroutines.launch
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.listeners.BlockingGameListener
 
-class GameTestContext<T: Any>(val coroutineScope: CoroutineScope, val entryPoint: GameEntryPoint<T>, val playerCount: Int): GameTest<T>, GameListener {
+class GameTestContext<T: Any>(val coroutineScope: CoroutineScope, val entryPoint: GameEntryPoint<T>, val playerCount: Int): GameTestScope<T>, GameListener {
     private val state = mutableMapOf<String, Any>()
     val setup = entryPoint.setup()
     var config: GameConfigs = setup.configs()

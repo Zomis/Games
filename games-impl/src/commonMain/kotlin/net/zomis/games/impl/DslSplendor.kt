@@ -5,7 +5,7 @@ import net.zomis.games.cards.CardZone
 import net.zomis.games.common.mergeWith
 import net.zomis.games.common.next
 import net.zomis.games.dsl.GameCreator
-import net.zomis.games.dsl.ReplayableScope
+import net.zomis.games.dsl.ReplayStateI
 import net.zomis.games.metrics.MetricBuilder
 import kotlin.math.absoluteValue
 import kotlin.math.max
@@ -495,7 +495,7 @@ object DslSplendor {
         }
     }
 
-    private fun replaceCard(replayable: ReplayableScope, game: SplendorGame, card: SplendorCard) {
+    private fun replaceCard(replayable: ReplayStateI, game: SplendorGame, card: SplendorCard) {
         game.board.card(card).remove()
         if (game.deck.cards.none { it.level == card.level }) return
         val state = replayable.string("card") {

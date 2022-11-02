@@ -23,13 +23,13 @@ object DslTTT {
         game.game.getSmallestTile(it.x, it.y)!!
     })
 
-    private fun GameDsl<TTController>.ttConfigs(options: TTOptions): List<GameConfig<Int>> {
+    private fun GameDslScope<TTController>.ttConfigs(options: TTOptions): List<GameConfig<Int>> {
         val m = config("m") { options.m }
         val n = config("n") { options.n }
         val k = config("k") { options.k }
         return listOf(m, n, k)
     }
-    private fun GameDsl<TTController>.ttGame() {
+    private fun GameDslScope<TTController>.ttGame() {
         actionRules {
             ttRules()
             ttView()
@@ -127,7 +127,7 @@ object DslTTT {
         ttGame()
     }
 
-    private fun GameActionRules<TTController>.ttView() {
+    private fun GameActionRulesScope<TTController>.ttView() {
         view("currentPlayer") { game.currentPlayer.index() }
         view("board") {
             game.game.view {
@@ -136,7 +136,7 @@ object DslTTT {
         }
     }
 
-    private fun GameActionRules<TTController>.ttRules() {
+    private fun GameActionRulesScope<TTController>.ttRules() {
         allActions.precondition { playerIndex == game.currentPlayer.index() }
         action(playAction) {
             options { allSmallest(game.game).asIterable() }

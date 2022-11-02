@@ -1,6 +1,7 @@
 package net.zomis.games.dsl.flow.actions
 
 import net.zomis.games.PlayerEliminationsRead
+import net.zomis.games.api.UsageScope
 import net.zomis.games.common.putSingle
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.*
@@ -259,7 +260,7 @@ class ActionChoice<T: Any, A: Any, E>(
 */
 
 
-interface ActionSpecScope<T: Any, A: Any> {
+interface ActionSpecScope<T: Any, A: Any> : UsageScope {
     val actionType: ActionType<T, A>
     fun <E> precondition(): PropertyDelegateProvider<Any?, ActionPrecondition<T, E>>
 }

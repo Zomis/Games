@@ -1,8 +1,7 @@
 package net.zomis.games.dsl
 
-import net.zomis.games.PlayerEliminationsRead
-import net.zomis.games.PlayerEliminationsWrite
-import net.zomis.games.dsl.flow.GameFlowRules
+import net.zomis.games.api.*
+import net.zomis.games.dsl.flow.GameFlowRulesScope
 import net.zomis.games.dsl.flow.GameFlowScope
 import net.zomis.games.dsl.impl.GameAI
 import net.zomis.games.dsl.impl.GameAIScope
@@ -14,24 +13,16 @@ data class ActionableOption(val actionType: String, val parameter: Any, val disp
 interface GameSerializable {
     fun serialize(): Any
 }
-interface EventTools {
-    val eliminations: PlayerEliminationsWrite
-    val replayable: ReplayableScope
-    fun <E: Any> config(gameConfig: GameConfig<E>): E
-}
-interface GameUtils {
-    val eliminations: PlayerEliminationsRead
-    val replayable: ReplayableScope
-    fun <E: Any> config(gameConfig: GameConfig<E>): E
-}
+interface EventTools : CompoundScope, MutableEliminationsScope, ReplayableScope, ConfigScope
+interface GameUtils : CompoundScope, EliminationsScope, ReplayableScope, ConfigScope
 
-class GameSpec<T : Any>(val name: String, val dsl: GameDsl<T>.() -> Unit) {
-    operator fun invoke(context: GameDsl<T>) = dsl(context)
+class GameSpec<T : Any>(val name: String, val dsl: GameDslScope<T>.() -> Unit) {
+    operator fun invoke(context: GameDslScope<T>) = dsl(context)
 }
-typealias GameTestDsl<T> = suspend GameTest<T>.() -> Unit
-typealias GameModelDsl<T, C> = GameModel<T, C>.() -> Unit
-typealias GameActionRulesDsl<T> = GameActionRules<T>.() -> Unit
-typealias GameFlowRulesDsl<T> = GameFlowRules<T>.() -> Unit
+typealias GameTestDsl<T> = suspend GameTestScope<T>.() -> Unit
+typealias GameModelDsl<T, C> = GameModelScope<T, C>.() -> Unit
+typealias GameActionRulesDsl<T> = GameActionRulesScope<T>.() -> Unit
+typealias GameFlowRulesDsl<T> = GameFlowRulesScope<T>.() -> Unit
 typealias GameFlowDsl<T> = suspend GameFlowScope<T>.() -> Unit
 
 interface GameConfig<E: Any> {
@@ -72,7 +63,7 @@ class GameConfigs(val configs: List<GameConfig<Any>>) {
 }
 
 @GameMarker
-interface GameDsl<T : Any> {
+interface GameDslScope<T : Any> : UsageScope {
     var useRandomAI: Boolean
     @Deprecated("use GameConfig class")
     fun <C : Any> setup(configClass: KClass<C>, modelDsl: GameModelDsl<T, C>)
@@ -87,7 +78,7 @@ interface GameDsl<T : Any> {
 }
 
 class GameCreator<T : Any>(val modelClass: KClass<T>) {
-    fun game(name: String, dsl: GameDsl<T>.() -> Unit): GameSpec<T> = GameSpec(name, dsl)
+    fun game(name: String, dsl: GameDslScope<T>.() -> Unit): GameSpec<T> = GameSpec(name, dsl)
     fun <A: Any> action(name: String, parameterType: KClass<A>): GameActionCreator<T, A>
         = GameActionCreator(name, parameterType, parameterType, {it}, {it as A})
     fun singleAction(name: String) = this.action(name, Unit::class)

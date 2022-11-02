@@ -2,13 +2,14 @@ package net.zomis.games.dsl
 
 import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.PlayerEliminationsWrite
+import net.zomis.games.api.UsageScope
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.impl.ActionOptionsContext
 import net.zomis.games.dsl.impl.GameMarker
 import kotlin.reflect.KClass
 
 @GameMarker
-interface GameActionRules<T : Any> {
+interface GameActionRulesScope<T : Any>: UsageScope {
     val allActions: GameAllActionsRule<T>
     fun <A : Any> action(actionType: ActionType<T, A>): GameActionRule<T, A>
     fun <A : Any> action(actionType: ActionType<T, A>, ruleSpec: GameActionSpecificationScope<T, A>.() -> Unit)
@@ -18,21 +19,21 @@ interface GameActionRules<T : Any> {
 }
 
 @GameMarker
-interface GameStartScope<T : Any> {
+interface GameStartScope<T : Any>: UsageScope {
     val game: T
-    val replayable: ReplayableScope
+    val replayable: ReplayStateI
     val playerCount: Int
     fun <E: Any> config(config: GameConfig<E>): E
 }
 
-interface LogSecretScope<T : Any> {
+interface LogSecretScope<T : Any>: UsageScope {
     fun publicLog(logging: LogScope<T>.() -> String)
 }
-interface LogSecretActionScope<T : Any, A : Any> {
+interface LogSecretActionScope<T : Any, A : Any>: UsageScope {
     fun publicLog(logging: LogActionScope<T, A>.() -> String)
 }
 @GameMarker
-interface LogScope<T : Any> {
+interface LogScope<T : Any>: UsageScope {
     val game: T
     fun obj(value: Any): String
     fun player(value: PlayerIndex): String
@@ -46,16 +47,16 @@ interface LogActionScope<T : Any, A : Any>: LogScope<T> {
     val action: A
 }
 @GameMarker
-interface ActionRuleScope<T : Any, A : Any> : GameUtils, ActionOptionsScope<T>, EventTools {
+interface ActionRuleScope<T : Any, A : Any> : GameUtils, ActionOptionsScope<T>, EventTools, UsageScope {
     override val game: T
     val action: Actionable<T, A>
     override val eliminations: PlayerEliminationsWrite
-    override val replayable: ReplayableScope
+    override val replayable: ReplayStateI
     fun log(logging: LogActionScope<T, A>.() -> String)
     fun logSecret(player: PlayerIndex, logging: LogActionScope<T, A>.() -> String): LogSecretActionScope<T, A>
 }
 @GameMarker
-interface ActionOptionsScope<T : Any> {
+interface ActionOptionsScope<T : Any> : UsageScope {
     val game: T
     val actionType: String
     val playerIndex: Int
@@ -68,7 +69,7 @@ interface GameAllActionsRule<T : Any> {
 
 @GameMarker
 @Deprecated("Too similar to GameFlowActionScope")
-interface GameActionSpecificationScope<T : Any, A : Any> {
+interface GameActionSpecificationScope<T : Any, A : Any>: UsageScope {
     fun after(rule: ActionRuleScope<T, A>.() -> Unit)
     fun effect(rule: ActionRuleScope<T, A>.() -> Unit)
     fun precondition(rule: ActionOptionsScope<T>.() -> Boolean)
@@ -83,7 +84,7 @@ interface GameActionRule<T : Any, A : Any> : GameActionSpecificationScope<T, A> 
 }
 
 @GameMarker
-interface ActionChoicesRecursiveScope<T : Any, C : Any> {
+interface ActionChoicesRecursiveScope<T : Any, C : Any> : UsageScope {
     val chosen: C
     val game: T
     val eliminations: PlayerEliminationsRead
@@ -92,7 +93,7 @@ interface ActionChoicesRecursiveScope<T : Any, C : Any> {
 }
 
 @GameMarker
-interface ActionChoicesRecursiveSpecScope<T : Any, C: Any, P : Any> {
+interface ActionChoicesRecursiveSpecScope<T : Any, C: Any, P : Any> : UsageScope {
     val chosen: C
     val game: T
     val playerIndex: Int
@@ -107,7 +108,7 @@ interface ActionChoicesRecursiveSpecScope<T : Any, C: Any, P : Any> {
 }
 
 @GameMarker
-interface ActionChoicesScope<T : Any, P : Any> {
+interface ActionChoicesScope<T : Any, P : Any> : UsageScope {
     fun parameter(parameter: P)
     val context: ActionOptionsContext<T>
     fun <C : Any> recursive(base: C, options: ActionChoicesRecursiveSpecScope<T, C, P>.() -> Unit)
@@ -116,18 +117,18 @@ interface ActionChoicesScope<T : Any, P : Any> {
 }
 
 @GameMarker
-interface GameRuleTriggerScope<T, E> {
+@Deprecated("Use Events instead")
+interface GameRuleTriggerScope<T, E> : UsageScope {
     val game: T
     val trigger: E
-    val replayable: ReplayableScope
+    val replayable: ReplayStateI
     val eliminations: PlayerEliminationsWrite
 }
-interface GameRuleTrigger<T : Any, E : Any> {
 
+interface GameRuleTrigger<T : Any, E : Any> {
     fun effect(effect: GameRuleTriggerScope<T, E>.() -> Unit): GameRuleTrigger<T, E>
     fun map(mapping: GameRuleTriggerScope<T, E>.() -> E): GameRuleTrigger<T, E>
     fun after(effect: GameRuleTriggerScope<T, E>.() -> Unit): GameRuleTrigger<T, E>
     fun ignoreEffectIf(condition: GameRuleTriggerScope<T, E>.() -> Boolean): GameRuleTrigger<T, E>
     operator fun invoke(trigger: E): E?
-
 }

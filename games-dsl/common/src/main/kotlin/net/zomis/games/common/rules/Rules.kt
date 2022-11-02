@@ -1,17 +1,17 @@
 package net.zomis.games.common.rules
 
 import net.zomis.games.WinResult
-import net.zomis.games.dsl.flow.GameFlowRules
+import net.zomis.games.dsl.flow.GameFlowRulesScope
 import net.zomis.games.dsl.rulebased.GameCommonRule
-import net.zomis.games.dsl.rulebased.GameRules
+import net.zomis.games.dsl.rulebased.GameRulesScope
 
-class GameDslRuleCreator<T: Any>(private val dsl: GameRules<T>): RuleCreator<T> {
+class GameDslRuleCreator<T: Any>(private val dsl: GameRulesScope<T>): RuleCreator<T> {
     override fun rule(name: String, rule: GameCommonRule<T>.() -> Unit) {
         dsl.rule(name, rule)
     }
 }
 
-class GameFlowRuleCreator<T: Any>(private val dsl: GameFlowRules<T>): RuleCreator<T> {
+class GameFlowRuleCreator<T: Any>(private val dsl: GameFlowRulesScope<T>): RuleCreator<T> {
     override fun rule(name: String, rule: GameCommonRule<T>.() -> Unit) {
         dsl.rule(name, rule)
     }
@@ -34,4 +34,4 @@ class Rules<T: Any>(private val ruleCreator: RuleCreator<T>) {
     val players get() = PlayerRules(ruleCreator)
 }
 
-val <T: Any> GameRules<T>.rules get() = Rules(GameDslRuleCreator(this))
+val <T: Any> GameRulesScope<T>.rules get() = Rules(GameDslRuleCreator(this))

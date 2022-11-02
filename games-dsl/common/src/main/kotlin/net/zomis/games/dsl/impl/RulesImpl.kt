@@ -8,17 +8,17 @@ import net.zomis.games.dsl.rulebased.*
 import kotlin.reflect.KClass
 
 class GameRuleContext<T: Any>(
-    override val game: T,
+    override val model: T,
     override val eliminations: PlayerEliminationsWrite,
     override val replayable: ReplayState,
     val configs: GameConfigs
 ): GameRuleScope<T> {
-    override fun <E: Any> config(gameConfig: GameConfig<E>): E = configs.get(gameConfig)
+    override fun <E: Any> config(config: GameConfig<E>): E = configs.get(config)
 }
 
 class GameActionRulesContext<T : Any>(
     val gameContext: GameRuleContext<T>
-): GameActionRules<T>, GameRules<T>, GameEventsExecutor {
+): GameActionRulesScope<T>, GameRulesScope<T>, GameEventsExecutor {
     private val views = mutableListOf<Pair<String, ViewScope<T>.() -> Any?>>()
 //    private val logger = KLoggers.logger(this)
     private val allActionRules = GameRuleList(gameContext)
@@ -72,7 +72,7 @@ class GameActionRulesContext<T : Any>(
         return this.action(actionType).invoke(ruleSpec)
     }
 
-    override fun rule(name: String, rule: GameRule<T>.() -> Any?): GameRule<T> {
+    override fun rule(name: String, rule: GameRuleRuleScope<T>.() -> Any?): GameRuleRuleScope<T> {
         val ruleImpl = GameRuleImpl(this, null, name)
         rule.invoke(ruleImpl)
         gameRules.add(ruleImpl)
@@ -90,14 +90,14 @@ class GameActionRulesContext<T : Any>(
         return GameRulesActive(rulesActive)
     }
 
-    fun gameStart(): List<GameRule<T>> {
+    fun gameStart(): List<GameRuleRuleScope<T>> {
         val activeRules = determineActiveRules(gameRules)
         return activeRules.runGameStart(gameContext) + stateCheck()
     }
 
-    fun stateCheck(): List<GameRule<T>> {
+    fun stateCheck(): List<GameRuleRuleScope<T>> {
         var loop = 0
-        val rulesTriggered = mutableListOf<GameRule<T>>()
+        val rulesTriggered = mutableListOf<GameRuleRuleScope<T>>()
         while (loop < 100_000) {
             val activeRules = determineActiveRules(gameRules)
             val result = activeRules.stateCheck(gameContext)
@@ -121,7 +121,7 @@ class GameActionRulesContext<T : Any>(
 class GameStartContext<T : Any>(
     val configs: GameConfigs,
     override val game: T,
-    override val replayable: ReplayableScope,
+    override val replayable: ReplayStateI,
     override val playerCount: Int
 ) : GameStartScope<T> {
     override fun <E : Any> config(config: GameConfig<E>): E = configs.get(config)
@@ -289,7 +289,7 @@ class GameActionRuleContext<T : Any, A : Any>(
 data class GameRuleTriggerContext<T : Any, E : Any>(
     override val game: T,
     override val trigger: E,
-    override val replayable: ReplayableScope,
+    override val replayable: ReplayStateI,
     override val eliminations: PlayerEliminationsWrite
 ): GameRuleTriggerScope<T, E>
 

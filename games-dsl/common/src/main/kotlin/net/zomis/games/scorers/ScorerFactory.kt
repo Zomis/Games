@@ -1,5 +1,6 @@
 package net.zomis.games.scorers
 
+import net.zomis.games.api.UsageScope
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.Actionable
 
@@ -25,7 +26,7 @@ class ScorerContext<T : Any>(
 
 }
 
-interface ScorerScope<T : Any, A: Any> {
+interface ScorerScope<T : Any, A: Any> : UsageScope {
     val model: T
     val playerIndex: Int
     val action: Actionable<T, A>

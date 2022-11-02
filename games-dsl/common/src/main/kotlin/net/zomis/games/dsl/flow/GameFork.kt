@@ -1,5 +1,6 @@
 package net.zomis.games.dsl.flow
 
+import net.zomis.games.api.UsageScope
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.ReplayData
 import net.zomis.games.dsl.impl.Game
@@ -22,6 +23,6 @@ class GameForkResult<T: Any>(
 }
 
 @GameMarker
-interface GameForkScope<T: Any> {
+interface GameForkScope<T: Any> : UsageScope {
     suspend fun <A: Any> performAction(actionType: ActionType<T, A>, playerIndex: Int, parameter: A)
 }

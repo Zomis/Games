@@ -4,13 +4,13 @@ import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.GameEvents
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.GameConfig
-import net.zomis.games.dsl.ReplayableScope
+import net.zomis.games.dsl.ReplayStateI
 import net.zomis.games.dsl.impl.GameActionRulesContext
 import net.zomis.games.dsl.impl.GameRuleContext
 
 class GameRulesActive<T: Any>(val rules: List<GameRuleImpl<T>>) {
 
-    fun runGameStart(context: GameRuleScope<T>): List<GameRule<T>> {
+    fun runGameStart(context: GameRuleScope<T>): List<GameRuleRuleScope<T>> {
         val applied = mutableListOf<GameRuleImpl<T>>()
         rules.forEach {rule ->
             if (rule.gameSetup.isNotEmpty()) {
@@ -21,7 +21,7 @@ class GameRulesActive<T: Any>(val rules: List<GameRuleImpl<T>>) {
         return applied
     }
 
-    fun stateCheck(context: GameRuleContext<T>): Collection<GameRule<T>> {
+    fun stateCheck(context: GameRuleContext<T>): Collection<GameRuleRuleScope<T>> {
         val applied = mutableListOf<GameRuleImpl<T>>()
         rules.forEach {rule ->
             if (rule.effects.isNotEmpty()) {
@@ -41,7 +41,7 @@ class GameRulesActive<T: Any>(val rules: List<GameRuleImpl<T>>) {
 
 }
 
-class GameRuleForEachContext<T: Any, E>(val list: GameRuleScope<T>.() -> Iterable<E>): GameRuleForEach<T, E> {
+class GameRuleForEachContext<T: Any, E>(val list: GameRuleScope<T>.() -> Iterable<E>): GameRuleForEachScope<T, E> {
     private val effects = mutableListOf<GameRuleScope<T>.(E) -> Unit>()
 
     override fun effect(effect: GameRuleScope<T>.(E) -> Unit) {
@@ -65,9 +65,9 @@ class GameRuleEventContext<T: Any, E>(
     private val context: GameRuleContext<T>,
     override val event: E
 ): GameRuleEventScope<T, E> {
-    override val game: T get() = context.game
+    override val model: T get() = context.game
     override val eliminations: PlayerEliminationsWrite get() = context.eliminations
-    override val replayable: ReplayableScope get() = context.replayable
+    override val replayable: ReplayStateI get() = context.replayable
     override fun <E : Any> config(gameConfig: GameConfig<E>): E = context.config(gameConfig)
 }
 class GameRuleEventListenerImpl<T: Any, E>(
@@ -93,7 +93,7 @@ class GameRuleImpl<T: Any>(
     val actionRulesContext: GameActionRulesContext<T>,
     val parentRule: GameRuleImpl<T>?,
     val name: String
-): GameRule<T> {
+): GameRuleRuleScope<T> {
     fun fullName(): String {
         return if (parentRule == null) name else "${parentRule.fullName()} - $name"
     }
@@ -114,7 +114,7 @@ class GameRuleImpl<T: Any>(
         this.effects.add(effect)
     }
 
-    override fun <E> applyForEach(list: GameRuleScope<T>.() -> Iterable<E>): GameRuleForEach<T, E> {
+    override fun <E> applyForEach(list: GameRuleScope<T>.() -> Iterable<E>): GameRuleForEachScope<T, E> {
         val forEachApplier = GameRuleForEachContext<T, E>(list)
         this.forEachApplies.add(forEachApplier)
         return forEachApplier
@@ -124,12 +124,12 @@ class GameRuleImpl<T: Any>(
         this.gameSetup.add(effect)
     }
 
-    override fun <A : Any> action(actionType: ActionType<T, A>, actionRule: GameRuleAction<T, A>.() -> Unit) {
+    override fun <A : Any> action(actionType: ActionType<T, A>, actionRule: GameRuleActionScope<T, A>.() -> Unit) {
         val ruleActionWrapper = GameRuleActionWrapper(actionRulesContext.gameContext, actionRulesContext.action(actionType), this)
         actionRule.invoke(ruleActionWrapper)
     }
 
-    override fun rule(name: String, rule: GameRule<T>.() -> Any?): GameRule<T> {
+    override fun rule(name: String, rule: GameRuleRuleScope<T>.() -> Any?): GameRuleRuleScope<T> {
         val ruleImpl = GameRuleImpl(actionRulesContext, this, name)
         rule.invoke(ruleImpl)
         subRules.add(ruleImpl)

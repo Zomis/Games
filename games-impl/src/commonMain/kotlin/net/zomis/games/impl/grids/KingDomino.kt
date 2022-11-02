@@ -1,13 +1,12 @@
 package net.zomis.games.impl.grids
 
 import net.zomis.games.api.Games
-import net.zomis.games.api.components
 import net.zomis.games.cards.CardZone
 import net.zomis.games.components.Direction4
 import net.zomis.games.components.Point
 import net.zomis.games.common.toSingleList
 import net.zomis.games.components.grids.connected
-import net.zomis.games.dsl.ReplayableScope
+import net.zomis.games.dsl.ReplayStateI
 
 object KingDomino {
 
@@ -316,7 +315,7 @@ object KingDomino {
         }
     }
 
-    private fun newDominoesCheck(game: Model, replayable: ReplayableScope) {
+    private fun newDominoesCheck(game: Model, replayable: ReplayStateI) {
         if (game.dominoNextChoices.cards.all { it.owner != null }) {
             check(game.dominoChoices.isEmpty())
             game.dominoNextChoices.moveAllTo(game.dominoChoices)

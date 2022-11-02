@@ -1,6 +1,7 @@
 package net.zomis.games.dsl
 
 import net.zomis.games.PlayerEliminationsWrite
+import net.zomis.games.api.UsageScope
 import net.zomis.games.common.GameEvents
 import net.zomis.games.dsl.impl.GameMarker
 
@@ -8,7 +9,7 @@ interface GameEventsExecutor {
     fun <E> fire(executor: GameEvents<E>, event: E)
 }
 
-interface GameFactoryScope<C> {
+interface GameFactoryScope<C> : UsageScope {
     fun <E: Any> config(config: GameConfig<E>): E
     val events: GameEventsExecutor
     val eliminationCallback: PlayerEliminationsWrite
@@ -18,7 +19,7 @@ interface GameFactoryScope<C> {
     val configs: GameConfigs
 }
 @GameMarker
-interface GameModel<T: Any, C> {
+interface GameModelScope<T: Any, C> : UsageScope {
     fun players(playerCount: IntRange)
     fun playersFixed(playerCount: Int)
     fun defaultConfig(creator: () -> C)

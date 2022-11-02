@@ -1,5 +1,6 @@
 package net.zomis.games.dsl.flow
 
+import net.zomis.games.api.UsageScope
 import net.zomis.games.common.GameEvents
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.flow.rules.GameRulePresets
@@ -10,20 +11,20 @@ import net.zomis.games.dsl.impl.GameRuleContext
 import net.zomis.games.dsl.rulebased.*
 
 @GameMarker
-interface GameFlowRule<T : Any>: GameCommonRule<T> {
+interface GameFlowRuleScope<T : Any>: GameCommonRule<T> {
     val game: T
-    fun rule(name: String, rule: GameFlowRule<T>.() -> Any?)
+    fun rule(name: String, rule: GameFlowRuleScope<T>.() -> Any?)
 
     fun view(key: String, value: ViewScope<T>.() -> Any?)
     fun <A: Any> action(actionType: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>)
 }
 
 @GameMarker
-interface GameFlowRules<T: Any> {
+interface GameFlowRulesScope<T: Any> : UsageScope {
     val rules: GameRulePresets<T>
-    fun rule(name: String, rule: GameFlowRule<T>.() -> Any?)
-    fun afterActionRule(name: String, rule: GameFlowRule<T>.() -> Any?)
-    fun beforeReturnRule(name: String, rule: GameFlowRule<T>.() -> Any?)
+    fun rule(name: String, rule: GameFlowRuleScope<T>.() -> Any?)
+    fun afterActionRule(name: String, rule: GameFlowRuleScope<T>.() -> Any?)
+    fun beforeReturnRule(name: String, rule: GameFlowRuleScope<T>.() -> Any?)
 }
 
 enum class GameFlowRulesState { AFTER_ACTIONS, BEFORE_RETURN, FIRE_EVENT }
@@ -32,28 +33,28 @@ class GameFlowRulesContext<T: Any>(
     val state: GameFlowRulesState,
     val event: Pair<GameEvents<*>, Any>?,
     val callbacks: GameFlowRuleCallbacks<T>
-): GameFlowRules<T> {
+): GameFlowRulesScope<T> {
     private val eventsMap: MutableMap<GameEvents<Any>, MutableList<GameRuleEventScope<T, Any>.() -> Unit>>
         = mutableMapOf()
 
     override val rules = GameRulePresetsImpl(this)
-    override fun afterActionRule(name: String, rule: GameFlowRule<T>.() -> Any?) {
+    override fun afterActionRule(name: String, rule: GameFlowRuleScope<T>.() -> Any?) {
         if (state == GameFlowRulesState.AFTER_ACTIONS) {
             runRule(name, rule)
         }
     }
 
-    override fun beforeReturnRule(name: String, rule: GameFlowRule<T>.() -> Any?) {
+    override fun beforeReturnRule(name: String, rule: GameFlowRuleScope<T>.() -> Any?) {
         if (state == GameFlowRulesState.BEFORE_RETURN) {
             runRule(name, rule)
         }
     }
 
-    override fun rule(name: String, rule: GameFlowRule<T>.() -> Any?) {
+    override fun rule(name: String, rule: GameFlowRuleScope<T>.() -> Any?) {
         runRule(name, rule)
     }
 
-    private fun runRule(name: String, rule: GameFlowRule<T>.() -> Any?) {
+    private fun runRule(name: String, rule: GameFlowRuleScope<T>.() -> Any?) {
         GameFlowRuleContextRun(context, callbacks, eventsMap).runRule(name, rule)
     }
 
@@ -68,15 +69,15 @@ class GameFlowRulesContext<T: Any>(
 
 }
 
-abstract class GameFlowRuleContext<T: Any>: GameFlowRule<T> {
+abstract class GameFlowRuleContext<T: Any>: GameFlowRuleScope<T> {
     override fun appliesWhen(condition: GameRuleScope<T>.() -> Boolean) {}
     override fun effect(effect: GameRuleScope<T>.() -> Unit) {}
-    override fun <E> applyForEach(list: GameRuleScope<T>.() -> Iterable<E>): GameRuleForEach<T, E> {
-        return object : GameRuleForEach<T, E> {
+    override fun <E> applyForEach(list: GameRuleScope<T>.() -> Iterable<E>): GameRuleForEachScope<T, E> {
+        return object : GameRuleForEachScope<T, E> {
             override fun effect(effect: GameRuleScope<T>.(E) -> Unit) {}
         }
     }
-    override fun rule(name: String, rule: GameFlowRule<T>.() -> Any?) {}
+    override fun rule(name: String, rule: GameFlowRuleScope<T>.() -> Any?) {}
     override fun <E> onEvent(gameEvents: GameRuleScope<T>.() -> GameEvents<E>): GameRuleEvents<T, E> {
         return object : GameRuleEvents<T, E> {
             override fun perform(perform: GameRuleEventScope<T, E>.() -> Unit) {}
@@ -96,7 +97,7 @@ class GameFlowRuleContextRun<T: Any>(
     private val callbacks: GameFlowRuleCallbacks<T>,
     private val eventsMap: MutableMap<GameEvents<Any>, MutableList<GameRuleEventScope<T, Any>.() -> Unit>>
 ) {
-    fun runRule(name: String, rule: GameFlowRule<T>.() -> Any?) {
+    fun runRule(name: String, rule: GameFlowRuleScope<T>.() -> Any?) {
         val activeCheck = GameFlowRuleContextActiveCheck(context)
         rule.invoke(activeCheck)
         if (!activeCheck.result) return
@@ -124,12 +125,12 @@ class GameFlowRuleContextExecution<T: Any>(
 ): GameFlowRuleContext<T>() {
     override val game: T get() = context.game
 
-    class GameRuleForEachImpl<T: Any, E>(val context: GameRuleContext<T>, val list: Iterable<E>): GameRuleForEach<T, E> {
+    class GameRuleForEachImpl<T: Any, E>(val context: GameRuleContext<T>, val list: Iterable<E>): GameRuleForEachScope<T, E> {
         override fun effect(effect: GameRuleScope<T>.(E) -> Unit) {
             list.forEach { effect.invoke(context, it) }
         }
     }
-    override fun <E> applyForEach(list: GameRuleScope<T>.() -> Iterable<E>): GameRuleForEach<T, E> {
+    override fun <E> applyForEach(list: GameRuleScope<T>.() -> Iterable<E>): GameRuleForEachScope<T, E> {
         return GameRuleForEachImpl(context, list.invoke(context))
     }
 
@@ -137,7 +138,7 @@ class GameFlowRuleContextExecution<T: Any>(
         effect.invoke(context)
     }
 
-    override fun rule(name: String, rule: GameFlowRule<T>.() -> Any?) {
+    override fun rule(name: String, rule: GameFlowRuleScope<T>.() -> Any?) {
         GameFlowRuleContextRun(context, callbacks, eventsMap).runRule(name, rule)
     }
 

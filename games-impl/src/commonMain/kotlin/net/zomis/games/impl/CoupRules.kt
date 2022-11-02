@@ -3,7 +3,7 @@ package net.zomis.games.impl
 import net.zomis.games.api.GamesApi
 import net.zomis.games.common.next
 import net.zomis.games.common.safeCast
-import net.zomis.games.dsl.flow.GameFlowRule
+import net.zomis.games.dsl.flow.GameFlowRuleScope
 import kotlin.math.min
 
 class GameStack {
@@ -57,7 +57,7 @@ object CoupRuleBased {
                 game.players.forEach { it.coins = 2 }
             }
         }
-        fun GameFlowRule<Coup>.coupViews() {
+        fun GameFlowRuleScope<Coup>.coupViews() {
             view("currentPlayer") { game.currentPlayerIndex }
             view("deck") { game.deck.size }
             view("players") {

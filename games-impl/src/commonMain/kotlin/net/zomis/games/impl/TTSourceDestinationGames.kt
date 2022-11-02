@@ -114,7 +114,7 @@ object TTSourceDestinationGames {
         }
     }
 
-    private fun GameActionRules<TTControllerSourceDestination>.ttRules() {
+    private fun GameActionRulesScope<TTControllerSourceDestination>.ttRules() {
         allActions.precondition { playerIndex == game.currentPlayer.index() }
         action(moveAction) {
             choose {

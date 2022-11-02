@@ -4,7 +4,7 @@ import net.zomis.games.cards.Card
 import net.zomis.games.cards.CardZone
 import net.zomis.games.cards.CardZoneI
 import net.zomis.games.cards.DeckDirection
-import net.zomis.games.dsl.ReplayableScope
+import net.zomis.games.dsl.ReplayStateI
 
 /**
 * A class that keeps track of cards. Like CardZone but may remember which card is the 5th from top etc.
@@ -22,11 +22,11 @@ class SemiKnownCardZone<T: Any>(cards: List<T> = emptyList(), val matcher: (T) -
         return cards.toList().withIndex().filter { it.value != null }.map { IndexedValue(it.index, it.value!!) }
     }
 
-    fun top(replayable: ReplayableScope, stateKey: String, count: Int): List<Card<T>> {
+    fun top(replayable: ReplayStateI, stateKey: String, count: Int): List<Card<T>> {
         return learnCards(0 until count, replayable, stateKey)
     }
 
-    private fun learnCards(range: IntRange, replayable: ReplayableScope, stateKey: String): List<Card<T>> {
+    private fun learnCards(range: IntRange, replayable: ReplayStateI, stateKey: String): List<Card<T>> {
         require(range.first >= 0 && range.last < size) { "Requested cards $range is outside of zone size $indices" }
         val unknownCount = cards.slice(range).count { it == null }
         val newLearntCards = this.randomFromUnknown(replayable, unknownCount, stateKey).toList()
@@ -57,7 +57,7 @@ class SemiKnownCardZone<T: Any>(cards: List<T> = emptyList(), val matcher: (T) -
         cards.add(card)
     }
 
-    fun deal(replayable: ReplayableScope, stateKey: String, count: Int, destinations: List<CardZone<T>>) {
+    fun deal(replayable: ReplayStateI, stateKey: String, count: Int, destinations: List<CardZone<T>>) {
         learnCards(0 until count, replayable, stateKey).forEachIndexed { index, card ->
             card.moveTo(destinations[index % destinations.size])
         }
@@ -84,7 +84,7 @@ class SemiKnownCardZone<T: Any>(cards: List<T> = emptyList(), val matcher: (T) -
         return Card(this, index, value)
     }
 
-    private fun randomFromUnknown(replayable: ReplayableScope, count: Int, stateKey: String): List<T> {
+    private fun randomFromUnknown(replayable: ReplayStateI, count: Int, stateKey: String): List<T> {
         require(count <= this.unassignedCards.size) { "Requesting more cards $count than are unknown in zone $this" }
         return replayable.randomFromList(stateKey, this.unassignedCards, count) { matcher.invoke(it) }
     }

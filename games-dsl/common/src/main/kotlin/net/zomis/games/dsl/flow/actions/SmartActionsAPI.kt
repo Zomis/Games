@@ -1,6 +1,7 @@
 package net.zomis.games.dsl.flow.actions
 
 import net.zomis.games.PlayerEliminationsRead
+import net.zomis.games.api.UsageScope
 import net.zomis.games.common.putSingle
 import net.zomis.games.dsl.ActionChoicesScope
 import net.zomis.games.dsl.ActionOptionsScope
@@ -10,7 +11,7 @@ import net.zomis.games.dsl.flow.GameFlowActionContext
 import net.zomis.games.dsl.flow.GameFlowActionDsl
 
 interface SmartActionChoice<E>
-interface SmartActionUsingScope<T: Any, A: Any> {
+interface SmartActionUsingScope<T: Any, A: Any> : UsageScope {
     val game: T
     val action: Actionable<T, A>
     val eliminations: PlayerEliminationsRead
@@ -26,14 +27,14 @@ interface SmartActionUsingBuilder<T: Any, A: Any, E> {
     fun perform(function: ActionRuleScope<T, A>.(E) -> Unit): ActionEffect<T, A, E>
 }
 
-interface SmartActionScope<T: Any, A: Any> {
+interface SmartActionScope<T: Any, A: Any> : UsageScope {
     fun exampleChoices(name: String, optional: Boolean, function: ActionOptionsScope<T>.() -> Iterable<A>): SmartActionChoice<A>
     fun choice(name: String, optional: Boolean, function: ActionOptionsScope<T>.() -> Iterable<A>): SmartActionChoice<A>
     fun <E> using(function: SmartActionUsingScope<T, A>.() -> E): SmartActionUsingBuilder<T, A, E>
     fun change(block: SmartActionChangeScope<T, A>.() -> Unit)
 }
 
-interface SmartActionChangeScope<T: Any, A: Any> {
+interface SmartActionChangeScope<T: Any, A: Any> : UsageScope {
     val handlers: Sequence<SmartActionBuilder<T, A>>
 }
 

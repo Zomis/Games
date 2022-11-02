@@ -391,7 +391,7 @@ object HanabiGame {
         }
     }
 
-    private fun moveCard(replayable: ReplayableScope, game: Hanabi, card: Card<HanabiCard>, destination: CardZone<HanabiCard>) {
+    private fun moveCard(replayable: ReplayStateI, game: Hanabi, card: Card<HanabiCard>, destination: CardZone<HanabiCard>) {
         if (game.deck.size > 0) {
             val zone = card.zone
             val cardState = replayable.string("card") { game.deck.cards[0].toStateString() }

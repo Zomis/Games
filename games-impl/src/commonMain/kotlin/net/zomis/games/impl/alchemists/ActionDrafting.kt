@@ -1,5 +1,7 @@
 package net.zomis.games.impl.alchemists
 
+import net.zomis.games.api.UsageScope
+
 typealias SpacePlacementRule<T, U> = ActionDrafting.SpacePlacementScope<T, U>.() -> Boolean
 
 /**
@@ -33,7 +35,7 @@ object ActionDrafting {
         }
     }
 
-    interface SpacePlacementScope<T, U> {
+    interface SpacePlacementScope<T, U> : UsageScope {
         val playerIndex: Int
         val space: Space<T, U>
         val unit: U

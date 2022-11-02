@@ -1,13 +1,14 @@
 package net.zomis.games.dsl
 
+import net.zomis.games.api.UsageScope
 import net.zomis.games.dsl.impl.GameMarker
 
 interface GameTestBranches<T: Any> {
-    fun branch(name: String, block: GameTest<T>.() -> Unit)
+    fun branch(name: String, block: GameTestScope<T>.() -> Unit)
 }
 
 @GameMarker
-interface GameTest<T: Any> {
+interface GameTestScope<T: Any> : UsageScope {
     val game: T
     fun state(key: String, value: Any)
     suspend fun initialize()
