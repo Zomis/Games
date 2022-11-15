@@ -9,7 +9,7 @@ import net.zomis.games.dsl.ReplayStateI
 /**
 * A class that keeps track of cards. Like CardZone but may remember which card is the 5th from top etc.
 */
-class SemiKnownCardZone<T: Any>(cards: List<T> = emptyList(), val matcher: (T) -> String): CardZoneI<T> {
+class SemiKnownCardZone<T: Any>(cards: List<T> = emptyList(), private val matcher: (T) -> String): CardZoneI<T> {
     override var name: String? = null
 
     override val size: Int get() = cards.size
@@ -22,29 +22,27 @@ class SemiKnownCardZone<T: Any>(cards: List<T> = emptyList(), val matcher: (T) -
         return cards.toList().withIndex().filter { it.value != null }.map { IndexedValue(it.index, it.value!!) }
     }
 
-    fun top(replayable: ReplayStateI, stateKey: String, count: Int): List<Card<T>> {
+    fun top(replayable: ReplayStateI, stateKey: String, count: Int): Sequence<Card<T>> {
         return learnCards(0 until count, replayable, stateKey)
     }
 
-    private fun learnCards(range: IntRange, replayable: ReplayStateI, stateKey: String): List<Card<T>> {
+    private fun learnCards(range: IntRange, replayable: ReplayStateI, stateKey: String): Sequence<Card<T>> {
         require(range.first >= 0 && range.last < size) { "Requested cards $range is outside of zone size $indices" }
         val unknownCount = cards.slice(range).count { it == null }
         val newLearntCards = this.randomFromUnknown(replayable, unknownCount, stateKey).toList()
-
-        val result = mutableListOf<Card<T>>()
         var newLearntCount = 0
-        for (i in range) {
+
+        return range.asSequence().map { i ->
             val value = cards[i]
             if (value == null) {
                 val learnedCard = newLearntCards[newLearntCount++]
                 unassignedCards.remove(learnedCard)
                 cards[i] = learnedCard
-                result.add(Card(this, i, learnedCard))
+                learnedCard
             } else {
-                result.add(Card(this, i, value))
+                value
             }
-        }
-        return result
+        }.map { card(it) }
     }
 
     override fun remove(card: Card<T>): T {
@@ -58,8 +56,10 @@ class SemiKnownCardZone<T: Any>(cards: List<T> = emptyList(), val matcher: (T) -
     }
 
     fun deal(replayable: ReplayStateI, stateKey: String, count: Int, destinations: List<CardZone<T>>) {
-        learnCards(0 until count, replayable, stateKey).forEachIndexed { index, card ->
-            card.moveTo(destinations[index % destinations.size])
+        val cardsToDeal = learnCards(0 until count, replayable, stateKey).toList()
+        cardsToDeal.indices.forEach { index ->
+            val cardValue = cards[0]!!
+            Card(this, 0, cardValue).moveTo(destinations[index % destinations.size])
         }
     }
 
