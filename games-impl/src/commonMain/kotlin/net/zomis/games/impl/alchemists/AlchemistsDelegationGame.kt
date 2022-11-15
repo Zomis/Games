@@ -40,7 +40,7 @@ object AlchemistsDelegationGame {
             val choosable: Boolean = true, var chosenBy: Int? = null
         ): GameSerializable {
             val key = toStateString()
-            fun toStateString(): String = "$gold/$favors/$ingredients"
+            fun toStateString(): String = "$gold/$favors/$ingredients-$choosable"
             override fun serialize(): Any = this.toStateString()
         }
 
@@ -58,6 +58,9 @@ object AlchemistsDelegationGame {
                     add(TurnOrder(0, 1, 1, false))
                 }
             }.on(newRound) { value.filter { it.choosable }.forEach { it.chosenBy = null } }
+            val actionable by this.viewOnly<Model> {
+                this.actionRaw(action.actionType).nextSteps(TurnOrder::class).associate { it.key to true }
+            }
             val action = actionSerializable<Model, TurnOrder>("turn", TurnOrder::class) {
                 precondition {
                     playerIndex == Players.startingWith(this@Model.players.indices.toList(), this@Model.startingPlayer).minus(

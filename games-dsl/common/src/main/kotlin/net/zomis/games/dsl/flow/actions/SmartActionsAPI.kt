@@ -32,6 +32,7 @@ interface SmartActionScope<T: Any, A: Any> : UsageScope {
     fun choice(name: String, optional: Boolean, function: ActionOptionsScope<T>.() -> Iterable<A>): SmartActionChoice<A>
     fun <E> using(function: SmartActionUsingScope<T, A>.() -> E): SmartActionUsingBuilder<T, A, E>
     fun change(block: SmartActionChangeScope<T, A>.() -> Unit)
+    val standard: SmartActionUsingBuilder<T, A, Unit> get() = using {}
 }
 
 interface SmartActionChangeScope<T: Any, A: Any> : UsageScope {
@@ -44,6 +45,9 @@ object SmartActions {
 
         override fun precondition(rule: ActionOptionsScope<T>.() -> Boolean) {
             handler._preconditions.add(ActionPrecondition(rule))
+        }
+        override fun preconditionDenyIf(rule: ActionOptionsScope<T>.() -> Boolean) {
+            handler._preconditions.add(ActionPrecondition { !rule.invoke(this) })
         }
         override fun requires(rule: ActionRuleScope<T, A>.() -> Boolean) {
             handler._requires.add(ActionRequirement({}, { rule.invoke(this) }))

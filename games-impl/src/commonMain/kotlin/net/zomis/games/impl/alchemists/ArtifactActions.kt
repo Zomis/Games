@@ -17,6 +17,7 @@ object ArtifactActions {
         override fun serialize(): String = name
     }
 
+    // An artifact needs: An on-play effect, an effect while in place, a resource map (victory points - may be dynamic, gold). Manipulate actions. Event listeners. Extra state.
     val altarOfGold = Artifact("Altar of Gold", "Immediate effect: Pay 1 to 8 gold pieces. Gain that many points of reputation.", 3, 1, 0)
     val amuletOfRhetoric = Artifact("Amulet of Rhetoric", "Immediate effect: Gain 5 points of reputation.", 2, 4, 0)
     val bootsOfSpeed = Artifact("Boots of Speed", "On an action space where you have at least one cube, you can perform that action again after everyone is done. Limit once per round. Can't be used to Sell Potions.",

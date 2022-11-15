@@ -16,6 +16,7 @@ open class GameFlowActionContext<T: Any, A: Any>: GameFlowActionScope<T, A> {
     override fun options(rule: ActionOptionsScope<T>.() -> Iterable<A>) = exampleOptions(rule)
     override fun exampleOptions(rule: ActionOptionsScope<T>.() -> Iterable<A>) {}
     override fun choose(options: ActionChoicesScope<T, A>.() -> Unit) {}
+    override fun preconditionDenyIf(rule: ActionOptionsScope<T>.() -> Boolean) { TODO() }
 }
 
 typealias GameFlowActionDsl<T, A> = GameFlowActionScope<T, A>.() -> Unit

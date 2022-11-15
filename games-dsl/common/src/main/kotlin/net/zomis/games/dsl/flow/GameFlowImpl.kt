@@ -302,6 +302,7 @@ interface GameFlowActionScope<T: Any, A: Any> : UsageScope {
     fun after(rule: ActionRuleScope<T, A>.() -> Unit)
     fun perform(rule: ActionRuleScope<T, A>.() -> Unit)
     fun precondition(rule: ActionOptionsScope<T>.() -> Boolean)
+    fun preconditionDenyIf(rule: ActionOptionsScope<T>.() -> Boolean)
     fun requires(rule: ActionRuleScope<T, A>.() -> Boolean)
     fun options(rule: ActionOptionsScope<T>.() -> Iterable<A>)
     fun exampleOptions(rule: ActionOptionsScope<T>.() -> Iterable<A>)

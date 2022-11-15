@@ -14,16 +14,19 @@
               <template v-for="(turnOrder, turnOrderIndex) in view.turnPicker.options">
                 <img v-if="turnOrder.chosenBy != null"
                   class="chosen"
+                :class="turnOrder.key"
                   :key="'turn-' + turnOrderIndex"
                   :src="`${path}cube_${turnOrder.chosenBy}.png`"
                   :style="{ top: (30*turnOrderIndex) + 'px' }"
                 />
-                <div v-else-if="turnOrder.choosable" :key="'turn-' + turnOrderIndex"
+                <div v-else-if="view.turnPicker.actionable[turnOrder.key]" :key="'turn-' + turnOrderIndex"
                   class="choosable"
+                :class="turnOrder.key"
                   :style="{ top: (30*turnOrderIndex) + 'px' }"
                   @click="chooseTurnOrder(turnOrder.key)"
                 />
                 <img v-else class="hidden" :key="'turn-' + turnOrderIndex"
+                :class="turnOrder.key"
                   :style="{ top: (30*turnOrderIndex) + 'px' }"
                 />
               </template>
@@ -144,7 +147,7 @@ export default {
       if (!this.view.buyArtifact) return result;
       if (!this.view.buyArtifact.forSale) return result;
       for (let artifact of this.view.buyArtifact.forSale) {
-        if (this.artifactIds[artifact.name]) {
+        if (this.artifactIds[artifact.name] !== undefined) {
           result.push(this.artifactIds[artifact.name]);
         } else {
           result.push('404-' + artifact.name);
@@ -290,9 +293,14 @@ export default {
 
 .turn-order-placement * {
   position: absolute;
-  width: 33px;
-  height: 33px;
+  cursor: pointer;
+  width: 30px;
+  height: 27px;
   left: 0px;
+}
+
+.turn-order-placement .choosable:hover {
+  background-color: green;
 }
 
 .turn-order-placement .choosable {
