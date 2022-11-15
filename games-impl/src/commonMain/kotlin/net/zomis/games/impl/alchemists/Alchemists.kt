@@ -176,7 +176,7 @@ object Alchemists {
         }
 
         data class SellAnalyze(val probability: Double, val guarantee: SellAction.SellResult, val expectedGold: Double) {
-            override fun toString(): String = "($probability, $guarantee, $expectedGold gold)"
+            override fun toString(): String = "(sold with $guarantee with $probability gives on average $expectedGold gold)"
         }
         private fun sellAnalyze(a: Ingredient, b: Ingredient, request: AlchemistsPotion): String {
             if (request == blocked) return ""
@@ -186,15 +186,15 @@ object Alchemists {
                 weightedRemains += remains.probability * remains.count
             }
 
-            val reward = SellAction.SellResult.values().map { guarantee ->
+            val sellAnalyze = SellAction.SellResult.values().map { guarantee ->
                 val betterOrEqual = SellAction.SellResult.values().filter { it.price >= guarantee.price }
                 val allRemains = betterOrEqual.map {result ->
                     weightedRemains { it.sellPotion(a, b, request) == result }
                 }
                 val probabilitySum = allRemains.sumByDouble { it.probability }
                 SellAnalyze(probabilitySum, guarantee, probabilitySum * guarantee.price)
-            }.maxOf { it.expectedGold }
-            return "selling gives $weightedRemains weighted remains, best guarantee is $reward"
+            }.maxByOrNull { it.expectedGold }
+            return "selling gives $weightedRemains weighted remains. $sellAnalyze"
         }
 
         class WeightedRemains(val parent: Solutions, val solutions: Set<AlchemistsSolution>) {
@@ -359,31 +359,37 @@ object Alchemists {
     class AlchemistsPotionSell(val ingredient: Ingredient, val other: Ingredient, val promise: AlchemistsPotion, val result: SellAction.SellResult)
 
     class State {
-        private val knowledge = mutableListOf<AlchemistsKnowledge>()
+        private val knowledge = mutableListOf<AlchemistsPotionSell>()
         fun copy(): State {
             val state = State()
             state.knowledge.addAll(this.knowledge)
             return state
         }
 
-        fun addKnowledge(knowledge: AlchemistsKnowledge) {
-            this.knowledge.add(knowledge)
-        }
-
-        fun addKnowledge(ingredient: Ingredient, otherIngredient: Ingredient, potion: AlchemistsPotion): State {
-            this.addKnowledge(AlchemistsKnowledge(ingredient, otherIngredient, potion))
+        fun addKnowledge(knowledge: AlchemistsKnowledge): State {
+            if (knowledge.result.blocked) {
+                this.knowledge.add(AlchemistsPotionSell(knowledge.ingredient, knowledge.other, red.plus, SellAction.SellResult.BLOCKED))
+            } else {
+                this.knowledge.add(AlchemistsPotionSell(knowledge.ingredient, knowledge.other, knowledge.result, SellAction.SellResult.CORRECT_COLOR_AND_SIGN))
+            }
             return this
         }
 
-        fun addKnowledgeSellResult(potion: AlchemistsPotionSell) {
-            TODO()
+        fun addKnowledge(ingredient: Ingredient, otherIngredient: Ingredient, potion: AlchemistsPotion): State {
+            return addKnowledge(AlchemistsKnowledge(ingredient, otherIngredient, potion))
         }
+
+        fun addKnowledgeSellResult(sell: AlchemistsPotionSell): State {
+            this.knowledge.add(sell)
+            return this
+        }
+
         fun findSolutions(): Solutions {
             val ingredients = Ingredient.values().toList()
             val solutions = (0 until 40320).map { Combinatorics.specificPermutation(8, it) }.map { permutation ->
                 AlchemistsSolution(permutation.withIndex().toList().associate { ingredients[it.index] to alchemyValues[it.value] })
             }
-            val possibleSolutions = solutions.filter { solution -> knowledge.all { solution.matchesKnowledge(it) } }
+            val possibleSolutions = solutions.filter { solution -> knowledge.all { solution.sellPotion(it.ingredient, it.other, it.promise) == it.result } }
             return Solutions(possibleSolutions.toSet())
         }
     }
