@@ -3,6 +3,7 @@ package net.zomis.games.dsl.impl
 import net.zomis.games.api.UsageScope
 import net.zomis.games.common.mergeWith
 import net.zomis.games.dsl.*
+import net.zomis.games.dsl.flow.GameMetaScope
 import kotlin.reflect.KClass
 
 @GameMarker
@@ -61,7 +62,7 @@ data class ActionSampleSize(val sampleSizes: List<Int>) {
 }
 
 class ActionTypeImplEntry<T : Any, P : Any>(
-    val gameContext: GameRuleContext<T>,
+    val gameContext: GameMetaScope<T>,
     val actionType: ActionType<T, P>,
     val impl: GameLogicActionType<T, P>
 ) {

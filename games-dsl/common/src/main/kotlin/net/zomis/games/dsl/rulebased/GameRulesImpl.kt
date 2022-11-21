@@ -5,8 +5,8 @@ import net.zomis.games.common.GameEvents
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.GameConfig
 import net.zomis.games.dsl.ReplayStateI
+import net.zomis.games.dsl.flow.GameMetaScope
 import net.zomis.games.dsl.impl.GameActionRulesContext
-import net.zomis.games.dsl.impl.GameRuleContext
 
 class GameRulesActive<T: Any>(val rules: List<GameRuleImpl<T>>) {
 
@@ -21,7 +21,7 @@ class GameRulesActive<T: Any>(val rules: List<GameRuleImpl<T>>) {
         return applied
     }
 
-    fun stateCheck(context: GameRuleContext<T>): Collection<GameRuleRuleScope<T>> {
+    fun stateCheck(context: GameMetaScope<T>): Collection<GameRuleRuleScope<T>> {
         val applied = mutableListOf<GameRuleImpl<T>>()
         rules.forEach {rule ->
             if (rule.effects.isNotEmpty()) {
@@ -48,7 +48,7 @@ class GameRuleForEachContext<T: Any, E>(val list: GameRuleScope<T>.() -> Iterabl
         effects.add(effect)
     }
 
-    fun performForEach(context: GameRuleContext<T>): Boolean {
+    fun performForEach(context: GameMetaScope<T>): Boolean {
         var performedSomething = false
         list(context).forEach { listItem ->
             effects.forEach { effect ->
@@ -62,7 +62,7 @@ class GameRuleForEachContext<T: Any, E>(val list: GameRuleScope<T>.() -> Iterabl
 }
 
 class GameRuleEventContext<T: Any, E>(
-    private val context: GameRuleContext<T>,
+    private val context: GameMetaScope<T>,
     override val event: E
 ): GameRuleEventScope<T, E> {
     override val model: T get() = context.game
@@ -80,7 +80,7 @@ class GameRuleEventListenerImpl<T: Any, E>(
         this.performer = perform
     }
 
-    fun fire(context: GameRuleContext<T>, executor: GameEvents<E>, event: E) {
+    fun fire(context: GameMetaScope<T>, executor: GameEvents<E>, event: E) {
         val allowedGameEvents = events.invoke(context)
         if (!allowedGameEvents.contains(executor)) {
             return
@@ -149,7 +149,7 @@ class GameRuleImpl<T: Any>(
         return gameRuleEvents
     }
 
-    fun <E> fire(context: GameRuleContext<T>, executor: GameEvents<E>, event: E) {
+    fun <E> fire(context: GameMetaScope<T>, executor: GameEvents<E>, event: E) {
         if (this.isActive(context)) {
             eventListeners.forEach {listenerImpl ->
                 val impl = listenerImpl as GameRuleEventListenerImpl<T, Any>

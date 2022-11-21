@@ -11,7 +11,9 @@ import net.zomis.games.common.GameEvents
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.common.toSingleList
 import net.zomis.games.dsl.*
+import net.zomis.games.dsl.flow.GameFlowStepScope
 import net.zomis.games.dsl.flow.GameForkResult
+import net.zomis.games.dsl.flow.GameMetaScope
 import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.listeners.ReplayListener
 import net.zomis.games.scorers.Scorer
@@ -121,23 +123,25 @@ annotation class GameMarker
 interface GameFork<T: Any> {
     val model: T
     val eliminations: PlayerEliminationsRead
+    fun isGameOver(): Boolean
+    fun isRunning() = !isGameOver()
 
     val gameType: String
     val playerCount: Int
     val playerIndices: IntRange get() = 0 until playerCount
     suspend fun copy(): GameForkResult<T>
-    fun isGameOver(): Boolean
-    fun isRunning() = !isGameOver()
     fun view(playerIndex: PlayerIndex): Map<String, Any?>
 }
 
 interface Game<T: Any>: GameFork<T> {
     override val eliminations: PlayerEliminationsWrite
+    override fun isGameOver(): Boolean = eliminations.isGameOver()
+
     val actions: Actions<T>
     val actionsInput: Channel<Actionable<T, out Any>>
     val feedbackFlow: Channel<FlowStep>
+
     suspend fun start(coroutineScope: CoroutineScope)
-    override fun isGameOver(): Boolean = eliminations.isGameOver()
     fun stop()
 }
 
@@ -146,7 +150,7 @@ class GameImpl<T : Any>(
     override val playerCount: Int,
     val gameConfig: GameConfigs,
     private val copier: suspend () -> GameForkResult<T>
-): Game<T>, GameFactoryScope<Any>, GameEventsExecutor {
+): Game<T>, GameFactoryScope<Any>, GameEventsExecutor, GameMetaScope<T> {
     override val configs: GameConfigs get() = gameConfig
     private val stateKeeper = StateKeeper()
     override val gameType: String = setupContext.gameType
@@ -158,8 +162,8 @@ class GameImpl<T : Any>(
     override val eliminations: PlayerEliminationsWrite get() = eliminationCallback
     override val model = setupContext.model.factory(this)
     private val replayState = ReplayState(stateKeeper)
-    private val gameContext = GameRuleContext(model, eliminations, replayState, gameConfig)
-    private val rules = GameActionRulesContext(gameContext)
+    override val replayable: ReplayState get() = replayState
+    private val rules = GameActionRulesContext(this)
 
     override suspend fun start(coroutineScope: CoroutineScope) {
         if (this.actionsInputJob != null) throw IllegalStateException("Game already started")
@@ -216,6 +220,10 @@ class GameImpl<T : Any>(
     override val feedbackFlow: Channel<FlowStep> = Channel()
 
     override suspend fun copy(): GameForkResult<T> = copier.invoke()
+
+    override fun injectStep(name: String, step: GameFlowStepScope<T>.() -> Unit) {
+        TODO("Not yet implemented")
+    }
 
     fun quickCopy(quickCopier: (source: T, destination: T) -> Unit): GameImpl<T> {
         val copy = GameImpl(setupContext, playerCount, gameConfig, copier)

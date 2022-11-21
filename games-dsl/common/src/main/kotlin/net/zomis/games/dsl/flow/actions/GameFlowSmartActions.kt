@@ -4,6 +4,7 @@ import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.api.UsageScope
 import net.zomis.games.common.putSingle
 import net.zomis.games.dsl.*
+import net.zomis.games.dsl.flow.GameMetaScope
 import net.zomis.games.dsl.impl.*
 import kotlin.properties.PropertyDelegateProvider
 import kotlin.reflect.KClass
@@ -13,7 +14,7 @@ import kotlin.reflect.KClass
 //data class SmartAction(val choices: Map<String, Any>)
 
 class SmartActionLogic<T: Any, A: Any>(
-    val gameContext: GameRuleContext<T>,
+    val gameContext: GameMetaScope<T>,
     override val actionType: ActionType<T, A>
 ) : GameLogicActionType<T, A>, SmartActionChangeScope<T, A> {
     private val _handlers = mutableListOf<SmartActionBuilder<T, A>>()
@@ -106,7 +107,7 @@ class SmartActionLogic<T: Any, A: Any>(
 
 
 class SmartActionContext<T: Any, A: Any>(
-    action: ActionType<T, A>, gameRuleContext: GameRuleContext<T>,
+    action: ActionType<T, A>, gameRuleContext: GameMetaScope<T>,
 ): SmartActionBuilder<T, A>()
 
 class ActionUsingBuilder<T: Any, A: Any, E>(

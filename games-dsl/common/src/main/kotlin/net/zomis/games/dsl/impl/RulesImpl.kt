@@ -4,20 +4,12 @@ import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.GameEvents
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
+import net.zomis.games.dsl.flow.GameMetaScope
 import net.zomis.games.dsl.rulebased.*
 import kotlin.reflect.KClass
 
-class GameRuleContext<T: Any>(
-    override val model: T,
-    override val eliminations: PlayerEliminationsWrite,
-    override val replayable: ReplayState,
-    val configs: GameConfigs
-): GameRuleScope<T> {
-    override fun <E: Any> config(config: GameConfig<E>): E = configs.get(config)
-}
-
 class GameActionRulesContext<T : Any>(
-    val gameContext: GameRuleContext<T>
+    val gameContext: GameMetaScope<T>
 ): GameActionRulesScope<T>, GameRulesScope<T>, GameEventsExecutor {
     private val views = mutableListOf<Pair<String, ViewScope<T>.() -> Any?>>()
 //    private val logger = KLoggers.logger(this)
@@ -128,7 +120,7 @@ class GameStartContext<T : Any>(
 }
 
 class GameRuleList<T : Any>(
-    val gameContext: GameRuleContext<T>,
+    val gameContext: GameMetaScope<T>,
 ): GameAllActionsRule<T> {
     val after = mutableListOf<ActionRuleScope<T, Any>.() -> Unit>()
     val preconditions = mutableListOf<ActionOptionsScope<T>.() -> Boolean>()
@@ -138,7 +130,7 @@ class GameRuleList<T : Any>(
 }
 
 class ActionOptionsContext<T : Any>(
-    val gameContext: GameRuleContext<T>,
+    val gameContext: GameMetaScope<T>,
     override val actionType: String,
     override val playerIndex: Int,
 ) : ActionOptionsScope<T>, GameRuleScope<T> by gameContext {
@@ -146,9 +138,10 @@ class ActionOptionsContext<T : Any>(
 }
 
 class ActionRuleContext<T : Any, A : Any>(
-    val gameContext: GameRuleContext<T>,
+    val gameContext: GameMetaScope<T>,
     override val action: Actionable<T, A>,
 ): ActionRuleScope<T, A>, GameRuleScope<T> by gameContext {
+    override val meta: GameMetaScope<T> get() = gameContext
     override val playerIndex: Int get() = action.playerIndex
     override val actionType: String get() = action.actionType
 
@@ -164,7 +157,7 @@ class ActionRuleContext<T : Any, A : Any>(
 
 @Deprecated("Replace with GameFlow and SmartAction")
 class GameActionRuleContext<T : Any, A : Any>(
-    val gameContext: GameRuleContext<T>,
+    val gameContext: GameMetaScope<T>,
     val actionDefinition: ActionType<T, A>,
     val globalRules: GameRuleList<T>,
 ): GameActionRule<T, A>, GameLogicActionType<T, A> {
@@ -294,7 +287,7 @@ data class GameRuleTriggerContext<T : Any, E : Any>(
 ): GameRuleTriggerScope<T, E>
 
 class GameRuleTriggerImpl<T : Any, E : Any>(
-    val gameContext: GameRuleContext<T>,
+    val gameContext: GameMetaScope<T>,
 ) : GameRuleTrigger<T, E> {
     private val effects = mutableListOf<GameRuleTriggerScope<T, E>.() -> Unit>()
     private val mappings = mutableListOf<GameRuleTriggerScope<T, E>.() -> E>()

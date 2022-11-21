@@ -3,6 +3,7 @@ package net.zomis.games.api
 import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.dsl.GameConfig
+import net.zomis.games.dsl.flow.GameMetaScope
 import net.zomis.games.dsl.impl.Game
 
 interface Scope
@@ -12,6 +13,9 @@ interface UsageScope: Scope
 
 interface GameModelScope<T: Any>: PrimitiveScope {
     val model: T
+}
+interface MetaScope<T: Any>: PrimitiveScope {
+    val meta: GameMetaScope<T>
 }
 interface PlayerCountScope: PrimitiveScope {
     val playerCount: Int

@@ -2,8 +2,10 @@ package net.zomis.games.dsl
 
 import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.PlayerEliminationsWrite
+import net.zomis.games.api.MetaScope
 import net.zomis.games.api.UsageScope
 import net.zomis.games.common.PlayerIndex
+import net.zomis.games.dsl.flow.GameMetaScope
 import net.zomis.games.dsl.impl.ActionOptionsContext
 import net.zomis.games.dsl.impl.GameMarker
 import kotlin.reflect.KClass
@@ -47,7 +49,8 @@ interface LogActionScope<T : Any, A : Any>: LogScope<T> {
     val action: A
 }
 @GameMarker
-interface ActionRuleScope<T : Any, A : Any> : GameUtils, ActionOptionsScope<T>, EventTools, UsageScope {
+interface ActionRuleScope<T : Any, A : Any> : GameUtils, ActionOptionsScope<T>, EventTools, MetaScope<T>, UsageScope {
+    override val meta: GameMetaScope<T>
     override val game: T
     val action: Actionable<T, A>
     override val eliminations: PlayerEliminationsWrite

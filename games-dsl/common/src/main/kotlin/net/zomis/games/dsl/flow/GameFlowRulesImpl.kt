@@ -7,7 +7,6 @@ import net.zomis.games.dsl.flow.rules.GameRulePresets
 import net.zomis.games.dsl.flow.rules.GameRulePresetsImpl
 import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.GameMarker
-import net.zomis.games.dsl.impl.GameRuleContext
 import net.zomis.games.dsl.rulebased.*
 
 @GameMarker
@@ -29,7 +28,7 @@ interface GameFlowRulesScope<T: Any> : UsageScope {
 
 enum class GameFlowRulesState { AFTER_ACTIONS, BEFORE_RETURN, FIRE_EVENT }
 class GameFlowRulesContext<T: Any>(
-    val context: GameRuleContext<T>,
+    val context: GameMetaScope<T>,
     val state: GameFlowRulesState,
     val event: Pair<GameEvents<*>, Any>?,
     val callbacks: GameFlowRuleCallbacks<T>
@@ -93,7 +92,7 @@ interface GameFlowRuleCallbacks<T: Any> {
 }
 
 class GameFlowRuleContextRun<T: Any>(
-    private val context: GameRuleContext<T>,
+    private val context: GameMetaScope<T>,
     private val callbacks: GameFlowRuleCallbacks<T>,
     private val eventsMap: MutableMap<GameEvents<Any>, MutableList<GameRuleEventScope<T, Any>.() -> Unit>>
 ) {
@@ -109,7 +108,7 @@ class GameFlowRuleContextRun<T: Any>(
 }
 
 class GameFlowRuleContextActiveCheck<T: Any>(
-    private val context: GameRuleContext<T>
+    private val context: GameMetaScope<T>
 ) : GameFlowRuleContext<T>() {
     override val game: T get() = context.game
     var result: Boolean = true
@@ -119,13 +118,13 @@ class GameFlowRuleContextActiveCheck<T: Any>(
     }
 }
 class GameFlowRuleContextExecution<T: Any>(
-    private val context: GameRuleContext<T>,
+    private val context: GameMetaScope<T>,
     private val callbacks: GameFlowRuleCallbacks<T>,
     private val eventsMap: MutableMap<GameEvents<Any>, MutableList<GameRuleEventScope<T, Any>.() -> Unit>>
 ): GameFlowRuleContext<T>() {
     override val game: T get() = context.game
 
-    class GameRuleForEachImpl<T: Any, E>(val context: GameRuleContext<T>, val list: Iterable<E>): GameRuleForEachScope<T, E> {
+    class GameRuleForEachImpl<T: Any, E>(val context: GameMetaScope<T>, val list: Iterable<E>): GameRuleForEachScope<T, E> {
         override fun effect(effect: GameRuleScope<T>.(E) -> Unit) {
             list.forEach { effect.invoke(context, it) }
         }

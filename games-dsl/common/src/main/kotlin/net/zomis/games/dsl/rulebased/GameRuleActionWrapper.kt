@@ -1,10 +1,10 @@
 package net.zomis.games.dsl.rulebased
 
 import net.zomis.games.dsl.*
-import net.zomis.games.dsl.impl.GameRuleContext
+import net.zomis.games.dsl.flow.GameMetaScope
 
 class GameRuleActionWrapper<T: Any, A: Any>(
-    private val gameContext: GameRuleContext<T>,
+    private val gameContext: GameMetaScope<T>,
     private val action: GameActionRule<T, A>,
     private val parentRule: GameRuleImpl<T>
 ) : GameRuleActionScope<T, A> {

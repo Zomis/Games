@@ -4,6 +4,7 @@ import klog.KLoggers
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.flow.GameFlowActionContext
 import net.zomis.games.dsl.flow.GameFlowActionDsl
+import net.zomis.games.dsl.flow.GameMetaScope
 import net.zomis.games.dsl.impl.*
 
 private class GameFlowActionContextPrecondition<T: Any, A: Any>(private val context: ActionOptionsContext<T>): GameFlowActionContext<T, A>() {
@@ -42,7 +43,7 @@ private class GameFlowActionContextOptions<T: Any, A: Any>(): GameFlowActionCont
 }
 
 class GameFlowLogicActionAvailable<T: Any, A: Any>(
-    private val gameData: GameRuleContext<T>,
+    private val gameData: GameMetaScope<T>,
     private val actionType: ActionType<T, A>,
     private val actionDsls: () -> List<GameFlowActionDsl<T, A>>
 ) {

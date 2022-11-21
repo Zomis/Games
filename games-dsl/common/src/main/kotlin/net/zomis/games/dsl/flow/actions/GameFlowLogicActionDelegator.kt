@@ -4,11 +4,12 @@ import net.zomis.games.dsl.Action
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.flow.GameFlowActionScope
+import net.zomis.games.dsl.flow.GameMetaScope
 import net.zomis.games.dsl.impl.*
 
 @Deprecated("Replace with GameFlow and SmartAction")
 class GameFlowLogicActionDelegator<T: Any, A: Any>(
-    private val gameData: GameRuleContext<T>,
+    private val gameData: GameMetaScope<T>,
     override val actionType: ActionType<T, A>,
     actionDsls: () -> List<GameFlowActionScope<T, A>.() -> Unit>
 ): GameLogicActionType<T, A> {
