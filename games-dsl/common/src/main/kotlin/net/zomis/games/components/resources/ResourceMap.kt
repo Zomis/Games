@@ -5,6 +5,9 @@ import net.zomis.games.dsl.Replayable
 interface ResourceMap: Replayable {
     companion object {
         fun empty(): ResourceMap = ResourceMapImpl(mutableMapOf())
+        fun of(vararg resources: Pair<GameResource, Int>) = resources.fold(empty()) { acc, pair ->
+            acc + pair.first.toResourceMap(pair.second)
+        }
     }
     operator fun get(resource: GameResource): Int?
     fun getOrDefault(resource: GameResource): Int
@@ -14,6 +17,7 @@ interface ResourceMap: Replayable {
     operator fun minus(other: ResourceMap): ResourceMap
     operator fun times(value: Int): ResourceMap
     fun has(resource: GameResource, value: Int): Boolean
+    fun count(): Int = this.entries().sumOf { it.value }
 
     fun has(resources: ResourceMap): Boolean
     fun resources(): Set<GameResource>
@@ -138,5 +142,15 @@ class ResourceMapImpl(
         return true
     }
 
-}
+    override fun hashCode(): Int {
+        return this.resources.hashCode()
+    }
 
+    override fun equals(other: Any?): Boolean {
+        if (other !is ResourceMap) return false
+        return other.entries() == this.entries()
+    }
+
+    override fun toString(): String = entries().toString()
+
+}

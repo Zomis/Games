@@ -35,4 +35,13 @@ class ResourceEntryImpl(override val resource: GameResource, override var value:
     override fun coerceAtLeast(value: Int) {
         this.value = this.value.coerceAtLeast(value)
     }
+
+    override fun hashCode(): Int = resource.hashCode() + 17 * value.hashCode()
+
+    override fun equals(other: Any?): Boolean {
+        if (other !is ResourceEntry) return false
+        return this.resource == other.resource && this.value == other.value
+    }
+
+    override fun toString(): String = "$resource=$value"
 }
