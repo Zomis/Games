@@ -1,6 +1,8 @@
 package net.zomis.games.components.resources
 
+import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.Replayable
+import net.zomis.games.dsl.Viewable
 
 interface ResourceMap: Replayable {
     companion object {
@@ -30,6 +32,7 @@ interface ResourceMap: Replayable {
 
     operator fun unaryMinus(): ResourceMap
     fun any(): Boolean = entries().any { it.value != 0 }
+    fun toView(): Map<String, Int> = entries().associate { it.resource.name to it.value }
 }
 
 interface MutableResourceMap: ResourceMap {
@@ -56,7 +59,7 @@ interface MutableResourceMap: ResourceMap {
 
 class ResourceMapImpl(
     private val resources: MutableMap<GameResource, ResourceEntryImpl> = mutableMapOf()
-): MutableResourceMap, ResourceMap {
+): MutableResourceMap, ResourceMap, Viewable {
 
     override fun get(resource: GameResource): Int? = resources[resource]?.value
     override fun getOrDefault(resource: GameResource): Int = resources[resource]?.value ?: resource.defaultValue()
@@ -107,7 +110,7 @@ class ResourceMapImpl(
         "${it.key}/${it.value.value}"
     }
 
-    private inline fun enforceResource(resource: GameResource): ResourceEntryImpl = this.resources.getOrPut(resource) { ResourceEntryImpl(resource, resource.defaultValue()) }
+    private fun enforceResource(resource: GameResource): ResourceEntryImpl = this.resources.getOrPut(resource) { ResourceEntryImpl(resource, resource.defaultValue()) }
 
     override fun set(resource: GameResource, value: Int) {
         enforceResource(resource).value = value
@@ -145,6 +148,9 @@ class ResourceMapImpl(
     override fun hashCode(): Int {
         return this.resources.hashCode()
     }
+
+    override fun toView(viewer: PlayerIndex): Map<GameResource, Int>
+        = this.entries().associate { it.resource to it.value }
 
     override fun equals(other: Any?): Boolean {
         if (other !is ResourceMap) return false
