@@ -111,7 +111,8 @@ kotlin {
                 runtimeOnly("org.junit.jupiter:junit-jupiter-engine:$jupiterVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion")
                 implementation("io.ktor:ktor-server-tests-jvm:$ktorVersion")
-                implementation("com.tngtech.archunit:archunit:1.0.0")
+                implementation("com.tngtech.archunit:archunit-junit5:1.0.0")
+                implementation("com.google.truth:truth:1.1.3")
             }
         }
         val jsMain by getting {
