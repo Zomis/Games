@@ -7,6 +7,7 @@ import net.zomis.games.common.next
 import net.zomis.games.common.toSingleList
 import net.zomis.games.dsl.flow.GameFlowScope
 import net.zomis.games.dsl.flow.GameFlowStep
+import net.zomis.games.dsl.flow.GameFlowStepResult
 
 object Red7 {
 
@@ -185,7 +186,7 @@ object Red7 {
                     hand2.findBestHand(Color.GREEN))
             }
         }
-        suspend fun playMode(scope: GameFlowScope<Model>, currentPlayer: Int, played: Boolean): GameFlowStep<Model> {
+        suspend fun playMode(scope: GameFlowScope<Model>, currentPlayer: Int, played: Boolean): GameFlowStepResult<Model> {
             return scope.step("step") {
                 game.currentPlayerIndex = currentPlayer
                 if (!played) {
