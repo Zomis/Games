@@ -56,7 +56,8 @@ class SemiKnownCardZoneTest {
                 fun `then top card should be random and remembered`() {
                     val replayable = ReplayState(StateKeeper())
                     val topCard = zone.top(replayable, "top", 1)
-                    Assertions.assertEquals(topCard, zone.top(replayable, "top", 1))
+                    replayable.stateKeeper.replayMode = true
+                    Assertions.assertEquals(topCard.toList(), zone.top(replayable, "top", 1).toList())
                     Assertions.assertEquals(IndexedValue(0, topCard.single().card), zone.knownCards().single())
                     val remembered = replayable.stateKeeper.lastMoveState().getValue("top") as List<String>
                     Assertions.assertEquals("value-" + topCard.single().card, remembered.single())
@@ -126,7 +127,7 @@ class SemiKnownCardZoneTest {
 
                 @Test
                 fun `then top card should be 4`() {
-                    val topCard = zone.top(replayable, "top", 1)
+                    val topCard = zone.top(replayable, "top", 1).toList()
                     Assertions.assertEquals(listOf(Card(zone, 0, 4)), topCard)
                     Assertions.assertEquals(IndexedValue(0, 4), zone.knownCards().single())
                 }
