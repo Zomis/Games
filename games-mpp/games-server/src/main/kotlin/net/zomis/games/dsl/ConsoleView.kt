@@ -9,46 +9,50 @@ class ConsoleView<T: Any> {
     fun showView(game: Game<T>, playerIndex: Int? = null) {
         println()
         val currentPlayer = game.view(0)["currentPlayer"] as Int?
-        print(0, "Game:", game.view(playerIndex ?: currentPlayer ?: 0))
+        val viewer = playerIndex ?: currentPlayer ?: 0
+        print(0, "Game:", game.view(viewer), viewer)
     }
 
-    fun print(indentation: Int, name: String, data: Any?) {
-        strings(indentation, name, data).forEach { println(it) }
+    fun print(indentation: Int, name: String, data: Any?, viewer: Int) {
+        strings(indentation, name, data, viewer).forEach { println(it) }
     }
 
-    fun strings(indentation: Int, name: String?, data: Any?): List<String> {
+    fun strings(indentation: Int, name: String?, data: Any?, viewer: Int): List<String> {
         val prefix = (0 until indentation).joinToString("") { " " }
         fun start(postName: String): String {
             if (name != null) return "$prefix$name$postName"
             return prefix
         }
         if (name == "grid" && data is List<*>) {
-            return start("").toSingleList() + displayGrid(indentation + 2, data as List<List<*>>)
+            return start("").toSingleList() + displayGrid(indentation + 2, data as List<List<*>>, viewer)
         }
         val strings = sequence {
             when (data) {
+                is Viewable -> {
+                    yieldAll(strings(indentation, name, data.toView(viewer), viewer))
+                }
                 null, is Int, is String, is Boolean, is Double -> yield(start (" = ") + data.toString())
                 is List<*> -> {
-                    yield(start(": List"))
+                    yield(start(": List (size ${data.size})"))
                     data.forEachIndexed { index, value ->
-                        yieldAll(strings(indentation + 2, index.toString(), value))
+                        yieldAll(strings(indentation + 2, index.toString(), value, viewer))
                     }
                 }
-                is Set<*> -> strings(indentation, name, data.toList())
-                is Array<*> -> strings(indentation, name, data.toList())
+                is Set<*> -> strings(indentation, name, data.toList(), viewer)
+                is Array<*> -> strings(indentation, name, data.toList(), viewer)
                 is Pair<*, *> -> {
                     yield(start(" ") + data.first + ": " + data.second)
                 }
                 is Map<*, *> -> {
                     yield(start(": Map"))
                     data.entries.sortedBy { it.key.toString() }.forEach {
-                        yieldAll(strings(indentation + 2, it.key.toString(), it.value))
+                        yieldAll(strings(indentation + 2, it.key.toString(), it.value, viewer))
                     }
                 }
                 else -> {
                     println("Attempting to convert $name from data $data (${data.javaClass})")
                     try {
-                        yieldAll(strings(indentation, name, convertToDBFormat(data)))
+                        yieldAll(strings(indentation, name, convertToDBFormat(data), viewer))
                     } catch (e: Exception) {
                         yield("${prefix}Unable to transform $name to Map: $e Class is ${data.javaClass} and value $data")
                     }
@@ -58,7 +62,7 @@ class ConsoleView<T: Any> {
         return strings.toList()
     }
 
-    fun displayGrid(indentation: Int, data: List<List<*>>): List<String> {
+    fun displayGrid(indentation: Int, data: List<List<*>>, viewer: Int): List<String> {
         if (data.isEmpty()) {
             return emptyList()
         }
@@ -66,7 +70,7 @@ class ConsoleView<T: Any> {
         return sequence {
             /* one char = one char, one line = with spaces, multi-line = with |- separators */
             val dataStrings = data.map { row ->
-                row.map { strings(0, null, it) }
+                row.map { strings(0, null, it, viewer) }
             }
             val maxLinesPerRow = dataStrings.map { row -> row.maxOf { it.size } }
             val maxWidthPerCol = dataStrings[0].indices.map { colIndex ->
