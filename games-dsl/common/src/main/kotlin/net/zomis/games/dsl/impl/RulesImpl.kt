@@ -12,7 +12,6 @@ class GameActionRulesContext<T : Any>(
     val gameContext: GameMetaScope<T>
 ): GameActionRulesScope<T>, GameRulesScope<T>, GameEventsExecutor {
     private val views = mutableListOf<Pair<String, ViewScope<T>.() -> Any?>>()
-//    private val logger = KLoggers.logger(this)
     private val allActionRules = GameRuleList(gameContext)
     private val actionRules = mutableMapOf<String, GameActionRuleContext<T, Any>>()
     private val gameRules = mutableListOf<GameRuleImpl<T>>()

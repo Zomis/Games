@@ -94,8 +94,11 @@ class GameFlowImpl<T: Any>(
         mainScope.cancel()
     }
 
-    override fun injectStep(name: String, step: GameFlowStepScope<T>.() -> Unit) {
-        TODO("Not implemented yet")
+
+    internal val stepInjectionQueue = mutableListOf<GameFlowStep<T>>()
+    override fun injectStep(name: String, dsl: suspend GameFlowStepScope<T>.() -> Unit) {
+        logger.info { "Add step to queue: $name" }
+        this.stepInjectionQueue.add(GameFlowStep(name, dsl))
     }
 
     override suspend fun copy(): GameForkResult<T> {
@@ -259,7 +262,17 @@ class GameFlowContext<T: Any>(
         }
     }
 
-    override suspend fun step(name: String, step: suspend GameFlowStepScope<T>.() -> Unit): GameFlowStep<T> {
+    override suspend fun step(name: String, dsl: suspend GameFlowStepScope<T>.() -> Unit): GameFlowStepResult<T> {
+        println("Run step $name queue is ${flow.stepInjectionQueue.size}")
+        while (flow.stepInjectionQueue.isNotEmpty()) {
+            val step = flow.stepInjectionQueue.removeFirst()
+            println("Run queued step ${step.name}")
+            val impl = GameFlowStepImpl(flow, coroutineScope, "${this.name}/$name", step)
+            impl.runDsl()
+        }
+
+        println("Run step $name queue is ${flow.stepInjectionQueue.size}")
+        val step = GameFlowStep(name, dsl)
         val impl = GameFlowStepImpl(flow, coroutineScope, "${this.name}/$name", step)
         impl.runDsl()
         return impl
@@ -334,12 +347,13 @@ interface GameFlowScope<T: Any>: EventTools, UsageScope {
     override val eliminations: PlayerEliminationsWrite
     override val replayable: ReplayStateI
     suspend fun loop(function: suspend GameFlowScope<T>.() -> Unit)
-    suspend fun step(name: String, step: suspend GameFlowStepScope<T>.() -> Unit): GameFlowStep<T>
+    suspend fun step(name: String, dsl: suspend GameFlowStepScope<T>.() -> Unit): GameFlowStepResult<T>
     suspend fun log(logging: LogScope<T>.() -> String)
     suspend fun logSecret(player: PlayerIndex, logging: LogScope<T>.() -> String): LogSecretScope<T>
 }
 
-interface GameFlowStep<T: Any> {
+class GameFlowStep<GameModel: Any>(val name: String, val dsl: suspend GameFlowStepScope<GameModel>.() -> Unit)
+interface GameFlowStepResult<T: Any> {
     val action: Actionable<T, Any>?
-    suspend fun loopUntil(function: GameFlowStep<T>.() -> Boolean)
+    suspend fun loopUntil(function: GameFlowStepResult<T>.() -> Boolean)
 }

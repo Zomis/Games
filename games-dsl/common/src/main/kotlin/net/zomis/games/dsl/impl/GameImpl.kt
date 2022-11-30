@@ -221,8 +221,8 @@ class GameImpl<T : Any>(
 
     override suspend fun copy(): GameForkResult<T> = copier.invoke()
 
-    override fun injectStep(name: String, step: GameFlowStepScope<T>.() -> Unit) {
-        TODO("Not yet implemented")
+    override fun injectStep(name: String, step: suspend GameFlowStepScope<T>.() -> Unit) {
+        TODO("Not yet implemented for GameImpl")
     }
 
     fun quickCopy(quickCopier: (source: T, destination: T) -> Unit): GameImpl<T> {

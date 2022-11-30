@@ -2,7 +2,7 @@ package net.zomis.games.dsl.flow
 
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.api.*
-import net.zomis.games.dsl.Actionable
+import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.GameConfig
 import net.zomis.games.dsl.GameConfigs
 import net.zomis.games.dsl.impl.ReplayState
@@ -28,6 +28,9 @@ interface GameMetaScope<GameModel: Any>: UsageScope, GameModelScope<GameModel>, 
     override fun <E: Any> config(config: GameConfig<E>): E = configs.get(config)
     val configs: GameConfigs
 
-    fun injectStep(name: String, step: GameFlowStepScope<GameModel>.() -> Unit)
-    fun <A: Any> forcePerformAction(action: Actionable<GameModel, A>, ruleModifiers: Nothing) { TODO() }
+    fun injectStep(name: String, step: suspend GameFlowStepScope<GameModel>.() -> Unit)
+    fun <A: Any> forcePerformAction(
+        actionType: ActionType<GameModel, A>, playerIndex: Int, parameter: A,
+        rule: GameModifierScope<GameModel, Unit>.() -> Unit
+    ) { TODO() }
 }
