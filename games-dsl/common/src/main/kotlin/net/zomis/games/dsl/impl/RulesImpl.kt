@@ -278,6 +278,7 @@ class GameActionRuleContext<T : Any, A : Any>(
 
 }
 
+@Deprecated("old-style event system. Use Event class instead")
 data class GameRuleTriggerContext<T : Any, E : Any>(
     override val game: T,
     override val trigger: E,
@@ -285,6 +286,7 @@ data class GameRuleTriggerContext<T : Any, E : Any>(
     override val eliminations: PlayerEliminationsWrite
 ): GameRuleTriggerScope<T, E>
 
+@Deprecated("old-style event system. Use Event class instead")
 class GameRuleTriggerImpl<T : Any, E : Any>(
     val gameContext: GameMetaScope<T>,
 ) : GameRuleTrigger<T, E> {

@@ -128,6 +128,7 @@ interface GameRuleTriggerScope<T, E> : UsageScope {
     val eliminations: PlayerEliminationsWrite
 }
 
+@Deprecated("old-style event system. Use Event class instead")
 interface GameRuleTrigger<T : Any, E : Any> {
     fun effect(effect: GameRuleTriggerScope<T, E>.() -> Unit): GameRuleTrigger<T, E>
     fun map(mapping: GameRuleTriggerScope<T, E>.() -> E): GameRuleTrigger<T, E>

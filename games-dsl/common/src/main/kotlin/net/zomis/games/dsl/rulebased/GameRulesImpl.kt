@@ -61,6 +61,7 @@ class GameRuleForEachContext<T: Any, E>(val list: GameRuleScope<T>.() -> Iterabl
 
 }
 
+@Deprecated("old-style events handling. Use Event class instead")
 class GameRuleEventContext<T: Any, E>(
     private val context: GameMetaScope<T>,
     override val event: E
@@ -70,6 +71,8 @@ class GameRuleEventContext<T: Any, E>(
     override val replayable: ReplayStateI get() = context.replayable
     override fun <E : Any> config(gameConfig: GameConfig<E>): E = context.config(gameConfig)
 }
+
+@Deprecated("old-style events handling. Use Event class instead")
 class GameRuleEventListenerImpl<T: Any, E>(
     private val events: GameRuleScope<T>.() -> Iterable<GameEvents<E>>
 ): GameRuleEvents<T, E> {
@@ -80,6 +83,7 @@ class GameRuleEventListenerImpl<T: Any, E>(
         this.performer = perform
     }
 
+    @Deprecated("old-style events handling. Use Event class instead")
     fun fire(context: GameMetaScope<T>, executor: GameEvents<E>, event: E) {
         val allowedGameEvents = events.invoke(context)
         if (!allowedGameEvents.contains(executor)) {

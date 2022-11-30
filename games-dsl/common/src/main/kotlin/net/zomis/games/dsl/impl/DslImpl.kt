@@ -11,7 +11,7 @@ import kotlin.reflect.KClass
 
 class GameModelContext<T: Any, C>(val configs: MutableList<GameConfig<Any>>) : GameModelScope<T, C> {
     var playerCount: IntRange = 2..2
-    lateinit var factory: GameFactoryScope<C>.() -> T
+    lateinit var factory: GameFactoryScope<T, C>.() -> T
     var onStart: GameStartScope<T>.() -> Unit = {}
 
     override fun players(playerCount: IntRange) {
@@ -27,7 +27,7 @@ class GameModelContext<T: Any, C>(val configs: MutableList<GameConfig<Any>>) : G
         this.configs.add(GameConfigImpl("") { creator.invoke() as Any })
     }
 
-    override fun init(factory: GameFactoryScope<C>.() -> T) {
+    override fun init(factory: GameFactoryScope<T, C>.() -> T) {
         this.factory = factory
     }
 

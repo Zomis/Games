@@ -11,9 +11,12 @@ import net.zomis.games.common.GameEvents
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.common.toSingleList
 import net.zomis.games.dsl.*
+import net.zomis.games.dsl.events.EventFactory
+import net.zomis.games.dsl.events.EventsHandling
 import net.zomis.games.dsl.flow.GameFlowStepScope
 import net.zomis.games.dsl.flow.GameForkResult
 import net.zomis.games.dsl.flow.GameMetaScope
+import net.zomis.games.dsl.flow.GameModifierScope
 import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.listeners.ReplayListener
 import net.zomis.games.scorers.Scorer
@@ -150,8 +153,12 @@ class GameImpl<T : Any>(
     override val playerCount: Int,
     val gameConfig: GameConfigs,
     private val copier: suspend () -> GameForkResult<T>
-): Game<T>, GameFactoryScope<Any>, GameEventsExecutor, GameMetaScope<T> {
+): Game<T>, GameFactoryScope<T, Any>, GameEventsExecutor, GameMetaScope<T> {
     override val configs: GameConfigs get() = gameConfig
+    override fun <E : Any> fireEvent(source: EventFactory<E>, event: E) {
+        TODO("Not yet implemented")
+    }
+
     private val stateKeeper = StateKeeper()
     override val gameType: String = setupContext.gameType
     override fun toString(): String = "${super.toString()}-$gameType"
@@ -225,6 +232,10 @@ class GameImpl<T : Any>(
         TODO("Not yet implemented for GameImpl")
     }
 
+    override fun <Owner> addRule(owner: Owner, rule: GameModifierScope<T, Owner>.() -> Unit) {
+        TODO("Not yet implemented for GameImpl")
+    }
+
     fun quickCopy(quickCopier: (source: T, destination: T) -> Unit): GameImpl<T> {
         val copy = GameImpl(setupContext, playerCount, gameConfig, copier)
         quickCopier.invoke(this.model, copy.model)
@@ -243,7 +254,9 @@ class GameImpl<T : Any>(
         return view.result()
     }
 
-    override val events: GameEventsExecutor get() = this
+    override val events: EventsHandling<T> = EventsHandling(this)
+    override val oldEvents: GameEventsExecutor get() = this
+
     override fun <E> fire(executor: GameEvents<E>, event: E) = this.rules.fire(executor, event)
     override fun <E: Any> config(config: GameConfig<E>): E = gameConfig.get(config)
 }

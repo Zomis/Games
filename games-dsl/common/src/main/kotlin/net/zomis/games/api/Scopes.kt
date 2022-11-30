@@ -3,6 +3,7 @@ package net.zomis.games.api
 import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.dsl.GameConfig
+import net.zomis.games.dsl.events.EventsHandling
 import net.zomis.games.dsl.flow.GameMetaScope
 import net.zomis.games.dsl.impl.Game
 
@@ -23,6 +24,9 @@ interface PlayerCountScope: PrimitiveScope {
 }
 interface GameScope<T: Any>: PrimitiveScope {
     val game: Game<T>
+}
+interface EventHandlingScope<GameModel: Any>: PrimitiveScope {
+    val events: EventsHandling<GameModel>
 }
 interface ReplayableScope: PrimitiveScope {
     val replayable: net.zomis.games.dsl.ReplayStateI

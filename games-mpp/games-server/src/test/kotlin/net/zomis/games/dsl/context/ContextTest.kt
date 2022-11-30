@@ -49,7 +49,7 @@ class ContextTest {
             options { 1..10 }
             perform {
                 val event = EventClass(action.parameter)
-                game.eventRun.invoke(this, event)
+                game.eventRun.invoke(event)
                 game.value += event.value
                 game.players[playerIndex].value += event.value
             }
@@ -60,7 +60,7 @@ class ContextTest {
             requires { game.players[playerIndex].boosters.cards.contains(action.parameter) }
             perform {
                 val player = game.players[playerIndex]
-                player.boosterEvent.invoke(this, action.parameter)
+                player.boosterEvent.invoke(action.parameter)
                 player.boosters.cards.remove(action.parameter)
                 player.value = action.parameter.func.invoke(player.value)
                 game.value = action.parameter.func.invoke(game.value)

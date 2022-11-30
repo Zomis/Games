@@ -57,6 +57,7 @@ class GameFlowRulesContext<T: Any>(
         GameFlowRuleContextRun(context, callbacks, eventsMap).runRule(name, rule)
     }
 
+    @Deprecated("old-style events handling. Use Event class instead")
     fun <E> fire(executor: GameEvents<E>, event: E) {
         // Loop through all rules related to this executor and fire them
         val listeners = eventsMap.getOrElse(executor as GameEvents<Any>) { mutableListOf() }
@@ -77,6 +78,7 @@ abstract class GameFlowRuleContext<T: Any>: GameFlowRuleScope<T> {
         }
     }
     override fun rule(name: String, rule: GameFlowRuleScope<T>.() -> Any?) {}
+    @Deprecated("old-style events handling. Use Event class instead")
     override fun <E> onEvent(gameEvents: GameRuleScope<T>.() -> GameEvents<E>): GameRuleEvents<T, E> {
         return object : GameRuleEvents<T, E> {
             override fun perform(perform: GameRuleEventScope<T, E>.() -> Unit) {}
@@ -149,6 +151,7 @@ class GameFlowRuleContextExecution<T: Any>(
         callbacks.action(actionType, actionDsl)
     }
 
+    @Deprecated("old-style events handling. Use Event class instead")
     override fun <E> onEvent(gameEvents: GameRuleScope<T>.() -> GameEvents<E>): GameRuleEvents<T, E> {
         return object : GameRuleEvents<T, E> {
             override fun perform(perform: GameRuleEventScope<T, E>.() -> Unit) {

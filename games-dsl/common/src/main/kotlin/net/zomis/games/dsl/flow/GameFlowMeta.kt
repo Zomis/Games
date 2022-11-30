@@ -5,10 +5,19 @@ import net.zomis.games.api.*
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.GameConfig
 import net.zomis.games.dsl.GameConfigs
+import net.zomis.games.dsl.events.EventFactory
+import net.zomis.games.dsl.events.EventsHandling
 import net.zomis.games.dsl.impl.ReplayState
 import net.zomis.games.dsl.rulebased.GameRuleScope
 
-interface GameMetaScope<GameModel: Any>: UsageScope, GameModelScope<GameModel>, MutableEliminationsScope, ReplayableScope, GameRuleScope<GameModel> {
+interface GameMetaScope<GameModel: Any>
+    : UsageScope,
+    GameModelScope<GameModel>,
+    MutableEliminationsScope,
+    ReplayableScope,
+    GameRuleScope<GameModel>,
+    EventHandlingScope<GameModel>
+{
     // TODO: Let GameFlowImpl / GameImpl themselves implement this interface? That would make a lot of sense.
 
 
@@ -21,7 +30,7 @@ interface GameMetaScope<GameModel: Any>: UsageScope, GameModelScope<GameModel>, 
     //  rule modifiers
 
 
-
+    override val events: EventsHandling<GameModel>
     override val model: GameModel
     override val eliminations: PlayerEliminationsWrite
     override val replayable: ReplayState
@@ -33,4 +42,6 @@ interface GameMetaScope<GameModel: Any>: UsageScope, GameModelScope<GameModel>, 
         actionType: ActionType<GameModel, A>, playerIndex: Int, parameter: A,
         rule: GameModifierScope<GameModel, Unit>.() -> Unit
     ) { TODO() }
+    fun <Owner> addRule(owner: Owner, rule: GameModifierScope<GameModel, Owner>.() -> Unit)
+    fun <E: Any> fireEvent(source: EventFactory<E>, event: E)
 }

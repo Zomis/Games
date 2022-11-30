@@ -303,7 +303,7 @@ object AlchemistsDelegationGame {
         init { Model(this.ctx, master) }
         gameFlow {
             println("SOLUTION: " + game.alchemySolution)
-            game.gameInit.invoke(this, Unit)
+            game.gameInit.invoke(Unit)
             step("choose favors") {
                 enableAction(game.favors.discardFavor)
             }.loopUntil { game.favors.playersDiscardingSetupFavor.isEmpty() }
@@ -315,7 +315,7 @@ object AlchemistsDelegationGame {
             stateChecks(this)
 
             for (round in 1..6) {
-                game.newRound(this, round)
+                game.newRound(round)
                 game.sellPotion.reset()
                 log { "Round $round" }
                 step("round $round - turnPicker") {
@@ -347,7 +347,7 @@ object AlchemistsDelegationGame {
                             && game.queue.isEmpty()
                             && space.actionSpace.rows.all { it == null || it.cubes.all { cubes -> cubes.used } }
                     }
-                    game.spaceDone.invoke(this, space)
+                    game.spaceDone.invoke(space)
                 }
             }
         }

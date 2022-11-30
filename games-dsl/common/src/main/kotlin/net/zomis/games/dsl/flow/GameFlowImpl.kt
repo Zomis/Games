@@ -10,6 +10,8 @@ import net.zomis.games.api.UsageScope
 import net.zomis.games.common.GameEvents
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
+import net.zomis.games.dsl.events.EventFactory
+import net.zomis.games.dsl.events.EventsHandling
 import net.zomis.games.dsl.flow.actions.SmartActionBuilder
 import net.zomis.games.dsl.flow.actions.SmartActionContext
 import net.zomis.games.dsl.flow.actions.SmartActionScope
@@ -21,8 +23,9 @@ class GameFlowImpl<T: Any>(
     val gameConfig: GameConfigs,
     private val copier: suspend (FlowStep.RandomnessResult?) -> GameForkResult<T>,
     val forkedGame: () -> Boolean
-): Game<T>, GameFactoryScope<Any>, GameEventsExecutor, GameFlowRuleCallbacks<T>, GameMetaScope<T> {
+): Game<T>, GameFactoryScope<T, Any>, GameEventsExecutor, GameFlowRuleCallbacks<T>, GameMetaScope<T> {
     override val configs: GameConfigs get() = gameConfig
+
     private val stateKeeper = StateKeeper()
     override val gameType: String = setupContext.gameType
     override fun toString(): String = "${super.toString()}-$gameType"
@@ -41,12 +44,18 @@ class GameFlowImpl<T: Any>(
             feedbacks.add(FlowStep.Elimination(elimination))
         }
     }
-    override val events: GameEventsExecutor = this
+    override val events: EventsHandling<T> = EventsHandling(this)
+    override val oldEvents: GameEventsExecutor = this
     override val eliminationCallback: PlayerEliminationsWrite = eliminations
-    override val model: T = setupContext.model.factory(this)
+    override val model: T = setupContext.model.factory(this) // TODO: Maybe this should happen last?
     override val replayable = ReplayState(stateKeeper)
     override val actions = GameFlowActionsImpl({ feedbacks.add(it) }, this)
     override val feedback: (FlowStep) -> Unit = { feedbacks.add(it) }
+    private val rules: MutableList<GameModifierImpl<T, Any>> = mutableListOf()
+    override fun <E : Any> fireEvent(source: EventFactory<E>, event: E) {
+        logger.info { "fireEvent from source $source with value $event" }
+        this.events.fireEvent(source as EventFactory<Any>, event)
+    }
 
     override val actionsInput: Channel<Actionable<T, out Any>> = Channel()
     var job: Job? = null
@@ -71,6 +80,14 @@ class GameFlowImpl<T: Any>(
                 logger.error(e) { "Error in Coroutine for game $game" }
             }
         }
+    }
+
+    override fun <Owner> addRule(owner: Owner, rule: GameModifierScope<T, Owner>.() -> Unit) {
+        logger.info { "Add rule with owner $owner" }
+        val ruleContext = GameModifierImpl(this, owner)
+        rule.invoke(ruleContext)
+        this.rules.add(ruleContext as GameModifierImpl<T, Any>)
+        ruleContext.executeOnActivate()
     }
 
     override fun stop() {
@@ -198,13 +215,18 @@ class GameFlowImpl<T: Any>(
 
     private fun runRules(state: GameFlowRulesState) {
         setupContext.flowRulesDsl?.invoke(GameFlowRulesContext(this, state, null, this))
+        when (state) {
+            GameFlowRulesState.AFTER_ACTIONS -> this.rules.forEach { it.executeStateCheck() }
+        }
     }
 
     override fun <E> fire(executor: GameEvents<E>, event: E) {
+        throw UnsupportedOperationException("Deprecated")
         val context = GameFlowRulesContext(this, GameFlowRulesState.FIRE_EVENT,
         executor as GameEvents<*> to event as Any, this)
         setupContext.flowRulesDsl?.invoke(context)
         context.fire(executor, event)
+//        this.rules.forEach { it.executeEvent(event, event) }
     }
 
     private fun clear() {

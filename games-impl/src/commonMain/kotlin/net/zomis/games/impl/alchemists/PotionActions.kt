@@ -43,7 +43,7 @@ object PotionActions {
             perform {
                 actionSpace.resolveNext()
                 val result = model.alchemySolution.mixPotion(action.parameter.ingredients)
-                model.playerMixPotion.invoke(this, action.parameter)
+                model.playerMixPotion.invoke(action.parameter)
                 if (poisoned) model.players[playerIndex].gold--
                 if (result.sign == AlchemistsSign.NEGATIVE) poisoned = true
                 logSecret(playerIndex) { "$player mixed ingredients ${action.ingredients.toList()} and got result $result" }
@@ -79,7 +79,7 @@ object PotionActions {
         scope.perform {
             actionSpace.resolveNext()
             val result = game.alchemySolution.mixPotion(action.parameter.ingredients)
-            game.playerMixPotion.invoke(this, action.parameter)
+            game.playerMixPotion.invoke(action.parameter)
             logSecret(playerIndex) { "$player mixed ingredients ${action.ingredients.toList()} and got result $result" }
                 .publicLog { "$player drank a potion and got $result" }
             if (result.negative) {

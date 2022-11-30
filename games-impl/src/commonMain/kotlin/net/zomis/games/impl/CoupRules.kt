@@ -47,7 +47,7 @@ object CoupRuleBased {
             defaultConfig { CoupConfig(0) }
             players(2..6)
             init {
-                Coup(events, config, playerCount)
+                Coup(oldEvents, config, playerCount)
             }
             onStart {
                 game.players.forEach { player ->

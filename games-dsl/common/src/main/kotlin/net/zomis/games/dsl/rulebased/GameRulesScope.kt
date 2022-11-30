@@ -16,6 +16,7 @@ interface GameRuleScope<T : Any> : CompoundScope, net.zomis.games.api.GameModelS
     val game: T get() = model
 }
 
+@Deprecated("old-style events handling. Use Event class instead")
 interface GameRuleEventScope<T: Any, E>: GameRuleScope<T> {
     val event: E
 }
@@ -40,6 +41,7 @@ interface GameRuleRuleScope<T : Any>: GameCommonRule<T> {
     fun rule(name: String, rule: GameRuleRuleScope<T>.() -> Any?): GameRuleRuleScope<T>
 }
 
+@Deprecated("old-style events handling. Use Event class instead")
 interface GameRuleEvents<T: Any, E> {
 //    fun filter(...): GameRuleEvents<T, E>
     fun perform(perform: GameRuleEventScope<T, E>.() -> Unit)
