@@ -67,8 +67,10 @@ class ActionComplexBlockRun<T: Any, P: Any>(
         if (upcomingChoices.isNotEmpty()) {
             val nextChosenKey = upcomingChoices.first()
             val nextChosenList = upcomingChoices.subList(1, upcomingChoices.size)
-            val nextE = evaluated.singleOrNull { it.first == nextChosenKey || it.second == nextChosenKey }
-                ?: throw NoSuchElementException("Evaluated contains $evaluated and we're looking for it.first == $nextChosenKey (${nextChosenKey::class})")
+            // first = choice key (serialized in some way), second = choice value.
+            // It's probably okay to contain multiple of the same here, as some choices may serialize to the same value. They should be equivalent.
+            val nextE = evaluated.firstOrNull { it.first == nextChosenKey || it.second == nextChosenKey }
+                ?: throw IllegalStateException("Expected it.first == $nextChosenKey (${nextChosenKey::class}) but evaluated contains $evaluated")
 
             val nextScope = ActionComplexBlockRun(actionType, chosen + nextE.second, nextChosenList, context)
             next.invoke(nextScope, nextE.second)

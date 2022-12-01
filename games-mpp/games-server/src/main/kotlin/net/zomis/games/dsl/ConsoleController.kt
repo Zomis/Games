@@ -39,8 +39,7 @@ class ConsoleController<T: Any> {
             return null
         }
 
-        val actionParameterClass = actionLogic.actionType.serializedType
-        val action: Actionable<T, Any> = when (actionParameterClass) {
+        val action: Actionable<T, Any> = when (actionLogic.actionType.parameterType) {
             Point::class -> {
                 println("Enter x position where you want to play")
                 val x = scanner.nextLine().toInt()
@@ -93,7 +92,10 @@ class ConsoleController<T: Any> {
             val entryChosen = entryList.getOrNull(choice) ?: return null
 
             val actionType = game.actions.type(moveType)!!
-            val actionInfoKey = entryChosen.value.single()
+            check(entryChosen.value.map { it.serialized }.distinct().size == 1) {
+                "Expected exactly one element to match serialized value: ${entryChosen.value}"
+            }
+            val actionInfoKey = entryChosen.value.first()
             if (actionInfoKey.isParameter) {
                 return actionType.createActionFromSerialized(playerIndex, actionInfoKey.serialized)
             }

@@ -155,7 +155,9 @@ class ReplayState(
         val result = mutableListOf<E>()
         while (strings.isNotEmpty()) {
             val next = strings.removeLast()
-            val item = remainingList.removeAt(remainingList.indexOfFirst { stringMapper(it) == next })
+            val index = remainingList.indexOfFirst { stringMapper(it) == next }.takeIf { it >= 0 }
+                ?: throw IllegalStateException("No string match for $next in $list")
+            val item = remainingList.removeAt(index)
             result.add(item)
         }
         if (result.size != count) throw IllegalStateException("Size mismatch: Was ${result.size} but expected $count")
