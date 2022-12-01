@@ -49,7 +49,7 @@ object SellAction {
                 if (event >= 2) value.removeFirst()
             }.publicView { it.take(if (model.round == 1) 1 else 2) }
 
-        class SellAction(var discount: Int?, var ingredients: PotionActions.IngredientsMix?, val guarantee: Guarantee?, val slot: Int?):
+        data class SellAction(var discount: Int?, var ingredients: PotionActions.IngredientsMix?, val guarantee: Guarantee?, val slot: Int?):
             GameSerializable {
             override fun serialize(): String = "$discount/${ingredients?.serialize()}/${guarantee?.level}/$slot"
         }
