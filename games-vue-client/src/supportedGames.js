@@ -17,6 +17,7 @@ function dsl(lookup) {
 import PlayGame from "@/components/PlayGame";
 
 import Alchemists from "@/components/games/alchemists/Alchemists";
+import Grizzled from "@/components/games/grizzled/Grizzled";
 import Backgammon from "@/components/games/paths/Backgammon";
 import RoyalGameOfUR from "@/components/RoyalGameOfUR";
 import DungeonMayhem from "@/components/games/dungeon-mayhem/DungeonMayhem"
@@ -99,6 +100,12 @@ const supportedGames = {
         component: Alchemists,
         playTime: '60',
         amountOfPlayers: '2-4'
+    },
+    "Grizzled": {
+        enabled: true,
+        component: Grizzled,
+        playTime: '45',
+        amountOfPlayers: '2-5'
     },
     "Backgammon": {
         component: Backgammon,
