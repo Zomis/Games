@@ -1,6 +1,5 @@
 package net.zomis.games.dsl.impl
 
-import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.events.EventFactory
@@ -271,56 +270,5 @@ class GameActionRuleContext<T : Any, A : Any>(
     }
 
     override fun isComplex(): Boolean = this.choices != null
-
-}
-
-@Deprecated("old-style event system. Use Event class instead")
-data class GameRuleTriggerContext<T : Any, E : Any>(
-    override val game: T,
-    override val trigger: E,
-    override val replayable: ReplayStateI,
-    override val eliminations: PlayerEliminationsWrite
-): GameRuleTriggerScope<T, E>
-
-@Deprecated("old-style event system. Use Event class instead")
-class GameRuleTriggerImpl<T : Any, E : Any>(
-    val gameContext: GameMetaScope<T>,
-) : GameRuleTrigger<T, E> {
-    private val effects = mutableListOf<GameRuleTriggerScope<T, E>.() -> Unit>()
-    private val mappings = mutableListOf<GameRuleTriggerScope<T, E>.() -> E>()
-    private val ignoreConditions = mutableListOf<GameRuleTriggerScope<T, E>.() -> Boolean>()
-    private val after = mutableListOf<GameRuleTriggerScope<T, E>.() -> Unit>()
-
-    override fun effect(effect: GameRuleTriggerScope<T, E>.() -> Unit): GameRuleTrigger<T, E> {
-        this.effects.add(effect)
-        return this
-    }
-
-    override fun map(mapping: GameRuleTriggerScope<T, E>.() -> E): GameRuleTrigger<T, E> {
-        this.mappings.add(mapping)
-        return this
-    }
-
-    override fun after(effect: GameRuleTriggerScope<T, E>.() -> Unit): GameRuleTrigger<T, E> {
-        this.after.add(effect)
-        return this
-    }
-
-    override fun ignoreEffectIf(condition: GameRuleTriggerScope<T, E>.() -> Boolean): GameRuleTrigger<T, E> {
-        this.ignoreConditions.add(condition)
-        return this
-    }
-
-    override fun invoke(trigger: E): E? {
-        val result = mappings.fold(GameRuleTriggerContext(gameContext.game, trigger, gameContext.replayable, gameContext.eliminations)) {
-            acc, next -> acc.copy(trigger = next.invoke(acc))
-        }
-        val process = ignoreConditions.none { it.invoke(result) }
-        if (process) {
-            effects.forEach { it.invoke(result) }
-        }
-        after.forEach { it.invoke(result) }
-        return if (process) result.trigger else null
-    }
 
 }

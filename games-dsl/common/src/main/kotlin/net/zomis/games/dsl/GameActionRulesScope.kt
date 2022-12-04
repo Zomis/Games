@@ -6,7 +6,6 @@ import net.zomis.games.api.MetaScope
 import net.zomis.games.api.UsageScope
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.events.EventFactory
-import net.zomis.games.dsl.events.EventSource
 import net.zomis.games.dsl.flow.GameMetaScope
 import net.zomis.games.dsl.impl.ActionOptionsContext
 import net.zomis.games.dsl.impl.GameMarker
@@ -120,22 +119,4 @@ interface ActionChoicesScope<T : Any, P : Any> : UsageScope {
     fun <C : Any> recursive(base: C, options: ActionChoicesRecursiveSpecScope<T, C, P>.() -> Unit)
     fun <E : Any> options(options: ActionOptionsScope<T>.() -> Iterable<E>, next: ActionChoicesScope<T, P>.(E) -> Unit)
     fun <E : Any> optionsWithIds(options: ActionOptionsScope<T>.() -> Iterable<Pair<String, E>>, next: ActionChoicesScope<T, P>.(E) -> Unit)
-}
-
-@GameMarker
-@Deprecated("Use Events instead")
-interface GameRuleTriggerScope<T, E> : UsageScope {
-    val game: T
-    val trigger: E
-    val replayable: ReplayStateI
-    val eliminations: PlayerEliminationsWrite
-}
-
-@Deprecated("old-style event system. Use Event class instead")
-interface GameRuleTrigger<T : Any, E : Any> {
-    fun effect(effect: GameRuleTriggerScope<T, E>.() -> Unit): GameRuleTrigger<T, E>
-    fun map(mapping: GameRuleTriggerScope<T, E>.() -> E): GameRuleTrigger<T, E>
-    fun after(effect: GameRuleTriggerScope<T, E>.() -> Unit): GameRuleTrigger<T, E>
-    fun ignoreEffectIf(condition: GameRuleTriggerScope<T, E>.() -> Boolean): GameRuleTrigger<T, E>
-    operator fun invoke(trigger: E): E?
 }
