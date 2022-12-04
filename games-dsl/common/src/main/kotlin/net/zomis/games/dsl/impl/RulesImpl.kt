@@ -3,6 +3,8 @@ package net.zomis.games.dsl.impl
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
+import net.zomis.games.dsl.events.EventFactory
+import net.zomis.games.dsl.events.MetaEventFactory
 import net.zomis.games.dsl.flow.GameMetaScope
 import net.zomis.games.dsl.rulebased.*
 import kotlin.reflect.KClass
@@ -14,6 +16,7 @@ class GameActionRulesContext<T : Any>(
     private val allActionRules = GameRuleList(gameContext)
     private val actionRules = mutableMapOf<String, GameActionRuleContext<T, Any>>()
     private val gameRules = mutableListOf<GameRuleImpl<T>>()
+    override val meta: GameMetaScope<T> get() = gameContext
     init {
         allActionRules.after { this@GameActionRulesContext.stateCheck() }
     }
@@ -54,9 +57,7 @@ class GameActionRulesContext<T : Any>(
         }
     }
 
-    override fun <E : Any> trigger(triggerClass: KClass<E>): GameRuleTrigger<T, E> {
-        return GameRuleTriggerImpl(gameContext)
-    }
+    override fun <E : Any> trigger(triggerClass: KClass<E>): EventFactory<E> = MetaEventFactory(meta)
 
     override fun <A : Any> action(actionType: ActionType<T, A>, ruleSpec: GameActionSpecificationScope<T, A>.() -> Unit) {
         return this.action(actionType).invoke(ruleSpec)

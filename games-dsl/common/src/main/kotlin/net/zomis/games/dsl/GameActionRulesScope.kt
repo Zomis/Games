@@ -5,6 +5,8 @@ import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.api.MetaScope
 import net.zomis.games.api.UsageScope
 import net.zomis.games.common.PlayerIndex
+import net.zomis.games.dsl.events.EventFactory
+import net.zomis.games.dsl.events.EventSource
 import net.zomis.games.dsl.flow.GameMetaScope
 import net.zomis.games.dsl.impl.ActionOptionsContext
 import net.zomis.games.dsl.impl.GameMarker
@@ -12,12 +14,13 @@ import kotlin.reflect.KClass
 
 @GameMarker
 interface GameActionRulesScope<T : Any>: UsageScope {
+    val meta: GameMetaScope<T>
     val allActions: GameAllActionsRule<T>
     fun <A : Any> action(actionType: ActionType<T, A>): GameActionRule<T, A>
     fun <A : Any> action(actionType: ActionType<T, A>, ruleSpec: GameActionSpecificationScope<T, A>.() -> Unit)
     fun view(key: String, value: ViewScope<T>.() -> Any?)
     fun gameStart(onStart: GameStartScope<T>.() -> Unit)
-    fun <E : Any> trigger(triggerClass: KClass<E>): GameRuleTrigger<T, E>
+    fun <E : Any> trigger(triggerClass: KClass<E>): EventFactory<E>
 }
 
 @GameMarker

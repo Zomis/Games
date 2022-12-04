@@ -94,7 +94,6 @@ class GameFlowImpl<T: Any>(
     }
 
     override fun <Owner> addRule(owner: Owner, rule: GameModifierScope<T, Owner>.() -> Unit) {
-        logger.info { "Add rule with owner $owner" }
         val ruleContext = GameModifierImpl(this, owner)
         rule.invoke(ruleContext)
         this.rules.add(ruleContext as GameModifierImpl<T, Any>)

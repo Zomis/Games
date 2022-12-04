@@ -60,15 +60,15 @@ class GameModifierImpl<GameModel: Any, Owner>(
         this.removeCondition = condition
     }
 
-    override fun <E : Any> on(event: EventFactory<E>): EventModifierScope<GameModel, E> {
+    override fun <E : Any> on(event: EventFactory<E>, priority: EventPriority): EventModifierScope<GameModel, E> {
         val impl = EventModifierImpl<GameModel, E>(meta) { this.isActive() && it.effectSource == event }
-        meta.events.addEventListener(EventPriority.NORMAL, impl)
+        meta.events.addEventListener(priority, impl)
         return impl
     }
 
-    override fun <E : Any> on(eventType: KClass<E>): EventModifierScope<GameModel, E> {
+    override fun <E : Any> on(eventType: KClass<E>, priority: EventPriority): EventModifierScope<GameModel, E> {
         val impl = EventModifierImpl<GameModel, E>(meta) { this.isActive() && eventType.isInstance(it.event) }
-        meta.events.addEventListener(EventPriority.NORMAL, impl)
+        meta.events.addEventListener(priority, impl)
         return impl
     }
 

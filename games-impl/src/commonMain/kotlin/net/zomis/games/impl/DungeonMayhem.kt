@@ -6,6 +6,9 @@ import net.zomis.games.cards.CardZone
 import net.zomis.games.cards.random
 import net.zomis.games.common.next
 import net.zomis.games.dsl.*
+import net.zomis.games.dsl.events.EventFactory
+import net.zomis.games.dsl.events.EventPriority
+import net.zomis.games.dsl.events.GameEventEffectScope
 import kotlin.math.min
 
 data class DungeonMayhemConfig(
@@ -93,13 +96,13 @@ enum class DungeonMayhemSymbol {
         return true
     }
 
-    fun resolve(game: DungeonMayhem, scope: GameRuleTriggerScope<DungeonMayhem, DungeonMayhemEffect>, playEffect: GameRuleTrigger<DungeonMayhem, DungeonMayhemPlayCard>) {
-        val target = scope.trigger.target
+    fun resolve(game: DungeonMayhem, scope: GameEventEffectScope<DungeonMayhem, DungeonMayhemEffect>, playEffect: EventFactory<DungeonMayhemPlayCard>) {
+        val target = scope.event.target
         val player: DungeonMayhemPlayer = game.players[target.player]
         when (this) {
             ATTACK -> {
-                if (target.shieldCard != null) player.shields[target.shieldCard].card.health -= scope.trigger.count
-                else player.damage(scope.trigger.count)
+                if (target.shieldCard != null) player.shields[target.shieldCard].card.health -= scope.event.count
+                else player.damage(scope.event.count)
             }
             DESTROY_SINGLE_SHIELD -> player.shields[target.shieldCard!!].let { it.card.destroy(it) }
             STEAL_SHIELD -> player.shields[target.shieldCard!!].moveTo(game.currentPlayer.shields)
@@ -291,28 +294,65 @@ object DungeonMayhemDsl {
         actionRules {
             allActions.precondition { playerIndex == game.currentPlayerIndex }
             view("currentPlayer") { game.currentPlayerIndex }
-            val newTurnDrawCard = trigger(Unit::class).effect {
-                game.currentPlayer.drawCard(replayable, "turnStart", 1)
-                game.currentPlayer.protected = false
-            }
+            val newTurnDrawCard = trigger(Unit::class)
             val playTrigger = trigger(DungeonMayhemPlayCard::class)
-            val effectTrigger = trigger(DungeonMayhemEffect::class).effect {
-                trigger.symbol.resolve(game, this, playTrigger)
+            val effectTrigger = trigger(DungeonMayhemEffect::class)
+
+            val gameMeta = meta
+            gameStart {
+                gameMeta.addRule(Unit) {
+                    on(newTurnDrawCard).perform {
+                        game.currentPlayer.drawCard(replayable, "turnStart", 1)
+                        game.currentPlayer.protected = false
+                    }
+                    on(effectTrigger).perform {
+                        event.symbol.resolve(game, this, playTrigger)
+                    }
+                    on(effectTrigger, EventPriority.EARLIER).modify {
+                        if (event.symbol == DungeonMayhemSymbol.ATTACK) {
+                            val player = game.players[event.target.player]
+                            val health = player.shields.cards.getOrNull(event.target.shieldCard ?: -1)?.health
+                            if (health != null && health < event.count) event.copy(count = health) else event
+                        } else event
+                    }
+                    on(effectTrigger, EventPriority.EARLY).require {
+                        if (!game.config.pickPocketIgnoresCleverDisguise || event.cardOwner.index != event.target.player) {
+                            !game.players[event.target.player].protected
+                        } else true
+                    }
+                    on(effectTrigger, EventPriority.LATE).perform {
+                        repeat(event.count) {
+                            game.symbolsToResolve.remove(game.symbolsToResolve.first { it.symbol == event.symbol })
+                        }
+                    }
+                    on(effectTrigger, EventPriority.LATER).perform {
+                        if (game.symbolsToResolve.any { it.symbol == event.symbol }) game.attackedPlayer = event.target.player
+                    }
+
+                    on(playTrigger).perform {
+                        game.symbolsToResolve.addAll(event.card.card.symbols.map { DungeonMayhemResolveSymbol(event.ownedByPlayer, it) })
+                    }
+                    on(playTrigger).perform {
+                        val shields = event.card.card.symbols.count { it == DungeonMayhemSymbol.SHIELD }
+                        if (shields > 0) {
+                            event.player.shields.cards.add(
+                                DungeonMayhemShield(event.ownedByPlayer.discard, event.card.remove(), shields)
+                            )
+                        } else event.card.moveTo(event.ownedByPlayer.played)
+                    }
+                    on(playTrigger).perform {
+                        // Auto-clear effects that does not need targets
+                        val autoResolve = game.symbolsToResolve.filter { symbol ->
+                            symbol.symbol.availableTargets(game).let { it == null || it.isEmpty() }
+                        }.groupBy { it }
+                        autoResolve.forEach {
+                            if (it.key.symbol.autoResolve(it.value.size, game, event, replayable)) {
+                                game.symbolsToResolve.removeAll(it.value)
+                            }
+                        }
+                    }
+                }
             }
-            effectTrigger.map {
-                if (trigger.symbol == DungeonMayhemSymbol.ATTACK) {
-                    val player = game.players[trigger.target.player]
-                    val health = player.shields.cards.getOrNull(trigger.target.shieldCard ?: -1)?.health
-                    if (health != null && health < trigger.count) trigger.copy(count = health) else trigger
-                } else trigger
-            }
-            effectTrigger.ignoreEffectIf {
-                if (!game.config.pickPocketIgnoresCleverDisguise || trigger.cardOwner.index != trigger.target.player) {
-                    game.players[trigger.target.player].protected
-                } else false
-            }
-            effectTrigger.after { (1..trigger.count).forEach { game.symbolsToResolve.remove(game.symbolsToResolve.first { it.symbol == trigger.symbol }) } }
-            effectTrigger.after { if (game.symbolsToResolve.any { it.symbol == trigger.symbol }) game.attackedPlayer = trigger.target.player }
 
             gameStart {
                 // How to choose player decks? Before game as player options or first action in game?
@@ -360,26 +400,6 @@ object DungeonMayhemDsl {
                 log { "$player plays ${viewLink(action.name, "card", action.view())}" }
                 playTrigger(DungeonMayhemPlayCard(game.config, game.currentPlayer, game.currentPlayer,
                     game.currentPlayer.hand.card(action.parameter)))
-            }
-            playTrigger.effect { game.symbolsToResolve.addAll(trigger.card.card.symbols.map { DungeonMayhemResolveSymbol(trigger.ownedByPlayer, it) }) }
-            playTrigger.effect {
-                val shields = trigger.card.card.symbols.count { it == DungeonMayhemSymbol.SHIELD }
-                if (shields > 0) {
-                    trigger.player.shields.cards.add(
-                        DungeonMayhemShield(trigger.ownedByPlayer.discard, trigger.card.remove(), shields)
-                    )
-                } else trigger.card.moveTo(trigger.ownedByPlayer.played)
-            }
-            playTrigger.after {
-                // Auto-clear effects that does not need targets
-                val autoResolve = game.symbolsToResolve.filter {symbol ->
-                    symbol.symbol.availableTargets(game).let { it == null || it.isEmpty() }
-                }.groupBy { it }
-                autoResolve.forEach {
-                    if (it.key.symbol.autoResolve(it.value.size, game, trigger, replayable)) {
-                        game.symbolsToResolve.removeAll(it.value)
-                    }
-                }
             }
             action(target).options { game.symbolsToResolve.mapNotNull { it.symbol.availableTargets(game) }.firstOrNull() ?: emptyList() }
             action(target).forceWhen { game.symbolsToResolve.any { it.symbol.availableTargets(game) != null } }

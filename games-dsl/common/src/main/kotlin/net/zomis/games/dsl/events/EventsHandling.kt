@@ -18,6 +18,9 @@ class SimpleEventSource: EventSource
 interface EventFactory<E: Any> : EventSource {
     operator fun invoke(value: E)
 }
+class MetaEventFactory<GameModel: Any, E: Any>(val meta: GameMetaScope<GameModel>): EventFactory<E> {
+    override fun invoke(value: E) = meta.fireEvent(this, value)
+}
 
 interface GameEventEffectScope<GameModel: Any, E: Any>: UsageScope {
     val effectSource: EventSource
