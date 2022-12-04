@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.*
 import net.zomis.games.PlayerEliminations
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.api.UsageScope
-import net.zomis.games.common.GameEvents
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.events.EventSource
@@ -23,7 +22,7 @@ class GameFlowImpl<T: Any>(
     val gameConfig: GameConfigs,
     private val copier: suspend (FlowStep.RandomnessResult?) -> GameForkResult<T>,
     val forkedGame: () -> Boolean
-): Game<T>, GameFactoryScope<T, Any>, GameEventsExecutor, GameFlowRuleCallbacks<T>, GameMetaScope<T> {
+): Game<T>, GameFactoryScope<T, Any>, GameFlowRuleCallbacks<T>, GameMetaScope<T> {
     override val configs: GameConfigs get() = gameConfig
 
     private val stateKeeper = StateKeeper()
@@ -58,7 +57,6 @@ class GameFlowImpl<T: Any>(
     }
 
     override val events: EventsHandling<T> = EventsHandling(this)
-    override val oldEvents: GameEventsExecutor = this
     override val eliminationCallback: PlayerEliminationsWrite = eliminations
     override val model: T = setupContext.model.factory(this) // TODO: Maybe this should happen last?
     override val replayable = ReplayState(stateKeeper)
@@ -243,19 +241,10 @@ class GameFlowImpl<T: Any>(
     }
 
     private fun runRules(state: GameFlowRulesState) {
-        setupContext.flowRulesDsl?.invoke(GameFlowRulesContext(this, state, null, this))
+        setupContext.flowRulesDsl?.invoke(GameFlowRulesContext(this, state, this))
         when (state) {
             GameFlowRulesState.AFTER_ACTIONS -> this.rules.toList().forEach { it.executeStateCheck() }
         }
-    }
-
-    override fun <E> fire(executor: GameEvents<E>, event: E) {
-        throw UnsupportedOperationException("Deprecated")
-        val context = GameFlowRulesContext(this, GameFlowRulesState.FIRE_EVENT,
-        executor as GameEvents<*> to event as Any, this)
-        setupContext.flowRulesDsl?.invoke(context)
-        context.fire(executor, event)
-//        this.rules.forEach { it.executeEvent(event, event) }
     }
 
     private fun clear() {

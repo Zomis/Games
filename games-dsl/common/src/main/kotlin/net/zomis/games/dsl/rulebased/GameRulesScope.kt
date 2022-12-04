@@ -1,7 +1,6 @@
 package net.zomis.games.dsl.rulebased
 
 import net.zomis.games.api.*
-import net.zomis.games.common.GameEvents
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.impl.GameMarker
 
@@ -30,7 +29,6 @@ interface GameCommonRule<T: Any> : UsageScope {
     fun appliesWhen(condition: GameRuleScope<T>.() -> Boolean)
     fun effect(effect: GameRuleScope<T>.() -> Unit)
     fun <E> applyForEach(list: GameRuleScope<T>.() -> Iterable<E>): GameRuleForEachScope<T, E>
-    fun <E> onEvent(gameEvents: GameRuleScope<T>.() -> GameEvents<E>): GameRuleEvents<T, E>
 }
 
 @GameMarker

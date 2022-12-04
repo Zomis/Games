@@ -7,11 +7,9 @@ import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.api.*
 import net.zomis.games.api.GameModelScope
-import net.zomis.games.common.GameEvents
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.common.toSingleList
 import net.zomis.games.dsl.*
-import net.zomis.games.dsl.events.EventFactory
 import net.zomis.games.dsl.events.EventSource
 import net.zomis.games.dsl.events.EventsHandling
 import net.zomis.games.dsl.flow.*
@@ -152,7 +150,7 @@ class GameImpl<T : Any>(
     override val playerCount: Int,
     val gameConfig: GameConfigs,
     private val copier: suspend () -> GameForkResult<T>
-): Game<T>, GameFactoryScope<T, Any>, GameEventsExecutor, GameMetaScope<T> {
+): Game<T>, GameFactoryScope<T, Any>, GameMetaScope<T> {
     override val configs: GameConfigs get() = gameConfig
     override fun <A : Any> forcePerformAction(
         actionType: ActionType<T, A>,
@@ -279,8 +277,6 @@ class GameImpl<T : Any>(
     }
 
     override val events: EventsHandling<T> = EventsHandling(this)
-    override val oldEvents: GameEventsExecutor get() = this
 
-    override fun <E> fire(executor: GameEvents<E>, event: E) = this.rules.fire(executor, event)
     override fun <E: Any> config(config: GameConfig<E>): E = gameConfig.get(config)
 }

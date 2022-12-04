@@ -1,7 +1,6 @@
 package net.zomis.games.dsl.rulebased
 
 import net.zomis.games.PlayerEliminationsWrite
-import net.zomis.games.common.GameEvents
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.GameConfig
 import net.zomis.games.dsl.ReplayStateI
@@ -72,27 +71,6 @@ class GameRuleEventContext<T: Any, E>(
     override fun <E : Any> config(gameConfig: GameConfig<E>): E = context.config(gameConfig)
 }
 
-@Deprecated("old-style events handling. Use Event class instead")
-class GameRuleEventListenerImpl<T: Any, E>(
-    private val events: GameRuleScope<T>.() -> Iterable<GameEvents<E>>
-): GameRuleEvents<T, E> {
-
-    private var performer: GameRuleEventScope<T, E>.() -> Unit = {}
-
-    override fun perform(perform: GameRuleEventScope<T, E>.() -> Unit) {
-        this.performer = perform
-    }
-
-    @Deprecated("old-style events handling. Use Event class instead")
-    fun fire(context: GameMetaScope<T>, executor: GameEvents<E>, event: E) {
-        val allowedGameEvents = events.invoke(context)
-        if (!allowedGameEvents.contains(executor)) {
-            return
-        }
-        this.performer.invoke(GameRuleEventContext(context, event))
-    }
-}
-
 class GameRuleImpl<T: Any>(
     val actionRulesContext: GameActionRulesContext<T>,
     val parentRule: GameRuleImpl<T>?,
@@ -107,7 +85,6 @@ class GameRuleImpl<T: Any>(
     internal var gameSetup: MutableList<GameRuleScope<T>.() -> Unit> = mutableListOf()
     internal var effects: MutableList<GameRuleScope<T>.() -> Unit> = mutableListOf()
     internal var forEachApplies: MutableList<GameRuleForEachContext<T, *>> = mutableListOf()
-    private val eventListeners: MutableList<GameRuleEventListenerImpl<T, *>> = mutableListOf()
 
     override fun appliesWhen(condition: GameRuleScope<T>.() -> Boolean) {
         val oldApplies = appliesWhen
@@ -145,21 +122,6 @@ class GameRuleImpl<T: Any>(
         val parentAllowed = this.parentRule?.isActive(context) ?: true
         val thisAllowed = this.appliesWhen(context)
         return parentAllowed && thisAllowed
-    }
-
-    override fun <E> onEvent(gameEvents: GameRuleScope<T>.() -> GameEvents<E>): GameRuleEvents<T, E> {
-        val gameRuleEvents = GameRuleEventListenerImpl<T, E> { listOf(gameEvents.invoke(this)) }
-        this.eventListeners.add(gameRuleEvents)
-        return gameRuleEvents
-    }
-
-    fun <E> fire(context: GameMetaScope<T>, executor: GameEvents<E>, event: E) {
-        if (this.isActive(context)) {
-            eventListeners.forEach {listenerImpl ->
-                val impl = listenerImpl as GameRuleEventListenerImpl<T, Any>
-                listenerImpl.fire(context, executor as GameEvents<Any>, event as Any)
-            }
-        }
     }
 
 }

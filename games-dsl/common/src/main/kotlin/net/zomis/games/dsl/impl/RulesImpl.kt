@@ -1,7 +1,6 @@
 package net.zomis.games.dsl.impl
 
 import net.zomis.games.PlayerEliminationsWrite
-import net.zomis.games.common.GameEvents
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.flow.GameMetaScope
@@ -10,7 +9,7 @@ import kotlin.reflect.KClass
 
 class GameActionRulesContext<T : Any>(
     val gameContext: GameMetaScope<T>
-): GameActionRulesScope<T>, GameRulesScope<T>, GameEventsExecutor {
+): GameActionRulesScope<T>, GameRulesScope<T> {
     private val views = mutableListOf<Pair<String, ViewScope<T>.() -> Any?>>()
     private val allActionRules = GameRuleList(gameContext)
     private val actionRules = mutableMapOf<String, GameActionRuleContext<T, Any>>()
@@ -101,10 +100,6 @@ class GameActionRulesContext<T : Any>(
         throw IllegalStateException("Stuck in a loop, most recent rules are " +
             rulesTriggered.drop(rulesTriggered.size - 10)
         )
-    }
-
-    override fun <E> fire(executor: GameEvents<E>, event: E) {
-        this.gameRules.forEach { it.fire(gameContext, executor as GameEvents<Any?>, event) }
     }
 
 }
