@@ -270,7 +270,7 @@ object Grizzled {
         val hardKnocks by cards<GrizzledCard>().publicView { z -> z.cards.map { it.toView(null) } }
         val hand by cards<GrizzledCard>().privateView(playerIndex) { z -> z.cards.map { it.toView(playerIndex) } }.publicView { it.size }
         val supportTiles by cards<SupportTile>().privateView(playerIndex) { it.cards }.publicView { it.size }
-        var placedSupportTile by component<SupportTile?> { null }
+        var placedSupportTile by component<SupportTile?> { null }.privateView(playerIndex) { it ?: "" }
         var speechesAvailable by component { 0 }
 
         fun enterMission() {
