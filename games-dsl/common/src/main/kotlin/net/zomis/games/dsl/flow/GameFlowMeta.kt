@@ -18,9 +18,6 @@ interface GameMetaScope<GameModel: Any>
     GameRuleScope<GameModel>,
     EventHandlingScope<GameModel>
 {
-    // TODO: Let GameFlowImpl / GameImpl themselves implement this interface? That would make a lot of sense.
-
-
     // TODO: Extract into a read version and a write version?
     // TODO: currentStep,
     //  available actions,
@@ -37,7 +34,7 @@ interface GameMetaScope<GameModel: Any>
     override fun <E: Any> config(config: GameConfig<E>): E = configs.get(config)
     val configs: GameConfigs
 
-    fun injectStep(name: String, step: suspend GameFlowStepScope<GameModel>.() -> Unit)
+    fun injectStep(name: String, dsl: suspend GameFlowStepScope<GameModel>.() -> Unit)
     fun <A: Any> forcePerformAction(
         actionType: ActionType<GameModel, A>, playerIndex: Int, parameter: A,
         rule: GameModifierScope<GameModel, Unit>.() -> Unit

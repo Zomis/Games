@@ -28,7 +28,10 @@ class SmartActionLogic<T: Any, A: Any>(
         }
         // TODO: For multiple options, find optionalChoices, start with those and then go to required choices and just do the first one recursively
         val choices = _handlers.flatMap { it._choices.entries }
-        check(choices.size == 1) { "Only single choices supported so far, found $choices (actionType $actionType)" }
+        if (choices.isEmpty()) {
+            return emptyList()
+        }
+        check(choices.size == 1) { "Only single choices supported so far, found $choices (actionType $actionType) when checking actions for playerIndex $playerIndex" }
         val choice = choices.single().value
         check(!choice.optional) { "Optional choices not supported yet (actionType $actionType)" }
 
@@ -47,7 +50,7 @@ class SmartActionLogic<T: Any, A: Any>(
 
     override fun withChosen(playerIndex: Int, chosen: List<Any>): ActionComplexChosenStep<T, A> {
         // TODO: Parallelize choices, so that you can choose key:"x", key:"y", number:123, number:456, in any order
-        if (!checkPreconditions(playerIndex)) {
+        if (!checkPreconditions(playerIndex) || _handlers.flatMap { it.choices.values }.isEmpty()) {
             return ActionComplexChosenStepEmpty(actionType, playerIndex, chosen)
         }
         val choiceRule = _handlers.flatMap { it.choices.values }.single()
