@@ -5,6 +5,7 @@ import net.zomis.games.dsl.GameSpec
 import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.impl.*
 import net.zomis.games.impl.alchemists.AlchemistsDelegationGame
+import net.zomis.games.impl.cards.Grizzled
 import net.zomis.games.impl.grids.Battleship
 import net.zomis.games.impl.grids.KingDomino
 import net.zomis.games.impl.paths.Backgammon
@@ -24,6 +25,7 @@ object ServerGames {
     )
 
     val games = listOf(
+        Grizzled.game,
         Wordle.game,
         Backgammon.game,
         KingDomino.game,
