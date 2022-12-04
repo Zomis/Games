@@ -209,6 +209,7 @@ class EventListenerContext(
 ): EventListener {
     override fun execute(scope: GameEventEffectScope<Any, Any>) {
         if (this.eventFactory != scope.effectSource) return
+        val event = scope.event
 
         val result = myHandler.invoke(object : HandlerScope<Any, Any> {
             override val value: Any get() = getter.invoke()
