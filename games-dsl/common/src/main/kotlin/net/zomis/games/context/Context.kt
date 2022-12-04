@@ -168,6 +168,7 @@ class GameContext(val events: EventsHandling<Any>, val playerCount: Int, val eli
 }
 interface ContextHolder {
     val ctx: Context
+    fun <E: Any> config(config: GameConfig<E>): E = ctx.gameContext.configLookup.invoke(config as GameConfig<Any>) as E
 }
 class ContextHolderImpl(override val ctx: Context): ContextHolder
 class Context(val gameContext: GameContext, private val parent: Context?, val name: Any) {

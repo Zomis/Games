@@ -380,7 +380,7 @@ object Grizzled {
         Character("Gaston Fayard", Threat.Shell),
         Character("Anselme Perrin", Threat.Mask),
     )
-    class Model(override val ctx: Context): Entity(ctx), ContextHolder {
+    class Model(val startingTrials: Int, override val ctx: Context): Entity(ctx), ContextHolder {
         val startMissionEvent = event<StartMission>()
         val resolveSupportEvent = event<Support>()
         val moraleDropEvent = event<MoraleDrop>()
@@ -421,7 +421,7 @@ object Grizzled {
         }
         val trials: SemiKnownCardZone<GrizzledCard> by component { SemiKnownCardZone(emptyList(), GrizzledCard::toStateString) }
             .onSetup {trialZone ->
-                morale.random(replayable, 25, "trials", GrizzledCard::toStateString)
+                morale.random(replayable, startingTrials, "trials", GrizzledCard::toStateString)
                     .forEach { it.moveTo(trialZone) }
             }
             .publicView { it.size }
@@ -454,8 +454,9 @@ object Grizzled {
 
     val game = GamesApi.gameContext("Grizzled", Model::class) {
         val trapsConfig = this.config("traps") { true }
+        val startingTrialsConfig = this.config("startingTrials") { 25 }
         players(3..5)
-        init { Model(ctx) }
+        init { Model(config(startingTrialsConfig), ctx) }
         gameFlow {
             meta.addRule(game) {
                 on(PlayCard::class).perform {
