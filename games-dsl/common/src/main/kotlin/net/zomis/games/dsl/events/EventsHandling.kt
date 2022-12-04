@@ -58,7 +58,7 @@ class EventsHandling<GameModel: Any>(val metaScope: GameMetaScope<GameModel>) {
             }
 
             // Step 3. Execute event
-            for (listener in currentPriorityListeners) {
+            for (listener in currentPriorityListeners.toList()) {
                 listener.execute(context)
             }
         }
