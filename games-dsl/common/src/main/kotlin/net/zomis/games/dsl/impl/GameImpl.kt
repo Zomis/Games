@@ -12,6 +12,7 @@ import net.zomis.games.common.PlayerIndex
 import net.zomis.games.common.toSingleList
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.events.EventFactory
+import net.zomis.games.dsl.events.EventSource
 import net.zomis.games.dsl.events.EventsHandling
 import net.zomis.games.dsl.flow.*
 import net.zomis.games.dsl.flow.actions.SmartActionBuilder
@@ -162,7 +163,7 @@ class GameImpl<T : Any>(
         TODO("Not yet implemented for GameImpl")
     }
 
-    override fun <E : Any> fireEvent(source: EventFactory<E>, event: E) {
+    override fun <E : Any> fireEvent(source: EventSource, event: E) {
         TODO("Not yet implemented")
     }
 

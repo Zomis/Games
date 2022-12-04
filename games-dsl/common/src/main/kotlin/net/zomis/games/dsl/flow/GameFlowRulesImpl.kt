@@ -24,6 +24,7 @@ interface GameFlowRulesScope<T: Any> : UsageScope {
     fun rule(name: String, rule: GameFlowRuleScope<T>.() -> Any?)
     fun afterActionRule(name: String, rule: GameFlowRuleScope<T>.() -> Any?)
     fun beforeReturnRule(name: String, rule: GameFlowRuleScope<T>.() -> Any?)
+    fun <Owner> addRule(owner: Owner, rule: GameModifierScope<T, Owner>.() -> Unit)
 }
 
 enum class GameFlowRulesState { AFTER_ACTIONS, BEFORE_RETURN, FIRE_EVENT }
@@ -35,6 +36,8 @@ class GameFlowRulesContext<T: Any>(
 ): GameFlowRulesScope<T> {
     private val eventsMap: MutableMap<GameEvents<Any>, MutableList<GameRuleEventScope<T, Any>.() -> Unit>>
         = mutableMapOf()
+
+    override fun <Owner> addRule(owner: Owner, rule: GameModifierScope<T, Owner>.() -> Unit) = this.context.addRule(owner, rule)
 
     override val rules = GameRulePresetsImpl(this)
     override fun afterActionRule(name: String, rule: GameFlowRuleScope<T>.() -> Any?) {

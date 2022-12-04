@@ -47,7 +47,7 @@ object CoupRuleBased {
             defaultConfig { CoupConfig(0) }
             players(2..6)
             init {
-                Coup(oldEvents, config, playerCount)
+                Coup(config, playerCount)
             }
             onStart {
                 game.players.forEach { player ->
@@ -153,6 +153,19 @@ object CoupRuleBased {
             }
         }
         gameFlow {
+            meta.addRule(Unit) {
+                // Get 1 coin (from the challenged player?) when winning a challenge
+                on(net.zomis.games.impl.CoupChallengeResolved::class).perform {
+                    kotlin.io.println("XXXXXXXXXX Challenge Resolved ${this.event}")
+                    if (!event.trueClaim) {
+                        game.players[event.challengedClaim.challengedBy].coins += game.config.gainMoneyOnSuccessfulChallenge
+                        if (game.config.gainMoneyOnSuccessfulChallenge > 0) {
+                            // TODO: Add action log "$player got $x coins for a successful challenge
+                        }
+                    }
+                }
+            }
+
             loop {
                 step("game") {
                     // TODO: Rewrite Coup to gameFlow
@@ -189,18 +202,6 @@ object CoupRuleBased {
                 }
                 effect { game.stack.pop() }
             }
-            rule("Get 1 coin (from the challenged player?) when winning a challenge") {
-                appliesWhen { true } // game.config.gainMoneyOnSuccessfulChallenge > 0 }
-                onEvent { game.challengeEvents }.perform {
-                    println("XXXXXXXXXX Challenge Resolved ${this.event}")
-                    if (!event.trueClaim) {
-                        game.players[event.challengedClaim.challengedBy].coins += game.config.gainMoneyOnSuccessfulChallenge
-                        if (game.config.gainMoneyOnSuccessfulChallenge > 0) {
-                            // TODO: Add action log "$player got $x coins for a successful challenge
-                        }
-                    }
-                }
-            }
             afterActionRule("lose influence") {
                 appliesWhen { game.stack.peek() is CoupLoseInfluence }
                 action(loseInfluence) {
@@ -222,7 +223,7 @@ object CoupRuleBased {
                         if (topTask is CoupChallengedClaim) {
                             // This will fire all rules
                             println("FIRING COUP CHALLENGE RESOLVED with stack ${game.stack.asList()}")
-                            game.challengeEvents.fire(CoupChallengeResolved(topTask, false))
+                            meta.fireEvent(game.challengeEvents, CoupChallengeResolved(topTask, false))
                             println("FIRED COUP CHALLENGE RESOLVED with stack ${game.stack.asList()}")
                         }
                         game.stack.pop() // Pop the LoseInfluenceTask
@@ -253,7 +254,7 @@ object CoupRuleBased {
                     perform {
                         // Put back card, draw a new one
                         val challengedClaim = game.stack.pop() as CoupChallengedClaim
-                        game.challengeEvents.fire(CoupChallengeResolved(challengedClaim, true))
+                        meta.fireEvent(game.challengeEvents, CoupChallengeResolved(challengedClaim, true))
 
                         log { "$player reveals ${challengedClaim.claim.character} and draws a new card" }
                         challengedClaim.claim.player.influence.card(challengedClaim.claim.character).moveTo(game.deck)

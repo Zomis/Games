@@ -1,9 +1,8 @@
 package net.zomis.games.impl
 
 import net.zomis.games.cards.CardZone
-import net.zomis.games.common.GameEvents
 import net.zomis.games.common.next
-import net.zomis.games.dsl.GameEventsExecutor
+import net.zomis.games.dsl.events.SimpleEventSource
 import kotlin.math.ceil
 import kotlin.math.max
 
@@ -48,7 +47,7 @@ data class CoupClaim(val player: CoupPlayer, val character: CoupCharacter, val a
 
 data class CoupConfig(val gainMoneyOnSuccessfulChallenge: Int)
 data class CoupChallengeResolved(val challengedClaim: CoupChallengedClaim, val trueClaim: Boolean)
-class Coup(val events: GameEventsExecutor, val config: CoupConfig, val playersCount: Int) {
+class Coup(val config: CoupConfig, val playersCount: Int) {
     val players = (0 until playersCount).map { CoupPlayer(it) }
     private val cardsPerCharacter = max(3, ceil((3 + playersCount * 2) / 5.0).toInt())
     val deck: CardZone<CoupCharacter> = CoupCharacter.values().flatMap { character -> (1..cardsPerCharacter).map { character } }.let { CardZone(it.toMutableList()) }
@@ -56,7 +55,7 @@ class Coup(val events: GameEventsExecutor, val config: CoupConfig, val playersCo
     val currentPlayer get() = players[currentPlayerIndex]
 
     val stack = GameStack()
-    val challengeEvents = GameEvents<CoupChallengeResolved>(events)
+    val challengeEvents = SimpleEventSource()
     // A challenge can only be made once. If action is targeting someone, then only targeted player may counteract.
 
     fun nextPlayer() {

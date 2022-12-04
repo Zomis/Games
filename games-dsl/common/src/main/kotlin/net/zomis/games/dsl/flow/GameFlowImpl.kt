@@ -10,7 +10,7 @@ import net.zomis.games.api.UsageScope
 import net.zomis.games.common.GameEvents
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
-import net.zomis.games.dsl.events.EventFactory
+import net.zomis.games.dsl.events.EventSource
 import net.zomis.games.dsl.events.EventsHandling
 import net.zomis.games.dsl.flow.actions.SmartActionBuilder
 import net.zomis.games.dsl.flow.actions.SmartActionContext
@@ -65,9 +65,9 @@ class GameFlowImpl<T: Any>(
     override val actions = GameFlowActionsImpl({ feedbacks.add(it) }, this)
     override val feedback: (FlowStep) -> Unit = { feedbacks.add(it) }
     private val rules: MutableList<GameModifierImpl<T, Any>> = mutableListOf()
-    override fun <E : Any> fireEvent(source: EventFactory<E>, event: E) {
+    override fun <E : Any> fireEvent(source: EventSource, event: E) {
         logger.info { "fireEvent from source $source with value $event" }
-        this.events.fireEvent(source as EventFactory<Any>, event)
+        this.events.fireEvent(source, event)
     }
 
     override val actionsInput: Channel<Actionable<T, out Any>> = Channel()

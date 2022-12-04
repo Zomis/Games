@@ -7,6 +7,7 @@ import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.GameConfig
 import net.zomis.games.dsl.GameConfigs
 import net.zomis.games.dsl.events.EventFactory
+import net.zomis.games.dsl.events.EventSource
 import net.zomis.games.dsl.events.EventsHandling
 import net.zomis.games.dsl.flow.actions.SmartActionBuilder
 import net.zomis.games.dsl.impl.Actions
@@ -46,7 +47,7 @@ interface GameMetaScope<GameModel: Any>
         rule: GameModifierScope<GameModel, Unit>.() -> Unit
     )
     fun <Owner> addRule(owner: Owner, rule: GameModifierScope<GameModel, Owner>.() -> Unit)
-    fun <E: Any> fireEvent(source: EventFactory<E>, event: E)
+    fun <E: Any> fireEvent(source: EventSource, event: E)
     fun <Owner> removeRule(rule: GameModifierScope<GameModel, Owner>)
     fun addGlobalActionPrecondition(rule: ActionOptionsScope<GameModel>.() -> Boolean)
 }

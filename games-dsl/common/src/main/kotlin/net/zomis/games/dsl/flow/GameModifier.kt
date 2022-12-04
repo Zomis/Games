@@ -1,6 +1,5 @@
 package net.zomis.games.dsl.flow
 
-import net.zomis.games.api.MetaScope
 import net.zomis.games.api.UsageScope
 import net.zomis.games.dsl.ActionOptionsScope
 import net.zomis.games.dsl.ActionType

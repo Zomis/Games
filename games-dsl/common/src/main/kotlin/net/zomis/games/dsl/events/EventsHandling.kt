@@ -14,6 +14,7 @@ enum class EventPriority {
 }
 
 interface EventSource
+class SimpleEventSource: EventSource
 interface EventFactory<E: Any> : EventSource {
     operator fun invoke(value: E)
 }
