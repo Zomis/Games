@@ -33,6 +33,7 @@ interface ResourceMap: Replayable {
     operator fun unaryMinus(): ResourceMap
     fun any(): Boolean = entries().any { it.value != 0 }
     fun toView(): Map<String, Int> = entries().associate { it.resource.name to it.value }
+    fun isEmpty(): Boolean = entries().all { it.value == it.resource.defaultValue() }
 }
 
 interface MutableResourceMap: ResourceMap {
