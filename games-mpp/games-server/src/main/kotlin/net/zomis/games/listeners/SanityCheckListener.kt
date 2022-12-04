@@ -68,13 +68,13 @@ class SanityCheckListener(val game: Game<out Any>): GameListener {
     }
 
     private val ignorePaths = listOf(
-        Regex("^/Hanabi/[^/]+/(others/\\d+|hand)/cards/\\d+/id$"),
+        Regex("^/Grizzled/[^/]+/actions/.*"),
         Regex("^/Hanabi/[^/]+/lastAction/.*"),
-        Regex("^/Hanabi/[^/]+/colors/\\d+/(board|discard)/\\d+/id$"),
         Regex("^/Dixit/[^/]+/board$")
     )
 
     private fun viewMatch(path: String, a: Any?, b: Any?, viewer: PlayerIndex): Boolean {
+        if (path.endsWith("/id")) return true // Ignore ids for cards etc.
         if (ignorePaths.any { it.matches(path) }) {
             println("Ignoring $path: $a vs. $b")
             return true
