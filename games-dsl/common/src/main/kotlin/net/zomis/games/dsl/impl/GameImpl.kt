@@ -13,10 +13,8 @@ import net.zomis.games.common.toSingleList
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.events.EventFactory
 import net.zomis.games.dsl.events.EventsHandling
-import net.zomis.games.dsl.flow.GameFlowStepScope
-import net.zomis.games.dsl.flow.GameForkResult
-import net.zomis.games.dsl.flow.GameMetaScope
-import net.zomis.games.dsl.flow.GameModifierScope
+import net.zomis.games.dsl.flow.*
+import net.zomis.games.dsl.flow.actions.SmartActionBuilder
 import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.listeners.ReplayListener
 import net.zomis.games.scorers.Scorer
@@ -155,8 +153,21 @@ class GameImpl<T : Any>(
     private val copier: suspend () -> GameForkResult<T>
 ): Game<T>, GameFactoryScope<T, Any>, GameEventsExecutor, GameMetaScope<T> {
     override val configs: GameConfigs get() = gameConfig
+    override fun <A : Any> forcePerformAction(
+        actionType: ActionType<T, A>,
+        playerIndex: Int,
+        parameter: A,
+        rule: GameModifierScope<T, Unit>.() -> Unit
+    ) {
+        TODO("Not yet implemented for GameImpl")
+    }
+
     override fun <E : Any> fireEvent(source: EventFactory<E>, event: E) {
         TODO("Not yet implemented")
+    }
+
+    override fun <Owner> removeRule(rule: GameModifierScope<T, Owner>) {
+        TODO("Not yet implemented for GameImpl")
     }
 
     private val stateKeeper = StateKeeper()
@@ -236,6 +247,10 @@ class GameImpl<T : Any>(
         TODO("Not yet implemented for GameImpl")
     }
 
+    override fun addGlobalActionPrecondition(rule: ActionOptionsScope<T>.() -> Boolean) {
+        TODO("Not yet implemented for GameImpl")
+    }
+
     fun quickCopy(quickCopier: (source: T, destination: T) -> Unit): GameImpl<T> {
         val copy = GameImpl(setupContext, playerCount, gameConfig, copier)
         quickCopier.invoke(this.model, copy.model)
@@ -252,6 +267,14 @@ class GameImpl<T : Any>(
         }
         rules.view(view)
         return view.result()
+    }
+
+    override fun <A : Any> addAction(actionType: ActionType<T, A>, handler: SmartActionBuilder<T, A>) {
+        TODO("Not implemented for GameImpl")
+    }
+
+    override fun <A : Any> addAction(actionType: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>) {
+        TODO("Not implemented for GameImpl")
     }
 
     override val events: EventsHandling<T> = EventsHandling(this)

@@ -47,13 +47,19 @@ class ActionViewImpl<T: Any, A: Any>(
             ?.filter { actionEntry.isAllowed(it) }?.any() ?: false
     }
 
-    override fun <E : Any> nextSteps(clazz: KClass<E>): List<E> {
-        if (playerIndex == null) return emptyList()
-        if (actionEntry == null) return emptyList()
+    private fun next(): Sequence<ActionNextChoice<T, A>> {
+        if (playerIndex == null) return emptySequence()
+        if (actionEntry == null) return emptySequence()
 
-        val next = game.actions.type(actionType)
-            ?.withChosen(playerIndex, chosen)?.nextOptions() ?: return emptyList()
-        return next.filter { clazz.isInstance(it.choiceValue) }.map { it.choiceValue }.toList() as List<E>
+        return game.actions.type(actionType)?.withChosen(playerIndex, chosen)?.nextOptions() ?: emptySequence()
+    }
+
+    override fun <E : Any> nextSteps(clazz: KClass<E>): List<E> {
+        return next().filter { clazz.isInstance(it.choiceValue) }.map { it.choiceValue }.toList() as List<E>
+    }
+
+    override fun nextStepsAll(): Map<Any, Any> {
+        return next().toList().associate { it.choiceKey to it.choiceValue }
     }
 
     override fun choose(next: Any): ActionView<T, A> {

@@ -44,6 +44,19 @@ class GameFlowImpl<T: Any>(
             feedbacks.add(FlowStep.Elimination(elimination))
         }
     }
+
+    override fun <A : Any> addAction(actionType: ActionType<T, A>, handler: SmartActionBuilder<T, A>) {
+        this.actions.add(actionType, handler)
+    }
+
+    override fun <A : Any> addAction(actionType: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>) {
+        this.actions.add(actionType, actionDsl)
+    }
+
+    override fun addGlobalActionPrecondition(rule: ActionOptionsScope<T>.() -> Boolean) {
+        this.actions.addGlobalPrecondition(rule)
+    }
+
     override val events: EventsHandling<T> = EventsHandling(this)
     override val oldEvents: GameEventsExecutor = this
     override val eliminationCallback: PlayerEliminationsWrite = eliminations
@@ -88,6 +101,22 @@ class GameFlowImpl<T: Any>(
         rule.invoke(ruleContext)
         this.rules.add(ruleContext as GameModifierImpl<T, Any>)
         ruleContext.executeOnActivate()
+    }
+
+    override fun <Owner> removeRule(rule: GameModifierScope<T, Owner>) {
+        val remove = this.rules.single { it == rule }
+        this.rules.remove(remove)
+    }
+
+    override fun <A : Any> forcePerformAction(
+        actionType: ActionType<T, A>,
+        playerIndex: Int,
+        parameter: A,
+        rule: GameModifierScope<T, Unit>.() -> Unit
+    ) {
+        val actionEntry = this.actions.type(actionType) ?: throw IllegalStateException("No such action: ${actionType.name}")
+        actionEntry.perform(playerIndex, parameter)
+
     }
 
     override fun stop() {
@@ -216,7 +245,7 @@ class GameFlowImpl<T: Any>(
     private fun runRules(state: GameFlowRulesState) {
         setupContext.flowRulesDsl?.invoke(GameFlowRulesContext(this, state, null, this))
         when (state) {
-            GameFlowRulesState.AFTER_ACTIONS -> this.rules.forEach { it.executeStateCheck() }
+            GameFlowRulesState.AFTER_ACTIONS -> this.rules.toList().forEach { it.executeStateCheck() }
         }
     }
 

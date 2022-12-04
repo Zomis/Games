@@ -1,11 +1,17 @@
 package net.zomis.games.dsl.flow
 
+import net.zomis.games.dsl.ActionOptionsScope
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.events.*
 import kotlin.properties.PropertyDelegateProvider
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
+
+class ActionModifier<GameModel: Any>(
+    val action: ActionType<GameModel, Any>,
+    val definition: GameFlowActionScope<GameModel, Any>.() -> Unit
+)
 
 class GameModifierImpl<GameModel: Any, Owner>(
     private val meta: GameMetaScope<GameModel>,
@@ -16,6 +22,10 @@ class GameModifierImpl<GameModel: Any, Owner>(
     private val states = mutableMapOf<String, Any>()
     private val activationEffects = mutableListOf<GameModifierApplyScope<GameModel, Owner>.() -> Unit>()
     private val stateChecks = mutableListOf<GameModifierApplyScope<GameModel, Owner>.() -> Unit>()
+    private val actionModifiers = mutableListOf<ActionModifier<GameModel>>()
+    private val activeConditions = mutableListOf<GameModifierScope<GameModel, Owner>.() -> Boolean>()
+    private var removeCondition: (GameModifierScope<GameModel, Owner>.() -> Boolean)? = null
+    private val globalPreconditions = mutableListOf<ActionOptionsScope<GameModel>.() -> Boolean>()
 
     override fun <T> state(initial: () -> T): PropertyDelegateProvider<GameModifierScope<GameModel, Owner>?, Delegate<T>> {
         return this.addState(initial.invoke())
@@ -41,22 +51,23 @@ class GameModifierImpl<GameModel: Any, Owner>(
         }
     }
 
-    override fun activeWhile() {
-        TODO("check if activated before doing anything else basically")
+    override fun activeWhile(condition: GameModifierScope<GameModel, Owner>.() -> Boolean) {
+        this.activeConditions.add(condition)
     }
 
-    override fun removeWhen() {
-        TODO("remove on meta when some condition is true")
+    override fun removeWhen(condition: GameModifierScope<GameModel, Owner>.() -> Boolean) {
+        check(this.removeCondition == null)
+        this.removeCondition = condition
     }
 
     override fun <E : Any> on(event: EventFactory<E>): EventModifierScope<GameModel, E> {
-        val impl = EventModifierImpl<GameModel, E>(meta) { it.effectSource == event }
+        val impl = EventModifierImpl<GameModel, E>(meta) { this.isActive() && it.effectSource == event }
         meta.events.addEventListener(EventPriority.NORMAL, impl)
         return impl
     }
 
     override fun <E : Any> on(eventType: KClass<E>): EventModifierScope<GameModel, E> {
-        val impl = EventModifierImpl<GameModel, E>(meta) { eventType.isInstance(it.event) }
+        val impl = EventModifierImpl<GameModel, E>(meta) { this.isActive() && eventType.isInstance(it.event) }
         meta.events.addEventListener(EventPriority.NORMAL, impl)
         return impl
     }
@@ -65,7 +76,13 @@ class GameModifierImpl<GameModel: Any, Owner>(
         action: ActionType<GameModel, A>,
         definition: GameFlowActionScope<GameModel, A>.() -> Unit
     ) {
-        TODO("Not yet implemented")
+        this.actionModifiers.add(
+            ActionModifier(action as ActionType<GameModel, Any>, definition as GameFlowActionScope<GameModel, Any>.() -> Unit)
+        )
+    }
+
+    override fun allActionsPrecondition(precondition: ActionOptionsScope<GameModel>.() -> Boolean) {
+        this.globalPreconditions.add(precondition)
     }
 
     override fun stateCheck(doSomething: GameModifierApplyScope<GameModel, Owner>.() -> Unit) {
@@ -86,16 +103,23 @@ class GameModifierImpl<GameModel: Any, Owner>(
     private fun createApplyContext(): GameModifierApplyContext<GameModel, Owner>
         = GameModifierApplyContext(ruleHolder, meta)
 
-    fun <E: Any> executeEvent(event: EventFactory<E>, value: E) {
-        event.invoke(value)
-    }
-
     fun executeStateCheck() {
+        if (this.removeCondition?.invoke(this) == true) {
+            meta.removeRule(this)
+        }
+
         val context = createApplyContext()
         for (effect in this.stateChecks) {
             effect.invoke(context)
         }
+
+        this.actionModifiers.forEach {
+            meta.addAction(it.action, it.definition)
+        }
+        this.globalPreconditions.forEach(meta::addGlobalActionPrecondition)
     }
+
+    private fun isActive(): Boolean = this.activeConditions.all { it.invoke(this) }
 
 }
 

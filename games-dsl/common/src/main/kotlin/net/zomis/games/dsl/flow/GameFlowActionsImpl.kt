@@ -2,6 +2,7 @@ package net.zomis.games.dsl.flow
 
 import klog.KLoggers
 import net.zomis.games.dsl.*
+import net.zomis.games.dsl.flow.actions.ActionPrecondition
 import net.zomis.games.dsl.flow.actions.SmartActionBuilder
 import net.zomis.games.dsl.flow.actions.SmartActionLogic
 import net.zomis.games.dsl.flow.actions.SmartActions
@@ -29,14 +30,16 @@ class GameFlowActionsImpl<T: Any>(
     private val logger = KLoggers.logger(this)
 
     private val actions = mutableMapOf<String, ActionTypeImplEntry<T, Any>>()
+    private val allActions = mutableListOf<ActionPrecondition<T, Unit>>()
     fun clear() {
         this.actions.clear()
+        this.allActions.clear()
     }
     fun findAction(actionType: String): ActionTypeImplEntry<T, Any> = actions.getValue(actionType)
 
     fun <A: Any> add(actionType: ActionType<T, A>, handler: SmartActionBuilder<T, A>) {
         val entry = actions.getOrPut(actionType.name) {
-            val smartAction = SmartActionLogic(gameContext, actionType)
+            val smartAction = SmartActionLogic(gameContext, actionType, allActions)
             ActionTypeImplEntry(gameContext, actionType, smartAction) as ActionTypeImplEntry<T, Any>
         }
         (entry.impl as SmartActionLogic<T, A>).add(handler)
@@ -44,6 +47,10 @@ class GameFlowActionsImpl<T: Any>(
 
     fun <A: Any> add(actionType: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>)
         = add(actionType, SmartActions.handlerFromDsl(actionDsl))
+
+    fun addGlobalPrecondition(rule: ActionOptionsScope<T>.() -> Boolean) {
+        this.allActions.add(ActionPrecondition(rule))
+    }
 
     override val actionTypes: Set<String> get() = actions.keys.toSet()
     override fun types(): Set<ActionTypeImplEntry<T, Any>> = actions.values.toSet()

@@ -25,6 +25,7 @@ interface ViewScope<T: Any> : UsageScope {
 interface ActionView<T: Any, A: Any> {
     fun anyAvailable(): Boolean
     fun <E: Any> nextSteps(clazz: KClass<E>): List<E>
+    fun nextStepsAll(): Map<Any, Any>
     fun choose(next: Any): ActionView<T, A>
     fun options(): List<A>
 }

@@ -2,6 +2,7 @@ package net.zomis.games.dsl.flow
 
 import net.zomis.games.api.MetaScope
 import net.zomis.games.api.UsageScope
+import net.zomis.games.dsl.ActionOptionsScope
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.events.EventFactory
 import net.zomis.games.dsl.events.GameEventEffectScope
@@ -23,13 +24,14 @@ interface GameModifierScope<GameModel: Any, Owner>: UsageScope {
 
     fun onActivate(doSomething: GameModifierApplyScope<GameModel, Owner>.() -> Unit) // happens once when rule is added
     fun stateCheck(doSomething: GameModifierApplyScope<GameModel, Owner>.() -> Unit) // happens every time rule is checked, maybe return some value for if anything was applied?
-    fun activeWhile()
-    fun removeWhen()
+    fun activeWhile(condition: GameModifierScope<GameModel, Owner>.() -> Boolean)
+    fun removeWhen(condition: GameModifierScope<GameModel, Owner>.() -> Boolean)
     // TODO: Add/Change/Remove view or part of view (such as seeing other player's cards)
     fun <E: Any> on(event: EventFactory<E>): EventModifierScope<GameModel, E>
     fun <E: Any> on(eventType: KClass<E>): EventModifierScope<GameModel, E>
     fun <A: Any> action(action: ActionType<GameModel, A>, definition: GameFlowActionScope<GameModel, A>.() -> Unit)
     // enable/disable entire rule, enable/disable part of rule, change some value - e.g. how much cost reduction is applied
+    fun allActionsPrecondition(precondition: ActionOptionsScope<GameModel>.() -> Boolean)
 }
 
 interface GameModifierApplyScope<GameModel: Any, Owner>: UsageScope {

@@ -9,6 +9,10 @@ import kotlin.coroutines.cancellation.CancellationException
 
 class ConsoleController<T: Any> {
 
+    companion object {
+        val MAX_PRINT_AVAILABLE_ACTIONS = 10
+    }
+
     fun humanController(scanner: Scanner): (GameControllerScope<T>) -> Actionable<T, Any>? {
         val view = ConsoleView<T>()
         return {ctx ->
@@ -69,7 +73,7 @@ class ConsoleController<T: Any> {
                 val plus = if (actionsCount == 1000) "+" else ""
                 if (actionsCount > 0) {
                     println("$playerIndex ${actionType.name}: $actionsCount$plus actions")
-                    if (actionsCount <= 10) {
+                    if (actionsCount <= MAX_PRINT_AVAILABLE_ACTIONS) {
                         actionsAvailable.map { it.parameter }.forEach { println(it) }
                     }
                 }

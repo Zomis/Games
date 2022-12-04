@@ -30,6 +30,7 @@ interface SmartActionUsingBuilder<T: Any, A: Any, E> {
 interface SmartActionScope<T: Any, A: Any> : UsageScope {
     fun exampleChoices(name: String, optional: Boolean, function: ActionOptionsScope<T>.() -> Iterable<A>): SmartActionChoice<A>
     fun choice(name: String, optional: Boolean, function: ActionOptionsScope<T>.() -> Iterable<A>): SmartActionChoice<A>
+    fun choiceKeys(name: String, optional: Boolean, function: ActionOptionsScope<T>.() -> Iterable<Pair<String, A>>): SmartActionChoice<A>
     fun <E> using(function: SmartActionUsingScope<T, A>.() -> E): SmartActionUsingBuilder<T, A, E>
     fun change(block: SmartActionChangeScope<T, A>.() -> Unit)
     val standard: SmartActionUsingBuilder<T, A, Unit> get() = using {}

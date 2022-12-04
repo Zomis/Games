@@ -2,11 +2,14 @@ package net.zomis.games.dsl.flow
 
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.api.*
+import net.zomis.games.dsl.ActionOptionsScope
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.GameConfig
 import net.zomis.games.dsl.GameConfigs
 import net.zomis.games.dsl.events.EventFactory
 import net.zomis.games.dsl.events.EventsHandling
+import net.zomis.games.dsl.flow.actions.SmartActionBuilder
+import net.zomis.games.dsl.impl.Actions
 import net.zomis.games.dsl.impl.ReplayState
 import net.zomis.games.dsl.rulebased.GameRuleScope
 
@@ -27,6 +30,9 @@ interface GameMetaScope<GameModel: Any>
     //  rule modifiers
 
 
+    fun <A: Any> addAction(actionType: ActionType<GameModel, A>, handler: SmartActionBuilder<GameModel, A>)
+    fun <A: Any> addAction(actionType: ActionType<GameModel, A>, actionDsl: GameFlowActionDsl<GameModel, A>)
+
     override val events: EventsHandling<GameModel>
     override val model: GameModel
     override val eliminations: PlayerEliminationsWrite
@@ -38,7 +44,9 @@ interface GameMetaScope<GameModel: Any>
     fun <A: Any> forcePerformAction(
         actionType: ActionType<GameModel, A>, playerIndex: Int, parameter: A,
         rule: GameModifierScope<GameModel, Unit>.() -> Unit
-    ) { TODO() }
+    )
     fun <Owner> addRule(owner: Owner, rule: GameModifierScope<GameModel, Owner>.() -> Unit)
     fun <E: Any> fireEvent(source: EventFactory<E>, event: E)
+    fun <Owner> removeRule(rule: GameModifierScope<GameModel, Owner>)
+    fun addGlobalActionPrecondition(rule: ActionOptionsScope<GameModel>.() -> Boolean)
 }

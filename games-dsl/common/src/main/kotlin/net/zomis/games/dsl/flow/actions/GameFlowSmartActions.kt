@@ -15,7 +15,8 @@ import kotlin.reflect.KClass
 
 class SmartActionLogic<T: Any, A: Any>(
     val gameContext: GameMetaScope<T>,
-    override val actionType: ActionType<T, A>
+    override val actionType: ActionType<T, A>,
+    val globalPreconditions: List<ActionPrecondition<T, Unit>>
 ) : GameLogicActionType<T, A>, SmartActionChangeScope<T, A> {
     private val _handlers = mutableListOf<SmartActionBuilder<T, A>>()
     override val handlers get() = _handlers.toList().asSequence()
@@ -59,7 +60,8 @@ class SmartActionLogic<T: Any, A: Any>(
 
     private fun checkPreconditions(playerIndex: Int): Boolean {
         val context = createOptionsContext(playerIndex)
-        return _handlers.flatMap { it.preconditions }.all { precond -> precond.fulfilled(context) }
+        val globalRulesOk = this.globalPreconditions.all { precond -> precond.fulfilled(context) }
+        return globalRulesOk && _handlers.flatMap { it.preconditions }.all { precond -> precond.fulfilled(context) }
     }
 
     override fun createAction(playerIndex: Int, parameter: A): Actionable<T, A>
@@ -157,6 +159,23 @@ open class SmartActionBuilder<T: Any, A: Any>: SmartActionScope<T, A> {
             _choices.putSingle(name, it as ActionChoice<T, A, out Any>)
             _requires.add(ActionRequirement({}, {
                 action.parameter in function.invoke(this)
+            }))
+        }
+    }
+
+    override fun choiceKeys(
+        name: String,
+        optional: Boolean,
+        function: ActionOptionsScope<T>.() -> Iterable<Pair<String, A>>
+    ): SmartActionChoice<A> {
+        return ActionChoice<T, A, A>(name, optional, exhaustive = true) {
+            optionsWithIds(function) {
+                parameter(it)
+            }
+        }.also { choice ->
+            _choices.putSingle(name, choice as ActionChoice<T, A, out Any>)
+            _requires.add(ActionRequirement({}, {
+                function.invoke(this).map { it.second }.contains(action.parameter)
             }))
         }
     }
