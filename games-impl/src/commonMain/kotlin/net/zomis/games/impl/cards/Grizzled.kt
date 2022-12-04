@@ -599,7 +599,7 @@ object Grizzled {
                                         .plus(GrizzledCard(ResourceMap.empty(), null, null, id = -1)).map { it.id.toString() to it }
                                 }) { chosenNext ->
                                     recursion(chosenNext) { acc, next ->
-                                        val hardKnock = next.takeIf { it.isHardKnock() }?.toSingleList() ?: emptyList()
+                                        val hardKnock = next.takeIf { it.id != -1 }?.toSingleList() ?: emptyList()
                                         Supported(acc.restoreCharm || next.threats.isEmpty(), acc.removeHardKnocks + hardKnock)
                                     }
                                 }
