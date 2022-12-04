@@ -4,6 +4,7 @@ import net.zomis.bestOf
 import net.zomis.games.WinResult
 import net.zomis.games.api.GamesApi
 import net.zomis.games.cards.CardZone
+import net.zomis.games.cards.CardZoneI
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.common.next
 import net.zomis.games.common.shifted
@@ -25,6 +26,7 @@ import kotlin.math.ceil
 object Grizzled {
 
     class StartMission
+    class PlayCard(val playerIndex: Int, val fromZone: CardZoneI<GrizzledCard>, val card: GrizzledCard, val trapsEnabled: Boolean)
     class Support(val supportedPlayers: MutableMap<Player, Player>)
     class Supported(val restoreCharm: Boolean, val removeHardKnocks: List<GrizzledCard>) {
         fun toStateString() = "$restoreCharm/${removeHardKnocks.map { it.toStateString() }}"
@@ -178,10 +180,7 @@ object Grizzled {
                     if (action.playerIndex != ruleHolder.owner.playerIndex) return@perform
                     if (game.trials.isEmpty()) return@perform
                     val card = game.trials.top(replayable, "clumsy", 1).first()
-                    card.moveTo(game.players[playerIndex].hand)
-                    this.meta.forcePerformAction(playAction, playerIndex, card.card) {
-                        // Disable traps
-                    }
+                    game.playCardEvent.invoke(PlayCard(playerIndex, game.trials, card.card, trapsEnabled = false))
                 }
             }
         }
@@ -339,19 +338,7 @@ object Grizzled {
             standard.apply {
                 precondition { playerIndex == this@Player.playerIndex }
                 perform {
-                    if (action.parameter.isHardKnock()) {
-                        hand.card(action.parameter).moveTo(hardKnocks)
-                        val effect = action.parameter.hardKnockEffects
-                        if (effect != null) {
-                            meta.addRule(PlayedGrizzledCard(this@Player, action.parameter)) {
-                                this.removeWhen { !ruleHolder.owner.hardKnocks.cards.contains(this.ruleHolder.card) }
-                                this.activeWhile { ruleHolder.owner.inMission }
-                                effect.invoke(this)
-                            }
-                        }
-                    } else {
-                        hand.card(action.parameter).moveTo(game.playedCards)
-                    }
+                    game.playCardEvent.invoke(PlayCard(playerIndex, hand, action.parameter, trapsEnabled = true))
                 }
                 perform {
                     log { "$player plays ${action.toStateString()}" }
@@ -398,6 +385,7 @@ object Grizzled {
         val resolveSupportEvent = event<Support>()
         val moraleDropEvent = event<MoraleDrop>()
         val changeLeaderEvent = event<ChangeLeader>()
+        val playCardEvent = event<PlayCard>()
 
         val discarded: CardZone<GrizzledCard> by cards()
         val activeThreats: ResourceMap by dynamicValue {
@@ -465,11 +453,36 @@ object Grizzled {
     }
 
     val game = GamesApi.gameContext("Grizzled", Model::class) {
+        val trapsConfig = this.config("traps") { true }
         players(3..5)
         init { Model(ctx) }
         gameFlow {
+            meta.addRule(game) {
+                on(PlayCard::class).perform {
+                    val player = game.players[event.playerIndex]
+                    if (event.card.isHardKnock()) {
+                        event.fromZone.card(event.card).moveTo(player.hardKnocks)
+                        val effect = event.card.hardKnockEffects
+                        if (effect != null) {
+                            meta.addRule(PlayedGrizzledCard(player, event.card)) {
+                                this.removeWhen { !ruleHolder.owner.hardKnocks.cards.contains(this.ruleHolder.card) }
+                                this.activeWhile { ruleHolder.owner.inMission }
+                                effect.invoke(this)
+                            }
+                        }
+                    } else {
+                        event.fromZone.card(event.card).moveTo(game.playedCards)
+                        if (config(trapsConfig) && event.trapsEnabled && event.card.threats.has(Trap, 1) && game.trials.isNotEmpty()) {
+                            game.playCardEvent.invoke(
+                                PlayCard(event.playerIndex, game.trials, game.trials.top(replayable, "trap", 1).first().card, trapsEnabled = false)
+                            )
+                        }
+                    }
+                }
+            }
             loop {
                 step("setup mission") {
+
                     game.currentPlayerIndex = game.missionLeaderIndex
                     game.players.forEach { it.enterMission() }
                     actionHandler(chooseCardCount, game.missionLeader.chooseStartCards)

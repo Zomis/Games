@@ -115,8 +115,8 @@ class GameFlowImpl<T: Any>(
         rule: GameModifierScope<T, Unit>.() -> Unit
     ) {
         val actionEntry = this.actions.type(actionType) ?: throw IllegalStateException("No such action: ${actionType.name}")
+        TODO("perform action without checking for requirements. Problem is however that actions are most likely not available at this point.")
         actionEntry.perform(playerIndex, parameter)
-
     }
 
     override fun stop() {
@@ -290,6 +290,7 @@ class GameFlowContext<T: Any>(
     private val name: String
 ): GameFlowScope<T>, GameFlowStepScope<T> {
     override val game: T get() = flow.model
+    override val meta: GameMetaScope<T> get() = flow
     override val eliminations: PlayerEliminationsWrite get() = flow.eliminations
     override val replayable: ReplayState get() = flow.replayable
 
@@ -395,6 +396,7 @@ interface GameFlowStepScope<T: Any> : UsageScope {
 @GameMarker
 interface GameFlowScope<T: Any>: EventTools, UsageScope {
     val game: T
+    val meta: GameMetaScope<T>
     override val eliminations: PlayerEliminationsWrite
     override val replayable: ReplayStateI
     suspend fun loop(function: suspend GameFlowScope<T>.() -> Unit)
