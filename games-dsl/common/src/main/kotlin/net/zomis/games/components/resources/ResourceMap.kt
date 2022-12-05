@@ -3,6 +3,8 @@ package net.zomis.games.components.resources
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.Replayable
 import net.zomis.games.dsl.Viewable
+import net.zomis.games.dsl.events.EmptyEventFactory
+import net.zomis.games.dsl.events.EventFactory
 
 interface ResourceMap: Replayable {
     companion object {
@@ -58,8 +60,11 @@ interface MutableResourceMap: ResourceMap {
 
 // See Splendor Money and Caravan in Spice Road
 
+class ResourceChange(val resourceMap: ResourceMap, val resource: GameResource, val oldValue: Int, var newValue: Int)
+
 class ResourceMapImpl(
-    private val resources: MutableMap<GameResource, ResourceEntryImpl> = mutableMapOf()
+    private val resources: MutableMap<GameResource, ResourceEntryImpl> = mutableMapOf(),
+    private val eventFactory: EventFactory<ResourceChange> = EmptyEventFactory(),
 ): MutableResourceMap, ResourceMap, Viewable {
 
     override fun get(resource: GameResource): Int? = resources[resource]?.value
@@ -113,34 +118,42 @@ class ResourceMapImpl(
 
     private fun enforceResource(resource: GameResource): ResourceEntryImpl = this.resources.getOrPut(resource) { ResourceEntryImpl(resource, resource.defaultValue()) }
 
-    override fun set(resource: GameResource, value: Int) {
-        enforceResource(resource).value = value
+    private fun changeResource(resource: GameResource, change: (Int) -> Int) {
+        val oldValue = getOrDefault(resource)
+        this.eventFactory.invoke(ResourceChange(this, resource, oldValue, change.invoke(oldValue))) {
+            enforceResource(resource).value = it.newValue
+        }
     }
 
+    override fun set(resource: GameResource, value: Int) = changeResource(resource) { value }
+
     override fun plusAssign(other: ResourceMap) {
-        other.entries().forEach {
-            this.enforceResource(it.resource) += it.value
+        other.entries().forEach { entry ->
+            changeResource(entry.resource) { it + entry.value }
         }
     }
 
     override fun minusAssign(other: ResourceMap) {
-        other.entries().forEach {
-            this.enforceResource(it.resource) -= it.value
+        other.entries().forEach { entry ->
+            changeResource(entry.resource) { it - entry.value }
         }
     }
 
     override fun timesAssign(value: Int) {
-        entries().map { it as MutableResourceEntry }.forEach {
-            it.value *= value
+        entries().forEach { entry ->
+            changeResource(entry.resource) { it * value }
         }
     }
 
     override fun clear(resource: GameResource) {
-        this.resources.remove(resource)
+        eventFactory.invoke(ResourceChange(this, resource, getOrDefault(resource), resource.defaultValue())) {
+            resources.remove(resource)
+        }
     }
 
     override fun payTo(resources: ResourceMap, destination: MutableResourceMap): Boolean {
         if (!this.has(resources)) return false
+        // NOTE: This may cause issues when using events that modify values. This is not performed as a single transaction.
         this -= resources
         destination += resources
         return true
