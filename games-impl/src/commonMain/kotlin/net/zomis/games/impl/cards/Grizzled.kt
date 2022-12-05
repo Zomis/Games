@@ -87,7 +87,7 @@ object Grizzled {
                     val supportPlayed = action.parameter.support
                     if (supportPlayed != null) {
                         // TODO: Is this done before or after the regular action things? Hopefully after.
-                        player.supportTiles.cards.add(supportPlayed)
+                        player.supportTiles.cards.add(supportPlayed) // TODO: Don't do this.
                     }
                     if (player.supportTiles.isEmpty()) return@perform
 
@@ -550,18 +550,32 @@ object Grizzled {
                 game.round++
             }
         }
+        val withdrawScorer = scorers.isAction(withdraw)
+        val failScorer = scorers.actionConditional(playAction) {
+            (this.action.parameter.threats + model.activeThreats).filter { it.value >= 3 }.any()
+        }
+        val useSupportRemoveHardKnocks = scorers.action(useSupport) { action.parameter.removeHardKnocks.size.toDouble() }
+        val supportTroubledPlayer = scorers.action(withdraw) {
+            val player = model.calculateSupportedPlayer(playerIndex, action.parameter.support ?: return@action 0.0)
+            val charmRequiredScore = if (player.charmAvailable) 0.0 else 0.5
+            player.hardKnocks.size.toDouble() + charmRequiredScore
+        }
+        scorers.ai("#AI_Chicken", withdrawScorer)
+        scorers.ai("#AI_Simple", failScorer.weight(-10), useSupportRemoveHardKnocks, supportTroubledPlayer)
+    }
+
+    private fun Model.calculateSupportedPlayer(myIndex: Int, supportTile: SupportTile): Player {
+        val supportedPlayerIndex = (myIndex + supportTile.offset + this.players.size) % this.players.size
+        return this.players[supportedPlayerIndex]
     }
 
     private fun supportDsl(
         successfulMission: Boolean
     ): suspend GameFlowStepScope<Model>.() -> Unit {
-        println("supportDsl step $successfulMission")
         return {
-            println("supportDsl step lambda $successfulMission")
-            val supportedPlayers = game.players.associateWith {
-                val supportOffset = it.placedSupportTile?.offset ?: 0
-                val supportedPlayerIndex = (it.playerIndex + supportOffset + game.players.size) % game.players.size
-                game.players[supportedPlayerIndex]
+            val supportedPlayers = game.players.filter { it.placedSupportTile != null }.associateWith {
+                val placedSupport = it.placedSupportTile ?: throw IllegalStateException("Player ${it.playerIndex} ($it) has not placed a SupportTile")
+                game.calculateSupportedPlayer(it. playerIndex, placedSupport)
             }.toMutableMap()
             this.game.resolveSupportEvent.invoke(Support(supportedPlayers))
 

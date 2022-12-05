@@ -10,6 +10,7 @@ import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.impl.DslSplendor
 import net.zomis.games.impl.SetGame
 import net.zomis.games.impl.SpiceRoadDsl
+import net.zomis.games.impl.cards.Grizzled
 import net.zomis.games.impl.words.Decrypto
 import net.zomis.games.listeners.*
 import net.zomis.games.server2.ServerGames
@@ -36,6 +37,7 @@ class AllGamesTest {
 
     val playingMap = mapOf(
         // Wordle?
+        Grizzled.game.name to "#AI_Chicken",
         SpiceRoadDsl.game.name to "#AI_BuyFirst",
         Decrypto.game.name to "#AI_NoChat",
         SetGame.game.name to "#AI_SetCheat50",
