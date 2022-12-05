@@ -44,7 +44,7 @@ class EventsHandling<GameModel: Any>(val metaScope: GameMetaScope<GameModel>) {
 
         val context = object : GameEventEffectScope<Any, Any> {
             override val effectSource: EventSource = source
-            override val event: Any get() = eventValue
+            override val event: Any get() = event
             override val meta: GameMetaScope<Any> = metaScope as GameMetaScope<Any>
         }
 
