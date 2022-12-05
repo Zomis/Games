@@ -33,12 +33,12 @@ class GameControllerContext<T : Any>(
 }
 interface GameControllerScope<T : Any>: UsageScope, CompoundScope, GameScope<T>, GameModelScope<T>, PlayerIndexScope
 
-class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
+class GameSetupImpl<T : Any>(private val gameSpec: GameSpec<T>) {
 
     val gameType: String = gameSpec.name
-    internal val context = GameDslContext(gameSpec)
+    internal val context = GameDslContext<T>(gameType)
     init {
-        gameSpec(context)
+        gameSpec.invoke(context)
         context.modelDsl(context.model)
         if (context.useRandomAI) {
             context.ai("#AI_Random") {
@@ -81,7 +81,7 @@ class GameSetupImpl<T : Any>(gameSpec: GameSpec<T>) {
             }
 
             val blockingGameListener = BlockingGameListener()
-            val replay = GamesImpl.game(context.gameSpec).replay(coroutineScope, replayData, gameListeners = {
+            val replay = GamesImpl.game(gameSpec).replay(coroutineScope, replayData, gameListeners = {
                 listOf(blockingGameListener)
             }, fork = true).goToEnd().awaitCatchUp()
 

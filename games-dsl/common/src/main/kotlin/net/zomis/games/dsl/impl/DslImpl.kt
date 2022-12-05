@@ -182,8 +182,7 @@ class GameConfigImpl<E: Any>(override val key: String, override val default: () 
 }
 class GameStartInfo(val playerCount: Int, val config: GameConfigs, val fork: () -> Boolean)
 
-class GameDslContext<T : Any>(val gameSpec: GameSpec<T>) : GameDslScope<T> {
-    val gameType = gameSpec.name
+class GameDslContext<T : Any>(val gameType: String) : GameDslScope<T> {
     lateinit var modelDsl: GameModelDsl<T, Any>
     var flowRulesDsl: GameFlowRulesDsl<T>? = null
     var flowDsl: GameFlowDsl<T>? = null
@@ -245,5 +244,10 @@ class GameDslContext<T : Any>(val gameSpec: GameSpec<T>) : GameDslScope<T> {
     override fun ai(name: String, block: GameAIScope<T>.() -> Unit): GameAI<T> = GameAI(name, block).also { otherAIs.add(it) }
 
     fun configs(): GameConfigs = GameConfigs(configs.map { it.withDefaults() })
+    fun copyAIsFrom(oldContext: GameDslContext<T>) {
+        this.createdScorers.addAll(oldContext.createdScorers)
+        this.createdAIs.addAll(oldContext.createdAIs)
+        this.otherAIs.addAll(oldContext.otherAIs)
+    }
 
 }

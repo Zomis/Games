@@ -12,8 +12,8 @@ import net.zomis.games.dsl.events.*
 import net.zomis.games.dsl.flow.ActionDefinition
 import net.zomis.games.dsl.flow.GameFlowActionScope
 import net.zomis.games.dsl.flow.GameFlowScope
-import net.zomis.games.dsl.impl.GameConfigImpl
-import net.zomis.games.dsl.impl.GameMarker
+import net.zomis.games.dsl.impl.*
+import net.zomis.games.scorers.ScorerFactory
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
@@ -224,11 +224,12 @@ class EventListenerContext(
     }
 
 }
-class GameCreatorContext<T: ContextHolder>(val gameName: String, val function: GameCreatorContextScope<T>.() -> Unit): GameCreatorContextScope<T> {
+class GameCreatorContext<T: ContextHolder>(val gameType: String, val function: GameCreatorContextScope<T>.() -> Unit): GameCreatorContextScope<T> {
     private var playerRange = 0..0
     private lateinit var init: ContextHolder.() -> T
     private lateinit var gameFlow: suspend GameFlowScope<T>.() -> Unit
     private val configs = mutableListOf<GameConfig<Any>>()
+    private val context = GameDslContext<T>(gameType)
 
     override fun players(players: IntRange) {
         this.playerRange = players
@@ -248,9 +249,12 @@ class GameCreatorContext<T: ContextHolder>(val gameName: String, val function: G
         return config
     }
 
-    fun toDsl(): GameDslScope<T>.() -> Unit {
+    override val scorers: ScorerFactory<T> = context.scorers
+    override fun ai(name: String, block: GameAIScope<T>.() -> Unit): GameAI<T> = context.ai(name, block)
+
+    fun toGameSpec(): GameSpec<T> {
         this.function.invoke(this)
-        return {
+        val dsl: GameDslScope<T>.() -> Unit = {
             for (config in this@GameCreatorContext.configs) {
                 this.config(config.key, config.default)
             }
@@ -279,7 +283,11 @@ class GameCreatorContext<T: ContextHolder>(val gameName: String, val function: G
                     }
                 }
             }
+            val oldContext = this@GameCreatorContext.context
+            val newContext = this as GameDslContext<T>
+            newContext.copyAIsFrom(oldContext)
         }
+        return GameSpec(gameType, dsl)
     }
 }
 @GameMarker
@@ -288,4 +296,6 @@ interface GameCreatorContextScope<T: Any>: UsageScope {
     fun init(function: ContextHolder.() -> T)
     fun gameFlow(function: suspend GameFlowScope<T>.() -> Unit)
     fun <E : Any> config(key: String, default: () -> E): GameConfig<E>
+    fun ai(name: String, block: GameAIScope<T>.() -> Unit): GameAI<T>
+    val scorers: ScorerFactory<T>
 }
