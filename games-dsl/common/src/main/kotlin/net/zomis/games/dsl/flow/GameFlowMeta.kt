@@ -47,7 +47,7 @@ interface GameMetaScope<GameModel: Any>
         rule: GameModifierScope<GameModel, Unit>.() -> Unit
     )
     fun <Owner> addRule(owner: Owner, rule: GameModifierScope<GameModel, Owner>.() -> Unit)
-    fun <E: Any> fireEvent(source: EventSource, event: E)
+    fun <E: Any> fireEvent(source: EventSource, event: E, performEvent: (E) -> Unit = {})
     fun <Owner> removeRule(rule: GameModifierScope<GameModel, Owner>)
     fun addGlobalActionPrecondition(rule: ActionOptionsScope<GameModel>.() -> Boolean)
 }

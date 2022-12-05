@@ -123,8 +123,8 @@ class ActionFactory<T: Any, A: Any>(
 }
 
 class EventContextFactory<E: Any>(val ctx: Context): EventFactory<E> {
-    override operator fun invoke(value: E) {
-        ctx.rootContext().gameContext.events.fireEvent(this as EventFactory<Any>, value)
+    override fun invoke(value: E, performEvent: (E) -> Unit) {
+        ctx.rootContext().gameContext.events.fireEvent(this as EventFactory<Any>, value, performEvent as (Any) -> Unit)
     }
 }
 

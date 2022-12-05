@@ -16,10 +16,10 @@ enum class EventPriority {
 interface EventSource
 class SimpleEventSource: EventSource
 interface EventFactory<E: Any> : EventSource {
-    operator fun invoke(value: E)
+    operator fun invoke(value: E, performEvent: (E) -> Unit = {})
 }
 class MetaEventFactory<GameModel: Any, E: Any>(val meta: GameMetaScope<GameModel>): EventFactory<E> {
-    override fun invoke(value: E) = meta.fireEvent(this, value)
+    override fun invoke(value: E, performEvent: (E) -> Unit) = meta.fireEvent(this, value, performEvent)
 }
 
 interface GameEventEffectScope<GameModel: Any, E: Any>: UsageScope {
@@ -39,7 +39,7 @@ class EventsHandling<GameModel: Any>(val metaScope: GameMetaScope<GameModel>) {
 
     private val onEvent = mutableMapOf<EventPriority, MutableList<EventListener>>()
 
-    fun fireEvent(source: EventSource, eventValue: Any) {
+    fun fireEvent(source: EventSource, eventValue: Any, eventAction: (Any) -> Unit = {}) {
         var event = eventValue
 
         val context = object : GameEventEffectScope<Any, Any> {
@@ -50,6 +50,9 @@ class EventsHandling<GameModel: Any>(val metaScope: GameMetaScope<GameModel>) {
 
         for (priority in EventPriority.values()) {
             val currentPriorityListeners = onEvent[priority] ?: continue
+            if (priority == EventPriority.NORMAL) {
+                eventAction.invoke(event)
+            }
 
             // Step 1. Possibly prevent event
             if (!currentPriorityListeners.all { it.conditionCheck(context) }) {

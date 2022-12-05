@@ -161,7 +161,8 @@ class GameImpl<T : Any>(
         TODO("Not yet implemented for GameImpl")
     }
 
-    override fun <E : Any> fireEvent(source: EventSource, event: E) = this.events.fireEvent(source, event)
+    override fun <E : Any> fireEvent(source: EventSource, event: E, performEvent: (E) -> Unit)
+        = this.events.fireEvent(source, event, performEvent as (Any) -> Unit)
 
     override fun <Owner> removeRule(rule: GameModifierScope<T, Owner>) {
         val remove = this.gameModifiers.single { it == rule }

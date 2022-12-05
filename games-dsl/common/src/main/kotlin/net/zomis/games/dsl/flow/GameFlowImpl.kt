@@ -63,9 +63,9 @@ class GameFlowImpl<T: Any>(
     override val actions = GameFlowActionsImpl({ feedbacks.add(it) }, this)
     override val feedback: (FlowStep) -> Unit = { feedbacks.add(it) }
     private val rules: MutableList<GameModifierImpl<T, Any>> = mutableListOf()
-    override fun <E : Any> fireEvent(source: EventSource, event: E) {
+    override fun <E : Any> fireEvent(source: EventSource, event: E, performEvent: (E) -> Unit) {
         logger.info { "fireEvent from source $source with value $event" }
-        this.events.fireEvent(source, event)
+        this.events.fireEvent(source, event, performEvent as (Any) -> Unit)
     }
 
     override val actionsInput: Channel<Actionable<T, out Any>> = Channel()
