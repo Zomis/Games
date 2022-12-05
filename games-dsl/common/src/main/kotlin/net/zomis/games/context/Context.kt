@@ -6,6 +6,7 @@ import net.zomis.games.api.EventScope
 import net.zomis.games.api.UsageScope
 import net.zomis.games.api.ValueScope
 import net.zomis.games.cards.CardZone
+import net.zomis.games.components.IdGenerator
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.events.*
 import net.zomis.games.dsl.flow.ActionDefinition
@@ -162,8 +163,10 @@ open class Entity(protected open val ctx: Context) {
             = ActionFactory(name, parameter, actionDefinition)
     fun <T: Any, A: GameSerializable> actionSerializable(name: String, parameter: KClass<A>, actionDefinition: GameFlowActionScope<T, A>.() -> Unit)
             = ActionFactory(name, parameter, actionDefinition).also { it.actionType = it.actionType.serializer { a -> a.serialize() } }
+    fun sharedIdGenerator() = ctx.gameContext.idGenerator
 }
 class GameContext(val events: EventsHandling<Any>, val playerCount: Int, val eliminations: PlayerEliminationsWrite, val configLookup: (GameConfig<Any>) -> Any) {
+    val idGenerator = IdGenerator()
     internal val onSetup = mutableListOf<GameStartScope<Any>.() -> Unit>()
 }
 interface ContextHolder {

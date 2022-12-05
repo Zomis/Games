@@ -55,11 +55,11 @@ class SemiKnownCardZone<T: Any>(cards: List<T> = emptyList(), private val matche
         cards.add(card)
     }
 
-    fun deal(replayable: ReplayStateI, stateKey: String, count: Int, destinations: List<CardZone<T>>) {
+    fun deal(replayable: ReplayStateI, stateKey: String, count: Int, destinations: List<CardZone<T>>, transformer: (T) -> T = { it }) {
         val cardsToDeal = learnCards(0 until count, replayable, stateKey).toList()
         cardsToDeal.indices.forEach { index ->
             val cardValue = cards[0]!!
-            Card(this, 0, cardValue).moveTo(destinations[index % destinations.size])
+            Card(this, 0, cardValue).transformTo(destinations[index % destinations.size], transformer)
         }
     }
 

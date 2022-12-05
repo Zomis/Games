@@ -272,6 +272,7 @@ object Grizzled {
         val supportTiles by cards<SupportTile>().privateView(playerIndex) { it.cards }.publicView { it.size }
         var placedSupportTile by component<SupportTile?> { null }.privateView(playerIndex) { it ?: "" }
         var speechesAvailable by component { 0 }
+        val idGenerator = sharedIdGenerator()
 
         fun enterMission() {
             this.withdrawn = false
@@ -356,7 +357,7 @@ object Grizzled {
                     game.trials.deal(
                         replayable, "trialCards", count.coerceAtMost(game.trials.size),
                         game.players.shifted(game.missionLeaderIndex).map { it.hand }
-                    )
+                    ) { it.id = idGenerator(); it } // val idGenerator by idGenerator() -- use a global id counter
                 }
             }
         }
@@ -406,8 +407,6 @@ object Grizzled {
         var round by component { 1 }
         val morale by component { CardZone<GrizzledCard>() }.onSetup {
             it.cards.addAll(threatCards + HardKnocks.allCards)
-            it.cards.shuffle()
-            it.cards.forEachIndexed { index, grizzledCard -> grizzledCard.id = index }
         }.publicView { it.size }
         val actions by viewOnly<Model> {
             val cards = actions().nextSteps(GrizzledCard::class).associate { it.id to true }
@@ -461,6 +460,7 @@ object Grizzled {
             meta.addRule(game) {
                 on(PlayCard::class).perform {
                     val player = game.players[event.playerIndex]
+                    if (event.card.id == 0) event.card.id = player.idGenerator.invoke()
                     if (event.card.isHardKnock()) {
                         event.fromZone.card(event.card).moveTo(player.hardKnocks)
                         val effect = event.card.hardKnockEffects

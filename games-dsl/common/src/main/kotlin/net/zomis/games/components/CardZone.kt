@@ -25,10 +25,14 @@ data class Card<T>(val zone: CardZoneI<T>, val index: Int, val card: T) {
         return value
     }
 
-    fun moveTo(destination: CardZoneI<T>) {
-        val card = this.remove()
+    inline fun moveTo(destination: CardZoneI<T>) = transformTo(destination) { it }
+
+    fun transformTo(destination: CardZoneI<T>, modifier: (T) -> T) {
+        val card = modifier.invoke(this.remove())
         destination.add(card)
     }
+
+    inline fun mutateTo(destination: CardZoneI<T>, crossinline modifier: (T) -> Unit) = transformTo(destination) { modifier.invoke(it); it }
 }
 
 class CardZone<T>(val cards: MutableList<T> = mutableListOf()): CardZoneI<T> {
@@ -49,10 +53,10 @@ class CardZone<T>(val cards: MutableList<T> = mutableListOf()): CardZoneI<T> {
 
     fun toList(): List<T> = cards.toList()
 
-    fun deal(cards: List<T>, destinations: List<CardZone<T>>) {
+    fun deal(cards: List<T>, destinations: List<CardZone<T>>, transform: (T) -> T = { it }) {
         repeat(cards.size) {
             val destination = destinations[it % destinations.size]
-            card(cards[it]).moveTo(destination)
+            card(cards[it]).transformTo(destination, transform)
         }
     }
 

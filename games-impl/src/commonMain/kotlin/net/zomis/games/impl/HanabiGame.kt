@@ -5,6 +5,7 @@ import net.zomis.games.api.GamesApi
 import net.zomis.games.cards.Card
 import net.zomis.games.cards.CardZone
 import net.zomis.games.cards.random
+import net.zomis.games.components.IdGenerator
 import net.zomis.games.dsl.*
 import net.zomis.games.metrics.MetricBuilder
 import kotlin.math.min
@@ -96,6 +97,7 @@ data class HanabiColorData(val color: HanabiColor, val board: CardZone<HanabiCar
     fun nextPlayable(): Int? = board.map { it.value }.maxOrNull().let { (it ?: 0) + 1 }.takeIf { it <= 5 }
 }
 data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
+    val idGenerator = IdGenerator()
     val colors: List<HanabiColorData> = config.colors().map { HanabiColorData(it) }
     var clueTokens: Int = config.maxClueTokens
     var failTokens: Int = 0
@@ -104,7 +106,7 @@ data class Hanabi(val config: HanabiConfig, val players: List<HanabiPlayer>) {
     val current: HanabiPlayer get() = players[currentPlayer]
     var lastAffectedCards: Map<Int, String> = emptyMap()
 
-    val deck = CardZone(config.createCards().shuffled().toMutableList()).also { it.cards.forEachIndexed { index, hanabiCard -> hanabiCard.id = index } }
+    val deck = CardZone(config.createCards().toMutableList())
 
     fun affectedCards(clue: HanabiClue): List<HanabiCard> = players[clue.player].cards.cards.filter { it.matches(clue) }
     fun reveal(clue: HanabiClue): List<HanabiCard> = affectedCards(clue).onEach { it.reveal(clue) }
@@ -201,7 +203,7 @@ object HanabiGame {
                 val cardPerPlayer = if (playerCount in 2..3) 5 else 4
                 val cards = game.deck.random(replayable, cardPerPlayer * playerCount, "cards")
                     .map { it.card }.toList()
-                game.deck.deal(cards, game.players.map { p -> p.cards })
+                game.deck.deal(cards, game.players.map { p -> p.cards }) { it.id = game.idGenerator.invoke(); it }
             }
             allActions.precondition { playerIndex == game.currentPlayer }
             allActions.precondition { game.turnsLeft != 0 }
@@ -396,7 +398,7 @@ object HanabiGame {
             val zone = card.zone
             val cardState = replayable.string("card") { game.deck.cards[0].toStateString() }
             val nextCard = game.deck.findState(cardState) { c -> c.toStateString() }
-            card.moveTo(destination)
+            card.mutateTo(destination) { it.id = game.idGenerator.invoke() }
             game.deck.card(nextCard).moveTo(zone)
             // OLD: card.moveAndReplace(destination, game.deck.card(nextCard))
             game.emptyDeckCheck()
