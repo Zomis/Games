@@ -114,7 +114,6 @@ class SanityCheckListener(val game: Game<out Any>): GameListener {
                 val jacksonMatch = jacksonSerialized.first == jacksonSerialized.second
                 val result = first == second
                 if (jacksonMatch && !result) {
-                    println("Match using jackson but not object equals at $path: $first vs. $second (${jacksonSerialized.first})")
                     return true
                 }
                 if (!result) println("Mismatch at $path: $first vs. $second. Jackson values ${jacksonSerialized.first} vs. ${jacksonSerialized.second}")
