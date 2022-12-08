@@ -14,6 +14,7 @@ import net.zomis.games.dsl.events.EventSource
 import net.zomis.games.dsl.events.EventsHandling
 import net.zomis.games.dsl.flow.*
 import net.zomis.games.dsl.flow.actions.SmartActionBuilder
+import net.zomis.games.dsl.flow.actions.SmartActionScope
 import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.listeners.ReplayListener
 import net.zomis.games.scorers.Scorer
@@ -273,6 +274,10 @@ class GameImpl<T : Any>(
     }
 
     override fun <A : Any> addAction(actionType: ActionType<T, A>, handler: SmartActionBuilder<T, A>) {
+        TODO("Not implemented for GameImpl")
+    }
+
+    override fun <A : Any> addActionHandler(actionType: ActionType<T, A>, dsl: SmartActionScope<T, A>.() -> Unit) {
         TODO("Not implemented for GameImpl")
     }
 

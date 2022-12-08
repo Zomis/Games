@@ -10,6 +10,7 @@ import net.zomis.games.dsl.events.EventFactory
 import net.zomis.games.dsl.events.EventSource
 import net.zomis.games.dsl.events.EventsHandling
 import net.zomis.games.dsl.flow.actions.SmartActionBuilder
+import net.zomis.games.dsl.flow.actions.SmartActionScope
 import net.zomis.games.dsl.impl.Actions
 import net.zomis.games.dsl.impl.ReplayState
 import net.zomis.games.dsl.rulebased.GameRuleScope
@@ -32,6 +33,7 @@ interface GameMetaScope<GameModel: Any>
 
 
     fun <A: Any> addAction(actionType: ActionType<GameModel, A>, handler: SmartActionBuilder<GameModel, A>)
+    fun <A: Any> addActionHandler(actionType: ActionType<GameModel, A>, dsl: SmartActionScope<GameModel, A>.() -> Unit)
     fun <A: Any> addAction(actionType: ActionType<GameModel, A>, actionDsl: GameFlowActionDsl<GameModel, A>)
 
     override val events: EventsHandling<GameModel>

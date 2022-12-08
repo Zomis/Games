@@ -7,6 +7,9 @@ import net.zomis.games.api.UsageScope
 import net.zomis.games.api.ValueScope
 import net.zomis.games.cards.CardZone
 import net.zomis.games.components.IdGenerator
+import net.zomis.games.components.resources.GameResource
+import net.zomis.games.components.resources.MutableResourceMap
+import net.zomis.games.components.resources.ResourceMap
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.events.*
 import net.zomis.games.dsl.flow.ActionDefinition
@@ -26,6 +29,11 @@ class ComponentDelegate<E>(initialValue: E): ReadWriteProperty<Entity?, E> {
         println("Set $property on $thisRef to $value")
         this.value = value
     }
+}
+
+class ResourceMapDelegate(val map: MutableResourceMap, val resource: GameResource): ReadWriteProperty<Any?, Int> {
+    override fun getValue(thisRef: Any?, property: KProperty<*>): Int = map.getOrDefault(resource)
+    override fun setValue(thisRef: Any?, property: KProperty<*>, value: Int) = map.set(resource, value)
 }
 
 class DynamicValueDelegate<E>(val function: () -> E): ReadOnlyProperty<Entity?, E> {
@@ -121,6 +129,10 @@ class ActionFactory<T: Any, A: Any>(
 ): ActionDefinition<T, A> {
     override var actionType = GameActionCreator<T, A>(name, parameterType, parameterType, { it }, { it as A })
 }
+class ActionTypeDefinition<GameModel: Any, A: Any>(
+    override val actionType: ActionType<GameModel, A>,
+    override val actionDsl: GameFlowActionScope<GameModel, A>.() -> Unit
+) : ActionDefinition<GameModel, A>
 
 class EventContextFactory<E: Any>(val ctx: Context): EventFactory<E> {
     override fun invoke(value: E, performEvent: (E) -> Unit) {
@@ -147,6 +159,9 @@ open class Entity(protected open val ctx: Context) {
     }
     fun <E> component(function: ContextHolder.() -> E): DelegateFactory<E, ComponentDelegate<E>> {
         return delegate { ComponentDelegate(function.invoke(ContextHolderImpl(it))) }
+    }
+    fun resource(resourceMap: MutableResourceMap, resource: GameResource): ReadWriteProperty<Any?, Int> {
+        return ResourceMapDelegate(resourceMap, resource) // TODO: Add possibility for this to have a view etc.
     }
     fun <T: Any> viewOnly(viewFunction: (ViewScope<T>).() -> Any) = dynamicValue {}.view { viewFunction.invoke(this as ViewScope<T>) }
     fun <E> value(function: ContextHolder.() -> E): DelegateFactory<E, ComponentDelegate<E>> = component(function)

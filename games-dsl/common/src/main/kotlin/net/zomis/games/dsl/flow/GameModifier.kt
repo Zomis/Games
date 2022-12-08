@@ -6,6 +6,7 @@ import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.events.EventFactory
 import net.zomis.games.dsl.events.EventPriority
 import net.zomis.games.dsl.events.GameEventEffectScope
+import net.zomis.games.dsl.flow.actions.SmartActionScope
 import kotlin.properties.PropertyDelegateProvider
 import kotlin.reflect.KClass
 
@@ -23,7 +24,8 @@ interface GameModifierScope<GameModel: Any, Owner>: UsageScope {
     fun <T> state(initial: () -> T): PropertyDelegateProvider<GameModifierScope<GameModel, Owner>?, GameModifierImpl<GameModel, Owner>.Delegate<T>>
 
     fun onActivate(doSomething: GameModifierApplyScope<GameModel, Owner>.() -> Unit) // happens once when rule is added
-    fun stateCheck(doSomething: GameModifierApplyScope<GameModel, Owner>.() -> Unit) // happens every time rule is checked, maybe return some value for if anything was applied?
+    fun stateCheckBeforeAction(doSomething: GameModifierApplyScope<GameModel, Owner>.() -> Unit)
+    fun stateCheckAfterAction(doSomething: GameModifierApplyScope<GameModel, Owner>.() -> Unit)
     fun activeWhile(condition: GameModifierScope<GameModel, Owner>.() -> Boolean)
     fun removeWhen(condition: GameModifierScope<GameModel, Owner>.() -> Boolean)
     // TODO: Add/Change/Remove view or part of view (such as seeing other player's cards)

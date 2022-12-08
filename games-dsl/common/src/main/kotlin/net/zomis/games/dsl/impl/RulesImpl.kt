@@ -147,6 +147,8 @@ class ActionRuleContext<T : Any, A : Any>(
         gameContext.replayable.stateKeeper.log(context)
         return context
     }
+
+    override fun toString(): String = "(ActionRuleContext:$action)"
 }
 
 @Deprecated("Replace with GameFlow and SmartAction")

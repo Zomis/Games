@@ -7,7 +7,6 @@ import net.zomis.games.dsl.flow.actions.SmartActionBuilder
 import net.zomis.games.dsl.flow.actions.SmartActionLogic
 import net.zomis.games.dsl.flow.actions.SmartActions
 import net.zomis.games.dsl.impl.*
-import net.zomis.games.dsl.rulebased.GameRuleScope
 import kotlin.reflect.KClass
 
 open class GameFlowActionContext<T: Any, A: Any>: GameFlowActionScope<T, A> {

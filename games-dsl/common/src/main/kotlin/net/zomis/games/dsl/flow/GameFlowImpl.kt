@@ -48,6 +48,12 @@ class GameFlowImpl<T: Any>(
         this.actions.add(actionType, handler)
     }
 
+    override fun <A : Any> addActionHandler(actionType: ActionType<T, A>, dsl: SmartActionScope<T, A>.() -> Unit) {
+        val smartActionContext = SmartActionContext(actionType, this)
+        dsl.invoke(smartActionContext)
+        this.actions.add(actionType, smartActionContext)
+    }
+
     override fun <A : Any> addAction(actionType: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>) {
         this.actions.add(actionType, actionDsl)
     }
@@ -82,6 +88,7 @@ class GameFlowImpl<T: Any>(
                 setupContext.model.onStart(GameStartContext(gameConfig, model, replayable, playerCount))
                 game.unfinishedFeedback = FlowStep.GameSetup(game, gameConfig, replayable.stateKeeper.lastMoveState())
                 dsl.invoke(flowContext)
+                runRules(GameFlowRulesState.BEFORE_RETURN)
                 actionDone()
                 sendFeedback(FlowStep.GameEnd)
             } catch (e: CancellationException) {
@@ -173,6 +180,7 @@ class GameFlowImpl<T: Any>(
 
     suspend fun nextAction(): Actionable<T, Any>? {
         this.unfinishedFeedback = copyUnfinishedFeedbackWithUpdatedState()
+        runRules(GameFlowRulesState.BEFORE_RETURN)
         if (isGameOver()) {
             this.actionDone()
             return null
@@ -220,7 +228,6 @@ class GameFlowImpl<T: Any>(
     }
 
     private suspend fun actionDone() {
-        runRules(GameFlowRulesState.BEFORE_RETURN)
         sendFeedbacks()
         unfinishedFeedback?.also { sendFeedback(it as FlowStep) }
         unfinishedFeedback = null
@@ -242,7 +249,8 @@ class GameFlowImpl<T: Any>(
     private fun runRules(state: GameFlowRulesState) {
         setupContext.flowRulesDsl?.invoke(GameFlowRulesContext(this, state, this))
         when (state) {
-            GameFlowRulesState.AFTER_ACTIONS -> this.rules.toList().forEach { it.executeStateCheck() }
+            GameFlowRulesState.AFTER_ACTIONS -> this.rules.toList().forEach { it.executeAfterAction() }
+            GameFlowRulesState.BEFORE_RETURN -> this.rules.toList().forEach { it.executeBeforeAction() }
         }
     }
 
@@ -323,10 +331,7 @@ class GameFlowContext<T: Any>(
     }
 
     override fun <A : Any> actionHandler(action: ActionType<T, A>, dsl: SmartActionScope<T, A>.() -> Unit) {
-        val smartActionContext = SmartActionContext(action, flow)
-//            flow.actions.smartAction(action.name).asSequence() as Sequence<SmartActionBuilder<T, A>>
-        dsl.invoke(smartActionContext)
-        flow.actions.add(action, smartActionContext)
+        flow.addActionHandler(action, dsl)
     }
 
     override fun <A : Any> actionHandler(action: ActionType<T, A>, handler: SmartActionBuilder<T, A>) {

@@ -21,7 +21,8 @@ class GameModifierImpl<GameModel: Any, Owner>(
     override val game: GameModel get() = meta.game
     private val states = mutableMapOf<String, Any>()
     private val activationEffects = mutableListOf<GameModifierApplyScope<GameModel, Owner>.() -> Unit>()
-    private val stateChecks = mutableListOf<GameModifierApplyScope<GameModel, Owner>.() -> Unit>()
+    private val stateChecksAfterAction = mutableListOf<GameModifierApplyScope<GameModel, Owner>.() -> Unit>()
+    private val stateChecksBeforeAction = mutableListOf<GameModifierApplyScope<GameModel, Owner>.() -> Unit>()
     private val actionModifiers = mutableListOf<ActionModifier<GameModel>>()
     private val activeConditions = mutableListOf<GameModifierScope<GameModel, Owner>.() -> Boolean>()
     private var removeCondition: (GameModifierScope<GameModel, Owner>.() -> Boolean)? = null
@@ -85,8 +86,12 @@ class GameModifierImpl<GameModel: Any, Owner>(
         this.globalPreconditions.add(precondition)
     }
 
-    override fun stateCheck(doSomething: GameModifierApplyScope<GameModel, Owner>.() -> Unit) {
-        this.stateChecks.add(doSomething)
+    override fun stateCheckAfterAction(doSomething: GameModifierApplyScope<GameModel, Owner>.() -> Unit) {
+        this.stateChecksAfterAction.add(doSomething)
+    }
+
+    override fun stateCheckBeforeAction(doSomething: GameModifierApplyScope<GameModel, Owner>.() -> Unit) {
+        this.stateChecksBeforeAction.add(doSomething)
     }
 
     override fun onActivate(doSomething: GameModifierApplyScope<GameModel, Owner>.() -> Unit) {
@@ -103,13 +108,16 @@ class GameModifierImpl<GameModel: Any, Owner>(
     private fun createApplyContext(): GameModifierApplyContext<GameModel, Owner>
         = GameModifierApplyContext(ruleHolder, meta)
 
-    fun executeStateCheck() {
+    fun executeBeforeAction() = this.executeStateCheck(stateChecksBeforeAction)
+    fun executeAfterAction() = this.executeStateCheck(stateChecksAfterAction)
+
+    private fun executeStateCheck(checks: List<GameModifierApplyScope<GameModel, Owner>.() -> Unit>) {
         if (this.removeCondition?.invoke(this) == true) {
             meta.removeRule(this)
         }
 
         val context = createApplyContext()
-        for (effect in this.stateChecks) {
+        for (effect in checks) {
             effect.invoke(context)
         }
 
