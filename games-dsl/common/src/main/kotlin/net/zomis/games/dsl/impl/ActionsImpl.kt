@@ -89,7 +89,9 @@ class ActionTypeImplEntry<T : Any, P : Any>(
         return if (parameter == null) {
             // If there is serialization but no deserialization is specified,
             // then check all available actions and match against those that serializes to the same value
-            val actions = availableActions(actionOptionsContext.playerIndex, null).filter { action2 ->
+            val allActions = availableActions(actionOptionsContext.playerIndex, null)
+            val actions = allActions.filterIndexed { index, action2 ->
+                if (index > 10000) throw RuntimeException("Many loops required to create action for '$actionType' from serialized parameter. For performance reasons, add a deserializer function.")
                 actionType.serialize(action2.parameter) == serialized
             }.distinct()
             if (actions.isEmpty()) {
