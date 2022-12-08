@@ -36,6 +36,8 @@ interface ResourceMap: Replayable {
     fun any(): Boolean = entries().any { it.value != 0 }
     fun toView(): Map<String, Int> = entries().associate { it.resource.name to it.value }
     fun isEmpty(): Boolean = entries().all { it.value == it.resource.defaultValue() }
+    fun toMutableResourceMap(eventFactory: EventFactory<ResourceChange> = EmptyEventFactory()): MutableResourceMap
+        = ResourceMapImpl(entries().map { it.resource to it.value }, eventFactory)
 }
 
 interface MutableResourceMap: ResourceMap {
@@ -66,6 +68,11 @@ class ResourceMapImpl(
     private val resources: MutableMap<GameResource, ResourceEntryImpl> = mutableMapOf(),
     private val eventFactory: EventFactory<ResourceChange> = EmptyEventFactory(),
 ): MutableResourceMap, ResourceMap, Viewable {
+
+    constructor(resources: Iterable<Pair<GameResource, Int>>, eventFactory: EventFactory<ResourceChange>) : this(
+        resources.associate { it.first to ResourceEntryImpl(it.first, it.second) }.toMutableMap(),
+        eventFactory
+    )
 
     override fun get(resource: GameResource): Int? = resources[resource]?.value
     override fun getOrDefault(resource: GameResource): Int = resources[resource]?.value ?: resource.defaultValue()
