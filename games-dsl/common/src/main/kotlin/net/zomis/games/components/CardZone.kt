@@ -116,7 +116,7 @@ class CardZone<T>(val cards: MutableList<T> = mutableListOf()): CardZoneI<T> {
 
     fun random(replayable: ReplayStateI, count: Int, stateKey: String, matcher: (T) -> String): Sequence<Card<T>> {
         if (count == 0) return emptySequence()
-        require(count <= this.size) { "Requesting more cards $count than what exists in zone $size" }
+        require(count <= this.size) { "Requesting more cards ($count) than exists in zone $this ($size)" }
         return replayable.randomFromList(stateKey, this.cards, count, matcher).asSequence().map { card(it) }
     }
     fun randomWithRefill(refill: CardZone<T>, replayable: ReplayStateI, count: Int, stateKey: String, matcher: (T) -> String): Sequence<Card<T>> {
@@ -125,10 +125,10 @@ class CardZone<T>(val cards: MutableList<T> = mutableListOf()): CardZoneI<T> {
             return random(replayable, count, stateKey, matcher)
         }
         val oldSize = this.size
-        val seq = cards.toList().map { card(it) }.asSequence()
-        refill.asSequence().forEach { it.moveTo(this) }
         val refilled = refill.random(replayable, count - oldSize, stateKey, matcher)
-        return seq + refilled
+        val allCards = cards.toList() + refilled.map { it.card }.toList()
+        refilled.forEach { it.moveTo(this) }
+        return allCards.asSequence().map { card(it) }
     }
 
     override fun isNotEmpty(): Boolean = !isEmpty()
