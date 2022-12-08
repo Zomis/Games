@@ -17,7 +17,7 @@ object SellAction {
     enum class Guarantee(val level: Int) {
         WRONG_SIGN(0),
         BLOCKED(1),
-        SAME_COLOR(2),
+        SAME_SIGN(2),
         EXACT_MATCH(3);
 
         fun result(request: AlchemistsPotion, result: AlchemistsPotion): SellResult {

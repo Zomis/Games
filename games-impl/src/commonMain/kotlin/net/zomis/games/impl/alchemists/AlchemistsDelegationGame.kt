@@ -4,14 +4,19 @@ import net.zomis.games.api.GamesApi
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.common.Players
 import net.zomis.games.common.next
+import net.zomis.games.components.resources.GameResource
+import net.zomis.games.components.resources.ResourceChange
+import net.zomis.games.components.resources.ResourceMap
 import net.zomis.games.context.Context
 import net.zomis.games.context.ContextHolder
 import net.zomis.games.context.Entity
+import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.GameConfig
 import net.zomis.games.dsl.GameSerializable
 import net.zomis.games.dsl.flow.ActionDefinition
 import net.zomis.games.dsl.flow.GameFlowScope
 import net.zomis.games.dsl.flow.GameFlowStepScope
+import net.zomis.games.dsl.flow.actions.SmartActionBuilder
 import kotlin.random.Random
 
 object AlchemistsDelegationGame {
@@ -20,10 +25,22 @@ object AlchemistsDelegationGame {
         val action: ActionDefinition<Model, *>
         fun actionAvailable(playerIndex: Int, chosen: List<Model.ActionChoice>): Boolean? = true
         fun extraActions(): List<ActionDefinition<Model, *>> = emptyList()
+        fun extraHandlers(): List<Pair<ActionType<Model, Any>, SmartActionBuilder<Model, Any>>> = emptyList()
     }
+    enum class Resources : GameResource {
+        Gold,
+        Favors,
+        Ingredients,
+        Reputation,
+        VictoryPoints,
+    }
+
+    class TurnOrderChoice(val player: Model.Player, val turnOrder: Model.TurnOrder, var resources: ResourceMap)
     class Model(override val ctx: Context, master: GameConfig<Boolean>) : Entity(ctx), ContextHolder {
+        var currentActionSpace: HasAction? = null
         val master by value { false }.setup { config(master) }
         val queue by component { mutableListOf<ActionDefinition<Model, Any>>() }.publicView { it.map { s -> s.actionType.name } }
+        val chosenTurnOrder = event<TurnOrderChoice>()
         val newRound = event<Int>()
         val gameInit = event<Unit>()
         val spaceDone = event<HasAction>()
@@ -39,6 +56,8 @@ object AlchemistsDelegationGame {
             val gold: Int, val favors: Int, val ingredients: Int,
             val choosable: Boolean = true, var chosenBy: Int? = null
         ): GameSerializable {
+            val resources = ResourceMap.of(Resources.Gold to gold, Resources.Favors to favors, Resources.Ingredients to ingredients)
+
             val key = toStateString()
             fun toStateString(): String = "$gold/$favors/$ingredients-$choosable"
             override fun serialize(): Any = this.toStateString()
@@ -54,7 +73,7 @@ object AlchemistsDelegationGame {
                     add(TurnOrder(0, 1, 1))
                     add(TurnOrder(0, 2, 0))
                     if (playerCount == 4) add(TurnOrder(0, 0, 3))
-                    else add(TurnOrder(0, 1, 2, choosable = playerCount >= 3))
+                    add(TurnOrder(0, 1, 2, choosable = playerCount >= 3))
                     add(TurnOrder(0, 1, 1, false))
                 }
             }.on(newRound) { value.filter { it.choosable }.forEach { it.chosenBy = null } }
@@ -70,15 +89,17 @@ object AlchemistsDelegationGame {
                 options { turnPicker.options.filter { it.choosable && it.chosenBy == null } }
                 requires { players[playerIndex].gold >= -action.parameter.gold }
                 perform {
-                    action.parameter.chosenBy = playerIndex
-                    players[playerIndex].gold += action.parameter.gold
-                    if (action.parameter.ingredients > 0) {
-                        game.ingredients.deck.randomWithRefill(game.ingredients.discardPile, replayable, action.parameter.ingredients, "ingredients") { it.serialize() }.forEach {
+                    val player = players[playerIndex]
+                    game.chosenTurnOrder.invoke(TurnOrderChoice(player, action.parameter, action.parameter.resources)) {
+                        action.parameter.chosenBy = playerIndex
+
+                        players[playerIndex].gold += action.parameter.resources.getOrDefault(Resources.Gold)
+                        val ingredients = action.parameter.resources.getOrDefault(Resources.Ingredients)
+                        val favors = action.parameter.resources.getOrDefault(Resources.Favors)
+                        game.ingredients.deck.randomWithRefill(game.ingredients.discardPile, replayable, ingredients, "ingredients") { it.serialize() }.forEach {
                             it.moveTo(game.players[playerIndex].ingredients)
                         }
-                    }
-                    if (action.parameter.favors > 0) {
-                        game.favors.deck.randomWithRefill(game.favors.discardPile, replayable, action.parameter.favors, "favors") { it.serialize() }
+                        game.favors.deck.randomWithRefill(game.favors.discardPile, replayable, favors, "favors") { it.serialize() }
                             .forEach { game.favors.giveFavor(game, it, game.players[playerIndex]) }
                     }
                     log { "$player chose turn order ${action.toStateString()}" }
@@ -162,8 +183,10 @@ object AlchemistsDelegationGame {
         }
 
         inner class Player(val model: Model, ctx: Context, val playerIndex: Int): Entity(ctx) {
-            var gold by component { 2 }
-            var reputation by component { 10 }
+            val resourceChange = event<ResourceChange>()
+            val resources by component { ResourceMap.of(Resources.Gold to 2, Resources.Reputation to 10).toMutableResourceMap(resourceChange) }.publicView { it.toView() }
+            var gold by resource(resources, Resources.Gold)
+            var reputation by resource(resources, Resources.Reputation)
             var extraCubes by component { 0 }
             var artifacts by cards<ArtifactActions.Artifact>().publicView { it.cards }
             val favors by cards<Favors.FavorType>().privateView(playerIndex) { it.cards }.publicView { it.size }
@@ -334,6 +357,7 @@ object AlchemistsDelegationGame {
                 }.loopUntil { game.turnPicker.options.all { it.chosenBy == null } }
 
                 for (space in game.actionSpaces) {
+                    game.currentActionSpace = space
                     step("resolve round $round ${space.actionSpace.name}") {
                         if (game.queue.isNotEmpty()) {
                             checkQueue(this)
@@ -341,6 +365,9 @@ object AlchemistsDelegationGame {
                             enableAction(space.action)
                             enableAction(game.cancelAction(space))
                             space.extraActions().forEach { enableAction(it) }
+                            space.extraHandlers().forEach {
+                                actionHandler(it.first, it.second)
+                            }
                         }
                     }.loopUntil {
                         action?.parameter !is Favors.FavorType
