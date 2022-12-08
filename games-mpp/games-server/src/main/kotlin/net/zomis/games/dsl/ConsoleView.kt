@@ -10,7 +10,30 @@ class ConsoleView<T: Any> {
         println()
         val currentPlayer = game.view(0)["currentPlayer"] as Int?
         val viewer = playerIndex ?: currentPlayer ?: 0
-        print(0, "Game:", game.view(viewer), viewer)
+        val view = game.view(viewer)
+        print(0, "Game:", view, viewer)
+    }
+
+    private fun watch(viewer: Int, view: Any?, path: List<Any>, inPath: List<Any>) {
+        if (path.isEmpty()) {
+            println(inPath)
+            print(indentation = 2, inPath.lastOrNull().toString(), view, viewer)
+            return
+        }
+        val next = path.first()
+        val nextInPath = inPath + next
+
+        when (view) {
+            is List<*> -> {
+                watch(viewer, view[next as Int]!!, path.drop(1), nextInPath)
+            }
+            is Map<*, *> -> {
+                val map = view as Map<Any, Any>
+                watch(viewer, map.getValue(next), path.drop(1), nextInPath)
+            }
+            is Viewable -> watch(viewer, view.toView(viewer)!!, path, inPath)
+            else -> throw NoSuchElementException("Missing view for $inPath (+ $path) for viewer $viewer current value is $view")
+        }
     }
 
     fun print(indentation: Int, name: String, data: Any?, viewer: Int) {
