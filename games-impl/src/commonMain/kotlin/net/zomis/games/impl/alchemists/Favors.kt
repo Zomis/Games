@@ -41,6 +41,7 @@ object Favors {
 
         fun allowFavors(vararg favorType: FavorType): ActionDefinition<AlchemistsDelegationGame.Model, FavorType> {
             return action("favor", FavorType::class) {
+                precondition { game.currentActionSpace?.actionSpace?.nextPlayerIndex() == playerIndex }
                 precondition { game.players[playerIndex].favors.cards.any { favorType.contains(it) } }
                 options { game.players[playerIndex].favors.cards.distinct() }
                 // TODO: proper options, requires...
