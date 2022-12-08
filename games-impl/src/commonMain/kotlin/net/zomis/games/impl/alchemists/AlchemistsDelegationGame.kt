@@ -225,10 +225,10 @@ object AlchemistsDelegationGame {
         data class ActionPlacement(val chosen: List<ActionChoice>): GameSerializable {
             override fun serialize(): Any = chosen.map { "${it.associate}/${it.spot.actionSpace.name}" }
         }
-        fun nextPlayer(): Int? = turnPicker.options.last { it.chosenBy != null }.chosenBy
+        fun nextActionPlacer(): Int? = turnPicker.options.lastOrNull { it.chosenBy != null }?.chosenBy
         val actionPlacement = actionSerializable<Model, ActionPlacement>("action", ActionPlacement::class) {
             precondition {
-                playerIndex == nextPlayer()
+                playerIndex == nextActionPlacer()
             }
             requires { action.parameter.chosen.sumOf { it.count } <= players[playerIndex].actionCubesAvailable }
             requires { action.parameter.chosen.groupBy { it.spot }.values.all { it.count { c -> c.associate } <= 1 } }

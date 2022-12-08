@@ -8,9 +8,12 @@ import net.zomis.games.context.Entity
 object IngredientActions {
 
     class Ingredients(model: AlchemistsDelegationGame.Model, ctx: Context) : Entity(ctx), AlchemistsDelegationGame.HasAction {
-        val discardPile = CardZone<Ingredient>()
+        val discardPile = CardZone<Ingredient>().also { it.name = "Ingredients-discard" }
         val deck by cards<Ingredient>()
-            .setup { it.cards.addAll(Ingredient.values().toList().times(5)); it }
+            .setup {
+                it.name = "Ingredients-deck"
+                it.cards.addAll(Ingredient.values().toList().times(5)); it
+            }
             .publicView { it.size }
         val slots by cards<Ingredient>()
             .on(model.spaceDone) {
@@ -19,7 +22,9 @@ object IngredientActions {
             }
             .on(model.newRound) {
                 println("Refilling ingredients for round $event")
-                deck.randomWithRefill(discardPile, replayable, 5, "ingredients-slots") { it.toString() }.forEach { it.moveTo(value) }
+                deck.randomWithRefill(discardPile, replayable, 5, "ingredients-slots") { it.toString() }.forEach {
+                    it.moveTo(value)
+                }
             }.publicView { it.cards.map { i -> i.serialize() } }
         override val actionSpace by component { model.ActionSpace(ctx, "Ingredients") }
             .setup { it.initialize(if (playerCount == 4) listOf(1, 1) else listOf(1, 1, 1), playerCount) }

@@ -60,6 +60,7 @@ object Favors {
         }
 
         val assistant = action<AlchemistsDelegationGame.Model, Unit>("assistant", Unit::class) {
+            precondition { game.nextActionPlacer() == playerIndex }
             precondition { game.players[playerIndex].favors.cards.contains(FavorType.ASSISTANT) }
             perform {
                 game.players[playerIndex].favors.card(FavorType.ASSISTANT).moveTo(discardPile)

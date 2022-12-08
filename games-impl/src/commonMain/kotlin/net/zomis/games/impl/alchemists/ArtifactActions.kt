@@ -163,7 +163,7 @@ object ArtifactActions {
     val printingPress =
         Artifact("Printing Press", "You do not pay 1 gold to the bank when you publish or endorse a theory.", 1, 4, 2) {
             stateCheckBeforeAction {
-                if (game.nextPlayer() != ruleHolder.owner.playerIndex) return@stateCheckBeforeAction
+                if (game.nextActionPlacer() != ruleHolder.owner.playerIndex) return@stateCheckBeforeAction
                 TODO("change cost of theory")
             }
         }
