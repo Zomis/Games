@@ -23,7 +23,7 @@ fun App() {
     }
 
     Button(onClick = {
-        text = "Hello, ${game?.model?.board?.asSequence()?.groupingBy { it.card.discounts.moneys.toList().first().first }?.eachCount()}"
+        text = "Hello, ${game?.model?.board?.asSequence()?.groupingBy { it.card.discounts.entries().toList().first().resource }?.eachCount()}"
     }) {
         Text(text)
     }
