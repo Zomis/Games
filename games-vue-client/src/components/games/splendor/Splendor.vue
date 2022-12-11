@@ -157,7 +157,7 @@ export default {
 .bank-GREEN,
 .bank-BLACK,
 .bank-WHITE,
-.bank-wildcards {
+.bank-WILDCARD {
     padding: 9px 14px;
     border-style: solid;
     border-width: thin;
@@ -181,7 +181,7 @@ export default {
 .bank-WHITE {
     background-color: var(--splendor-white) !important;
 }
-.bank-wildcards {
+.bank-WILDCARD {
     background-color: var(--splendor-yellow) !important;
 }
 .bank-RED,
@@ -191,7 +191,7 @@ export default {
 }
 .bank-GREEN,
 .bank-WHITE,
-.bank-wildcards {
+.bank-WILDCARD {
     color: var(--splendor-black) !important;
 }
 

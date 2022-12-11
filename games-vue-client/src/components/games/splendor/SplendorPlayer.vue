@@ -28,7 +28,7 @@
               :key="moneyType"
             >
               <div
-                v-if="moneyType !== 'wildcards'"
+                v-if="moneyType !== 'WILDCARD'"
                 class="ma-1"
               >
                 <span
@@ -136,13 +136,13 @@ export default {
 .color-WHITE {
     background-color: var(--splendor-white) !important;
 }
-.color-wildcards {
+.color-WILDCARD {
     background-color: var(--splendor-yellow) !important;
 }
 .color-RED, .color-BLUE, .color-BLACK {
     color: var(--splendor-white) !important;
 }
-.color-GREEN, .color-WHITE, .color-wildcards {
+.color-GREEN, .color-WHITE, .color-WILDCARD {
     color: var(--splendor-black) !important;
 }
 </style>
