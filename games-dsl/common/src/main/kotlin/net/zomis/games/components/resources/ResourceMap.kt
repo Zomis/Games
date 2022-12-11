@@ -105,7 +105,7 @@ class ResourceMapImpl(
 
     override fun has(resource: GameResource, value: Int): Boolean = this.getOrDefault(resource) >= value
 
-    override fun has(resources: ResourceMap): Boolean = this.resources.all { it.value.value >= resources.getOrDefault(it.key) }
+    override fun has(resources: ResourceMap): Boolean = resources.entries().all { this.has(it.resource, it.value) }
 
     override fun resources(): Set<GameResource> = this.resources.keys.toSet()
     override fun entries(): Set<ResourceEntry> = this.resources.values.toSet()
