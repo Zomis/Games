@@ -1,18 +1,16 @@
 package net.zomis.games.impl
 
 import net.zomis.games.cards.CardZone
-import net.zomis.games.common.mergeWith
 import net.zomis.games.common.next
 import net.zomis.games.components.resources.GameResource
+import net.zomis.games.components.resources.ResourceMap
 import net.zomis.games.dsl.*
-import kotlin.math.absoluteValue
 
 object SpiceRoadDsl {
-    data class PlayParameter(val card: SpiceRoadGameModel.ActionCard, val remove: SpiceRoadGameModel.Caravan, val add: SpiceRoadGameModel.Caravan)
-    data class AcquireParameter(val card: SpiceRoadGameModel.ActionCard, val payArray: List<SpiceRoadGameModel.Spice>)
-
-    private fun List<SpiceRoadGameModel.Spice>.toCaravan(): SpiceRoadGameModel.Caravan
-        = this.fold(SpiceRoadGameModel.Caravan()) { acc, spice -> acc + spice.toCaravan() }
+    data class PlayParameter(val card: SpiceRoadGameModel.ActionCard, val remove: ResourceMap, val add: ResourceMap)
+    data class AcquireParameter(val card: SpiceRoadGameModel.ActionCard, val payArray: List<GameResource>) {
+        fun payArrayAsResourceMap(): ResourceMap = ResourceMap.fromList(payArray)
+    }
 
     val factory = GameCreator(SpiceRoadGameModel::class)
     val play = factory.action("play", PlayParameter::class).serializer {
@@ -21,7 +19,7 @@ object SpiceRoadDsl {
     val claim = factory.action("claim", SpiceRoadGameModel.PointCard::class).serializer { it.toStateString() }
     val rest = factory.action("rest", Unit::class)
     val acquire = factory.action("acquire", AcquireParameter::class).serializer {
-        "Acquire Card " + it.card.toStateString() + " PayArray " + it.payArray.joinToString("") { x -> x.char.toString() }
+        "Acquire Card " + it.card.toStateString() + " PayArray " + it.payArray.joinToString("") { x -> (x as SpiceRoadGameModel.Spice).char.toString() }
     }
     val discard = factory.action("discard", SpiceRoadGameModel.Spice::class).serializer {"Discard " + it.char}
     val game = factory.game("Spice Road") {
@@ -85,25 +83,32 @@ object SpiceRoadDsl {
                 requires {
                     game.currentPlayer.caravan.has(action.parameter.remove)
                 }
-                fun removeUpgrades(chosen: Pair<SpiceRoadGameModel.Caravan, Int>): SpiceRoadGameModel.Caravan {
-                    return chosen.first.filter { it.value < 0 }.map { it.first to it.second.times(-1) }
+                data class UpgradeChanges(val upgradesRemaining: Int, val changes: ResourceMap = ResourceMap.empty()) {
+                    fun removes(): ResourceMap = changes.filter { it.value < 0 }.map { it.resource to it.value * -1 }
+                    fun adds(): ResourceMap = changes.filter { it.value > 0 }
+                    fun upgradableSpices(startingResources: ResourceMap): Iterable<GameResource> {
+                        return (startingResources - this.removes()).filter { it.value > 0 }.entries().map { it.resource }.toSet() - SpiceRoadGameModel.Spice.BROWN
+                    }
+                    fun upgradableTimes(spiceToUpgrade: GameResource): IntRange {
+                        return  1..(minOf(SpiceRoadGameModel.Spice.BROWN.ordinal - (spiceToUpgrade as SpiceRoadGameModel.Spice).ordinal, this.upgradesRemaining))
+                    }
                 }
 
                 choose {
                     optionsWithIds({ game.currentPlayer.hand.cards.map { it.toStateString() to it } }) { card ->
                         when {
-                            card.gain != null -> parameter(PlayParameter(card, SpiceRoadGameModel.Caravan(), card.gain))
+                            card.gain != null -> parameter(PlayParameter(card, ResourceMap.empty(), card.gain))
                             card.upgrade != null -> {
                                 val upgrades = card.upgrade
-                                recursive(SpiceRoadGameModel.Caravan() to upgrades) {
+                                recursive(UpgradeChanges(upgrades)) {
                                     intermediateParameter { true }
-                                    parameter { PlayParameter(card, removeUpgrades(chosen), chosen.first.filter { it.value > 0 }) }
-                                    until { chosen.second == 0 }
-                                    options({ (game.currentPlayer.caravan - removeUpgrades(chosen)).remainingKeys() - SpiceRoadGameModel.Spice.BROWN }) { spiceToUpgrade ->
-                                        options({ 1..(minOf(SpiceRoadGameModel.Spice.BROWN.ordinal - spiceToUpgrade.ordinal, chosen.second)) }) { times ->
-                                            val caravan = spiceToUpgrade.toCaravan(-1) + spiceToUpgrade.upgrade(times)
-                                            recursion(caravan to times) { previous, e ->
-                                                (previous.first + e.first) to (previous.second - e.second)
+                                    parameter { PlayParameter(card, chosen.removes(), chosen.adds()) }
+                                    until { chosen.upgradesRemaining == 0 }
+                                    options({ chosen.upgradableSpices(game.currentPlayer.caravan) }) { spiceToUpgrade ->
+                                        options({ chosen.upgradableTimes(spiceToUpgrade) }) { times ->
+                                            val caravan = spiceToUpgrade.toResourceMap(-1) + (spiceToUpgrade as SpiceRoadGameModel.Spice).upgrade(times)
+                                            recursion(UpgradeChanges(times, caravan)) { previous, e ->
+                                                UpgradeChanges(previous.upgradesRemaining - e.upgradesRemaining, previous.changes + e.changes)
                                             }
                                         }
                                     }
@@ -118,10 +123,10 @@ object SpiceRoadDsl {
             }
             action(acquire) {
                 requires {
-                    game.currentPlayer.caravan.has(action.parameter.payArray.fold(SpiceRoadGameModel.Caravan(), { acc, x -> acc + x.toCaravan() }))
+                    game.currentPlayer.caravan.has(action.parameter.payArrayAsResourceMap())
                 }
                 effect {
-                    game.currentPlayer.caravan -= action.parameter.payArray.fold(SpiceRoadGameModel.Caravan(), { acc, x -> acc + x.toCaravan() })
+                    game.currentPlayer.caravan -= action.parameter.payArrayAsResourceMap()
                     game.visibleActionCards.cards.mapIndexed { index, card -> card.addSpice(action.parameter.payArray.getOrNull(index)) }
 
                     game.currentPlayer.caravan += action.parameter.card.takeAllSpice()
@@ -133,12 +138,12 @@ object SpiceRoadDsl {
                 }
                 choose {
                     optionsWithIds({
-                        game.visibleActionCards.cards.filterIndexed { index, _ -> index <= game.currentPlayer.caravan.count }
+                        game.visibleActionCards.cards.filterIndexed { index, _ -> index <= game.currentPlayer.caravan.count() }
                                 .map { it.toStateString() to it }
                     }) { card ->
-                        recursive(emptyList<SpiceRoadGameModel.Spice>()) {
-                            until { chosen.size == game.visibleActionCards.card(card).index }
-                            options({ (game.currentPlayer.caravan - chosen.toCaravan()).spice.filter { it.value > 0 }.keys }) {
+                        recursive(emptyList<GameResource>()) {
+                            until { chosen.count() == game.visibleActionCards.card(card).index }
+                            options({ (game.currentPlayer.caravan - ResourceMap.fromList(chosen)).entries().filter { it.value > 0 }.map { it.resource } }) {
                                 recursion(it) { list, e -> list + e }
                             }
                             parameter { AcquireParameter(card, chosen) }
@@ -147,11 +152,11 @@ object SpiceRoadDsl {
                 }
             }
             action(discard) {
-                forceWhen { game.currentPlayer.caravan.count > 10 }
-                options { game.currentPlayer.caravan.spice.keys.filter { game.currentPlayer.caravan.has(it.toCaravan()) } }
-                requires { game.currentPlayer.caravan.has(action.parameter.toCaravan()) }
+                forceWhen { game.currentPlayer.caravan.count() > 10 }
+                options { game.currentPlayer.caravan.resources().filter { game.currentPlayer.caravan.has(it, 1) }.filterIsInstance<SpiceRoadGameModel.Spice>() }
+                requires { game.currentPlayer.caravan.has(action.parameter.toResourceMap()) }
                 effect {
-                    game.currentPlayer.caravan -= this.action.parameter.toCaravan()
+                    game.currentPlayer.caravan -= this.action.parameter.toResourceMap()
                 }
             }
             allActions.precondition { game.currentPlayer.index == playerIndex }
@@ -165,7 +170,7 @@ object SpiceRoadDsl {
                 }
             }
             allActions.after {
-                if (game.players[playerIndex].caravan.count <= 10) {
+                if (game.players[playerIndex].caravan.count() <= 10) {
                     game.currentPlayerIndex = game.currentPlayerIndex.next(game.playerCount)
                     if (game.currentPlayerIndex == 0) game.round++
                 }
@@ -185,8 +190,8 @@ class SpiceRoadGameModel(val playerCount: Int) {
     var currentPlayerIndex = 0
     val currentPlayer: Player get() = players[currentPlayerIndex]
     val players = (0 until playerCount).map { Player(it) }
-    val pointsDeck = CardZone<PointCard>(pointsCards.split("\n").map { x -> x.split(",") }.map { (x, y) -> PointCard(x.toInt(), y.toCaravan()!!) }.toMutableList())
-    val actionDeck = CardZone<ActionCard>(actionCards.split("\n").map { x -> x.split(",") }
+    val pointsDeck: CardZone<PointCard> = CardZone(pointsCards.split("\n").map { x -> x.split(",") }.map { (x, y) -> PointCard(x.toInt(), y.toCaravan()!!) }.toMutableList())
+    val actionDeck: CardZone<ActionCard> = CardZone(actionCards.split("\n").map { x -> x.split(",") }
             .map { (x, y, z) ->
                 ActionCard(
                         x.toIntOrNull(),
@@ -200,63 +205,63 @@ class SpiceRoadGameModel(val playerCount: Int) {
     val goldCoins = (0 until playerCount * 2).map { Coin(3) }.toMutableList()
     val silverCoins = (0 until playerCount * 2).map { Coin(1) }.toMutableList()
 
-    class ActionCard(val upgrade: Int?, val gain: Caravan?, val trade: Pair<Caravan, Caravan>?) {
-        var spiceOnMe = Caravan()
+    class ActionCard(val upgrade: Int?, val gain: ResourceMap?, val trade: Pair<ResourceMap, ResourceMap>?) {
+        var spiceOnMe = ResourceMap.empty().toMutableResourceMap()
         fun toStateString(): String = "$upgrade $gain ${trade?.first}->${trade?.second}"
 
         fun toViewable(): Map<String, Any?> = mapOf(
             "upgrade" to upgrade,
-            "gain" to gain?.toViewable(),
+            "gain" to gain?.toView(),
             "trade" to if (trade == null) null else mapOf(
-                "give" to trade.first.toViewable(),
-                "get" to trade.second.toViewable()
+                "give" to trade.first.toView(),
+                "get" to trade.second.toView()
             ),
             "id" to toStateString(),
-            "bonusSpice" to if (spiceOnMe.count == 0) null else spiceOnMe.toViewable()
+            "bonusSpice" to if (spiceOnMe.isEmpty()) null else spiceOnMe.toView()
         )
 
-        fun addSpice(spice: Spice?) {
+        fun addSpice(spice: GameResource?) {
             if (spice != null) {
-                spiceOnMe += spice.toCaravan()
+                spiceOnMe += spice.toResourceMap()
             }
         }
 
-        fun takeAllSpice(): Caravan {
-            val tmp = spiceOnMe
-            spiceOnMe = Caravan()
+        fun takeAllSpice(): ResourceMap {
+            val tmp = spiceOnMe.toMutableResourceMap()
+            spiceOnMe = ResourceMap.empty().toMutableResourceMap()
             return tmp
         }
     }
 
-    class PointCard(val points: Int, val cost: Caravan) {
+    class PointCard(val points: Int, val cost: ResourceMap) {
         fun toStateString(): String = "$points $cost"
 
-        fun toViewable(): Map<String, Any> = mapOf("points" to points, "cost" to cost.toViewable(), "id" to toStateString())
+        fun toViewable(): Map<String, Any> = mapOf("points" to points, "cost" to cost.toView(), "id" to toStateString())
     }
 
     class Coin(val points: Int)
 
     class Player(val index: Int) {
         var caravan = when (index) {
-            0 -> Caravan(Spice.YELLOW to 3)
-            1, 2 -> Caravan(Spice.YELLOW to 4)
-            3, 4 -> Caravan(Spice.YELLOW to 3, Spice.RED to 1)
+            0 -> ResourceMap.of(Spice.YELLOW to 3)
+            1, 2 -> ResourceMap.of(Spice.YELLOW to 4)
+            3, 4 -> ResourceMap.of(Spice.YELLOW to 3, Spice.RED to 1)
             else -> throw Exception("You have created a game with too many players")
-        }
+        }.toMutableResourceMap()
         val discard = CardZone<ActionCard>()
-        val hand = CardZone<ActionCard>(mutableListOf(
+        val hand: CardZone<ActionCard> = CardZone(mutableListOf(
                 ActionCard(2, null, null),
-                ActionCard(null, Spice.YELLOW.toCaravan(2), null))
+                ActionCard(null, Spice.YELLOW.toResourceMap(2), null))
         )
         val pointCards = CardZone<PointCard>()
         val coins = mutableListOf<Coin>()
-        val points: Int get() = pointCards.cards.sumBy { it.points } +
-                coins.sumBy { it.points } +
-                caravan.spice.filter { it.key > Spice.YELLOW }.values.sum()
+        val points: Int get() = pointCards.cards.sumOf { it.points } +
+                coins.sumOf { it.points } +
+                caravan.entries().filter { it.resource as Spice > Spice.YELLOW }.sumOf { it.value }
 
         fun toViewable(): Map<String, Any?> {
             return mapOf(
-                    "caravan" to caravan.toViewable(),
+                    "caravan" to caravan.toView(),
                     "discard" to discard.cards.map { it.toViewable() },
                     "hand" to hand.cards.map { it.toViewable() },
                     "points" to points,
@@ -269,74 +274,13 @@ class SpiceRoadGameModel(val playerCount: Int) {
     enum class Spice(val char: Char): GameResource {
         YELLOW('Y'), RED('R'), GREEN('G'), BROWN('B');
 
-        fun toCaravan(count: Int = 1): Caravan {
-            return Caravan(mutableMapOf(this to count))
-        }
-
-        fun upgrade(steps: Int): Caravan = Spice.values()[this.ordinal + steps].toCaravan()
+        fun upgrade(steps: Int): ResourceMap = Spice.values()[this.ordinal + steps].toResourceMap()
     }
 
-    private fun String.toCaravan(): Caravan? {
+    private fun String.toCaravan(): ResourceMap? {
         return if (this.isEmpty()) null else
-            this.groupBy { it }.mapValues { it.value.size }.map { Spice.values().find { x -> it.key == x.char }!!.toCaravan(it.value) }.fold(Caravan(), Caravan::plus)
+            this.groupBy { it }.mapValues { it.value.size }.map { Spice.values().find { x -> it.key == x.char }!!
+                .toResourceMap(it.value) }.fold(ResourceMap.empty(), ResourceMap::plus)
     }
 
-    data class Caravan(val spice: MutableMap<Spice, Int> = mutableMapOf()) {
-
-        val count: Int = spice.values.sum()
-
-        constructor(vararg spices: Pair<Spice, Int>) : this(mutableMapOf<Spice, Int>(*spices))
-
-        operator fun plus(other: Caravan): Caravan {
-            val result = spice.mergeWith(other.spice) { a, b -> (a ?: 0) + (b ?: 0) }
-            return Caravan(result.toMutableMap())
-        }
-
-        fun has(costs: Caravan): Boolean {
-            val diff = this - costs
-            return diff.spice.all { it.value >= 0 }
-        }
-
-        fun map(mapping: (Pair<Spice, Int>) -> Pair<Spice, Int>): Caravan {
-            var result = Caravan()
-            spice.forEach { pair -> result += Caravan(mutableMapOf(mapping(pair.key to pair.value))) }
-            return Caravan(result.spice.toMutableMap())
-        }
-
-        operator fun times(times: Int): Caravan {
-            var tmp = Caravan()
-            for (i in 1..times) {
-                tmp += this
-            }
-            return tmp
-        }
-
-        fun negativeAmount(): Int = spice.values.filter { it < 0 }.sum().absoluteValue
-
-        operator fun minus(other: Caravan): Caravan {
-            val result = spice.mergeWith(other.spice) { a, b -> (a ?: 0) - (b ?: 0) }
-            return Caravan(result.toMutableMap())
-        }
-
-        operator fun div(other: Caravan): Int {
-            var times = 0
-            var tmp = this
-            while (tmp.has(other)) {
-                times += 1
-                tmp -= other
-            }
-            return times
-        }
-
-        fun toStateString(): String {
-            return spice.entries.sortedBy { it.key.char }.joinToString("") { it.key.char.toString().repeat(it.value) }
-        }
-
-        fun toViewable(): Map<String, Int> {
-            return this.spice.entries.sortedBy { it.key.name }.map { it.key.name to it.value }.toMap()
-        }
-
-        fun remainingKeys() = spice.filter { it.value > 0 }.keys
-        fun filter(predicate: (Map.Entry<Spice, Int>) -> Boolean): Caravan = Caravan(spice.filter(predicate).toMutableMap())
-    }
 }

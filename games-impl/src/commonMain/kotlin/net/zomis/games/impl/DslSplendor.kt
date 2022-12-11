@@ -2,60 +2,61 @@ package net.zomis.games.impl
 
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.cards.CardZone
-import net.zomis.games.common.mergeWith
 import net.zomis.games.common.next
+import net.zomis.games.components.resources.GameResource
+import net.zomis.games.components.resources.MutableResourceMap
+import net.zomis.games.components.resources.ResourceMap
 import net.zomis.games.dsl.GameCreator
 import net.zomis.games.dsl.ReplayStateI
 import net.zomis.games.metrics.MetricBuilder
-import kotlin.math.absoluteValue
 import kotlin.math.max
 
 data class SplendorPlayer(val index: Int) {
-    var chips: Money = Money()
+    var chips: MutableResourceMap = ResourceMap.empty().toMutableResourceMap()
     val owned: CardZone<SplendorCard> = CardZone()
     val reserved: CardZone<SplendorCard> = CardZone()
 
     val nobles = CardZone<SplendorNoble>()
     val points: Int get() = owned.cards.sumOf { it.points } + nobles.cards.sumOf { it.points }
 
-    fun total(): Money = this.discounts() + this.chips
+    fun total(): ResourceMap = this.discounts() + this.chips
 
     fun canBuy(card: SplendorCard): Boolean {
         val have = this.total()
         val diff = have - card.costs
         val wildcardsNeeded = diff.negativeAmount()
-        return have.moneys.getOrElse(MoneyType.WILDCARD) { 0 } >= wildcardsNeeded
+        return have.getOrDefault(MoneyType.WILDCARD) >= wildcardsNeeded
     }
 
-    fun pay(costs: Money): Money {
-        val chipCosts = (costs - this.discounts()).map { it.first to max(it.second, 0) }
+    fun pay(costs: ResourceMap): ResourceMap {
+        val chipCosts = (costs - this.discounts()).map { it.resource to max(it.value, 0) }
         val remaining = (this.chips - chipCosts)
         val wildcardsNeeded = remaining.negativeAmount()
-        val actualCosts = this.chips - remaining.map { it.first to max(it.second, 0) } + MoneyType.WILDCARD.toMoney(wildcardsNeeded)
+        val actualCosts = this.chips - remaining.map { it.resource to max(it.value, 0) } + MoneyType.WILDCARD.toMoney(wildcardsNeeded)
 
-        val tokensExpected = chipCosts.count
-        val oldMoney = this.chips
+        val tokensExpected = chipCosts.count()
+        val oldMoney = this.chips.toMutableResourceMap()
 
         this.chips -= actualCosts
         if (actualCosts.negativeAmount() > 0) {
             throw IllegalStateException("Actual costs has negative: $oldMoney --> ${this.chips}. Cost was $chipCosts. Actual $actualCosts")
         }
-        if (oldMoney.count - this.chips.count != tokensExpected) {
+        if (oldMoney.count() - this.chips.count() != tokensExpected) {
             throw IllegalStateException("Wrong amount of tokens were taken: $oldMoney --> ${this.chips}. Cost was $chipCosts")
         }
         return actualCosts
     }
 
-    fun discounts(): Money {
-        return this.owned.map { it.discounts }.fold(Money()) { acc, money -> acc + money }
-    }
+    fun discounts(): ResourceMap = this.owned.map { it.discounts }.fold(ResourceMap.empty(), ResourceMap::plus)
 
 }
 
-data class SplendorCard(val level: Int, val discounts: Money, val costs: Money, val points: Int) {
+private fun ResourceMap.negativeAmount(): Int = this.filter { it.value < 0 }.unaryMinus().count()
+
+data class SplendorCard(val level: Int, val discounts: ResourceMap, val costs: ResourceMap, val points: Int) {
     // Possible to support multiple discounts on the same card. Because why not!
-    constructor(level: Int, discount: MoneyType, costs: Money, points: Int):
-            this(level, Money(discount to 1), costs, points)
+    constructor(level: Int, discount: MoneyType, costs: ResourceMap, points: Int):
+            this(level, ResourceMap.of(discount to 1), costs, points)
 
     val id: String get() = toStateString()
 
@@ -64,7 +65,7 @@ data class SplendorCard(val level: Int, val discounts: Money, val costs: Money, 
     }
 }
 
-data class SplendorNoble(val points: Int, val requirements: Money) {
+data class SplendorNoble(val points: Int, val requirements: ResourceMap) {
     fun requirementsFulfilled(player: SplendorPlayer): Boolean {
         return player.discounts().has(requirements)
     }
@@ -74,58 +75,19 @@ data class SplendorNoble(val points: Int, val requirements: Money) {
     }
 }
 
-enum class MoneyType(val char: Char) {
+enum class MoneyType(val char: Char): GameResource {
     WHITE('W'), BLUE('U'), BLACK('B'), RED('R'), GREEN('G'),
     WILDCARD('*');
 
-    fun toMoney(count: Int): Money {
-        return Money(mutableMapOf(this to count))
-    }
+    fun toMoney(count: Int) = this.toResourceMap(count)
 
     companion object {
         fun withoutWildcard(): List<MoneyType> = MoneyType.values().toList().minus(WILDCARD)
     }
 }
-data class Money(val moneys: MutableMap<MoneyType, Int> = mutableMapOf()) {
-    val count: Int = moneys.values.sum()
-
-    constructor(vararg money: Pair<MoneyType, Int>) : this(mutableMapOf<MoneyType, Int>(*money))
-
-    operator fun plus(other: Money): Money {
-        val result = moneys.mergeWith(other.moneys) {a, b -> (a ?: 0) + (b ?: 0)}
-        return Money(result.toMutableMap())
-    }
-
-
-    fun map(mapping: (Pair<MoneyType, Int>) -> Pair<MoneyType, Int>): Money {
-        var result = Money()
-        moneys.forEach { pair -> result += Money(mutableMapOf(mapping(pair.key to pair.value))) }
-        return Money(result.moneys.toMutableMap())
-    }
-
-    fun filter(entry: (Map.Entry<MoneyType, Int>) -> Boolean): Money {
-        return Money(moneys.entries.filter(entry).associate { it.key to it.value }.toMutableMap())
-    }
-
-    fun negativeAmount(): Int = moneys.values.filter { it < 0 }.sum().absoluteValue
-
-    operator fun minus(other: Money): Money {
-        val result = moneys.mergeWith(other.moneys) {a, b -> (a ?: 0) - (b ?: 0)}
-        return Money(result.toMutableMap())
-    }
-
-    fun toStateString(): String {
-        return moneys.entries.sortedBy { it.key.char }.joinToString("") { it.key.char.toString().repeat(it.value) }
-    }
-
-    fun has(requirements: Money): Boolean {
-        val diff = this - requirements
-        return diff.negativeAmount() == 0
-    }
-}
 
 data class MoneyChoice(val moneys: List<MoneyType>) {
-    fun toMoney(): Money = Money(moneys.groupBy { it }.mapValues { it.value.size }.toMutableMap())
+    fun toMoney() = ResourceMap.fromList(moneys)
 }
 
 fun startingStockForPlayerCount(playerCount: Int): Int {
@@ -162,14 +124,14 @@ class SplendorGame(val config: SplendorConfig, val eliminations: PlayerEliminati
             throw IllegalStateException("Player has negative amount of chips")
         }
         if (this.currentPlayer.discounts().negativeAmount() > 0) throw IllegalStateException("Player has negative amount of discounts")
-        val totalChipsInGame = this.stock + this.players.fold(Money()) { a, b -> a.plus(b.chips) }
-        if (totalChipsInGame.moneys[MoneyType.WILDCARD] != 5) throw IllegalStateException("Wrong amount of total wildcards: $totalChipsInGame")
-        if (totalChipsInGame.moneys.any { it.key != MoneyType.WILDCARD && it.value != startingStockForPlayerCount(players.size) }) {
+        val totalChipsInGame = this.stock + this.players.fold(ResourceMap.empty()) { a, b -> a.plus(b.chips) }
+        if (totalChipsInGame[MoneyType.WILDCARD] != 5) throw IllegalStateException("Wrong amount of total wildcards: $totalChipsInGame")
+        if (totalChipsInGame.entries().any { it.resource != MoneyType.WILDCARD && it.value != startingStockForPlayerCount(players.size) }) {
             throw IllegalStateException("Wrong amount of total chips: $totalChipsInGame")
         }
 
         // Check money count > maxMoney
-        if (this.currentPlayer.chips.count > config.maxMoney) return null // Need to discard some money
+        if (this.currentPlayer.chips.count() > config.maxMoney) return null // Need to discard some money
 
         // Check noble conditions
         val noble = this.nobles.cards.find { it.requirementsFulfilled(currentPlayer) }
@@ -200,7 +162,7 @@ class SplendorGame(val config: SplendorConfig, val eliminations: PlayerEliminati
     val playerCount = eliminations.playerCount
     val players: List<SplendorPlayer> = (0 until playerCount).map { SplendorPlayer(it) }
     val board: CardZone<SplendorCard> = CardZone(mutableListOf())
-    var stock: Money = MoneyType.withoutWildcard().fold(Money()) { money, type -> money + type.toMoney(startingStockForPlayerCount(playerCount))}.plus(MoneyType.WILDCARD.toMoney(5))
+    var stock: ResourceMap = MoneyType.withoutWildcard().fold(ResourceMap.empty()) { money, type -> money + type.toMoney(startingStockForPlayerCount(playerCount))}.plus(MoneyType.WILDCARD.toMoney(5))
     var currentPlayerIndex: Int = 0
 
     val currentPlayer: SplendorPlayer
@@ -217,8 +179,8 @@ data class SplendorConfig(
 
 object DslSplendor {
 
-    fun viewMoney(money: Money): Map<String, Int> {
-        return money.moneys.entries.sortedBy { it.key.name }.associate { it.key.name to it.value }
+    fun viewMoney(money: ResourceMap): Map<String, Int> {
+        return money.entries().sortedBy { it.resource.name }.associate { it.resource.name to it.value }
     }
     fun viewNoble(game: SplendorGame, noble: SplendorNoble): Map<String, Any?> = mapOf(
         "points" to 3,
@@ -302,7 +264,7 @@ object DslSplendor {
             }
 
             action(discardMoney) {
-                forceWhen { game.currentPlayer.chips.count > game.config.maxMoney }
+                forceWhen { game.currentPlayer.chips.count() > game.config.maxMoney }
                 options { MoneyType.values().toList() }
                 requires { game.currentPlayer.chips.has(action.parameter.toMoney(1)) }
                 effect {
@@ -318,7 +280,7 @@ object DslSplendor {
             action(reserve).effect {
                 val card = game.board.card(action.parameter)
                 game.currentPlayer.reserved.cards.add(card.card)
-                val wildcardIfAvailable = if (game.stock.moneys.getOrElse(MoneyType.WILDCARD) { 0 } > 0) MoneyType.WILDCARD.toMoney(1) else Money()
+                val wildcardIfAvailable = if (game.stock.getOrDefault(MoneyType.WILDCARD) > 0) MoneyType.WILDCARD.toMoney(1) else ResourceMap.empty()
                 game.stock -= wildcardIfAvailable
                 game.currentPlayer.chips += wildcardIfAvailable
                 replaceCard(replayable, game, card.card)
@@ -341,7 +303,7 @@ object DslSplendor {
             }
             action(takeMoney).requires {
                 val moneyChosen = action.parameter.toMoney()
-                if (moneyChosen.moneys.getOrElse(MoneyType.WILDCARD) { 0 } >= 1) return@requires false
+                if (moneyChosen.getOrDefault(MoneyType.WILDCARD) >= 1) return@requires false
                 if (!game.stock.has(moneyChosen)) {
                     return@requires false
                 }
@@ -378,7 +340,7 @@ object DslSplendor {
                 }.values.toList()
             }
             view("stock") {
-                MoneyType.values().associateWith { game.stock.moneys[it] }
+                MoneyType.values().associateWith { game.stock.getOrDefault(it) }
             }
             view("nobles") {
                 val allNobles = game.players.flatMap { pl -> pl.nobles.cards } + game.nobles.cards
@@ -413,27 +375,27 @@ object DslSplendor {
             // card desiredness -- points, discount needed, usefulness for nobles
             val player = ctx.model.players[ctx.playerIndex]
             ctx.model.board.cards.associateWith { card ->
-                val discount = card.discounts.moneys.entries.single()
+                val discount = card.discounts.entries().single()
                 check(discount.value == 1)
-                val discountType = discount.key
-                val playerHas = player.owned.cards.sumOf { it.discounts.moneys.getOrElse(discountType) { 0 } }
+                val discountType = discount.resource
+                val playerHas = player.owned.cards.sumOf { it.discounts.getOrDefault(discountType) }
                 val otherCardsRequiresDiscountType = ctx.model.board.cards.minus(card).count {
                     val money = player.discounts() + player.chips
                     val remaining = it.costs - money
-                    remaining.moneys.getOrElse(discountType) { 0 } > 0
+                    remaining.getOrDefault(discountType) > 0
                 }
                 val nobles = ctx.model.nobles.cards.count { noble ->
-                    val requires = noble.requirements.moneys.getOrElse(discountType) { 0 }
+                    val requires = noble.requirements.getOrDefault(discountType)
                     requires > playerHas
                 }
                 CardDesiredness(ctx.model.roundNumber, card.points, otherCardsRequiresDiscountType, nobles)
             }
         }
 
-        data class CardObtainability(val remainingCost: Money) {
+        data class CardObtainability(val remainingCost: ResourceMap) {
             fun turnsLeftUntilBuy(): Int {
-                val remainingTotal = remainingCost.count / 3
-                val remainingMax = remainingCost.moneys.maxOfOrNull { it.value } ?: 0
+                val remainingTotal = remainingCost.count() / 3
+                val remainingMax = remainingCost.entries().maxOfOrNull { it.value } ?: 0
                 return maxOf(remainingTotal, remainingMax)
             }
             val value = (1.0 - (turnsLeftUntilBuy() / 10.0)).let { it * it }
@@ -476,13 +438,13 @@ object DslSplendor {
             game.players[playerIndex].points
         }
         val moneyTaken = builder.actionMetric(takeMoney) {
-            action.parameter.toMoney().moneys
+            action.parameter.toMoney().toMap()
         }
         val cardCosts = builder.actionMetric(buy) {
-            action.parameter.costs.moneys
+            action.parameter.costs.toMap()
         }
         val moneyPaid = builder.actionMetric(buy) {
-            (action.parameter.costs - game.players[action.playerIndex].discounts()).filter { it.value >= 0 }.moneys
+            (action.parameter.costs - game.players[action.playerIndex].discounts()).filter { it.value >= 0 }.toMap()
         } // + actionMetric(DslSplendor.buyReserved)...?
         val noblesGotten = builder.endGamePlayerMetric {
             game.players[playerIndex].nobles.size
@@ -491,7 +453,7 @@ object DslSplendor {
             eliminations.eliminationFor(playerIndex)!!
         }
         val discarded = builder.actionMetric(discardMoney) {
-            action.parameter.toMoney(1).moneys
+            action.parameter.toMoney(1).toMap()
         }
     }
 

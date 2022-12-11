@@ -1,6 +1,6 @@
 package net.zomis.games
 
-import net.zomis.games.impl.Money
+import net.zomis.games.components.resources.ResourceMap
 import net.zomis.games.impl.SplendorCard
 import net.zomis.games.impl.SplendorConfig
 import net.zomis.games.impl.SplendorGame
@@ -88,6 +88,7 @@ class PlayerEliminationsTest {
 
     @Test
     fun splendor() {
+        val Money: () -> ResourceMap = { ResourceMap.empty() }
         val eliminations = PlayerEliminations(3)
         val game = SplendorGame(SplendorConfig(false, 10, 1, false), eliminations)
         game.players[0].owned.cards.add(SplendorCard(1, Money(), Money(), 1))

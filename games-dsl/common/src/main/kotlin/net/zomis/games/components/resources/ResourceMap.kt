@@ -12,6 +12,7 @@ interface ResourceMap: Replayable {
         fun of(vararg resources: Pair<GameResource, Int>) = resources.fold(empty()) { acc, pair ->
             acc + pair.first.toResourceMap(pair.second)
         }
+        fun fromList(list: List<GameResource>): ResourceMap = list.fold(empty(), ResourceMap::plus)
     }
     operator fun get(resource: GameResource): Int?
     fun getOrDefault(resource: GameResource): Int
@@ -20,6 +21,16 @@ interface ResourceMap: Replayable {
     operator fun plus(other: GameResource): ResourceMap
     operator fun minus(other: ResourceMap): ResourceMap
     operator fun times(value: Int): ResourceMap
+    operator fun div(other: ResourceMap): Int {
+        var times = 0
+        var tmp = this
+        while (tmp.has(other)) {
+            times += 1
+            tmp -= other
+        }
+        return times
+    }
+
     fun has(resource: GameResource, value: Int): Boolean
     fun count(): Int = this.entries().sumOf { it.value }
 
@@ -38,6 +49,8 @@ interface ResourceMap: Replayable {
     fun isEmpty(): Boolean = entries().all { it.value == it.resource.defaultValue() }
     fun toMutableResourceMap(eventFactory: EventFactory<ResourceChange> = EmptyEventFactory()): MutableResourceMap
         = ResourceMapImpl(entries().map { it.resource to it.value }, eventFactory)
+
+    fun toMap(): Map<GameResource, Int> = entries().associate { it.resource to it.value }
 }
 
 interface MutableResourceMap: ResourceMap {
@@ -62,7 +75,7 @@ interface MutableResourceMap: ResourceMap {
 
 // See Splendor Money and Caravan in Spice Road
 
-class ResourceChange(val resourceMap: ResourceMap, val resource: GameResource, val oldValue: Int, var newValue: Int)
+data class ResourceChange(val resourceMap: ResourceMap, val resource: GameResource, val oldValue: Int, var newValue: Int)
 
 class ResourceMapImpl(
     private val resources: MutableMap<GameResource, ResourceEntryImpl> = mutableMapOf(),

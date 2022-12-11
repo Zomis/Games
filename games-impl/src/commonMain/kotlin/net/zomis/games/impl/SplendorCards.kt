@@ -1,5 +1,7 @@
 package net.zomis.games.impl
 
+import net.zomis.games.components.resources.ResourceMap
+
 val splendorCards = listOf("""
         W,0,UGRB
         W,0,UGGRB
@@ -105,8 +107,8 @@ fun splendorCardsFromMultilineCSV(level: Int, multilineString: String): List<Spl
 
 fun splendorCardFromCSV(level: Int, csv: String): SplendorCard {
     val split = csv.split(",").map { it.trim() }
-    fun String.toMoney(): Money {
-        return this.fold(Money()) { acc, c -> acc + MoneyType.values().first { it.char == c }.toMoney(1) }
+    fun String.toMoney(): ResourceMap {
+        return this.fold(ResourceMap.empty()) { acc, c -> acc + MoneyType.values().first { it.char == c }.toMoney(1) }
     }
 
     return SplendorCard(level, split[0].toMoney(), split[2].toMoney(), split[1].toInt())
