@@ -161,10 +161,11 @@ object SpiceRoadDsl {
             }
             allActions.precondition { game.currentPlayer.index == playerIndex }
             allActions.after {
-                val gameEnd = when (game.playerCount) {
-                    1, 2, 3 -> game.players.any { player -> player.pointCards.size >= 6 }
-                    else -> game.currentPlayer.pointCards.size >= 5
+                val pointCardsRequired = when (game.playerCount) {
+                    1, 2, 3 -> 6
+                    else -> 5
                 }
+                val gameEnd = game.players.any { player -> player.pointCards.size >= pointCardsRequired }
                 if (gameEnd && game.currentPlayerIndex == game.playerCount - 1) {
                    this.eliminations.eliminateBy(game.players.mapIndexed { index, player -> index to player }, compareBy({ it.points }, { +it.index }))
                 }
