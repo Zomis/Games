@@ -37,7 +37,7 @@
     "@percy/cypress": "2.3.4",
     "@vue/cli-plugin-babel": "4.5.14",
     "@vue/cli-plugin-eslint": "4.5.14",
-    "@vue/cli-plugin-unit-mocha": "4.5.14",
+    "@vue/cli-plugin-unit-mocha": "5.0.8",
     "@vue/cli-service": "4.5.14",
     "@vue/test-utils": "1.2.2",
     "babel-eslint": "10.1.0",
