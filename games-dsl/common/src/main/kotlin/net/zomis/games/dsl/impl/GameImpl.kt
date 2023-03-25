@@ -175,6 +175,7 @@ class GameImpl<T : Any>(
     override fun toString(): String = "${super.toString()}-$gameType"
 
     private var actionsInputJob: Job? = null
+    @Deprecated("use config method instead")
     override val config: Any get() = gameConfig.oldStyleValue()
     override val eliminationCallback = PlayerEliminations(playerCount)
     override val eliminations: PlayerEliminationsWrite get() = eliminationCallback

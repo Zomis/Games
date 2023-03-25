@@ -29,6 +29,7 @@ class GameFlowImpl<T: Any>(
     override val gameType: String = setupContext.gameType
     override fun toString(): String = "${super.toString()}-$gameType"
 
+    @Deprecated("use config method instead")
     override val config: Any get() = gameConfig.oldStyleValue()
     private val logger = KLoggers.logger(this)
     private var unfinishedFeedback: FlowStep.RandomnessResult? = null
@@ -251,6 +252,7 @@ class GameFlowImpl<T: Any>(
         when (state) {
             GameFlowRulesState.AFTER_ACTIONS -> this.rules.toList().forEach { it.executeAfterAction() }
             GameFlowRulesState.BEFORE_RETURN -> this.rules.toList().forEach { it.executeBeforeAction() }
+            GameFlowRulesState.FIRE_EVENT -> { /* ignore */ }
         }
     }
 

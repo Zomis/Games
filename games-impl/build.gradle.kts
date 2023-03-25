@@ -14,7 +14,7 @@ kotlin {
             }
         }
     }
-    js {
+    js(IR) {
         browser()
     }
 
@@ -34,7 +34,7 @@ kotlin {
         }
         val jvmMain by getting {
             dependencies {
-                implementation("com.github.lewik.klog:klog-jvm:2.0.2")
+                implementation("com.github.lewik.klog:klog-jvm:2.0.5")
             }
         }
         val jvmTest by getting {
@@ -47,7 +47,7 @@ kotlin {
         }
         val jsMain by getting {
             dependencies {
-                implementation("com.github.lewik.klog:klog-js:2.0.2")
+                implementation("com.github.lewik.klog:klog-js:2.0.5")
             }
         }
     }

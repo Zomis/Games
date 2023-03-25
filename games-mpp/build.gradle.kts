@@ -11,7 +11,7 @@ version = "1.0-SNAPSHOT"
 
 val jacksonVersion = "2.13.1"
 val jupiterVersion = "5.7.1"
-val coroutinesVersion = "1.6.3"
+val coroutinesVersion = "1.6.4"
 val ktorVersion = "2.0.3"
 
 kotlin {
@@ -23,7 +23,7 @@ kotlin {
         }
         withJava()
     }
-    js {
+    js(IR) {
         browser {
 
         }
@@ -53,7 +53,7 @@ kotlin {
             languageSettings.optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:$coroutinesVersion")
-                implementation("com.github.lewik.klog:klog-jvm:2.0.2")
+                implementation("com.github.lewik.klog:klog-jvm:2.0.5")
                 implementation(kotlin("reflect"))
 
                 // For Kotlin scripting inside a shadow jar (some of these dependencies may be removed)
@@ -119,7 +119,7 @@ kotlin {
             kotlin.srcDir("games-js/src/main/kotlin")
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutinesVersion")
-                implementation("com.github.lewik.klog:klog-js:2.0.2")
+                implementation("com.github.lewik.klog:klog-js:2.0.5")
             }
         }
     }

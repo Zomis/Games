@@ -51,6 +51,7 @@ class GameViewContext<T : Any>(
         this.viewResult[key] = value(game)
     }
 
+    @Deprecated("use actionRaw or chosenActions instead")
     override fun <A : Any> action(actionType: ActionType<T, A>): ActionView<T, A> = this.chosenActions(actionType)
 
     override fun actions(): ActionsView<T> = ActionsViewImpl(gameObj, PlayerViewer(playerIndex = viewer), false)
@@ -193,6 +194,7 @@ class GameDslContext<T : Any>(val gameType: String) : GameDslScope<T> {
 
     val model = GameModelContext<T, Any>(configs)
 
+    @Deprecated("use GameConfig class")
     override fun <C : Any> setup(configClass: KClass<C>, modelDsl: GameModelDsl<T, C>) {
         this.modelDsl = modelDsl as GameModelDsl<T, Any>
     }

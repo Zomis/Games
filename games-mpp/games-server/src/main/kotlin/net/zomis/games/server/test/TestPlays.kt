@@ -72,6 +72,14 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
                     is FlowStep.GameSetup<*> -> {
                         stateSave(node, "state", step.state)
                     }
+                    FlowStep.AwaitInput -> { /* ignore */ }
+                    is FlowStep.Elimination -> { /* ignore */ }
+                    FlowStep.GameEnd -> { /* ignore */ }
+                    is FlowStep.GameStarted<*> -> { /* ignore */ }
+                    is FlowStep.IllegalAction -> { /* ignore */ }
+                    is FlowStep.Log -> { /* ignore */ }
+                    FlowStep.NextView -> { /* ignore */ }
+                    is FlowStep.RuleExecution -> { /* ignore */ }
                 }
             }
         }
