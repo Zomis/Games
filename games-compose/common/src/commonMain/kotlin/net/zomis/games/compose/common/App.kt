@@ -1,4 +1,4 @@
-package me.simon.common
+package net.zomis.games.compose.common
 
 import androidx.compose.material.Text
 import androidx.compose.material.Button
