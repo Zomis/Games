@@ -13,9 +13,9 @@ import kotlin.reflect.KClass
 
 object GamesApi {
 
-    fun <T : Any> gameCreator(clazz: KClass<T>): GameCreator<T> = GameCreator(clazz)
-    fun <T : ContextHolder> gameContext(name: String, clazz: KClass<T>, function: GameCreatorContextScope<T>.() -> Unit)
-        = GameCreatorContext(name, function).toGameSpec()
+    fun <T : Any> gameCreator(gameModel: KClass<T>): GameCreator<T> = GameCreator(gameModel)
+    fun <T : ContextHolder> gameContext(name: String, clazz: KClass<T>, dsl: GameCreatorContextScope<T>.() -> Unit)
+        = GameCreatorContext(name, dsl).toGameSpec()
 
     val components get() = GamesComponents
 }
