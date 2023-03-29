@@ -25,6 +25,7 @@ object ServerGames {
     )
 
     val games = listOf(
+        NoThanks.game,
         Grizzled.game,
         Wordle.game,
         Backgammon.game,
