@@ -1,5 +1,7 @@
 import org.jetbrains.compose.compose
 
+val ktor_version = "2.2.4"
+
 plugins {
     kotlin("multiplatform")
     id("org.jetbrains.compose") version "1.3.1"
@@ -33,6 +35,9 @@ kotlin {
                 implementation(project(":games-dsl"))
                 implementation(project(":games-impl"))
                 implementation(project(":games-mpp"))
+                implementation("io.ktor:ktor-client-websockets:$ktor_version")
+                implementation("io.ktor:ktor-client-cio:$ktor_version")
+                implementation("io.ktor:ktor-client-websockets:$ktor_version")
             }
         }
         val commonTest by getting {
