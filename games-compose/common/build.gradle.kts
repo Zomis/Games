@@ -1,10 +1,10 @@
-import org.jetbrains.compose.compose
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 val ktor_version = "2.2.4"
 
 plugins {
     kotlin("multiplatform")
-    id("org.jetbrains.compose") version "1.3.1"
+    id("org.jetbrains.compose") version "1.4.0"
     // id("com.android.library")
 }
 
@@ -38,6 +38,8 @@ kotlin {
                 implementation("io.ktor:ktor-client-websockets:$ktor_version")
                 implementation("io.ktor:ktor-client-cio:$ktor_version")
                 implementation("io.ktor:ktor-client-websockets:$ktor_version")
+                implementation("com.arkivanov.decompose:decompose:2.0.0-compose-experimental-alpha-02")
+                implementation("com.arkivanov.decompose:extensions-compose-jetbrains:2.0.0-compose-experimental-alpha-02")
             }
         }
         val commonTest by getting {
@@ -61,12 +63,24 @@ kotlin {
         val desktopMain by getting {
             dependencies {
                 api(compose.preview)
+                implementation(compose.desktop.currentOs)
                 implementation(project(":games-mpp"))
             }
         }
         val desktopTest by getting
 //        val jsMain by getting
 //        val jsTest by getting
+    }
+}
+
+compose.desktop {
+    application {
+        mainClass = "MainKt"
+        nativeDistributions {
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            packageName = "jvm"
+            packageVersion = "1.0.0"
+        }
     }
 }
 /*
