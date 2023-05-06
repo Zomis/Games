@@ -10,6 +10,7 @@ import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.value.Value
+import io.ktor.client.*
 
 typealias Content = @Composable () -> Unit
 
@@ -25,6 +26,7 @@ interface RootComponent {
 
 class DefaultRootComponent(
     componentContext: ComponentContext,
+    private val httpClient: HttpClient,
     private val database: Int
 ) : ComponentContext by componentContext, RootComponent {
 
@@ -49,7 +51,8 @@ class DefaultRootComponent(
 
     private fun loginComponent(componentContext: ComponentContext)
         = DefaultLoginComponent(
-            componentContext = componentContext
+            componentContext = componentContext,
+            httpClient = httpClient,
             // https://arkivanov.github.io/Decompose/getting-started/quick-start/
         )
 

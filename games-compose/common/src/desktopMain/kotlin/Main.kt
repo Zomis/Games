@@ -9,6 +9,11 @@ import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.jetbrains.lifecycle.LifecycleController
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
+import io.ktor.client.*
+import io.ktor.client.engine.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.serialization.jackson.*
 import net.zomis.games.compose.common.DefaultRootComponent
 import net.zomis.games.compose.common.RootContent
 import javax.swing.SwingUtilities
@@ -36,12 +41,18 @@ internal fun <T> runOnUiThread(block: () -> T): T {
 }
 
 @OptIn(ExperimentalDecomposeApi::class)
-fun main(args: Array<String>) {
+fun main() {
     val lifecycle = LifecycleRegistry()
+    val httpClient = HttpClient(CIO) {
+        install(ContentNegotiation) {
+            jackson()
+        }
+    }
 
     val root = runOnUiThread {
         DefaultRootComponent(
             componentContext = DefaultComponentContext(lifecycle = lifecycle),
+            httpClient = httpClient,
             database = 42
         )
     }
@@ -54,7 +65,7 @@ fun main(args: Array<String>) {
         Window(
             onCloseRequest = ::exitApplication,
             state = windowState,
-            title = "My Application"
+            title = "Minesweeper Flags Extreme"
         ) {
             MaterialTheme {
                 Surface {
@@ -63,10 +74,4 @@ fun main(args: Array<String>) {
             }
         }
     }
-
-    println("Hello World!")
-
-    // Try adding program arguments via Run/Debug configuration.
-    // Learn more about running applications: https://www.jetbrains.com/help/idea/running-applications.html.
-    println("Program arguments: ${args.joinToString()}")
 }

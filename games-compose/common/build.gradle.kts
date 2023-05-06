@@ -38,6 +38,8 @@ kotlin {
                 implementation("io.ktor:ktor-client-websockets:$ktor_version")
                 implementation("io.ktor:ktor-client-cio:$ktor_version")
                 implementation("io.ktor:ktor-client-websockets:$ktor_version")
+                implementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
+                implementation("io.ktor:ktor-serialization-jackson:$ktor_version")
                 implementation("com.arkivanov.decompose:decompose:2.0.0-compose-experimental-alpha-02")
                 implementation("com.arkivanov.decompose:extensions-compose-jetbrains:2.0.0-compose-experimental-alpha-02")
             }
