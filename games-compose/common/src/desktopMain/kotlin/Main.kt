@@ -13,9 +13,13 @@ import io.ktor.client.*
 import io.ktor.client.engine.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.plugins.websocket.*
 import io.ktor.serialization.jackson.*
 import net.zomis.games.compose.common.DefaultRootComponent
+import net.zomis.games.compose.common.FileLocalStorage
+import net.zomis.games.compose.common.LocalStorage
 import net.zomis.games.compose.common.RootContent
+import java.nio.file.Path
 import javax.swing.SwingUtilities
 
 internal fun <T> runOnUiThread(block: () -> T): T {
@@ -47,13 +51,14 @@ fun main() {
         install(ContentNegotiation) {
             jackson()
         }
+        install(WebSockets)
     }
 
     val root = runOnUiThread {
         DefaultRootComponent(
             componentContext = DefaultComponentContext(lifecycle = lifecycle),
             httpClient = httpClient,
-            database = 42
+            localStorage = FileLocalStorage(Path.of("localStorage")),
         )
     }
 

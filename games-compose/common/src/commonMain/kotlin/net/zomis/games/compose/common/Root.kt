@@ -18,6 +18,7 @@ fun <T : Any> T.asContent(content: @Composable (T) -> Unit): Content = { content
 
 interface RootComponent {
     val stack: Value<ChildStack<*, Child>>
+    val localStorage: LocalStorage
 
     sealed interface Child {
         class LoginChild(val component: DefaultLoginComponent) : Child
@@ -27,7 +28,7 @@ interface RootComponent {
 class DefaultRootComponent(
     componentContext: ComponentContext,
     private val httpClient: HttpClient,
-    private val database: Int
+    override val localStorage: LocalStorage,
 ) : ComponentContext by componentContext, RootComponent {
 
     private val navigation = StackNavigation<Configuration>()
