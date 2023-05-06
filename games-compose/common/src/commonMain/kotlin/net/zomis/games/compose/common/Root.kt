@@ -54,6 +54,7 @@ class DefaultRootComponent(
         = DefaultLoginComponent(
             componentContext = componentContext,
             httpClient = httpClient,
+            localStorage = localStorage,
             // https://arkivanov.github.io/Decompose/getting-started/quick-start/
         )
 
