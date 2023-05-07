@@ -1,8 +1,14 @@
 package net.zomis.games.compose.common
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.ComponentContext
 import io.ktor.client.*
 import kotlinx.coroutines.Dispatchers
@@ -54,10 +60,12 @@ class DefaultLoginComponent(
 
 @Composable
 fun LoginContent(component: DefaultLoginComponent) {
-    Button({
-        component.gitHubLogin()
-    }) {
-        Text("Connect with GitHub")
+    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        Button({
+            component.gitHubLogin()
+        }) {
+            Text("Connect with GitHub")
+        }
     }
 
     // Open browser, use code callback

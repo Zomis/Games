@@ -2,16 +2,11 @@ package net.zomis.games.compose.common
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.Button
 import androidx.compose.material.Card
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
@@ -24,12 +19,12 @@ import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.lifecycle.doOnCreate
 import com.arkivanov.essenty.lifecycle.doOnStart
+import io.ktor.client.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import net.zomis.games.compose.common.network.ClientConnection
 import net.zomis.games.compose.common.network.Message
 import net.zomis.games.server2.ServerGames
-import net.zomis.games.server2.invites.PlayerInfo
 
 interface HomeComponent {
     val player: Value<Message.AuthMessage>
