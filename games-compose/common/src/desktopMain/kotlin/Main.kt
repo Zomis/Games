@@ -1,6 +1,7 @@
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -9,20 +10,33 @@ import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.jetbrains.lifecycle.LifecycleController
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.client.*
 import io.ktor.client.engine.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.serialization.jackson.*
-import net.zomis.games.compose.common.DefaultRootComponent
-import net.zomis.games.compose.common.FileLocalStorage
-import net.zomis.games.compose.common.LocalStorage
-import net.zomis.games.compose.common.RootContent
+import net.zomis.games.compose.common.*
 import java.nio.file.Path
 import javax.swing.SwingUtilities
+import kotlin.coroutines.coroutineContext
+import kotlin.reflect.KClass
 
-internal fun <T> runOnUiThread(block: () -> T): T {
+class DesktopPlatform : PlatformTools {
+   private val mapper = jacksonObjectMapper()
+
+    override fun runOnUiThread(block: () -> Unit) = runOnUiThreadDesktop(block)
+
+    override fun toJson(value: Any): String = mapper.writeValueAsString(value)
+
+    override fun <T : Any> fromJson(json: Any, type: KClass<T>): T {
+        TODO("Not yet implemented")
+    }
+
+}
+
+internal fun <T> runOnUiThreadDesktop(block: () -> T): T {
     if (SwingUtilities.isEventDispatchThread()) {
         return block()
     }
@@ -54,15 +68,17 @@ fun main() {
         install(WebSockets)
     }
 
-    val root = runOnUiThread {
-        DefaultRootComponent(
-            componentContext = DefaultComponentContext(lifecycle = lifecycle),
-            httpClient = httpClient,
-            localStorage = FileLocalStorage(Path.of("localStorage")),
-        )
-    }
-
     application {
+        val coroutineScope = rememberCoroutineScope()
+        val root = runOnUiThreadDesktop {
+            DefaultRootComponent(
+                componentContext = DefaultComponentContext(lifecycle = lifecycle),
+                httpClient = httpClient,
+                localStorage = FileLocalStorage(Path.of("localStorage")),
+                mainScope = coroutineScope,
+                platformTools = DesktopPlatform()
+            )
+        }
         val windowState = rememberWindowState()
 
         LifecycleController(lifecycle, windowState)
