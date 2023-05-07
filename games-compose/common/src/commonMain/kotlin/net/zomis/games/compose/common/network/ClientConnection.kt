@@ -9,6 +9,7 @@ import io.ktor.client.plugins.websocket.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import net.zomis.games.compose.common.ClientAuth
 
 abstract class ClientConnection {
@@ -33,22 +34,29 @@ abstract class ClientConnection {
     }
 
     suspend fun joinLobby(keys: Set<String>, maxGames: Int) {
-        val gameKeys = mapper.writeValueAsString(keys)
+        println("joinLobby $keys")
         send(
             mapOf(
                 "route" to "lobby/join",
-                "gameTypes" to gameKeys,
+                "gameTypes" to keys,
                 "maxGames" to maxGames
             )
         )
         send("""{ "route": "lobby/list" }""")
+        events.collect {
+            println(it)
+        }
     }
 
     companion object {
 
         suspend fun connectWebSocket(httpClient: HttpClient, scope: CoroutineScope, url: String, onConnected: suspend (ClientConnection) -> Unit) {
             httpClient.webSocket(url) {
-                onConnected.invoke(ClientConnectionWS(this, scope))
+                val clientConnectionWS = ClientConnectionWS(this, scope)
+                scope.launch {
+                    onConnected.invoke(clientConnectionWS)
+                }
+                clientConnectionWS.listen()
             }
         }
     }
@@ -56,13 +64,20 @@ abstract class ClientConnection {
 }
 
 class ClientConnectionWS(private val connection: DefaultClientWebSocketSession, scope: CoroutineScope) : ClientConnection() {
-    override val events: SharedFlow<JsonNode> = flow<JsonNode> {
+    override val events: MutableSharedFlow<JsonNode> = MutableSharedFlow()
+
+    override suspend fun send(data: String) {
+        println("OUT: $data")
+        connection.send(data)
+    }
+
+    suspend fun listen() {
         for (frame in connection.incoming) {
             when (frame) {
                 is Frame.Text -> {
                     val text = frame.readText()
-                    println(text)
-                    emit(mapper.readTree(text))
+                    println("IN: $text")
+                    events.emit(mapper.readTree(text))
                 }
                 is Frame.Close -> {
                     println("Close reason: " + frame.readReason())
@@ -70,10 +85,7 @@ class ClientConnectionWS(private val connection: DefaultClientWebSocketSession, 
                 else -> {}
             }
         }
-    }.shareIn(scope, SharingStarted.Eagerly)
-
-    override suspend fun send(data: String) {
-        connection.send(data)
+        println("No more incoming WebSocket events.")
     }
 
 }

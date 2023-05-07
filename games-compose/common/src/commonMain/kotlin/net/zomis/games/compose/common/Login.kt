@@ -46,9 +46,7 @@ class DefaultLoginComponent(
     private suspend fun serverConnect(provider: String, token: String) {
         ClientConnection.connectWebSocket(httpClient, coroutineScope, "wss://games.zomis.net/backend/websocket") {
             it.auth(provider, token)
-//            withContext(Dispatchers.Main) {
-                onConnected.invoke(it)
-//            }
+            onConnected.invoke(it)
         }
     }
 
