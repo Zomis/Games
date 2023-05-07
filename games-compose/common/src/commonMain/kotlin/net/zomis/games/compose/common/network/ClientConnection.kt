@@ -2,7 +2,6 @@ package net.zomis.games.compose.common.network
 
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.module.kotlin.convertValue
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.client.*
 import io.ktor.client.plugins.websocket.*
@@ -10,31 +9,42 @@ import io.ktor.websocket.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import net.zomis.games.compose.common.ClientAuth
+import kotlin.reflect.KClass
 
 abstract class ClientConnection {
     internal val mapper = jacksonObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-    var auth: ClientAuth? = null
+    var auth: Message.AuthMessage? = null
         private set
 
     suspend fun send(data: Map<String, Any?>) {
         send(mapper.writeValueAsString(data))
     }
 
+    protected val _messages = MutableSharedFlow<Message>()
+    val messages = _messages.asSharedFlow()
     abstract val events: SharedFlow<JsonNode>
     abstract suspend fun send(data: String)
 
-    suspend fun auth(provider: String, token: String): ClientAuth {
-        send("""{ "route": "auth/$provider", "token": "$token" }""")
-        val response = events.first {
-            it.get("type").asText() == "Auth"
-        }
-        this.auth = mapper.convertValue<ClientAuth>(response)
-        return this.auth!!
+    suspend fun auth(provider: String, token: String): Message.AuthMessage {
+        val result = sendAndAwait(
+            mapOf("route" to "auth/$provider", "token" to token),
+            await = "Auth", awaitType = Message.AuthMessage::class
+        )
+        this.auth = result
+        return result
+    }
+
+    internal suspend fun <T: Message> sendAndAwait(
+        data: Map<String, String>,
+        await: String,
+        awaitType: KClass<T>
+    ): T {
+        send(data)
+        val result = events.first { it.get("type").asText() == await }
+        return mapper.convertValue(result, awaitType.java)
     }
 
     suspend fun joinLobby(keys: Set<String>, maxGames: Int) {
-        println("joinLobby $keys")
         send(
             mapOf(
                 "route" to "lobby/join",
@@ -42,11 +52,9 @@ abstract class ClientConnection {
                 "maxGames" to maxGames
             )
         )
-        send("""{ "route": "lobby/list" }""")
-        events.collect {
-            println(it)
-        }
     }
+
+    suspend fun updateLobby(): Message.LobbyMessage = sendAndAwait(mapOf("route" to "lobby/list"), await = "Lobby", awaitType = Message.LobbyMessage::class)
 
     companion object {
 

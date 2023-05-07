@@ -12,7 +12,7 @@ import kotlinx.coroutines.withContext
 import net.zomis.games.compose.common.network.ClientConnection
 import kotlin.coroutines.CoroutineContext
 
-data class ClientAuth(val playerId: String, val name: String, val picture: String, val cookie: String?)
+
 
 interface LoginComponent {
     val localStorage: LocalStorage
