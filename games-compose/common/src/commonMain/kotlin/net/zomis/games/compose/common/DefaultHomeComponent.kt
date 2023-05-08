@@ -17,10 +17,13 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
+import com.arkivanov.decompose.value.update
 import com.arkivanov.essenty.lifecycle.doOnCreate
 import com.arkivanov.essenty.lifecycle.doOnStart
-import io.ktor.client.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
 import net.zomis.games.compose.common.network.ClientConnection
 import net.zomis.games.compose.common.network.Message
@@ -29,12 +32,14 @@ import net.zomis.games.server2.ServerGames
 interface HomeComponent {
     val player: Value<Message.AuthMessage>
     val lobby: Value<Message.LobbyMessage>
+    val lobbyChangeMessages: Flow<Message.LobbyChangeMessage>
 }
 
 class DefaultHomeComponent(componentContext: ComponentContext, connection: ClientConnection) : HomeComponent {
     private val coroutineScope = CoroutineScope(Dispatchers.Default, componentContext.lifecycle)
     override val lobby = MutableValue(Message.LobbyMessage(emptyMap()))
     override val player: Value<Message.AuthMessage> = MutableValue(connection.auth!!)
+    override val lobbyChangeMessages: Flow<Message.LobbyChangeMessage> = connection.messages.filterIsInstance()
 
     init {
         componentContext.lifecycle.doOnCreate {
@@ -48,6 +53,28 @@ class DefaultHomeComponent(componentContext: ComponentContext, connection: Clien
         componentContext.lifecycle.doOnStart {
             coroutineScope.launch {
                 lobby.value = connection.updateLobby()
+                lobbyChangeMessages.collect { lobbyChange ->
+                    if (lobbyChange.didJoin()) {
+                        val joinedGames = lobbyChange.gameTypes!!.toSet()
+                        lobby.update { oldLobby ->
+                            oldLobby.copy(
+                                users = oldLobby.users.mapValues {
+                                    if (it.key in joinedGames) {
+                                        it.value + lobbyChange.player
+                                    } else {
+                                        it.value
+                                    }
+                                }
+                            )
+                        }
+                    } else {
+                        lobby.update { oldLobby ->
+                            oldLobby.copy(
+                                users = oldLobby.users.mapValues { oldUsers -> oldUsers.value.filter { it.playerId != lobbyChange.player.playerId } }
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -70,7 +97,10 @@ fun HomeContent(component: HomeComponent) {
                 Card(
                     Modifier.padding(32.dp).fillMaxWidth()
                 ) {
-                    Text(lobbyGame.key)
+                    Column {
+                        Text(lobbyGame.key)
+                        Text(text = lobbyGame.value.map { it.name }.toString())
+                    }
                 }
             }
         }
@@ -93,6 +123,7 @@ fun HomePreview() {
                 )
             )
         )
+        override val lobbyChangeMessages: Flow<Message.LobbyChangeMessage> = emptyFlow()
     }
     HomeContent(component)
 

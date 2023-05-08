@@ -85,7 +85,16 @@ class ClientConnectionWS(private val connection: DefaultClientWebSocketSession, 
                 is Frame.Text -> {
                     val text = frame.readText()
                     println("IN: $text")
-                    events.emit(mapper.readTree(text))
+                    val frameInput = mapper.readTree(text)
+                    events.emit(frameInput)
+                    val typeName = frameInput.get("type")?.asText()
+                    val type = Message.messageType(typeName ?: "undefined")
+                    if (type == null) {
+                        println("WARNING: No such type $typeName")
+                    } else {
+                        val message = mapper.convertValue(frameInput, type.java)
+                        _messages.emit(message)
+                    }
                 }
                 is Frame.Close -> {
                     println("Close reason: " + frame.readReason())
