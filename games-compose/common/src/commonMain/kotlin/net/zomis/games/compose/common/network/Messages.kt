@@ -32,6 +32,13 @@ sealed class Message(val type: String) {
         val players: List<PlayerWithOptions>,
         val invited: List<PlayerInfo>
     ) : Message("InviteView")
+
+    data class InviteStatus(val inviteId: String, val playerId: String, val status: String) : Message("InviteStatus")
+    data class InvitePrepare(val gameType: String, val playersMin: Int, val playersMax: Int, val config: Any) : Message("InvitePrepare")
+    data class InviteResponse(val inviteId: String, val playerId: String, val accepted: Boolean) : Message("InviteResponse")
+
+    data class ActionLog(val gameType: String, val gameId: String, val private: Boolean, val parts: List<Any>) : Message("ActionLog")
+
     data class GameStarted(
         val gameType: String, val gameId: String,
         val access: Map<String, String>,
@@ -59,6 +66,10 @@ sealed class Message(val type: String) {
                 "Invite" -> Invite::class
                 "InviteCancelled" -> InviteCancelled::class
                 "InviteView" -> InviteView::class
+                "InvitePrepare" -> InvitePrepare::class
+                "InviteStatus" -> InviteStatus::class
+                "InviteResponse" -> InviteResponse::class
+                "ActionLog" -> ActionLog::class
                 "GameStarted" -> GameStarted::class
                 "GameInfo" -> GameInfo::class
                 "UpdateView" -> UpdateView::class
