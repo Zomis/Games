@@ -9,6 +9,7 @@ import io.ktor.websocket.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import net.zomis.games.server2.ClientMessage
 import kotlin.reflect.KClass
 
 abstract class ClientConnection {
@@ -16,7 +17,7 @@ abstract class ClientConnection {
     var auth: Message.AuthMessage? = null
         private set
 
-    suspend fun send(data: Map<String, Any?>) {
+    suspend fun send(data: ClientToServerMessage) {
         send(mapper.writeValueAsString(data))
     }
 
@@ -26,35 +27,29 @@ abstract class ClientConnection {
     abstract suspend fun send(data: String)
 
     suspend fun auth(provider: String, token: String): Message.AuthMessage {
-        val result = sendAndAwait(
-            mapOf("route" to "auth/$provider", "token" to token),
-            await = "Auth", awaitType = Message.AuthMessage::class
-        )
+        val result: Message.AuthMessage = sendAndAwait(ClientToServerMessage.AuthRequest(provider, token))
         this.auth = result
         return result
     }
 
+    internal suspend inline fun <reified T: Message> sendAndAwait(
+        message: ClientToServerMessage
+    ): T = sendAndAwait(message, awaitType = T::class)
+
     internal suspend fun <T: Message> sendAndAwait(
-        data: Map<String, String>,
-        await: String,
+        data: ClientToServerMessage,
         awaitType: KClass<T>
     ): T {
         send(data)
-        val result = events.first { it.get("type").asText() == await }
+        val result = messages.filter { awaitType.isInstance(it) }.first()
         return mapper.convertValue(result, awaitType.java)
     }
 
     suspend fun joinLobby(keys: Set<String>, maxGames: Int) {
-        send(
-            mapOf(
-                "route" to "lobby/join",
-                "gameTypes" to keys,
-                "maxGames" to maxGames
-            )
-        )
+        send(ClientToServerMessage.JoinLobby(gameTypes = keys, maxGames = maxGames))
     }
 
-    suspend fun updateLobby(): Message.LobbyMessage = sendAndAwait(mapOf("route" to "lobby/list"), await = "Lobby", awaitType = Message.LobbyMessage::class)
+    suspend fun updateLobby(): Message.LobbyMessage = sendAndAwait(ClientToServerMessage.ListLobby)
 
     companion object {
 
