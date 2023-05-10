@@ -31,6 +31,7 @@ import kotlinx.coroutines.launch
 import net.zomis.games.compose.common.lobby.InvitationList
 import net.zomis.games.compose.common.lobby.InvitationStoreEmpty
 import net.zomis.games.compose.common.lobby.InvitationsStore
+import net.zomis.games.compose.common.lobby.LobbyGame
 import net.zomis.games.compose.common.network.ClientConnection
 import net.zomis.games.compose.common.network.Message
 import net.zomis.games.server2.ServerGames
@@ -101,14 +102,7 @@ fun HomeContent(component: HomeComponent) {
             columns = GridCells.Adaptive(300.dp)
         ) {
             items(items = lobby, key = { it.key }) { lobbyGame ->
-                Card(
-                    Modifier.padding(32.dp).fillMaxWidth()
-                ) {
-                    Column {
-                        Text(lobbyGame.key)
-                        Text(text = lobbyGame.value.map { it.name }.toString())
-                    }
-                }
+                LobbyGame(lobbyGame.key, lobbyGame.value, component.invites)
             }
         }
     }
