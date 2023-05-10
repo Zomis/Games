@@ -14,6 +14,7 @@ import io.ktor.client.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import net.zomis.games.compose.common.lobby.InvitationsStoreImpl
 import net.zomis.games.compose.common.network.ClientConnection
 import kotlin.coroutines.CoroutineContext
 
@@ -62,7 +63,7 @@ class DefaultRootComponent(
         }
 
     private fun homeComponent(componentContext: ComponentContext, connection: ClientConnection): DefaultHomeComponent
-        = DefaultHomeComponent(componentContext, connection)
+        = DefaultHomeComponent(componentContext, connection, InvitationsStoreImpl(mainScope, connection))
 
     private fun loginComponent(componentContext: ComponentContext)
         = DefaultLoginComponent(

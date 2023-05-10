@@ -7,7 +7,9 @@ import kotlin.reflect.KClass
 data class PlayerWithOptions(
     val id: String, val name: String?, val picture: String?,
     val playerOptions: Any?
-)
+) {
+    fun asPlayerInfo(): PlayerInfo = PlayerInfo(playerId = id, name = name, picture = picture)
+}
 
 sealed class Message(val type: String) {
 

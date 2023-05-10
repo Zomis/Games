@@ -8,8 +8,11 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.Card
+import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccountBox
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -25,6 +28,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
+import net.zomis.games.compose.common.lobby.InvitationList
+import net.zomis.games.compose.common.lobby.InvitationStoreEmpty
+import net.zomis.games.compose.common.lobby.InvitationsStore
 import net.zomis.games.compose.common.network.ClientConnection
 import net.zomis.games.compose.common.network.Message
 import net.zomis.games.server2.ServerGames
@@ -32,10 +38,15 @@ import net.zomis.games.server2.ServerGames
 interface HomeComponent {
     val player: Value<Message.AuthMessage>
     val lobby: Value<Message.LobbyMessage>
+    val invites: InvitationsStore
     val lobbyChangeMessages: Flow<Message.LobbyChangeMessage>
 }
 
-class DefaultHomeComponent(componentContext: ComponentContext, connection: ClientConnection) : HomeComponent {
+class DefaultHomeComponent(
+    componentContext: ComponentContext,
+    connection: ClientConnection,
+    override val invites: InvitationsStore
+) : HomeComponent {
     private val coroutineScope = CoroutineScope(Dispatchers.Default, componentContext.lifecycle)
     override val lobby = MutableValue(Message.LobbyMessage(emptyMap()))
     override val player: Value<Message.AuthMessage> = MutableValue(connection.auth!!)
@@ -83,13 +94,9 @@ class DefaultHomeComponent(componentContext: ComponentContext, connection: Clien
 
 @Composable
 fun HomeContent(component: HomeComponent) {
-    val player = component.player.subscribeAsState().value
     val lobby = component.lobby.subscribeAsState().value.users.entries.toList()
-    Column {
-        TopAppBar {
-            Text(text = player.name)
-        }
-
+    AppView(component.player) {
+        InvitationList(component.invites)
         LazyVerticalGrid(
             columns = GridCells.Adaptive(300.dp)
         ) {
@@ -123,6 +130,7 @@ fun HomePreview() {
                 )
             )
         )
+        override val invites: InvitationsStore = InvitationStoreEmpty()
         override val lobbyChangeMessages: Flow<Message.LobbyChangeMessage> = emptyFlow()
     }
     HomeContent(component)

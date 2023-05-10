@@ -17,6 +17,7 @@ import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.serialization.jackson.*
+import kotlinx.coroutines.Dispatchers
 import net.zomis.games.compose.common.*
 import java.nio.file.Path
 import javax.swing.SwingUtilities
@@ -75,7 +76,8 @@ fun main() {
                 componentContext = DefaultComponentContext(lifecycle = lifecycle),
                 httpClient = httpClient,
                 localStorage = FileLocalStorage(Path.of("localStorage")),
-                mainScope = coroutineScope,
+                mainScope = CoroutineScope(Dispatchers.Default, lifecycle),
+//                coroutineScope = ,
                 platformTools = DesktopPlatform()
             )
         }
