@@ -68,6 +68,7 @@ fun main() {
         }
         install(WebSockets)
     }
+    val clientConfig = ClientConfig()
 
     application {
         val coroutineScope = rememberCoroutineScope()
@@ -78,7 +79,8 @@ fun main() {
                 localStorage = FileLocalStorage(Path.of("localStorage")),
                 mainScope = CoroutineScope(Dispatchers.Default, lifecycle),
 //                coroutineScope = ,
-                platformTools = DesktopPlatform()
+                platformTools = DesktopPlatform(),
+                clientConfig = clientConfig,
             )
         }
         val windowState = rememberWindowState()

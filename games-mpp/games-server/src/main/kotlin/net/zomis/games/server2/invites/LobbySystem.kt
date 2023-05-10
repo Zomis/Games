@@ -1,5 +1,6 @@
 package net.zomis.games.server2.invites
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.node.ArrayNode
 import klog.KLoggers
 import net.zomis.core.events.EventSystem
@@ -25,7 +26,7 @@ class LobbyGameType {
     val clients = ClientList()
 }
 
-data class PlayerInfo(val playerId: String, val name: String?, val picture: String?) {
+data class PlayerInfo(@JsonProperty("id") val playerId: String, val name: String?, val picture: String?) {
     fun toMap(): Map<String, String> = mapOf(
         "id" to playerId,
         "name" to (name ?: "(UNKNOWN)"),

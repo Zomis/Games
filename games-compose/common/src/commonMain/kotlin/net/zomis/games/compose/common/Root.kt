@@ -37,6 +37,7 @@ class DefaultRootComponent(
     private val platformTools: PlatformTools,
     private val mainScope: CoroutineScope,
     private val httpClient: HttpClient,
+    private val clientConfig: ClientConfig,
     override val localStorage: LocalStorage,
 ) : ComponentContext by componentContext, RootComponent {
 
@@ -70,7 +71,8 @@ class DefaultRootComponent(
             componentContext = componentContext,
             httpClient = httpClient,
             localStorage = localStorage,
-            context = mainScope.coroutineContext
+            context = mainScope.coroutineContext,
+            clientConfig = clientConfig,
     ) {
         // https://arkivanov.github.io/Decompose/getting-started/quick-start/
         platformTools.runOnUiThread {

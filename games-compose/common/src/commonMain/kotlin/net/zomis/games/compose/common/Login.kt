@@ -29,6 +29,7 @@ interface LoginComponent {
 class DefaultLoginComponent(
     componentContext: ComponentContext,
     context: CoroutineContext,
+    private val clientConfig: ClientConfig,
     private val httpClient: HttpClient,
     override val localStorage: LocalStorage,
     override val onConnected: (ClientConnection) -> Unit,
@@ -50,7 +51,7 @@ class DefaultLoginComponent(
     }
 
     private suspend fun serverConnect(provider: String, token: String) {
-        ClientConnection.connectWebSocket(httpClient, coroutineScope, "wss://games.zomis.net/backend/websocket") {
+        ClientConnection.connectWebSocket(httpClient, coroutineScope, clientConfig.websocketUrl) {
             it.auth(provider, token)
             onConnected.invoke(it)
         }
