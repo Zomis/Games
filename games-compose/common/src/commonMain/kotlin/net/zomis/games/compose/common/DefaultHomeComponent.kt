@@ -20,19 +20,16 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
+import com.arkivanov.decompose.value.operator.map
 import com.arkivanov.decompose.value.update
 import com.arkivanov.essenty.lifecycle.doOnCreate
 import com.arkivanov.essenty.lifecycle.doOnStart
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import net.zomis.games.compose.common.lobby.InvitationList
-import net.zomis.games.compose.common.lobby.InvitationStoreEmpty
-import net.zomis.games.compose.common.lobby.InvitationsStore
-import net.zomis.games.compose.common.lobby.LobbyGame
+import net.zomis.games.compose.common.gametype.GameTypeStore
+import net.zomis.games.compose.common.lobby.*
 import net.zomis.games.compose.common.network.ClientConnection
 import net.zomis.games.compose.common.network.ClientToServerMessage
 import net.zomis.games.compose.common.network.Message
@@ -51,7 +48,8 @@ interface HomeComponent {
 class DefaultHomeComponent(
     componentContext: ComponentContext,
     private val connection: ClientConnection,
-    override val invites: InvitationsStore,
+    mainScope: CoroutineScope,
+    private val gameTypeStore: GameTypeStore,
     override val navigator: Navigator,
 ) : HomeComponent {
     private val coroutineScope = CoroutineScope(Dispatchers.Default, componentContext.lifecycle)
@@ -59,6 +57,8 @@ class DefaultHomeComponent(
     override val player: Value<Message.AuthMessage> = MutableValue(connection.auth!!)
     override val lobbyChangeMessages: Flow<Message.LobbyChangeMessage> = connection.messages.filterIsInstance()
     private val lobbyMessages: Flow<Message.LobbyMessage> = connection.messages.filterIsInstance()
+    override val invites = InvitationsStoreImpl(mainScope, connection, navigator, connection.auth!!, lobby.map { it.users })
+
 
     init {
         componentContext.lifecycle.doOnCreate {
@@ -69,6 +69,11 @@ class DefaultHomeComponent(
                 lobby.value = connection.updateLobby()
                 lobbyMessages.collect {
                     lobby.value = it
+                }
+            }
+            coroutineScope.launch {
+                connection.messages.filterIsInstance<Message.InvitePrepare>().collect {
+                    navigator.navigateTo(Configuration.CreateInvite(it, gameTypeStore.getGameType(it.gameType)!!, connection))
                 }
             }
         }

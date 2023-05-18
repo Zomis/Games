@@ -1,6 +1,7 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 val ktor_version = "2.2.4"
+val decomposeVersion = "2.0.0-compose-experimental-alpha-02"
 
 plugins {
     kotlin("multiplatform")
@@ -40,8 +41,8 @@ kotlin {
                 implementation("io.ktor:ktor-client-websockets:$ktor_version")
                 implementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
                 implementation("io.ktor:ktor-serialization-jackson:$ktor_version")
-                implementation("com.arkivanov.decompose:decompose:2.0.0-compose-experimental-alpha-02")
-                implementation("com.arkivanov.decompose:extensions-compose-jetbrains:2.0.0-compose-experimental-alpha-02")
+                implementation("com.arkivanov.decompose:decompose:$decomposeVersion")
+                implementation("com.arkivanov.decompose:extensions-compose-jetbrains:$decomposeVersion")
             }
         }
         val commonTest by getting {

@@ -88,6 +88,7 @@ class ClientConnectionWS(private val connection: DefaultClientWebSocketSession, 
                         println("WARNING: No such type $typeName")
                     } else {
                         val message = mapper.convertValue(frameInput, type.java)
+                        println("Parsed: $message")
                         _messages.emit(message)
                     }
                 }

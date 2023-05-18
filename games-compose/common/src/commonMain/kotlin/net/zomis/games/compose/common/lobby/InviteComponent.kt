@@ -12,14 +12,22 @@ import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.launch
+import net.zomis.games.compose.common.CoroutineScope
 import net.zomis.games.compose.common.network.ClientConnection
 import net.zomis.games.compose.common.network.Message
+import net.zomis.games.server2.invites.PlayerInfo
 
 interface InviteComponent {
 
+    val showHostOptions: Boolean
     val player: Value<Message.AuthMessage>
     val invite: Value<Message.InviteView>
-    val invites: InvitationsStore
+    val availablePlayers: Value<List<PlayerInfo>>
 
     /*
     * game type + details
@@ -37,13 +45,23 @@ interface InviteComponent {
 class DefaultViewInviteComponent(
     componentContext: ComponentContext,
     private val connection: ClientConnection,
+    override val availablePlayers: Value<List<PlayerInfo>>,
+    invite: Message.InviteView,
 ) : InviteComponent {
     override val player: Value<Message.AuthMessage> = MutableValue(connection.auth!!)
-    override val invite: Value<Message.InviteView>
-        get() = TODO("Not yet implemented")
-    override val invites: InvitationsStore
-        get() = TODO("Not yet implemented")
+    private val _invite = MutableValue(invite)
+    override val invite: Value<Message.InviteView> = _invite
+    override val showHostOptions: Boolean = invite.host.playerId == player.value.playerId
 
+    private val scope = CoroutineScope(Dispatchers.Default, componentContext.lifecycle)
+
+    init {
+        scope.launch {
+            connection.messages.filterIsInstance<Message.InviteView>().filter { it.inviteId == invite.inviteId }.collect {
+                _invite.value = it
+            }
+        }
+    }
 
 }
 
@@ -67,7 +85,7 @@ fun InviteContent(component: InviteComponent) {
                 Card {
                     // People in game + Invites pending
                 }
-                if (component.invite.value.host.playerId == component.player.value.playerId) {
+                if (component.showHostOptions) {
                     Card {
                         // List of people to invite (with search filter)
                     }

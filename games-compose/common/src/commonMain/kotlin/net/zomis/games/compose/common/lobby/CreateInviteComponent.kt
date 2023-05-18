@@ -1,15 +1,14 @@
 package net.zomis.games.compose.common.lobby
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
 import androidx.compose.material.Card
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
@@ -17,7 +16,7 @@ import net.zomis.games.compose.common.gametype.GameTypeDetails
 import net.zomis.games.compose.common.network.Message
 
 class GenericGameOptions {
-    fun toServerOptions(): Any = Any()
+    fun toServerOptions(): Any = emptyMap<String, Unit>()
 
     /*
     * store in database
@@ -61,11 +60,12 @@ class DefaultCreateInviteComponent(
     override val genericGameOptions: Value<GenericGameOptions> = MutableValue(GenericGameOptions())
 
     override fun createInvite() {
+        val serializedGameOptions = gameSpecificOptions.value.takeIf { it !is Unit } ?: emptyMap<String, Any>()
         onCreateInvite.invoke(
             PreparedInvite(
                 gameType = invitePrepare.gameType,
                 genericGameOptions = genericGameOptions.value,
-                gameSpecificOptions = gameSpecificOptions.value,
+                gameSpecificOptions = serializedGameOptions,
             )
         )
     }
@@ -88,8 +88,8 @@ fun CreateInviteContent(component: CreateInviteComponent) {
         Card(Modifier.weight(1f)) {
             // Game-specific options
         }
-        Row(horizontalArrangement = Arrangement.End) {
-            Button(onClick = {}) {
+        Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.End) {
+            Button(onClick = {}, modifier = Modifier.padding(end = 12.dp)) {
                 Text("Cancel")
             }
             Button(onClick = {

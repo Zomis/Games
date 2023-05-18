@@ -64,24 +64,27 @@ class DefaultRootComponent(
                 loginComponent(componentContext)
             )
             is Configuration.Home -> RootComponent.Child.HomeChild(
-                homeComponent(componentContext, configuration.connection)
+                DefaultHomeComponent(
+                    componentContext, configuration.connection,
+                    mainScope, gameTypeStore,
+                    navigator
+                )
             )
             is Configuration.CreateInvite -> RootComponent.Child.CreateInviteChild(
                 DefaultCreateInviteComponent(componentContext, configuration.invitePrepare,
                     gameDetails = configuration.gameTypeDetails) {
                     mainScope.launch {
-                        configuration.connection.send(ClientToServerMessage.InvitePrepareStart(it.gameType, it.genericGameOptions.toServerOptions(), it.gameSpecificOptions))
+                        configuration.connection.send(ClientToServerMessage.InvitePrepareStart(
+                            it.gameType, it.genericGameOptions.toServerOptions(), it.gameSpecificOptions
+                        ))
                     }
                 }
             )
             is Configuration.ViewInvite -> RootComponent.Child.ViewInviteChild(
-                DefaultViewInviteComponent(componentContext, configuration.connection)
+                DefaultViewInviteComponent(componentContext, configuration.connection, configuration.availablePlayers, configuration.invite)
             )
             else -> throw UnsupportedOperationException("Unknown child for configuration: $configuration")
         }
-
-    private fun homeComponent(componentContext: ComponentContext, connection: ClientConnection): DefaultHomeComponent
-        = DefaultHomeComponent(componentContext, connection, InvitationsStoreImpl(mainScope, connection), navigator)
 
     private fun loginComponent(componentContext: ComponentContext)
         = DefaultLoginComponent(
