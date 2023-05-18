@@ -46,8 +46,13 @@ class LocalGameClient(
         }
     }
 
-    override fun performAction(actionType: String, serializedParameter: Any) {
-        TODO("Not yet implemented")
+    override suspend fun performAction(actionTypeKey: String, serializedParameter: Any) {
+        val game = game
+        check(game != null)
+        val actionType = game.actions.type(actionTypeKey)
+        check(actionType != null)
+        val action = actionType.createActionFromSerialized(playerIndex, serializedParameter)
+        game.actionsInput.send(action)
     }
 
     override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {

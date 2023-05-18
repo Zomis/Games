@@ -2,6 +2,7 @@ package net.zomis.games.compose.common.gametype
 
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import net.zomis.games.compose.common.games.SimpleGridGames
 import net.zomis.games.server2.ServerGames
 
 class SupportedGames : GameTypeStore {
@@ -24,7 +25,7 @@ class SupportedGames : GameTypeStore {
     init {
         addGame("NoThanks") { Text(it.toString()) }
         addGame("Hanabi") { Text(it.toString()) }
-        addGame("DSL-TTT") { Text(it.toString()) }
+        addGame("DSL-TTT") { SimpleGridGames.TTT(it) }
     }
 
     private fun addGame(gameType: String, component: @Composable (Any) -> Unit) {

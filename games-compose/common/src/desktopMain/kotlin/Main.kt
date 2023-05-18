@@ -26,14 +26,14 @@ import kotlin.coroutines.coroutineContext
 import kotlin.reflect.KClass
 
 class DesktopPlatform : PlatformTools {
-   private val mapper = jacksonObjectMapper()
+    private val mapper = jacksonObjectMapper()
 
     override fun runOnUiThread(block: () -> Unit) = runOnUiThreadDesktop(block)
 
     override fun toJson(value: Any): String = mapper.writeValueAsString(value)
 
     override fun <T : Any> fromJson(json: Any, type: KClass<T>): T {
-        TODO("Not yet implemented")
+        return mapper.convertValue(json, type.java)
     }
 
 }

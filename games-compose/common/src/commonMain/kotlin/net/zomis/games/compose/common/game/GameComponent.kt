@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -25,9 +26,9 @@ import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.launch
 import net.zomis.games.PlayerElimination
 import net.zomis.games.PlayerEliminations
+import net.zomis.games.components.Point
 import net.zomis.games.compose.common.CoroutineScope
 import net.zomis.games.compose.common.gametype.GameTypeDetails
-import net.zomis.games.compose.common.gametype.GameTypeStore
 import net.zomis.games.compose.common.gametype.SupportedGames
 import net.zomis.games.compose.common.network.ClientConnection
 import net.zomis.games.compose.common.network.ClientToServerMessage
@@ -96,7 +97,7 @@ fun GameContent(component: GameComponent) {
     val view = component.gameClient.view.subscribeAsState()
 
     Row(modifier = Modifier.fillMaxSize()) {
-        Box(Modifier.fillMaxHeight().weight(0.7f).background(Color.Blue)) {
+        Box(Modifier.fillMaxHeight().weight(0.7f).background(Color.DarkGray)) {
             component.gameTypeDetails.component.invoke(view.value)
         }
         Box(Modifier.fillMaxHeight().weight(0.3f).background(Color.Gray)) {
@@ -119,6 +120,11 @@ fun GameContentPreview() {
     val playerCount = remember { gameTypeDetails.gameEntryPoint.setup().playersCount.random() }
     val playerIndex = remember { (0 until playerCount).random() }
     val component = LocalGameComponent(coroutineScope, gameTypeDetails, playerCount, playerIndex)
+
+    LaunchedEffect(Unit) {
+
+        component.gameClient.performAction("play", Point(0, 2))
+    }
 
     GameContent(component)
 }

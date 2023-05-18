@@ -18,7 +18,7 @@ class NetworkGameClient(
 ) : GameClient {
     override val gameType: String = startedMessage.gameType
 
-    override fun performAction(actionType: String, serializedParameter: Any) {
+    override suspend fun performAction(actionType: String, serializedParameter: Any) {
         TODO("Not yet implemented")
     }
 }

@@ -10,7 +10,7 @@ interface GameClient {
     val eliminations: Value<PlayerEliminationsRead>
     val view: Value<Any>
     val logs: Value<List<LogEntry>>
-    fun performAction(actionType: String, serializedParameter: Any)
+    suspend fun performAction(actionType: String, serializedParameter: Any)
     // fun browseActions(actionType: String, choices: List<Any>): ...
     // actionTypes: Value<List<String>>
 
