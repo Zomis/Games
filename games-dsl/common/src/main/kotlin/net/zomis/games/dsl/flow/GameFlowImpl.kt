@@ -16,6 +16,9 @@ import net.zomis.games.dsl.flow.actions.SmartActionContext
 import net.zomis.games.dsl.flow.actions.SmartActionScope
 import net.zomis.games.dsl.impl.*
 
+private const val ECS_VIEW_KEY = ""
+const val VIEWMODEL_VIEW_KEY = "_vm"
+
 class GameFlowImpl<T: Any>(
     private val setupContext: GameDslContext<T>,
     override val playerCount: Int,
@@ -35,6 +38,7 @@ class GameFlowImpl<T: Any>(
     private var unfinishedFeedback: FlowStep.RandomnessResult? = null
     private val mainScope = MainScope()
     val views = mutableListOf<Pair<String, ViewScope<T>.() -> Any?>>()
+    private var viewModel: ViewModel<T, *>? = null
     override val feedbackFlow: Channel<FlowStep> = Channel()
 
     private val feedbacks = mutableListOf<FlowStep>()
@@ -167,8 +171,12 @@ class GameFlowImpl<T: Any>(
         val viewContext = GameViewContext(this, playerIndex)
         val result = this.views.associate { it.first to it.second(viewContext) }.filterValues { it !is HiddenValue }
 
-        return if (result.size == 1 && result.containsKey("")) result.getValue("") as Map<String, Any?>
-        else result
+        val singleView = result.entries.singleOrNull()
+        // A bit of an ugly hack for if the full view is specified
+        return when (singleView?.key) {
+            ECS_VIEW_KEY -> result.getValue(ECS_VIEW_KEY) as Map<String, Any?> // Introduced for ECS-style games.
+            else -> result
+        }
     }
     private fun copyUnfinishedFeedbackWithUpdatedState(): FlowStep.RandomnessResult? {
         return when (val unfinished = unfinishedFeedback) {
@@ -263,6 +271,12 @@ class GameFlowImpl<T: Any>(
 
     override fun view(key: String, value: ViewScope<T>.() -> Any?) {
         views.add(key to value)
+    }
+
+    override fun viewModel(viewModel: ViewModel<T, *>) {
+        views.add(VIEWMODEL_VIEW_KEY to {
+            viewModel.factory.invoke(this.game, this.viewer ?: -1)
+        })
     }
 
     override fun <A : Any> action(action: ActionType<T, A>, actionDsl: GameFlowActionScope<T, A>.() -> Unit) {

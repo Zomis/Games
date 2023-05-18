@@ -33,6 +33,8 @@ class DesktopPlatform : PlatformTools {
     override fun toJson(value: Any): String = mapper.writeValueAsString(value)
 
     override fun <T : Any> fromJson(json: Any, type: KClass<T>): T {
+        println("Json convert: $json (of type ${json::class} to $type")
+        if (json::class == type) return json as T
         return mapper.convertValue(json, type.java)
     }
 
@@ -82,7 +84,7 @@ fun main() {
 //                coroutineScope = ,
                 platformTools = DesktopPlatform(),
                 clientConfig = clientConfig,
-                gameTypeStore = SupportedGames()
+                gameTypeStore = SupportedGames(DesktopPlatform())
             )
         }
         val windowState = rememberWindowState()

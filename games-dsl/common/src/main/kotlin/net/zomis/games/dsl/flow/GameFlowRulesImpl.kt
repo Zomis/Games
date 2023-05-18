@@ -14,6 +14,7 @@ interface GameFlowRuleScope<T : Any>: GameCommonRule<T> {
     fun rule(name: String, rule: GameFlowRuleScope<T>.() -> Any?)
 
     fun view(key: String, value: ViewScope<T>.() -> Any?)
+    fun viewModel(viewModel: ViewModel<T, *>)
     fun <A: Any> action(actionType: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>)
 }
 
@@ -67,10 +68,12 @@ abstract class GameFlowRuleContext<T: Any>: GameFlowRuleScope<T> {
     }
     override fun rule(name: String, rule: GameFlowRuleScope<T>.() -> Any?) {}
     override fun view(key: String, value: ViewScope<T>.() -> Any?) {}
+    override fun viewModel(viewModel: ViewModel<T, *>) {}
     override fun <A : Any> action(actionType: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>) {}
 }
 interface GameFlowRuleCallbacks<T: Any> {
     fun view(key: String, value: ViewScope<T>.() -> Any?)
+    fun viewModel(viewModel: ViewModel<T, *>)
     val feedback: (FlowStep) -> Unit
     fun <A : Any> action(action: ActionType<T, A>, actionDsl: GameFlowActionScope<T, A>.() -> Unit)
 }
@@ -125,6 +128,10 @@ class GameFlowRuleContextExecution<T: Any>(
 
     override fun view(key: String, value: ViewScope<T>.() -> Any?) {
         callbacks.view(key, value)
+    }
+
+    override fun viewModel(viewModel: ViewModel<T, *>) {
+        callbacks.viewModel(viewModel)
     }
 
     override fun <A : Any> action(actionType: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>) {

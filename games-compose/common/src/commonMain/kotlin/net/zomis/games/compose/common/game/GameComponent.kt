@@ -28,6 +28,7 @@ import net.zomis.games.PlayerElimination
 import net.zomis.games.PlayerEliminations
 import net.zomis.games.components.Point
 import net.zomis.games.compose.common.CoroutineScope
+import net.zomis.games.compose.common.TestPlatform
 import net.zomis.games.compose.common.gametype.GameTypeDetails
 import net.zomis.games.compose.common.gametype.SupportedGames
 import net.zomis.games.compose.common.network.ClientConnection
@@ -38,11 +39,12 @@ import net.zomis.games.dsl.impl.LogEntry
 interface GameComponent {
     val gameTypeDetails: GameTypeDetails
     val gameClient: GameClient
+    val viewDetails: SupportedGames.GameViewDetails
 }
 
 class DefaultGameComponent(
     componentContext: ComponentContext,
-    connection: ClientConnection,
+    private val connection: ClientConnection,
     gameStarted: Message.GameStarted,
     override val gameTypeDetails: GameTypeDetails
 ) : GameComponent {
@@ -55,9 +57,11 @@ class DefaultGameComponent(
         gameStarted, connection, scope, playerIndex ?: -1,
         _eliminations, _view, _logs
     )
+    override val viewDetails: SupportedGames.GameViewDetails
+        get() = SupportedGames.GameViewDetailsImpl(_view, gameClient)
+    val gameId = gameStarted.gameId
 
     init {
-        val gameId = gameStarted.gameId
         componentContext.lifecycle.doOnCreate {
             scope.launch {
                 connection.messages.onSubscription {
@@ -66,6 +70,9 @@ class DefaultGameComponent(
                     when (it) {
                         is Message.GameMessage.GameView -> {
                             _view.value = it.view
+                        }
+                        is Message.GameMessage.UpdateView -> {
+                            updateView()
                         }
                         is Message.GameMessage.PlayerEliminated -> {
                             _eliminations.update { oldValue ->
@@ -84,9 +91,15 @@ class DefaultGameComponent(
         }
         componentContext.lifecycle.doOnResume {
             scope.launch {
-                connection.send(ClientToServerMessage.GameView(gameStarted.gameType, gameId, playerIndex ?: -1, null, null))
+                updateView()
             }
         }
+    }
+
+    private suspend fun updateView() {
+        connection.send(
+            ClientToServerMessage.GameView(gameTypeDetails.gameType, gameId, playerIndex ?: -1, null, null)
+        )
     }
 
 
@@ -95,10 +108,13 @@ class DefaultGameComponent(
 @Composable
 fun GameContent(component: GameComponent) {
     val view = component.gameClient.view.subscribeAsState()
+    if (view.value is Unit) return
+    val value = view.value
+    if (value is Map<*, *> && value.isEmpty()) return
 
     Row(modifier = Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxHeight().weight(0.7f).background(Color.DarkGray)) {
-            component.gameTypeDetails.component.invoke(view.value)
+            component.gameTypeDetails.component.invoke(component.viewDetails)
         }
         Box(Modifier.fillMaxHeight().weight(0.3f).background(Color.Gray)) {
             Text("ActionLog")
@@ -110,8 +126,8 @@ fun GameContent(component: GameComponent) {
 @Preview
 fun GameContentPreview() {
     val coroutineScope = rememberCoroutineScope()
-    val gameStore = SupportedGames()
-    val gameType = "DSL-TTT"
+    val gameStore = SupportedGames(TestPlatform())
+    val gameType = "NoThanks"
     val gameTypeDetails = gameStore.getGameType(gameType)
     if (gameTypeDetails == null) {
         Text("Game $gameType not found")
@@ -122,7 +138,6 @@ fun GameContentPreview() {
     val component = LocalGameComponent(coroutineScope, gameTypeDetails, playerCount, playerIndex)
 
     LaunchedEffect(Unit) {
-
         component.gameClient.performAction("play", Point(0, 2))
     }
 

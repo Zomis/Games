@@ -15,7 +15,7 @@ interface GameTypeDetails {
     val timeNeeded: TimeExpression
     val description: String
     val gameConfig: @Composable (Any) -> Unit
-    val component: @Composable (Any) -> Unit
+    val component: @Composable (SupportedGames.GameViewDetails) -> Unit
     val logRenderers: Map<String, @Composable (Any) -> Unit>
 }
 
@@ -26,7 +26,7 @@ class GameTypeDetailsImpl(
     description: String? = null,
     override val logRenderers: Map<String, @Composable (Any) -> Unit> = emptyMap(),
     override val gameConfig: @Composable (Any) -> Unit = {},
-    override val component: @Composable (Any) -> Unit,
+    override val component: @Composable (SupportedGames.GameViewDetails) -> Unit,
 ) : GameTypeDetails {
     override val name: String = name ?: gameType
     override val description: String = description ?: "Description for $gameType"

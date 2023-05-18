@@ -11,6 +11,7 @@ interface GameClient {
     val view: Value<Any>
     val logs: Value<List<LogEntry>>
     suspend fun performAction(actionType: String, serializedParameter: Any)
+    fun postAction(actionType: String, serializedParameter: Any)
     // fun browseActions(actionType: String, choices: List<Any>): ...
     // actionTypes: Value<List<String>>
 

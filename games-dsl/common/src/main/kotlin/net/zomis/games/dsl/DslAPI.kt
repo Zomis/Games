@@ -77,9 +77,12 @@ interface GameDslScope<T : Any> : UsageScope {
     val scorers: ScorerFactory<T>
 }
 
+class ViewModel<T, VM>(val factory: (T, Int) -> VM)
+
 class GameCreator<T : Any>(val modelClass: KClass<T>) {
     fun game(name: String, dsl: GameDslScope<T>.() -> Unit): GameSpec<T> = GameSpec(name, dsl)
     fun <A: Any> action(name: String, parameterType: KClass<A>): GameActionCreator<T, A>
         = GameActionCreator(name, parameterType, parameterType, {it}, {it as A})
     fun singleAction(name: String) = this.action(name, Unit::class)
+    fun <VM> viewModel(viewModelCreator: (model: T, playerIndex: Int) -> VM): ViewModel<T, VM> = ViewModel(viewModelCreator)
 }
