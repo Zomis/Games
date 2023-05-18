@@ -26,7 +26,11 @@ class LobbyGameType {
     val clients = ClientList()
 }
 
-data class PlayerInfo(@JsonProperty("id") val playerId: String, val name: String?, val picture: String?) {
+@Deprecated("Use PlayerInfo instead")
+data class PlayerInfoId(@JsonProperty("id") val playerId: String, val name: String?, val picture: String?) {
+    fun toPlayerInfo() = PlayerInfo(playerId, name, picture)
+}
+data class PlayerInfo(val playerId: String, val name: String?, val picture: String?) {
     fun toMap(): Map<String, String> = mapOf(
         "id" to playerId,
         "name" to (name ?: "(UNKNOWN)"),

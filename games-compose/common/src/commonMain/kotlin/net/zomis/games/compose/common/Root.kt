@@ -12,11 +12,12 @@ import com.arkivanov.decompose.router.stack.*
 import com.arkivanov.decompose.value.Value
 import io.ktor.client.*
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import net.zomis.games.compose.common.game.DefaultGameComponent
+import net.zomis.games.compose.common.game.GameComponent
+import net.zomis.games.compose.common.game.GameContent
 import net.zomis.games.compose.common.gametype.GameTypeStore
 import net.zomis.games.compose.common.lobby.*
-import net.zomis.games.compose.common.network.ClientConnection
 import net.zomis.games.compose.common.network.ClientToServerMessage
 import net.zomis.games.compose.common.network.Message
 
@@ -33,6 +34,7 @@ interface RootComponent {
         class HomeChild(val component: HomeComponent) : Child
         class CreateInviteChild(val component: CreateInviteComponent) : Child
         class ViewInviteChild(val component: InviteComponent) : Child
+        class GameChild(val component: GameComponent) : Child
     }
 }
 
@@ -88,6 +90,13 @@ class DefaultRootComponent(
                     configuration.invite
                 )
             )
+            is Configuration.Game -> RootComponent.Child.GameChild(
+                DefaultGameComponent(
+                    componentContext, configuration.connection,
+                    configuration.gameStarted,
+                    gameTypeStore.getGameType(configuration.gameStarted.gameType)!!,
+                )
+            )
             else -> throw UnsupportedOperationException("Unknown child for configuration: $configuration")
         }
 
@@ -135,6 +144,7 @@ fun RootContent(component: RootComponent, modifier: Modifier = Modifier) {
             is RootComponent.Child.HomeChild -> HomeContent(component = child.component)
             is RootComponent.Child.CreateInviteChild -> CreateInviteContent(component = child.component)
             is RootComponent.Child.ViewInviteChild -> InviteContent(component = child.component)
+            is RootComponent.Child.GameChild -> GameContent(component = child.component)
             else -> throw UnsupportedOperationException("Unknown child: $child")
         }
     }

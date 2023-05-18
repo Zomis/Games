@@ -49,7 +49,7 @@ abstract class ClientConnection {
         send(ClientToServerMessage.JoinLobby(gameTypes = keys, maxGames = maxGames))
     }
 
-    suspend fun updateLobby(): Message.LobbyMessage = sendAndAwait(ClientToServerMessage.ListLobby)
+    suspend fun updateLobby(): Message.LobbyMessage = sendAndAwait<Message.LobbyMessageInternal>(ClientToServerMessage.ListLobby).toLobbyMessage()
 
     companion object {
 

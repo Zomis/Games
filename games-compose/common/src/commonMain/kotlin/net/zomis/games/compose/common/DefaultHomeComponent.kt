@@ -56,7 +56,7 @@ class DefaultHomeComponent(
     override val lobby = MutableValue(Message.LobbyMessage(emptyMap()))
     override val player: Value<Message.AuthMessage> = MutableValue(connection.auth!!)
     override val lobbyChangeMessages: Flow<Message.LobbyChangeMessage> = connection.messages.filterIsInstance()
-    private val lobbyMessages: Flow<Message.LobbyMessage> = connection.messages.filterIsInstance()
+    private val lobbyMessages: Flow<Message.LobbyMessage> = connection.messages.filterIsInstance<Message.LobbyMessageInternal>().map { it.toLobbyMessage() }
     override val invites = InvitationsStoreImpl(mainScope, connection, navigator, connection.auth!!, lobby.map { it.users })
 
 
@@ -74,6 +74,11 @@ class DefaultHomeComponent(
             coroutineScope.launch {
                 connection.messages.filterIsInstance<Message.InvitePrepare>().collect {
                     navigator.navigateTo(Configuration.CreateInvite(it, gameTypeStore.getGameType(it.gameType)!!, connection))
+                }
+            }
+            coroutineScope.launch {
+                connection.messages.filterIsInstance<Message.GameStarted>().filter { it.access.isNotEmpty() }.collect {
+                    navigator.navigateTo(Configuration.Game(it, connection))
                 }
             }
         }

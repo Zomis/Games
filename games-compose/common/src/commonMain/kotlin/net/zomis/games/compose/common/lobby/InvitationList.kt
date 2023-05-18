@@ -24,7 +24,7 @@ fun InvitationList(inviteStore: InvitationsStore) {
             val invite = it.value
             Column {
                 Row(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
-                    PlayerProfile(invite.host, modifier = Modifier.weight(0.2f))
+                    PlayerProfile(invite.host.toPlayerInfo(), modifier = Modifier.weight(0.2f))
                     GameTypeLink(invite.gameType, modifier = Modifier.weight(0.2f))
                     Text(text = "${invite.players.size} / ${invite.minPlayers}..${invite.maxPlayers}", modifier = Modifier.weight(0.2f))
                     Row(modifier = Modifier.weight(0.2f)) {

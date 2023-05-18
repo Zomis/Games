@@ -25,6 +25,7 @@ import net.zomis.games.compose.common.network.ClientConnection
 import net.zomis.games.compose.common.network.ClientToServerMessage
 import net.zomis.games.compose.common.network.Message
 import net.zomis.games.server2.invites.PlayerInfo
+import net.zomis.games.server2.invites.PlayerInfoId
 
 interface InviteComponent {
 
@@ -87,12 +88,8 @@ class DefaultViewInviteComponent(
 @Composable
 fun InviteContent(component: InviteComponent) {
     val players = component.invite.map { it.players }.subscribeAsState()
-    val invitedPlayers = component.invite.map { it.invited }.subscribeAsState()
+    val invitedPlayers = component.invite.map { it.invited.map(PlayerInfoId::toPlayerInfo) }.subscribeAsState()
     val invitablePlayers = component.availablePlayers.subscribeAsState()
-    println("players1 ${players.value}")
-    println("players2 ${invitedPlayers.value}")
-    println("players3 ${invitablePlayers.value}")
-    println("showHost ${component.showHostOptions}")
     Row(Modifier.fillMaxSize()) {
         Column(Modifier.width(300.dp)) {
             Card {

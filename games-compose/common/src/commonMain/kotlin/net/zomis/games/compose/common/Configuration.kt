@@ -4,7 +4,6 @@ import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.parcelable.Parcelable
 import com.arkivanov.essenty.parcelable.Parcelize
 import net.zomis.games.compose.common.gametype.GameTypeDetails
-import net.zomis.games.compose.common.gametype.GameTypeStore
 import net.zomis.games.compose.common.network.ClientConnection
 import net.zomis.games.compose.common.network.Message
 import net.zomis.games.server2.invites.PlayerInfo
@@ -35,7 +34,10 @@ sealed interface Configuration : Parcelable {
     ) : Configuration
 
     @Parcelize
-    data class Game(val gameId: String) : Configuration
+    data class Game(
+        val gameStarted: Message.GameStarted,
+        val connection: ClientConnection,
+    ) : Configuration
 
 
 }

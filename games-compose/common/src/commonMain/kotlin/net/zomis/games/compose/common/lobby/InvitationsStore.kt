@@ -6,8 +6,6 @@ import com.arkivanov.decompose.value.getAndUpdate
 import com.arkivanov.decompose.value.operator.map
 import com.arkivanov.decompose.value.update
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
 import net.zomis.games.compose.common.Configuration
