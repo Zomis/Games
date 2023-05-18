@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.compose.common.network.ClientConnection
 import net.zomis.games.compose.common.network.Message
+import net.zomis.games.dsl.impl.LogEntry
 
 class NetworkGameClient(
     startedMessage: Message.GameStarted,
@@ -13,7 +14,7 @@ class NetworkGameClient(
     override val playerIndex: Int,
     override val eliminations: Value<PlayerEliminationsRead>,
     override val view: Value<Any>,
-    override val logs: Value<List<Message.GameMessage.ActionLog>>,
+    override val logs: Value<List<LogEntry>>,
 ) : GameClient {
     override val gameType: String = startedMessage.gameType
 

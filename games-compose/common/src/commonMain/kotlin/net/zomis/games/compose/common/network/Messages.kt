@@ -1,6 +1,7 @@
 package net.zomis.games.compose.common.network
 
 import net.zomis.games.WinResult
+import net.zomis.games.dsl.impl.LogPart
 import net.zomis.games.server2.invites.PlayerInfo
 import net.zomis.games.server2.invites.PlayerInfoId
 import kotlin.reflect.KClass
@@ -60,7 +61,7 @@ sealed class Message(val type: String) {
         abstract val gameType: String
         abstract val gameId: String
 
-        data class ActionLog(override val gameType: String, override val gameId: String, val private: Boolean, val parts: List<Any>) : GameMessage("ActionLog")
+        data class ActionLog(override val gameType: String, override val gameId: String, val private: Boolean, val parts: List<LogPart>) : GameMessage("ActionLog")
         data class UpdateView(override val gameType: String, override val gameId: String) : GameMessage("UpdateView")
         data class GameReady(override val gameType: String, override val gameId: String) : GameMessage("GameReady")
         data class GameEnded(override val gameType: String, override val gameId: String) : GameMessage("GameEnded")

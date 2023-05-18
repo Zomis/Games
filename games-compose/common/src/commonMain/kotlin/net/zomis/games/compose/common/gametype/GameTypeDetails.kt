@@ -10,6 +10,7 @@ interface TimeExpression {
 interface GameTypeDetails {
     val gameType: String
     val name: String
+    val gameEntryPoint: GameEntryPoint<Any>
     val playersCount: IntRange
     val timeNeeded: TimeExpression
     val description: String
@@ -21,7 +22,7 @@ interface GameTypeDetails {
 class GameTypeDetailsImpl(
     override val gameType: String,
     name: String? = null,
-    val gameEntryPoint: GameEntryPoint<Any>,
+    override val gameEntryPoint: GameEntryPoint<Any>,
     description: String? = null,
     override val logRenderers: Map<String, @Composable (Any) -> Unit> = emptyMap(),
     override val gameConfig: @Composable (Any) -> Unit = {},
