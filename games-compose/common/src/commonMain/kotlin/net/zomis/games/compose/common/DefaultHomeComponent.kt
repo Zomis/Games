@@ -115,13 +115,13 @@ class DefaultHomeComponent(
 
 @Composable
 fun HomeContent(component: HomeComponent) {
-    val lobby = component.lobby.subscribeAsState().value.users.entries.toList()
+    val lobby = component.lobby.map { it.users.entries.toList() }.subscribeAsState()
     AppView(component.player) {
         InvitationList(component.invites)
         LazyVerticalGrid(
             columns = GridCells.Adaptive(300.dp)
         ) {
-            items(items = lobby, key = { it.key }) { lobbyGame ->
+            items(items = lobby.value, key = { it.key }) { lobbyGame ->
                 LobbyGame(lobbyGame.key, lobbyGame.value) {
                     component.startInvite(lobbyGame.key)
                 }

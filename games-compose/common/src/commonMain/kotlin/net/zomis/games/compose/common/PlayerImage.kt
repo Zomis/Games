@@ -3,6 +3,7 @@ package net.zomis.games.compose.common
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.Image
 import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import io.ktor.client.*
@@ -19,9 +20,15 @@ suspend fun loadPicture(httpClient: HttpClient, url: String): ImageBitmap {
     }
     return SkiaImage.makeFromEncoded(image).toComposeImageBitmap()
 }
+private val httpClient = HttpClient(CIO)
 
 @Composable
-fun PlayerImage(httpClient: HttpClient, player: PlayerInfo) {
+fun PlayerImage(player: PlayerInfo, modifier: Modifier) {
+    PlayerImage(httpClient, player, modifier)
+}
+
+@Composable
+fun PlayerImage(httpClient: HttpClient, player: PlayerInfo, modifier: Modifier) {
     if (player.picture == null) return
     // TODO: Store previously loaded images in a Map<URL, ImageBitmap> cache?
     var image by remember {
@@ -31,7 +38,7 @@ fun PlayerImage(httpClient: HttpClient, player: PlayerInfo) {
         image = loadPicture(httpClient = httpClient, url = player.picture!!)
     }
     if (image != null) {
-        Image(bitmap = image!!, contentDescription = null)
+        Image(bitmap = image!!, contentDescription = null, modifier = modifier)
     }
 }
 
@@ -39,5 +46,5 @@ fun PlayerImage(httpClient: HttpClient, player: PlayerInfo) {
 @Preview
 fun PlayerImagePreview() {
     val httpClient = HttpClient(CIO)
-    PlayerImage(httpClient, TestData.testPlayerInfo)
+    PlayerImage(httpClient, TestData.testPlayerInfo, modifier = Modifier)
 }

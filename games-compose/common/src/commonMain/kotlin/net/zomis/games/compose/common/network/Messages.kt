@@ -45,7 +45,9 @@ sealed class Message(val type: String) {
         val gameType: String, val gameId: String,
         val access: Map<String, String>,
         val players: List<PlayerInfo>
-    ) : Message("GameStarted")
+    ) : Message("GameStarted") {
+        fun indexAccess(): Map<Int, String> = access.mapKeys { it.key.toInt() }
+    }
     data class GameInfo(
         val gameType: String, val gameId: String,
         val access: Map<String, String>,

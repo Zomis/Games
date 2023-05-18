@@ -73,11 +73,11 @@ class DefaultCreateInviteComponent(
 
 @Composable
 fun CreateInviteContent(component: CreateInviteComponent) {
-    Column {
-        Row {
+    Column(Modifier.fillMaxSize()) {
+        Row(Modifier.weight(0.5f).padding(12.dp)) {
             // Game Details
             Card(Modifier.weight(0.5f).background(Color.Magenta)) {
-
+                GameTypeDetailsContent(component.gameDetails, showDescription = true, showPreview = true, showLinks = true, showTags = true)
             }
 
             // Generic Game Options
@@ -85,7 +85,7 @@ fun CreateInviteContent(component: CreateInviteComponent) {
 
             }
         }
-        Card(Modifier.weight(1f)) {
+        Card(Modifier.weight(0.5f)) {
             // Game-specific options
         }
         Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.End) {

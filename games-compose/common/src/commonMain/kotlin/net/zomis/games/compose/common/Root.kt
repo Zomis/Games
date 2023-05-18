@@ -81,7 +81,12 @@ class DefaultRootComponent(
                 }
             )
             is Configuration.ViewInvite -> RootComponent.Child.ViewInviteChild(
-                DefaultViewInviteComponent(componentContext, configuration.connection, configuration.availablePlayers, configuration.invite)
+                DefaultViewInviteComponent(
+                    componentContext, configuration.connection,
+                    configuration.availablePlayers,
+                    gameTypeStore.getGameType(configuration.invite.gameType)!!,
+                    configuration.invite
+                )
             )
             else -> throw UnsupportedOperationException("Unknown child for configuration: $configuration")
         }
