@@ -60,7 +60,7 @@ class DefaultLoginComponent(
 }
 
 @Composable
-fun LoginContent(component: DefaultLoginComponent) {
+fun LoginContent(component: LoginComponent) {
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
         Button({
             component.gitHubLogin()

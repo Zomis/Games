@@ -19,6 +19,7 @@ import io.ktor.client.plugins.websocket.*
 import io.ktor.serialization.jackson.*
 import kotlinx.coroutines.Dispatchers
 import net.zomis.games.compose.common.*
+import net.zomis.games.compose.common.gametype.SupportedGames
 import java.nio.file.Path
 import javax.swing.SwingUtilities
 import kotlin.coroutines.coroutineContext
@@ -81,6 +82,7 @@ fun main() {
 //                coroutineScope = ,
                 platformTools = DesktopPlatform(),
                 clientConfig = clientConfig,
+                gameTypeStore = SupportedGames()
             )
         }
         val windowState = rememberWindowState()
@@ -90,7 +92,7 @@ fun main() {
         Window(
             onCloseRequest = ::exitApplication,
             state = windowState,
-            title = "Minesweeper Flags Extreme"
+            title = "Zomis' Games"
         ) {
             MaterialTheme {
                 Surface {

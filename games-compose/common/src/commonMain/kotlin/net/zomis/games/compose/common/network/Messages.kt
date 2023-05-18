@@ -36,7 +36,7 @@ sealed class Message(val type: String) {
     ) : Message("InviteView")
 
     data class InviteStatus(val inviteId: String, val playerId: String, val status: String) : Message("InviteStatus")
-    data class InvitePrepare(val gameType: String, val playersMin: Int, val playersMax: Int, val config: Any) : Message("InvitePrepare")
+    data class InvitePrepare(val gameType: String, val playersMin: Int, val playersMax: Int, val config: Any?) : Message("InvitePrepare")
     data class InviteResponse(val inviteId: String, val playerId: String, val accepted: Boolean) : Message("InviteResponse")
 
     data class ActionLog(val gameType: String, val gameId: String, val private: Boolean, val parts: List<Any>) : Message("ActionLog")
