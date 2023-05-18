@@ -31,9 +31,11 @@ interface PlayerEliminationsWrite: PlayerEliminationsRead {
 
 data class PlayerElimination(val playerIndex: Int, val winResult: WinResult, val position: Int)
 
-class PlayerEliminations(override val playerCount: Int): PlayerEliminationsWrite, PlayerEliminationsRead {
+class PlayerEliminations(
+    override val playerCount: Int,
+    private val eliminations: MutableList<PlayerElimination> = mutableListOf(),
+): PlayerEliminationsWrite, PlayerEliminationsRead {
 
-    private val eliminations = mutableListOf<PlayerElimination>()
     var callback: (PlayerElimination) -> Unit = {}
 
     override fun remainingPlayers(): List<Int> {
@@ -116,6 +118,10 @@ class PlayerEliminations(override val playerCount: Int): PlayerEliminationsWrite
 
     override fun isGameOver(): Boolean {
         return this.eliminations.map { it.playerIndex }.distinct().size == playerCount
+    }
+
+    operator fun plus(elimination: PlayerElimination): PlayerEliminations {
+        return PlayerEliminations(playerCount, eliminations.plus(elimination).toMutableList())
     }
 
 }
