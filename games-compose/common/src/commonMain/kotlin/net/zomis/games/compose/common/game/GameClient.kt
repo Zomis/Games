@@ -3,13 +3,17 @@ package net.zomis.games.compose.common.game
 import com.arkivanov.decompose.value.Value
 import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.dsl.impl.LogEntry
+import net.zomis.games.server2.invites.PlayerInfo
 
 interface GameClient {
+    val playerIndices: IntRange get() = 0 until playerCount
+    val playerCount: Int
     val gameType: String
-    val playerIndex: Int
+    val playerIndex: Value<Int>
     val eliminations: Value<PlayerEliminationsRead>
     val view: Value<Any>
     val logs: Value<List<LogEntry>>
+    val players: Value<List<PlayerInfo>>
     suspend fun performAction(actionType: String, serializedParameter: Any)
     fun postAction(actionType: String, serializedParameter: Any)
     // fun browseActions(actionType: String, choices: List<Any>): ...

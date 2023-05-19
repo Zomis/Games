@@ -2,15 +2,10 @@ package net.zomis.games.compose.common.game
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.Button
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.arkivanov.decompose.ComponentContext
@@ -54,7 +49,7 @@ class DefaultGameComponent(
     private val _view = MutableValue<Any>(Unit)
     private val _logs = MutableValue(emptyList<LogEntry>())
     override val gameClient: GameClient = NetworkGameClient(
-        gameStarted, connection, scope, playerIndex ?: -1,
+        gameStarted, connection, scope, MutableValue(playerIndex ?: -1),
         _eliminations, _view, _logs
     )
     override val viewDetails: SupportedGames.GameViewDetails
@@ -134,12 +129,22 @@ fun GameContentPreview() {
         return
     }
     val playerCount = remember { gameTypeDetails.gameEntryPoint.setup().playersCount.random() }
-    val playerIndex = remember { (0 until playerCount).random() }
+    val playerIndex = MutableValue(0)
     val component = LocalGameComponent(coroutineScope, gameTypeDetails, playerCount, playerIndex)
+    playerIndex.subscribeAsState()
 
     LaunchedEffect(Unit) {
         component.gameClient.performAction("play", Point(0, 2))
     }
+    Column(Modifier.fillMaxSize()) {
+        Row {
+            for (i in component.gameClient.playerIndices) {
+                Button(onClick = { playerIndex.value = i }) {
+                    Text(i.toString())
+                }
+            }
+        }
+        GameContent(component)
+    }
 
-    GameContent(component)
 }
