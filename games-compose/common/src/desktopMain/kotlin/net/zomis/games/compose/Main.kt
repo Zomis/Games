@@ -1,3 +1,5 @@
+package net.zomis.games.compose
+
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
@@ -20,6 +22,7 @@ import io.ktor.client.plugins.websocket.*
 import io.ktor.serialization.jackson.*
 import kotlinx.coroutines.Dispatchers
 import net.zomis.games.compose.common.*
+import net.zomis.games.compose.common.game.GameContentPreview
 import net.zomis.games.compose.common.gametype.SupportedGames
 import java.nio.file.Path
 import javax.swing.SwingUtilities
@@ -96,6 +99,7 @@ fun main() {
         ) {
             MaterialTheme {
                 Surface {
+//                    GameContentPreview()
                     RootContent(component = root, modifier = Modifier.fillMaxSize())
                 }
             }
