@@ -2,8 +2,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.arkivanov.decompose.DefaultComponentContext
@@ -22,7 +24,6 @@ import net.zomis.games.compose.common.*
 import net.zomis.games.compose.common.gametype.SupportedGames
 import java.nio.file.Path
 import javax.swing.SwingUtilities
-import kotlin.coroutines.coroutineContext
 import kotlin.reflect.KClass
 
 class DesktopPlatform : PlatformTools {
@@ -87,7 +88,7 @@ fun main() {
                 gameTypeStore = SupportedGames(DesktopPlatform())
             )
         }
-        val windowState = rememberWindowState()
+        val windowState = rememberWindowState(position = WindowPosition.Aligned(Alignment.Center))
 
         LifecycleController(lifecycle, windowState)
 
