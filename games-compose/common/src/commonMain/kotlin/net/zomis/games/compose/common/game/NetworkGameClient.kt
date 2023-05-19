@@ -28,7 +28,7 @@ class NetworkGameClient(
     override val players: Value<List<PlayerInfo>> = MutableValue(startedMessage.players).map { it.map(PlayerInfoId::toPlayerInfo) }
 
     override suspend fun performAction(actionType: String, serializedParameter: Any) {
-        connection.send(ClientToServerMessage.GameActionPerform(gameType, gameId, actionType, serializedParameter))
+        connection.send(ClientToServerMessage.GameActionMove(gameType, gameId, playerIndex.value, actionType, serializedParameter))
     }
 
     override fun postAction(actionType: String, serializedParameter: Any) {

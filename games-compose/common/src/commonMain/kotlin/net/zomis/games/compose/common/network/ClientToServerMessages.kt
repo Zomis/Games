@@ -18,9 +18,11 @@ sealed class ClientToServerMessage(val route: String) {
 
     class GameJoin(gameType: String, gameId: String) : ClientToServerMessage("games/$gameType/$gameId/join")
     class GameView(gameType: String, gameId: String, val playerIndex: Int, val actionType: String?, val chosen: List<Any>?) : ClientToServerMessage("games/$gameType/$gameId/view")
-    class GameActionPerform(gameType: String, gameId: String, val moveType: String, val move: Any?) : ClientToServerMessage("games/$gameType/$gameId/join")
+    class GameActionPerform(gameType: String, gameId: String, val playerIndex: Int, val moveType: String, val chosen: List<Any>?) : ClientToServerMessage("games/$gameType/$gameId/action")
+    @Deprecated("Prefer GameActionPerform instead")
+    class GameActionMove(gameType: String, gameId: String, val playerIndex: Int, val moveType: String, val move: Any?) : ClientToServerMessage("games/$gameType/$gameId/move")
 
     @Deprecated("Actions should be made part of view")
-    class GameActionList(gameType: String, gameId: String, val playerIndex: Int, val chosen: List<Any>) : ClientToServerMessage("games/$gameType/$gameId/join")
+    class GameActionList(gameType: String, gameId: String, val playerIndex: Int, val chosen: List<Any>) : ClientToServerMessage("games/$gameType/$gameId/actionList")
 
 }

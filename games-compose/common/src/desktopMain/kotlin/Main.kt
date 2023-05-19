@@ -1,7 +1,6 @@
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.Window
@@ -75,14 +74,12 @@ fun main() {
     val clientConfig = ClientConfig()
 
     application {
-        val coroutineScope = rememberCoroutineScope()
         val root = runOnUiThreadDesktop {
             DefaultRootComponent(
                 componentContext = DefaultComponentContext(lifecycle = lifecycle),
                 httpClient = httpClient,
                 localStorage = FileLocalStorage(Path.of("localStorage")),
                 mainScope = CoroutineScope(Dispatchers.Default, lifecycle),
-//                coroutineScope = ,
                 platformTools = DesktopPlatform(),
                 clientConfig = clientConfig,
                 gameTypeStore = SupportedGames(DesktopPlatform())

@@ -39,7 +39,9 @@ class SupportedGames(private val platformTools: PlatformTools) : GameTypeStore {
             }
         }
         addGame("Hanabi") { Text(it.toString()) }
-        addGame("DSL-TTT") { SimpleGridGames.TTT(it.view.subscribeAsState().value) }
+        addGame("DSL-TTT") {
+            SimpleGridGames.TTT(it.view.subscribeAsState().value, it.gameClient, it.gameClient.playerIndex.subscribeAsState().value)
+        }
     }
 
     @Composable

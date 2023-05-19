@@ -79,11 +79,8 @@ class LocalGameClient(
         println("Handle: $step")
         val game = this.game ?: return
         when (step) {
-            is FlowStep.AwaitInput -> {
+            is FlowStep.AwaitInput, is FlowStep.GameEnd -> {
                 view.value = game.view(playerIndex.value)
-            }
-            is FlowStep.GameEnd -> {
-
             }
             is FlowStep.Log -> {
                 val entry = step.log.forPlayer(playerIndex.value)

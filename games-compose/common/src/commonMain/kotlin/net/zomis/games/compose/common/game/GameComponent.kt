@@ -66,7 +66,7 @@ class DefaultGameComponent(
                         is Message.GameMessage.GameView -> {
                             _view.value = it.view
                         }
-                        is Message.GameMessage.UpdateView -> {
+                        is Message.GameMessage.UpdateView, is Message.GameMessage.GameMove -> {
                             updateView()
                         }
                         is Message.GameMessage.PlayerEliminated -> {
@@ -133,9 +133,6 @@ fun GameContentPreview() {
     val component = LocalGameComponent(coroutineScope, gameTypeDetails, playerCount, playerIndex)
     playerIndex.subscribeAsState()
 
-    LaunchedEffect(Unit) {
-        component.gameClient.performAction("play", Point(0, 2))
-    }
     Column(Modifier.fillMaxSize()) {
         Row {
             for (i in component.gameClient.playerIndices) {
