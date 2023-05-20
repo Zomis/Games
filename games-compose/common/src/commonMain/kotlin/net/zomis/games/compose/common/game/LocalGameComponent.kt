@@ -26,9 +26,10 @@ class LocalGameComponent(
     override val gameTypeDetails: GameTypeDetails,
     playerCount: Int,
     playerIndex: Value<Int>,
+    listeners: (Game<Any>) -> List<GameListener> = { emptyList() },
 ): GameComponent {
     override val gameClient: GameClient = LocalGameClient(
-        coroutineScope, playerIndex, playerCount, gameTypeDetails
+        coroutineScope, playerIndex, playerCount, gameTypeDetails, listeners
     )
     override val viewDetails: SupportedGames.GameViewDetails
         get() = SupportedGames.GameViewDetailsImpl(gameClient.view, gameClient)
@@ -39,6 +40,7 @@ class LocalGameClient(
     override val playerIndex: Value<Int>,
     override val playerCount: Int,
     gameTypeDetails: GameTypeDetails,
+    listeners: (Game<Any>) -> List<GameListener>,
 ) : GameClient, GameListener {
     private var game: Game<Any>? = null
 
@@ -52,7 +54,7 @@ class LocalGameClient(
     init {
         coroutineScope.launch {
             game = gameTypeDetails.gameEntryPoint.setup().startGame(this, playerCount) {
-                listOf(this@LocalGameClient)
+                listOf(this@LocalGameClient) + listeners.invoke(it)
             }
             eliminations.value = game!!.eliminations
             view.value = game!!.view(playerIndex.value)

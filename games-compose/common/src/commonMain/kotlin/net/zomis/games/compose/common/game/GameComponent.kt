@@ -30,6 +30,7 @@ import net.zomis.games.compose.common.network.ClientConnection
 import net.zomis.games.compose.common.network.ClientToServerMessage
 import net.zomis.games.compose.common.network.Message
 import net.zomis.games.dsl.impl.LogEntry
+import net.zomis.games.listeners.LimitedNextViews
 
 interface GameComponent {
     val gameTypeDetails: GameTypeDetails
@@ -130,8 +131,11 @@ fun GameContentPreview() {
     }
     val playerCount = remember { gameTypeDetails.gameEntryPoint.setup().playersCount.random() }
     val playerIndex = MutableValue(0)
-    val component = LocalGameComponent(coroutineScope, gameTypeDetails, playerCount, playerIndex)
-    playerIndex.subscribeAsState()
+    val component = LocalGameComponent(coroutineScope, gameTypeDetails, playerCount, playerIndex) {
+        listOf(
+            LimitedNextViews(10),
+        )
+    }
 
     Column(Modifier.fillMaxSize()) {
         Row {
