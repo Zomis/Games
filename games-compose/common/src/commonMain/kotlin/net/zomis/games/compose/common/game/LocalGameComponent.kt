@@ -67,8 +67,12 @@ class LocalGameClient(
         val game = game
         check(game != null)
         val actionTypeEntry = game.actions.type(actionType) ?: return
-        val action = actionTypeEntry.createActionFromSerialized(playerIndex.value, serializedParameter)
-        game.actionsInput.send(action)
+        try {
+            val action = actionTypeEntry.createActionFromSerialized(playerIndex.value, serializedParameter)
+            game.actionsInput.send(action)
+        } catch (e: Exception) {
+            println(e)
+        }
     }
 
     override fun postAction(actionType: String, serializedParameter: Any) {
