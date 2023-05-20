@@ -2,6 +2,7 @@ package net.zomis.games.impl
 
 import net.zomis.games.WinResult
 import net.zomis.games.api.GamesApi
+import net.zomis.games.cards.Card
 import net.zomis.games.cards.CardZone
 import net.zomis.games.common.next
 
@@ -27,7 +28,6 @@ object NoThanks {
     }
 
     class ViewModel(
-        val viewer: Int,
         val cardsRemaining: Int,
         val currentCard: Int?,
         val currentPlayer: Int,
@@ -35,7 +35,6 @@ object NoThanks {
         val players: List<ViewPlayer>
     ) {
         constructor(model: Model, viewer: Int) : this(
-            viewer,
             cardsRemaining = model.deck.size,
             currentCard = model.currentCard,
             currentPlayer = model.currentPlayer,
@@ -52,6 +51,7 @@ object NoThanks {
     val action = factory.action("take", Boolean::class)
     val viewModel = factory.viewModel(::ViewModel)
     val game = factory.game("NoThanks") {
+        val removedCards = config("removedCards") { 9 }
         setup {
             players(2..7)
             init {
@@ -64,6 +64,7 @@ object NoThanks {
             }
         }
         gameFlow {
+            game.deck.random(replayable, config(removedCards), "discard", Int::toString).forEach(Card<*>::remove)
             loop {
                 if (game.currentCard == null) {
                     if (game.deck.isEmpty()) {
