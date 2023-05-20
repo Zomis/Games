@@ -30,16 +30,27 @@ fun PlayerImage(player: PlayerInfo, modifier: Modifier) {
 @Composable
 fun PlayerImage(httpClient: HttpClient, player: PlayerInfo, modifier: Modifier) {
     if (player.picture == null) return
+    GeneralImage(httpClient, player.picture!!, modifier)
+}
+
+@Composable
+fun GeneralImage(url: String, modifier: Modifier) {
+    GeneralImage(httpClient, url, modifier)
+}
+
+@Composable
+fun GeneralImage(httpClient: HttpClient, url: String, modifier: Modifier) {
     // TODO: Store previously loaded images in a Map<URL, ImageBitmap> cache?
     var image by remember {
         mutableStateOf<ImageBitmap?>(null)
     }
-    LaunchedEffect(player.picture) {
-        image = loadPicture(httpClient = httpClient, url = player.picture!!)
+    LaunchedEffect(url) {
+        image = loadPicture(httpClient = httpClient, url = url)
     }
     if (image != null) {
         Image(bitmap = image!!, contentDescription = null, modifier = modifier)
     }
+
 }
 
 @Composable
