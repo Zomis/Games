@@ -10,12 +10,10 @@ class NormalMultiplayer {
 
     object Goal {
 
-        fun lastPlayersStanding(number: Int): (Game<Flags.Model>) -> Unit {
-            return { e: Game<Flags.Model> ->
-                val winnablePlayers = e.eliminations.remainingPlayers().count()
-                if (winnablePlayers <= number) {
-                    e.eliminations.eliminateRemaining(WinResult.WIN)
-                }
+        fun lastPlayersStanding(eliminations: PlayerEliminationsWrite, count: Int) {
+            val winnablePlayers = eliminations.remainingPlayers().count()
+            if (winnablePlayers <= count) {
+                eliminations.eliminateRemaining(WinResult.WIN)
             }
         }
 

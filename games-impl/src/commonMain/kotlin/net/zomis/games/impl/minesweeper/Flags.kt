@@ -38,6 +38,9 @@ object Flags {
             this.value = _neighbors.sumOf { it.mineValue }
         }
         fun reveal(playedBy: Player?) {
+            if (!this.clicked && playedBy != null) {
+                playedBy.score += mineValue
+            }
             this.clicked = true
             this.takenBy = playedBy
         }
@@ -102,6 +105,7 @@ object Flags {
                 }
 
                 NormalMultiplayer.Goal.eliminateLosers(game, eliminations)
+                NormalMultiplayer.Goal.lastPlayersStanding(eliminations, count = 1)
             }
         }
         gameFlowRules {
