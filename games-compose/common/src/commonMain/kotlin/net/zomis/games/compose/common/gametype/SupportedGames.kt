@@ -1,9 +1,7 @@
 package net.zomis.games.compose.common.gametype
 
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
-import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import net.zomis.games.compose.common.PlatformTools
 import net.zomis.games.compose.common.game.GameClient
@@ -11,6 +9,7 @@ import net.zomis.games.compose.common.games.NoThanksGameView
 import net.zomis.games.compose.common.games.SimpleGridGames
 import net.zomis.games.dsl.flow.VIEWMODEL_VIEW_KEY
 import net.zomis.games.impl.NoThanks
+import net.zomis.games.impl.minesweeper.ViewModel as MFEViewModel
 import net.zomis.games.server2.ServerGames
 import kotlin.reflect.KClass
 
@@ -38,9 +37,13 @@ class SupportedGames(private val platformTools: PlatformTools) : GameTypeStore {
                 NoThanksGameView(result, it.gameClient)
             }
         }
-        addGame("Hanabi") { Text(it.toString()) }
         addGame("DSL-TTT") {
             SimpleGridGames.TTT(it.view.subscribeAsState().value, it.gameClient, it.gameClient.playerIndex.subscribeAsState().value)
+        }
+        addGame("MFE") {
+            fromViewModel(it.view.subscribeAsState().value, MFEViewModel::class) { result ->
+                SimpleGridGames.MFE(result, it.gameClient)
+            }
         }
     }
 

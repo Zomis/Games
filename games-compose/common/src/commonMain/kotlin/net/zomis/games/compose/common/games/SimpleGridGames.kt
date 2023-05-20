@@ -1,12 +1,16 @@
 package net.zomis.games.compose.common.games
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import net.zomis.games.compose.common.game.GameClient
+import net.zomis.games.impl.minesweeper.ViewModel
 
 object SimpleGridGames {
     private val tileSize = 48
@@ -38,6 +42,31 @@ object SimpleGridGames {
 //                else Piece(3, modifier = Modifier.border(1.dp, color = Color.White).size(tileSize.dp))
             }
         )
+    }
+
+    @Composable
+    fun MFE(view: ViewModel, gameClient: GameClient) {
+        GridView(
+            view.grid.rect.width(), view.grid.rect.height(), view.grid.grid,
+            modifier = Modifier, tileSize = 64.dp, tilePadding = 0.dp,
+            onClick = { point, viewField ->
+                gameClient.postAction("use", "default@${point.x},${point.y}")
+            },
+            clickable = { x, y, field -> true }
+        ) { x, y, field ->
+            val f = field!!
+            if (!f.clicked) {
+                Image(painterResource("images/mfe/classic_unknown.png"), contentDescription = "unknown")
+                return@GridView
+            }
+            if (f.knownMineValue != null && f.knownMineValue!! > 0) {
+                val i = "m" + (field.playedBy ?: "_null")
+                Image(painterResource("images/mfe/classic_$i.png"), contentDescription = i)
+            } else {
+                val i = f.knownValue
+                Image(painterResource("images/mfe/classic_$i.png"), contentDescription = i.toString())
+            }
+        }
     }
 
 }

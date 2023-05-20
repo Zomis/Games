@@ -78,6 +78,9 @@ interface Grid<T> {
     }
     fun all(): Iterable<GridPoint<T>> = points().map { point(it.x, it.y) }
 
+    fun <R> viewModel(viewFunction: (T) -> R): GridView<R?> {
+        return GridView(border(), boardView(viewFunction))
+    }
     fun view(viewFunction: (T) -> Any?): Map<String, Any> {
         val border = border()
         return mapOf(
@@ -88,13 +91,19 @@ interface Grid<T> {
             "grid" to boardView(viewFunction)
         )
     }
-    fun boardView(viewFunction: (T) -> Any?): List<List<Any?>> {
+    fun <R> boardView(viewFunction: (T) -> R): List<List<R?>> {
         val border = border()
         return (border.top..border.bottom).map { y ->
             (border.left..border.right).map { x ->
                 val pos = getOrNull(x, y)
                 if (pos != null) viewFunction(pos) else null
             }
+        }
+    }
+
+    fun <R> map(mapper: (T) -> R): Grid<R> {
+        return GridImpl(sizeX, sizeY) { x, y ->
+            mapper.invoke(this.get(x, y))
         }
     }
 }
@@ -128,3 +137,8 @@ class GridSubView<T>(private val original: Grid<T>, val origin: Point, override 
 
 fun <T> Grid<T>.subGrid(x: Int, y: Int, subSizeX: Int, subSizeY: Int): Grid<T>
     = GridSubView(this, Point(x, y), subSizeX, subSizeY)
+
+data class GridView<T>(
+    val rect: Rect,
+    val grid: List<List<T>>
+)
