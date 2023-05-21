@@ -1,10 +1,8 @@
 package net.zomis.games.compose
 
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
@@ -20,6 +18,7 @@ import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.serialization.jackson.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import net.zomis.games.compose.common.*
 import net.zomis.games.compose.common.game.GameContentPreview
@@ -77,12 +76,13 @@ fun main() {
     val clientConfig = ClientConfig()
 
     application {
+        val coroutineScope = CoroutineScope(Dispatchers.Default, lifecycle)
         val root = runOnUiThreadDesktop {
             DefaultRootComponent(
                 componentContext = DefaultComponentContext(lifecycle = lifecycle),
                 httpClient = httpClient,
                 localStorage = FileLocalStorage(Path.of("localStorage")),
-                mainScope = CoroutineScope(Dispatchers.Default, lifecycle),
+                mainScope = coroutineScope,
                 platformTools = DesktopPlatform(),
                 clientConfig = clientConfig,
                 gameTypeStore = SupportedGames(DesktopPlatform())
@@ -93,14 +93,16 @@ fun main() {
         LifecycleController(lifecycle, windowState)
 
         Window(
-            onCloseRequest = ::exitApplication,
+            onCloseRequest = {
+                this.exitApplication()
+            },
             state = windowState,
             title = "Zomis' Games"
         ) {
             MaterialTheme {
                 Surface {
-//                    GameContentPreview()
-                    RootContent(component = root, modifier = Modifier.fillMaxSize())
+                    GameContentPreview()
+//                    RootContent(component = root, modifier = Modifier.fillMaxSize())
                 }
             }
         }

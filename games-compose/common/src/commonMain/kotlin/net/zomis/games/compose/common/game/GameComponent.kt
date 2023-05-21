@@ -112,9 +112,11 @@ fun GameContent(component: GameComponent) {
         Box(Modifier.fillMaxHeight().weight(0.7f).background(Color.DarkGray)) {
             component.gameTypeDetails.component.invoke(component.viewDetails)
         }
+        /*
         Box(Modifier.fillMaxHeight().weight(0.3f).background(Color.Gray)) {
             Text("ActionLog")
         }
+        */
     }
 }
 
@@ -123,7 +125,7 @@ fun GameContent(component: GameComponent) {
 fun GameContentPreview() {
     val coroutineScope = rememberCoroutineScope()
     val gameStore = SupportedGames(TestPlatform())
-    val gameType = "NoThanks"
+    val gameType = "MFE"
     val gameTypeDetails = gameStore.getGameType(gameType)
     if (gameTypeDetails == null) {
         Text("Game $gameType not found")
@@ -131,17 +133,27 @@ fun GameContentPreview() {
     }
     val playerCount = remember { gameTypeDetails.gameEntryPoint.setup().playersCount.random() }
     val playerIndex = MutableValue(0)
-    val component = LocalGameComponent(coroutineScope, gameTypeDetails, playerCount, playerIndex) {
-        listOf(
-            LimitedNextViews(10),
-        )
+    fun createGameComponent(): LocalGameComponent {
+        return LocalGameComponent(coroutineScope, gameTypeDetails, playerCount, playerIndex) {
+            listOf(
+                LimitedNextViews(10),
+                gameTypeDetails.gameEntryPoint.setup().findAI("#AI_Complete_Idiot")!!.gameListener(it, 1)
+            )
+        }
     }
 
+    var component by remember { mutableStateOf(createGameComponent()) }
+    val allowChoosePlayer = false
     Column(Modifier.fillMaxSize()) {
-        Row {
-            for (i in component.gameClient.playerIndices) {
-                Button(onClick = { playerIndex.value = i }) {
-                    Text(i.toString())
+        Button(onClick = { component = createGameComponent() }) {
+            Text("New Game")
+        }
+        if (allowChoosePlayer) {
+            Row {
+                for (i in component.gameClient.playerIndices) {
+                    Button(onClick = { playerIndex.value = i }) {
+                        Text(i.toString())
+                    }
                 }
             }
         }

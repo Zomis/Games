@@ -5,6 +5,7 @@ import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import com.arkivanov.decompose.value.Value
 import net.zomis.games.compose.common.PlatformTools
 import net.zomis.games.compose.common.game.GameClient
+import net.zomis.games.compose.common.games.MFE
 import net.zomis.games.compose.common.games.NoThanksGameView
 import net.zomis.games.compose.common.games.SimpleGridGames
 import net.zomis.games.dsl.flow.VIEWMODEL_VIEW_KEY
@@ -42,7 +43,7 @@ class SupportedGames(private val platformTools: PlatformTools) : GameTypeStore {
         }
         addGame("MFE") {
             fromViewModel(it.view.subscribeAsState().value, MFEViewModel::class) { result ->
-                SimpleGridGames.MFE(result, it.gameClient)
+                MFE(result, it.gameClient)
             }
         }
     }

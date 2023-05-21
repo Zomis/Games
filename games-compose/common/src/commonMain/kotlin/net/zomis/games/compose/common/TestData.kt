@@ -8,7 +8,7 @@ object TestData {
     val playerInfoList = (1..32).map(::playerInfo)
     fun playerInfo(it: Int) = PlayerInfo(
         playerId = "id-$it",
-        name = "Name$it",
+        name = "Player ${it + 1}",
         picture = "https://www.gravatar.com/avatar/${it.toString(16).padStart(32, padChar = '0')}?s=128&d=identicon"
     )
 

@@ -22,11 +22,13 @@ data class ViewPlayer(val score: Int, val weapons: List<ViewWeapon>) {
 }
 data class ViewModel(
     val viewer: Int,
+    val minesRemaining: Int,
     val grid: GridView<ViewField?>,
     val players: List<ViewPlayer>,
 ) {
     constructor(model: Flags.Model, viewer: Int) : this(
         viewer = viewer,
+        minesRemaining = model.remainingMines(),
         grid = model.grid.viewModel { ViewField(it) },
         players = model.players.map { ViewPlayer(it) }
     )
