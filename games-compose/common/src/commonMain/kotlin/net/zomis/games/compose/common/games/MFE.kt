@@ -35,25 +35,25 @@ fun MFE(view: ViewModel, gameClient: GameClient) {
             Text(view.minesRemaining.toString())
             PlayerBox(Color.Red, players, view, 1)
         }
-        GridView(
+        GridViewAutoScale(
             view.grid.rect.width(), view.grid.rect.height(), view.grid.grid,
-            modifier = Modifier, tileSize = 32.dp, tilePadding = 0.dp,
+            modifier = Modifier.padding(12.dp).weight(0.7f).fillMaxHeight(),
             onClick = { point, viewField ->
                 gameClient.postAction("use", "default@${point.x},${point.y}")
             },
             clickable = { x, y, field -> true }
         ) { x, y, field ->
             val f = field!!
-            if (!f.clicked) {
-                Image(painterResource("images/mfe/classic_unknown.png"), contentDescription = "unknown")
-                return@GridView
-            }
-            if (f.knownMineValue != null && f.knownMineValue!! > 0) {
-                val i = "m" + (field.playedBy ?: "_null")
-                Image(painterResource("images/mfe/classic_$i.png"), contentDescription = i)
-            } else {
-                val i = f.knownValue
-                Image(painterResource("images/mfe/classic_$i.png"), contentDescription = i.toString())
+            when {
+                !f.clicked -> Image(painterResource("images/mfe/classic_unknown.png"), contentDescription = "unknown")
+                f.knownMineValue != null && f.knownMineValue!! > 0 -> {
+                    val i = "m" + (field.playedBy ?: "_null")
+                    Image(painterResource("images/mfe/classic_$i.png"), contentDescription = i)
+                }
+                else -> {
+                    val i = f.knownValue
+                    Image(painterResource("images/mfe/classic_$i.png"), contentDescription = i.toString())
+                }
             }
         }
 
