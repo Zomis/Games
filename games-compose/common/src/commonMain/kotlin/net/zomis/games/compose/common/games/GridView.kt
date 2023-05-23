@@ -60,9 +60,7 @@ fun <T> GridViewAutoScale(
     gridHeight: Int,
     grid: List<List<T>>,
     modifier: Modifier,
-    onClick: (Point, T) -> Unit,
-    clickable: (x: Int, y: Int, piece: T) -> Boolean,
-    tile: @Composable (x: Int, y: Int, piece: T) -> Unit,
+    tile: @Composable (x: Int, y: Int, piece: T, modifier: Modifier) -> Unit,
 ) {
     var size by remember { mutableStateOf (Size.Zero) }
     val width = with(LocalDensity.current) {
@@ -84,13 +82,7 @@ fun <T> GridViewAutoScale(
                             width = minSize,
                             height = minSize,
                         )
-                        .background(Color.Red)
-
-                    Box(tileModifier.clickable(enabled = clickable.invoke(x, y, model)) {
-                        onClick.invoke(Point(x, y), model)
-                    }) {
-                        tile.invoke(x, y, model)
-                    }
+                    tile.invoke(x, y, model, tileModifier)
                 }
             }
         }
