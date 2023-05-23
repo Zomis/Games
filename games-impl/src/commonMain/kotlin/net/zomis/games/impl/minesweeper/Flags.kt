@@ -106,6 +106,7 @@ object Flags {
 
                 NormalMultiplayer.Goal.eliminateLosers(game, eliminations)
                 NormalMultiplayer.Goal.lastPlayersStanding(eliminations, count = 1)
+                NormalMultiplayer.Goal.endShowMines(eliminations, game)
             }
         }
         gameFlowRules {

@@ -1,14 +1,20 @@
 package net.zomis.games.impl.minesweeper.specials
 
-import net.zomis.games.PlayerEliminations
+import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.WinResult
-import net.zomis.games.dsl.impl.Game
 import net.zomis.games.impl.minesweeper.Flags
 
 class NormalMultiplayer {
 
     object Goal {
+
+        fun endShowMines(eliminations: PlayerEliminationsRead, game: Flags.Model) {
+            if (!eliminations.isGameOver()) return
+            game.grid.all().filter { !it.value.clicked && it.value.isMine() }.forEach {field ->
+                field.value.reveal(playedBy = null)
+            }
+        }
 
         fun lastPlayersStanding(eliminations: PlayerEliminationsWrite, count: Int) {
             val winnablePlayers = eliminations.remainingPlayers().count()
