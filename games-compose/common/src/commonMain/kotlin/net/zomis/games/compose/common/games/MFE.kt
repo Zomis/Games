@@ -46,10 +46,11 @@ fun MFE(view: ViewModel, gameClient: GameClient) {
                 mutableStateOf(false)
             }
 
-            Box(tileModifier.clickable(enabled = true) {
-                gameClient.postAction("use", "default@${x},${y}")
-            }.onClick(matcher = PointerMatcher.mouse(PointerButton.Secondary), onClick = {
+            Box(tileModifier.onClick(matcher = PointerMatcher.mouse(PointerButton.Secondary), onClick = {
+//                gameClient.postAction("use", "bomb@${x},${y}")
                 highlight = !highlight
+            }).onClick(matcher = PointerMatcher.Primary, onClick = {
+                gameClient.postAction("use", "default@${x},${y}")
             }).alpha(if (highlight) 0.3f else 1.0f)) {
                 println("Compose $x $y")
                 val f = field!!

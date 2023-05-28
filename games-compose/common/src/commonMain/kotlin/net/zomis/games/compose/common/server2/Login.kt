@@ -1,8 +1,7 @@
-package net.zomis.games.compose.common
+package net.zomis.games.compose.common.server2
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.Button
 import androidx.compose.material.Text
@@ -12,9 +11,11 @@ import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.ComponentContext
 import io.ktor.client.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import net.zomis.games.compose.common.ClientConfig
+import net.zomis.games.compose.common.CoroutineScope
+import net.zomis.games.compose.common.LocalStorage
+import net.zomis.games.compose.common.OAuth
 import net.zomis.games.compose.common.network.ClientConnection
 import kotlin.coroutines.CoroutineContext
 

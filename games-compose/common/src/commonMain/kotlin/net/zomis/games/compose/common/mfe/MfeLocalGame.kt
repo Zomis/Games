@@ -1,6 +1,7 @@
 package net.zomis.games.compose.common.mfe
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.Button
 import androidx.compose.material.Text
@@ -58,8 +59,11 @@ fun LocalGameContent(component: MfeLocalGameComponent) {
 
     var gamePlayComponent by remember { mutableStateOf(createGameComponent()) }
     Column(Modifier.fillMaxSize()) {
-        Button(onClick = { gamePlayComponent = createGameComponent() }) {
-            Text("New Game")
+        Row {
+            Button(onClick = { gamePlayComponent = createGameComponent() }) {
+                Text("New Game")
+            }
+
         }
         GameContent(gamePlayComponent)
     }

@@ -91,7 +91,7 @@ object Flags {
             Neighbors.configure(game, config(neighbors))
             game.players.forEach {
                 it.weapons.add(Weapons.Default())
-                it.weapons.add(Weapons.Bomb(usages = 1))
+                it.weapons.add(Weapons.bomb(usages = 1))
             }
             val mines = replayable.randomFromList("mines", game.grid.all().map { it.value }.toList(), config(mineCount)) { it.toStateString() }
             mines.forEach {
@@ -128,7 +128,7 @@ object Flags {
                 viewModel(viewModel)
             }
         }
-        val bombScorer = this.scorers.actionConditional(useWeapon) { action.parameter.weapon is Weapons.Bomb }
+        val bombScorer = this.scorers.actionConditional(useWeapon) { action.parameter.weapon is SizedBombWeapon }
         val cheatScorer = this.scorers.actionConditional(useWeapon) {
             action.parameter.weapon is Weapons.Default && action.game.grid.point(action.parameter.position).value.mineValue > 0
         }

@@ -1,4 +1,4 @@
-package net.zomis.games.compose.common
+package net.zomis.games.compose.common.server2
 
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable

@@ -1,6 +1,5 @@
 package net.zomis.games.impl.minesweeper
 
-import net.zomis.games.common.next
 import net.zomis.games.components.Point
 
 open class Weapon(val name: String) {
@@ -25,7 +24,7 @@ object Weapons {
             }
         }
     }
-    class Bomb(val usages: Int = 1) : Weapon("bomb")
+    fun bomb(usages: Int = 1) = SizedBombWeapon("bomb", 5, usages)
     class Laser : Weapon("laser")
     class Sniper : Weapon("sniper")
 
@@ -36,6 +35,14 @@ object Weapons {
             field.neighbors.forEach {
                 reveal(game, playerIndex, it, expand)
             }
+        }
+    }
+
+    fun <T> recursiveAdd(added: MutableSet<T>, field: T, continuation: (T) -> Iterable<T>) {
+        if (field in added) return
+        added.add(field)
+        for (next in continuation.invoke(field)) {
+            recursiveAdd(added, field, continuation)
         }
     }
 }

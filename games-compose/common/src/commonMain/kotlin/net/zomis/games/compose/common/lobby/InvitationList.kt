@@ -10,9 +10,8 @@ import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
-import net.zomis.games.compose.common.GameTypeLink
+import net.zomis.games.compose.common.server2.GameTypeLink
 import net.zomis.games.compose.common.PlayerProfile
-import net.zomis.games.compose.common.network.ClientConnection
 
 @Composable
 fun InvitationList(inviteStore: InvitationsStore) {
