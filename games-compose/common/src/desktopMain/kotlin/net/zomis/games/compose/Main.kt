@@ -12,6 +12,7 @@ import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.jetbrains.lifecycle.LifecycleController
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
+import com.codedisaster.steamworks.*
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.client.*
 import io.ktor.client.engine.*
@@ -109,12 +110,14 @@ fun main() {
             )
         }
 
+        initializeSteam(coroutineScope)
         val windowState = rememberWindowState(position = WindowPosition.Aligned(Alignment.Center))
 
         LifecycleController(lifecycle, windowState)
 
         Window(
             onCloseRequest = {
+                SteamAPI.shutdown()
                 this.exitApplication()
             },
             state = windowState,
@@ -128,5 +131,56 @@ fun main() {
                 }
             }
         }
+    }
+}
+
+fun initializeSteam(coroutineScope: CoroutineScope) {
+    try {
+        SteamAPI.loadLibraries()
+        if (!SteamAPI.init()) {
+            println("Steamworks initialization error, e.g. Steam client not running")
+            return
+        }
+        coroutineScope.launch {
+            while (true) {
+                delay(1000)
+                if (SteamAPI.isSteamRunning()) {
+                    SteamAPI.runCallbacks()
+                }
+            }
+        }
+        val apps = SteamApps()
+        println("Steam build " + apps.appBuildId)
+        apps.dispose()
+
+
+        /*
+         * 1. getAuthSessionTicket
+         * 2. send to server along with userId
+         * 3. Server: beginAuthSession
+         * 4. await ValidateAuthTicketResponse callback
+         *
+         * On terminate:
+         * Client: CancelAuthTicket using the previous response from GetAuthSessionTicket
+         * Server: EndAuthSession
+         * https://partner.steamgames.com/doc/api/ISteamUser#GetAuthSessionTicket
+         * https://partner.steamgames.com/doc/webapi/ISteamUserAuth#AuthenticateUserTicket
+         * https://partner.steamgames.com/doc/api/ISteamUser#GetAuthTicketForWebApi
+         * https://partner.steamgames.com/doc/features/auth#client_to_backend_webapi
+         *
+         */
+
+        // Send to server
+
+
+        // getAuthSessionTicket
+        // beginAuthSession
+        // userHasLicenseForApp
+//        user.cancelAuthTicket()
+//        user.beginAuthSession()
+//        user.getAuthSessionTicket()
+
+    } catch (e: SteamException) {
+        println("Steam Error: Error extracting or loading native libraries: $e")
     }
 }

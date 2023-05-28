@@ -1,5 +1,6 @@
 package net.zomis.games.server2
 
+import com.codedisaster.steamworks.*
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.ktor.client.*
@@ -11,6 +12,7 @@ import io.ktor.client.request.*
 import io.ktor.serialization.jackson.*
 import kotlinx.coroutines.runBlocking
 import net.zomis.core.events.EventSystem
+import net.zomis.games.server2.steam.Steam
 import org.slf4j.LoggerFactory
 import java.net.URL
 import java.security.SecureRandom
@@ -40,6 +42,7 @@ data class PlayerDatabaseInfo(val name: String, val playerId: PlayerId)
 
 class AuthorizationSystem(
     private val events: EventSystem,
+    private val steam: Steam? = null,
     httpClientFactory: () -> HttpClient = { HttpClient() },
     private val callback: AuthorizationCallback = AuthorizationCallback(),
 ) {
@@ -48,6 +51,7 @@ class AuthorizationSystem(
         .handler("guest", this::handleGuest)
         .handler("github", this::handleGitHub)
         .handler("google", this::handleGoogle)
+        .handler("steam", this::handleSteam)
     private val httpClient = httpClientFactory.invoke()
 
     private val logger = LoggerFactory.getLogger(AuthorizationSystem::class.java)
@@ -117,6 +121,85 @@ class AuthorizationSystem(
     private fun handleGoogle(message: ClientJsonMessage) {
         val client = message.client
         val token = message.data.getTextOrDefault("token", "")
+
+        val result = runBlocking {
+            httpClient.get("https://www.googleapis.com/userinfo/v2/me") {
+                header("Authorization", "Bearer $token")
+            }
+        }
+        logger.info(result.toString())
+
+        val tree = runBlocking {
+            result.body<ObjectNode>()
+        }
+
+        val providerName = tree.get("given_name").asText() + " " + tree.get("family_name").asText()
+        val avatarUrl = tree.get("picture").asText()
+
+        val id = tree.get("id").asText()
+
+        logger.info("$client with token $token is google/$id/$providerName")
+        client.updateInfo(providerName, UUID.randomUUID(), avatarUrl)
+        events.execute(ClientLoginEvent(client, id, providerName, "github", token))
+        sendLoginToClient(client)
+    }
+
+    private fun handleSteam(message: ClientJsonMessage) {
+        if (steam != null) {
+            steam.authUser(message)
+            return
+        }
+
+        val client = message.client
+        val token = message.data.getTextOrDefault("token", "")
+
+
+
+        val server = SteamGameServer(object : SteamGameServerCallback {
+            override fun onValidateAuthTicketResponse(
+                steamID: SteamID?,
+                authSessionResponse: SteamAuth.AuthSessionResponse?,
+                ownerSteamID: SteamID?
+            ) {}
+
+            override fun onSteamServersConnected() {}
+
+            override fun onSteamServerConnectFailure(result: SteamResult?, stillRetrying: Boolean) {}
+
+            override fun onSteamServersDisconnected(result: SteamResult?) {}
+
+            override fun onClientApprove(steamID: SteamID?, ownerSteamID: SteamID?) {}
+
+            override fun onClientDeny(
+                steamID: SteamID?,
+                denyReason: SteamGameServer.DenyReason?,
+                optionalText: String?
+            ) {}
+
+            override fun onClientKick(steamID: SteamID?, denyReason: SteamGameServer.DenyReason?) {}
+
+            override fun onClientGroupStatus(
+                steamID: SteamID?,
+                steamIDGroup: SteamID?,
+                isMember: Boolean,
+                isOfficer: Boolean
+            ) {}
+
+            override fun onAssociateWithClanResult(result: SteamResult?) {}
+
+            override fun onComputeNewPlayerCompatibilityResult(
+                result: SteamResult?,
+                playersThatDontLikeCandidate: Int,
+                playersThatCandidateDoesntLike: Int,
+                clanPlayersThatDontLikeCandidate: Int,
+                steamIDCandidate: SteamID?
+            ) {}
+        })
+
+//        server.beginAuthSession()
+        
+//        server.cancelAuthTicket()
+
 
         val result = runBlocking {
             httpClient.get("https://www.googleapis.com/userinfo/v2/me") {

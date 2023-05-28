@@ -2,6 +2,7 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 val ktor_version = "2.2.4"
 val decomposeVersion = "2.0.0-compose-experimental-alpha-02"
+val steamWorksVersion: String by project
 
 plugins {
     kotlin("multiplatform")
@@ -68,6 +69,7 @@ kotlin {
                 api(compose.preview)
                 implementation(compose.desktop.currentOs)
                 implementation(project(":games-mpp"))
+                implementation("com.code-disaster.steamworks4j:steamworks4j:$steamWorksVersion")
             }
         }
         val desktopTest by getting
@@ -100,3 +102,21 @@ android {
     }
 }
 */
+
+tasks.create<Copy>("steam") {
+    dependsOn("packageUberJarForCurrentOS")
+    from("build/compose/jars/")
+    into("e:/SteamSDK/steam-package/jar/")
+    include("*.jar")
+    rename { "desktop.jar" }
+}
+
+tasks.create<Exec>("steamTest") {
+    description = "Build JAR and build steam depot and upload to steam"
+//    doFirst {
+        workingDir = File("e:/SteamSDK")
+        commandLine = listOf(
+            "cmd", "/c", "build-test.bat",
+        )
+//    }
+}

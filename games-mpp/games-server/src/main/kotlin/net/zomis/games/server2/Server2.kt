@@ -26,6 +26,7 @@ import net.zomis.games.server2.games.*
 import net.zomis.games.server2.invites.InviteOptions
 import net.zomis.games.server2.invites.InviteSystem
 import net.zomis.games.server2.invites.LobbySystem
+import net.zomis.games.server2.steam.Steam
 import net.zomis.games.server2.ws.WebsocketMessageHandler
 import org.jetbrains.kotlin.script.jsr223.KotlinJsr223JvmLocalScriptEngineFactory
 import java.io.File
@@ -58,6 +59,12 @@ class ServerConfig {
 
     @Parameter(names = ["-dbfs"], description = "Use file database")
     var databaseFiles = false
+
+    @Parameter(names = ["-steam"], description = "Steam API Key")
+    var steamKey: String = ""
+
+    @Parameter(names = ["-steamPublisherKey"], description = "Steam Publisher API Key")
+    var steamPublisherKey: String = ""
 
     @Parameter(names = ["-statsDB"], description = "Use statistics database (requires database as well)")
     var statsDB = false
@@ -154,7 +161,8 @@ class Server2(val events: EventSystem) {
             val dbIntegration = FileDB().also { this.dbIntegration = it }
         }
         val authCallback = AuthorizationCallback { dbIntegration?.cookieAuth(it) }
-        messageRouter.route("auth", AuthorizationSystem(events, httpClientFactory, authCallback).router)
+        val steam = if (config.steamKey.isNotEmpty()) Steam(httpClientFactory.invoke(), config.steamKey, config.steamPublisherKey) else null
+        messageRouter.route("auth", AuthorizationSystem(events, steam, httpClientFactory, authCallback).router)
         events.listen("Authenticate login with dbIntegration", ClientLoginEvent::class, {true}) { dbIntegration?.authenticate(it) }
 
         events.with(lobbySystem::setup)

@@ -9,6 +9,8 @@ plugins {
 group = "net.zomis"
 version = "1.0-SNAPSHOT"
 
+val steamWorksVersion: String by project
+
 val jacksonVersion = "2.13.1"
 val jupiterVersion = "5.7.1"
 val coroutinesVersion = "1.6.4"
@@ -94,6 +96,7 @@ kotlin {
                 implementation("org.postgresql:postgresql:42.2.20")
                 implementation("com.zaxxer:HikariCP:3.4.5")
                 implementation("com.github.ben-manes.caffeine:caffeine:2.9.1")
+                implementation("com.code-disaster.steamworks4j:steamworks4j-server:$steamWorksVersion")
 
                 implementation("ai.djl:api:0.3.0")
                 implementation("ai.djl:model-zoo:0.3.0")

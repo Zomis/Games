@@ -17,6 +17,7 @@ module net.zomis {
     requires material.desktop;
     requires foundation.layout.desktop;
     requires java.xml;
+    requires steamworks4j;
 
     opens net.zomis.games.compose to java.desktop;
 }
