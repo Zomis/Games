@@ -1,5 +1,6 @@
 rootProject.name = "games"
 
+include(":games-analyze")
 include(":games-dsl")
 include(":games-impl")
 //include(":games-compose:android")
