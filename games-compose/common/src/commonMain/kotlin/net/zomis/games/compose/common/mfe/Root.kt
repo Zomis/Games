@@ -29,6 +29,7 @@ interface RootComponent {
 
     sealed interface Child {
         class MenuChild(val component: MenuComponent) : Child
+        class LocalGameChild(val component: MfeLocalGameComponent) : Child
         class GameChild(val component: GameComponent) : Child
     }
 }
@@ -41,14 +42,14 @@ class DefaultRootComponent(
     private val clientConfig: ClientConfig,
     override val localStorage: LocalStorage,
 ) : ComponentContext by componentContext, RootComponent {
-    private val gameTypeStore = MfeGameTypes
+    private val gameTypeStore = MfeGameTypes(platformTools)
 
     private val navigation = StackNavigation<Configuration>()
     private val navigator: Navigator<Configuration> = PlatformNavigator(platformTools, navigation)
 
     private val _stack = childStack(
         source = navigation,
-        initialConfiguration = Configuration.Menu(null),
+        initialConfiguration = Configuration.Menu,
         handleBackButton = true,
         childFactory = ::child
     )
@@ -58,9 +59,15 @@ class DefaultRootComponent(
     private fun child(configuration: Configuration, componentContext: ComponentContext): RootComponent.Child =
         when (configuration) {
             is Configuration.Menu -> RootComponent.Child.MenuChild(
-                DefaultMenuComponent()
+                DefaultMenuComponent(navigator)
             )
-            is Configuration.Game -> RootComponent.Child.GameChild(
+            is Configuration.LocalGame -> RootComponent.Child.LocalGameChild(
+                DefaultMfeLocalGameComponent(
+                    componentContext, configuration.ai,
+                    gameTypeStore.defaultGameType
+                )
+            )
+            is Configuration.OnlineGame -> RootComponent.Child.GameChild(
                 DefaultGameComponent(
                     componentContext, configuration.connection,
                     configuration.gameStarted,
@@ -81,6 +88,7 @@ fun RootContent(component: RootComponent, modifier: Modifier = Modifier) {
     ) {
         when (val child = it.instance) {
             is RootComponent.Child.MenuChild -> MenuScreen(component = child.component)
+            is RootComponent.Child.LocalGameChild -> LocalGameContent(component = child.component)
             is RootComponent.Child.GameChild -> GameContent(component = child.component)
             else -> throw UnsupportedOperationException("Unknown child: $child")
         }

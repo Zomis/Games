@@ -6,6 +6,20 @@ import net.zomis.games.components.Point
 import net.zomis.games.impl.minesweeper.specials.NormalMultiplayer
 
 object Flags {
+    enum class AI(val visibleName: String, aiName: String? = null) {
+//        Loser("Loser"),
+        CompleteIdiot("Complete Idiot"),
+//        Medium("Medium"),
+//        Challenger("Challenger"),
+//        Hard("Hard"),
+//        HardPlus("Hard Plus"),
+//        Extreme("Extreme"),
+//        Nightmare("Nightmare"),
+        Impossible("Impossible (for testing only)", aiName = "#AI_Impossible"),
+        ;
+
+        val publicName = aiName ?: "#AI_$visibleName"
+    }
 
     class Model(playerCount: Int, size: Point) {
         val players = (0 until playerCount).map { Player(it) }
@@ -115,7 +129,11 @@ object Flags {
             }
         }
         val bombScorer = this.scorers.actionConditional(useWeapon) { action.parameter.weapon is Weapons.Bomb }
-        scorers.ai("#AI_Complete_Idiot", bombScorer.weight(-1))
+        val cheatScorer = this.scorers.actionConditional(useWeapon) {
+            action.parameter.weapon is Weapons.Default && action.game.grid.point(action.parameter.position).value.mineValue > 0
+        }
+        scorers.ai(AI.CompleteIdiot.publicName, bombScorer.weight(-1))
+        scorers.ai(AI.Impossible.publicName, cheatScorer.weight(1))
     }
 
 }

@@ -11,6 +11,14 @@ import kotlin.reflect.KClass
 
 interface GameListener {
     suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep)
+
+    companion object {
+        operator fun invoke(handler: suspend (coroutineScope: CoroutineScope, step: FlowStep) -> Unit) = object : GameListener {
+            override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
+                handler.invoke(coroutineScope, step)
+            }
+        }
+    }
 }
 
 fun interface GameListenerFactory {

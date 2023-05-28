@@ -1,5 +1,6 @@
 package net.zomis.games.compose.common.mfe
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -13,40 +14,60 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import net.zomis.games.impl.minesweeper.Flags
 
 @Composable
 fun MenuScreen(component: MenuComponent) {
     val submenuView: MutableState<@Composable () -> Unit> = remember { mutableStateOf({}) }
     Box(modifier = Modifier.fillMaxSize().background(color = Color(0, 0, 0x33)), contentAlignment = Alignment.Center) {
         Row {
-            MainMenu { submenuView.value = it }
-            submenuView.value.invoke()
+            MainMenu(component) { submenuView.value = it }
+            Column(modifier = Modifier.animateContentSize()) {
+                // TODO: Add padding to the left menu, but only when content is actually shown
+                submenuView.value.invoke()
+            }
         }
     }
 }
 
 @Composable
-fun AIButton(ai: String) {
-    Button(onClick = {}) {
-        Text(ai)
+fun AIButton(component: MenuComponent, ai: Flags.AI) {
+    // TODO: Check if AI is available
+    Button(onClick = { component.navigator.navigateTo(Configuration.LocalGame(ai)) }) {
+        Text(ai.visibleName)
     }
 }
 
 @Composable
-fun SingleplayerMenu() {
+fun SingleplayerMenu(component: MenuComponent) {
     Column {
-        AIButton("Loser")
-        AIButton("Complete Idiot")
+        Flags.AI.values().forEach {
+            AIButton(component, it)
+        }
     }
 }
 
 @Composable
-fun MultiplayerMenu() {
-    // Hotseat, steam, browse public, connect to server...
+fun MultiplayerMenu(component: MenuComponent) {
+    Column {
+        Button(onClick = { component.navigator.navigateTo(Configuration.LocalGame(ai = null)) }) {
+            Text("Local hot seat")
+        }
+        Button(onClick = {  }, enabled = false) {
+            Text("Steam")
+        }
+        Button(onClick = {  }, enabled = false) {
+            Text("Browse public games")
+        }
+        Button(onClick = {  }, enabled = false) {
+            Text("Connect to server")
+        }
+    }
 }
 
 @Composable
-fun DailyChallengeMenu() {
+fun DailyChallengeMenu(component: MenuComponent) {
+    Text("No challenge today 😞")
     /*
 - Lose against AI Loser
 - With more weapon-combinations
@@ -67,30 +88,25 @@ fun DailyChallengeMenu() {
 
 @Composable
 @Preview
-fun MainMenu(openMenu: (@Composable () -> Unit) -> Unit) {
+fun MainMenu(component: MenuComponent, openMenu: (@Composable () -> Unit) -> Unit) {
     val buttonSize = Modifier.padding(6.dp).fillMaxWidth().height(36.dp)
-//    MainMenuScreen()
-//    SingleplayerMenu()
-//    return
 
     Column(modifier = Modifier.width(IntrinsicSize.Max)) {
         // Green-ish continue button if a game is not finished
-//        Button(modifier = buttonSize, onClick = {}) {
-//            Text("Quickstart?")
-//        }
-        Button(modifier = buttonSize, onClick = { openMenu { SingleplayerMenu() } }) {
+        // Quickstart button? Start same as last time?
+        Button(modifier = buttonSize, onClick = { openMenu { SingleplayerMenu(component) } }) {
             Text("Single player")
         }
-        Button(modifier = buttonSize, onClick = { openMenu { MultiplayerMenu() } }) {
+        Button(modifier = buttonSize, onClick = { openMenu { MultiplayerMenu(component) } }) {
             Text("Multiplayer")
         }
-        Button(modifier = buttonSize, onClick = { openMenu { DailyChallengeMenu() } }) {
+        Button(modifier = buttonSize, onClick = { openMenu { DailyChallengeMenu(component) } }) {
             Text("Daily challenge") // Glide menu to the left, show details / more options to the right?
         }
-        Button(modifier = buttonSize, onClick = {}) {
+        Button(modifier = buttonSize, onClick = {}, enabled = false) {
             Text("Settings")
         }
-        Button(modifier = buttonSize, onClick = {}) {
+        Button(modifier = buttonSize, onClick = {}, enabled = false) {
             Text("About")
         }
     }

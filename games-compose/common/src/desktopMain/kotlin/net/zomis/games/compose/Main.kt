@@ -121,7 +121,7 @@ fun main() {
                 this.exitApplication()
             },
             state = windowState,
-            title = "Zomis' Games"
+            title = "Minesweeper Flags Extreme"
         ) {
             MaterialTheme(colors = darkColors()) {
                 Surface {
