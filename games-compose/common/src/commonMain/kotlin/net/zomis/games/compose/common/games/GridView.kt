@@ -16,13 +16,13 @@ import androidx.compose.ui.unit.toSize
 import net.zomis.games.components.Point
 
 @Composable
+@Deprecated("use GridViewAutoScale")
 fun <T> GridView(
     width: Int,
     height: Int,
     grid: List<List<T>>,
     modifier: Modifier,
     tileSize: Dp,
-    tilePadding: Dp,
     onClick: (Point, T) -> Unit,
     clickable: (x: Int, y: Int, piece: T) -> Boolean,
     tile: @Composable (x: Int, y: Int, piece: T) -> Unit,
@@ -70,6 +70,8 @@ fun <T> GridViewAutoScale(
         (size.height / gridHeight).toDp()
     }
     val minSize = min(width, height)
+    val tileModifier = Modifier.requiredSize(width = minSize, height = minSize)
+
     Column(modifier.onGloballyPositioned { coordinates ->
         size = coordinates.size.toSize()
     }) {
@@ -77,11 +79,6 @@ fun <T> GridViewAutoScale(
             Row {
                 repeat(gridWidth) { x ->
                     val model = grid[y][x]
-                    val tileModifier = Modifier
-                        .requiredSize(
-                            width = minSize,
-                            height = minSize,
-                        )
                     tile.invoke(x, y, model, tileModifier)
                 }
             }

@@ -1,4 +1,4 @@
-package net.zomis.games.compose.common
+package net.zomis.games.compose.common.server2
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -13,6 +13,7 @@ import com.arkivanov.decompose.value.Value
 import io.ktor.client.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import net.zomis.games.compose.common.*
 import net.zomis.games.compose.common.game.DefaultGameComponent
 import net.zomis.games.compose.common.game.GameComponent
 import net.zomis.games.compose.common.game.GameContent
@@ -49,7 +50,7 @@ class DefaultRootComponent(
 ) : ComponentContext by componentContext, RootComponent {
 
     private val navigation = StackNavigation<Configuration>()
-    private val navigator: Navigator = PlatformNavigator(platformTools, navigation)
+    private val navigator: Navigator<Configuration> = PlatformNavigator(platformTools, navigation)
 
     private val _stack = childStack(
         source = navigation,
@@ -73,12 +74,16 @@ class DefaultRootComponent(
                 )
             )
             is Configuration.CreateInvite -> RootComponent.Child.CreateInviteChild(
-                DefaultCreateInviteComponent(componentContext, configuration.invitePrepare,
-                    gameDetails = configuration.gameTypeDetails) {
+                DefaultCreateInviteComponent(
+                    componentContext, configuration.invitePrepare,
+                    gameDetails = configuration.gameTypeDetails
+                ) {
                     mainScope.launch {
-                        configuration.connection.send(ClientToServerMessage.InvitePrepareStart(
-                            it.gameType, it.genericGameOptions.toServerOptions(), it.gameSpecificOptions
-                        ))
+                        configuration.connection.send(
+                            ClientToServerMessage.InvitePrepareStart(
+                                it.gameType, it.genericGameOptions.toServerOptions(), it.gameSpecificOptions
+                            )
+                        )
                     }
                 }
             )

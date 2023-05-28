@@ -1,20 +1,10 @@
-package net.zomis.games.compose.common
+package net.zomis.games.compose.common.server2
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material.Card
-import androidx.compose.material.Icon
-import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AccountBox
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
@@ -28,6 +18,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import net.zomis.games.compose.common.*
 import net.zomis.games.compose.common.gametype.GameTypeStore
 import net.zomis.games.compose.common.lobby.*
 import net.zomis.games.compose.common.network.ClientConnection
@@ -36,7 +27,7 @@ import net.zomis.games.compose.common.network.Message
 import net.zomis.games.server2.ServerGames
 
 interface HomeComponent {
-    val navigator: Navigator
+    val navigator: Navigator<Configuration>
     val player: Value<Message.AuthMessage>
     val lobby: Value<Message.LobbyMessage>
     val invites: InvitationsStore
@@ -50,7 +41,7 @@ class DefaultHomeComponent(
     private val connection: ClientConnection,
     mainScope: CoroutineScope,
     private val gameTypeStore: GameTypeStore,
-    override val navigator: Navigator,
+    override val navigator: Navigator<Configuration>,
 ) : HomeComponent {
     private val coroutineScope = CoroutineScope(Dispatchers.Default, componentContext.lifecycle)
     override val lobby = MutableValue(Message.LobbyMessage(emptyMap()))
@@ -73,7 +64,13 @@ class DefaultHomeComponent(
             }
             coroutineScope.launch {
                 connection.messages.filterIsInstance<Message.InvitePrepare>().collect {
-                    navigator.navigateTo(Configuration.CreateInvite(it, gameTypeStore.getGameType(it.gameType)!!, connection))
+                    navigator.navigateTo(
+                        Configuration.CreateInvite(
+                            it,
+                            gameTypeStore.getGameType(it.gameType)!!,
+                            connection
+                        )
+                    )
                 }
             }
             coroutineScope.launch {
@@ -151,7 +148,7 @@ fun HomePreview() {
                 )
             )
         )
-        override val navigator: Navigator = NoopNavigator()
+        override val navigator: Navigator<Configuration> = NoopNavigator()
         override val invites: InvitationsStore = InvitationStoreEmpty()
         override val lobbyChangeMessages: Flow<Message.LobbyChangeMessage> = emptyFlow()
         override fun startInvite(gameType: String) {}

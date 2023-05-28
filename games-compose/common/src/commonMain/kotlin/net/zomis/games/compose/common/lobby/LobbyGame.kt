@@ -10,9 +10,6 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import net.zomis.games.compose.common.Configuration
-import net.zomis.games.compose.common.Navigator
-import net.zomis.games.compose.common.NoopNavigator
 import net.zomis.games.compose.common.TestData
 import net.zomis.games.server2.invites.PlayerInfo
 

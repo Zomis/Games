@@ -12,10 +12,9 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
-import net.zomis.games.components.Point
 import net.zomis.games.compose.common.PlayerProfile
 import net.zomis.games.compose.common.game.GameClient
-import net.zomis.games.compose.common.games.viewtest.ViewModel2
+import net.zomis.games.impl.minesweeper.ViewModel
 import net.zomis.games.server2.invites.PlayerInfo
 
 @Composable
@@ -30,7 +29,7 @@ private fun ColumnScope.PlayerBox(background: Color, players: List<PlayerInfo>, 
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MFE(view: ViewModel2, gameClient: GameClient) {
+fun MFE(view: ViewModel, gameClient: GameClient) {
     println("Recompose MFE: $view")
     val players = gameClient.players.subscribeAsState().value
     Row {

@@ -4,16 +4,16 @@ import com.arkivanov.decompose.router.stack.StackNavigator
 import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.router.stack.push
 
-interface Navigator {
-    fun navigateTo(configuration: Configuration)
+interface Navigator<T> {
+    fun navigateTo(configuration: T)
     fun pop()
 }
 
-class PlatformNavigator(
+class PlatformNavigator<T: Any>(
     private val platformTools: PlatformTools,
-    private val navigator: StackNavigator<Configuration>,
-) : Navigator {
-    override fun navigateTo(configuration: Configuration) {
+    private val navigator: StackNavigator<T>,
+) : Navigator<T> {
+    override fun navigateTo(configuration: T) {
         platformTools.runOnUiThread {
             navigator.push(configuration)
         }
@@ -25,7 +25,7 @@ class PlatformNavigator(
         }
     }
 }
-class NoopNavigator : Navigator {
-    override fun navigateTo(configuration: Configuration) {}
+class NoopNavigator<T> : Navigator<T> {
+    override fun navigateTo(configuration: T) {}
     override fun pop() {}
 }

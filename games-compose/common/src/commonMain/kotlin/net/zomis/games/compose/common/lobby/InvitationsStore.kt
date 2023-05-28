@@ -8,7 +8,7 @@ import com.arkivanov.decompose.value.update
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
-import net.zomis.games.compose.common.Configuration
+import net.zomis.games.compose.common.server2.Configuration
 import net.zomis.games.compose.common.Navigator
 import net.zomis.games.compose.common.network.ClientConnection
 import net.zomis.games.compose.common.network.ClientToServerMessage
@@ -32,7 +32,7 @@ class InvitationStoreEmpty : InvitationsStore {
 class InvitationsStoreImpl(
     private val scope: CoroutineScope,
     private val connection: ClientConnection,
-    private val navigator: Navigator,
+    private val navigator: Navigator<Configuration>,
     private val player: Message.AuthMessage,
     override val allPlayers: Value<Map<String, List<PlayerInfo>>>,
 ) : InvitationsStore {

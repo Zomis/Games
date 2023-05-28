@@ -25,7 +25,7 @@ object SimpleGridGames {
 
         GridView(
             width, height, grid, modifier = Modifier,
-            tileSize = tileSize.dp, tilePadding = padding.dp,
+            tileSize = tileSize.dp,
             onClick = { point, value ->
                 gameClient.postAction(actionName, point)
             }, clickable = { x, y, piece ->

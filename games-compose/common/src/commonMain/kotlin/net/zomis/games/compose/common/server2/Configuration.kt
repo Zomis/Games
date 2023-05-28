@@ -1,4 +1,4 @@
-package net.zomis.games.compose.common
+package net.zomis.games.compose.common.server2
 
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.parcelable.Parcelable
@@ -39,5 +39,11 @@ sealed interface Configuration : Parcelable {
         val connection: ClientConnection,
     ) : Configuration
 
+    enum class MenuChoice {
+        Singleplayer, Multiplayer, Challenge
+    }
+    data class Menu(
+        val menu: MenuChoice
+    ) : Configuration
 
 }

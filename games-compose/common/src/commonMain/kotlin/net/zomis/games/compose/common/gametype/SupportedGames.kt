@@ -8,10 +8,9 @@ import net.zomis.games.compose.common.game.GameClient
 import net.zomis.games.compose.common.games.MFE
 import net.zomis.games.compose.common.games.NoThanksGameView
 import net.zomis.games.compose.common.games.SimpleGridGames
-import net.zomis.games.compose.common.games.viewtest.ViewModel2
 import net.zomis.games.dsl.flow.VIEWMODEL_VIEW_KEY
 import net.zomis.games.impl.NoThanks
-import net.zomis.games.impl.minesweeper.ViewModel as MFEViewModel
+import net.zomis.games.impl.minesweeper.ViewModel
 import net.zomis.games.server2.ServerGames
 import kotlin.reflect.KClass
 
@@ -43,7 +42,7 @@ class SupportedGames(private val platformTools: PlatformTools) : GameTypeStore {
             SimpleGridGames.TTT(it.view.subscribeAsState().value, it.gameClient, it.gameClient.playerIndex.subscribeAsState().value)
         }
         addGame("MFE") {
-            fromViewModel(it.view.subscribeAsState().value, ViewModel2::class) { result ->
+            fromViewModel(it.view.subscribeAsState().value, ViewModel::class) { result ->
                 MFE(result, it.gameClient)
             }
         }

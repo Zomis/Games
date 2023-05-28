@@ -2,6 +2,7 @@ package net.zomis.games.compose
 
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
+import androidx.compose.material.darkColors
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
@@ -20,9 +21,13 @@ import io.ktor.client.plugins.websocket.*
 import io.ktor.serialization.jackson.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import net.zomis.games.compose.common.*
-import net.zomis.games.compose.common.game.GameContentPreview
 import net.zomis.games.compose.common.gametype.SupportedGames
+import net.zomis.games.compose.common.mfe.RootContent
+import net.zomis.games.compose.common.mfe.DefaultRootComponent as MfeRoot
+import net.zomis.games.compose.common.server2.DefaultRootComponent as Server2Root
 import java.nio.file.Path
 import javax.swing.SwingUtilities
 import kotlin.reflect.KClass
@@ -82,7 +87,7 @@ fun main() {
     application {
         val coroutineScope = CoroutineScope(Dispatchers.Default, lifecycle)
         val root = runOnUiThreadDesktop {
-            DefaultRootComponent(
+            Server2Root(
                 componentContext = DefaultComponentContext(lifecycle = lifecycle),
                 httpClient = httpClient,
                 localStorage = FileLocalStorage(Path.of("localStorage")),
@@ -92,6 +97,18 @@ fun main() {
                 gameTypeStore = SupportedGames(DesktopPlatform())
             )
         }
+
+        val mfeMainMenu = runOnUiThreadDesktop {
+            MfeRoot(
+                componentContext = DefaultComponentContext(lifecycle = lifecycle),
+                httpClient = httpClient,
+                localStorage = FileLocalStorage(Path.of("localStorage")),
+                mainScope = coroutineScope,
+                platformTools = DesktopPlatform(),
+                clientConfig = clientConfig,
+            )
+        }
+
         val windowState = rememberWindowState(position = WindowPosition.Aligned(Alignment.Center))
 
         LifecycleController(lifecycle, windowState)
@@ -103,9 +120,10 @@ fun main() {
             state = windowState,
             title = "Zomis' Games"
         ) {
-            MaterialTheme {
+            MaterialTheme(colors = darkColors()) {
                 Surface {
-                    GameContentPreview()
+                    RootContent(mfeMainMenu)
+//                    GameContentPreview()
 //                    RootContent(component = root, modifier = Modifier.fillMaxSize())
                 }
             }
