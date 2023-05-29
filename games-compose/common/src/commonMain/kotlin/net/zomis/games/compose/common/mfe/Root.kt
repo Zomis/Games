@@ -63,7 +63,7 @@ class DefaultRootComponent(
             )
             is Configuration.LocalGame -> RootComponent.Child.LocalGameChild(
                 DefaultMfeLocalGameComponent(
-                    componentContext, configuration.ai,
+                    componentContext, navigator, configuration.ai,
                     gameTypeStore.defaultGameType
                 )
             )

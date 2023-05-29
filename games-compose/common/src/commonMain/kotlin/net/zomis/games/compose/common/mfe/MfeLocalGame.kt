@@ -3,12 +3,15 @@ package net.zomis.games.compose.common.mfe
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.value.MutableValue
+import net.zomis.games.compose.common.Navigator
 import net.zomis.games.compose.common.game.GameContent
 import net.zomis.games.compose.common.game.LocalGameComponent
 import net.zomis.games.compose.common.gametype.GameTypeDetails
@@ -21,13 +24,17 @@ import net.zomis.games.listeners.NoOpListener
 interface MfeLocalGameComponent {
     val gameType: GameTypeDetails
     val ai: Flags.AI?
+    fun back()
 }
 
 class DefaultMfeLocalGameComponent(
     context: ComponentContext,
+    private val navigator: Navigator<*>,
     override val ai: Flags.AI?,
     override val gameType: GameTypeDetails,
-) : MfeLocalGameComponent
+) : MfeLocalGameComponent {
+    override fun back() = navigator.pop()
+}
 
 
 @Composable
@@ -60,6 +67,9 @@ fun LocalGameContent(component: MfeLocalGameComponent) {
     var gamePlayComponent by remember { mutableStateOf(createGameComponent()) }
     Column(Modifier.fillMaxSize()) {
         Row {
+            Button(onClick = { component.back() }, modifier = Modifier.padding(end = 4.dp)) {
+                Text("Back")
+            }
             Button(onClick = { gamePlayComponent = createGameComponent() }) {
                 Text("New Game")
             }
