@@ -4,11 +4,15 @@ import net.zomis.games.impl.minesweeper.ais.AI_Challenger
 import net.zomis.games.api.GamesApi
 import net.zomis.games.common.next
 import net.zomis.games.components.Point
+import net.zomis.games.impl.minesweeper.ais.AI_Loser
+import net.zomis.games.impl.minesweeper.ais.point
 import net.zomis.games.impl.minesweeper.specials.NormalMultiplayer
+import net.zomis.games.scorers.ScorerAnalyzeProvider
+import net.zomis.minesweeper.analyze.AnalyzeResult
 
 object Flags {
     enum class AI(val visibleName: String, aiName: String? = null) {
-//        Loser("Loser"),
+        Loser("Loser"),
         CompleteIdiot("Complete Idiot"),
 //        Medium("Medium"),
         Challenger("Challenger"),
@@ -34,6 +38,7 @@ object Flags {
         fun nextPlayer() {
             currentPlayer = currentPlayer.next(players.size)
         }
+        fun getRelativePosition(field: Field, x: Int, y: Int) = fieldAt(field.point + Point(x, y))
 
         fun remainingMines(): Int = grid.all().filter { !it.value.clicked }.sumOf { it.value.mineValue }
         fun totalMines(): Int = grid.all().sumOf { it.value.mineValue }
@@ -49,6 +54,7 @@ object Flags {
         private val _inverseNeighbors: MutableList<Field> = mutableListOf()
         val neighbors: List<Field> = _neighbors
         val inverseNeighbors: List<Field> = _inverseNeighbors
+        val knownValue: Int get() { check(clicked); return value }
 
         fun recount() {
             this.value = _neighbors.sumOf { it.mineValue }
@@ -68,6 +74,7 @@ object Flags {
 
         fun toStateString() = Point(x, y).toStateString()
         fun isMine() = mineValue != 0
+        fun isDiscoveredMine(): Boolean = clicked && isMine()
     }
     class Player(val playerIndex: Int) {
         val weapons = mutableListOf<Weapon>()
@@ -145,6 +152,7 @@ object Flags {
         }
 
         val idiot = scorers.ai(AI.CompleteIdiot.publicName, bombScorer.weight(-1)).gameAI()
+        ai(AI.Loser.publicName) { AI_Loser.block(this) }
         ai(AI.Challenger.publicName) { AI_Challenger.block(this, requiredAI { idiot }) }
 
         scorers.ai(AI.Impossible.publicName, mineProbability)
@@ -152,3 +160,4 @@ object Flags {
     }
 
 }
+typealias MfeProbabilityProvider = ScorerAnalyzeProvider<Flags.Model, AnalyzeResult<Flags.Field>>
