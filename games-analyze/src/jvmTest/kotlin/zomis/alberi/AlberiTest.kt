@@ -78,7 +78,7 @@ class AlberiTest {
                 "Map format incorrect: " + map + " expected " +
                         lines.size + " columns in row " + y + " but was " + line.length
             }
-            val row: MutableList<String> = java.util.ArrayList<String>()
+            val row: MutableList<String> = ArrayList<String>()
             for (x in 0 until line.length) {
                 val ch = line[x]
                 addToGroup(groups, ch, x, y)
@@ -87,7 +87,7 @@ class AlberiTest {
             factory.addRule(FieldRule<String>("row $y", row, count))
         }
         for (x in lines.indices) {
-            val col: MutableList<String> = java.util.ArrayList<String>()
+            val col: MutableList<String> = ArrayList<String>()
             for (y in lines.indices) {
                 col.add(str(x, y))
             }
@@ -103,7 +103,7 @@ class AlberiTest {
     private fun addToGroup(groups: MutableMap<Char, MutableList<String>>, ch: Char, x: Int, y: Int) {
         var list = groups[ch]
         if (list == null) {
-            list = java.util.ArrayList<String>()
+            list = ArrayList<String>()
             groups[ch] = list
         }
         list.add(str(x, y))
@@ -111,14 +111,14 @@ class AlberiTest {
 
     companion object {
         fun <T> assertSolution(result: AnalyzeResult<T>, vararg trueFields: T) {
-            val allGroups: Set<FieldGroup<T>> = java.util.HashSet<FieldGroup<T>>(result.groups)
-            val trueGroups: MutableSet<FieldGroup<T>> = java.util.HashSet<FieldGroup<T>>()
+            val allGroups: Set<FieldGroup<T>> = HashSet<FieldGroup<T>>(result.groups)
+            val trueGroups: MutableSet<FieldGroup<T>> = HashSet<FieldGroup<T>>()
             for (field in trueFields) {
                 val group: FieldGroup<T> = result.getGroupFor(field)!!
                 assertEquals(1.0, group.probability, 0.0001, "Unexpected probability for $group")
                 trueGroups.add(group)
             }
-            val falseGroups: MutableSet<FieldGroup<T>> = java.util.HashSet<FieldGroup<T>>(allGroups)
+            val falseGroups: MutableSet<FieldGroup<T>> = HashSet<FieldGroup<T>>(allGroups)
             falseGroups.removeAll(trueGroups)
             for (group in falseGroups) {
                 assertEquals(0.0, group.probability, 0.0001, "Unexpected probability for $group")

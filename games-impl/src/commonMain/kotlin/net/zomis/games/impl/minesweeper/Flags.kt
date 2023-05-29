@@ -1,5 +1,6 @@
 package net.zomis.games.impl.minesweeper
 
+import net.zomis.games.impl.minesweeper.ais.AI_Challenger
 import net.zomis.games.api.GamesApi
 import net.zomis.games.common.next
 import net.zomis.games.components.Point
@@ -10,7 +11,7 @@ object Flags {
 //        Loser("Loser"),
         CompleteIdiot("Complete Idiot"),
 //        Medium("Medium"),
-//        Challenger("Challenger"),
+        Challenger("Challenger"),
 //        Hard("Hard"),
 //        HardPlus("Hard Plus"),
 //        Extreme("Extreme"),
@@ -35,6 +36,7 @@ object Flags {
         }
 
         fun remainingMines(): Int = grid.all().filter { !it.value.clicked }.sumOf { it.value.mineValue }
+        fun totalMines(): Int = grid.all().sumOf { it.value.mineValue }
 
     }
     class Field(val x: Int, val y: Int) {
@@ -132,8 +134,21 @@ object Flags {
         val cheatScorer = this.scorers.actionConditional(useWeapon) {
             action.parameter.weapon is Weapons.Default && action.game.grid.point(action.parameter.position).value.mineValue > 0
         }
-        scorers.ai(AI.CompleteIdiot.publicName, bombScorer.weight(-1))
-        scorers.ai(AI.Impossible.publicName, cheatScorer.weight(1))
+        val analysis = scorers.provider {
+            MfeAnalyze.analyze(it.model)
+        }
+        val mineProbability = scorers.action(useWeapon) {
+            this.require(analysis)!!.getGroupFor(action.game.fieldAt(action.parameter.position))?.probability
+        }
+        val detailedAnalysis = scorers.provider {
+            it.require(analysis)!!.analyzeDetailed(MfeAnalyze.NeighborStrategy)
+        }
+
+        val idiot = scorers.ai(AI.CompleteIdiot.publicName, bombScorer.weight(-1)).gameAI()
+        ai(AI.Challenger.publicName) { AI_Challenger.block(this, requiredAI { idiot }) }
+
+        scorers.ai(AI.Impossible.publicName, mineProbability)
+//        scorers.ai(AI.Impossible.publicName, cheatScorer.weight(1))
     }
 
 }

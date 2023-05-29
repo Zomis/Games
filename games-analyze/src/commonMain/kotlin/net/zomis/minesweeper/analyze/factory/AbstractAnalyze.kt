@@ -19,7 +19,7 @@ abstract class AbstractAnalyze<F> : AnalyzeFactory<F>(), NeighborFind<F> {
                 addRule(newRule)
             }
         }
-        if (!knownNonMines.isEmpty()) addRule(FieldRule(null, knownNonMines, 0))
+        if (knownNonMines.isNotEmpty()) addRule(FieldRule(null, knownNonMines, 0))
     }
 
     /**

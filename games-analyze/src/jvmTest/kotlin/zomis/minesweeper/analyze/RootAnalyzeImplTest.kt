@@ -27,7 +27,7 @@ class RootAnalyzeImplTest {
             )
         )
         val solution: AnalyzeResult<CharPoint> = analyze.solve()
-        val extraRules: MutableList<RuleConstraint<CharPoint>> = java.util.ArrayList<RuleConstraint<CharPoint>>()
+        val extraRules: MutableList<RuleConstraint<CharPoint>> = ArrayList<RuleConstraint<CharPoint>>()
         extraRules.add(
             FieldRule<CharPoint>(
                 null,

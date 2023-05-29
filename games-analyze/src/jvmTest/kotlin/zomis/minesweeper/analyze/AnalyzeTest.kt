@@ -73,7 +73,7 @@ class AnalyzeTest {
     }
 
     private fun placeThreeAt(x: Int, y: Int, openSea: MutableList<String>): FieldRule<String> {
-        val fields: MutableList<String> = java.util.ArrayList<String>()
+        val fields: MutableList<String> = ArrayList<String>()
         for (xx in x - 1..x + 1) {
             for (yy in y - 1..y + 1) {
                 if (xx != x || yy != y) {
@@ -87,7 +87,7 @@ class AnalyzeTest {
     }
 
     private fun addBoard(width: Int, height: Int): MutableList<String> {
-        val pos: MutableList<String> = java.util.ArrayList<String>(width * height)
+        val pos: MutableList<String> = ArrayList<String>(width * height)
         for (x in 0 until width) {
             for (y in 0 until width) {
                 pos.add(pos(x, y))
@@ -217,7 +217,7 @@ class AnalyzeTest {
     }
 
     private fun fields(string: String): Collection<String> {
-        val str: MutableList<String> = java.util.ArrayList<String>()
+        val str: MutableList<String> = ArrayList<String>()
         for (i in 0 until string.length) str.add(string[i].toString())
         assertEquals(string.length, str.size)
         return str
