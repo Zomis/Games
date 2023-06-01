@@ -1,30 +1,40 @@
 package net.zomis.games.compose.common.mfe
 
 import androidx.compose.animation.animateContentSize
-import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import net.zomis.games.impl.minesweeper.Flags
 
+enum class SubMenu {
+    None,
+    Singleplayer,
+    Multiplayer,
+    Challenge,
+}
+
 @Composable
 fun MenuScreen(component: MenuComponent) {
-    val submenuView: MutableState<@Composable () -> Unit> = remember { mutableStateOf({}) }
+    var submenuView: SubMenu by remember { mutableStateOf(SubMenu.None) }
     Box(modifier = Modifier.fillMaxSize().background(color = Color(0, 0, 0x33)), contentAlignment = Alignment.Center) {
         Row {
-            MainMenu(component) { submenuView.value = it }
+            MainMenu(component) {
+                submenuView = if (submenuView == it) SubMenu.None else it
+            }
             Column(modifier = Modifier.animateContentSize()) {
                 // TODO: Add padding to the left menu, but only when content is actually shown
-                submenuView.value.invoke()
+                when (submenuView) {
+                    SubMenu.None -> {}
+                    SubMenu.Singleplayer -> SingleplayerMenu(component)
+                    SubMenu.Multiplayer -> MultiplayerMenu(component)
+                    SubMenu.Challenge -> DailyChallengeMenu(component)
+                }
             }
         }
     }
@@ -32,7 +42,6 @@ fun MenuScreen(component: MenuComponent) {
 
 @Composable
 fun AIButton(component: MenuComponent, ai: Flags.AI) {
-    // TODO: Check if AI is available
     Button(onClick = { component.navigator.navigateTo(Configuration.LocalGame(ai)) }) {
         Text(ai.visibleName)
     }
@@ -87,20 +96,19 @@ fun DailyChallengeMenu(component: MenuComponent) {
 }
 
 @Composable
-@Preview
-fun MainMenu(component: MenuComponent, openMenu: (@Composable () -> Unit) -> Unit) {
+fun MainMenu(component: MenuComponent, openMenu: (SubMenu) -> Unit) {
     val buttonSize = Modifier.padding(6.dp).fillMaxWidth().height(36.dp)
 
-    Column(modifier = Modifier.width(IntrinsicSize.Max)) {
+    Column(modifier = Modifier.width(IntrinsicSize.Max).animateContentSize()) {
         // Green-ish continue button if a game is not finished
         // Quickstart button? Start same as last time?
-        Button(modifier = buttonSize, onClick = { openMenu { SingleplayerMenu(component) } }) {
+        Button(modifier = buttonSize, onClick = { openMenu(SubMenu.Singleplayer) }) {
             Text("Single player")
         }
-        Button(modifier = buttonSize, onClick = { openMenu { MultiplayerMenu(component) } }) {
+        Button(modifier = buttonSize, onClick = { openMenu(SubMenu.Multiplayer) }) {
             Text("Multiplayer")
         }
-        Button(modifier = buttonSize, onClick = { openMenu { DailyChallengeMenu(component) } }) {
+        Button(modifier = buttonSize, onClick = { openMenu(SubMenu.Challenge) }) {
             Text("Daily challenge") // Glide menu to the left, show details / more options to the right?
         }
         Button(modifier = buttonSize, onClick = {}, enabled = false) {
