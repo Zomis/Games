@@ -1,4 +1,5 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val ktor_version = "2.2.4"
 val decomposeVersion = "2.0.0-compose-experimental-alpha-02"
@@ -102,6 +103,22 @@ android {
     }
 }
 */
+
+tasks.withType<KotlinCompile> {
+    kotlinOptions {
+        if (project.findProperty("composeReports") == "true") {
+            freeCompilerArgs += listOf("-P",
+                "plugin:androidx.compose.compiler.plugins.kotlin:reportsDestination=" +
+                        project.buildDir.absolutePath + "/compose_metrics"
+            )
+            freeCompilerArgs += listOf(
+                "-P",
+                "plugin:androidx.compose.compiler.plugins.kotlin:metricsDestination=" +
+                        project.buildDir.absolutePath + "/compose_metrics"
+            )
+        }
+    }
+}
 
 tasks.create<Copy>("steam") {
     dependsOn("packageUberJarForCurrentOS")
