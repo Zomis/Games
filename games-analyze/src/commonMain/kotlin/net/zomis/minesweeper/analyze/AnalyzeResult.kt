@@ -24,3 +24,17 @@ interface AnalyzeResult<T> {
     fun randomSolution(random: Random): List<T>?
     fun analyzeDetailed(neighborStrategy: NeighborFind<T>): DetailedResults<T>
 }
+
+fun <T> AnalyzeResult<T>.sanityCheck() {
+    val groups = mutableMapOf<FieldGroup<T>, MutableList<FieldGroup<T>>>()
+    this.solutions.forEach { sol ->
+        sol.getSetGroupValues().entrySet().map { fg -> fg.key }.forEach {
+            groups.getOrPut(it) { mutableListOf() }.add(it)
+        }
+    }
+    val multipleGroups = mutableSetOf<FieldGroup<T>>()
+    groups.forEach { ee ->
+        if (ee.value.any { it !== ee.key }) multipleGroups.add(ee.key)
+    }
+    check(multipleGroups.isEmpty()) { "Found multiple groups: $multipleGroups" }
+}
