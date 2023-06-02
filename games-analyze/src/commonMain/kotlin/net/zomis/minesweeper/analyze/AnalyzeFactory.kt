@@ -51,7 +51,10 @@ open class AnalyzeFactory<T> {
             inProgress.add(rule!!.copy())
         }
         val solutions: MutableList<Solution<T>> = mutableListOf()
-        splitFieldRules<T>(inProgress)
+//        splitFieldRules<T>(inProgress)
+        FieldGroupSplit.superSplit(inProgress)
+        inProgress.flatMap { it.fieldGroups() }.sanityCheck()
+
         val solveListener: SolveListener<T> =
             if (listener != null) listener!! else SolveListener { analyze, group, value ->
                 // no operation
@@ -107,23 +110,22 @@ open class AnalyzeFactory<T> {
             if (rules.size <= 1) {
                 return
             }
-            var splitPerformed = true
-            while (splitPerformed) {
-                splitPerformed = false
+            do {
+                var splitPerformed = false
                 for (a in rules) {
                     for (b in rules) {
                         splitPerformed = splitPerformed or checkIntersection(a, b)
                     }
                 }
-            }
+            } while (splitPerformed)
         }
 
-        private fun <T> checkIntersection(ruleA: RuleConstraint<T>?, ruleB: RuleConstraint<T>?): Boolean {
+        private fun <T> checkIntersection(ruleA: RuleConstraint<T>, ruleB: RuleConstraint<T>): Boolean {
             if (ruleA === ruleB) {
                 return false
             }
-            val fieldsA = ruleA!!.fieldGroups()
-            val fieldsB = ruleB!!.fieldGroups()
+            val fieldsA = ruleA.fieldGroups()
+            val fieldsB = ruleB.fieldGroups()
             val fieldsCopy: List<FieldGroup<T>> = ArrayList<FieldGroup<T>>(ruleA.fieldGroups())
             val ruleFieldsCopy: List<FieldGroup<T>> = ArrayList<FieldGroup<T>>(ruleB.fieldGroups())
             for (groupA in fieldsCopy) {
@@ -136,12 +138,12 @@ open class AnalyzeFactory<T> {
                     val both = splitResult.both
                     val onlyA = splitResult.onlyA
                     val onlyB = splitResult.onlyB
-                    fieldsA!!.remove(groupA)
+                    fieldsA.remove(groupA)
                     fieldsA.add(both)
                     if (onlyA.isNotEmpty()) {
                         fieldsA.add(onlyA)
                     }
-                    fieldsB!!.remove(groupB)
+                    fieldsB.remove(groupB)
                     fieldsB.add(both)
                     if (onlyB.isNotEmpty()) {
                         fieldsB.add(onlyB)

@@ -23,8 +23,8 @@ kotlin {
             dependencies {
                 implementation(kotlin("stdlib-common"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.2")
-                implementation(project(":games-dsl"))
-                implementation(project(":games-analyze"))
+                api(project(":games-dsl"))
+                api(project(":games-analyze"))
             }
         }
         val commonTest by getting {

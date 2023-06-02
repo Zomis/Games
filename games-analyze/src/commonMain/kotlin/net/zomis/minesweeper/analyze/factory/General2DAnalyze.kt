@@ -4,7 +4,7 @@ import kotlin.jvm.JvmOverloads
 
 class General2DAnalyze @JvmOverloads constructor(
     map: Array<String>,
-    hiddenMines: Int = 0,
+    var hiddenMines: Int = 0,
     neighbors: Array<IntArray> = DEFAULT_NEIGHBORS
 ) : AbstractAnalyze<CharPoint>() {
     private val neighbors: Array<IntArray>
@@ -14,7 +14,6 @@ class General2DAnalyze @JvmOverloads constructor(
     public override val remainingMinesCount: Int
 
     init {
-        var hiddenMines = hiddenMines
         for (neighbor in neighbors) {
             require(neighbor.size == 2) {
                 "Neighbor array must be an array of int[2] (x, y) pair. Unexpected length " + neighbor.size +
@@ -45,8 +44,8 @@ class General2DAnalyze @JvmOverloads constructor(
         )
     }
 
-    override val allPoints: List<CharPoint>
-        protected get() {
+    public override val allPoints: List<CharPoint>
+        get() {
             val point: MutableList<CharPoint> = mutableListOf()
             for (ps in points) {
                 for (p in ps) {
@@ -64,24 +63,11 @@ class General2DAnalyze @JvmOverloads constructor(
         return field.value == BLOCKED
     }
 
-    override val allUnclickedFields: List<CharPoint>
-        protected get() {
-            val point: MutableList<CharPoint> = mutableListOf()
-            for (ps in points) {
-                for (p in ps) {
-                    if (!isClicked(p)) point.add(p)
-                }
-            }
-            return point
-        }
+    public override val allUnclickedFields: List<CharPoint> get() = points.flatten().filter { !isClicked(it) }
 
-    public override fun isDiscoveredMine(neighbor: CharPoint): Boolean {
-        return neighbor.value == KNOWN_MINE
-    }
+    public override fun isDiscoveredMine(field: CharPoint): Boolean = field.value == KNOWN_MINE
 
-    protected override fun getFieldValue(field: CharPoint): Int {
-        return field.value.digitToIntOrNull() ?: -1
-    }
+    public override fun getFieldValue(field: CharPoint): Int = field.value.digitToIntOrNull() ?: -1
 
     public override fun getNeighbors(field: CharPoint): List<CharPoint> {
         val neighbors: MutableList<CharPoint> = ArrayList<CharPoint>(neighbors.size)
@@ -98,8 +84,8 @@ class General2DAnalyze @JvmOverloads constructor(
         return neighbors
     }
 
-    public override fun isClicked(neighbor: CharPoint): Boolean {
-        return if (isBlocked(neighbor)) true else !isUnclickedChar(neighbor.value) && neighbor.value != HIDDEN_MINE
+    public override fun isClicked(field: CharPoint): Boolean {
+        return if (isBlocked(field)) true else !isUnclickedChar(field.value) && field.value != HIDDEN_MINE
     }
 
     private fun isUnclickedChar(value: Char): Boolean {

@@ -26,15 +26,17 @@ interface AnalyzeResult<T> {
 }
 
 fun <T> AnalyzeResult<T>.sanityCheck() {
+    this.solutions.flatMap { it.getSetGroupValues().keySet() }.sanityCheck()
+}
+
+fun <T> List<FieldGroup<T>>.sanityCheck() {
     val groups = mutableMapOf<FieldGroup<T>, MutableList<FieldGroup<T>>>()
-    this.solutions.forEach { sol ->
-        sol.getSetGroupValues().entrySet().map { fg -> fg.key }.forEach {
-            groups.getOrPut(it) { mutableListOf() }.add(it)
-        }
+    this.forEach {
+        groups.getOrPut(it) { mutableListOf() }.add(it)
     }
     val multipleGroups = mutableSetOf<FieldGroup<T>>()
     groups.forEach { ee ->
         if (ee.value.any { it !== ee.key }) multipleGroups.add(ee.key)
     }
-    check(multipleGroups.isEmpty()) { "Found multiple groups: $multipleGroups" }
+    check(multipleGroups.isEmpty()) { "Found ${multipleGroups.size} multiple groups: $multipleGroups" }
 }

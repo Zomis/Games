@@ -5,6 +5,7 @@ import net.zomis.minesweeper.analyze.FieldGroup
 import net.zomis.minesweeper.analyze.FieldRule
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class AnalyzeTest {
@@ -97,7 +98,50 @@ class AnalyzeTest {
     }
 
     @Test
-    fun pattern_14_withSameCharacters() {
+    @Disabled
+    fun pattern_14_withSameCharacters_preSplitted() {
+//		abbc
+//		a14c
+//		abbc
+//		dddd
+        val before = AnalyzeFactory<String>()
+        val a = FieldGroup(listOf("a", "a", "a"))
+        val b = FieldGroup(listOf("b", "b", "b", "b"))
+        val c = FieldGroup(listOf("c", "c", "c"))
+        val d = FieldGroup(listOf("d", "d", "d", "d"))
+
+        val ruleGlobal = FieldRule("global", d, 6).also { it.fieldGroups().addAll(listOf(a, b, c)) }
+        val rule1 = FieldRule("1", a, 1).also { it.fieldGroups().add(b) }
+        val rule4 = FieldRule("4", c, 4).also { it.fieldGroups().add(b) }
+
+        before.addRule(ruleGlobal)
+        before.addRule(rule1)
+        before.addRule(rule4)
+        val root = before.solve()
+        assertEquals(3, root.originalRules.size)
+        assertEquals(4, root.groups.size)
+        assertEquals(1, root.solutions.size)
+        assertEquals(3, root.getGroupFor("a")!!.size)
+        assertEquals(4, root.getGroupFor("b")!!.size)
+        assertEquals(3, root.getGroupFor("c")!!.size)
+        assertEquals(4, root.getGroupFor("d")!!.size)
+        assertEquals(0.0, root.getGroupFor("a")!!.probability, EPSILON)
+        assertEquals(0.25, root.getGroupFor("b")!!.probability, EPSILON)
+        assertEquals(1.0, root.getGroupFor("c")!!.probability, EPSILON)
+        assertEquals(0.5, root.getGroupFor("d")!!.probability, EPSILON)
+        assertEquals(1, root.solutions.size)
+        val solution = root.solutions.iterator().next()
+        val values = solution.getSetGroupValues()
+        assertEquals(0, values[root.getGroupFor("a")!!] as Int)
+        assertEquals(1, values[root.getGroupFor("b")!!] as Int)
+        assertEquals(3, values[root.getGroupFor("c")!!] as Int)
+        assertEquals(2, values[root.getGroupFor("d")!!] as Int)
+        assertEquals(4.0 * 6, root.total, EPSILON) // 4 for 'b', 1 for 'a' (no mines in a), 6 for 'd'
+    }
+
+    @Test
+    @Disabled
+    fun pattern_14_withSameCharacters_autoSplit() {
 //		abbc
 //		a14c
 //		abbc

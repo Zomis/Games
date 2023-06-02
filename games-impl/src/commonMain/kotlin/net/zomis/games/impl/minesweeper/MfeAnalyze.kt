@@ -9,7 +9,7 @@ class MfeAnalyze private constructor(val game: Flags.Model) : AbstractAnalyze<Fl
     override val remainingMinesCount: Int = game.remainingMines()
     override val allUnclickedFields: List<Flags.Field> = allPoints.filter { !it.clicked }
 
-    override fun isClicked(neighbor: Flags.Field): Boolean = neighbor.clicked
+    override fun isClicked(field: Flags.Field): Boolean = field.blocked || field.clicked
 
     override fun getNeighbors(field: Flags.Field): List<Flags.Field> = field.neighbors
 
@@ -18,9 +18,7 @@ class MfeAnalyze private constructor(val game: Flags.Model) : AbstractAnalyze<Fl
     override fun isDiscoveredMine(neighbor: Flags.Field): Boolean = neighbor.isMine() && neighbor.clicked
 
     override fun fieldHasRule(field: Flags.Field): Boolean {
-        if (!field.clicked) return false
-        if (field.isMine()) return false
-        return field.neighbors.any { !it.clicked }
+        return !field.blocked && isClicked(field) && !isDiscoveredMine(field)
     }
 
     object NeighborStrategy: NeighborFind<Flags.Field> {

@@ -20,6 +20,7 @@ class General2DTest {
         )
         val gen2d = General2DAnalyze(input)
         val analyze: AnalyzeResult<CharPoint> = gen2d.solve()
+        analyze.sanityCheck()
         val grp: FieldGroup<CharPoint> = analyze.getGroupFor(gen2d.getPoint(0, 0))!!
         assertEquals(1, grp.solutionsKnown)
         assertEquals(2, analyze.solutions.size)

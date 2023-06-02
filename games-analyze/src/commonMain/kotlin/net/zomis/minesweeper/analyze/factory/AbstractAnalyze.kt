@@ -46,10 +46,10 @@ abstract class AbstractAnalyze<F> : AnalyzeFactory<F>(), NeighborFind<F> {
         } else FieldRule(field, ruleParams, fieldValue - foundNeighbors)
     }
 
-    protected abstract fun isDiscoveredMine(neighbor: F): Boolean
+    protected abstract fun isDiscoveredMine(field: F): Boolean
     protected abstract fun getFieldValue(field: F): Int
     protected abstract fun getNeighbors(field: F): List<F>
-    protected abstract fun isClicked(neighbor: F): Boolean
+    protected abstract fun isClicked(field: F): Boolean
     override fun getNeighborsFor(field: F): Collection<F> {
         return getNeighbors(field)
     }

@@ -15,13 +15,33 @@ class FieldGroupSplit<T> private constructor(
     }
 
     companion object {
+        /**
+         * Split (and combine) all FieldGroups at once, by grouping them by which rules that contain each field.
+         */
+        fun <T> superSplit(rules: List<RuleConstraint<T>>) {
+            val allStartGroups = rules.flatMap { it.fieldGroups() }.distinct()
+            val allFields = allStartGroups.flatMap { it.fields }.distinct()
+            val fieldCountBefore = allFields.size
+            val intermediate: Map<List<RuleConstraint<T>>, List<T>> = allFields
+                .groupBy { f -> rules.filter { it.fieldGroups().any { fg -> fg.contains(f) } } }
+
+            rules.forEach { it.fieldGroups().clear() }
+
+            intermediate.forEach {
+                val fieldGroup = FieldGroup(it.value)
+                it.key.forEach { rule -> rule.fieldGroups().add(fieldGroup) }
+            }
+            val fieldCountAfter = intermediate.values.sumOf { it.size }
+            check(fieldCountBefore == fieldCountAfter) { "fieldCountBefore ($fieldCountBefore) != fieldCountAfter ($fieldCountAfter): $intermediate" }
+        }
+
         fun <T> split(a: FieldGroup<T>, b: FieldGroup<T>): FieldGroupSplit<T>? {
             if (a === b) {
                 return null
             }
-//            if (disjoint(a, b)) {
-//                return null // Return if the groups have no fields in common
-//            }
+            if (disjoint(a, b)) {
+                return null // Return if the groups have no fields in common
+            }
             var both = FieldGroup(a)
             val onlyA = FieldGroup(a)
             val onlyB = FieldGroup(b)
@@ -40,8 +60,11 @@ class FieldGroupSplit<T> private constructor(
         }
 
         private fun <T> disjoint(a: FieldGroup<T>, b: FieldGroup<T>): Boolean {
-            val disjointCheck = a.fields.toSet() + b.fields.toSet()
-            return disjointCheck.size == a.size + b.size
+            if (a.isEmpty || b.isEmpty) return true
+
+            val iterate = if (a.size < b.size) a else b
+            val contains = if (iterate === a) b else a
+            return iterate.all { !contains.contains(it) }
         }
 
         fun <T> splitHash(a: FieldGroup<T>, b: FieldGroup<T>): FieldGroupSplit<T>? {

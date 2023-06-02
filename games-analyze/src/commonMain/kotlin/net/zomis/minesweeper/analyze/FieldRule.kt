@@ -33,7 +33,7 @@ class FieldRule<T> : BoundedFieldRule<T> {
         result,
         result
     ) {
-        fields.add(group!!)
+        fields.add(group)
     }
 
     val fieldGroupsField: Collection<FieldGroup<T>> get() = fields
@@ -56,7 +56,7 @@ class FieldRule<T> : BoundedFieldRule<T> {
     override fun toString(): String {
         val rule = StringBuilder()
         for (field in fields) {
-            if (rule.length > 0) {
+            if (rule.isNotEmpty()) {
                 rule.append(" + ")
             }
             rule.append(field.toString())

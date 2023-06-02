@@ -21,7 +21,8 @@ data class FieldGroup<T>(private val _fields: ArrayList<T>) : Iterable<T> {
         if (minesForGroup == 0) {
             return
         }
-        probability = probability + solution.nCr() / total * minesForGroup / this.size
+        val addProbability = solution.nCr() / total * minesForGroup / this.size
+        probability += addProbability
         solutionsKnown++
     }
 
