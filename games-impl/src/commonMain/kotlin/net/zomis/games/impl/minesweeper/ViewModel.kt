@@ -1,5 +1,6 @@
 package net.zomis.games.impl.minesweeper
 
+import net.zomis.games.components.Point
 import net.zomis.games.components.grids.GridView
 
 data class ViewField(
@@ -9,6 +10,8 @@ data class ViewField(
     val knownMineValue: Int?,
     val playedBy: Int?,
 ) {
+    fun point(): Point = Point(x, y)
+
     constructor(field: Flags.Field) : this(field.x, field.y,
         clicked = field.clicked,
         knownValue = field.value.takeIf { field.clicked },

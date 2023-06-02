@@ -5,15 +5,14 @@ import net.zomis.games.compose.common.gametype.GameTypeDetails
 import net.zomis.games.compose.common.gametype.GameTypeStore
 import net.zomis.games.compose.common.gametype.SupportedGames
 import net.zomis.games.impl.minesweeper.Flags
+import net.zomis.games.impl.minesweeper.specials.OpenFieldChallenge
 
-class MfeGameTypes(private val platformTools: PlatformTools) : GameTypeStore {
-    override val gameTypes: List<String>
-        get() = emptyList()
+class MfeGameTypes(platformTools: PlatformTools) {
+    private val supportedGames = SupportedGames(platformTools)
 
-    override fun getGameType(gameType: String): GameTypeDetails? {
-        return null
-    }
+    val defaultGameType = supportedGames.getGameType(Flags.game.name)!!
+    val ofcGameType = supportedGames.getGameType(OpenFieldChallenge.game.name)!!
 
-    val defaultGameType = SupportedGames(platformTools).getGameType(Flags.game.name)!!
+    fun getGameType(gameType: String): GameTypeDetails? = supportedGames.getGameType(gameType)
 
 }

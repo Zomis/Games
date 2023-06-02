@@ -18,6 +18,7 @@ import net.zomis.games.compose.common.*
 import net.zomis.games.compose.common.game.DefaultGameComponent
 import net.zomis.games.compose.common.game.GameComponent
 import net.zomis.games.compose.common.game.GameContent
+import net.zomis.games.compose.common.mfe.challenges.*
 
 typealias Content = @Composable () -> Unit
 
@@ -31,6 +32,7 @@ interface RootComponent {
         class MenuChild(val component: MenuComponent) : Child
         class LocalGameChild(val component: MfeLocalGameComponent) : Child
         class GameChild(val component: GameComponent) : Child
+        class ChallengeChild(val component: ChallengeComponent) : Child
     }
 }
 
@@ -74,6 +76,9 @@ class DefaultRootComponent(
                     gameTypeStore.getGameType(configuration.gameStarted.gameType)!!,
                 )
             )
+            is Configuration.ChallengeConfig -> RootComponent.Child.ChallengeChild(
+                Challenges.createComponentForChallenge(componentContext, configuration.challenge, gameTypeStore, navigator)
+            )
             else -> throw UnsupportedOperationException("Unknown child for configuration: $configuration")
         }
 
@@ -90,6 +95,11 @@ fun RootContent(component: RootComponent, modifier: Modifier = Modifier) {
             is RootComponent.Child.MenuChild -> MenuScreen(component = child.component)
             is RootComponent.Child.LocalGameChild -> LocalGameContent(component = child.component)
             is RootComponent.Child.GameChild -> GameContent(component = child.component)
+            is RootComponent.Child.ChallengeChild -> {
+                when (child.component) {
+                    is OpenFieldChallengeComponent -> OpenFieldChallengeScreen(child.component)
+                }
+            }
             else -> throw UnsupportedOperationException("Unknown child: $child")
         }
     }

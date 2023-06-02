@@ -2,6 +2,7 @@ package net.zomis.games.impl.minesweeper
 
 import net.zomis.minesweeper.analyze.detail.NeighborFind
 import net.zomis.minesweeper.analyze.factory.AbstractAnalyze
+import net.zomis.minesweeper.analyze.factory.General2DAnalyze
 
 class MfeAnalyze private constructor(val game: Flags.Model) : AbstractAnalyze<Flags.Field>() {
 
@@ -15,7 +16,11 @@ class MfeAnalyze private constructor(val game: Flags.Model) : AbstractAnalyze<Fl
 
     override fun getFieldValue(field: Flags.Field): Int = field.value
 
-    override fun isDiscoveredMine(neighbor: Flags.Field): Boolean = neighbor.isMine() && neighbor.clicked
+    override fun getNeighborsFor(field: Flags.Field): Collection<Flags.Field> = field.neighbors
+
+    override fun isFoundAndisMine(field: Flags.Field): Boolean = field.isDiscoveredMine()
+
+    override fun isDiscoveredMine(field: Flags.Field): Boolean = field.isMine() && field.clicked
 
     override fun fieldHasRule(field: Flags.Field): Boolean {
         return !field.blocked && isClicked(field) && !isDiscoveredMine(field)

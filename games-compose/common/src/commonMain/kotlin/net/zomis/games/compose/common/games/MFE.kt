@@ -12,8 +12,10 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
+import net.zomis.games.components.grids.GridView
 import net.zomis.games.compose.common.PlayerProfile
 import net.zomis.games.compose.common.game.GameClient
+import net.zomis.games.impl.minesweeper.ViewField
 import net.zomis.games.impl.minesweeper.ViewModel
 import net.zomis.games.server2.invites.PlayerInfo
 
@@ -38,41 +40,49 @@ fun MFE(view: ViewModel, gameClient: GameClient) {
             Text(view.minesRemaining.toString())
             PlayerBox(Color.Red, players, { view.players[it].score.toString() }, 1)
         }
-        GridViewAutoScale(
-            view.grid.rect.width(), view.grid.rect.height(), view.grid.grid,
-            modifier = Modifier.padding(12.dp).weight(0.7f).fillMaxHeight(),
-        ) { x, y, field, tileModifier ->
+        MFEGridView(modifier = Modifier.padding(12.dp).weight(0.7f).fillMaxHeight(), view.grid) { x, y, field, tileModifier ->
             var highlight by remember {
                 mutableStateOf(false)
             }
-
-            Box(tileModifier.onClick(matcher = PointerMatcher.mouse(PointerButton.Secondary), onClick = {
+            val fieldModifier = Modifier.onClick(matcher = PointerMatcher.mouse(PointerButton.Secondary), onClick = {
 //                gameClient.postAction("use", "bomb@${x},${y}")
                 highlight = !highlight
             }).onClick(matcher = PointerMatcher.Primary, onClick = {
                 gameClient.postAction("use", "default@${x},${y}")
-            }).alpha(if (highlight) 0.3f else 1.0f)) {
+            }).alpha(if (highlight) 0.3f else 1.0f)
+
+            Box(tileModifier.then(fieldModifier)) {
                 println("Compose $x $y")
-                val f = field!!
                 when {
-                    !f.clicked -> Image(
+                    !field.clicked -> Image(
                         painterResource("images/mfe/classic_unknown.png"),
                         contentDescription = "unknown"
                     )
 
-                    f.knownMineValue != null && f.knownMineValue!! > 0 -> {
+                    field.knownMineValue != null && field.knownMineValue!! > 0 -> {
                         val i = "m" + (field.playedBy ?: "_null")
                         Image(painterResource("images/mfe/classic_$i.png"), contentDescription = i)
                     }
 
                     else -> {
-                        val i = f.knownValue
+                        val i = field.knownValue
                         Image(painterResource("images/mfe/classic_$i.png"), contentDescription = i.toString())
                     }
                 }
             }
         }
-
     }
+}
 
+@Composable
+fun MFEGridView(
+    modifier: Modifier, view: GridView<ViewField?>,
+    fieldComposable: @Composable (x: Int, y: Int, field: ViewField, tileModifier: Modifier) -> Unit
+) {
+    GridViewAutoScale(
+        view.rect.width(), view.rect.height(), view.grid,
+        modifier = modifier,
+    ) { x, y, field, tileModifier ->
+        fieldComposable.invoke(x, y, field!!, tileModifier)
+    }
 }

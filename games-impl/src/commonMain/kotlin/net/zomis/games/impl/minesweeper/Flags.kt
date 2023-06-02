@@ -75,6 +75,15 @@ object Flags {
         fun toStateString() = Point(x, y).toStateString()
         fun isMine() = mineValue != 0
         fun isDiscoveredMine(): Boolean = clicked && isMine()
+        fun clear() {
+            clicked = false
+            value = 0
+            mineValue = 0
+            takenBy = null
+            blocked = false
+        }
+
+        override fun toString(): String = "(" + point.toStateString() + ")"
     }
     class Player(val playerIndex: Int) {
         val weapons = mutableListOf<Weapon>()
@@ -102,10 +111,7 @@ object Flags {
                 it.weapons.add(Weapons.Default())
                 it.weapons.add(Weapons.bomb(usages = 1))
             }
-            val mines = replayable.randomFromList("mines", game.grid.all().map { it.value }.toList(), config(mineCount)) { it.toStateString() }
-            mines.forEach {
-                it.mineValue = 1
-            }
+            Setup.generate(game, replayable, config(mineCount))
             game.recount()
 
             loop {

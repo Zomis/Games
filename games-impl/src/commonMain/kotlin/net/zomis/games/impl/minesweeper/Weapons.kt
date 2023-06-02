@@ -5,7 +5,7 @@ import net.zomis.games.components.Point
 open class Weapon(val name: String) {
     open fun usableForPlayer(game: Flags.Model, playerIndex: Int): Boolean = game.currentPlayer == playerIndex
     open fun usableAt(game: Flags.Model, playerIndex: Int, field: Flags.Field): Boolean = true
-    open fun affectedArea(game: Flags.Model, playerIndex: Int, position: Point): Set<Point> = emptySet()
+    open fun affectedArea(game: Flags.Model, playerIndex: Int, position: Point): Set<Point> = setOf(position)
     open fun use(game: Flags.Model, playerIndex: Int, field: Flags.Field) {}
 }
 
