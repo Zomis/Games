@@ -81,20 +81,26 @@ fun MultiplayerMenu(component: MenuComponent) {
 
 @Composable
 fun DailyChallengeMenu(component: MenuComponent) {
-    Button(onClick = { component.navigator.navigateTo(
-        Configuration.ChallengeConfig(Challenge.OpenFieldChallenge(OpenFieldChallengeDifficulty.HARD))
-    ) }) {
-        Text("Open Field Challenge (Hard)")
+    for (ofcDifficulty in OpenFieldChallengeDifficulty.values()) {
+        Button(onClick = { component.navigator.navigateTo(
+            Configuration.ChallengeConfig(Challenge.OpenFieldChallenge(ofcDifficulty))
+        ) }) {
+            Text("Open Field Challenge ($ofcDifficulty)")
+        }
     }
     /*
 - repeewseniM: Minesweeper backwards. Click fields to hide them. Make all mines still be 100%
 - Chess-sweeper: Chess + MFE --> 8x8 grid, move pieces to open a field. If you reveal a mine, your piece explodes.
 - Tetri-sweeper: Get a block with numbers/unclicked fields, place it like Tetris. Create 100% mines to reduce numbers. Create line of open field to remove it. Make blocked fields on logic errors.
+- Co-op sweeper, click on a place on your board, but you reveal field on other player's board.
+- Co-op sweeper, click on a place on your board, but reveal both boards - add numbers to get real answer.
+
 - Don't reveal any mines
 - Start with some fields already revealed
 - Click on X mines in Y moves. Start with some fields already revealed and automatically reveal more when all mines around a number are taken.
 - Click on X non-mine squares without clicking on Y mines. Start with some fields revealed.
 - Mark X 100% mines. Start with some fields revealed.
+
 - Lose against AI Loser
 - With more weapon-combinations
 - Chess Neighbors

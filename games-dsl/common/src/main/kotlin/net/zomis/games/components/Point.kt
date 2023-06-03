@@ -14,6 +14,14 @@ data class Point(val x: Int, val y: Int): GameSerializable {
     override fun serialize(): Any = toStateString()
     operator fun times(multiplier: Int): Point = Point(x * multiplier, y * multiplier)
     fun topLeftOfRect(sizeX: Int, sizeY: Int): Rect = Rect(y, x, x + sizeX - 1, y + sizeY - 1)
+
+    companion object {
+        fun fromString(string: String): Point {
+            val x = string.substringBefore(',').toInt()
+            val y = string.substringAfter(',').toInt()
+            return Point(x, y)
+        }
+    }
 }
 
 data class Rect(val top: Int, val left: Int, val right: Int, val bottom: Int) {

@@ -96,7 +96,10 @@ object OpenFieldChallenge {
             val correct = certainFields()
             val incorrectlyMarkedMines = list.minus(correct.toSet())
             val missedMines = correct.minus(list.toSet())
+            val correctlyMarkedMines = list.union(correct)
             score.points -= incorrectlyMarkedMines.size * 5
+            correctlyMarkedMines.forEach { Weapons.reveal(model, model.currentPlayer, it, expand = false) }
+            score.points += correctlyMarkedMines.size * 3
             if (missedMines.isNotEmpty() || incorrectlyMarkedMines.isNotEmpty()) {
                 score.mistakesMade += incorrectlyMarkedMines
                 score.correctAnswers += missedMines
@@ -199,9 +202,12 @@ object OpenFieldChallenge {
     val singleGuess = factory.action("click", Flags.Field::class).serializer {
         it.point.toStateString()
     }
-    val makeGuesses = factory.action("confirm", FieldGuesses::class).serializer {
+    val makeGuesses = factory.action("confirm", FieldGuesses::class).serialization({
         it.fields.joinToString(separator = "+", transform = Flags.Field::toStateString)
-    }
+    }, { s ->
+        if (s.isEmpty()) return@serialization FieldGuesses(emptyList())
+        FieldGuesses(s.split("+").map { Point.fromString(it) }.map { game.model.fieldAt(it) })
+    })
     val game = factory.game("MFE-OFC") {
         val width = config("width") { 16 }
         val height = config("height") { 16 }

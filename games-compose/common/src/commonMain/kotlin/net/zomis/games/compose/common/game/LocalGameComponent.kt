@@ -15,6 +15,7 @@ import net.zomis.games.PlayerEliminationsRead
 import net.zomis.games.compose.common.TestData
 import net.zomis.games.compose.common.gametype.GameTypeDetails
 import net.zomis.games.compose.common.gametype.SupportedGames
+import net.zomis.games.dsl.GameConfigs
 import net.zomis.games.dsl.GameListener
 import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
@@ -26,10 +27,11 @@ class LocalGameComponent(
     override val gameTypeDetails: GameTypeDetails,
     playerCount: Int,
     playerIndex: Value<Int>,
+    config: (GameConfigs) -> GameConfigs = { it },
     listeners: (Game<Any>) -> List<GameListener> = { emptyList() },
 ): GameComponent {
     override val gameClient: GameClient = LocalGameClient(
-        coroutineScope, playerIndex, playerCount, gameTypeDetails, listeners
+        coroutineScope, playerIndex, playerCount, gameTypeDetails, listeners, config
     )
     override val viewDetails: SupportedGames.GameViewDetails
         get() = SupportedGames.GameViewDetailsImpl(gameClient.view, gameClient)
@@ -41,6 +43,7 @@ class LocalGameClient(
     override val playerCount: Int,
     gameTypeDetails: GameTypeDetails,
     listeners: (Game<Any>) -> List<GameListener>,
+    configInit: (GameConfigs) -> GameConfigs = { it },
 ) : GameClient, GameListener {
     private var game: Game<Any>? = null
 
@@ -53,7 +56,9 @@ class LocalGameClient(
 
     init {
         coroutineScope.launch {
-            game = gameTypeDetails.gameEntryPoint.setup().startGame(this, playerCount) {
+            val setup = gameTypeDetails.gameEntryPoint.setup()
+            val gameConfig = setup.configs().let(configInit)
+            game = setup.startGameWithConfig(this, playerCount, config = gameConfig) {
                 listOf(this@LocalGameClient) + listeners.invoke(it)
             }
             eliminations.value = game!!.eliminations
