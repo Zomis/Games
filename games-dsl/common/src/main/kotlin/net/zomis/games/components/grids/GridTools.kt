@@ -56,6 +56,15 @@ fun <T> Grid<T>.mnkLines(includeDiagonals: Boolean): Sequence<GridLine<T>> {
 
 class ConnectedArea<T, R>(val group: R, val points: List<GridPoint<T>>)
 fun <T, R: Any> Grid<T>.connected(neighbors: List<Point>, function: (GridPoint<T>) -> R): List<ConnectedArea<T, R>> {
+    return connectedAreas(neighbors = { origin ->
+        neighbors.map { this.point(origin.point + it) }
+    }, groupFunction = function)
+}
+fun <T, R: Any> Grid<T>.connectedAreas(
+    neighbors: (GridPoint<T>) -> List<GridPoint<T>>,
+    groupFunction: (GridPoint<T>) -> R,
+    originFilter: (GridPoint<T>) -> Boolean = { true },
+): List<ConnectedArea<T, R>> {
     val matched = mutableSetOf<Point>()
     val waiting = mutableSetOf<Point>()
     val inGroup = mutableSetOf<GridPoint<T>>()
@@ -65,22 +74,26 @@ fun <T, R: Any> Grid<T>.connected(neighbors: List<Point>, function: (GridPoint<T
         if (matched.contains(pos.point)) {
             continue
         }
+        if (!originFilter.invoke(pos)) {
+            continue
+        }
         check(waiting.isEmpty())
         waiting.add(pos.point)
-        val group = function(pos)
+        val group = groupFunction.invoke(pos)
 
         while (waiting.isNotEmpty()) {
             // Pick a spot from awaiting, mark it as checked and add it to group
             val current = waiting.first()
+            val currentPoint = point(current)
             waiting.remove(current)
             matched.add(current)
-            inGroup.add(point(current))
+            inGroup.add(currentPoint)
 
-            for (neighbor in neighbors) {
+            for (neighbor in neighbors.invoke(currentPoint)) {
                 // check neighbors of spot and compare grouping
                 val target = this.point(current.x + neighbor.x, current.y + neighbor.y).rangeCheck(this) ?: continue
                 if (matched.contains(target.point) || waiting.contains(target.point)) continue
-                if (function(target) == group) {
+                if (groupFunction.invoke(target) == group) {
                     // if match, add to awaiting for later processing when it will be marked as checked and added to group
                     waiting.add(target.point)
                 }
