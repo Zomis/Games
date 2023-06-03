@@ -26,22 +26,18 @@ enum class SubMenu {
 fun MenuScreen(component: MenuComponent) {
     var submenuView: SubMenu by remember { mutableStateOf(SubMenu.None) }
     Box(modifier = Modifier.fillMaxSize().background(color = Color(0, 0, 0x33)), contentAlignment = Alignment.Center) {
-        Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Box(modifier = Modifier.fillMaxHeight().weight(1f), contentAlignment = Alignment.Center) {
-                MainMenu {
-                    submenuView = if (submenuView == it) SubMenu.None else it
-                }
+        Row(modifier = Modifier.fillMaxSize(), horizontalArrangement = Arrangement.Center) {
+            MainMenu(modifier = Modifier.width(IntrinsicSize.Max).fillMaxHeight()) {
+                submenuView = if (submenuView == it) SubMenu.None else it
             }
             AnimatedVisibility(submenuView != SubMenu.None) {
-                Box(modifier = Modifier.fillMaxHeight().weight(1f).animateContentSize(), contentAlignment = Alignment.Center) {
-                    Column {
-                        // TODO: Add padding to the left menu, but only when content is actually shown
-                        when (submenuView) {
-                            SubMenu.None -> {}
-                            SubMenu.Singleplayer -> SingleplayerMenu(component)
-                            SubMenu.Multiplayer -> MultiplayerMenu(component)
-                            SubMenu.Challenge -> DailyChallengeMenu(component)
-                        }
+                Column(modifier = Modifier.padding(start = 12.dp).fillMaxHeight().animateContentSize(), verticalArrangement = Arrangement.Center) {
+                    // TODO: Add padding to the left menu, but only when content is actually shown
+                    when (submenuView) {
+                        SubMenu.None -> {}
+                        SubMenu.Singleplayer -> SingleplayerMenu(component)
+                        SubMenu.Multiplayer -> MultiplayerMenu(component)
+                        SubMenu.Challenge -> DailyChallengeMenu(component)
                     }
                 }
             }
@@ -117,10 +113,10 @@ fun DailyChallengeMenu(component: MenuComponent) {
 }
 
 @Composable
-fun MainMenu(openMenu: (SubMenu) -> Unit) {
+fun RowScope.MainMenu(modifier: Modifier, openMenu: (SubMenu) -> Unit) {
     val buttonSize = Modifier.padding(6.dp).fillMaxWidth().height(36.dp)
 
-    Column(modifier = Modifier.width(IntrinsicSize.Max)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.Center) {
         // Green-ish continue button if a game is not finished
         // Quickstart button? Start same as last time?
         Button(modifier = buttonSize, onClick = { openMenu(SubMenu.Singleplayer) }) {
