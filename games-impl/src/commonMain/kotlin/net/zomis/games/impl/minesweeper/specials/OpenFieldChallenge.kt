@@ -114,7 +114,6 @@ object OpenFieldChallenge {
             val field = chooseNextOpenField(replayable)
             if (field == null) {
                 newBoard(replayable)
-                openField(replayable)
                 return
             }
             fieldsOpened++
@@ -228,7 +227,6 @@ object OpenFieldChallenge {
 
             loop {
                 step("gameplay") {
-                    println("Gameplay ${game.difficulty}")
                     if (game.difficulty == OpenFieldChallengeDifficulty.EXTREME) {
                         yieldAction(makeGuesses) {
                             choose {
