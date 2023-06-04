@@ -10,6 +10,10 @@ import net.zomis.games.dsl.ReplayStateI
 import net.zomis.games.impl.minesweeper.*
 import net.zomis.games.impl.minesweeper.ais.point
 import net.zomis.minesweeper.analyze.AnalyzeResult
+import net.zomis.minesweeper.analyze.FieldRule
+import net.zomis.minesweeper.analyze.GroupValues
+import net.zomis.minesweeper.analyze.SimplifyResult
+import net.zomis.minesweeper.analyze.listener.RuleListener
 
 enum class OpenFieldChallengeDifficulty {
     /**
@@ -82,7 +86,7 @@ object OpenFieldChallenge {
                 } else score.mistakesAllowed--
             }
             val remaining = certainFields().filter { !it.clicked }
-            if (remaining.isEmpty()) {
+            if (remaining.isEmpty() || (score.minesRequired ?: 1) <= 0) {
                 openField(replayable)
             }
         }
@@ -156,13 +160,33 @@ object OpenFieldChallenge {
 
         private fun updateAnalysis(replayable: ReplayStateI) {
             analysis = MfeAnalyze.analyze(model)
-            when (difficulty) {
-                OpenFieldChallengeDifficulty.EASY -> TODO()
-                OpenFieldChallengeDifficulty.MEDIUM -> TODO()
-                OpenFieldChallengeDifficulty.HARD -> {
-                    if (certainFields().isEmpty()) openField(replayable)
+
+            score.minesRequired = when (difficulty) {
+                OpenFieldChallengeDifficulty.EASY -> {
+                    val allCertainMines = certainFields().size
+                    val easyMines = MfeAnalyze.create(model).filterIsInstance<FieldRule<Flags.Field>>()
+                        .filter { it.fieldsCountInGroups == it.result }
+                        .flatMap { it.fieldGroups().flatten() }
+                        .distinct().size
+                    avgWith(allCertainMines, 0.5f, easyMines).toInt()
                 }
-                OpenFieldChallengeDifficulty.EXTREME -> {}
+                OpenFieldChallengeDifficulty.MEDIUM -> {
+                    val rules = MfeAnalyze.create(model).filterIsInstance<FieldRule<Flags.Field>>()
+                    val knownValues = GroupValues<Flags.Field>()
+                    do {
+                        var simplified = false
+                        rules.forEach { simplified = simplified or (it.simplify(knownValues) { _, _ -> } != SimplifyResult.NO_EFFECT) }
+                    } while (simplified)
+                    println("knownValues: $knownValues")
+                    knownValues.data.entries.filter { it.key.size == it.value }.sumOf { it.value }
+                }
+                else -> null
+            }
+            if (difficulty != OpenFieldChallengeDifficulty.EXTREME) {
+                if ((score.minesRequired ?: certainFields().size) <= 0 || certainFields().isEmpty()) {
+                    println("opening another one")
+                    openField(replayable)
+                }
             }
         }
 
@@ -172,13 +196,16 @@ object OpenFieldChallenge {
             score.clearedBoards++
             fieldsOpened = 0
             Setup.generate(model, replayable, minesCount)
-            openField(replayable)
         }
         private val pointsBonusClearedMap = when (difficulty) {
             OpenFieldChallengeDifficulty.EASY -> 10
             OpenFieldChallengeDifficulty.MEDIUM -> 10
             OpenFieldChallengeDifficulty.HARD -> 15
             OpenFieldChallengeDifficulty.EXTREME -> 25
+        }
+
+        private fun avgWith(certainMinesRequired: Int, v: Float, minesOfDifficulty: Int): Float {
+            return (certainMinesRequired * v + minesOfDifficulty) / 2
         }
     }
 

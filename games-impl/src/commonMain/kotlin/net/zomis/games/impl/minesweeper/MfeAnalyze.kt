@@ -37,6 +37,7 @@ class MfeAnalyze private constructor(val game: Flags.Model) : AbstractAnalyze<Fl
     }
 
     companion object {
+        fun create(game: Flags.Model) = MfeAnalyze(game).also { it.createRules() }.let { it.splitAndPrepare(it.getRules()) }
         fun analyze(game: Flags.Model) = MfeAnalyze(game).also { it.createRules() }.solve()
     }
 
