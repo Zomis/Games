@@ -91,7 +91,7 @@ fun <T, R: Any> Grid<T>.connectedAreas(
 
             for (neighbor in neighbors.invoke(currentPoint)) {
                 // check neighbors of spot and compare grouping
-                val target = this.point(current.x + neighbor.x, current.y + neighbor.y).rangeCheck(this) ?: continue
+                val target = this.point(neighbor.x, neighbor.y).rangeCheck(this) ?: continue
                 if (matched.contains(target.point) || waiting.contains(target.point)) continue
                 if (groupFunction.invoke(target) == group) {
                     // if match, add to awaiting for later processing when it will be marked as checked and added to group
