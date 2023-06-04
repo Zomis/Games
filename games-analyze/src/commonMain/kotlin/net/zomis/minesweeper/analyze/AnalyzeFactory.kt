@@ -45,16 +45,9 @@ open class AnalyzeFactory<T> {
         for (rule in rules) {
             original.add(rule!!.copy())
         }
-        val inProgress: MutableList<RuleConstraint<T>> =
-            ArrayList<RuleConstraint<T>>(rules.size)
-        for (rule in rules) {
-            inProgress.add(rule!!.copy())
-        }
-        val solutions: MutableList<Solution<T>> = mutableListOf()
-//        splitFieldRules<T>(inProgress)
-        FieldGroupSplit.superSplit(inProgress)
-        inProgress.flatMap { it.fieldGroups() }.sanityCheck()
+        val inProgress = splitAndPrepare(rules).toMutableList()
 
+        val solutions: MutableList<Solution<T>> = mutableListOf()
         val solveListener: SolveListener<T> =
             if (listener != null) listener!! else SolveListener { analyze, group, value ->
                 // no operation
@@ -72,6 +65,14 @@ open class AnalyzeFactory<T> {
             }
         }
         return AnalyzeResultsImpl(original, inProgress, groups, solutions, total)
+    }
+
+    fun splitAndPrepare(rules: List<RuleConstraint<T>>): List<RuleConstraint<T>> {
+        val inProgress = rules.map { it.copy() }
+//        splitFieldRules<T>(inProgress)
+        FieldGroupSplit.superSplit(inProgress)
+        inProgress.flatMap { it.fieldGroups() }.sanityCheck()
+        return inProgress
     }
 
     /**
