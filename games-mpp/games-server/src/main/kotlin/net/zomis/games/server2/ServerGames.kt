@@ -6,6 +6,7 @@ import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.impl.*
 import net.zomis.games.impl.alchemists.AlchemistsDelegationGame
 import net.zomis.games.impl.cards.Grizzled
+import net.zomis.games.impl.cards.TheCrew
 import net.zomis.games.impl.grids.Battleship
 import net.zomis.games.impl.grids.KingDomino
 import net.zomis.games.impl.minesweeper.Flags
@@ -19,7 +20,6 @@ object ServerGames {
 
     val beta = listOf(
         Pentago.game,
-        AlchemistsDelegationGame.game,
         Battleship.game,
         Decrypto.game,
         Red7.Game.game,
@@ -27,11 +27,13 @@ object ServerGames {
     )
 
     val games = listOf(
+        TheCrew.game,
         Flags.game,
         OpenFieldChallenge.game,
         NoThanks.game,
         Grizzled.game,
         Wordle.game,
+        AlchemistsDelegationGame.game,
         Backgammon.game,
         KingDomino.game,
         TTTUpgrade.game,

@@ -6,11 +6,8 @@ import com.arkivanov.decompose.value.Value
 import net.zomis.games.compose.common.PlatformTools
 import net.zomis.games.compose.common.game.GameClient
 import net.zomis.games.compose.common.games.MFE
-import net.zomis.games.compose.common.games.NoThanksGameView
-import net.zomis.games.compose.common.games.SimpleGridGames
 import net.zomis.games.compose.common.mfe.challenges.OpenFieldChallengeGameContent
 import net.zomis.games.dsl.flow.VIEWMODEL_VIEW_KEY
-import net.zomis.games.impl.NoThanks
 import net.zomis.games.impl.minesweeper.ViewModel
 import net.zomis.games.impl.minesweeper.specials.OpenFieldChallenge
 import net.zomis.games.server2.ServerGames
@@ -34,15 +31,6 @@ class SupportedGames(private val platformTools: PlatformTools) : GameTypeStore {
     override fun getGameType(gameType: String): GameTypeDetails? = games[gameType]
 
     init {
-        addGame("NoThanks") {
-            val view = it.view.subscribeAsState()
-            fromViewModel(view.value, NoThanks.ViewModel::class) { result ->
-                NoThanksGameView(result, it.gameClient)
-            }
-        }
-        addGame("DSL-TTT") {
-            SimpleGridGames.TTT(it.view.subscribeAsState().value, it.gameClient, it.gameClient.playerIndex.subscribeAsState().value)
-        }
         addGame("MFE") {
             fromViewModel(it.view.subscribeAsState().value, ViewModel::class) { result ->
                 MFE(result, it.gameClient)

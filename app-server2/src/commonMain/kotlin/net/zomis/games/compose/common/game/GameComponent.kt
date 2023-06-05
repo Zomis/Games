@@ -125,7 +125,7 @@ fun GameContent(component: GameComponent) {
 fun GameContentPreview() {
     val coroutineScope = rememberCoroutineScope()
     val gameStore = SupportedGames(TestPlatform())
-    val gameType = "MFE"
+    val gameType = "TheCrew"
     val gameTypeDetails = gameStore.getGameType(gameType)
     if (gameTypeDetails == null) {
         Text("Game $gameType not found")
@@ -137,13 +137,12 @@ fun GameContentPreview() {
         return LocalGameComponent(coroutineScope, gameTypeDetails, playerCount, playerIndex) {
             listOf(
                 LimitedNextViews(10),
-                gameTypeDetails.gameEntryPoint.setup().findAI("#AI_Complete_Idiot")!!.gameListener(it, 1)
             )
         }
     }
 
     var component by remember { mutableStateOf(createGameComponent()) }
-    val allowChoosePlayer = false
+    val allowChoosePlayer = true
     Column(Modifier.fillMaxSize()) {
         Button(onClick = { component = createGameComponent() }) {
             Text("New Game")

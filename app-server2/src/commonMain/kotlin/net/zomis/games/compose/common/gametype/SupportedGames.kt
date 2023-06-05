@@ -7,8 +7,10 @@ import net.zomis.games.compose.common.PlatformTools
 import net.zomis.games.compose.common.game.GameClient
 import net.zomis.games.compose.common.games.NoThanksGameView
 import net.zomis.games.compose.common.games.SimpleGridGames
+import net.zomis.games.compose.common.games.TheCrewGameView
 import net.zomis.games.dsl.flow.VIEWMODEL_VIEW_KEY
 import net.zomis.games.impl.NoThanks
+import net.zomis.games.impl.cards.TheCrew
 import net.zomis.games.server2.ServerGames
 import kotlin.reflect.KClass
 
@@ -30,6 +32,12 @@ class SupportedGames(private val platformTools: PlatformTools) : GameTypeStore {
     override fun getGameType(gameType: String): GameTypeDetails? = games[gameType]
 
     init {
+        addGame("TheCrew") {
+            val view = it.view.subscribeAsState()
+            fromViewModel(view.value, TheCrew.ViewModel::class) { result ->
+                TheCrewGameView(result, it.gameClient)
+            }
+        }
         addGame("NoThanks") {
             val view = it.view.subscribeAsState()
             fromViewModel(view.value, NoThanks.ViewModel::class) { result ->

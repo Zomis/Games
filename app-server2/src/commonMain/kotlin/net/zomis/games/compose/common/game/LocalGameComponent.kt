@@ -1,5 +1,6 @@
 package net.zomis.games.compose.common.game
 
+import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.decompose.value.operator.map
@@ -63,6 +64,9 @@ class LocalGameClient(
             }
             eliminations.value = game!!.eliminations
             view.value = game!!.view(playerIndex.value)
+            playerIndex.subscribe {
+                view.value = game!!.view(it)
+            }
             initLock.unlock() // This coroutine will not finish because the game keeps running, therefore use a lock.
         }
     }
