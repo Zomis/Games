@@ -1,4 +1,4 @@
-package net.zomis.games.compose.common.server2
+package net.zomis.games.compose.server2
 
 import com.arkivanov.decompose.value.Value
 import com.arkivanov.essenty.parcelable.Parcelable

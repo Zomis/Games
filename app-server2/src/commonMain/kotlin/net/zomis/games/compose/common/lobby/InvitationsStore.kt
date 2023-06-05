@@ -8,7 +8,7 @@ import com.arkivanov.decompose.value.update
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
-import net.zomis.games.compose.common.server2.Configuration
+import net.zomis.games.compose.server2.Configuration
 import net.zomis.games.compose.common.Navigator
 import net.zomis.games.compose.common.network.ClientConnection
 import net.zomis.games.compose.common.network.ClientToServerMessage

@@ -1,4 +1,4 @@
-package net.zomis.games.compose.common.server2
+package net.zomis.games.compose.server2
 
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.lazy.grid.GridCells

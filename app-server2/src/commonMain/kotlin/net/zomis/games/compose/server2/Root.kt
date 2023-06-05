@@ -1,4 +1,4 @@
-package net.zomis.games.compose.common.server2
+package net.zomis.games.compose.server2
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
