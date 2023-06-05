@@ -218,9 +218,6 @@ object OpenFieldChallenge {
         val model = net.zomis.games.impl.minesweeper.ViewModel(model.model, viewer)
     }
 
-    fun ofcGoal(eliminations: PlayerEliminationsWrite, game: Model) {
-        if (game.score.mistakesAllowed < 0) eliminations.eliminateRemaining(WinResult.WIN)
-    }
     data class FieldGuesses(val fields: List<Flags.Field>)
 
     val factory = GamesApi.gameCreator(Model::class)

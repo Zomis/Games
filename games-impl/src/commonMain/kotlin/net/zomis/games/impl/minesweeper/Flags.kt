@@ -8,6 +8,7 @@ import net.zomis.games.impl.minesweeper.ais.AI_Loser
 import net.zomis.games.impl.minesweeper.ais.point
 import net.zomis.games.impl.minesweeper.specials.NormalMultiplayer
 import net.zomis.games.scorers.ScorerAnalyzeProvider
+import net.zomis.games.impl.minesweeper.ais.AI_Hard
 import net.zomis.minesweeper.analyze.AnalyzeResult
 
 object Flags {
@@ -16,7 +17,7 @@ object Flags {
         CompleteIdiot("Complete Idiot"),
 //        Medium("Medium"),
         Challenger("Challenger"),
-//        Hard("Hard"),
+        Hard("Hard"),
 //        HardPlus("Hard Plus"),
 //        Extreme("Extreme"),
 //        Nightmare("Nightmare"),
@@ -151,6 +152,7 @@ object Flags {
             MfeAnalyze.analyze(it.model)
         }
         val mineProbability = scorers.action(useWeapon) {
+            if (action.parameter.weapon !is Weapons.Default) return@action 0.0
             this.require(analysis)!!.getGroupFor(action.game.fieldAt(action.parameter.position))?.probability
         }
         val detailedAnalysis = scorers.provider {
@@ -160,6 +162,7 @@ object Flags {
         val idiot = scorers.ai(AI.CompleteIdiot.publicName, bombScorer.weight(-1)).gameAI()
         ai(AI.Loser.publicName) { AI_Loser.block(this) }
         ai(AI.Challenger.publicName) { AI_Challenger.block(this, requiredAI { idiot }) }
+        AI_Hard.ai(this, analysis)
 
         scorers.ai(AI.Impossible.publicName, mineProbability)
 //        scorers.ai(AI.Impossible.publicName, cheatScorer.weight(1))
