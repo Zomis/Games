@@ -10,7 +10,9 @@ import net.zomis.games.impl.minesweeper.specials.NormalMultiplayer
 import net.zomis.games.scorers.ScorerAnalyzeProvider
 import net.zomis.games.impl.minesweeper.ais.AI_Hard
 import net.zomis.games.impl.minesweeper.ais.AI_Medium
+import net.zomis.minesweeper.ais.AI_HardPlus
 import net.zomis.minesweeper.analyze.AnalyzeResult
+import net.zomis.minesweeper.analyze.detail.DetailedResults
 
 object Flags {
     enum class AI(val visibleName: String, aiName: String? = null) {
@@ -19,7 +21,7 @@ object Flags {
         Medium("Medium"),
         Challenger("Challenger"),
         Hard("Hard"),
-//        HardPlus("Hard Plus"),
+        HardPlus("Hard Plus"),
 //        Extreme("Extreme"),
 //        Nightmare("Nightmare"),
 //        Impossible("Impossible (for testing only)", aiName = "#AI_Impossible"),
@@ -149,10 +151,6 @@ object Flags {
         val analysis = scorers.provider {
             MfeAnalyze.analyze(it.model)
         }
-        val mineProbability = scorers.action(useWeapon) {
-            if (action.parameter.weapon !is Weapons.Default) return@action 0.0
-            this.require(analysis)!!.getGroupFor(action.game.fieldAt(action.parameter.position))?.probability
-        }
         val detailedAnalysis = scorers.provider {
             it.require(analysis)!!.analyzeDetailed(MfeAnalyze.NeighborStrategy)
         }
@@ -162,7 +160,9 @@ object Flags {
         ai(AI.Challenger.publicName) { AI_Challenger.block(this, requiredAI { idiot }) }
         AI_Hard.ai(this, analysis)
         AI_Medium.ai(this)
+        AI_HardPlus.ai(this, analysis, detailedAnalysis)
     }
 
 }
 typealias MfeProbabilityProvider = ScorerAnalyzeProvider<Flags.Model, AnalyzeResult<Flags.Field>>
+typealias MfeAdvancedProbabilityProvider = ScorerAnalyzeProvider<Flags.Model, DetailedResults<Flags.Field>>
