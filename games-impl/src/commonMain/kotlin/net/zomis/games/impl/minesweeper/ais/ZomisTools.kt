@@ -4,6 +4,11 @@ import net.zomis.games.impl.minesweeper.Flags
 import net.zomis.minesweeper.analyze.detail.ProbabilityKnowledge
 
 object ZomisTools {
+    fun playerHasMostScore(game: Flags.Model, playerIndex: Int): Boolean {
+        val playerScore = game.players[playerIndex].score
+        return game.players.none { it.score > playerScore }
+    }
+
     fun isAIChallengerField(fieldData: ProbabilityKnowledge<Flags.Field>): Boolean {
         return !isZomisOpenField(fieldData.field) && fieldData.mineProbability > 0
     }

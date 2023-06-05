@@ -9,13 +9,14 @@ import net.zomis.games.impl.minesweeper.ais.point
 import net.zomis.games.impl.minesweeper.specials.NormalMultiplayer
 import net.zomis.games.scorers.ScorerAnalyzeProvider
 import net.zomis.games.impl.minesweeper.ais.AI_Hard
+import net.zomis.games.impl.minesweeper.ais.AI_Medium
 import net.zomis.minesweeper.analyze.AnalyzeResult
 
 object Flags {
     enum class AI(val visibleName: String, aiName: String? = null) {
         Loser("Loser"),
         CompleteIdiot("Complete Idiot"),
-//        Medium("Medium"),
+        Medium("Medium"),
         Challenger("Challenger"),
         Hard("Hard"),
 //        HardPlus("Hard Plus"),
@@ -160,6 +161,7 @@ object Flags {
         ai(AI.Loser.publicName) { AI_Loser.block(this) }
         ai(AI.Challenger.publicName) { AI_Challenger.block(this, requiredAI { idiot }) }
         AI_Hard.ai(this, analysis)
+        AI_Medium.ai(this)
     }
 
 }
