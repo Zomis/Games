@@ -25,10 +25,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.zomis.games.compose.common.*
-import net.zomis.games.compose.common.gametype.SupportedGames
 import net.zomis.games.compose.common.mfe.RootContent
 import net.zomis.games.compose.common.mfe.DefaultRootComponent as MfeRoot
-import net.zomis.games.compose.common.server2.DefaultRootComponent as Server2Root
 import java.nio.file.Path
 import javax.swing.SwingUtilities
 import kotlin.reflect.KClass
@@ -87,17 +85,6 @@ fun main() {
 
     application {
         val coroutineScope = CoroutineScope(Dispatchers.Default, lifecycle)
-        val root = runOnUiThreadDesktop {
-            Server2Root(
-                componentContext = DefaultComponentContext(lifecycle = lifecycle),
-                httpClient = httpClient,
-                localStorage = FileLocalStorage(Path.of("localStorage")),
-                mainScope = coroutineScope,
-                platformTools = DesktopPlatform(),
-                clientConfig = clientConfig,
-                gameTypeStore = SupportedGames(DesktopPlatform())
-            )
-        }
 
         val mfeMainMenu = runOnUiThreadDesktop {
             MfeRoot(

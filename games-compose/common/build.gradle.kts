@@ -11,7 +11,7 @@ plugins {
     // id("com.android.library")
 }
 
-group = "me.simon"
+group = "net.zomis"
 version = "1.0"
 
 kotlin {
