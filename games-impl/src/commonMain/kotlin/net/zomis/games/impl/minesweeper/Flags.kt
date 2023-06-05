@@ -21,7 +21,7 @@ object Flags {
 //        HardPlus("Hard Plus"),
 //        Extreme("Extreme"),
 //        Nightmare("Nightmare"),
-        Impossible("Impossible (for testing only)", aiName = "#AI_Impossible"),
+//        Impossible("Impossible (for testing only)", aiName = "#AI_Impossible"),
         ;
 
         val publicName = aiName ?: "#AI_$visibleName"
@@ -145,9 +145,6 @@ object Flags {
             }
         }
         val bombScorer = this.scorers.actionConditional(useWeapon) { action.parameter.weapon is SizedBombWeapon }
-        val cheatScorer = this.scorers.actionConditional(useWeapon) {
-            action.parameter.weapon is Weapons.Default && action.game.grid.point(action.parameter.position).value.mineValue > 0
-        }
         val analysis = scorers.provider {
             MfeAnalyze.analyze(it.model)
         }
@@ -163,9 +160,6 @@ object Flags {
         ai(AI.Loser.publicName) { AI_Loser.block(this) }
         ai(AI.Challenger.publicName) { AI_Challenger.block(this, requiredAI { idiot }) }
         AI_Hard.ai(this, analysis)
-
-        scorers.ai(AI.Impossible.publicName, mineProbability)
-//        scorers.ai(AI.Impossible.publicName, cheatScorer.weight(1))
     }
 
 }
