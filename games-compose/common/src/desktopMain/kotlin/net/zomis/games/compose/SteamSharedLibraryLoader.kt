@@ -1,13 +1,14 @@
 package net.zomis.games.compose
 
 import com.codedisaster.steamworks.SteamException
+import com.codedisaster.steamworks.SteamLibraryLoader
 import com.codedisaster.steamworks.Version
 import java.io.*
 import java.util.*
 
-internal object SteamSharedLibraryLoader {
-    private val OS: PLATFORM? = null
-    private const val IS_64_BIT = false
+class SteamSharedLibraryLoader : SteamLibraryLoader {
+    private val OS: PLATFORM
+    private val IS_64_BIT: Boolean
     private val SHARED_LIBRARY_EXTRACT_DIRECTORY = System.getProperty(
         "com.codedisaster.steamworks.SharedLibraryExtractDirectory", "steamworks4j"
     )
@@ -29,12 +30,12 @@ internal object SteamSharedLibraryLoader {
     init {
         val osName = System.getProperty("os.name")
         val osArch = System.getProperty("os.arch")
-        if (osName.contains("Windows")) {
-            OS = PLATFORM.Windows
+        OS = if (osName.contains("Windows")) {
+            PLATFORM.Windows
         } else if (osName.contains("Linux")) {
-            OS = PLATFORM.Linux
+            PLATFORM.Linux
         } else if (osName.contains("Mac")) {
-            OS = PLATFORM.MacOS
+            PLATFORM.MacOS
         } else {
             throw RuntimeException("Unknown host architecture: $osName, $osArch")
         }
@@ -42,10 +43,10 @@ internal object SteamSharedLibraryLoader {
     }
 
     private fun getPlatformLibName(libName: String): String {
-        when (OS) {
-            PLATFORM.Windows -> return libName + (if (IS_64_BIT) "64" else "") + ".dll"
-            PLATFORM.Linux -> return "lib$libName.so"
-            PLATFORM.MacOS -> return "lib$libName.dylib"
+        return when (OS) {
+            PLATFORM.Windows -> libName + (if (IS_64_BIT) "64" else "") + ".dll"
+            PLATFORM.Linux -> "lib$libName.so"
+            PLATFORM.MacOS -> "lib$libName.dylib"
         }
         throw RuntimeException("Unknown host architecture")
     }
@@ -81,8 +82,12 @@ internal object SteamSharedLibraryLoader {
             return if (path.exists()) path.path else null
         }
 
+    override fun loadLibrary(libraryName: String): Boolean {
+        return loadLibrary(libraryName, null)
+    }
+
     @Throws(SteamException::class)
-    fun loadLibrary(libraryName: String, libraryPath: String?) {
+    fun loadLibrary(libraryName: String, libraryPath: String?): Boolean {
         try {
             val librarySystemName = getPlatformLibName(libraryName)
             var librarySystemPath = discoverExtractLocation(
@@ -104,6 +109,7 @@ internal object SteamSharedLibraryLoader {
             }
             val absolutePath = librarySystemPath.canonicalPath
             System.load(absolutePath)
+            return true
         } catch (e: IOException) {
             throw SteamException(e)
         }

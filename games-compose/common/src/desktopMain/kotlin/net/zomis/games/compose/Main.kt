@@ -123,7 +123,7 @@ fun main() {
 
 fun initializeSteam(coroutineScope: CoroutineScope) {
     try {
-        SteamAPI.loadLibraries()
+        SteamAPI.loadLibraries(SteamSharedLibraryLoader())
         if (!SteamAPI.init()) {
             println("Steamworks initialization error, e.g. Steam client not running")
             return
