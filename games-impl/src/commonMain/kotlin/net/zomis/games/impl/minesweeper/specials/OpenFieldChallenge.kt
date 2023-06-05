@@ -118,6 +118,7 @@ object OpenFieldChallenge {
             val field = chooseNextOpenField(replayable)
             if (field == null) {
                 newBoard(replayable)
+                updateAnalysis(replayable)
                 return
             }
             fieldsOpened++
