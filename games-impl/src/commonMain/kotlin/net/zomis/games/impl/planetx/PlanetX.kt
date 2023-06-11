@@ -1,16 +1,10 @@
 package net.zomis.games.impl.planetx
 
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import net.zomis.games.cards.CardZone
-import net.zomis.games.cards.probabilities.CardsAnalyze2
-import net.zomis.games.impl.planetx.PlanetX.setObjects
-import net.zomis.games.impl.planetx.PlanetX.wrapGet
 import kotlin.math.abs
-import kotlin.random.Random
 
 object PlanetX {
     val LIST_OF_ZERO = listOf(0)
@@ -92,7 +86,7 @@ object PlanetX {
 
         // Gas Clouds adjacent to at least one truly empty
         val gas1 = list.indexOfFirst { it == StarObject.GasCloud }
-        val gas2 = list.indexOfFirst { it == StarObject.GasCloud }
+        val gas2 = list.indexOfLast { it == StarObject.GasCloud }
         if (!getWithin(list, gas1, range = 1).contains(StarObject.TrulyEmpty)) return false
         if (!getWithin(list, gas2, range = 1).contains(StarObject.TrulyEmpty)) return false
 
@@ -116,12 +110,21 @@ object PlanetX {
         return max
     }
     fun List<StarObject>.wrapGet(index: Int): StarObject = this[index % size]
+    fun List<StarObject>.available(index: Int, obj: StarObject): Boolean = wrapGet(index).let { it == StarObject.TrulyEmpty || it == obj }
+    private fun MutableList<StarObject>.clearOf(obj: StarObject) {
+        for (i in indices) {
+            if (this[i] == obj) this[i] = StarObject.TrulyEmpty
+        }
+    }
 
     private fun MutableList<StarObject>.setObjects(obj: StarObject, index: Int, addIndex: List<Int>): Boolean {
         for (i in indices) {
             if (this[i] == obj) this[i] = StarObject.TrulyEmpty
         }
-        if (addIndex.any { this[(index + it) % size] != StarObject.TrulyEmpty }) return false
+        if (addIndex.any { this[(index + it) % size] != StarObject.TrulyEmpty }) {
+            println("Could not setObjects: $obj $index $addIndex. $this")
+            return false
+        }
 
         for (i in addIndex) {
             this[(index + i) % size] = obj
@@ -144,19 +147,25 @@ object PlanetX {
         private suspend fun dwarfPlanets(list: MutableList<StarObject>, next: suspend (MutableList<StarObject>) -> Unit) {
             for (firstDwarf in range) {
                 for (dwarfOrder in dwarfVariants) {
-                    if (list.setObjects(StarObject.DwarfPlanet, firstDwarf, dwarfOrder)) next.invoke(list)
+                    if (list.setObjects(StarObject.DwarfPlanet, firstDwarf, dwarfOrder)) {
+                        next.invoke(list)
+                        list.clearOf(StarObject.DwarfPlanet)
+                    }
                 }
             }
         }
 
         private suspend fun asteroids(list: MutableList<StarObject>, next: suspend (MutableList<StarObject>) -> Unit) {
             for (firstAsteroidPair in range) {
-                if (list[firstAsteroidPair] == StarObject.TrulyEmpty && list.wrapGet(firstAsteroidPair + 1) == StarObject.TrulyEmpty) {
-                    for (secondAsteroidPair in range) {
-                        if (list[secondAsteroidPair] == StarObject.TrulyEmpty && list.wrapGet(secondAsteroidPair + 1) == StarObject.TrulyEmpty) {
-                            val asteroids = setOf(firstAsteroidPair, firstAsteroidPair + 1, secondAsteroidPair, secondAsteroidPair + 1)
+                if (list.available(firstAsteroidPair, StarObject.Asteroid) && list.available(firstAsteroidPair + 1, StarObject.Asteroid)) {
+                    for (secondAsteroidPair in range.filter { it > firstAsteroidPair }) {
+                        if (list.available(secondAsteroidPair, StarObject.Asteroid) && list.available(secondAsteroidPair + 1, StarObject.Asteroid)) {
+                            val asteroids = setOf(firstAsteroidPair, (firstAsteroidPair + 1) % size, secondAsteroidPair, (secondAsteroidPair + 1) % size)
                             if (asteroids.size == 4) {
-                                if (list.setObjects(StarObject.Asteroid, 0, asteroids.toList())) next.invoke(list)
+                                if (list.setObjects(StarObject.Asteroid, 0, asteroids.toList())) {
+                                    next.invoke(list)
+                                    list.clearOf(StarObject.Asteroid)
+                                }
                             }
                         }
                     }
@@ -164,13 +173,16 @@ object PlanetX {
             }
         }
 
-        private suspend fun comeets(list: MutableList<StarObject>, next: suspend (MutableList<StarObject>) -> Unit) {
+        private suspend fun comets(list: MutableList<StarObject>, next: suspend (MutableList<StarObject>) -> Unit) {
             for (firstComet in validCometLocations) {
-                if (list[firstComet] == StarObject.TrulyEmpty) {
-                    for (secondComet in validCometLocations.minus(firstComet)) {
-                        if (list[secondComet] == StarObject.TrulyEmpty) {
+                if (list[firstComet] == StarObject.TrulyEmpty || list[firstComet] == StarObject.Comet) {
+                    for (secondComet in validCometLocations.filter { it > firstComet }) {
+                        if (list[secondComet] == StarObject.TrulyEmpty || list[secondComet] == StarObject.Comet) {
                             val comets = listOf(firstComet, secondComet)
-                            if (list.setObjects(StarObject.Comet, 0, comets)) next.invoke(list)
+                            if (list.setObjects(StarObject.Comet, 0, comets)) {
+                                next.invoke(list)
+                                list.clearOf(StarObject.Comet)
+                            }
                         }
                     }
                 }
@@ -184,13 +196,21 @@ object PlanetX {
 
             // 2 Gas Clouds
             for (gasCloud1 in remaining) {
-                if (getWithin(list, gasCloud1, 1).count { it == StarObject.TrulyEmpty } >= 2) {
-                    for (gasCloud2 in remaining.minus(gasCloud1)) {
+                list.clearOf(StarObject.GasCloud)
+                val emptySpacesForGasCloud1 = getWithin(list, gasCloud1, 1).count { it == StarObject.TrulyEmpty }
+                if (emptySpacesForGasCloud1 >= 2) {
+                    list[gasCloud1] = StarObject.GasCloud
+                    // TODO: 1001 1010 0101 0110. There's one too many being emitted here, because we're blocking the empty space that gasCloud1 reserved.
+                    for (gasCloud2 in remaining.minus(gasCloud1).filter { it > gasCloud1 }) {
                         if (getWithin(list, gasCloud2, 1).count { it == StarObject.TrulyEmpty } >= 2) {
                             val gasClouds = listOf(gasCloud1, gasCloud2)
-                            if (list.setObjects(StarObject.GasCloud, 0, gasClouds)) next.invoke(list)
+                            if (list.setObjects(StarObject.GasCloud, 0, gasClouds)) {
+                                next.invoke(list)
+                                list.clearOf(StarObject.GasCloud)
+                            }
                         }
                     }
+                    list[gasCloud1] = StarObject.TrulyEmpty
                 }
             }
         }
@@ -201,79 +221,26 @@ object PlanetX {
             }
 
             for (planetX in remaining) {
-                if (list.setObjects(StarObject.PlanetX, planetX, LIST_OF_ZERO)) next.invoke(list)
-            }
-        }
-
-
-        private fun iterateRaw(): Flow<List<StarObject>> {
-
-            return flow {
-                // Dwarfs, 2 sets of asteroids, gas clouds, comets, planetX
-                val it1 = range.map { StarObject.TrulyEmpty }.toMutableList()
-                val mutableList = range.map { StarObject.TrulyEmpty }.toMutableList()
-
-                for (firstDwarf in range) {
-                    for (dwarfOrder in dwarfVariants) {
-                        mutableList.setObjects(StarObject.DwarfPlanet, firstDwarf, dwarfOrder)
-
-                        for (firstAsteroidPair in range) {
-                            if (mutableList[firstAsteroidPair] == StarObject.TrulyEmpty && mutableList.wrapGet(firstAsteroidPair + 1) == StarObject.TrulyEmpty) {
-
-                                for (secondAsteroidPair in range) {
-                                    if (mutableList[secondAsteroidPair] == StarObject.TrulyEmpty && mutableList.wrapGet(secondAsteroidPair + 1) == StarObject.TrulyEmpty) {
-                                        val asteroids = setOf(firstAsteroidPair, firstAsteroidPair + 1, secondAsteroidPair, secondAsteroidPair + 1)
-                                        if (asteroids.size == 4) {
-                                            mutableList.setObjects(StarObject.Asteroid, 0, asteroids.toList())
-                                            placeRest(mutableList) {
-                                                emit(it)
-                                            }
-                                        }
-                                        // Remaining: Place Comets, PlanetX, Gas Clouds
-                                    }
-                                }
-                            }
-                        }
-
-
-                    }
+                if (list[planetX] == StarObject.TrulyEmpty) {
+                    list[planetX] = StarObject.PlanetX
+                    next.invoke(list)
+                    list[planetX] = StarObject.TrulyEmpty
                 }
             }
         }
+        fun emptySpace() = range.map { StarObject.TrulyEmpty }.toMutableList()
 
-
-        private suspend fun placeRest(list: MutableList<StarObject>, completed: suspend (List<StarObject>) -> Unit) {
-            // 2 Comets
-            for (firstComet in validCometLocations) {
-                if (list[firstComet] == StarObject.TrulyEmpty) {
-                    for (secondComet in validCometLocations.minus(firstComet)) {
-                        if (list[secondComet] == StarObject.TrulyEmpty) {
-                            val comets = listOf(firstComet, secondComet)
-                            list.setObjects(StarObject.Comet, 0, comets)
-
-                            val remaining = list.mapIndexedNotNull { index, starObject ->
-                                if (starObject == StarObject.TrulyEmpty) index else null
-                            }
-
-                            // PlanetX
-                            for (planetX in remaining) {
-                                list.setObjects(StarObject.PlanetX, planetX, LIST_OF_ZERO)
-                                val remainingAfterX = remaining.minus(planetX)
-
-                                // 2 Gas Clouds
-                                for (gasCloud1 in remainingAfterX) {
-                                    if (getWithin(list, gasCloud1, 1).count { it == StarObject.TrulyEmpty } >= 2) {
-                                        for (gasCloud2 in remainingAfterX.minus(gasCloud1)) {
-                                            if (getWithin(list, gasCloud2, 1).count { it == StarObject.TrulyEmpty } >= 2) {
-                                                val gasClouds = listOf(gasCloud1, gasCloud2)
-                                                list.setObjects(StarObject.GasCloud, 0, gasClouds)
-
-                                                completed.invoke(list.toList())
-                                            }
-                                        }
-                                    }
+        private fun iterateRaw(): Flow<List<StarObject>> {
+            return flow {
+                // Dwarfs, 2 sets of asteroids, gas clouds, comets, planetX
+                val it1 = emptySpace()
+                dwarfPlanets(it1) { it2 ->
+                    asteroids(it2) { it3 ->
+                        comets(it3) { it4 ->
+                            planetX(it4) { it5 ->
+                                gasClouds(it5) { final ->
+                                    emit(final.toList())
                                 }
-
                             }
                         }
                     }
@@ -322,26 +289,60 @@ object PlanetX {
             }
         }.filter { valid(it) }
 
+        fun <T> Flow<T>.collectCombinations(): Flow<Set<T>> {
+            return this.runningFold(setOf()) { accumulator: Set<T>, value: T ->
+                accumulator.plus(element = value)
+            }
+        }
+        suspend fun <T> Flow<Set<T>>.finalCount(): Int = this.last().size
+
+        suspend fun combinationCount(name: String, debug: Boolean = false, block: suspend FlowCollector<List<StarObject>>.() -> Unit) {
+            flow<List<StarObject>> {
+                block.invoke(this)
+            }
+                .onEach { if (debug) println(it) }
+                .map { it.toList() }
+                .collectCombinations().finalCount().let { println("$name: $it") }
+        }
+
         suspend fun f() {
+            val list = "TrulyEmpty, GasCloud, Comet, Asteroid, Asteroid, DwarfPlanet, TrulyEmpty, TrulyEmpty, DwarfPlanet, DwarfPlanet, DwarfPlanet, TrulyEmpty, Asteroid, Asteroid, PlanetX, GasCloud, Comet, TrulyEmpty"
+                .split(", ").map { StarObject.valueOf(it) }
+            println(valid(list))
+
+
             val all = iterateUse().toList()
-            println(all.size)
+            println("All: " + all.size)
 
             val combinations = all.toMutableSet()
-            println(combinations.size)
+            println("Combinations: " + combinations.size)
 
-            generator(true).runningFold(combinations.toSet()) { accumulator: Set<List<StarObject>>, value: List<StarObject> ->
-                accumulator.plus(element = value)
-            }.conflate().collect {
-                println(it.size)
-                delay(500)
+            combinationCount("Asteroids") {
+                asteroids(emptySpace()) { emit(it) }
             }
-            return
+            combinationCount("Dwarf Planets", debug = false) { // 16 * 6 = 108
+                dwarfPlanets(emptySpace()) { emit(it) }
+            }
+            combinationCount("Comets") { // 7 nCr 2 = 21
+                comets(emptySpace()) { emit(it) }
+            }
+            combinationCount("PlanetX") { // 18
+                planetX(emptySpace()) { emit(it) }
+            }
+            combinationCount("Gas Clouds", debug = true) { // 4
+                val space = emptySpace()
+                space.setObjects(StarObject.Asteroid, 0, (1..14).toList())
+                gasClouds(space) { emit(it) }
+            }
+//            return
+//            estimateTotals(expert = true)
+            println()
+            println("Generated but not iterated:")
 
-
-            generator(true).filter { it !in combinations }.collect {
-                if (combinations.add(it)) println(combinations.size)
-                // println(it)
-
+            generator(expert = true).filter {
+                combinations.add(it)
+            }.take(5).collect {
+                println(it)
             }
             return
 
@@ -359,5 +360,42 @@ object PlanetX {
 //            cards.addRule() // Rules are crossing multiple zones, might also need dynamic rules
 
         }
+
+        private suspend fun lookFor(lookingFor: List<StarObject>) {
+            var bestInt: Long = 0L
+            var best = listOf<StarObject>()
+            iterateUse().collect { list ->
+                val matches = list.indices.sumOf {
+                    if (list[it] != lookingFor[it]) 0L
+                    else when (list[it]) {
+                        StarObject.Comet -> 8
+                        StarObject.Asteroid -> 9
+                        StarObject.DwarfPlanet -> 10
+                        StarObject.GasCloud -> 5
+                        StarObject.PlanetX -> 7
+                        StarObject.TrulyEmpty -> 1
+                    }
+                }
+                if (matches > bestInt) {
+                    bestInt = matches
+                    best = list.toList()
+                }
+            }
+            println(bestInt)
+            println(best)
+        }
+
+        private suspend fun estimateTotals(expert: Boolean) {
+            generator(expert).collectCombinations().conflate().map { it.size }.distinctUntilChanged().collect {
+                println(it)
+                delay(1000)
+            }
+        }
+    }
+}
+
+fun <E> MutableList<E>.allIndicesOf(obj: E): List<Int> {
+    return this.mapIndexedNotNull { index, e ->
+        if (e == obj) index else null
     }
 }
