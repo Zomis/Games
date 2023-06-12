@@ -1,6 +1,17 @@
 package net.zomis.games.impl.planetx
 
+import kotlinx.coroutines.flow.toList
 import kotlin.math.abs
+
+class SectorRange(start: Int, stop: Int, expert: Boolean) : Iterable<Int> {
+    private val size = if (expert) 18 else 12
+    private val iterable = if (start < stop) {
+        start..stop
+    } else {
+        (start until size).toList() + (1..stop).toList()
+    }
+    override fun iterator(): Iterator<Int> = iterable.iterator()
+}
 
 class StarGame(val expert: Boolean) {
     val sectorCount: Int = if (expert) 18 else 12
@@ -11,6 +22,7 @@ class StarGame(val expert: Boolean) {
     fun allObjects(): List<PlanetX.StarObject> = PlanetX.StarObject.values().flatMap { it.list(expert) }
     fun random(): StarMap = StarMap(game = this, list = allObjects().shuffled().toMutableList())
 
+    fun sectorRange(start: Int, stop: Int) = SectorRange(start, stop, expert)
     fun sectorDistance(a: Int, b: Int): Int {
         val distance = abs(a - b)
         return if (distance > halfSize) sectorCount - distance else distance
@@ -37,5 +49,9 @@ class StarGame(val expert: Boolean) {
         }
     }
 
+    suspend fun startSearch(): Search {
+        val possibilities = Generate(this).iterateUse().toList().toMutableList()
+        return Search(this, possibilities)
+    }
 
 }
