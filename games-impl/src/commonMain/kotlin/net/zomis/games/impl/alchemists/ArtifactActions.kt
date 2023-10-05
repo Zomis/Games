@@ -14,6 +14,7 @@ import net.zomis.games.dsl.events.EventPriority
 import net.zomis.games.dsl.flow.ActionDefinition
 import net.zomis.games.dsl.flow.GameModifierScope
 import net.zomis.games.dsl.flow.actions.SmartActionBuilder
+import kotlin.math.max
 
 object ArtifactActions {
     data class OwnedArtifact(val owner: AlchemistsDelegationGame.Model.Player, val artifact: Artifact)
@@ -172,6 +173,7 @@ object ArtifactActions {
             on(ResourceChange::class, EventPriority.EARLIER).mutate {
                 if (
                     event.resourceMap == ruleHolder.owner.resources &&
+                    event.diff > 0 &&
                     event.resource == AlchemistsDelegationGame.Resources.Reputation
                 ) event.newValue++
             }
@@ -242,7 +244,7 @@ object ArtifactActions {
             game.players[playerIndex].gold >= it
         }
         val costPerform = using { action.parameter.cost }.perform {
-            game.players[playerIndex].gold -= it
+            game.players[playerIndex].gold -= it.coerceAtLeast(0)
         }
     }
     val buyArtifactAction = GamesApi.gameCreator(AlchemistsDelegationGame.Model::class).action("buyArtifact", Artifact::class).serializer { it.serialize() }

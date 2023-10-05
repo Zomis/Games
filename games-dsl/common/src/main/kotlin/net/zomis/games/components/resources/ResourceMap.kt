@@ -6,6 +6,8 @@ import net.zomis.games.dsl.Viewable
 import net.zomis.games.dsl.events.EmptyEventFactory
 import net.zomis.games.dsl.events.EventFactory
 
+// TODO: DynamicResourceMap: Have two different resource maps, one for original and one for modifiers?
+
 interface ResourceMap: Replayable {
     companion object {
         fun empty(): ResourceMap = ResourceMapImpl(mutableMapOf())
@@ -75,7 +77,9 @@ interface MutableResourceMap: ResourceMap {
 
 // See Splendor Money and Caravan in Spice Road
 
-data class ResourceChange(val resourceMap: ResourceMap, val resource: GameResource, val oldValue: Int, var newValue: Int)
+data class ResourceChange(val resourceMap: ResourceMap, val resource: GameResource, val oldValue: Int, var newValue: Int) {
+    val diff: Int = newValue - oldValue
+}
 
 class ResourceMapImpl(
     private val resources: MutableMap<GameResource, ResourceEntryImpl> = mutableMapOf(),
