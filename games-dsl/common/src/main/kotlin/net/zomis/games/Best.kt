@@ -73,6 +73,33 @@ class Best<T>(private val valueFunction: (T) -> Double) {
 
 }
 
+class GreedyIterator<T>(val descending: Boolean = false) {
+    private val comparator = compareBy<Double> { it }.let { if (descending) it.reversed() else it }
+
+    private var bestValue: Double = if (descending) Double.POSITIVE_INFINITY else Double.NEGATIVE_INFINITY
+    private var bestElements: MutableList<T> = mutableListOf()
+
+    fun next(value: Double, element: () -> T) {
+        val compareResult = comparator.compare(value, bestValue)
+        if (compareResult > 0) {
+            bestValue = value
+            bestElements = mutableListOf(element.invoke())
+        } else if (compareResult == 0) {
+            bestElements.add(element.invoke())
+        }
+    }
+
+    fun asCollection(): Collection<T> = bestElements.toList()
+
+    fun getBest(): List<T> = bestElements.toList()
+    fun firstBest(): T = bestElements.first()
+    fun isBest(element: T): Boolean = bestElements.contains(element)
+    fun getBestValue(): Double = bestValue
+    fun bestPair(): Pair<T, Double> = firstBest() to getBestValue()
+
+}
+
+
 class BestSuspending<T>(private val valueFunction: suspend (T) -> Double) {
 
     private var bestValue: Double = Double.NEGATIVE_INFINITY
