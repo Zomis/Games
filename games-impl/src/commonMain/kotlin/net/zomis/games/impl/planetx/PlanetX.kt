@@ -52,14 +52,15 @@ object PlanetX {
         search.printProbabilities("After another turn")
         search.bestTheories(listOf(12, 15, 14, 17, 16, 3, 1, 2, 18))
         println("Remaining: ${search.size}")
-
+/*
+        TODO: Improve API to the below
         search.atLeastOne(StarObject.Comet).isWithin(3).sectorsOf(StarObject.DwarfPlanet)
         search.no(StarObject.Comet).isDirectlyOpposite(StarObject.DwarfPlanet)
         search.all(StarObject.Asteroid).areWithinBandOf(7)
         search.all(StarObject.Asteroid).areConsecutive()
         search.no(StarObject.Asteroid).isWithin(3).sectorsOfAnother()
         search.all(StarObject.Asteroid).isWithin(7).sectorsOfAnother()
-
+*/
         return
         search.filter {
             // Research: At least one Comet is adjacent to 1 Dwarf Planet
