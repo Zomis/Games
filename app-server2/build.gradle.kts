@@ -2,7 +2,7 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val ktor_version = "2.2.4"
-val decomposeVersion = "2.0.0-compose-experimental-alpha-02"
+val decomposeVersion = "2.1.2"
 val steamWorksVersion: String by project
 
 plugins {
