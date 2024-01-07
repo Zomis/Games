@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     kotlin("multiplatform")
 }
@@ -11,6 +13,7 @@ kotlin {
         compilations.all {
             kotlinOptions {
                 jvmTarget = "11"
+                freeCompilerArgs += "-Xcontext-receivers"
             }
         }
     }
@@ -27,6 +30,7 @@ kotlin {
             dependencies {
                 implementation(kotlin("stdlib-common"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+                implementation("com.github.lewik.klog:klog:2.0.5")
             }
         }
         val commonTest by getting {

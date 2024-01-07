@@ -94,3 +94,7 @@ gradle-app.setting
 games-server/src/main/resources/secrets\.properties
 
 hikari.properties
+
+localStorage/
+
+local.properties

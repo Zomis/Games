@@ -13,7 +13,7 @@ val steamWorksVersion: String by project
 
 val jacksonVersion = "2.13.1"
 val jupiterVersion = "5.7.1"
-val coroutinesVersion = "1.6.4"
+val coroutinesVersion = "1.7.3"
 val ktorVersion = "2.0.3"
 
 kotlin {
@@ -40,7 +40,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
                 implementation(project(":games-dsl"))
                 implementation(project(":games-impl"))
-//                implementation("com.github.lewik.klog:klog-metadata:2.0.2")
+                implementation("com.github.lewik.klog:klog:2.0.5")
             }
         }
         val commonTest by getting {
@@ -144,6 +144,7 @@ tasks {
     }
 
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        kotlinOptions.freeCompilerArgs += "-Xcontext-receivers"
         kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
         kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"
     }
