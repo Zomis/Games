@@ -308,7 +308,7 @@ object Grizzled {
                     .map { it.id.toString() to it }
             }
             standard.apply {
-                // TODO: Boolean cost (both requires true -> set false, and inverted)
+                // TODO: Boolean cost (implement both that it requires true and sets false, and inverted)
                 precondition { playerIndex == this@Player.playerIndex }
                 precondition { charmAvailable }
                 perform { charmAvailable = false }

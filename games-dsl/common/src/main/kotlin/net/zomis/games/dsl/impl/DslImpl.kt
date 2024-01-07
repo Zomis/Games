@@ -150,6 +150,7 @@ class ReplayState(
     override fun list(key: String, default: () -> List<Map<String, Any>>): List<Map<String, Any>> = replayable(key, default)
     override fun <E> randomFromList(key: String, list: List<E>, count: Int, stringMapper: (E) -> String): List<E> {
         require(count >= 0) { "randomFromList count cannot be less than zero, was $count" }
+        require(count <= list.size) { "randomFromList count cannot be more than size of list (${list.size}), was $count" }
         if (count == 0) return emptyList()
         val remainingList = list.toMutableList()
         val strings = strings(key) { remainingList.shuffled().take(count).map(stringMapper) }.toMutableList()
@@ -161,7 +162,7 @@ class ReplayState(
             val item = remainingList.removeAt(index)
             result.add(item)
         }
-        if (result.size != count) throw IllegalStateException("Size mismatch: Was ${result.size} but expected $count")
+        check(result.size == count) { "Size mismatch: Was ${result.size} but expected $count" }
         return result
     }
 
