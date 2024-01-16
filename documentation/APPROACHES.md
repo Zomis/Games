@@ -62,3 +62,20 @@ to one place instead of spreading things out over several places such as:
 
 First seen in Alchemists:
 https://github.com/Zomis/Games/blob/057509d67de275d65d4feb00aa91dc48f93eb999/games-core/src/main/kotlin/net/zomis/games/impl/alchemists/AlchemistsDelegationGame.kt
+
+## 6. DSL with Delegates and Kotlin Context Receivers
+
+Even with the above approach, it was still hard to implement some functionality that is used in more complex games.
+
+For example:
+- Conflict resolution ("You must do X" and "You cannot do X")
+- Ignore specific rules for some purposes
+- Changing what choices you can make, "You may pay one X instead of two Y" or "If you pay 1 gold you may target any X"
+- Considering things as something else, "Your X may count as Y"
+- Ignoring something when there's no possible options (e.g. "Discard a card that has X")
+
+To accomplish this, delegates were again used (similar to the above approach) but also Kotlin Context Receivers.
+
+Additionally, earlier game implementations have always sent the entire view to a client. Instead, this approach lets clients subscribe to state and be updated whenever that changes, which leads to sending significantly less data.
+
+First seen in: NOT IMPLEMENTED YET

@@ -44,6 +44,7 @@ kotlin {
             kotlin.srcDir("jvm/src/main/kotlin")
             dependencies {
                 implementation("com.github.lewik.klog:klog-jvm:2.0.5")
+                implementation(kotlin("reflect"))
             }
         }
         val jvmTest by getting {

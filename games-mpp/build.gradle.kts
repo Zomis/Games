@@ -116,6 +116,7 @@ kotlin {
                 implementation("io.ktor:ktor-server-tests-jvm:$ktorVersion")
                 implementation("com.tngtech.archunit:archunit-junit5:1.0.0")
                 implementation("com.google.truth:truth:1.1.3")
+                implementation(libs.turbine)
             }
         }
         val jsMain by getting {
