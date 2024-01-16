@@ -64,7 +64,7 @@ suspend fun main() {
     coroutineScope {
         val g = EcsModelConsole().play(EcsModelExample.game)
 
-        g.stateFor(g.root::energy)?.collectLatest {
+        g.stateFor(g.root::energy, 0)?.collectLatest {
             println("Energy $it")
         }
     }
