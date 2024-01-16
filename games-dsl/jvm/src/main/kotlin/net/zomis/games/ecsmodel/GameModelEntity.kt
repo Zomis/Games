@@ -13,8 +13,7 @@ open class GameModelEntityPrototype<T>(val factory: () -> T) {
 
 context(Game)
 open class GameModelEntity {
-    internal var publicKnown: Boolean = true
-    internal val known: KnownMap = KnownMapList() // playerIndices that knows about this entity
+    internal val known: KnownMap = KnownMap.Public // playerIndices that knows about this entity
     internal var parent: GameModelEntity? = null
     internal val children = mutableListOf<GameModelEntity>()
     internal val properties = mutableMapOf<String, Any>()

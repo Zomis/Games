@@ -12,10 +12,10 @@ class EcsGame<T : GameModelEntity>(
 ) {
 
     fun copy(): EcsGame<T> = TODO()
-    fun <T> stateFor(property: KProperty0<T>): StateFlow<T>? {
+    fun <T> stateFor(property: KProperty0<T>, playerIndex: Int): StateFlow<T>? {
         val delegate = property.delegate as? GamePropertyDelegate<T>
         println("stateFor($property) returns delegate: $delegate")
-        return delegate?.stateFlow()
+        return delegate?.stateFlow(playerIndex)
     }
 
 }

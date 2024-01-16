@@ -13,12 +13,14 @@ import kotlin.reflect.KProperty
 * - copyable
 * - viewable (one view per player, "no player" knows if and only if everyone knows)
 */
-interface PropertyDelegate<T> : PropertyDelegateProvider<GameModelEntity, ReadWriteProperty<GameModelEntity, T>>, ReadWriteProperty<GameModelEntity, T>
+interface PropertyDelegate<T> : PropertyDelegateProvider<GameModelEntity, ReadWriteProperty<GameModelEntity, T>>, ReadWriteProperty<GameModelEntity, T> {
+    fun private(playerIndex: Int): PropertyDelegate<T>
+}
 interface PropertyProvider<T> : PropertyDelegateProvider<GameModelEntity, GameModelProperty<T>> {
     fun hidden(): PropertyProvider<T>
 }
 fun <T> PropertyProvider<CardZone<T>>.privateWithPublicSize(): PropertyProvider<CardZone<T>> {
-    TODO("Not yet implemented")
+    TODO("Not yet implemented -- possibly return a `PropertyProvider<PublicSizeCardZone<T>> ?`")
 }
 
 interface ContainerProperty {
@@ -54,7 +56,7 @@ class GamePropertyDelegate<ModelType>(
     private val entity: GameModelEntity,
     private val function: () -> ModelType,
 ) : PropertyDelegate<ModelType> {
-    private val knownMap = KnownMap.Public
+    private var knownMap: KnownMap = KnownMap.Public
     private var stateFlow: MutableStateFlow<ModelType>? = null
 
     override fun provideDelegate(thisRef: GameModelEntity, property: KProperty<*>): GamePropertyDelegate<ModelType> {
@@ -70,14 +72,27 @@ class GamePropertyDelegate<ModelType>(
         this.stateFlow!!.value = value
     }
 
+    override fun private(playerIndex: Int): PropertyDelegate<ModelType> {
+        knownMap = knownMap.and(KnownMap.Private(playerIndex))
+        return this
+    }
+
     fun hidden(): GamePropertyDelegate<ModelType> = TODO()
-    fun stateFlow(): StateFlow<ModelType>? = stateFlow?.asStateFlow()
+    fun stateFlow(playerIndex: Int): StateFlow<ModelType>? {
+        if (!entity.known.isKnownTo(playerIndex)) return null
+        if (!knownMap.isKnownTo(playerIndex)) return null
+        return stateFlow?.asStateFlow()
+    }
 
 }
 
 internal class EcsModelCardZoneDelegate<T>(entity: GameModelEntity) : PropertyDelegate<CardZone<T>> {
     private val knownMap = KnownMap.Public
     private val cardZone = CardZone<T>()
+
+    override fun private(playerIndex: Int): PropertyDelegate<CardZone<T>> {
+        TODO("Not yet implemented")
+    }
 
     override fun provideDelegate(thisRef: GameModelEntity, property: KProperty<*>): EcsModelCardZoneDelegate<T> {
         return this

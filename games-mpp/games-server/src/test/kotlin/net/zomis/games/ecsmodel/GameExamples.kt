@@ -4,7 +4,7 @@ object GameExamples {
 
     context(Game)
     class ObservableStateExample : GameModelEntity() {
-        var value by property { 0 }
+        var value by property { 0 }.private(0)
     }
 
     val game = EcsGameApi.create("observable-state") {
