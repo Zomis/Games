@@ -6,6 +6,11 @@ import com.codedisaster.steamworks.*
  * Steam Multiplayer Server + Client
  */
 class SteamMultiplayer {
+    private val user = createUser()
+
+    init {
+        init()
+    }
 
     fun init() {
 //        val userId = SteamNativeHandle.getNativeHandle(user.steamID)
@@ -16,13 +21,11 @@ class SteamMultiplayer {
 //        * 2. send to server along with userId
 //        * 3. Server: beginAuthSession
 //        * 4. await ValidateAuthTicketResponse callback
-        val user = createUser()
         println("User: ${user.steamID}")
 
-        createNetworking()
-        val s = "dsadsadsa"
-        s.count { it in 'a'..'z' || it in 'A'..'Z' }
-//        createNetworking().
+        println(user.authTicketForWebApi)
+
+//        createNetworking()
 //        user.getAuthSessionTicket()
     }
 
@@ -33,7 +36,6 @@ class SteamMultiplayer {
                 sessionError: SteamNetworking.P2PSessionError
             ) {
                 println("onP2PSessionConnectFail $steamIDRemote $sessionError")
-                TODO("Not yet implemented")
             }
 
             override fun onP2PSessionRequest(steamIDRemote: SteamID) {
@@ -44,6 +46,15 @@ class SteamMultiplayer {
 
     private fun createUser(): SteamUser {
         return SteamUser(object : SteamUserCallback {
+            override fun onGetTicketForWebApi(
+                authTicket: SteamAuthTicket,
+                result: SteamResult,
+                ticketData: ByteArray?
+            ) {
+                println("onGetTicketForWebApi $authTicket $result $ticketData")
+                super.onGetTicketForWebApi(authTicket, result, ticketData)
+            }
+
             override fun onAuthSessionTicket(authTicket: SteamAuthTicket, result: SteamResult) {
                 println("onAuthSessionTicket $authTicket $result")
             }
@@ -64,6 +75,10 @@ class SteamMultiplayer {
                 println("onEncryptedAppTicket $result")
             }
         })
+    }
+
+    fun dispose() {
+        user.dispose()
     }
 
 }

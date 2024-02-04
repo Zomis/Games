@@ -2,6 +2,7 @@ package net.zomis.games.compose.common.mfe
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
@@ -10,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import net.zomis.games.compose.common.mfe.challenges.Challenge
 import net.zomis.games.impl.minesweeper.Flags
@@ -20,6 +22,7 @@ enum class SubMenu {
     Singleplayer,
     Multiplayer,
     Challenge,
+    About,
 }
 
 @Composable
@@ -38,11 +41,17 @@ fun MenuScreen(component: MenuComponent) {
                         SubMenu.Singleplayer -> SingleplayerMenu(component)
                         SubMenu.Multiplayer -> MultiplayerMenu(component)
                         SubMenu.Challenge -> DailyChallengeMenu(component)
+                        SubMenu.About -> AboutScreen(component)
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+fun AboutScreen(component: MenuComponent) {
+    Image(painter = painterResource("test/1.svg"), contentDescription = "1", modifier = Modifier.padding(12.dp).fillMaxSize().aspectRatio(1.0f))
 }
 
 @Composable
@@ -137,7 +146,7 @@ fun RowScope.MainMenu(modifier: Modifier, openMenu: (SubMenu) -> Unit) {
         Button(modifier = buttonSize, onClick = {}, enabled = false) {
             Text("Settings")
         }
-        Button(modifier = buttonSize, onClick = {}, enabled = false) {
+        Button(modifier = buttonSize, onClick = { openMenu(SubMenu.About) }, enabled = true) {
             Text("About")
         }
     }

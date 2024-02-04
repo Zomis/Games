@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="128"
+   height="128"
+   viewBox="0 0 33.866666 33.866666"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2.2 (732a01da63, 2022-12-09)"
+   sodipodi:docname="1.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="5.6568543"
+     inkscape:cx="2.8284271"
+     inkscape:cy="73.715882"
+     inkscape:window-width="2560"
+     inkscape:window-height="1377"
+     inkscape:window-x="2552"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer2" />
+  <defs
+     id="defs2">
+    <rect
+       x="0.27325211"
+       y="0.13662606"
+       width="127.74536"
+       height="127.88199"
+       id="rect204" />
+    <rect
+       x="0.77287369"
+       y="0.38643685"
+       width="127.52416"
+       height="128.29703"
+       id="rect190" />
+  </defs>
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="Layer 2">
+    <rect
+       style="display:inline;fill:#556059;stroke-width:0.264583;fill-opacity:1"
+       id="rect550"
+       width="33.864601"
+       height="33.866665"
+       x="2.7755576e-17"
+       y="2.7755576e-17"
+       ry="3.96875" />
+  </g>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-0.42633035,18.945452)"
+       id="text202"
+       style="font-size:100px;line-height:0;text-align:center;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect204);display:inline;fill:#000000"><tspan
+         x="32.359375"
+         y="28.86975"
+         id="tspan4681"><tspan
+           style="line-height:0px"
+           id="tspan4679">1</tspan></tspan></text>
+  </g>
+</svg>

@@ -23,9 +23,12 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.serialization.jackson.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import net.zomis.games.compose.common.*
+import net.zomis.games.compose.common.game.GameContentPreview
 import net.zomis.games.compose.common.gametype.SupportedGames
 import net.zomis.games.compose.server2.RootContent
+import net.zomis.games.impl.planetx.PlanetX
 import net.zomis.games.compose.server2.DefaultRootComponent as Server2Root
 import java.nio.file.Path
 import javax.swing.SwingUtilities
@@ -110,7 +113,8 @@ fun main() {
         ) {
             MaterialTheme(/*colors = darkColors()*/) {
                 Surface {
-                    RootContent(component = root, modifier = Modifier.fillMaxSize())
+                    GameContentPreview()
+                    // RootContent(component = root, modifier = Modifier.fillMaxSize())
                 }
             }
         }

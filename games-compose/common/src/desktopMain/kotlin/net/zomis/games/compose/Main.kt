@@ -98,6 +98,7 @@ fun main() {
         }
 
         initializeSteam(coroutineScope)
+        val steamUser = SteamMultiplayer()
         val windowState = rememberWindowState(position = WindowPosition.Aligned(Alignment.Center))
 
         LifecycleController(lifecycle, windowState)
@@ -105,6 +106,7 @@ fun main() {
         Window(
             onCloseRequest = {
                 SteamAPI.shutdown()
+                steamUser.dispose()
                 this.exitApplication()
             },
             state = windowState,
@@ -129,9 +131,12 @@ fun initializeSteam(coroutineScope: CoroutineScope) {
             return
         }
         coroutineScope.launch {
+            var counter: Int = 0
             while (true) {
                 delay(1000)
                 if (SteamAPI.isSteamRunning()) {
+                    println("Run callbacks $counter")
+                    counter++
                     SteamAPI.runCallbacks()
                 }
             }
