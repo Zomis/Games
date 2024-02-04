@@ -153,14 +153,6 @@ class GameImpl<T : Any>(
     private val copier: suspend () -> GameForkResult<T>
 ): Game<T>, GameFactoryScope<T, Any>, GameMetaScope<T> {
     override val configs: GameConfigs get() = gameConfig
-    override fun <A : Any> forcePerformAction(
-        actionType: ActionType<T, A>,
-        playerIndex: Int,
-        parameter: A,
-        rule: GameModifierScope<T, Unit>.() -> Unit
-    ) {
-        TODO("Not yet implemented for GameImpl")
-    }
 
     override fun <E : Any> fireEvent(source: EventSource, event: E, performEvent: (E) -> Unit)
         = this.events.fireEvent(source, event, performEvent as (Any) -> Unit)

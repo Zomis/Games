@@ -44,10 +44,6 @@ interface GameMetaScope<GameModel: Any>
     val configs: GameConfigs
 
     fun injectStep(name: String, dsl: suspend GameFlowStepScope<GameModel>.() -> Unit)
-    fun <A: Any> forcePerformAction(
-        actionType: ActionType<GameModel, A>, playerIndex: Int, parameter: A,
-        rule: GameModifierScope<GameModel, Unit>.() -> Unit
-    )
     fun <Owner> addRule(owner: Owner, rule: GameModifierScope<GameModel, Owner>.() -> Unit)
     fun <E: Any> fireEvent(source: EventSource, event: E, performEvent: (E) -> Unit = {})
     fun <Owner> removeRule(rule: GameModifierScope<GameModel, Owner>)

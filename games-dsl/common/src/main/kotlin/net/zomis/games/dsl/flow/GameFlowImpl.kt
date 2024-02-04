@@ -117,17 +117,6 @@ class GameFlowImpl<T: Any>(
         this.rules.remove(remove)
     }
 
-    override fun <A : Any> forcePerformAction(
-        actionType: ActionType<T, A>,
-        playerIndex: Int,
-        parameter: A,
-        rule: GameModifierScope<T, Unit>.() -> Unit
-    ) {
-        val actionEntry = this.actions.type(actionType) ?: throw IllegalStateException("No such action: ${actionType.name}")
-        TODO("perform action without checking for requirements. Problem is however that actions are most likely not available at this point.")
-        actionEntry.perform(playerIndex, parameter)
-    }
-
     override fun stop() {
         this.feedbackFlow.close()
         this.job?.cancel()

@@ -54,7 +54,7 @@ class Coup(val config: CoupConfig, val playersCount: Int) {
     var currentPlayerIndex = 0
     val currentPlayer get() = players[currentPlayerIndex]
 
-    val stack = GameStack()
+    val stack = GameStack<Any>()
     val challengeEvents = SimpleEventSource()
     // A challenge can only be made once. If action is targeting someone, then only targeted player may counteract.
 

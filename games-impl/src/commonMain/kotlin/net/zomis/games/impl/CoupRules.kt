@@ -6,16 +6,16 @@ import net.zomis.games.common.safeCast
 import net.zomis.games.dsl.flow.GameFlowRuleScope
 import kotlin.math.min
 
-class GameStack {
-    val stack = mutableListOf<Any>()
+class GameStack<T> {
+    val stack = mutableListOf<T>()
 
-    fun add(item: Any) {
+    fun add(item: T) {
         stack.add(item)
     }
-    fun asList(): List<Any> = stack.toList()
-    fun peek(): Any? = stack.lastOrNull()
+    fun asList(): List<T> = stack.toList()
+    fun peek(): T? = stack.lastOrNull()
     fun isEmpty(): Boolean = stack.isEmpty()
-    fun pop(): Any = stack.removeAt(stack.lastIndex)
+    fun pop(): T = stack.removeAt(stack.lastIndex)
     fun clear() = stack.clear()
 }
 
