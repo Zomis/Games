@@ -3,6 +3,8 @@ package net.zomis.games.dsl.flow
 import net.zomis.games.dsl.ActionOptionsScope
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.events.*
+import net.zomis.games.rules.Rule
+import net.zomis.games.rules.RuleSpec
 import kotlin.properties.PropertyDelegateProvider
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
@@ -21,7 +23,6 @@ class GameModifierImpl<GameModel: Any, Owner>(
     override val game: GameModel get() = meta.game
     private val states = mutableMapOf<String, Any>()
     private val activationEffects = mutableListOf<GameModifierApplyScope<GameModel, Owner>.() -> Unit>()
-    private val stateChecksAfterAction = mutableListOf<GameModifierApplyScope<GameModel, Owner>.() -> Unit>()
     private val stateChecksBeforeAction = mutableListOf<GameModifierApplyScope<GameModel, Owner>.() -> Unit>()
     private val actionModifiers = mutableListOf<ActionModifier<GameModel>>()
     private val activeConditions = mutableListOf<GameModifierScope<GameModel, Owner>.() -> Boolean>()
@@ -30,6 +31,30 @@ class GameModifierImpl<GameModel: Any, Owner>(
 
     override fun <T> state(initial: () -> T): PropertyDelegateProvider<GameModifierScope<GameModel, Owner>?, Delegate<T>> {
         return this.addState(initial.invoke())
+    }
+
+    override fun enableAction(actionDefinition: ActionDefinition<GameModel, out Any>) {
+        TODO("Not yet implemented")
+    }
+
+    override fun applyRule(condition: () -> Boolean, rule: RuleSpec<GameModel, out Any>): Rule<GameModel, out Any> {
+        TODO("Not yet implemented")
+    }
+
+    override fun overrides(rule: Rule<GameModel, out Any>) {
+        TODO("Not yet implemented")
+    }
+
+    override fun conflictsWith(rule: Rule<GameModel, out Any>) {
+        TODO("Not yet implemented")
+    }
+
+    override fun onState(condition: () -> Boolean, thenPerform: GameModifierApplyScope<GameModel, Owner>.() -> Unit) {
+        stateCheckBeforeAction {
+            if (condition.invoke()) {
+                thenPerform.invoke(this)
+            }
+        }
     }
 
     inner class Delegate<T>(var value: T): ReadWriteProperty<GameModifierScope<GameModel, Owner>?, T> {
@@ -42,13 +67,11 @@ class GameModifierImpl<GameModel: Any, Owner>(
         }
     }
     private fun <T> addState(initial: T): PropertyDelegateProvider<GameModifierScope<GameModel, Owner>?, Delegate<T>> {
-        return object : PropertyDelegateProvider<GameModifierScope<GameModel, Owner>?, Delegate<T>> {
-            override fun provideDelegate(thisRef: GameModifierScope<GameModel, Owner>?, property: KProperty<*>): GameModifierImpl<GameModel, Owner>.Delegate<T> {
-                println("thisRef: $thisRef")
-                val propertyName = property.name
-                states[propertyName] = initial as Any
-                return Delegate(initial)
-            }
+        return PropertyDelegateProvider { thisRef, property ->
+            println("GameModifierImpl.addState: thisRef $thisRef")
+            val propertyName = property.name
+            states[propertyName] = initial as Any
+            Delegate(initial)
         }
     }
 
@@ -73,6 +96,17 @@ class GameModifierImpl<GameModel: Any, Owner>(
         return impl
     }
 
+    override fun <A : Any> action(action: ActionDefinition<GameModel, A>): ActionRule<GameModel, A> {
+        TODO("Not yet implemented")
+    }
+
+    override fun <A : Any> action(
+        action: ActionDefinition<GameModel, A>,
+        definition: GameFlowActionScope<GameModel, A>.() -> Unit
+    ) {
+        TODO("Not yet implemented")
+    }
+
     override fun <A : Any> action(
         action: ActionType<GameModel, A>,
         definition: GameFlowActionScope<GameModel, A>.() -> Unit
@@ -84,10 +118,6 @@ class GameModifierImpl<GameModel: Any, Owner>(
 
     override fun allActionsPrecondition(precondition: ActionOptionsScope<GameModel>.() -> Boolean) {
         this.globalPreconditions.add(precondition)
-    }
-
-    override fun stateCheckAfterAction(doSomething: GameModifierApplyScope<GameModel, Owner>.() -> Unit) {
-        this.stateChecksAfterAction.add(doSomething)
     }
 
     override fun stateCheckBeforeAction(doSomething: GameModifierApplyScope<GameModel, Owner>.() -> Unit) {
@@ -109,7 +139,6 @@ class GameModifierImpl<GameModel: Any, Owner>(
         = GameModifierApplyContext(ruleHolder, meta)
 
     fun executeBeforeAction() = this.executeStateCheck(stateChecksBeforeAction)
-    fun executeAfterAction() = this.executeStateCheck(stateChecksAfterAction)
 
     private fun executeStateCheck(checks: List<GameModifierApplyScope<GameModel, Owner>.() -> Unit>) {
         if (this.removeCondition?.invoke(this) == true) {

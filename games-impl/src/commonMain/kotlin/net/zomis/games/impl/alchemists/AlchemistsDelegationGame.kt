@@ -218,7 +218,7 @@ object AlchemistsDelegationGame {
 
         val players by playerComponent { Player(this@Model, ctx, it) }
         val startingPlayer by playerReference { 0 }
-            .setup { replayable.int("startingPlayer") { (0 until playerCount).random() } }
+            .setup { replayable.int("startingPlayer") { playerIndices.random() } }
             .on(newRound) { value.next(players.size) }
 
         data class ActionChoice(val spot: HasAction, val count: Int, val associate: Boolean)
@@ -327,9 +327,11 @@ object AlchemistsDelegationGame {
         gameFlow {
             println("SOLUTION: " + game.alchemySolution)
             game.gameInit.invoke(Unit)
+            // Discard favors step. Next step self - discarding player, until none are left.
             step("choose favors") {
                 enableAction(game.favors.discardFavor)
             }.loopUntil { game.favors.playersDiscardingSetupFavor.isEmpty() }
+            // Use a stack and a rule that checks if stack is empty and anyone has a herbalist.
             game.players.forEach { player ->
                 repeat(player.favors.cards.count { it == Favors.FavorType.HERBALIST }) {
                     game.queue.add(game.favors.herbalistDiscard as ActionDefinition<Model, Any>)
@@ -337,10 +339,12 @@ object AlchemistsDelegationGame {
             }
             stateChecks(this)
 
+            // Sequential steps, round 1-6
             for (round in 1..6) {
                 game.newRound(round)
                 game.sellPotion.reset()
                 log { "Round $round" }
+                // Sequential nested step, turn picker. Next step self(with nextPlayer) until all players picked.
                 step("round $round - turnPicker") {
                     if (game.queue.isNotEmpty()) checkQueue(this)
                     else enableAction(game.turnPicker.action)
@@ -351,11 +355,13 @@ object AlchemistsDelegationGame {
 
                 stateChecks(this)
 
+                // Sequential nested step, place actions. Next step self(with nextPlayer) until all players placed.
                 step("round $round - placeActions") {
                     enableAction(game.actionPlacement)
                     enableAction(game.favors.assistant)
                 }.loopUntil { game.turnPicker.options.all { it.chosenBy == null } }
 
+                // Sequential nested step, resolve spaces. Next step self until all spaces are done.
                 for (space in game.actionSpaces) {
                     game.currentActionSpace = space
                     step("resolve round $round ${space.actionSpace.name}") {

@@ -19,9 +19,9 @@ class AdvancedRulesTest {
     }
 
     interface GameLookup
-    class Ref(val entity: RPath) {
+    class Ref<T : GameModelEntity>(val entity: RPath) {
         context(GameLookup)
-        fun entity(): GameModelEntity = TODO()
+        fun entity(): T = TODO()
     }
     class Refs(val entities: List<GameModelEntity>)
 

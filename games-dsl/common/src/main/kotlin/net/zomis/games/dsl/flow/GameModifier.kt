@@ -1,14 +1,24 @@
 package net.zomis.games.dsl.flow
 
+import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.api.UsageScope
 import net.zomis.games.dsl.ActionOptionsScope
+import net.zomis.games.dsl.ActionRuleScope
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.events.EventFactory
 import net.zomis.games.dsl.events.EventPriority
 import net.zomis.games.dsl.events.GameEventEffectScope
 import net.zomis.games.dsl.flow.actions.SmartActionScope
+import net.zomis.games.rules.Rule
+import net.zomis.games.rules.RuleSpec
 import kotlin.properties.PropertyDelegateProvider
 import kotlin.reflect.KClass
+import kotlin.reflect.KMutableProperty0
+
+interface ActionRule<GameModel : Any, A : Any> {
+    fun cost(property: KMutableProperty0<Int>, value: Int)
+    fun deny()
+}
 
 /**
  * A system for allowing the game itself, and cards or other objects in games to manipulate rules.
@@ -17,20 +27,28 @@ import kotlin.reflect.KClass
  * @param Owner Parameter passed to the modifier
  */
 interface GameModifierScope<GameModel: Any, Owner>: UsageScope {
+    // TODO: Add `var name/description: String ?`
     // TODO: Unify ways to specify rules. So that even Action-based `actionRules { ... }` is a "RuleHolder" / "GameModifier"
     val ruleHolder: Owner
     val game: GameModel
 
     fun <T> state(initial: () -> T): PropertyDelegateProvider<GameModifierScope<GameModel, Owner>?, GameModifierImpl<GameModel, Owner>.Delegate<T>>
 
+    fun conflictsWith(rule: Rule<GameModel, out Any>)
+    fun overrides(rule: Rule<GameModel, out Any>)
+    fun applyRule(condition: () -> Boolean, rule: RuleSpec<GameModel, out Any>): Rule<GameModel, out Any>
+
     fun onActivate(doSomething: GameModifierApplyScope<GameModel, Owner>.() -> Unit) // happens once when rule is added
+    fun onState(condition: () -> Boolean, thenPerform: GameModifierApplyScope<GameModel, Owner>.() -> Unit)
+    fun enableAction(actionDefinition: ActionDefinition<GameModel, out Any>)
     fun stateCheckBeforeAction(doSomething: GameModifierApplyScope<GameModel, Owner>.() -> Unit)
-    fun stateCheckAfterAction(doSomething: GameModifierApplyScope<GameModel, Owner>.() -> Unit)
     fun activeWhile(condition: GameModifierScope<GameModel, Owner>.() -> Boolean)
     fun removeWhen(condition: GameModifierScope<GameModel, Owner>.() -> Boolean)
     // TODO: Add/Change/Remove view or part of view (such as seeing other player's cards)
     fun <E: Any> on(event: EventFactory<E>, priority: EventPriority = EventPriority.NORMAL): EventModifierScope<GameModel, E>
     fun <E: Any> on(eventType: KClass<E>, priority: EventPriority = EventPriority.NORMAL): EventModifierScope<GameModel, E>
+    fun <A: Any> action(action: ActionDefinition<GameModel, A>, definition: GameFlowActionScope<GameModel, A>.() -> Unit)
+    fun <A: Any> action(action: ActionDefinition<GameModel, A>): ActionRule<GameModel, A>
     fun <A: Any> action(action: ActionType<GameModel, A>, definition: GameFlowActionScope<GameModel, A>.() -> Unit)
     // enable/disable entire rule, enable/disable part of rule, change some value - e.g. how much cost reduction is applied
     fun allActionsPrecondition(precondition: ActionOptionsScope<GameModel>.() -> Boolean)
@@ -40,6 +58,7 @@ interface GameModifierApplyScope<GameModel: Any, Owner>: UsageScope {
     val ruleHolder: Owner
     val game: GameModel
     val meta: GameMetaScope<GameModel>
+    val eliminations: PlayerEliminationsWrite get() = meta.eliminations
 }
 
 /*
@@ -87,18 +106,13 @@ old triggers
 multiple rule sources
 - Dungeon Mayhem, Avalon(?), Alchemists
 
-
-
 (Once again a help for tagging games would be useful)
-
-
 */
 
 // TODO: RuleHolder - game (permanent effects) / step (phase-specific actions etc.) / entity (card etc.)
 // TODO: Add/Remove StepRuleHolders every time step changes
 
 interface EventModifierScope<T: Any, E: Any>: UsageScope {
-    // TODO: Can/Should this be Flow somehow?
     fun require(condition: GameEventEffectScope<T, E>.() -> Boolean)
 
     fun modify(function: GameEventEffectScope<T, E>.() -> E)

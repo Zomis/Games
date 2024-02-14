@@ -166,6 +166,7 @@ class GameImpl<T : Any>(
     override val gameType: String = setupContext.gameType
     override fun toString(): String = "${super.toString()}-$gameType"
 
+    override val meta: GameMetaScope<T> get() = this
     private var actionsInputJob: Job? = null
     @Deprecated("use config method instead")
     override val config: Any get() = gameConfig.oldStyleValue()
@@ -175,7 +176,7 @@ class GameImpl<T : Any>(
     private val replayState = ReplayState(stateKeeper)
     override val replayable: ReplayState get() = replayState
     private val rules = GameActionRulesContext(this)
-    private val gameModifiers: MutableList<GameModifierImpl<T, Any>> = mutableListOf()
+    private val gameModifiers: MutableList<GameModifierImpl<T, Any>> = mutableListOf() // TODO: Unused?
 
     override suspend fun start(coroutineScope: CoroutineScope) {
         if (this.actionsInputJob != null) throw IllegalStateException("Game already started")

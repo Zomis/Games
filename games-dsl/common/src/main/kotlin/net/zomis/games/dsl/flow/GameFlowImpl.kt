@@ -6,6 +6,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import net.zomis.games.PlayerEliminations
 import net.zomis.games.PlayerEliminationsWrite
+import net.zomis.games.api.MetaScope
 import net.zomis.games.api.UsageScope
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
@@ -15,6 +16,7 @@ import net.zomis.games.dsl.flow.actions.SmartActionBuilder
 import net.zomis.games.dsl.flow.actions.SmartActionContext
 import net.zomis.games.dsl.flow.actions.SmartActionScope
 import net.zomis.games.dsl.impl.*
+import net.zomis.games.rules.ActiveRules
 
 private const val ECS_VIEW_KEY = ""
 const val VIEWMODEL_VIEW_KEY = "_vm"
@@ -28,6 +30,7 @@ class GameFlowImpl<T: Any>(
 ): Game<T>, GameFactoryScope<T, Any>, GameFlowRuleCallbacks<T>, GameMetaScope<T> {
     override val configs: GameConfigs get() = gameConfig
 
+    private val activeRules = ActiveRules<T>(this)
     private val stateKeeper = StateKeeper()
     override val gameType: String = setupContext.gameType
     override fun toString(): String = "${super.toString()}-$gameType"
@@ -36,7 +39,6 @@ class GameFlowImpl<T: Any>(
     override val config: Any get() = gameConfig.oldStyleValue()
     private val logger = KLoggers.logger(this)
     private var unfinishedFeedback: FlowStep.RandomnessResult? = null
-    private val mainScope = MainScope()
     val views = mutableListOf<Pair<String, ViewScope<T>.() -> Any?>>()
     private var viewModel: ViewModel<T, *>? = null
     override val feedbackFlow: Channel<FlowStep> = Channel()
@@ -78,6 +80,8 @@ class GameFlowImpl<T: Any>(
         logger.info { "fireEvent from source $source with value $event" }
         this.events.fireEvent(source, event, performEvent as (Any) -> Unit)
     }
+
+    override val meta: GameMetaScope<T> get() = this
 
     override val actionsInput: Channel<Actionable<T, out Any>> = Channel()
     var job: Job? = null
@@ -133,11 +137,6 @@ class GameFlowImpl<T: Any>(
         stateKeeper.clearLogs()
         feedbacks.clear()
     }
-
-    fun destroy() {
-        mainScope.cancel()
-    }
-
 
     internal val stepInjectionQueue = mutableListOf<GameFlowStep<T>>()
     override fun injectStep(name: String, dsl: suspend GameFlowStepScope<T>.() -> Unit) {
@@ -247,7 +246,7 @@ class GameFlowImpl<T: Any>(
     private fun runRules(state: GameFlowRulesState) {
         setupContext.flowRulesDsl?.invoke(GameFlowRulesContext(this, state, this))
         when (state) {
-            GameFlowRulesState.AFTER_ACTIONS -> this.rules.toList().forEach { it.executeAfterAction() }
+            GameFlowRulesState.AFTER_ACTIONS -> { /* ignore */ }
             GameFlowRulesState.BEFORE_RETURN -> this.rules.toList().forEach { it.executeBeforeAction() }
             GameFlowRulesState.FIRE_EVENT -> { /* ignore */ }
         }

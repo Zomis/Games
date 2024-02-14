@@ -13,24 +13,26 @@ class AdvancedGameTest {
         @Test
         fun `viewState properties should be observable`() = runTest {
             // receive updates every time view changes, don't send entire view unless explicitly requested
-            val game = EcsGameImpl.withSpec(GameExamples.game).createGame(2) {
-                listOf()
-            }
-
-            game.stateFor(game.root::value, 0)!!.test {
-                assertThat(awaitItem()).isEqualTo(0)
-                game.root.value = 42
-                assertThat(awaitItem()).isEqualTo(42)
-            }
+            TODO()
+//            val game = EcsGameImpl.withSpec(GameExamples.game).createGame(2) {
+//                listOf()
+//            }
+//
+//            game.stateFor(game.root::value, 0)!!.test {
+//                assertThat(awaitItem()).isEqualTo(0)
+//                game.root.value = 42
+//                assertThat(awaitItem()).isEqualTo(42)
+//            }
         }
 
         @Test
         fun `viewState properties may be hidden from specific players`() {
             // e.g. card zones being private, things being face-down anywhere (including cards played), or players not knowing about color/value (Hanabi)
-            val game = EcsGameImpl.withSpec(GameExamples.game).createGame(2) {
-                listOf()
-            }
-            assertThat(game.stateFor(game.root::value, 1)).isNull()
+            TODO()
+//            val game = EcsGameImpl.withSpec(GameExamples.game).createGame(2) {
+//                listOf()
+//            }
+//            assertThat(game.stateFor(game.root::value, 1)).isNull()
         }
 
         @Test

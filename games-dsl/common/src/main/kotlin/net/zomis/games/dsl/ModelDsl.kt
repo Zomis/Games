@@ -1,12 +1,15 @@
 package net.zomis.games.dsl
 
 import net.zomis.games.PlayerEliminationsWrite
+import net.zomis.games.api.MetaScope
 import net.zomis.games.api.UsageScope
 import net.zomis.games.dsl.events.EventsHandling
+import net.zomis.games.dsl.flow.GameMetaScope
 import net.zomis.games.dsl.impl.GameMarker
 
 interface GameFactoryScope<GameModel: Any, C> : UsageScope {
     fun <E: Any> config(config: GameConfig<E>): E
+    val meta: GameMetaScope<GameModel>
     val events: EventsHandling<GameModel>
     val eliminationCallback: PlayerEliminationsWrite
     val playerCount: Int

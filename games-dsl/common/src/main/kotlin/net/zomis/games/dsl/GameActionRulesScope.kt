@@ -27,6 +27,7 @@ interface GameStartScope<T : Any>: UsageScope {
     val game: T
     val replayable: ReplayStateI
     val playerCount: Int
+    val playerIndices: IntRange get() = 0 until playerCount
     fun <E: Any> config(config: GameConfig<E>): E
 }
 

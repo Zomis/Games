@@ -9,14 +9,16 @@ import net.zomis.games.cards.CardZone
 import net.zomis.games.components.IdGenerator
 import net.zomis.games.components.resources.GameResource
 import net.zomis.games.components.resources.MutableResourceMap
-import net.zomis.games.components.resources.ResourceMap
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.events.*
 import net.zomis.games.dsl.flow.ActionDefinition
 import net.zomis.games.dsl.flow.GameFlowActionScope
 import net.zomis.games.dsl.flow.GameFlowScope
 import net.zomis.games.dsl.impl.*
+import net.zomis.games.rules.Rule
+import net.zomis.games.rules.RuleSpec
 import net.zomis.games.scorers.ScorerFactory
+import kotlin.properties.PropertyDelegateProvider
 import kotlin.properties.ReadOnlyProperty
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
@@ -105,13 +107,13 @@ class DelegateFactory<E, P: ReadOnlyProperty<Entity?, E>>(
         this.publicView = { viewFunction.invoke(it, getter.invoke(delegate)) }
         return this
     }
-    fun privateView(playerIndices: List<Int>, view: (E) -> Any): DelegateFactory<E, P> {
+    fun privateView(playerIndices: List<Int>, view: (E) -> Any? = { it }): DelegateFactory<E, P> {
         playerIndices.forEach { index ->
             privateViews[index] = { view.invoke(getter.invoke(delegate)) }
         }
         return this
     }
-    fun privateView(playerIndex: Int, view: (E) -> Any): DelegateFactory<E, P> = this.privateView(listOf(playerIndex), view)
+    fun privateView(playerIndex: Int, view: (E) -> Any? = { it }): DelegateFactory<E, P> = this.privateView(listOf(playerIndex), view)
     fun publicView(view: (E) -> Any): DelegateFactory<E, P> {
         this.publicView = { view.invoke(getter.invoke(delegate)) }
         return this
@@ -120,6 +122,24 @@ class DelegateFactory<E, P: ReadOnlyProperty<Entity?, E>>(
     fun hiddenView(): DelegateFactory<E, P> {
         this.publicView = { HiddenValue }
         return this
+    }
+}
+
+fun <T : Entity> T.action(dsl: GameFlowActionScope<T, ChoiceAction>.() -> Unit) = ActionDelegate<T>(this, dsl)
+class ChoiceAction
+class ActionDelegate<T: Entity>(
+    private val self: T,
+    private val dsl: GameFlowActionScope<T, ChoiceAction>.() -> Unit,
+) : PropertyDelegateProvider<T, ReadOnlyProperty<T, ActionDefinition<T, ChoiceAction>>> {
+    override fun provideDelegate(
+        thisRef: T,
+        property: KProperty<*>
+    ): ReadOnlyProperty<T, ActionDefinition<T, ChoiceAction>> {
+        val name = property.name
+        val actionType = GameActionCreator<T, ChoiceAction>(name, ChoiceAction::class, Map::class, serializer = {}, deserializer = { TODO() })
+        val actionDefinition = ActionTypeDefinition(actionType, dsl)
+
+        return ReadOnlyProperty<T, ActionDefinition<T, ChoiceAction>> { _, _ -> actionDefinition }
     }
 }
 
@@ -169,6 +189,8 @@ open class Entity(protected open val ctx: Context) {
         val delegate = DynamicValueDelegate { function.invoke(ContextHolderImpl(ctx)) }
         return DelegateFactory(ctx, { delegate }, { it.function.invoke() }, {_, _ ->})
     }
+    fun <T : Any, RuleHolder> rule(owner: RuleHolder, dsl: RuleSpec<T, RuleHolder>): RuleDelegateProvider<T, RuleHolder> = RuleDelegateProvider(ctx, owner, dsl)
+    fun <T : Any, RuleHolder> ruleSpec(dsl: RuleSpec<T, RuleHolder>): RuleSpecDelegateProvider<T, RuleHolder> = RuleSpecDelegateProvider(ctx, dsl)
     fun playerReference(function: ContextHolder.() -> Int): DelegateFactory<Int, ComponentDelegate<Int>> = component(function)
     fun <E> cards(list: MutableList<E> = mutableListOf()): DelegateFactory<CardZone<E>, ComponentDelegate<CardZone<E>>> {
         val delegate = ComponentDelegate(CardZone(list))

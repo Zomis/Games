@@ -12,9 +12,8 @@ import net.zomis.games.dsl.GameSerializable
 import net.zomis.games.dsl.Viewable
 import net.zomis.games.dsl.events.EventPriority
 import net.zomis.games.dsl.flow.ActionDefinition
-import net.zomis.games.dsl.flow.GameModifierScope
 import net.zomis.games.dsl.flow.actions.SmartActionBuilder
-import kotlin.math.max
+import net.zomis.games.rules.RuleSpec
 
 object ArtifactActions {
     data class OwnedArtifact(val owner: AlchemistsDelegationGame.Model.Player, val artifact: Artifact)
@@ -24,7 +23,7 @@ object ArtifactActions {
         val level: Int,
         val cost: Int,
         val victoryPoints: Int?,
-        val rule: GameModifierScope<AlchemistsDelegationGame.Model, OwnedArtifact>.() -> Unit = {}
+        val rule: RuleSpec<AlchemistsDelegationGame.Model, OwnedArtifact> = {}
     ): GameSerializable, Viewable {
         override fun serialize(): String = name
         override fun toView(viewer: PlayerIndex) = mapOf("name" to name, "description" to description, "level" to level, "cost" to cost, "victoryPoints" to victoryPoints)

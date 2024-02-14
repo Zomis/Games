@@ -17,12 +17,13 @@ import net.zomis.minesweeper.analyze.detail.DetailedResults
 object Flags {
     enum class AI(val visibleName: String, aiName: String? = null) {
         Loser("Loser"),
+        Horrible("Horrible"),
         CompleteIdiot("Complete Idiot"),
         Medium("Medium"),
         Challenger("Challenger"),
         Hard("Hard"),
         HardPlus("Hard Plus"),
-//        Extreme("Extreme"),
+        Extreme("Extreme"),
 //        Nightmare("Nightmare"),
 //        Impossible("Impossible (for testing only)", aiName = "#AI_Impossible"),
         ;

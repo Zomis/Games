@@ -6,14 +6,13 @@ import net.zomis.games.dsl.ActionOptionsScope
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.GameConfig
 import net.zomis.games.dsl.GameConfigs
-import net.zomis.games.dsl.events.EventFactory
 import net.zomis.games.dsl.events.EventSource
 import net.zomis.games.dsl.events.EventsHandling
 import net.zomis.games.dsl.flow.actions.SmartActionBuilder
 import net.zomis.games.dsl.flow.actions.SmartActionScope
-import net.zomis.games.dsl.impl.Actions
 import net.zomis.games.dsl.impl.ReplayState
 import net.zomis.games.dsl.rulebased.GameRuleScope
+import net.zomis.games.rules.RuleSpec
 
 interface GameMetaScope<GameModel: Any>
     : UsageScope,
@@ -44,7 +43,7 @@ interface GameMetaScope<GameModel: Any>
     val configs: GameConfigs
 
     fun injectStep(name: String, dsl: suspend GameFlowStepScope<GameModel>.() -> Unit)
-    fun <Owner> addRule(owner: Owner, rule: GameModifierScope<GameModel, Owner>.() -> Unit)
+    fun <Owner> addRule(owner: Owner, rule: RuleSpec<GameModel, Owner>)
     fun <E: Any> fireEvent(source: EventSource, event: E, performEvent: (E) -> Unit = {})
     fun <Owner> removeRule(rule: GameModifierScope<GameModel, Owner>)
     fun addGlobalActionPrecondition(rule: ActionOptionsScope<GameModel>.() -> Boolean)
