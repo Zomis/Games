@@ -170,7 +170,7 @@ object LiarsDiceGame {
 
     private fun logRevealAllDice(call: String, scope: ActionRuleScope<LiarsDice, *>) {
         val bet = scope.game.bet!!
-        val actual = scope.game.players.sumBy { player -> player.dice.count { it == bet.second.value } }
+        val actual = scope.game.players.sumOf { player -> player.dice.count { it == bet.second.value } }
         scope.log { "$player calls $call on the bet ${bet.second.amount}x ${bet.second.value} by ${player(bet.first.index)} and everyone reveals their dice! (A total of $actual was revealed)" }
         scope.game.players.filter { !it.eliminated }.forEach {
             scope.log { "${player(it.index)} had ${it.dice.sorted().joinToString(", ")}" }

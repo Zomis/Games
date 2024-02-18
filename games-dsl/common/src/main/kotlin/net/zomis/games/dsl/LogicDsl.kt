@@ -6,11 +6,9 @@ interface Replayable {
     fun toStateString(): String
 }
 interface ReplayStateI {
-    fun map(key: String, default: () -> Map<String, Any>): Map<String, Any>
     fun int(key: String, default: () -> Int): Int
     fun ints(key: String, default: () -> List<Int>): List<Int>
     fun string(key: String, default: () -> String): String
     fun strings(key: String, default: () -> List<String>): List<String>
-    fun list(key: String, default: () -> List<Map<String, Any>>): List<Map<String, Any>>
     fun <E> randomFromList(key: String, list: List<E>, count: Int, stringMapper: (E) -> String): List<E>
 }

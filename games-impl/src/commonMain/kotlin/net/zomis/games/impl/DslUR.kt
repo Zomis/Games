@@ -1,7 +1,6 @@
 package net.zomis.games.impl
 
 import net.zomis.games.dsl.GameCreator
-import net.zomis.games.dsl.flow.GameFlowStepScope
 import net.zomis.games.impl.paths.URScorers
 import net.zomis.games.ur.RoyalGameOfUr
 
@@ -35,7 +34,7 @@ object DslUR {
                     yieldAction(roll) {
                         precondition { playerIndex == game.currentPlayer }
                         perform {
-                            val roll = replayable.int("roll") { game.randomRoll() }
+                            val roll = game.randomRoll(replayable).sum()
                             if (game.canMove(roll)) {
                                 log { "$player rolled $roll" }
                             } else {

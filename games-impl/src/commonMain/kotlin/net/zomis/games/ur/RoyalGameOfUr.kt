@@ -1,5 +1,8 @@
 package net.zomis.games.ur
 
+import net.zomis.games.Dice
+import net.zomis.games.dsl.ReplayStateI
+
 /*
 // 0 = Outside
 // 4 = First flower
@@ -55,15 +58,13 @@ class RoyalGameOfUr {
             return NO_WINNER
         }
 
-    fun randomBoolean(): Boolean {
-        return (0..1).shuffled().first() == 1
-    }
+    private val dice = Dice.d(2).times(4).randomiser("roll")
 
-    fun randomRoll(): Int {
+    fun randomRoll(replayable: ReplayStateI): List<Int> {
         if (!isRollTime()) {
             throw IllegalStateException("Not time to roll. Current roll is $roll")
         }
-        return (0..3).map { randomBoolean() }.count { it }
+        return dice.random(replayable)
     }
 
     fun doRoll(sum: Int): Int {
