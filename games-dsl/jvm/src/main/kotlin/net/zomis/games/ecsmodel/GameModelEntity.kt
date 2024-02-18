@@ -70,8 +70,8 @@ open class GameModelEntity {
         return EcsModelCardZoneDelegate(this)
     }
 
-    fun action(block: Any.() -> Unit): PropertyDelegate<Any> {
-        return GamePropertyDelegate(this) { Unit }
+    fun action(block: Any.() -> Unit): PropertyDelegate<EcsAction> {
+        return GamePropertyDelegate(this) { TODO() }
         /*
         * ACTIONS:
         * when is it allowed

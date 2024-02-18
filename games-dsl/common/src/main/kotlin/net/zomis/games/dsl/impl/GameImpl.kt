@@ -157,6 +157,10 @@ class GameImpl<T : Any>(
     override fun <E : Any> fireEvent(source: EventSource, event: E, performEvent: (E) -> Unit)
         = this.events.fireEvent(source, event, performEvent as (Any) -> Unit)
 
+    override fun onNoActions(function: () -> Unit) {
+        TODO("Not yet implemented")
+    }
+
     override fun <Owner> removeRule(rule: GameModifierScope<T, Owner>) {
         val remove = this.gameModifiers.single { it == rule }
         this.gameModifiers.remove(remove)
@@ -239,8 +243,8 @@ class GameImpl<T : Any>(
     }
 
     override fun <Owner> addRule(owner: Owner, rule: GameModifierScope<T, Owner>.() -> Unit) {
-        val ruleContext = GameModifierImpl(this, owner)
-        rule.invoke(ruleContext)
+        val ruleContext = GameModifierImpl(this, owner, rule)
+        ruleContext.fire()
         this.gameModifiers.add(ruleContext as GameModifierImpl<T, Any>)
         ruleContext.executeOnActivate()
     }

@@ -32,18 +32,6 @@ object GameExamples {
 //                }
 //            }
         }
-        /*
-        * run after action rules
-        * 1. check applicable rules
-        * 2. add actions, event listeners
-        * last: state checks
-        *
-        * switch rules
-        *
-        * run before action rules
-        * action
-        */
-
 
         val rule by rule<ConflictingRules, ConflictingRules>(this) {
             onState(condition = { damage >= 10 }) { eliminations.eliminateRemaining(WinResult.WIN) }

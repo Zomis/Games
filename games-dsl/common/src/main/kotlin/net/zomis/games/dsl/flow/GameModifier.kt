@@ -3,12 +3,12 @@ package net.zomis.games.dsl.flow
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.api.UsageScope
 import net.zomis.games.dsl.ActionOptionsScope
-import net.zomis.games.dsl.ActionRuleScope
 import net.zomis.games.dsl.ActionType
+import net.zomis.games.dsl.LogScope
+import net.zomis.games.dsl.LogSecretScope
 import net.zomis.games.dsl.events.EventFactory
 import net.zomis.games.dsl.events.EventPriority
 import net.zomis.games.dsl.events.GameEventEffectScope
-import net.zomis.games.dsl.flow.actions.SmartActionScope
 import net.zomis.games.rules.Rule
 import net.zomis.games.rules.RuleSpec
 import kotlin.properties.PropertyDelegateProvider
@@ -40,7 +40,8 @@ interface GameModifierScope<GameModel: Any, Owner>: UsageScope {
 
     fun onActivate(doSomething: GameModifierApplyScope<GameModel, Owner>.() -> Unit) // happens once when rule is added
     fun onState(condition: () -> Boolean, thenPerform: GameModifierApplyScope<GameModel, Owner>.() -> Unit)
-    fun enableAction(actionDefinition: ActionDefinition<GameModel, out Any>)
+    fun enableAction(actionDefinition: ActionDefinition<GameModel, out Any>) = enableAction(actionDefinition.actionType)
+    fun enableAction(actionType: ActionType<GameModel, out Any>)
     fun stateCheckBeforeAction(doSomething: GameModifierApplyScope<GameModel, Owner>.() -> Unit)
     fun activeWhile(condition: GameModifierScope<GameModel, Owner>.() -> Boolean)
     fun removeWhen(condition: GameModifierScope<GameModel, Owner>.() -> Boolean)
@@ -52,6 +53,7 @@ interface GameModifierScope<GameModel: Any, Owner>: UsageScope {
     fun <A: Any> action(action: ActionType<GameModel, A>, definition: GameFlowActionScope<GameModel, A>.() -> Unit)
     // enable/disable entire rule, enable/disable part of rule, change some value - e.g. how much cost reduction is applied
     fun allActionsPrecondition(precondition: ActionOptionsScope<GameModel>.() -> Boolean)
+    fun onNoActions(function: () -> Unit)
 }
 
 interface GameModifierApplyScope<GameModel: Any, Owner>: UsageScope {
@@ -59,6 +61,8 @@ interface GameModifierApplyScope<GameModel: Any, Owner>: UsageScope {
     val game: GameModel
     val meta: GameMetaScope<GameModel>
     val eliminations: PlayerEliminationsWrite get() = meta.eliminations
+    fun log(logging: LogScope<GameModel>.() -> String)
+    fun logSecret(playerIndex: Int, logging: LogScope<GameModel>.() -> String): LogSecretScope<GameModel>
 }
 
 /*

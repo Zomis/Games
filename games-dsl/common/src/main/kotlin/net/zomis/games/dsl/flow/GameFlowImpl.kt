@@ -3,10 +3,8 @@ package net.zomis.games.dsl.flow
 import klog.KLoggers
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.*
 import net.zomis.games.PlayerEliminations
 import net.zomis.games.PlayerEliminationsWrite
-import net.zomis.games.api.MetaScope
 import net.zomis.games.api.UsageScope
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
@@ -42,6 +40,7 @@ class GameFlowImpl<T: Any>(
     val views = mutableListOf<Pair<String, ViewScope<T>.() -> Any?>>()
     private var viewModel: ViewModel<T, *>? = null
     override val feedbackFlow: Channel<FlowStep> = Channel()
+    private var onNoActions: () -> Unit = {}
 
     private val feedbacks = mutableListOf<FlowStep>()
 
@@ -75,7 +74,7 @@ class GameFlowImpl<T: Any>(
     override val replayable = ReplayState(stateKeeper)
     override val actions = GameFlowActionsImpl({ feedbacks.add(it) }, this)
     override val feedback: (FlowStep) -> Unit = { feedbacks.add(it) }
-    private val rules: MutableList<GameModifierImpl<T, Any>> = mutableListOf()
+    private val rules: MutableList<GameModifierImpl<T, out Any?>> = mutableListOf()
     override fun <E : Any> fireEvent(source: EventSource, event: E, performEvent: (E) -> Unit) {
         logger.info { "fireEvent from source $source with value $event" }
         this.events.fireEvent(source, event, performEvent as (Any) -> Unit)
@@ -109,10 +108,18 @@ class GameFlowImpl<T: Any>(
         }
     }
 
+    override fun onNoActions(function: () -> Unit) {
+        val old = this.onNoActions
+        this.onNoActions = {
+            old.invoke()
+            function.invoke()
+        }
+    }
+
     override fun <Owner> addRule(owner: Owner, rule: GameModifierScope<T, Owner>.() -> Unit) {
-        val ruleContext = GameModifierImpl(this, owner)
-        rule.invoke(ruleContext)
-        this.rules.add(ruleContext as GameModifierImpl<T, Any>)
+        val ruleContext = GameModifierImpl(this, owner, rule)
+        ruleContext.fire()
+        this.rules.add(ruleContext)
         ruleContext.executeOnActivate()
     }
 
@@ -177,6 +184,7 @@ class GameFlowImpl<T: Any>(
 
     suspend fun nextAction(): Actionable<T, Any>? {
         this.unfinishedFeedback = copyUnfinishedFeedbackWithUpdatedState()
+        activeRules.fireRules(this.setupContext.getBaseRule(model))
         runRules(GameFlowRulesState.BEFORE_RETURN)
         if (isGameOver()) {
             this.actionDone()
@@ -216,8 +224,9 @@ class GameFlowImpl<T: Any>(
                 return action
             }
         } else {
-            logger.info("GameFlow Coroutine No Available Actions")
+            logger.info("GameFlow Coroutine No Available Actions. ActionTypes: ${actions.types().map { it.name }}")
             sendFeedback(FlowStep.NextView)
+            onNoActions.invoke()
             clear()
             runRules(GameFlowRulesState.AFTER_ACTIONS)
             return null
@@ -237,7 +246,7 @@ class GameFlowImpl<T: Any>(
         }
     }
 
-    suspend fun sendFeedback(feedback: FlowStep) {
+    private suspend fun sendFeedback(feedback: FlowStep) {
         logger.info("GameFlow Coroutine sends feedback: $feedback")
         this.feedbackFlow.send(feedback)
         // logger.info("GameFlow Coroutine feedback sent: $feedback, continuing coroutine...") // Possible ConcurrentModificationExceptions
@@ -253,6 +262,7 @@ class GameFlowImpl<T: Any>(
     }
 
     private fun clear() {
+        this.onNoActions = {}
         this.views.clear()
         this.actions.clear()
     }

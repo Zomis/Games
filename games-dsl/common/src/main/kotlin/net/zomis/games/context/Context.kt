@@ -14,6 +14,7 @@ import net.zomis.games.dsl.events.*
 import net.zomis.games.dsl.flow.ActionDefinition
 import net.zomis.games.dsl.flow.GameFlowActionScope
 import net.zomis.games.dsl.flow.GameFlowScope
+import net.zomis.games.dsl.flow.GameMetaScope
 import net.zomis.games.dsl.impl.*
 import net.zomis.games.rules.Rule
 import net.zomis.games.rules.RuleSpec
@@ -202,7 +203,7 @@ open class Entity(protected open val ctx: Context) {
             = ActionFactory(name, parameter, actionDefinition).also { it.actionType = it.actionType.serializer { a -> a.serialize() } }
     fun sharedIdGenerator() = ctx.gameContext.idGenerator
 }
-class GameContext(val events: EventsHandling<Any>, val playerCount: Int, val eliminations: PlayerEliminationsWrite, val configLookup: (GameConfig<Any>) -> Any) {
+class GameContext(val meta: GameMetaScope<Any>, val events: EventsHandling<Any>, val playerCount: Int, val eliminations: PlayerEliminationsWrite, val configLookup: (GameConfig<Any>) -> Any) {
     val idGenerator = IdGenerator()
     internal val onSetup = mutableListOf<GameStartScope<Any>.() -> Unit>()
 }
@@ -264,7 +265,11 @@ class EventListenerContext(
 class GameCreatorContext<T: ContextHolder>(val gameType: String, val function: GameCreatorContextScope<T>.() -> Unit): GameCreatorContextScope<T> {
     private var playerRange = 0..0
     private lateinit var init: ContextHolder.() -> T
-    private lateinit var gameFlow: suspend GameFlowScope<T>.() -> Unit
+    private var gameFlow: suspend GameFlowScope<T>.() -> Unit = {
+        loop {
+            step("no-op step") {}
+        }
+    }
     private val configs = mutableListOf<GameConfig<Any>>()
     private val context = GameDslContext<T>(gameType)
 
@@ -301,8 +306,7 @@ class GameCreatorContext<T: ContextHolder>(val gameType: String, val function: G
                     this.game.ctx.gameContext.onSetup.forEach { it.invoke(this as GameStartScope<Any>) }
                 }
                 init {
-                    // TODO: GameMetaScope can be made available here, as the object is the same.
-                    val gc = GameContext(this.events as EventsHandling<Any>, this.playerCount, this.eliminationCallback) { config(it) }
+                    val gc = GameContext(this.meta as GameMetaScope<Any>, this.events as EventsHandling<Any>, this.playerCount, this.eliminationCallback) { config(it) }
                     val context = Context(gc, null, "")
                     context.view = {
                         context.children.associate { it.name to it.view }

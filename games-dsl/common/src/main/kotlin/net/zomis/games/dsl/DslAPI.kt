@@ -6,6 +6,7 @@ import net.zomis.games.dsl.flow.GameFlowScope
 import net.zomis.games.dsl.impl.GameAI
 import net.zomis.games.dsl.impl.GameAIScope
 import net.zomis.games.dsl.impl.GameMarker
+import net.zomis.games.rules.Rule
 import net.zomis.games.scorers.ScorerFactory
 import kotlin.reflect.KClass
 
@@ -74,6 +75,8 @@ interface GameDslScope<T : Any> : UsageScope {
     fun gameFlowRules(flowRulesDsl: GameFlowRulesDsl<T>)
     fun <E: Any> config(key: String, default: () -> E): GameConfig<E>
     fun ai(name: String, block: GameAIScope<T>.() -> Unit): GameAI<T>
+    fun baseRule(rule: (T) -> Rule<T, out Any>)
+
     val scorers: ScorerFactory<T>
 }
 

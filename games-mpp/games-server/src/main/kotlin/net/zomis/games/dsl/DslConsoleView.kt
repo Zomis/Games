@@ -41,6 +41,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
                     FileReplay(file, replayListener).postReplay(replayData),
                     blockingGameListener,
 //                    ai.gameListener(g, 0).postReplay(replayData),
+                    LimitedNextViews(10),
                     SanityCheckListener(g)
                 )
             }, fork = false).goToEnd().awaitCatchUp()
@@ -77,6 +78,7 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
                     FileReplay(file, replayListener),
                     blockingGameListener,
 //                    ai.gameListener(g as Game<T>, 0),
+                    LimitedNextViews(10),
                     SanityCheckListener(g)
                 )
             }
@@ -94,14 +96,15 @@ class DslConsoleView<T : Any>(private val game: GameSpec<T>) {
 
 class DslConsoleSetup {
     fun chooseGame(scanner: Scanner): GameSpec<Any> {
-        val gameTypeList = ServerGames.games.map { game -> game.key }.sorted()
+        val allGames = ServerGames.games
+        val gameTypeList = allGames.map { game -> game.key }.sorted()
         gameTypeList.forEachIndexed { index, gameType ->
             println("$index. $gameType")
         }
         println("Which game do you want to play?")
         val chosenGame = scanner.nextLine()
         val gameType = if (chosenGame.toIntOrNull() != null) gameTypeList[chosenGame.toInt()] else chosenGame
-        val gameSpec = ServerGames.games[gameType] as GameSpec<Any>?
+        val gameSpec = allGames[gameType] as GameSpec<Any>?
         if (gameSpec == null) {
             println("No such game type: $chosenGame")
             throw IllegalStateException()

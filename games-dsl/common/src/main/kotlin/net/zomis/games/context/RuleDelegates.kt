@@ -1,5 +1,6 @@
 package net.zomis.games.context
 
+import net.zomis.games.dsl.flow.GameMetaScope
 import net.zomis.games.rules.Rule
 import net.zomis.games.rules.RuleSpec
 import kotlin.properties.PropertyDelegateProvider
@@ -37,6 +38,6 @@ class RuleDelegateProvider<Model : Any, Owner>(
     }
 
     override fun getValue(thisRef: Any?, property: KProperty<*>): Rule<Model, Owner> {
-        return Rule(owner, dsl)
+        return Rule<Model, Owner>(ctx.gameContext.meta as GameMetaScope<Model>, owner, dsl)
     }
 }

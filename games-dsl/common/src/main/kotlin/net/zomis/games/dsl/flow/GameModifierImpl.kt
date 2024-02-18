@@ -1,8 +1,9 @@
 package net.zomis.games.dsl.flow
 
-import net.zomis.games.dsl.ActionOptionsScope
-import net.zomis.games.dsl.ActionType
+import net.zomis.games.dsl.*
 import net.zomis.games.dsl.events.*
+import net.zomis.games.dsl.impl.LogActionContext
+import net.zomis.games.dsl.impl.LogContext
 import net.zomis.games.rules.Rule
 import net.zomis.games.rules.RuleSpec
 import kotlin.properties.PropertyDelegateProvider
@@ -15,12 +16,18 @@ class ActionModifier<GameModel: Any>(
     val definition: GameFlowActionScope<GameModel, Any>.() -> Unit
 )
 
+// TODO: Stateful rules and Stateless rules. Stateless has no owner and no internal state.
+
 class GameModifierImpl<GameModel: Any, Owner>(
     private val meta: GameMetaScope<GameModel>,
-    val owner: Owner
+    val owner: Owner,
+    private val ruleSpec: RuleSpec<GameModel, Owner>,
 ): GameModifierScope<GameModel, Owner> {
+    private var active: Boolean = false
+
     override val ruleHolder: Owner get() = owner
     override val game: GameModel get() = meta.game
+    private val actionTypesEnabled = mutableMapOf<ActionType<GameModel, out Any>, Boolean>()
     private val states = mutableMapOf<String, Any>()
     private val activationEffects = mutableListOf<GameModifierApplyScope<GameModel, Owner>.() -> Unit>()
     private val stateChecksBeforeAction = mutableListOf<GameModifierApplyScope<GameModel, Owner>.() -> Unit>()
@@ -33,8 +40,8 @@ class GameModifierImpl<GameModel: Any, Owner>(
         return this.addState(initial.invoke())
     }
 
-    override fun enableAction(actionDefinition: ActionDefinition<GameModel, out Any>) {
-        TODO("Not yet implemented")
+    override fun enableAction(actionType: ActionType<GameModel, out Any>) {
+        actionTypesEnabled[actionType] = true
     }
 
     override fun applyRule(condition: () -> Boolean, rule: RuleSpec<GameModel, out Any>): Rule<GameModel, out Any> {
@@ -48,6 +55,8 @@ class GameModifierImpl<GameModel: Any, Owner>(
     override fun conflictsWith(rule: Rule<GameModel, out Any>) {
         TODO("Not yet implemented")
     }
+
+    override fun onNoActions(function: () -> Unit) = meta.onNoActions(function)
 
     override fun onState(condition: () -> Boolean, thenPerform: GameModifierApplyScope<GameModel, Owner>.() -> Unit) {
         stateCheckBeforeAction {
@@ -156,7 +165,32 @@ class GameModifierImpl<GameModel: Any, Owner>(
         this.globalPreconditions.forEach(meta::addGlobalActionPrecondition)
     }
 
-    private fun isActive(): Boolean = this.activeConditions.all { it.invoke(this) }
+    fun isActive(): Boolean {
+        if (!active) return true
+        return this.activeConditions.all { it.invoke(this) }
+    }
+
+    fun fire() {
+        clear()
+        this.active = true
+        ruleSpec.invoke(this)
+        executeBeforeAction()
+    }
+
+    fun disable() {
+        this.active = false
+    }
+
+    private fun clear() {
+        actionTypesEnabled.clear()
+        // states.clear() // Do not clear states.
+        activationEffects.clear()
+        stateChecksBeforeAction.clear()
+        actionModifiers.clear()
+        activeConditions.clear()
+        removeCondition = null
+        globalPreconditions.clear()
+    }
 
 }
 
@@ -165,6 +199,16 @@ class GameModifierApplyContext<GameModel : Any, Owner>(
     override val meta: GameMetaScope<GameModel>
 ) : GameModifierApplyScope<GameModel, Owner> {
     override val game: GameModel get() = meta.game
+
+    override fun log(logging: LogScope<GameModel>.() -> String) {
+        meta.replayable.stateKeeper.log(LogContext(game, null).log(logging))
+    }
+
+    override fun logSecret(playerIndex: Int, logging: LogScope<GameModel>.() -> String): LogSecretScope<GameModel> {
+        val context = LogContext(game, playerIndex).secretLog(playerIndex, logging)
+        meta.replayable.stateKeeper.log(context)
+        return context
+    }
 }
 
 class EventModifierImpl<GameModel: Any, E: Any>(

@@ -45,6 +45,7 @@ object EcsModelExample {
         }
 
         val rule by rule {
+            action(rest)
             applyRules(active.cards.map { it.ruleInPlay })
         }
 //        val cardChoice = actionChoice { hand.cards }

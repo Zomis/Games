@@ -61,7 +61,8 @@ class Replay<T : Any>(
             }
             actionsFlow.collect { action ->
                 blockingListener.await()
-                val actionType = game.actions.type(action.actionType)!!
+                val actionType = game.actions.type(action.actionType)
+                    ?: throw IllegalStateException("Unable to perform action $actionsSent. '${action.actionType}' does not exist: $action")
                 val converted = actionConverter.invoke(actionType.actionType.serializedType, action.serializedParameter)
                 val actionable = actionType.createActionFromSerialized(action.playerIndex, converted)
                 actionsSent++

@@ -4,6 +4,7 @@ import net.zomis.games.common.PlayerIndex
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.flow.GameFlowImpl
 import net.zomis.games.dsl.flow.GameForkResult
+import net.zomis.games.rules.Rule
 import net.zomis.games.scorers.Scorer
 import net.zomis.games.scorers.ScorerController
 import net.zomis.games.scorers.ScorerFactory
@@ -192,6 +193,7 @@ class GameDslContext<T : Any>(val gameType: String) : GameDslScope<T> {
     private var configs = mutableListOf<GameConfig<Any>>()
     val testCases: MutableList<GameTestCaseContext<T>> = mutableListOf()
     override var useRandomAI = true
+    private var baseRule: (T) -> Rule<T, out Any>? = { null }
 
     val model = GameModelContext<T, Any>(configs)
 
@@ -219,8 +221,8 @@ class GameDslContext<T : Any>(val gameType: String) : GameDslScope<T> {
     fun createGame(startInfo: GameStartInfo, copier: suspend (FlowStep.RandomnessResult?) -> GameForkResult<T>): Game<T> {
         val flowDslNull = this.flowDsl == null
         val flowRulesNull = this.flowRulesDsl == null
-        if (listOf(flowDslNull, flowRulesNull).distinct().size > 1) {
-            throw IllegalStateException("when using one of gameFlow and gameFlowRules, the others must be used too")
+        if (flowDslNull != flowRulesNull) {
+            throw IllegalStateException("when using one of gameFlow and gameFlowRules, the others must be used too. FlowDsl = $flowDsl, FlowRulesDsl = $flowRulesDsl")
         }
 
         return if (this.flowDsl == null) {
@@ -239,6 +241,17 @@ class GameDslContext<T : Any>(val gameType: String) : GameDslScope<T> {
         this.configs.add(config as GameConfig<Any>)
         return config
     }
+
+    override fun baseRule(rule: (T) -> Rule<T, out Any>) {
+        this.baseRule = rule
+        if (flowDsl == null) {
+            flowDsl = {
+                loop { step("no-op, use base-rule instead") {} }
+            }
+        }
+    }
+
+    fun getBaseRule(model: T): Rule<T, out Any>? = baseRule.invoke(model)
 
     val createdScorers = mutableListOf<Scorer<T, out Any>>()
     val createdAIs = mutableListOf<ScorerController<T>>()
