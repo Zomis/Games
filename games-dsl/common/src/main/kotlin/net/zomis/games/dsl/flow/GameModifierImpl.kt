@@ -180,6 +180,7 @@ class GameModifierImpl<GameModel: Any, Owner>(
         activeConditions.clear()
         removeCondition = null
         globalPreconditions.clear()
+        subRules.clear()
     }
 
 }
