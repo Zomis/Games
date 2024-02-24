@@ -273,9 +273,14 @@ class GameCreatorContext<T: ContextHolder>(val gameType: String, val function: G
     private val configs = mutableListOf<GameConfig<out Any>>()
     private val context = GameDslContext<T>(gameType)
     private var baseRule: ((T) -> RuleSpec<T, Unit>)? = null
+    private val testCases = mutableListOf<GameTestCaseContext<T>>()
 
     override fun players(players: IntRange) {
         this.playerRange = players
+    }
+
+    override fun testCase(players: Int, testDsl: GameTestDsl<T>) {
+        this.testCases.add(GameTestCaseContext(players, testDsl))
     }
 
     override fun baseRule(rule: (T) -> RuleSpec<T, Unit>) {
@@ -337,6 +342,9 @@ class GameCreatorContext<T: ContextHolder>(val gameType: String, val function: G
                     }
                 }
             }
+            this@GameCreatorContext.testCases.forEach {
+                testCase(it.players, it.testContext)
+            }
             val oldContext = this@GameCreatorContext.context
             val newContext = this as GameDslContext<T>
             newContext.copyAIsFrom(oldContext)
@@ -350,6 +358,7 @@ interface GameCreatorContextScope<T: Any>: UsageScope {
     fun init(function: ContextHolder.() -> T)
     fun gameFlow(function: suspend GameFlowScope<T>.() -> Unit)
     fun baseRule(rule: (T) -> RuleSpec<T, Unit>)
+    fun testCase(players: Int, testDsl: GameTestDsl<T>)
     fun <E : Any> config(key: String, default: () -> E): GameConfig<E>
     fun ai(name: String, block: GameAIScope<T>.() -> Unit): GameAI<T>
     fun <C : Any> addConfig(config: GameConfig<C>)

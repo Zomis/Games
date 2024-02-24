@@ -31,6 +31,7 @@ interface GameModifierScope<GameModel: Any, Owner> : UsageScope, StateOwner {
 
     fun conflictsWith(rule: Rule<GameModel, out Any>)
     fun overrides(rule: Rule<GameModel, out Any>)
+    fun <Owner2> subRule(rule: RuleSpec<GameModel, Owner2>?, owner: Owner2, stateOwner: StateOwner)
     fun applyRule(condition: () -> Boolean, rule: RuleSpec<GameModel, out Any>): Rule<GameModel, out Any>
 
     fun onActivate(doSomething: GameModifierApplyScope<GameModel, Owner>.() -> Unit) // happens once when rule is added

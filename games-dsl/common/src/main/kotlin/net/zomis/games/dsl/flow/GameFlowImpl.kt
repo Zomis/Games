@@ -188,6 +188,7 @@ class GameFlowImpl<T: Any>(
 
     suspend fun nextAction(): Actionable<T, Any>? {
         this.unfinishedFeedback = copyUnfinishedFeedbackWithUpdatedState()
+        events.clearTemporary()
         activeRules.fireRules(baseRule)
         runRules(GameFlowRulesState.BEFORE_RETURN)
         if (isGameOver()) {

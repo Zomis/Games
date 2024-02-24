@@ -152,24 +152,16 @@ object CoupRuleBased {
                 )
             }
         }
-        gameFlow {
-            meta.addRule(Unit) {
+        baseRule {
+            return@baseRule {
                 // Get 1 coin (from the challenged player?) when winning a challenge
-                on(net.zomis.games.impl.CoupChallengeResolved::class).perform {
-                    kotlin.io.println("XXXXXXXXXX Challenge Resolved ${this.event}")
+                on(CoupChallengeResolved::class).perform {
                     if (!event.trueClaim) {
                         game.players[event.challengedClaim.challengedBy].coins += game.config.gainMoneyOnSuccessfulChallenge
                         if (game.config.gainMoneyOnSuccessfulChallenge > 0) {
                             // TODO: Add action log "$player got $x coins for a successful challenge
                         }
                     }
-                }
-            }
-
-            loop {
-                step("game") {
-                    // TODO: Rewrite Coup to gameFlow
-                    println("Test")
                 }
             }
         }
@@ -187,7 +179,7 @@ object CoupRuleBased {
                 appliesWhen {
                     val peek = game.stack.peek()
                     if (peek !is CoupLoseInfluence) return@appliesWhen false
-                    val task = peek as CoupLoseInfluence
+                    val task = peek
                     task.player.influence.size == 0
                 }
                 effect {

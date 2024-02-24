@@ -22,6 +22,7 @@ import net.zomis.games.dsl.flow.GameFlowStepScope
 import net.zomis.games.dsl.flow.GameModifierScope
 import net.zomis.games.dsl.flow.SmartActionDsl
 import net.zomis.games.dsl.impl.GameConfigImpl
+import net.zomis.games.rules.NoState
 import net.zomis.games.rules.Rule
 import net.zomis.games.rules.RuleSpec
 import kotlin.math.ceil
@@ -29,8 +30,8 @@ import kotlin.math.ceil
 object Grizzled {
 
     class StartMission
-    class PlayCard(val playerIndex: Int, val fromZone: CardZoneI<GrizzledCard>, val card: GrizzledCard, val trapsEnabled: Boolean)
-    class Support(val supportedPlayers: MutableMap<Player, Player>)
+    data class PlayCard(val playerIndex: Int, val fromZone: CardZoneI<GrizzledCard>, val card: GrizzledCard, val trapsEnabled: Boolean)
+    data class Support(val supportedPlayers: MutableMap<Player, Player>)
     class Supported(val restoreCharm: Boolean, val removeHardKnocks: List<GrizzledCard>) {
         fun toStateString() = "$restoreCharm/${removeHardKnocks.map { it.toStateString() }}"
     }
@@ -397,7 +398,7 @@ object Grizzled {
 
             for (player in players.shifted(currentPlayerIndex + 1).filter { it.inMission }) {
                 for (card in player.hardKnocks.cards) {
-//                    card.hardKnockEffects.applyRule(player, card)
+                    subRule(rule = card.hardKnockEffects, owner = player, stateOwner = NoState)
                 }
             }
         }
@@ -562,6 +563,20 @@ object Grizzled {
 
                 game.round++
             }
+        }
+        testCase(3) {
+            state("trials", listOf(
+                "Snow/1,Whistle/1", "Snow/1,Trap/1,Whistle/1", "Phobia Whistle", "Mask/1,Shell/1", "Night/1,Trap/1,Whistle/1", "Trauma Night", "Demoralized", "Panicked", "Rain/1,Whistle/1", "Selfish", "Fragile", "Shell/1,Whistle/1", "Rain/1,Shell/1", "Mask/1,Snow/1,Trap/1", "Rain/1,Whistle/1", "Mask/1,Shell/1,Whistle/1", "Trauma Snow", "Absent-minded", "Night/1,Shell/1,Trap/1", "Mute", "Night/1,Shell/1", "Prideful", "Rain/1,Shell/1,Trap/1", "Mask/1,Rain/1", "Fearful"
+            ))
+            initialize()
+            action(0, chooseCardCount, 9)
+            action(0, playAction, game.currentPlayer.hand.cards.first { it.name == "Fearful" })
+            expectEquals(1, game.players[0].hardKnocks.cards.size)
+            action(1, playAction, game.currentPlayer.hand.cards.first { it.name == "Absent-minded" })
+            expectEquals(1, game.players[1].hardKnocks.cards.size)
+            action(2, playAction, game.currentPlayer.hand.cards.first { it.name == "Fragile" })
+            expectEquals(1, game.players[2].hardKnocks.cards.size)
+            actionNotAllowed(0, withdraw, WithdrawAction(game.currentPlayer.supportTiles.cards.random()))
         }
         val withdrawScorer = scorers.isAction(withdraw)
         val failScorer = scorers.actionConditional(playAction) {

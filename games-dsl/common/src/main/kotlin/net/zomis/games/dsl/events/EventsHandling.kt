@@ -1,6 +1,7 @@
 package net.zomis.games.dsl.events
 
 import net.zomis.games.api.UsageScope
+import net.zomis.games.dsl.flow.EventModifierImpl
 import net.zomis.games.dsl.flow.GameMetaScope
 
 enum class EventPriority {
@@ -43,6 +44,7 @@ interface EventListener {
 class EventsHandling<GameModel: Any>(val metaScope: GameMetaScope<GameModel>) {
 
     private val onEvent = mutableMapOf<EventPriority, MutableList<EventListener>>()
+    private val temporaryListeners = mutableListOf<EventListener>()
 
     fun fireEvent(source: EventSource, eventValue: Any, eventAction: (Any) -> Unit = {}) {
         var event = eventValue
@@ -78,6 +80,17 @@ class EventsHandling<GameModel: Any>(val metaScope: GameMetaScope<GameModel>) {
 
     fun addEventListener(priority: EventPriority, listener: EventListener) {
         onEvent.getOrPut(priority) { mutableListOf() }.add(listener)
+    }
+
+    fun addTemporaryEventListener(priority: EventPriority, listener: EventListener) {
+        onEvent.getOrPut(priority) { mutableListOf() }.add(listener)
+        temporaryListeners.add(listener)
+    }
+
+    fun clearTemporary() {
+        onEvent.forEach { ee ->
+            ee.value.removeAll { listener -> temporaryListeners.contains(listener) }
+        }
     }
 
 }

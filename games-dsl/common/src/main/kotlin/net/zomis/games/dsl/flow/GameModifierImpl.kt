@@ -36,6 +36,7 @@ class GameModifierImpl<GameModel: Any, Owner>(
     private val activeConditions = mutableListOf<GameModifierScope<GameModel, Owner>.() -> Boolean>()
     private var removeCondition: (GameModifierScope<GameModel, Owner>.() -> Boolean)? = null
     private val globalPreconditions = mutableListOf<ActionOptionsScope<GameModel>.() -> Boolean>()
+    private val subRules = mutableListOf<GameModifierImpl<GameModel, out Any?>>()
 
     override fun enableAction(actionType: ActionType<GameModel, out Any>) {
         actionTypesEnabled[actionType] = true
@@ -43,6 +44,13 @@ class GameModifierImpl<GameModel: Any, Owner>(
 
     override fun applyRule(condition: () -> Boolean, rule: RuleSpec<GameModel, out Any>): Rule<GameModel, out Any> {
         TODO("Not yet implemented")
+    }
+
+    override fun <Owner2> subRule(rule: RuleSpec<GameModel, Owner2>?, owner: Owner2, stateOwner: StateOwner) {
+        if (rule == null) return
+        val context = GameModifierImpl(meta, owner, rule, stateOwner)
+        rule.invoke(context)
+        subRules.add(context)
     }
 
     override fun overrides(rule: Rule<GameModel, out Any>) {
@@ -74,13 +82,13 @@ class GameModifierImpl<GameModel: Any, Owner>(
 
     override fun <E : Any> on(event: EventFactory<E>, priority: EventPriority): EventModifierScope<GameModel, E> {
         val impl = EventModifierImpl<GameModel, E>(meta) { this.isActive() && it.effectSource == event }
-        meta.events.addEventListener(priority, impl)
+        meta.events.addTemporaryEventListener(priority, impl)
         return impl
     }
 
     override fun <E : Any> on(eventType: KClass<E>, priority: EventPriority): EventModifierScope<GameModel, E> {
         val impl = EventModifierImpl<GameModel, E>(meta) { this.isActive() && eventType.isInstance(it.event) }
-        meta.events.addEventListener(priority, impl)
+        meta.events.addTemporaryEventListener(priority, impl)
         return impl
     }
 
@@ -144,6 +152,7 @@ class GameModifierImpl<GameModel: Any, Owner>(
             meta.addAction(it.action, it.definition)
         }
         this.globalPreconditions.forEach(meta::addGlobalActionPrecondition)
+        subRules.forEach { it.executeBeforeAction() }
     }
 
     fun isActive(): Boolean {
