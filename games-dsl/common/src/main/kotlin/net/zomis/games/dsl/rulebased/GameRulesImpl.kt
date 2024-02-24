@@ -60,17 +60,6 @@ class GameRuleForEachContext<T: Any, E>(val list: GameRuleScope<T>.() -> Iterabl
 
 }
 
-@Deprecated("old-style events handling. Use Event class instead")
-class GameRuleEventContext<T: Any, E>(
-    private val context: GameMetaScope<T>,
-    override val event: E
-): GameRuleEventScope<T, E> {
-    override val model: T get() = context.game
-    override val eliminations: PlayerEliminationsWrite get() = context.eliminations
-    override val replayable: ReplayStateI get() = context.replayable
-    override fun <E : Any> config(gameConfig: GameConfig<E>): E = context.config(gameConfig)
-}
-
 class GameRuleImpl<T: Any>(
     val actionRulesContext: GameActionRulesContext<T>,
     val parentRule: GameRuleImpl<T>?,

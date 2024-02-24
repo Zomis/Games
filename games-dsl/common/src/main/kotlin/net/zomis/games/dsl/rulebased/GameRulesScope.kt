@@ -15,11 +15,6 @@ interface GameRuleScope<T : Any> : CompoundScope, net.zomis.games.api.GameModelS
     val game: T get() = model
 }
 
-@Deprecated("old-style events handling. Use Event class instead")
-interface GameRuleEventScope<T: Any, E>: GameRuleScope<T> {
-    val event: E
-}
-
 @GameMarker
 interface GameRuleForEachScope<T : Any, E> : UsageScope {
     fun effect(effect: GameRuleScope<T>.(E) -> Unit)
@@ -37,12 +32,6 @@ interface GameRuleRuleScope<T : Any>: GameCommonRule<T> {
     fun <A: Any> action(actionType: ActionType<T, A>, actionRule: GameRuleActionScope<T, A>.() -> Unit)
 
     fun rule(name: String, rule: GameRuleRuleScope<T>.() -> Any?): GameRuleRuleScope<T>
-}
-
-@Deprecated("old-style events handling. Use Event class instead")
-interface GameRuleEvents<T: Any, E> {
-//    fun filter(...): GameRuleEvents<T, E>
-    fun perform(perform: GameRuleEventScope<T, E>.() -> Unit)
 }
 
 @GameMarker
