@@ -57,13 +57,9 @@ class GameEntryPoint<T : Any>(private val gameSpec: GameSpec<T>) {
     ): Replay<T>
         = Replay.initReplay(coroutineScope, gameSpec, replay, actionConverter, gameListeners, fork = {fork})
 
-    suspend fun runTests() {
-        setup().context.testCases.forEach {
-            it.runTests(this)
-        }
-    }
-
     override fun toString(): String = "EntryPoint:$gameType"
+
+    fun testCases() = setup().context.testCases.toList()
 
 }
 

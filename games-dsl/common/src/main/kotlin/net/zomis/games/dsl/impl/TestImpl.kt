@@ -1,9 +1,7 @@
 package net.zomis.games.dsl.impl
 
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.listeners.BlockingGameListener
 
@@ -113,11 +111,9 @@ class GameTestCaseContext<T: Any>(val players: Int, val testContext: GameTestDsl
 
     suspend fun runTests(entryPoint: GameEntryPoint<T>) {
         coroutineScope {
-            launch(CoroutineName("Run tests for ${entryPoint.gameType}")) {
-                val context = GameTestContext(this, entryPoint, players)
-                testContext.invoke(context)
-                context.gameImpl?.stop()
-            }
+            val context = GameTestContext(this, entryPoint, players)
+            testContext.invoke(context)
+            context.gameImpl?.stop()
         }
     }
 

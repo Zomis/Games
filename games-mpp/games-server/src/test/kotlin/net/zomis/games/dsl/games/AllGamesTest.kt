@@ -14,7 +14,7 @@ import net.zomis.games.impl.cards.Grizzled
 import net.zomis.games.impl.words.Decrypto
 import net.zomis.games.listeners.*
 import net.zomis.games.server2.ServerGames
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.*
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
@@ -25,7 +25,7 @@ class AllGamesTest {
     companion object {
         @JvmStatic
         fun gameList(): List<Arguments> {
-            return ServerGames.games.values.filter { !ServerGames.beta.contains(it) }.map {
+            return gamesToTest().map {
                 val entryPoint = GamesImpl.game(it)
                 val playerCount = entryPoint.setup().playersCount
                 val randomCount = playerCount.random()
@@ -33,6 +33,8 @@ class AllGamesTest {
                 Arguments.of(entryPoint, randomCount)
             }
         }
+
+        fun gamesToTest() = ServerGames.games.values.filter { !ServerGames.beta.contains(it) }
     }
 
     val playingMap = mapOf(
@@ -44,10 +46,25 @@ class AllGamesTest {
         DslSplendor.splendorGame.name to "#AI_BuyFirst"
     )
 
-    @ParameterizedTest(name = "Run tests for {0} with {1} players")
-    @MethodSource("gameList")
-    fun gameTests(gameType: GameEntryPoint<Any>, playerCount: Int) = runTest {
-        gameType.runTests()
+    @TestFactory
+    fun gameTests(): Collection<DynamicNode> {
+        val untestedGames = mutableListOf<String>()
+        return gamesToTest().mapNotNull { gameSpec ->
+            val entryPoint = GamesImpl.game(gameSpec) as GameEntryPoint<Any>
+            val tests = entryPoint.testCases().map {
+                DynamicTest.dynamicTest("${gameSpec.name} with ${it.players} players") {
+                    runTest {
+                        it.runTests(entryPoint)
+                    }
+                }
+            }
+            if (tests.isEmpty()) untestedGames.add(gameSpec.name)
+            DynamicContainer.dynamicContainer(gameSpec.name, tests).takeIf { tests.isNotEmpty() }
+        } + DynamicTest.dynamicTest("${untestedGames.size} untested games") {
+            untestedGames.sorted().forEach {
+                println(it)
+            }
+        }
     }
 
     @ParameterizedTest(name = "Sanity Check {0} with {1} players")
