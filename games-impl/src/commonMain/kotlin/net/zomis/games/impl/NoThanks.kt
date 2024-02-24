@@ -68,6 +68,7 @@ object NoThanks {
             loop {
                 if (game.currentCard == null) {
                     if (game.deck.isEmpty()) {
+                        // TODO: Count points
                         eliminations.eliminateRemaining(WinResult.DRAW)
 //                        eliminations.eliminateBy()
                         return@loop

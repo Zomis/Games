@@ -61,7 +61,7 @@ object ArtifactActions {
     val bootsOfSpeedAction = GamesApi.gameCreator(AlchemistsDelegationGame.Model::class).action("bootsOfSpeed", Boolean::class)
     val bootsOfSpeed = Artifact("Boots of Speed", "On an action space where you have at least one cube, you can perform that action again after everyone is done. Limit once per round. Can't be used to Sell Potions.",
             1, 4, 2) {
-        var usedBootsOfSpeed by state { false }
+        var usedBootsOfSpeed by state2 { false }
         on(game.newRound).perform {
             usedBootsOfSpeed = false
         }
@@ -88,7 +88,7 @@ object ArtifactActions {
         }
     }
     val discountCard = Artifact("Discount Card", "Your next artifact costs 2 gold less. After that, artifacts cost you 1 gold less.", 1, 3, 1) {
-        var usedDiscountCard by state { false }
+        var usedDiscountCard by state2 { false }
 
         stateCheckBeforeAction {
             if (game.currentActionSpace != game.buyArtifact) return@stateCheckBeforeAction
@@ -134,7 +134,7 @@ object ArtifactActions {
 
     val periscopeAction = GamesApi.gameCreator(AlchemistsDelegationGame.Model::class).action("periscope", Boolean::class)
     val periscope: Artifact = Artifact("Periscope", "Immediately after a colleague sells or tests a potion, you may look at one of the ingredients. Choose It randomly. Limit once per round.", 1, 3, 1) {
-        var usedPeriscope by state { false }
+        var usedPeriscope by state2 { false }
         on(game.newRound).perform {
             usedPeriscope = false
         }
@@ -170,6 +170,7 @@ object ArtifactActions {
     val robeOfRespect =
         Artifact("Robe of Respect", "Whenever you gain reputation points, gain 1 more. This does not apply in the final round.", 1, 4, 0) {
             on(ResourceChange::class, EventPriority.EARLIER).mutate {
+                if (this.meta.game.round == 6) return@mutate
                 if (
                     event.resourceMap == ruleHolder.owner.resources &&
                     event.diff > 0 &&

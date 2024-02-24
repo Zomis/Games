@@ -29,15 +29,17 @@ class RuleDelegateProvider<Model : Any, Owner>(
     private val ctx: Context,
     private val owner: Owner,
     private val dsl: RuleSpec<Model, Owner>,
-) : PropertyDelegateProvider<Any?, RuleDelegateProvider<Model, Owner>>, ReadOnlyProperty<Any?, Rule<Model, Owner>> {
+) : PropertyDelegateProvider<Any?, RuleDelegateProvider<Model, Owner>>, ReadOnlyProperty<Any?, RuleSpec<Model, Owner>> {
     private lateinit var name: String
+    private lateinit var rule: RuleSpec<Model, Owner>
 
     override fun provideDelegate(thisRef: Any?, property: KProperty<*>): RuleDelegateProvider<Model, Owner> {
         this.name = property.name
+        this.rule = dsl //Rule<Model, Owner>(ctx.gameContext.meta as GameMetaScope<Model>, owner, dsl)
         return this
     }
 
-    override fun getValue(thisRef: Any?, property: KProperty<*>): Rule<Model, Owner> {
-        return Rule<Model, Owner>(ctx.gameContext.meta as GameMetaScope<Model>, owner, dsl)
+    override fun getValue(thisRef: Any?, property: KProperty<*>): RuleSpec<Model, Owner> {
+        return rule
     }
 }

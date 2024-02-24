@@ -73,7 +73,7 @@ object Dixit {
         val board = CardZone<String>()
         val deck = CardZone<String>()
         val trash = CardZone<String>()
-        val rule = Rule<Model, Unit>(meta, Unit) {
+        val rule: RuleSpec<Model, Unit> = {
             println("Dixit Current phase ${phase.current}")
             when (val currentPhase = phase.current) {
                 is Phase.TellStory -> storytellPhase(currentPhase.playerIndex).invoke(this)

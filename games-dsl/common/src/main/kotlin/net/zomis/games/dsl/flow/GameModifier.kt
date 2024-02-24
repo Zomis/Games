@@ -2,16 +2,13 @@ package net.zomis.games.dsl.flow
 
 import net.zomis.games.PlayerEliminationsWrite
 import net.zomis.games.api.UsageScope
-import net.zomis.games.dsl.ActionOptionsScope
-import net.zomis.games.dsl.ActionType
-import net.zomis.games.dsl.LogScope
-import net.zomis.games.dsl.LogSecretScope
+import net.zomis.games.dsl.*
 import net.zomis.games.dsl.events.EventFactory
 import net.zomis.games.dsl.events.EventPriority
 import net.zomis.games.dsl.events.GameEventEffectScope
 import net.zomis.games.rules.Rule
 import net.zomis.games.rules.RuleSpec
-import kotlin.properties.PropertyDelegateProvider
+import net.zomis.games.rules.StateOwner
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty0
 
@@ -26,13 +23,11 @@ interface ActionRule<GameModel : Any, A : Any> {
  * @param GameModel The game model type
  * @param Owner Parameter passed to the modifier
  */
-interface GameModifierScope<GameModel: Any, Owner>: UsageScope {
+interface GameModifierScope<GameModel: Any, Owner> : UsageScope, StateOwner {
     // TODO: Add `var name/description: String ?`
     // TODO: Unify ways to specify rules. So that even Action-based `actionRules { ... }` is a "RuleHolder" / "GameModifier"
     val ruleHolder: Owner
     val game: GameModel
-
-    fun <T> state(initial: () -> T): PropertyDelegateProvider<GameModifierScope<GameModel, Owner>?, GameModifierImpl<GameModel, Owner>.Delegate<T>>
 
     fun conflictsWith(rule: Rule<GameModel, out Any>)
     fun overrides(rule: Rule<GameModel, out Any>)
@@ -51,6 +46,8 @@ interface GameModifierScope<GameModel: Any, Owner>: UsageScope {
     fun <A: Any> action(action: ActionDefinition<GameModel, A>, definition: GameFlowActionScope<GameModel, A>.() -> Unit)
     fun <A: Any> action(action: ActionDefinition<GameModel, A>): ActionRule<GameModel, A>
     fun <A: Any> action(action: ActionType<GameModel, A>, definition: GameFlowActionScope<GameModel, A>.() -> Unit)
+    fun <C: Any> config(config: GameConfig<C>): C
+
     // enable/disable entire rule, enable/disable part of rule, change some value - e.g. how much cost reduction is applied
     fun allActionsPrecondition(precondition: ActionOptionsScope<GameModel>.() -> Boolean)
     fun onNoActions(function: () -> Unit)

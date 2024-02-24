@@ -270,11 +270,16 @@ class GameCreatorContext<T: ContextHolder>(val gameType: String, val function: G
             step("no-op step") {}
         }
     }
-    private val configs = mutableListOf<GameConfig<Any>>()
+    private val configs = mutableListOf<GameConfig<out Any>>()
     private val context = GameDslContext<T>(gameType)
+    private var baseRule: ((T) -> RuleSpec<T, Unit>)? = null
 
     override fun players(players: IntRange) {
         this.playerRange = players
+    }
+
+    override fun baseRule(rule: (T) -> RuleSpec<T, Unit>) {
+        this.baseRule = rule
     }
 
     override fun init(function: ContextHolder.() -> T) {
@@ -287,8 +292,12 @@ class GameCreatorContext<T: ContextHolder>(val gameType: String, val function: G
 
     override fun <E: Any> config(key: String, default: () -> E): GameConfig<E> {
         val config = GameConfigImpl(key, default)
-        this.configs.add(config as GameConfig<Any>)
+        addConfig(config)
         return config
+    }
+
+    override fun <C : Any> addConfig(config: GameConfig<C>) {
+        this.configs.add(config)
     }
 
     override val scorers: ScorerFactory<T> = context.scorers
@@ -314,6 +323,10 @@ class GameCreatorContext<T: ContextHolder>(val gameType: String, val function: G
                     this@GameCreatorContext.init.invoke(ContextHolderImpl(context))
                 }
             }
+            val mainRule = this@GameCreatorContext.baseRule
+            if (mainRule != null) {
+                baseRule(mainRule)
+            }
             gameFlow {
                 this@GameCreatorContext.gameFlow.invoke(this)
             }
@@ -336,7 +349,10 @@ interface GameCreatorContextScope<T: Any>: UsageScope {
     fun players(players: IntRange)
     fun init(function: ContextHolder.() -> T)
     fun gameFlow(function: suspend GameFlowScope<T>.() -> Unit)
+    fun baseRule(rule: (T) -> RuleSpec<T, Unit>)
     fun <E : Any> config(key: String, default: () -> E): GameConfig<E>
     fun ai(name: String, block: GameAIScope<T>.() -> Unit): GameAI<T>
+    fun <C : Any> addConfig(config: GameConfig<C>)
+
     val scorers: ScorerFactory<T>
 }

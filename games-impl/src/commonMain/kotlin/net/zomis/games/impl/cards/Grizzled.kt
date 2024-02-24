@@ -21,6 +21,9 @@ import net.zomis.games.dsl.Viewable
 import net.zomis.games.dsl.flow.GameFlowStepScope
 import net.zomis.games.dsl.flow.GameModifierScope
 import net.zomis.games.dsl.flow.SmartActionDsl
+import net.zomis.games.dsl.impl.GameConfigImpl
+import net.zomis.games.rules.Rule
+import net.zomis.games.rules.RuleSpec
 import kotlin.math.ceil
 
 object Grizzled {
@@ -38,6 +41,7 @@ object Grizzled {
         fun toStateString() = support?.name ?: "null"
     }
     val factory = GamesApi.gameCreator(Model::class)
+    val trapsConfig = factory.config("traps") { true }
     val playAction = factory.action("play", GrizzledCard::class).serializer { it.toStateString() }
     val withdraw = factory.action("withdraw", WithdrawAction::class).serializer { it.toStateString() }
     val giveSpeech = factory.action("speech", Threat::class)
@@ -70,7 +74,7 @@ object Grizzled {
         val traumas = Threat.values().filter { it.weather }.map { GrizzledCard(hardKnock + it, "Trauma ${it.name}", it.name) }
         val frenzied: GrizzledCard = GrizzledCard(hardKnock, "Frenzied", "At the beginning of the mission, you must draw 2 extra cards (from trial to hand)") {
             on(StartMission::class).perform {
-                game.trials.top(replayable, "frenzied",2).forEach { it.moveTo(ruleHolder.owner.hand) }
+                game.trials.top(replayable, "frenzied",2).forEach { it.moveTo(ruleHolder.hand) }
             }
         }
         val wounded = GrizzledCard(hardKnock * 2, "Wounded", "Counts as 2 hard knocks")
@@ -97,30 +101,30 @@ object Grizzled {
             }
         }
         val selfish = GrizzledCard(hardKnock, "Selfish", "Your support tile is always redirected to yourself") {
-            val owner = this.ruleHolder.owner
+            val owner = this.ruleHolder
             on(Support::class).mutate {
                 event.supportedPlayers[owner] = owner
             }
         }
         val mute = GrizzledCard(hardKnock, "Mute", "You can no longer speak or communicate with other players in any way. You may not use a speech") {
-            val owner = this.ruleHolder.owner
+            val owner = this.ruleHolder
             action(giveSpeech) {
                 precondition { playerIndex != owner.playerIndex }
             }
         }
         val fragile = GrizzledCard(hardKnock, "Fragile", "Other players cannot withdraw as long as they have any cards in hand") {
             action(withdraw) {
-                precondition { playerIndex == ruleHolder.owner.playerIndex || game.players[playerIndex].hand.isEmpty() }
+                precondition { playerIndex == ruleHolder.playerIndex || game.players[playerIndex].hand.isEmpty() }
             }
         }
         val prideful = GrizzledCard(hardKnock, "Prideful", "You may withdraw only if your hand is empty, or if you are the last one still in the mission") {
-            val owner = ruleHolder.owner
+            val owner = ruleHolder
             action(withdraw) {
                 precondition { owner.playerIndex != playerIndex || owner.hand.isEmpty() || game.players.count { it.inMission } == 1 }
             }
         }
         val merryChristmas = GrizzledCard(ResourceMap.empty(), "Merry Christmas", "Discard a hard knock card from yourself or another player") {
-            val owner = this.ruleHolder.owner
+            val owner = this.ruleHolder
             onActivate {
                 meta.injectStep("Discard a hard knock card from yourself or another player") {
                     action(merryChristmasAction) {
@@ -131,7 +135,7 @@ object Grizzled {
                             }
                         }
                         perform {
-                            val zone = game.players.map { it.hardKnocks }.first { it.cards.contains(action.parameter) }
+                            val zone = game.players.map { it.hardKnocks }.single { it.cards.contains(action.parameter) }
                             zone.card(action.parameter).moveTo(game.discarded)
                         }
                     }
@@ -140,22 +144,22 @@ object Grizzled {
         }
         val hardheaded = GrizzledCard(hardKnock, "Hardheaded", "You cannot withdraw as long as you have 2 or more cards in hand") {
             action(withdraw) {
-                precondition { ruleHolder.owner.playerIndex != playerIndex || ruleHolder.owner.hand.size < 2 }
+                precondition { ruleHolder.playerIndex != playerIndex || ruleHolder.hand.size < 2 }
             }
         }
         val absentMinded = GrizzledCard(hardKnock, "Absent-minded", "Before withdrawing, choose and remove one of your support tiles from the game") {
-            var discardedTile: Boolean by this.state { false }
+            var discardedTile: Boolean by this.state2<Boolean> { false }
 
             action(withdraw) {
-                precondition { playerIndex != ruleHolder.owner.playerIndex || discardedTile }
+                precondition { playerIndex != ruleHolder.playerIndex || discardedTile }
                 perform {
                     discardedTile = false
                 }
             }
             action(absentMindedAction) {
                 precondition { playerIndex == game.currentPlayerIndex && game.currentPlayer.inMission }
-                precondition { playerIndex == ruleHolder.owner.playerIndex && !discardedTile }
-                options { ruleHolder.owner.supportTiles.cards }
+                precondition { playerIndex == ruleHolder.playerIndex && !discardedTile }
+                options { ruleHolder.supportTiles.cards }
                 perform {
                     discardedTile = true
                 }
@@ -164,20 +168,20 @@ object Grizzled {
                     game.currentPlayerIndex = (game.currentPlayerIndex + game.players.size - 1) % game.players.size
                 }
                 perform {
-                    ruleHolder.owner.supportTiles.cards.remove(action.parameter)
+                    ruleHolder.supportTiles.cards.remove(action.parameter)
                 }
             }
         }
         val tyrannical = GrizzledCard(hardKnock, "Tyrannical", "Take the mission leader role and keep it, preventing the distribution of speeches") {
             onActivate {
-                game.missionLeaderIndex = ruleHolder.owner.playerIndex
+                game.missionLeaderIndex = ruleHolder.playerIndex
             }
-            on(ChangeLeader::class).mutate { event.nextPlayer = ruleHolder.owner.playerIndex }
+            on(ChangeLeader::class).mutate { event.nextPlayer = ruleHolder.playerIndex }
         }
         val clumsy = GrizzledCard(hardKnock, "Clumsy", "After your withdrawal, you must draw a trial card and play it") {
             action(withdraw) {
                 perform {
-                    if (action.playerIndex != ruleHolder.owner.playerIndex) return@perform
+                    if (action.playerIndex != ruleHolder.playerIndex) return@perform
                     if (game.trials.isEmpty()) return@perform
                     val card = game.trials.top(replayable, "clumsy", 1).first()
                     game.playCardEvent.invoke(PlayCard(playerIndex, game.trials, card.card, trapsEnabled = false))
@@ -186,7 +190,7 @@ object Grizzled {
         }
         val fearful = GrizzledCard(hardKnock, "Fearful", "On your turn, you must withdraw if 2 identical threats are active") {
             allActionsPrecondition {
-                if (playerIndex != ruleHolder.owner.playerIndex) return@allActionsPrecondition true
+                if (playerIndex != ruleHolder.playerIndex) return@allActionsPrecondition true
                 if (game.activeThreats.filter { it.value >= 2 }.isEmpty()) return@allActionsPrecondition true
                 actionType == withdraw.name
             }
@@ -240,13 +244,12 @@ object Grizzled {
         Threat.Shell + Threat.Rain,
         Threat.Snow + Threat.Rain,
     ).map { GrizzledCard(id = 0, threats = it, name = null, description = null) }
-    data class PlayedGrizzledCard(val owner: Player, val card: GrizzledCard)
     class GrizzledCard(
         val threats: ResourceMap,
         val name: String?,
         val description: String?,
         var id: Int = 0,
-        val hardKnockEffects: (GameModifierScope<Model, PlayedGrizzledCard>.() -> Unit)? = null
+        val hardKnockEffects: RuleSpec<Model, Player>? = null
     ): GameSerializable, Viewable {
         override fun serialize(): Any = toStateString()
 
@@ -267,7 +270,7 @@ object Grizzled {
         val inMission: Boolean get() = !withdrawn
         var character by component<Character?> { null }
         var charmAvailable by component { true }
-        val hardKnocks by cards<GrizzledCard>().publicView { z -> z.cards.map { it.toView(null) } }
+        val hardKnocks by cards<GrizzledCard>().publicView { z -> z.cards.map { it.toView(playerIndex) } }
         val hand by cards<GrizzledCard>().privateView(playerIndex) { z -> z.cards.map { it.toView(playerIndex) } }.publicView { it.size }
         val supportTiles by cards<SupportTile>().privateView(playerIndex) { it.cards }.publicView { it.size }
         var placedSupportTile by component<SupportTile?> { null }.privateView(playerIndex) { it ?: "" }
@@ -388,6 +391,17 @@ object Grizzled {
         val changeLeaderEvent = event<ChangeLeader>()
         val playCardEvent = event<PlayCard>()
 
+        val baseRule by rule<Model, Unit>(Unit) {
+            generateId.invoke(this)
+            playCard.invoke(this)
+
+            for (player in players.shifted(currentPlayerIndex + 1).filter { it.inMission }) {
+                for (card in player.hardKnocks.cards) {
+//                    card.hardKnockEffects.applyRule(player, card)
+                }
+            }
+        }
+
         val discarded: CardZone<GrizzledCard> by cards()
         val activeThreats: ResourceMap by dynamicValue {
             val cards = players.filter { it.inMission }.flatMap { it.hardKnocks.cards } + playedCards.cards
@@ -451,36 +465,35 @@ object Grizzled {
         fun missionFailed(): Boolean = activeThreats.entries().any { it.value >= 3 }
     }
 
+    private val generateId: RuleSpec<Model, Unit> = {
+        on(PlayCard::class).perform {
+            val player = game.players[event.playerIndex]
+            if (event.card.id == 0) event.card.id = player.idGenerator.invoke()
+        }
+    }
+    private val playCard: RuleSpec<Model, Unit> = {
+        on(PlayCard::class).perform {
+            val player = game.players[event.playerIndex]
+            if (event.card.isHardKnock()) {
+                event.fromZone.card(event.card).moveTo(player.hardKnocks)
+            } else {
+                event.fromZone.card(event.card).moveTo(game.playedCards)
+                if (config(trapsConfig) && event.trapsEnabled && event.card.threats.has(Trap, 1) && game.trials.isNotEmpty()) {
+                    game.playCardEvent.invoke(
+                        PlayCard(event.playerIndex, game.trials, game.trials.top(replayable, "trap", 1).first().card, trapsEnabled = false)
+                    )
+                }
+            }
+        }
+    }
+
     val game = GamesApi.gameContext("Grizzled", Model::class) {
-        val trapsConfig = this.config("traps") { true }
+        addConfig(trapsConfig)
         val startingTrialsConfig = this.config("startingTrials") { 25 }
         players(3..5)
         init { Model(config(startingTrialsConfig), ctx) }
+        baseRule(Model::baseRule)
         gameFlow {
-            meta.addRule(game) {
-                on(PlayCard::class).perform {
-                    val player = game.players[event.playerIndex]
-                    if (event.card.id == 0) event.card.id = player.idGenerator.invoke()
-                    if (event.card.isHardKnock()) {
-                        event.fromZone.card(event.card).moveTo(player.hardKnocks)
-                        val effect = event.card.hardKnockEffects
-                        if (effect != null) {
-                            meta.addRule(PlayedGrizzledCard(player, event.card)) {
-                                this.removeWhen { !ruleHolder.owner.hardKnocks.cards.contains(this.ruleHolder.card) }
-                                this.activeWhile { ruleHolder.owner.inMission }
-                                effect.invoke(this)
-                            }
-                        }
-                    } else {
-                        event.fromZone.card(event.card).moveTo(game.playedCards)
-                        if (config(trapsConfig) && event.trapsEnabled && event.card.threats.has(Trap, 1) && game.trials.isNotEmpty()) {
-                            game.playCardEvent.invoke(
-                                PlayCard(event.playerIndex, game.trials, game.trials.top(replayable, "trap", 1).first().card, trapsEnabled = false)
-                            )
-                        }
-                    }
-                }
-            }
             loop {
                 step("setup mission") {
 
@@ -585,7 +598,7 @@ object Grizzled {
 
             val playersGivenSupport = supportedPlayers.entries.groupingBy { it.value }.eachCount()
             val mostSupported = playersGivenSupport.entries.bestOf { it.value.toDouble() }
-            mostSupported.forEach {
+            playersGivenSupport.forEach {
                 log { "${player(it.key.playerIndex)} was supported by ${it.value} players" }
             }
             println("supportDsl step2 lambda $successfulMission")

@@ -5,8 +5,9 @@ import net.zomis.games.dsl.flow.GameFlowRulesScope
 import net.zomis.games.dsl.flow.GameFlowScope
 import net.zomis.games.dsl.impl.GameAI
 import net.zomis.games.dsl.impl.GameAIScope
+import net.zomis.games.dsl.impl.GameConfigImpl
 import net.zomis.games.dsl.impl.GameMarker
-import net.zomis.games.rules.Rule
+import net.zomis.games.rules.RuleSpec
 import net.zomis.games.scorers.ScorerFactory
 import kotlin.reflect.KClass
 
@@ -75,7 +76,7 @@ interface GameDslScope<T : Any> : UsageScope {
     fun gameFlowRules(flowRulesDsl: GameFlowRulesDsl<T>)
     fun <E: Any> config(key: String, default: () -> E): GameConfig<E>
     fun ai(name: String, block: GameAIScope<T>.() -> Unit): GameAI<T>
-    fun baseRule(rule: (T) -> Rule<T, out Any>)
+    fun baseRule(rule: (T) -> RuleSpec<T, Unit>)
 
     val scorers: ScorerFactory<T>
 }
@@ -88,4 +89,5 @@ class GameCreator<T : Any>(val modelClass: KClass<T>) {
         = GameActionCreator(name, parameterType, parameterType, {it}, {it as A})
     fun singleAction(name: String) = this.action(name, Unit::class)
     fun <VM> viewModel(viewModelCreator: (model: T, playerIndex: Int) -> VM): ViewModel<T, VM> = ViewModel(viewModelCreator)
+    fun <C : Any> config(key: String, default: () -> C): GameConfig<C> = GameConfigImpl(key, default)
 }

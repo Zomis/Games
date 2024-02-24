@@ -17,12 +17,13 @@ import net.zomis.games.dsl.flow.actions.SmartActionBuilder
 import net.zomis.games.dsl.flow.actions.SmartActionScope
 import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.listeners.ReplayListener
+import net.zomis.games.rules.StandaloneStateOwner
 import net.zomis.games.scorers.Scorer
 import net.zomis.games.scorers.ScorerController
 
 const val DEBUG = false
 
-inline fun debugPrint(message: String) {
+fun debugPrint(message: String) {
     if (DEBUG) println(message)
 }
 
@@ -180,7 +181,7 @@ class GameImpl<T : Any>(
     private val replayState = ReplayState(stateKeeper)
     override val replayable: ReplayState get() = replayState
     private val rules = GameActionRulesContext(this)
-    private val gameModifiers: MutableList<GameModifierImpl<T, Any>> = mutableListOf() // TODO: Unused?
+    private val gameModifiers: MutableList<GameModifierImpl<T, out Any?>> = mutableListOf() // TODO: Unused?
 
     override suspend fun start(coroutineScope: CoroutineScope) {
         if (this.actionsInputJob != null) throw IllegalStateException("Game already started")
@@ -238,14 +239,14 @@ class GameImpl<T : Any>(
 
     override suspend fun copy(): GameForkResult<T> = copier.invoke()
 
-    override fun injectStep(name: String, step: suspend GameFlowStepScope<T>.() -> Unit) {
+    override fun injectStep(name: String, dsl: suspend GameFlowStepScope<T>.() -> Unit) {
         TODO("Not yet implemented for GameImpl")
     }
 
     override fun <Owner> addRule(owner: Owner, rule: GameModifierScope<T, Owner>.() -> Unit) {
-        val ruleContext = GameModifierImpl(this, owner, rule)
+        val ruleContext = GameModifierImpl(this, owner, rule, StandaloneStateOwner())
         ruleContext.fire()
-        this.gameModifiers.add(ruleContext as GameModifierImpl<T, Any>)
+        this.gameModifiers.add(ruleContext)
         ruleContext.executeOnActivate()
     }
 

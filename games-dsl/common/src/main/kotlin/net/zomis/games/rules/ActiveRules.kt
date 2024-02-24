@@ -1,11 +1,6 @@
 package net.zomis.games.rules
 
 import net.zomis.games.dsl.flow.GameMetaScope
-import net.zomis.games.dsl.flow.GameModifierImpl
-import net.zomis.games.dsl.flow.GameModifierScope
-
-typealias RuleSpec<GameModel, Owner> = GameModifierScope<GameModel, Owner>.() -> Unit
-typealias Rule<GameModel, Owner> = GameModifierImpl<GameModel, Owner>
 
 class ActiveRules<GameModel : Any>(private val metaScope: GameMetaScope<GameModel>) {
 

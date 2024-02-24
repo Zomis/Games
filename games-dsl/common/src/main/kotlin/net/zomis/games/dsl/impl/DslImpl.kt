@@ -5,6 +5,7 @@ import net.zomis.games.dsl.*
 import net.zomis.games.dsl.flow.GameFlowImpl
 import net.zomis.games.dsl.flow.GameForkResult
 import net.zomis.games.rules.Rule
+import net.zomis.games.rules.RuleSpec
 import net.zomis.games.scorers.Scorer
 import net.zomis.games.scorers.ScorerController
 import net.zomis.games.scorers.ScorerFactory
@@ -191,7 +192,7 @@ class GameDslContext<T : Any>(val gameType: String) : GameDslScope<T> {
     private var configs = mutableListOf<GameConfig<Any>>()
     val testCases: MutableList<GameTestCaseContext<T>> = mutableListOf()
     override var useRandomAI = true
-    private var baseRule: (T) -> Rule<T, out Any>? = { null }
+    private var baseRule: (T) -> RuleSpec<T, Unit>? = { null }
 
     val model = GameModelContext<T, Any>(configs)
 
@@ -240,7 +241,7 @@ class GameDslContext<T : Any>(val gameType: String) : GameDslScope<T> {
         return config
     }
 
-    override fun baseRule(rule: (T) -> Rule<T, out Any>) {
+    override fun baseRule(rule: (T) -> RuleSpec<T, Unit>) {
         this.baseRule = rule
         if (flowDsl == null) {
             flowDsl = {
@@ -249,7 +250,7 @@ class GameDslContext<T : Any>(val gameType: String) : GameDslScope<T> {
         }
     }
 
-    fun getBaseRule(model: T): Rule<T, out Any>? = baseRule.invoke(model)
+    fun getBaseRule(model: T): RuleSpec<T, Unit>? = baseRule.invoke(model)
 
     val createdScorers = mutableListOf<Scorer<T, out Any>>()
     val createdAIs = mutableListOf<ScorerController<T>>()

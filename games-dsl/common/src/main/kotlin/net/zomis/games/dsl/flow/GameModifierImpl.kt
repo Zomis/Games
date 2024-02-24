@@ -6,6 +6,7 @@ import net.zomis.games.dsl.impl.LogActionContext
 import net.zomis.games.dsl.impl.LogContext
 import net.zomis.games.rules.Rule
 import net.zomis.games.rules.RuleSpec
+import net.zomis.games.rules.StateOwner
 import kotlin.properties.PropertyDelegateProvider
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
@@ -22,23 +23,19 @@ class GameModifierImpl<GameModel: Any, Owner>(
     private val meta: GameMetaScope<GameModel>,
     val owner: Owner,
     private val ruleSpec: RuleSpec<GameModel, Owner>,
-): GameModifierScope<GameModel, Owner> {
+    private val stateOwner: StateOwner,
+): GameModifierScope<GameModel, Owner>, StateOwner by stateOwner {
     private var active: Boolean = false
 
     override val ruleHolder: Owner get() = owner
     override val game: GameModel get() = meta.game
     private val actionTypesEnabled = mutableMapOf<ActionType<GameModel, out Any>, Boolean>()
-    private val states = mutableMapOf<String, Any>()
     private val activationEffects = mutableListOf<GameModifierApplyScope<GameModel, Owner>.() -> Unit>()
     private val stateChecksBeforeAction = mutableListOf<GameModifierApplyScope<GameModel, Owner>.() -> Unit>()
     private val actionModifiers = mutableListOf<ActionModifier<GameModel>>()
     private val activeConditions = mutableListOf<GameModifierScope<GameModel, Owner>.() -> Boolean>()
     private var removeCondition: (GameModifierScope<GameModel, Owner>.() -> Boolean)? = null
     private val globalPreconditions = mutableListOf<ActionOptionsScope<GameModel>.() -> Boolean>()
-
-    override fun <T> state(initial: () -> T): PropertyDelegateProvider<GameModifierScope<GameModel, Owner>?, Delegate<T>> {
-        return this.addState(initial.invoke())
-    }
 
     override fun enableAction(actionType: ActionType<GameModel, out Any>) {
         actionTypesEnabled[actionType] = true
@@ -66,24 +63,6 @@ class GameModifierImpl<GameModel: Any, Owner>(
         }
     }
 
-    inner class Delegate<T>(var value: T): ReadWriteProperty<GameModifierScope<GameModel, Owner>?, T> {
-        override fun getValue(thisRef: GameModifierScope<GameModel, Owner>?, property: KProperty<*>): T {
-            return this.value
-        }
-
-        override fun setValue(thisRef: GameModifierScope<GameModel, Owner>?, property: KProperty<*>, value: T) {
-            this.value = value
-        }
-    }
-    private fun <T> addState(initial: T): PropertyDelegateProvider<GameModifierScope<GameModel, Owner>?, Delegate<T>> {
-        return PropertyDelegateProvider { thisRef, property ->
-            println("GameModifierImpl.addState: thisRef $thisRef")
-            val propertyName = property.name
-            states[propertyName] = initial as Any
-            Delegate(initial)
-        }
-    }
-
     override fun activeWhile(condition: GameModifierScope<GameModel, Owner>.() -> Boolean) {
         this.activeConditions.add(condition)
     }
@@ -104,6 +83,8 @@ class GameModifierImpl<GameModel: Any, Owner>(
         meta.events.addEventListener(priority, impl)
         return impl
     }
+
+    override fun <C : Any> config(config: GameConfig<C>): C = meta.config(config)
 
     override fun <A : Any> action(action: ActionDefinition<GameModel, A>): ActionRule<GameModel, A> {
         TODO("Not yet implemented")

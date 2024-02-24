@@ -15,6 +15,9 @@ import net.zomis.games.dsl.flow.actions.SmartActionContext
 import net.zomis.games.dsl.flow.actions.SmartActionScope
 import net.zomis.games.dsl.impl.*
 import net.zomis.games.rules.ActiveRules
+import net.zomis.games.rules.NoState
+import net.zomis.games.rules.Rule
+import net.zomis.games.rules.StandaloneStateOwner
 
 private const val ECS_VIEW_KEY = ""
 const val VIEWMODEL_VIEW_KEY = "_vm"
@@ -81,6 +84,7 @@ class GameFlowImpl<T: Any>(
     }
 
     override val meta: GameMetaScope<T> get() = this
+    private val baseRule = Rule(this, Unit, setupContext.getBaseRule(model) ?: {}, NoState)
 
     override val actionsInput: Channel<Actionable<T, out Any>> = Channel()
     var job: Job? = null
@@ -117,7 +121,7 @@ class GameFlowImpl<T: Any>(
     }
 
     override fun <Owner> addRule(owner: Owner, rule: GameModifierScope<T, Owner>.() -> Unit) {
-        val ruleContext = GameModifierImpl(this, owner, rule)
+        val ruleContext = GameModifierImpl(this, owner, rule, StandaloneStateOwner())
         ruleContext.fire()
         this.rules.add(ruleContext)
         ruleContext.executeOnActivate()
@@ -184,7 +188,7 @@ class GameFlowImpl<T: Any>(
 
     suspend fun nextAction(): Actionable<T, Any>? {
         this.unfinishedFeedback = copyUnfinishedFeedbackWithUpdatedState()
-        activeRules.fireRules(this.setupContext.getBaseRule(model))
+        activeRules.fireRules(baseRule)
         runRules(GameFlowRulesState.BEFORE_RETURN)
         if (isGameOver()) {
             this.actionDone()
