@@ -96,110 +96,123 @@ object SkullGame {
             allActions.precondition { playerIndex == game.currentPlayerIndex }
             fun nextTurn(game: SkullGameModel) { game.currentPlayerIndex = game.currentPlayerIndex.next(game.players.size) }
 
-            action(play).options { game.currentPlayer.hand.cards }
-            action(play).effect { game.currentPlayer.hand.card(action.parameter).moveTo(game.currentPlayer.played) }
+            action(play) {
+                options { game.currentPlayer.hand.cards }
+                effect { game.currentPlayer.hand.card(action.parameter).moveTo(game.currentPlayer.played) }
+                requires { game.players.all { it.bet == 0 } }
+                effect {
+                    logSecret(action.playerIndex) { "$player played $action" }.publicLog { "$player played a card" }
+                }
+                after { nextTurn(game) }
+            }
+
             allActions.precondition {
                 actionType == play.name
                     || game.currentPlayer.played.isNotEmpty()
                     || game.currentPlayer.chosen.isNotEmpty()
                     || game.choseOwnSkull
             }
-            action(play).requires { game.players.all { it.bet == 0 } }
-            action(bet).effect { game.currentPlayer.bet = action.parameter }
-            action(bet).options { (game.players.maxOf { it.bet } + 1)..game.players.sumOf { it.played.size } }
-            action(pass).requires { game.players.any { it.bet > 0 } }
-            action(pass).requires { game.players.count { !it.pass } > 1 }
-            action(pass).effect { game.currentPlayer.pass = true }
-            action(pass).effect { log { "$player passes" } }
+
+            action(bet) {
+                effect { game.currentPlayer.bet = action.parameter }
+                options { (game.players.maxOf { it.bet } + 1)..game.players.sumOf { it.played.size } }
+                requires {
+                    val maxBet = game.players.maxByOrNull { it.bet }!!.bet
+                    game.currentPlayer.bet < maxBet || maxBet == 0
+                }
+                after {
+                    if (game.players.sumOf { it.played.size } == action.parameter) {
+                        // Auto pass
+                        game.players.minus(game.players[action.playerIndex]).forEach { it.pass = true }
+                    }
+                }
+                effect { log { "$player bets $action" } }
+                after { nextTurn(game) }
+            }
+            action(pass) {
+                requires { game.players.any { it.bet > 0 } }
+                requires { game.players.count { !it.pass } > 1 }
+                effect { game.currentPlayer.pass = true }
+                effect { log { "$player passes" } }
+                after { nextTurn(game) }
+            }
             allActions.after {
                 if (!game.choseOwnSkull) {
                     while (game.currentPlayer.pass || game.currentPlayer.totalCards == 0) nextTurn(game)
                 }
             }
-            action(bet).requires {
-                val maxBet = game.players.maxByOrNull { it.bet }!!.bet
-                game.currentPlayer.bet < maxBet || maxBet == 0
-            }
-            action(bet).after {
-                if (game.players.sumBy { it.played.size } == action.parameter) {
-                    // Auto pass
-                    game.players.minus(game.players[action.playerIndex]).forEach { it.pass = true }
+
+            action(choose) {
+                precondition { game.currentPlayer.bet > 0 && !game.currentPlayer.pass && game.players.count { !it.pass } == 1 }
+                requires { action.parameter == game.currentPlayer || game.currentPlayer.played.cards.isEmpty() }
+                requires { action.parameter.played.cards.isNotEmpty() }
+                options { game.players.filter { it.played.cards.isNotEmpty() } }
+                effect {
+                    val player = action.parameter
+                    val chosenCard = player.played.cards.last()
+                    player.played.card(chosenCard).moveTo(player.chosen)
+                    log { "${this.player} choose ${player(action.index)} and revealed $chosenCard" }
                 }
-            }
-
-            action(play).effect {
-                logSecret(action.playerIndex) { "$player played $action" }.publicLog { "$player played a card" }
-            }
-            action(play).after { nextTurn(game) }
-            action(pass).after { nextTurn(game) }
-            action(bet).effect { log { "$player bets $action" } }
-            action(bet).after { nextTurn(game) }
-
-            action(choose).effect {
-                val player = action.parameter
-                val chosenCard = player.played.cards.last()
-                player.played.card(chosenCard).moveTo(player.chosen)
-                log { "${this.player} choose ${player(action.index)} and revealed $chosenCard" }
-            }
-            action(choose).requires { action.parameter == game.currentPlayer || game.currentPlayer.played.cards.isEmpty() }
-            action(choose).precondition { game.currentPlayer.bet > 0 && !game.currentPlayer.pass && game.players.count { !it.pass } == 1 }
-            action(choose).requires { action.parameter.played.cards.isNotEmpty() }
-            action(choose).options { game.players.filter { it.played.cards.isNotEmpty() } }
-            action(choose).after {
-                val skullPlayer = game.players.find { it.chosen.cards.contains(SkullCard.SKULL) }
-                if (skullPlayer != null) {
-                    game.choseOwnSkull = skullPlayer == game.currentPlayer
-                    if (game.choseOwnSkull) {
-                        log { "$player chose their own skull and will have to choose a card to discard" }
-                    }
-                    game.currentPlayer.chosen.moveAllTo(game.currentPlayer.hand)
-                    game.currentPlayer.played.moveAllTo(game.currentPlayer.hand)
-                    if (!game.choseOwnSkull) {
-                        game.currentPlayer.hand.random(replayable, 1, "lost") { it.name }.forEach {
-                            logSecret(action.playerIndex) { "$player lost a ${it.card}" }.publicLog { "$player lost a card" }
-                            it.remove()
+                after {
+                    val skullPlayer = game.players.find { it.chosen.cards.contains(SkullCard.SKULL) }
+                    if (skullPlayer != null) {
+                        game.choseOwnSkull = skullPlayer == game.currentPlayer
+                        if (game.choseOwnSkull) {
+                            log { "$player chose their own skull and will have to choose a card to discard" }
+                        }
+                        game.currentPlayer.chosen.moveAllTo(game.currentPlayer.hand)
+                        game.currentPlayer.played.moveAllTo(game.currentPlayer.hand)
+                        if (!game.choseOwnSkull) {
+                            game.currentPlayer.hand.random(replayable, 1, "lost") { it.name }.forEach {
+                                logSecret(action.playerIndex) { "$player lost a ${it.card}" }.publicLog { "$player lost a card" }
+                                it.remove()
+                            }
+                        }
+                        game.newRound() // reset boards, bets and pass values
+                        if (!game.config.bettingPlayerAlwaysStart) {
+                            game.currentPlayerIndex = skullPlayer.index
                         }
                     }
-                    game.newRound() // reset boards, bets and pass values
-                    if (!game.config.bettingPlayerAlwaysStart) {
-                        game.currentPlayerIndex = skullPlayer.index
+                }
+                after {
+                    if (game.players.flatMap { it.chosen.cards }.count { it == SkullCard.FLOWER } == game.currentPlayer.bet && game.currentPlayer.bet > 0) {
+                        game.currentPlayer.points++
+                        log { "$player completed the bet of ${game.currentPlayer.bet} and got a point!" }
+                        game.newRound()
+                        game.currentPlayerIndex = action.playerIndex
                     }
                 }
-            }
-            action(choose).after {
-                if (game.players.flatMap { it.chosen.cards }.count { it == SkullCard.FLOWER } == game.currentPlayer.bet && game.currentPlayer.bet > 0) {
-                    game.currentPlayer.points++
-                    log { "$player completed the bet of ${game.currentPlayer.bet} and got a point!" }
-                    game.newRound()
-                    game.currentPlayerIndex = action.playerIndex
-                }
-            }
-            action(choose).after {
-                if (game.currentPlayer.points == 2) {
-                    eliminations.result(game.currentPlayerIndex, WinResult.WIN)
-                    eliminations.eliminateRemaining(WinResult.LOSS)
+                after {
+                    if (game.currentPlayer.points == 2) {
+                        eliminations.result(game.currentPlayerIndex, WinResult.WIN)
+                        eliminations.eliminateRemaining(WinResult.LOSS)
+                    }
                 }
             }
 
             // If you lost to your own skull... choose a card to get rid of
-            action(discard).forceWhen { game.currentPlayer.totalCards > 0 && game.choseOwnSkull }
-            action(discard).options { game.currentPlayer.hand.cards }
-            action(discard).effect {
-                logSecret(action.playerIndex) { "$player discarded $action" }
-                game.currentPlayer.hand.card(action.parameter).remove()
-                game.choseOwnSkull = (game.currentPlayer.totalCards == 0) // Allow chooseNextPlayer action if player is eliminated
-                if (game.choseOwnSkull) {
-                    log { "$player was eliminated by their own skull and has to choose the player to go next" }
+            action(discard) {
+                forceWhen { game.currentPlayer.totalCards > 0 && game.choseOwnSkull }
+                options { game.currentPlayer.hand.cards }
+                effect {
+                    logSecret(action.playerIndex) { "$player discarded $action" }
+                    game.currentPlayer.hand.card(action.parameter).remove()
+                    game.choseOwnSkull = (game.currentPlayer.totalCards == 0) // Allow chooseNextPlayer action if player is eliminated
+                    if (game.choseOwnSkull) {
+                        log { "$player was eliminated by their own skull and has to choose the player to go next" }
+                    }
                 }
             }
 
-            action(chooseNextPlayer).forceWhen { game.currentPlayer.totalCards == 0 && game.config.selfEliminatedChooseNextPlayer && game.choseOwnSkull }
-            action(chooseNextPlayer).options { game.players.filter { it.totalCards > 0 } }
-            action(chooseNextPlayer).effect {
-                val nextPlayer = action.parameter.index
-                log { "$player chose ${player(nextPlayer)} to be the next player" }
-                game.choseOwnSkull = false
-                game.currentPlayerIndex = nextPlayer
+            action(chooseNextPlayer) {
+                forceWhen { game.currentPlayer.totalCards == 0 && game.config.selfEliminatedChooseNextPlayer && game.choseOwnSkull }
+                options { game.players.filter { it.totalCards > 0 } }
+                effect {
+                    val nextPlayer = action.parameter.index
+                    log { "$player chose ${player(nextPlayer)} to be the next player" }
+                    game.choseOwnSkull = false
+                    game.currentPlayerIndex = nextPlayer
+                }
             }
 
             allActions.after {

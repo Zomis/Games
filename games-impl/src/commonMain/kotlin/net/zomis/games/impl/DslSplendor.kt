@@ -252,15 +252,17 @@ object DslSplendor {
                 }
             }
 
-            action(buyReserved).options { game.currentPlayer.reserved.cards }
-            action(buyReserved).requires { game.currentPlayer.canBuy(action.parameter) }
-            action(buyReserved).effect {
-                val param = action.parameter
-                val card = game.currentPlayer.reserved.card(param)
-                val actualCost = game.currentPlayer.pay(card.card.costs)
-                game.stock += actualCost
-                card.moveTo(game.currentPlayer.owned)
-                log { "$player bought ${viewLink("a reserved card", "card", viewCard(card.card))}" }
+            action(buyReserved) {
+                options { game.currentPlayer.reserved.cards }
+                requires { game.currentPlayer.canBuy(action.parameter) }
+                effect {
+                    val param = action.parameter
+                    val card = game.currentPlayer.reserved.card(param)
+                    val actualCost = game.currentPlayer.pay(card.card.costs)
+                    game.stock += actualCost
+                    card.moveTo(game.currentPlayer.owned)
+                    log { "$player bought ${viewLink("a reserved card", "card", viewCard(card.card))}" }
+                }
             }
 
             action(discardMoney) {
@@ -275,50 +277,54 @@ object DslSplendor {
                 }
             }
 
-            action(reserve).options { game.board.cards }
-            action(reserve).requires { game.currentPlayer.reserved.size < 3 }
-            action(reserve).effect {
-                val card = game.board.card(action.parameter)
-                game.currentPlayer.reserved.cards.add(card.card)
-                val wildcardIfAvailable = if (game.stock.getOrDefault(MoneyType.WILDCARD) > 0) MoneyType.WILDCARD.toMoney(1) else ResourceMap.empty()
-                game.stock -= wildcardIfAvailable
-                game.currentPlayer.chips += wildcardIfAvailable
-                replaceCard(replayable, game, card.card)
-                logSecret(action.playerIndex) { "$player reserved ${viewLink("card", "card", viewCard(card.card))}" }
-                    .publicLog { "$player reserved a level ${card.card.level} card" }
+            action(reserve) {
+                options { game.board.cards }
+                requires { game.currentPlayer.reserved.size < 3 }
+                effect {
+                    val card = game.board.card(action.parameter)
+                    game.currentPlayer.reserved.cards.add(card.card)
+                    val wildcardIfAvailable = if (game.stock.getOrDefault(MoneyType.WILDCARD) > 0) MoneyType.WILDCARD.toMoney(1) else ResourceMap.empty()
+                    game.stock -= wildcardIfAvailable
+                    game.currentPlayer.chips += wildcardIfAvailable
+                    replaceCard(replayable, game, card.card)
+                    logSecret(action.playerIndex) { "$player reserved ${viewLink("card", "card", viewCard(card.card))}" }
+                        .publicLog { "$player reserved a level ${card.card.level} card" }
+                }
             }
 
-            action(takeMoney).choose {
-                recursive(emptyList<MoneyType>()) {
-                    options({
-                        val all = MoneyType.withoutWildcard().asIterable()
-                        if (chosen.distinct().size == 2) all - chosen.toSet() else all
-                    }) { moneyType ->
-                        recursion(moneyType) { list, e -> list + e }
+            action(takeMoney) {
+                choose {
+                    recursive(emptyList<MoneyType>()) {
+                        options({
+                            val all = MoneyType.withoutWildcard().asIterable()
+                            if (chosen.distinct().size == 2) all - chosen.toSet() else all
+                        }) { moneyType ->
+                            recursion(moneyType) { list, e -> list + e }
+                        }
+                        until { chosen.size == 3 || (chosen.size == 2 && chosen.distinct().size == 1) }
+                        parameter { MoneyChoice(chosen) }
+                        intermediateParameter { chosen.size in 1..3 }
                     }
-                    until { chosen.size == 3 || (chosen.size == 2 && chosen.distinct().size == 1) }
-                    parameter { MoneyChoice(chosen) }
-                    intermediateParameter { chosen.size in 1..3 }
                 }
-            }
-            action(takeMoney).requires {
-                val moneyChosen = action.parameter.toMoney()
-                if (moneyChosen.getOrDefault(MoneyType.WILDCARD) >= 1) return@requires false
-                if (!game.stock.has(moneyChosen)) {
-                    return@requires false
+                requires {
+                    val moneyChosen = action.parameter.toMoney()
+                    if (moneyChosen.getOrDefault(MoneyType.WILDCARD) >= 1) return@requires false
+                    if (!game.stock.has(moneyChosen)) {
+                        return@requires false
+                    }
+                    val chosen = action.parameter.moneys
+                    return@requires when (chosen.size) {
+                        1 -> true
+                        2 -> chosen.distinct().size != 1 || game.stock.has(moneyChosen.plus(moneyChosen))
+                        3 -> chosen.distinct().size == chosen.size
+                        else -> false
+                    }
                 }
-                val chosen = action.parameter.moneys
-                return@requires when (chosen.size) {
-                    1 -> true
-                    2 -> chosen.distinct().size != 1 || game.stock.has(moneyChosen.plus(moneyChosen))
-                    3 -> chosen.distinct().size == chosen.size
-                    else -> false
+                effect {
+                    game.stock -= action.parameter.toMoney()
+                    game.currentPlayer.chips += action.parameter.toMoney()
+                    log { "$player took ${action.moneys}" }
                 }
-            }
-            action(takeMoney).effect {
-                game.stock -= action.parameter.toMoney()
-                game.currentPlayer.chips += action.parameter.toMoney()
-                log { "$player took ${action.moneys}" }
             }
 
             allActions.after {

@@ -19,11 +19,8 @@ import net.zomis.games.dsl.ActionRuleScope
 import net.zomis.games.dsl.GameSerializable
 import net.zomis.games.dsl.Viewable
 import net.zomis.games.dsl.flow.GameFlowStepScope
-import net.zomis.games.dsl.flow.GameModifierScope
 import net.zomis.games.dsl.flow.SmartActionDsl
-import net.zomis.games.dsl.impl.GameConfigImpl
 import net.zomis.games.rules.NoState
-import net.zomis.games.rules.Rule
 import net.zomis.games.rules.RuleSpec
 import kotlin.math.ceil
 
@@ -57,10 +54,10 @@ object Grizzled {
         DoubleLeft(-2), Left(-1), Right(1), DoubleRight(2);
 
         companion object {
-            private const val singles = 6
-            private const val doubles = 2
-            val onlySingles = (1..singles).flatMap { listOf(Left, Right) }
-            val allTiles = onlySingles + (1..doubles).flatMap { listOf(DoubleLeft, DoubleRight) }
+            private const val SINGLE_SUPPORT_TILES = 6
+            private const val DOUBLE_SUPPORT_TILES = 2
+            val onlySingles = (1..SINGLE_SUPPORT_TILES).flatMap { listOf(Left, Right) }
+            val allTiles = onlySingles + (1..DOUBLE_SUPPORT_TILES).flatMap { listOf(DoubleLeft, DoubleRight) }
         }
     }
 
@@ -85,7 +82,7 @@ object Grizzled {
 
         // Rule modifications
         val panicked = GrizzledCard(hardKnock, "Panicked", "During withdrawal, draw your support tile randomly") {
-            // TODO: This can instead be done during Support event.
+            // TODO: Instead remove the support tile choice from withdraw action, or force player to choose support tile == null
             action(withdraw) {
                 perform {
                     val player = game.players[action.playerIndex]
@@ -163,10 +160,6 @@ object Grizzled {
                 options { ruleHolder.supportTiles.cards }
                 perform {
                     discardedTile = true
-                }
-                perform {
-                    // TODO: This is an ugly way to prevent currentPlayerIndex from changing. Find a way to cancel the next change of currentPlayerIndex.
-                    game.currentPlayerIndex = (game.currentPlayerIndex + game.players.size - 1) % game.players.size
                 }
                 perform {
                     ruleHolder.supportTiles.cards.remove(action.parameter)
@@ -510,14 +503,18 @@ object Grizzled {
                 }
 
                 while (game.players.any { it.inMission }) {
-                    step("play") {
+                    val action = step("play") {
                         actionHandler(playAction, game.currentPlayer.playCard)
                         actionHandler(giveSpeech, game.currentPlayer.useSpeech)
                         actionHandler(useLuckyCharm, game.currentPlayer.useLuckyCharmDsl)
                         actionHandler(withdraw, game.currentPlayer.withdrawDsl)
                     }
-                    val nextPlayer = game.currentPlayerIndex.next(game.players.size) { game.players[it].inMission } ?: break
-                    game.currentPlayerIndex = nextPlayer
+                    when (action.action?.actionType) {
+                        playAction.name, giveSpeech.name, useLuckyCharm.name, withdraw.name -> {
+                            val nextPlayer = game.currentPlayerIndex.next(game.players.size) { game.players[it].inMission } ?: break
+                            game.currentPlayerIndex = nextPlayer
+                        }
+                    }
                     if (game.missionFailed()) break
                 }
                 if (game.missionFailed()) {

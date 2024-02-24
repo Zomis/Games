@@ -394,32 +394,36 @@ object DungeonMayhemDsl {
             }
             view("stack") { game.symbolsToResolve.map { it.symbol } }
 
-            action(play).options { game.currentPlayer.hand.cards }
-            action(play).effect { game.symbolsToResolve.remove(game.symbolsToResolve.firstOrNull { it.symbol == DungeonMayhemSymbol.PLAY_AGAIN }) }
-            action(play).effect {
-                log { "$player plays ${viewLink(action.name, "card", action.view())}" }
-                playTrigger(DungeonMayhemPlayCard(game.config, game.currentPlayer, game.currentPlayer,
-                    game.currentPlayer.hand.card(action.parameter)))
-            }
-            action(target).options { game.symbolsToResolve.mapNotNull { it.symbol.availableTargets(game) }.firstOrNull() ?: emptyList() }
-            action(target).forceWhen { game.symbolsToResolve.any { it.symbol.availableTargets(game) != null } }
-            action(target).effect {
-                val symbol = game.symbolsToResolve.first { it.symbol.availableTargets(game) != null }
-                val count = game.symbolsToResolve.count { it == symbol }
-                val playerTarget = game.players[action.parameter.player]
-                log {
-                    val target = when {
-                        action.discardedCard != null -> playerTarget.discard[action.discardedCard!!].card.let { viewLink(it.name, "card", it.view()) }
-                        action.shieldCard != null -> playerTarget.shields[action.shieldCard!!].card.card.let {
-                            player(playerTarget.index) + " " + viewLink(it.name, "card", it.view())
-                        }
-                        else -> player(playerTarget.index)
-                    }
-                    "$player targets $target with ${count}x ${symbol.symbol.name}"
+            action(play) {
+                options { game.currentPlayer.hand.cards }
+                effect { game.symbolsToResolve.remove(game.symbolsToResolve.firstOrNull { it.symbol == DungeonMayhemSymbol.PLAY_AGAIN }) }
+                effect {
+                    log { "$player plays ${viewLink(action.name, "card", action.view())}" }
+                    playTrigger(DungeonMayhemPlayCard(game.config, game.currentPlayer, game.currentPlayer,
+                        game.currentPlayer.hand.card(action.parameter)))
                 }
-                effectTrigger(DungeonMayhemEffect(game, playerTarget, symbol.player, symbol.symbol, count, action.parameter))
             }
-            action(target).after { if (game.symbolsToResolve.none { it.symbol == DungeonMayhemSymbol.ATTACK }) game.attackedPlayer = null }
+            action(target) {
+                options { game.symbolsToResolve.mapNotNull { it.symbol.availableTargets(game) }.firstOrNull() ?: emptyList() }
+                forceWhen { game.symbolsToResolve.any { it.symbol.availableTargets(game) != null } }
+                effect {
+                    val symbol = game.symbolsToResolve.first { it.symbol.availableTargets(game) != null }
+                    val count = game.symbolsToResolve.count { it == symbol }
+                    val playerTarget = game.players[action.parameter.player]
+                    log {
+                        val target = when {
+                            action.discardedCard != null -> playerTarget.discard[action.discardedCard!!].card.let { viewLink(it.name, "card", it.view()) }
+                            action.shieldCard != null -> playerTarget.shields[action.shieldCard!!].card.card.let {
+                                player(playerTarget.index) + " " + viewLink(it.name, "card", it.view())
+                            }
+                            else -> player(playerTarget.index)
+                        }
+                        "$player targets $target with ${count}x ${symbol.symbol.name}"
+                    }
+                    effectTrigger(DungeonMayhemEffect(game, playerTarget, symbol.player, symbol.symbol, count, action.parameter))
+                }
+                after { if (game.symbolsToResolve.none { it.symbol == DungeonMayhemSymbol.ATTACK }) game.attackedPlayer = null }
+            }
 
             allActions.after {
                 if (game.currentPlayer.hand.size == 0) {

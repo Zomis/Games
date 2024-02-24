@@ -207,88 +207,96 @@ object HanabiGame {
             }
             allActions.precondition { playerIndex == game.currentPlayer }
             allActions.precondition { game.turnsLeft != 0 }
-            action(discard).options { game.current.cards.indices }
-            action(discard).requires { game.clueTokens < game.config.maxClueTokens }
-            action(discard).effect {
-                val card = game.current.cards[action.parameter]
-                moveCard(replayable, game, card, game.colorData(card.card).discard)
-                log {
-                    "$player discarded ${viewLink(card.card.toStateString(), "card", card.card.known(true))}"
-                }
-                game.lastAffectedCards = mapOf(card.card.id to "discard")
-            }
-            action(discard).effect { game.increaseClueTokens() }
-
-            action(play).options { game.current.cards.indices }
-            action(play).requires { !game.config.namePlayingCard }
-            action(play).effect {
-                val card = game.current.cards[action.parameter]
-                val playArea = game.playAreaFor(card.card)
-                playCardTo(card, playArea, game, this)
-                if (playArea != null) {
+            action(discard) {
+                options { game.current.cards.indices }
+                requires { game.clueTokens < game.config.maxClueTokens }
+                effect {
+                    val card = game.current.cards[action.parameter]
+                    moveCard(replayable, game, card, game.colorData(card.card).discard)
                     log {
-                        "$player played ${viewLink(card.card.toStateString(), "card", card.card.known(true))}"
+                        "$player discarded ${viewLink(card.card.toStateString(), "card", card.card.known(true))}"
                     }
-                } else {
+                    game.lastAffectedCards = mapOf(card.card.id to "discard")
+                }
+                effect { game.increaseClueTokens() }
+            }
+            action(play) {
+                options { game.current.cards.indices }
+                requires { !game.config.namePlayingCard }
+                effect {
+                    val card = game.current.cards[action.parameter]
+                    val playArea = game.playAreaFor(card.card)
+                    playCardTo(card, playArea, game, this)
+                    if (playArea != null) {
+                        log {
+                            "$player played ${viewLink(card.card.toStateString(), "card", card.card.known(true))}"
+                        }
+                    } else {
+                        log {
+                            "$player tried to play ${viewLink(card.card.toStateString(), "card", card.card.known(true))} but failed"
+                        }
+                    }
+                    game.lastAffectedCards = mapOf(card.card.id to if (playArea != null) "play" else "fail")
+                }
+            }
+
+            action(playNamed) {
+                precondition { game.config.namePlayingCard }
+                effect {
+                    val playCard = game.current.cards[action.parameter.cardIndex]
+                    val playArea = game.playAreaFor(playCard.card).takeIf { playCard.card.color == action.parameter.color }
+                    playCardTo(playCard, playArea, game, this)
                     log {
-                        "$player tried to play ${viewLink(card.card.toStateString(), "card", card.card.known(true))} but failed"
+                        "$player played ${viewLink(playCard.card.toStateString(), "card", playCard.card.known(true))} as ${action.color}"
                     }
+                    game.lastAffectedCards = mapOf(playCard.card.id to if (playArea != null) "play" else "fail")
                 }
-                game.lastAffectedCards = mapOf(card.card.id to if (playArea != null) "play" else "fail")
-            }
-
-            action(playNamed).precondition { game.config.namePlayingCard }
-            action(playNamed).effect {
-                val playCard = game.current.cards[action.parameter.cardIndex]
-                val playArea = game.playAreaFor(playCard.card).takeIf { playCard.card.color == action.parameter.color }
-                playCardTo(playCard, playArea, game, this)
-                log {
-                    "$player played ${viewLink(playCard.card.toStateString(), "card", playCard.card.known(true))} as ${action.color}"
-                }
-                game.lastAffectedCards = mapOf(playCard.card.id to if (playArea != null) "play" else "fail")
-            }
-            action(playNamed).choose {
-                options({ game.current.cards.indices.toList() }) {cardIndex ->
-                    options({ game.colors.filter { c -> c.nextPlayable() != null }.map { c -> c.color } }) {color ->
-                        parameter(PlayNamedAction(cardIndex, color))
+                choose {
+                    options({ game.current.cards.indices.toList() }) {cardIndex ->
+                        options({ game.colors.filter { c -> c.nextPlayable() != null }.map { c -> c.color } }) {color ->
+                            parameter(PlayNamedAction(cardIndex, color))
+                        }
                     }
                 }
             }
 
-            action(giveClue).requires { action.parameter.player != action.playerIndex }
-            action(giveClue).requires { game.clueTokens > 0 }
-            action(giveClue).requires { game.allowClue(action.parameter) }
-            action(giveClue).effect { game.clueTokens-- }
-            action(giveClue).effect {
-                val cards = game.players[action.parameter.player].cards.cards
-                    .filter { it.matches(action.parameter) }
-                val actionPerformer = action.playerIndex
-                logSecret(action.parameter.player) {
-                    "${player(actionPerformer)} gave clue to ${player(action.player)}: ${cards.size}x ${action.text()}"
-                }.publicLog {
-                    "${player(actionPerformer)} gave clue to ${player(action.player)}: ${cards.size}x ${action.text()} - ${cards.filter { it.matches(action) }.joinToString(", ") {
-                        viewLink(it.toStateString(), "card", it.known(true))
-                    }}"
+            action(giveClue) {
+                requires { action.parameter.player != action.playerIndex }
+                requires { game.clueTokens > 0 }
+                requires { game.allowClue(action.parameter) }
+                effect { game.clueTokens-- }
+                effect {
+                    val cards = game.players[action.parameter.player].cards.cards
+                        .filter { it.matches(action.parameter) }
+                    val actionPerformer = action.playerIndex
+                    logSecret(action.parameter.player) {
+                        "${player(actionPerformer)} gave clue to ${player(action.player)}: ${cards.size}x ${action.text()}"
+                    }.publicLog {
+                        "${player(actionPerformer)} gave clue to ${player(action.player)}: ${cards.size}x ${action.text()} - ${cards.filter { it.matches(action) }.joinToString(", ") {
+                            viewLink(it.toStateString(), "card", it.known(true))
+                        }}"
+                    }
+                    game.reveal(action.parameter)
+                    game.lastAffectedCards = cards.associate { it.id to "clue" }
                 }
-                game.reveal(action.parameter)
-                game.lastAffectedCards = cards.associate { it.id to "clue" }
-            }
-            action(giveClue).choose {
-                options({ game.players.indices.toList().minus(game.currentPlayer) }) {player ->
-                    val textColor = "color"
-                    options({ listOf(textColor, "value") }) {clueMode ->
-                        if (clueMode == textColor) {
-                            options({ game.config.clueableColors() }) {color ->
-                                parameter(HanabiClue(player, color, null))
-                            }
-                        } else {
-                            options({ 1..5 }) {value ->
-                                parameter(HanabiClue(player, null, value))
+                choose {
+                    options({ game.players.indices.toList().minus(game.currentPlayer) }) {player ->
+                        val textColor = "color"
+                        options({ listOf(textColor, "value") }) {clueMode ->
+                            if (clueMode == textColor) {
+                                options({ game.config.clueableColors() }) {color ->
+                                    parameter(HanabiClue(player, color, null))
+                                }
+                            } else {
+                                options({ 1..5 }) {value ->
+                                    parameter(HanabiClue(player, null, value))
+                                }
                             }
                         }
                     }
                 }
             }
+
             allActions.after {
                 game.nextTurn()
                 if (game.turnsLeft == 0) {
