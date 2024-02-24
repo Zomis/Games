@@ -41,13 +41,14 @@ object CoupRuleBased {
     val challenge = factory.action("challenge", Unit::class)
     val ambassadorPutBack = factory.action("putBack", CoupCharacter::class).serializer { it.name }
     val loseInfluence = factory.action("lose", CoupCharacter::class).serializer { it.name }
+    val gainMoneyOnSuccessfulChallenge = factory.config("gainMoneyOnSuccessfulChallenge") { 0 }
 
     val game = factory.game("Coup") {
-        setup(CoupConfig::class) {
-            defaultConfig { CoupConfig(0) }
+        addConfig(gainMoneyOnSuccessfulChallenge)
+        setup {
             players(2..6)
             init {
-                Coup(config, playerCount)
+                Coup(playerCount)
             }
             onStart {
                 game.players.forEach { player ->
@@ -157,8 +158,9 @@ object CoupRuleBased {
                 // Get 1 coin (from the challenged player?) when winning a challenge
                 on(CoupChallengeResolved::class).perform {
                     if (!event.trueClaim) {
-                        game.players[event.challengedClaim.challengedBy].coins += game.config.gainMoneyOnSuccessfulChallenge
-                        if (game.config.gainMoneyOnSuccessfulChallenge > 0) {
+                        val gainMoney = config(gainMoneyOnSuccessfulChallenge)
+                        game.players[event.challengedClaim.challengedBy].coins += gainMoney
+                        if (gainMoney > 0) {
                             // TODO: Add action log "$player got $x coins for a successful challenge
                         }
                     }
@@ -575,7 +577,7 @@ object CoupRuleBased {
             expectTrue(game.stack.isEmpty())
         }
         testCase(players = 3) {
-            config("", CoupConfig(gainMoneyOnSuccessfulChallenge = 1))
+            config("gainMoneyOnSuccessfulChallenge", 1)
             state("start-0", listOf("CONTESSA", "ASSASSIN"))
             initialize()
             action(0, perform, CoupAction(game.players[0], CoupActionType.TAX))

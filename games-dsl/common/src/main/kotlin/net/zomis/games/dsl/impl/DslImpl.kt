@@ -217,6 +217,10 @@ class GameDslContext<T : Any>(val gameType: String) : GameDslScope<T> {
         this.flowDsl = flowDsl
     }
 
+    override fun <C : Any> addConfig(config: GameConfig<C>) {
+        this.configs.add(config as GameConfig<Any>)
+    }
+
     fun createGame(startInfo: GameStartInfo, copier: suspend (FlowStep.RandomnessResult?) -> GameForkResult<T>): Game<T> {
         val flowDslNull = this.flowDsl == null
         val flowRulesNull = this.flowRulesDsl == null

@@ -10,8 +10,7 @@ object TTT3DGame {
     val playAction = factory.action("play", Point::class)
     val SIZE = 4
     val game = factory.game("DSL-TTT3D") {
-        setup(Unit::class) {
-            defaultConfig { Unit }
+        setup {
             init { TTT3D() }
         }
         actionRules {

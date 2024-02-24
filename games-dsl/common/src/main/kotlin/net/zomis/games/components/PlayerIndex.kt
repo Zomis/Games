@@ -16,9 +16,6 @@ fun Int.withLeadingZeros(minSize: Int): String {
         this.toString()
 }
 fun Int.next(playerCount: Int): Int = (this + 1) % playerCount
-@Deprecated("playerCount parameter not required")
-fun Int.next(playerCount: Int, eliminations: PlayerEliminationsRead): Int
-    = this.next(eliminations)
 fun Int.next(eliminations: PlayerEliminationsRead): Int {
     if (eliminations.isGameOver()) throw IllegalStateException("Game is over, next player cannot happen.")
     var next: Int

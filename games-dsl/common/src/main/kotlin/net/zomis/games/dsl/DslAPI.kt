@@ -40,6 +40,7 @@ class GameConfigs(val configs: List<GameConfig<Any>>) {
     override fun toString(): String = "Configs($configs)"
     fun <E: Any> get(config: GameConfig<E>): E = configs.first { it.key == config.key }.value as E
     fun set(key: String, value: Any): GameConfigs {
+        require(configs.any { it.key == key }) { "No config found for '$key', available keys are ${configs.map { it.key }}" }
         this.configs.first { it.key == key }.value = value
         return this
     }
@@ -74,6 +75,7 @@ interface GameDslScope<T : Any> : UsageScope {
     fun actionRules(actionRulesDsl: GameActionRulesDsl<T>)
     fun gameFlow(flowDsl: GameFlowDsl<T>)
     fun gameFlowRules(flowRulesDsl: GameFlowRulesDsl<T>)
+    fun <C : Any> addConfig(config: GameConfig<C>)
     fun <E: Any> config(key: String, default: () -> E): GameConfig<E>
     fun ai(name: String, block: GameAIScope<T>.() -> Unit): GameAI<T>
     fun baseRule(rule: (T) -> RuleSpec<T, Unit>)

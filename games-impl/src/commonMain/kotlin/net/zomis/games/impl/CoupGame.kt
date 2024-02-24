@@ -45,9 +45,8 @@ data class CoupClaim(val player: CoupPlayer, val character: CoupCharacter, val a
 
 }
 
-data class CoupConfig(val gainMoneyOnSuccessfulChallenge: Int)
 data class CoupChallengeResolved(val challengedClaim: CoupChallengedClaim, val trueClaim: Boolean)
-class Coup(val config: CoupConfig, val playersCount: Int) {
+class Coup(val playersCount: Int) {
     val players = (0 until playersCount).map { CoupPlayer(it) }
     private val cardsPerCharacter = max(3, ceil((3 + playersCount * 2) / 5.0).toInt())
     val deck: CardZone<CoupCharacter> = CoupCharacter.values().flatMap { character -> (1..cardsPerCharacter).map { character } }.let { CardZone(it.toMutableList()) }
