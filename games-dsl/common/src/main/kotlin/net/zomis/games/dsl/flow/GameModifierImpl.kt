@@ -187,6 +187,8 @@ class GameModifierImpl<GameModel: Any, Owner>(
         subRules.clear()
     }
 
+    override fun toString(): String = "Rule(ruleSpec=$ruleSpec, owner=$owner, state=$stateOwner)"
+
 }
 
 class GameModifierApplyContext<GameModel : Any, Owner>(
