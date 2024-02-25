@@ -183,9 +183,11 @@ object Grizzled {
             }
         }
         val fearful = GrizzledCard(hardKnock, "Fearful", "On your turn, you must withdraw if 2 identical threats are active") {
+            activeWhile {
+                game.activeThreats.any { it.value >= 2 }
+            }
             allActionsPrecondition {
                 if (playerIndex != ruleHolder.playerIndex) return@allActionsPrecondition true
-                if (game.activeThreats.filter { it.value >= 2 }.isEmpty()) return@allActionsPrecondition true
                 actionType == withdraw.name
             }
         }
