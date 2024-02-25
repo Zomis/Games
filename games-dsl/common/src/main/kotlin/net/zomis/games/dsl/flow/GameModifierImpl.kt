@@ -22,7 +22,7 @@ class ActionModifier<GameModel: Any>(
 class GameModifierImpl<GameModel: Any, Owner>(
     private val meta: GameMetaScope<GameModel>,
     val owner: Owner,
-    private val ruleSpec: RuleSpec<GameModel, Owner>,
+    val ruleSpec: RuleSpec<GameModel, Owner>,
     private val stateOwner: StateOwner,
 ): GameModifierScope<GameModel, Owner>, StateOwner by stateOwner {
     private var active: Boolean = false
@@ -46,11 +46,11 @@ class GameModifierImpl<GameModel: Any, Owner>(
         TODO("Not yet implemented")
     }
 
-    override fun <Owner2> subRule(rule: RuleSpec<GameModel, Owner2>?, owner: Owner2, stateOwner: StateOwner) {
-        if (rule == null) return
+    override fun <Owner2> subRule(rule: RuleSpec<GameModel, Owner2>, owner: Owner2, stateOwner: StateOwner): Rule<GameModel, Owner2> {
         val context = GameModifierImpl(meta, owner, rule, stateOwner)
         rule.invoke(context)
         subRules.add(context)
+        return context
     }
 
     override fun overrides(rule: Rule<GameModel, out Any>) {
