@@ -28,6 +28,7 @@ interface GameModifierScope<GameModel: Any, Owner> : UsageScope, StateOwner {
     // TODO: Unify ways to specify rules. So that even Action-based `actionRules { ... }` is a "RuleHolder" / "GameModifier"
     val ruleHolder: Owner
     val game: GameModel
+    val ruleSpec: RuleSpec<GameModel, Owner>
 
     fun conflictsWith(rule: Rule<GameModel, out Any>)
     fun overrides(rule: Rule<GameModel, out Any>)

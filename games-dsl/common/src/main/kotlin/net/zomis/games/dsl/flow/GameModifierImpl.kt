@@ -22,7 +22,7 @@ class ActionModifier<GameModel: Any>(
 class GameModifierImpl<GameModel: Any, Owner>(
     private val meta: GameMetaScope<GameModel>,
     val owner: Owner,
-    val ruleSpec: RuleSpec<GameModel, Owner>,
+    override val ruleSpec: RuleSpec<GameModel, Owner>,
     private val stateOwner: StateOwner,
 ): GameModifierScope<GameModel, Owner>, StateOwner by stateOwner {
     private var active: Boolean = true
