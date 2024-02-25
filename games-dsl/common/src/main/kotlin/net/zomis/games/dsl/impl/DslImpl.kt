@@ -209,8 +209,8 @@ class GameDslContext<T : Any>(val gameType: String) : GameDslScope<T> {
         this.actionRulesDsl = actionRulesDsl
     }
 
-    override fun testCase(players: Int, testDsl: GameTestDsl<T>) {
-        this.testCases.add(GameTestCaseContext(players, testDsl))
+    override fun testCase(players: Int, name: String?, testDsl: GameTestDsl<T>) {
+        this.testCases.add(GameTestCaseContext(players, name, testDsl))
     }
 
     override fun gameFlow(flowDsl: GameFlowDsl<T>) {

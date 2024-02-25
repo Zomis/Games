@@ -71,7 +71,7 @@ interface GameDslScope<T : Any> : UsageScope {
     @Deprecated("use GameConfig class")
     fun <C : Any> setup(configClass: KClass<C>, modelDsl: GameModelDsl<T, C>)
     fun setup(modelDsl: GameModelDsl<T, Unit>)
-    fun testCase(players: Int, testDsl: GameTestDsl<T>)
+    fun testCase(players: Int, name: String? = null, testDsl: GameTestDsl<T>)
     fun actionRules(actionRulesDsl: GameActionRulesDsl<T>)
     fun gameFlow(flowDsl: GameFlowDsl<T>)
     fun gameFlowRules(flowRulesDsl: GameFlowRulesDsl<T>)

@@ -109,7 +109,7 @@ class GameTestContext<T: Any>(val coroutineScope: CoroutineScope, val entryPoint
 
 }
 
-class GameTestCaseContext<T: Any>(val players: Int, val testContext: GameTestDsl<T>) {
+class GameTestCaseContext<T: Any>(val players: Int, val name: String?, val testContext: GameTestDsl<T>) {
 
     suspend fun runTests(entryPoint: GameEntryPoint<T>) {
         coroutineScope {

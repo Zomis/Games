@@ -52,7 +52,7 @@ class AllGamesTest {
         return gamesToTest().mapNotNull { gameSpec ->
             val entryPoint = GamesImpl.game(gameSpec) as GameEntryPoint<Any>
             val tests = entryPoint.testCases().map {
-                DynamicTest.dynamicTest("${gameSpec.name} with ${it.players} players") {
+                DynamicTest.dynamicTest(it.name ?: "${gameSpec.name} with ${it.players} players") {
                     runTest {
                         it.runTests(entryPoint)
                     }
