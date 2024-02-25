@@ -62,4 +62,5 @@ sealed class FlowStep {
     //    class AwaitInput<T: Any>(val game: Game<T>, var deferred: Deferred<Actionable<T, out Any>?>? = null): FlowStep(), ProceedStep
     object AwaitInput: FlowStep(), ProceedStep
     object NextView : FlowStep()
+    data class GameException(val e: Throwable) : FlowStep()
 }

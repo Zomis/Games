@@ -4,6 +4,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.listeners.BlockingGameListener
+import net.zomis.games.listeners.ExceptionPrinter
+import net.zomis.games.listeners.LimitedNextViews
 
 class GameTestContext<T: Any>(val coroutineScope: CoroutineScope, val entryPoint: GameEntryPoint<T>, val playerCount: Int): GameTestScope<T>, GameListener {
     private val state = mutableMapOf<String, Any>()
@@ -16,7 +18,7 @@ class GameTestContext<T: Any>(val coroutineScope: CoroutineScope, val entryPoint
     private suspend fun initializedGame(): Game<T> {
         if (gameImpl == null) {
             gameImpl = entryPoint.setup().startGameWithConfig(coroutineScope, playerCount, config) {
-                listOf(blocking, this)
+                listOf(blocking, LimitedNextViews(10), ExceptionPrinter, this)
             }
             blocking.await()
         }

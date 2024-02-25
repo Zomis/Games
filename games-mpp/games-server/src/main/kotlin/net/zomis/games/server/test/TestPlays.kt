@@ -80,6 +80,9 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
                     is FlowStep.Log -> { /* ignore */ }
                     FlowStep.NextView -> { /* ignore */ }
                     is FlowStep.RuleExecution -> { /* ignore */ }
+                    is FlowStep.GameException -> {
+                        step.e.printStackTrace()
+                    }
                 }
             }
         }

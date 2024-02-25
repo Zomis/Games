@@ -107,6 +107,8 @@ class GameFlowImpl<T: Any>(
                 if (e.cause != null) logger.warn(e) { "Game cancelled: $game" }
                 else logger.info { "Game cancelled (no cause): $game" }
             } catch (e: Exception) {
+                sendFeedbacks()
+                sendFeedback(FlowStep.GameException(e))
                 logger.error(e) { "Error in Coroutine for game $game" }
             }
         }
