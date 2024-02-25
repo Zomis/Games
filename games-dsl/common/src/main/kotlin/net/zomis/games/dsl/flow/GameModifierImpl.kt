@@ -25,7 +25,7 @@ class GameModifierImpl<GameModel: Any, Owner>(
     val ruleSpec: RuleSpec<GameModel, Owner>,
     private val stateOwner: StateOwner,
 ): GameModifierScope<GameModel, Owner>, StateOwner by stateOwner {
-    private var active: Boolean = false
+    private var active: Boolean = true
 
     override val ruleHolder: Owner get() = owner
     override val game: GameModel get() = meta.game
@@ -139,6 +139,7 @@ class GameModifierImpl<GameModel: Any, Owner>(
     fun executeBeforeAction() = this.executeStateCheck(stateChecksBeforeAction)
 
     private fun executeStateCheck(checks: List<GameModifierApplyScope<GameModel, Owner>.() -> Unit>) {
+        if (!this.isActive()) return
         if (this.removeCondition?.invoke(this) == true) {
             meta.removeRule(this)
         }
