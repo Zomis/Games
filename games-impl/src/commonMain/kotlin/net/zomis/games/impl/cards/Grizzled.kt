@@ -19,8 +19,8 @@ import net.zomis.games.dsl.ActionRuleScope
 import net.zomis.games.dsl.GameSerializable
 import net.zomis.games.dsl.Viewable
 import net.zomis.games.dsl.flow.GameFlowStepScope
-import net.zomis.games.dsl.flow.GameModifierImpl
 import net.zomis.games.dsl.flow.SmartActionDsl
+import net.zomis.games.impl.GameStack
 import net.zomis.games.rules.NoState
 import net.zomis.games.rules.Rule
 import net.zomis.games.rules.RuleSpec
@@ -125,22 +125,25 @@ object Grizzled {
         }
         val merryChristmas = GrizzledCard(ResourceMap.empty(), "Merry Christmas", "Discard a hard knock card from yourself or another player") {
             val owner = this.ruleHolder
-            onActivate {
-                meta.injectStep("Discard a hard knock card from yourself or another player") {
-                    action(merryChristmasAction) {
-                        precondition { playerIndex == owner.playerIndex }
-                        choose {
-                            optionsWithIds({ game.players.flatMap { it.hardKnocks.cards }.map { it.id.toString() to it } }) {
-                                parameter(it)
-                            }
-                        }
-                        perform {
-                            val zone = game.players.map { it.hardKnocks }.single { it.cards.contains(action.parameter) }
-                            zone.card(action.parameter).moveTo(game.discarded)
+            stateCheckBeforeAction {
+                // This card goes directly to the discard pile
+                owner.hardKnocks.card(owner.hardKnocks.cards.first { it.hardKnockEffects == ruleSpec }).moveTo(game.discarded)
+            }
+            game.stack.add(StackItem.MerryChristmas(ruleHolder.playerIndex) {
+                action(merryChristmasAction) {
+                    precondition { playerIndex == owner.playerIndex }
+                    choose {
+                        optionsWithIds({ game.players.flatMap { it.hardKnocks.cards }.map { it.id.toString() to it } }) {
+                            parameter(it)
                         }
                     }
+                    perform { game.stack.pop() }
+                    perform {
+                        val zone = game.players.map { it.hardKnocks }.single { it.cards.contains(action.parameter) }
+                        zone.card(action.parameter).moveTo(game.discarded)
+                    }
                 }
-            }
+            })
         }
         val hardheaded = GrizzledCard(hardKnock, "Hardheaded", "You cannot withdraw as long as you have 2 or more cards in hand") {
             action(withdraw) {
@@ -246,7 +249,7 @@ object Grizzled {
         Threat.Whistle + Threat.Night,
         Threat.Shell + Threat.Rain,
         Threat.Snow + Threat.Rain,
-    ).map { GrizzledCard(id = 0, threats = it, name = null, description = null) }
+    ).map(GrizzledCard::fromThreats)
     class GrizzledCard(
         val threats: ResourceMap,
         val name: String?,
@@ -265,6 +268,11 @@ object Grizzled {
             "name" to name,
             "description" to (description ?: threats.toStateString())
         )
+
+        companion object {
+            fun fromThreats(threats: ResourceMap): GrizzledCard = GrizzledCard(threats = threats, name = null, description = null)
+            fun fromThreat(threat: Threat): GrizzledCard = fromThreats(threat.toResourceMap())
+        }
 
         fun isHardKnock(): Boolean = threats.has(HardKnock, 1) || threats.isEmpty()
     }
@@ -387,7 +395,12 @@ object Grizzled {
         Character("Gaston Fayard", Threat.Shell),
         Character("Anselme Perrin", Threat.Mask),
     )
+    sealed interface StackItem {
+        val ruleSpec: RuleSpec<Model, StackItem>
+        class MerryChristmas(val giftingPlayerIndex: Int, override val ruleSpec: RuleSpec<Model, StackItem>) : StackItem
+    }
     class Model(val startingTrials: Int, override val ctx: Context): Entity(ctx), ContextHolder {
+        val stack = GameStack<StackItem>()
         val startMissionEvent = event<StartMission>()
         val resolveSupportEvent = event<Support>()
         val moraleDropEvent = event<MoraleDrop>()
@@ -405,6 +418,13 @@ object Grizzled {
                 }
             }
             resolveConflicts(game, activeRules.filter { it.isActive() })
+
+            when (val peek = stack.peek()) {
+                null -> {}
+                is StackItem.MerryChristmas -> subRule(peek.ruleSpec, peek, NoState)
+            }
+
+            onNoActions { stack.popOrNull() }
         }
 
         val discarded: CardZone<GrizzledCard> by cards()
@@ -523,7 +543,6 @@ object Grizzled {
         gameFlow {
             loop {
                 step("setup mission") {
-
                     game.currentPlayerIndex = game.missionLeaderIndex
                     game.players.forEach { it.enterMission() }
                     actionHandler(chooseCardCount, game.missionLeader.chooseStartCards)
@@ -594,25 +613,83 @@ object Grizzled {
                 game.round++
             }
         }
-        testCase(3) {
+        testCase(players = 3, name = "Conflict resolution") {
             state("trials", listOf(
                 "Snow/1,Whistle/1", "Snow/1,Trap/1,Whistle/1", "Phobia Whistle", "Mask/1,Shell/1", "Night/1,Whistle/1", "Trauma Night", "Demoralized", "Panicked", "Rain/1,Whistle/1", "Selfish", "Fragile", "Shell/1,Whistle/1", "Rain/1,Shell/1", "Mask/1,Snow/1,Trap/1", "Rain/1,Whistle/1", "Mask/1,Shell/1,Whistle/1", "Trauma Snow", "Absent-minded", "Night/1,Shell/1,Trap/1", "Mute", "Night/1,Shell/1", "Prideful", "Rain/1,Shell/1,Trap/1", "Mask/1,Rain/1", "Fearful"
             ))
             initialize()
             action(0, chooseCardCount, 9)
-            action(0, playAction, game.currentPlayer.hand.cards.first { it.name == "Fearful" })
-            action(1, playAction, game.currentPlayer.hand.cards.first { it.name == "Absent-minded" })
-            action(2, playAction, game.currentPlayer.hand.cards.first { it.name == "Fragile" })
+            action(0, playAction, HardKnocks.fearful)
+            action(1, playAction, HardKnocks.absentMinded)
+            action(2, playAction, HardKnocks.fragile)
             actionNotAllowed(0, withdraw, WithdrawAction(game.currentPlayer.supportTiles.cards.random()))
 
-            action(0, playAction, game.currentPlayer.hand.cards.first { it.name == "Prideful" })
+            action(0, playAction, HardKnocks.prideful)
             expectEquals(2, game.players[0].hardKnocks.cards.size)
             action(1, playAction, game.currentPlayer.hand.cards.first { it.name == "Trauma Night" })
-//            action(2, playAction, game.currentPlayer.hand.cards.first { it.name == "Panicked" })
-            println(game.currentPlayer.hand.cards)
             action(2, playAction, game.currentPlayer.hand.cards.first { it.threats == Threat.Night + Threat.Whistle })
 
             action(0, withdraw, WithdrawAction(game.currentPlayer.supportTiles.cards.first()))
+        }
+        testCase(players = 3, name = "Merry Christmas") {
+            initialize()
+            action(0, chooseCardCount, 3)
+            game.players.forEach { it.hand.cards.clear() }
+            game.players[0].hand.cards.add(HardKnocks.merryChristmas)
+            game.players[1].hardKnocks.cards.add(HardKnocks.fragile)
+            action(0, playAction, game.currentPlayer.hand.cards.single())
+            println("After Christmas it's ${game.currentPlayerIndex} turn")
+            action(0, merryChristmasAction, game.players[1].hardKnocks.cards.single())
+            expectEquals(0, game.players[0].hand.size)
+            expectEquals(0, game.players[1].hardKnocks.size)
+            expectEquals(1, game.currentPlayerIndex)
+        }
+        testCase(players = 4, name = "Cards for first round") {
+            initialize()
+            actionNotAllowed(0, chooseCardCount, 0)
+            actionNotAllowed(0, chooseCardCount, 1)
+            actionNotAllowed(0, chooseCardCount, 2)
+            action(0, chooseCardCount, 3)
+            expectEquals(3, game.players[0].hand.size)
+            expectEquals(3, game.players[1].hand.size)
+            expectEquals(3, game.players[2].hand.size)
+            expectEquals(3, game.players[3].hand.size)
+        }
+        testCase(5, name = "Speech, Speech, Speech!") {
+            initialize()
+            action(0, chooseCardCount, 3)
+            game.players.forEach { it.hand.cards.clear() }
+            game.players[0].speechesAvailable = 1
+            game.players[0].hand.cards.add(GrizzledCard.fromThreat(Threat.Snow))
+            game.players[1].hand.cards.add(GrizzledCard.fromThreats(ResourceMap.from(Threat.values())))
+            game.players[2].hand.cards.add(HardKnocks.traumas.single { it.threats.has(Threat.Snow, 1) })
+            game.players[3].hand.cards.add(GrizzledCard.fromThreats(Threat.values().filter(Threat::item).fold(ResourceMap.empty()) { a, b -> a + b }))
+            game.players[4].hand.cards.add(GrizzledCard.fromThreats(Threat.Snow + Threat.Whistle + Trap))
+            game.players[4].hand.cards.add(GrizzledCard.fromThreats(Threat.Snow + Threat.Shell))
+            game.players[1].apply {
+                placedSupportTile = supportTiles.card(supportTiles.cards.random()).remove()
+                withdrawn = true
+            }
+            action(0, giveSpeech, Threat.Snow)
+
+            // Must discard card from your own hand
+            val randomDiscarder = game.players.indices.random()
+            actionNotAllowed(randomDiscarder, discard, game.players.minus(game.players[randomDiscarder]).random().hand.cards.random())
+
+            game.players.indices.shuffled().forEach {
+                when (it) {
+                    0 -> actionNotAllowed(it, discard, game.players[it].hand.cards.single()) // Player giving speech
+                    1 -> actionNotAllowed(it, discard, game.players[it].hand.cards.single()) // Already withdrawn
+                    2 -> action(it, discard, game.players[it].hand.cards.single())
+                    3 -> actionNotAllowed(it, discard, game.players[it].hand.cards.random()) // No matching cards
+                    4 -> {
+                        // Can only discard one card
+                        action(it, discard, game.players[it].hand.cards.random())
+                        actionNotAllowed(it, discard, game.players[it].hand.cards.single())
+                    }
+                    else -> throw UnsupportedOperationException()
+                }
+            }
         }
         val withdrawScorer = scorers.isAction(withdraw)
         val failScorer = scorers.actionConditional(playAction) {
@@ -711,6 +788,7 @@ object Grizzled {
                     }
                 }
                 requires { action.parameter.threats.has(discardableThreat, 1) }
+                requires { game.players[playerIndex].hand.cards.contains(action.parameter) }
                 perform { game.players[playerIndex].hand.card(action.parameter).moveTo(game.discarded) }
                 perform {
                     val remainingPlayers = discardablePlayers.minus(game.players[playerIndex])
