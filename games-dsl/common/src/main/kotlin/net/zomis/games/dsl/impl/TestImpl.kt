@@ -87,7 +87,7 @@ class GameTestContext<T: Any>(val coroutineScope: CoroutineScope, val entryPoint
         initialize()
         blocking.await()
         val actionImpl = initializedGame().actions[actionType.name]
-        checkNotNull(actionImpl) { "No such action name: ${actionType.name}" }
+            ?: return // No such action, good - then it cannot be allowed!
         val actionable = actionImpl.createAction(playerIndex, parameter)
         check(!actionImpl.isAllowed(actionable)) { "Action is allowed when it shouldn't be: $playerIndex $actionable" }
     }
