@@ -169,6 +169,9 @@ class GameModifierImpl<GameModel: Any, Owner>(
 
     fun disable() {
         this.active = false
+        subRules.forEach {
+            it.disable()
+        }
     }
 
     private fun clear() {
