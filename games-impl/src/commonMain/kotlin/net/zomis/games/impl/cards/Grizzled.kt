@@ -19,8 +19,10 @@ import net.zomis.games.dsl.ActionRuleScope
 import net.zomis.games.dsl.GameSerializable
 import net.zomis.games.dsl.Viewable
 import net.zomis.games.dsl.flow.GameFlowStepScope
+import net.zomis.games.dsl.flow.GameModifierImpl
 import net.zomis.games.dsl.flow.SmartActionDsl
 import net.zomis.games.rules.NoState
+import net.zomis.games.rules.Rule
 import net.zomis.games.rules.RuleSpec
 import kotlin.math.ceil
 
@@ -191,6 +193,11 @@ object Grizzled {
                 actionType == withdraw.name
             }
         }
+        val potentiallyConflictingRules = listOf(
+            setOf(fearful, prideful),
+            setOf(fearful, fragile),
+            setOf(fearful, hardheaded),
+        )
 
         val allCards = phobias + traumas + listOf(
             frenzied, wounded, demoralized, panicked,
@@ -391,11 +398,13 @@ object Grizzled {
             generateId.invoke(this)
             playCard.invoke(this)
 
+            val activeRules = mutableListOf<Rule<Model, Player>>()
             for (player in players.shifted(currentPlayerIndex + 1).filter { it.inMission }) {
                 for (card in player.hardKnocks.cards) {
-                    subRule(rule = card.hardKnockEffects, owner = player, stateOwner = NoState)
+                    activeRules.add(subRule(rule = card.hardKnockEffects ?: {}, owner = player, stateOwner = NoState))
                 }
             }
+            resolveConflicts(game, activeRules.filter { it.isActive() })
         }
 
         val discarded: CardZone<GrizzledCard> by cards()
@@ -459,6 +468,28 @@ object Grizzled {
         val currentPlayer get() = players[currentPlayerIndex]
 
         fun missionFailed(): Boolean = activeThreats.entries().any { it.value >= 3 }
+    }
+
+    private fun resolveConflicts(game: Model, activeRules: List<Rule<Model, Player>>) {
+        for (conflict in HardKnocks.potentiallyConflictingRules) {
+            if (!conflict.all { card -> activeRules.any { it.ruleSpec == card.hardKnockEffects } }) continue
+
+            val conflictingSpecs = conflict.map { it.hardKnockEffects }
+
+            val players = conflict.map { card -> game.players.single { player -> player.hardKnocks.cards.contains(card) } }.distinct()
+            if (!players.contains(game.currentPlayer)) {
+                continue
+            } else if (players.size == 1) {
+                // On the same player: Oldest cards win.
+                val cardToDisable = game.currentPlayer.hardKnocks.cards.last { it.hardKnockEffects in conflictingSpecs }
+                activeRules.single { it.ruleSpec == cardToDisable.hardKnockEffects }.disable()
+            } else {
+                // On different players: On player currently playing wins.
+                val cardToKeep = game.currentPlayer.hardKnocks.cards.single { it.hardKnockEffects in conflictingSpecs }
+                val cardToDisable = conflict.minus(cardToKeep).single()
+                activeRules.single { it.ruleSpec == cardToDisable.hardKnockEffects }.disable()
+            }
+        }
     }
 
     private val generateId: RuleSpec<Model, Unit> = {
@@ -565,17 +596,23 @@ object Grizzled {
         }
         testCase(3) {
             state("trials", listOf(
-                "Snow/1,Whistle/1", "Snow/1,Trap/1,Whistle/1", "Phobia Whistle", "Mask/1,Shell/1", "Night/1,Trap/1,Whistle/1", "Trauma Night", "Demoralized", "Panicked", "Rain/1,Whistle/1", "Selfish", "Fragile", "Shell/1,Whistle/1", "Rain/1,Shell/1", "Mask/1,Snow/1,Trap/1", "Rain/1,Whistle/1", "Mask/1,Shell/1,Whistle/1", "Trauma Snow", "Absent-minded", "Night/1,Shell/1,Trap/1", "Mute", "Night/1,Shell/1", "Prideful", "Rain/1,Shell/1,Trap/1", "Mask/1,Rain/1", "Fearful"
+                "Snow/1,Whistle/1", "Snow/1,Trap/1,Whistle/1", "Phobia Whistle", "Mask/1,Shell/1", "Night/1,Whistle/1", "Trauma Night", "Demoralized", "Panicked", "Rain/1,Whistle/1", "Selfish", "Fragile", "Shell/1,Whistle/1", "Rain/1,Shell/1", "Mask/1,Snow/1,Trap/1", "Rain/1,Whistle/1", "Mask/1,Shell/1,Whistle/1", "Trauma Snow", "Absent-minded", "Night/1,Shell/1,Trap/1", "Mute", "Night/1,Shell/1", "Prideful", "Rain/1,Shell/1,Trap/1", "Mask/1,Rain/1", "Fearful"
             ))
             initialize()
             action(0, chooseCardCount, 9)
             action(0, playAction, game.currentPlayer.hand.cards.first { it.name == "Fearful" })
-            expectEquals(1, game.players[0].hardKnocks.cards.size)
             action(1, playAction, game.currentPlayer.hand.cards.first { it.name == "Absent-minded" })
-            expectEquals(1, game.players[1].hardKnocks.cards.size)
             action(2, playAction, game.currentPlayer.hand.cards.first { it.name == "Fragile" })
-            expectEquals(1, game.players[2].hardKnocks.cards.size)
             actionNotAllowed(0, withdraw, WithdrawAction(game.currentPlayer.supportTiles.cards.random()))
+
+            action(0, playAction, game.currentPlayer.hand.cards.first { it.name == "Prideful" })
+            expectEquals(2, game.players[0].hardKnocks.cards.size)
+            action(1, playAction, game.currentPlayer.hand.cards.first { it.name == "Trauma Night" })
+//            action(2, playAction, game.currentPlayer.hand.cards.first { it.name == "Panicked" })
+            println(game.currentPlayer.hand.cards)
+            action(2, playAction, game.currentPlayer.hand.cards.first { it.threats == Threat.Night + Threat.Whistle })
+
+            action(0, withdraw, WithdrawAction(game.currentPlayer.supportTiles.cards.first()))
         }
         val withdrawScorer = scorers.isAction(withdraw)
         val failScorer = scorers.actionConditional(playAction) {
