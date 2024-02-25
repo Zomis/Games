@@ -15,6 +15,8 @@ interface ResourceMap: Replayable {
             acc + pair.first.toResourceMap(pair.second)
         }
         fun fromList(list: List<GameResource>): ResourceMap = list.fold(empty(), ResourceMap::plus)
+        fun from(values: Array<out GameResource>): ResourceMap = fromList(values.toList())
+        fun ofEach(vararg values: GameResource): ResourceMap = fromList(values.toList())
     }
     operator fun get(resource: GameResource): Int?
     fun getOrDefault(resource: GameResource): Int
