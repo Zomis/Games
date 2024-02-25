@@ -16,6 +16,7 @@ class GameStack<T> {
     fun peek(): T? = stack.lastOrNull()
     fun isEmpty(): Boolean = stack.isEmpty()
     fun pop(): T = stack.removeAt(stack.lastIndex)
+    fun popOrNull(): T? = if (stack.isEmpty()) null else pop()
     fun clear() = stack.clear()
 }
 
