@@ -157,7 +157,7 @@ class GameModifierImpl<GameModel: Any, Owner>(
     }
 
     fun isActive(): Boolean {
-        if (!active) return true
+        if (!active) return false
         return this.activeConditions.all { it.invoke(this) }
     }
 
