@@ -15,7 +15,6 @@ import net.zomis.games.components.resources.ResourceMap
 import net.zomis.games.context.Context
 import net.zomis.games.context.ContextHolder
 import net.zomis.games.context.Entity
-import net.zomis.games.dsl.ActionRuleScope
 import net.zomis.games.dsl.GameSerializable
 import net.zomis.games.dsl.Viewable
 import net.zomis.games.dsl.flow.GameFlowStepScope
@@ -303,16 +302,7 @@ object Grizzled {
                     speechesAvailable--
                 }
                 perform {
-                    val discardableThreat = action.parameter
-                    val speechGiver = action.playerIndex
-                    val discardablePlayers = game.players
-                        .filter { it.playerIndex != speechGiver }
-                        .filter { it.inMission }
-                        .filter { player -> player.hand.cards.any { it.threats.has(discardableThreat, 1) } }
-                        .toMutableList()
-                    if (discardablePlayers.isNotEmpty()) {
-                        meta.injectStep("discard from speech $discardableThreat", discardStep(discardableThreat, discardablePlayers))
-                    }
+                    game.stack.add(StackItem.Speech(action.playerIndex, speechRule, action.parameter, game.players.toMutableList()))
                 }
             }
         }
@@ -398,6 +388,7 @@ object Grizzled {
     sealed interface StackItem {
         val ruleSpec: RuleSpec<Model, StackItem>
         class MerryChristmas(val giftingPlayerIndex: Int, override val ruleSpec: RuleSpec<Model, StackItem>) : StackItem
+        class Speech(val speechGiver: Int, override val ruleSpec: RuleSpec<Model, StackItem>, val speech: Threat, val playersToDiscard: MutableList<Player>) : StackItem
     }
     class Model(val startingTrials: Int, override val ctx: Context): Entity(ctx), ContextHolder {
         val stack = GameStack<StackItem>()
@@ -422,6 +413,7 @@ object Grizzled {
             when (val peek = stack.peek()) {
                 null -> {}
                 is StackItem.MerryChristmas -> subRule(peek.ruleSpec, peek, NoState)
+                is StackItem.Speech -> subRule(peek.ruleSpec, peek, NoState)
             }
 
             onNoActions { stack.popOrNull() }
@@ -775,27 +767,22 @@ object Grizzled {
         }
     }
 
-    private fun ActionRuleScope<Model, Threat>.discardStep(
-        discardableThreat: Threat,
-        discardablePlayers: List<Player>
-    ): suspend GameFlowStepScope<Model>.() -> Unit {
-        return {
-            yieldAction(discard) {
-                precondition { discardablePlayers.any { it.playerIndex == playerIndex } }
-                choose {
-                    optionsWithIds({ game.players[playerIndex].hand.cards.map { it.id.toString() to it } }) {
-                        parameter(it)
-                    }
+    private val speechRule: RuleSpec<Model, StackItem> = {
+        val owner = ruleHolder as StackItem.Speech
+        action(discard) {
+            precondition { playerIndex != owner.speechGiver }
+            precondition { game.players[playerIndex].inMission }
+            precondition { owner.playersToDiscard.contains(game.players[playerIndex]) }
+            choose {
+                optionsWithIds({ game.players[playerIndex].hand.cards.map { it.id.toString() to it } }) {
+                    parameter(it)
                 }
-                requires { action.parameter.threats.has(discardableThreat, 1) }
-                requires { game.players[playerIndex].hand.cards.contains(action.parameter) }
-                perform { game.players[playerIndex].hand.card(action.parameter).moveTo(game.discarded) }
-                perform {
-                    val remainingPlayers = discardablePlayers.minus(game.players[playerIndex])
-                    if (remainingPlayers.isNotEmpty()) {
-                        meta.injectStep("discardStep $remainingPlayers", this@discardStep.discardStep(discardableThreat, remainingPlayers))
-                    }
-                }
+            }
+            requires { action.parameter.threats.has(owner.speech, 1) }
+            requires { game.players[playerIndex].hand.cards.contains(action.parameter) }
+            perform { game.players[playerIndex].hand.card(action.parameter).moveTo(game.discarded) }
+            perform {
+                owner.playersToDiscard.remove(game.players[playerIndex])
             }
         }
     }
