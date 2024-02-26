@@ -35,12 +35,14 @@ interface GameModifierScope<GameModel: Any, Owner> : UsageScope, StateOwner {
     fun <Owner2> subRule(rule: RuleSpec<GameModel, Owner2>, owner: Owner2, stateOwner: StateOwner): Rule<GameModel, Owner2>
     fun applyRule(condition: () -> Boolean, rule: RuleSpec<GameModel, out Any>): Rule<GameModel, out Any>
 
+    @Deprecated("apply rules instead, don't add/remove")
     fun onActivate(doSomething: GameModifierApplyScope<GameModel, Owner>.() -> Unit) // happens once when rule is added
     fun onState(condition: () -> Boolean, thenPerform: GameModifierApplyScope<GameModel, Owner>.() -> Unit)
     fun enableAction(actionDefinition: ActionDefinition<GameModel, out Any>) = enableAction(actionDefinition.actionType)
     fun enableAction(actionType: ActionType<GameModel, out Any>)
     fun stateCheckBeforeAction(doSomething: GameModifierApplyScope<GameModel, Owner>.() -> Unit)
     fun activeWhile(condition: GameModifierScope<GameModel, Owner>.() -> Boolean)
+    @Deprecated("apply rules instead, don't add/remove")
     fun removeWhen(condition: GameModifierScope<GameModel, Owner>.() -> Boolean)
     // TODO: Add/Change/Remove view or part of view (such as seeing other player's cards)
     fun <E: Any> on(event: EventFactory<E>, priority: EventPriority = EventPriority.NORMAL): EventModifierScope<GameModel, E>

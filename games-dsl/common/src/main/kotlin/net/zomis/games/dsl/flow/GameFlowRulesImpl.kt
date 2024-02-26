@@ -24,6 +24,7 @@ interface GameFlowRulesScope<T: Any> : UsageScope {
     fun rule(name: String, rule: GameFlowRuleScope<T>.() -> Any?)
     fun afterActionRule(name: String, rule: GameFlowRuleScope<T>.() -> Any?)
     fun beforeReturnRule(name: String, rule: GameFlowRuleScope<T>.() -> Any?)
+    @Deprecated("apply rules instead, don't add/remove")
     fun <Owner> addRule(owner: Owner, rule: GameModifierScope<T, Owner>.() -> Unit)
 }
 
