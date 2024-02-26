@@ -682,6 +682,14 @@ object Grizzled {
                     else -> throw UnsupportedOperationException()
                 }
             }
+            val cardsLeft = mapOf(
+                0 to 1, // Player giving speech
+                1 to 1, // Already withdrawn
+                2 to 0, // Discarded
+                3 to 1, // No matching cards
+                4 to 1, // Had two cards, discarded one
+            )
+            for (entry in cardsLeft) expectEquals(entry.value, game.players[entry.key].hand.size)
         }
         val withdrawScorer = scorers.isAction(withdraw)
         val failScorer = scorers.actionConditional(playAction) {
