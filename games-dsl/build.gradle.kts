@@ -6,8 +6,6 @@ plugins {
 
 version = "1.0-SNAPSHOT"
 
-val jupiterVersion = "5.7.1"
-
 kotlin {
     jvm {
         compilations.all {
@@ -29,8 +27,8 @@ kotlin {
             kotlin.srcDir("common/src/main/kotlin")
             dependencies {
                 implementation(kotlin("stdlib-common"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
-                implementation("com.github.lewik.klog:klog:2.0.5")
+                implementation(libs.coroutines.core)
+                implementation(libs.klog.common)
             }
         }
         val commonTest by getting {
@@ -43,23 +41,23 @@ kotlin {
         val jvmMain by getting {
             kotlin.srcDir("jvm/src/main/kotlin")
             dependencies {
-                implementation("com.github.lewik.klog:klog-jvm:2.0.5")
+                implementation(libs.klog.jvm)
                 implementation(kotlin("reflect"))
             }
         }
         val jvmTest by getting {
             kotlin.srcDir("src/jvmTest/kotlin")
             dependencies {
-                implementation("org.junit.jupiter:junit-jupiter-api:$jupiterVersion")
-                implementation("org.junit.jupiter:junit-jupiter-params:$jupiterVersion")
-                runtimeOnly("org.junit.jupiter:junit-jupiter-engine:$jupiterVersion")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.5.2")
+                implementation(libs.jupiter.api)
+                implementation(libs.jupiter.params)
+                runtimeOnly(libs.jupiter.engine)
+                implementation(libs.coroutines.test)
             }
         }
         val jsMain by getting {
             kotlin.srcDir("js/src/main/kotlin")
             dependencies {
-                implementation("com.github.lewik.klog:klog-js:2.0.5")
+                implementation(libs.klog.js)
             }
         }
     }

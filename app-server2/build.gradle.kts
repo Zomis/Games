@@ -1,10 +1,6 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-val ktor_version = "2.2.4"
-val decomposeVersion = "2.1.2"
-val steamWorksVersion: String by project
-
 plugins {
     kotlin("multiplatform")
     id("org.jetbrains.compose") version "1.4.0"
@@ -38,13 +34,12 @@ kotlin {
                 implementation(project(":games-dsl"))
                 implementation(project(":games-impl"))
                 implementation(project(":games-mpp"))
-                implementation("io.ktor:ktor-client-websockets:$ktor_version")
-                implementation("io.ktor:ktor-client-cio:$ktor_version")
-                implementation("io.ktor:ktor-client-websockets:$ktor_version")
-                implementation("io.ktor:ktor-client-content-negotiation:$ktor_version")
-                implementation("io.ktor:ktor-serialization-jackson:$ktor_version")
-                implementation("com.arkivanov.decompose:decompose:$decomposeVersion")
-                implementation("com.arkivanov.decompose:extensions-compose-jetbrains:$decomposeVersion")
+                implementation(libs.ktor.client.websockets)
+                implementation(libs.ktor.client.cio)
+                implementation(libs.ktor.client.content.negotiation)
+                implementation(libs.ktor.serialization.jackson)
+                implementation(libs.decompose)
+                implementation(libs.decompose.jetbrains)
             }
         }
         val commonTest by getting {
@@ -70,7 +65,7 @@ kotlin {
                 api(compose.preview)
                 implementation(compose.desktop.currentOs)
                 implementation(project(":games-mpp"))
-                implementation("com.code-disaster.steamworks4j:steamworks4j:$steamWorksVersion")
+                implementation(libs.steamworks4j)
             }
         }
         val desktopTest by getting

@@ -11,11 +11,6 @@ version = "1.0-SNAPSHOT"
 
 val steamWorksVersion: String by project
 
-val jacksonVersion = "2.13.1"
-val jupiterVersion = "5.7.1"
-val coroutinesVersion = "1.7.3"
-val ktorVersion = "2.0.3"
-
 kotlin {
     jvm {
         compilations.all {
@@ -37,10 +32,10 @@ kotlin {
             resources.srcDir("games-core/src/main/resources")
             dependencies {
                 implementation(kotlin("stdlib-common"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+                implementation(libs.coroutines.core)
                 implementation(project(":games-dsl"))
                 implementation(project(":games-impl"))
-                implementation("com.github.lewik.klog:klog:2.0.5")
+                implementation(libs.klog.common)
             }
         }
         val commonTest by getting {
@@ -54,8 +49,8 @@ kotlin {
             resources.srcDir("games-server/src/main/resources")
             languageSettings.optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:$coroutinesVersion")
-                implementation("com.github.lewik.klog:klog-jvm:2.0.5")
+                implementation(libs.coroutines.core.jvm)
+                implementation(libs.klog.jvm)
                 implementation(kotlin("reflect"))
 
                 // For Kotlin scripting inside a shadow jar (some of these dependencies may be removed)
@@ -67,41 +62,41 @@ kotlin {
                 implementation(kotlin("script-runtime"))
                 implementation(kotlin("script-util"))
 
-                implementation("com.fasterxml.jackson.core:jackson-core:$jacksonVersion")
-                implementation("com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion")
-                implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
-                implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
+                implementation(libs.jackson.core)
+                implementation(libs.jackson.annotations)
+                implementation(libs.jackson.databind)
+                implementation(libs.jackson.kotlin)
 
                 // Ktor
-                implementation("io.ktor:ktor-server-core-jvm:$ktorVersion")
-                implementation("io.ktor:ktor-server-websockets-jvm:$ktorVersion")
-                implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktorVersion")
-                implementation("io.ktor:ktor-serialization-jackson-jvm:$ktorVersion")
-                implementation("io.ktor:ktor-server-http-redirect-jvm:$ktorVersion")
-                implementation("io.ktor:ktor-server-default-headers-jvm:$ktorVersion")
-                implementation("io.ktor:ktor-server-cors-jvm:$ktorVersion")
-                implementation("io.ktor:ktor-server-compression-jvm:$ktorVersion")
-                implementation("io.ktor:ktor-server-netty-jvm:$ktorVersion")
-                implementation("io.ktor:ktor-client-core:$ktorVersion")
-                implementation("io.ktor:ktor-client-cio:$ktorVersion")
-                implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
-                implementation("io.ktor:ktor-client-logging:$ktorVersion")
+                implementation(libs.ktor.jvm.server)
+                implementation(libs.ktor.jvm.server.websockets)
+                implementation(libs.ktor.jvm.server.content.negotiation)
+                implementation(libs.ktor.jvm.serialization.jackson)
+                implementation(libs.ktor.jvm.server.http.redirect)
+                implementation(libs.ktor.jvm.server.default.headers)
+                implementation(libs.ktor.jvm.server.cors)
+                implementation(libs.ktor.jvm.server.compression)
+                implementation(libs.ktor.jvm.server.netty)
+                implementation(libs.ktor.client.core)
+                implementation(libs.ktor.client.cio)
+                implementation(libs.ktor.client.content.negotiation)
+                implementation(libs.ktor.client.logging)
 
-                implementation("com.beust:jcommander:1.81")
-                implementation("org.java-websocket:Java-WebSocket:1.5.2")
-                implementation("org.apache.logging.log4j:log4j-slf4j-impl:2.18.0")
-                implementation("org.apache.logging.log4j:log4j-core:2.18.0")
+                implementation(libs.jcommander)
+                implementation(libs.java.websocket)
+                implementation(libs.log4j.slf4j)
+                implementation(libs.log4j.core)
 
-                implementation("com.amazonaws:aws-java-sdk-dynamodb:1.11.1031")
-                implementation("org.postgresql:postgresql:42.2.20")
-                implementation("com.zaxxer:HikariCP:3.4.5")
-                implementation("com.github.ben-manes.caffeine:caffeine:2.9.1")
-                implementation("com.code-disaster.steamworks4j:steamworks4j-server:$steamWorksVersion")
+                implementation(libs.aws.dynamodb)
+                implementation(libs.postgres)
+                implementation(libs.hikari)
+                implementation(libs.caffeine)
+                implementation(libs.steamworks4j.server)
 
-                implementation("ai.djl:api:0.3.0")
-                implementation("ai.djl:model-zoo:0.3.0")
-                runtimeOnly("ai.djl.mxnet:mxnet-engine:0.3.0")
-                runtimeOnly("ai.djl.mxnet:mxnet-native-auto:1.6.0")
+                implementation(libs.djl.api)
+                implementation(libs.djl.model.zoo)
+                runtimeOnly(libs.djl.mxnet.engine)
+                runtimeOnly(libs.djl.mxnet.nativeAuto)
             }
         }
         val jvmTest by getting {
@@ -109,21 +104,21 @@ kotlin {
             resources.srcDir("games-server/src/test/resources")
             languageSettings.optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
             dependencies {
-                implementation("org.junit.jupiter:junit-jupiter-api:$jupiterVersion")
-                implementation("org.junit.jupiter:junit-jupiter-params:$jupiterVersion")
-                runtimeOnly("org.junit.jupiter:junit-jupiter-engine:$jupiterVersion")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion")
-                implementation("io.ktor:ktor-server-tests-jvm:$ktorVersion")
-                implementation("com.tngtech.archunit:archunit-junit5:1.0.0")
-                implementation("com.google.truth:truth:1.1.3")
+                implementation(libs.jupiter.api)
+                implementation(libs.jupiter.params)
+                runtimeOnly(libs.jupiter.engine)
+                implementation(libs.coroutines.test)
+                implementation(libs.ktor.jvm.server.tests)
+                implementation(libs.archUnit)
+                implementation(libs.truth)
                 implementation(libs.turbine)
             }
         }
         val jsMain by getting {
             kotlin.srcDir("games-js/src/main/kotlin")
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutinesVersion")
-                implementation("com.github.lewik.klog:klog-js:2.0.5")
+                implementation(libs.coroutines.core.js)
+                implementation(libs.klog.js)
             }
         }
     }

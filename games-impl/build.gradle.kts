@@ -4,8 +4,6 @@ plugins {
 
 version = "1.0-SNAPSHOT"
 
-val jupiterVersion = "5.7.1"
-
 kotlin {
     jvm {
         compilations.all {
@@ -22,7 +20,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(kotlin("stdlib-common"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.2")
+                implementation(libs.coroutines.core)
                 api(project(":games-dsl"))
                 api(project(":games-analyze"))
             }
@@ -35,20 +33,20 @@ kotlin {
         }
         val jvmMain by getting {
             dependencies {
-                implementation("com.github.lewik.klog:klog-jvm:2.0.5")
+                implementation(libs.klog.jvm)
             }
         }
         val jvmTest by getting {
             dependencies {
-                implementation("org.junit.jupiter:junit-jupiter-api:$jupiterVersion")
-                implementation("org.junit.jupiter:junit-jupiter-params:$jupiterVersion")
-                runtimeOnly("org.junit.jupiter:junit-jupiter-engine:$jupiterVersion")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.5.2")
+                implementation(libs.jupiter.api)
+                implementation(libs.jupiter.params)
+                runtimeOnly(libs.jupiter.engine)
+                implementation(libs.coroutines.test)
             }
         }
         val jsMain by getting {
             dependencies {
-                implementation("com.github.lewik.klog:klog-js:2.0.5")
+                implementation(libs.klog.js)
             }
         }
     }
