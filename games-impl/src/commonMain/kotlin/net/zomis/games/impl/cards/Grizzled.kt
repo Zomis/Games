@@ -171,7 +171,7 @@ object Grizzled {
             }
         }
         val tyrannical = GrizzledCard(hardKnock, "Tyrannical", "Take the mission leader role and keep it, preventing the distribution of speeches") {
-            onActivate {
+            stateCheckBeforeAction {
                 game.missionLeaderIndex = ruleHolder.playerIndex
             }
             on(ChangeLeader::class).mutate { event.nextPlayer = ruleHolder.playerIndex }
