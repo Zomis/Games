@@ -3,6 +3,7 @@ package net.zomis.games.impl.alchemists
 import net.zomis.games.context.ActionFactory
 import net.zomis.games.context.Context
 import net.zomis.games.context.Entity
+import net.zomis.games.dsl.GameActionCreator
 import net.zomis.games.dsl.GameSerializable
 import net.zomis.games.dsl.flow.ActionDefinition
 import net.zomis.games.dsl.flow.GameFlowActionScope
@@ -143,7 +144,10 @@ object TheoryActions {
     }
 
     private fun createPublishFromDebunkAction(playerIndex: Int, debunked: List<Theory>): ActionDefinition<AlchemistsDelegationGame.Model, Any> {
-        return ActionFactory<AlchemistsDelegationGame.Model, TheoryAction>("instantPublish", TheoryAction::class) {
+        val actionType = GameActionCreator<AlchemistsDelegationGame.Model, TheoryAction>(
+            "instantPublish", TheoryAction::class, TheoryAction::class, { it }, { it as TheoryAction }
+        )
+        return ActionFactory(actionType) {
             theoryAction(this, playerIndex)
             requires { action.parameter.ingredient in debunked.map { it.ingredient } || action.parameter.alchemical in debunked.map { it.alchemical } }
         } as ActionFactory<AlchemistsDelegationGame.Model, Any>

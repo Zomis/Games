@@ -16,6 +16,7 @@ import net.zomis.games.dsl.GameSerializable
 import net.zomis.games.dsl.flow.ActionDefinition
 import net.zomis.games.dsl.flow.GameFlowScope
 import net.zomis.games.dsl.flow.GameFlowStepScope
+import net.zomis.games.dsl.flow.actions.ActionChoice
 import net.zomis.games.dsl.flow.actions.SmartActionBuilder
 import net.zomis.games.impl.GameStack
 import net.zomis.games.rules.RuleSpec
@@ -42,6 +43,16 @@ object AlchemistsDelegationGame {
         val ruleSpec: RuleSpec<Model, Unit>
 
     }
+    val actionPlaceType = GamesApi.gameCreator(Model::class).action("action", Model.ActionPlacement::class)
+        .serialization<List<String>>({ it.serialize() }, { deserialized ->
+            Model.ActionPlacement(
+                deserialized.map { s ->
+                    val (associate, count, name) = s.split("/")
+                    val spot = game.actionSpaces.first { it.actionSpace.name == name }
+                    Model.ActionChoice(spot, count.toInt(), associate == "true")
+                }
+            )
+        })
 
     class TurnOrderChoice(val player: Model.Player, val turnOrder: Model.TurnOrder, var resources: ResourceMap)
     class Model(override val ctx: Context, master: GameConfig<Boolean>) : Entity(ctx), ContextHolder {
@@ -236,10 +247,10 @@ object AlchemistsDelegationGame {
 
         data class ActionChoice(val spot: HasAction, val count: Int, val associate: Boolean)
         data class ActionPlacement(val chosen: List<ActionChoice>): GameSerializable {
-            override fun serialize(): Any = chosen.map { "${it.associate}/${it.spot.actionSpace.name}" }
+            override fun serialize(): List<String> = chosen.map { "${it.associate}/${it.count}/${it.spot.actionSpace.name}" }
         }
         fun nextActionPlacer(): Int? = turnPicker.options.lastOrNull { it.chosenBy != null }?.chosenBy
-        val actionPlacement = actionSerializable<Model, ActionPlacement>("action", ActionPlacement::class) {
+        val actionPlacement = action<Model, ActionPlacement>(actionPlaceType) {
             precondition {
                 playerIndex == nextActionPlacer()
             }

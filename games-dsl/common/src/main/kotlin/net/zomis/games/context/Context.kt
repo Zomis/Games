@@ -145,11 +145,12 @@ class ActionDelegate<T: Entity>(
 }
 
 class ActionFactory<T: Any, A: Any>(
-    val name: String, val parameterType: KClass<A>,
+    override val actionType: ActionType<T, A>,
     override val actionDsl: GameFlowActionScope<T, A>.() -> Unit
 ): ActionDefinition<T, A> {
-    override var actionType = GameActionCreator<T, A>(name, parameterType, parameterType, { it }, { it as A })
+    val name get() = actionType.name
 }
+
 class ActionTypeDefinition<GameModel: Any, A: Any>(
     override val actionType: ActionType<GameModel, A>,
     override val actionDsl: GameFlowActionScope<GameModel, A>.() -> Unit
@@ -198,9 +199,13 @@ open class Entity(protected open val ctx: Context) {
         return this.delegate { delegate }.publicView { it.cards }
     }
     fun <T: Any, A: Any> action(name: String, parameter: KClass<A>, actionDefinition: GameFlowActionScope<T, A>.() -> Unit)
-            = ActionFactory(name, parameter, actionDefinition)
-    fun <T: Any, A: GameSerializable> actionSerializable(name: String, parameter: KClass<A>, actionDefinition: GameFlowActionScope<T, A>.() -> Unit)
-            = ActionFactory(name, parameter, actionDefinition).also { it.actionType = it.actionType.serializer { a -> a.serialize() } }
+            = ActionFactory(GameActionCreator(name, parameter, parameter, { it }, { it as A }), actionDefinition)
+    fun <T: Any, A: Any> action(actionType: ActionType<T, A>, actionDefinition: GameFlowActionScope<T, A>.() -> Unit)
+            = ActionFactory(actionType, actionDefinition)
+    fun <T: Any, A: GameSerializable> actionSerializable(name: String, parameter: KClass<A>, actionDefinition: GameFlowActionScope<T, A>.() -> Unit): ActionFactory<T, A> {
+        val actionType = GameActionCreator<T, A>(name, parameter, parameter, { it }, { it as A }).serializer { it.serialize() }
+        return ActionFactory(actionType, actionDefinition)
+    }
     fun sharedIdGenerator() = ctx.gameContext.idGenerator
 }
 class GameContext(val meta: GameMetaScope<Any>, val events: EventsHandling<Any>, val playerCount: Int, val eliminations: PlayerEliminationsWrite, val configLookup: (GameConfig<Any>) -> Any) {
