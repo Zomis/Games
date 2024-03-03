@@ -13,6 +13,7 @@ class GameTestContext<T: Any>(val coroutineScope: CoroutineScope, val entryPoint
     var config: GameConfigs = setup.configs()
     var gameImpl: Game<T>? = null
     private val blocking = BlockingGameListener()
+    private var performingAction: Actionable<*, *>? = null
     var forwards = 0
 
     private suspend fun initializedGame(): Game<T> {
@@ -42,6 +43,13 @@ class GameTestContext<T: Any>(val coroutineScope: CoroutineScope, val entryPoint
             step.state.putAll(state)
             state.clear()
         }
+        if (step is FlowStep.ActionPerformed<*>) {
+            check(performingAction == step.action) { "ActionPerformed was ${step.action} but we performed $performingAction" }
+            performingAction = null
+        }
+        if (step is FlowStep.IllegalAction) {
+            throw IllegalStateException("We tried to perform $performingAction but it was not allowed.")
+        }
     }
 
     override fun state(key: String, value: Any) {
@@ -50,7 +58,9 @@ class GameTestContext<T: Any>(val coroutineScope: CoroutineScope, val entryPoint
 
     override suspend fun <A : Any> action(playerIndex: Int, actionType: ActionType<T, A>, parameter: A) {
         initialize()
-        blocking.awaitAndPerform(playerIndex, actionType, parameter)
+        val action = blocking.createAction(playerIndex, actionType, parameter)
+        performingAction = action
+        blocking.awaitAndPerform(action)
         flowForward()
     }
 

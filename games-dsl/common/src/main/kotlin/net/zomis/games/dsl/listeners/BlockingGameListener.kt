@@ -50,9 +50,14 @@ class BlockingGameListener: GameListener {
     suspend fun <T: Any, P: Any> awaitAndPerform(playerIndex: Int, type: ActionType<T, P>, parameter: P) {
         await()
         lock.lock()
-        val actionType = (game as Game<T>).actions.type(type) ?: throw IllegalArgumentException("ActionType '$type' not found. Valid options are ${game.actions.types().map { it.name }}")
-        val action = actionType.createAction(playerIndex, parameter)
+        val action = createAction(playerIndex, type, parameter)
         game.actionsInput.send(action as Actionable<Any, out Any>)
+    }
+
+    suspend fun <T: Any, P: Any> createAction(playerIndex: Int, type: ActionType<T, P>, parameter: P): Actionable<T, P> {
+        await()
+        val actionType = (game as Game<T>).actions.type(type) ?: throw IllegalArgumentException("ActionType '$type' not found. Valid options are ${game.actions.types().map { it.name }}")
+        return actionType.createAction(playerIndex, parameter)
     }
 
 }
