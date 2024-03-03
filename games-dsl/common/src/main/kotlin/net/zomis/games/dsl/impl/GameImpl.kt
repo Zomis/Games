@@ -17,6 +17,9 @@ import net.zomis.games.dsl.flow.actions.SmartActionBuilder
 import net.zomis.games.dsl.flow.actions.SmartActionScope
 import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.listeners.ReplayListener
+import net.zomis.games.rules.ActiveRules
+import net.zomis.games.rules.NoState
+import net.zomis.games.rules.Rule
 import net.zomis.games.rules.StandaloneStateOwner
 import net.zomis.games.scorers.Scorer
 import net.zomis.games.scorers.ScorerController
@@ -154,6 +157,7 @@ class GameImpl<T : Any>(
     private val copier: suspend () -> GameForkResult<T>
 ): Game<T>, GameFactoryScope<T, Any>, GameMetaScope<T> {
     override val configs: GameConfigs get() = gameConfig
+    private val activeRules = ActiveRules<T>(this)
 
     override fun <E : Any> fireEvent(source: EventSource, event: E, performEvent: (E) -> Unit)
         = this.events.fireEvent(source, event, performEvent as (Any) -> Unit)
@@ -174,6 +178,7 @@ class GameImpl<T : Any>(
     override val eliminations: PlayerEliminationsWrite get() = eliminationCallback
     override val events: EventsHandling<T> = EventsHandling(this)
     override val model = setupContext.model.factory(this)
+    private val baseRule = Rule(this, Unit, setupContext.getBaseRule(model) ?: {}, NoState)
     private val replayState = ReplayState(stateKeeper)
     override val replayable: ReplayState get() = replayState
     private val rules = GameActionRulesContext(this)
@@ -188,6 +193,8 @@ class GameImpl<T : Any>(
         feedbackFlow.send(FlowStep.GameSetup(this, gameConfig, stateKeeper.lastMoveState()))
 
         this.actionsInputJob = coroutineScope.launch(CoroutineName("Actions job for $this")) {
+            events.clearTemporary()
+            activeRules.fireRules(baseRule)
             for (action in actionsInput) {
                 check(action.game == model)
                 stateKeeper.clear()
@@ -204,6 +211,8 @@ class GameImpl<T : Any>(
                 eliminations.eliminations().minus(oldEliminations.toSet()).forEach {
                     feedbackFlow.send(FlowStep.Elimination(it))
                 }
+                events.clearTemporary()
+                activeRules.fireRules(baseRule)
                 awaitInput()
                 if (isGameOver()) {
                     break
