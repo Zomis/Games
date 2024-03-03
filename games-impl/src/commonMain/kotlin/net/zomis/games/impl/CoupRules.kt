@@ -616,6 +616,7 @@ object CoupRuleBased {
             state("replacement", listOf("AMBASSADOR"))
             action(0, reveal, Unit)
             action(2, loseInfluence, CoupCharacter.DUKE)
+            expectTrue(game.players[0].influence.cards.contains(CoupCharacter.AMBASSADOR))
             expectTrue(game.players[2].influence.size == 0)
             check(game.stack.isEmpty()) { game.stack.asList().toString() }
             expectTrue(game.stack.isEmpty())
