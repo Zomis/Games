@@ -18,6 +18,7 @@ class GameStack<T> {
     fun pop(): T = stack.removeAt(stack.lastIndex)
     fun popOrNull(): T? = if (stack.isEmpty()) null else pop()
     fun clear() = stack.clear()
+    fun isNotEmpty(): Boolean = !isEmpty()
 }
 
 data class CoupChallengedClaim(val claim: CoupClaim, val challengedBy: Int): CoupLoseInfluence {
