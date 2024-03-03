@@ -172,6 +172,7 @@ class GameImpl<T : Any>(
     override val config: Any get() = gameConfig.oldStyleValue()
     override val eliminationCallback = PlayerEliminations(playerCount)
     override val eliminations: PlayerEliminationsWrite get() = eliminationCallback
+    override val events: EventsHandling<T> = EventsHandling(this)
     override val model = setupContext.model.factory(this)
     private val replayState = ReplayState(stateKeeper)
     override val replayable: ReplayState get() = replayState
@@ -266,8 +267,6 @@ class GameImpl<T : Any>(
     override fun <A : Any> addAction(actionType: ActionType<T, A>, actionDsl: GameFlowActionDsl<T, A>) {
         TODO("Not implemented for GameImpl")
     }
-
-    override val events: EventsHandling<T> = EventsHandling(this)
 
     override fun <E: Any> config(config: GameConfig<E>): E = gameConfig.get(config)
 }

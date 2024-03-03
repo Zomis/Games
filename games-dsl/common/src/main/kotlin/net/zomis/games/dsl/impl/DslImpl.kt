@@ -247,7 +247,7 @@ class GameDslContext<T : Any>(val gameType: String) : GameDslScope<T> {
 
     override fun baseRule(rule: (T) -> RuleSpec<T, Unit>) {
         this.baseRule = rule
-        if (flowDsl == null) {
+        if (flowDsl == null && actionRulesDsl == null) {
             flowDsl = {
                 loop { step("no-op, use base-rule instead") {} }
             }

@@ -350,8 +350,6 @@ object DungeonMayhemDsl {
             defaultConfig { DungeonMayhemConfig() }
             init { DungeonMayhem(events, playerCount, config) }
         }
-        baseRule { baseRule }
-
         actionRules {
             allActions.precondition { playerIndex == game.currentPlayerIndex }
             view("currentPlayer") { game.currentPlayerIndex }
@@ -458,6 +456,7 @@ object DungeonMayhemDsl {
                 }
             }
         }
+        baseRule { baseRule }
 
         fun symbolCount(symbol: DungeonMayhemSymbol) = scorers.action(play) {
             action.parameter.symbols.count { it == symbol }.toDouble()
