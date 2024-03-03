@@ -17,6 +17,10 @@ import net.zomis.games.dsl.flow.ActionDefinition
 import net.zomis.games.dsl.flow.GameFlowScope
 import net.zomis.games.dsl.flow.GameFlowStepScope
 import net.zomis.games.dsl.flow.actions.SmartActionBuilder
+import net.zomis.games.impl.GameStack
+import net.zomis.games.rules.RuleSpec
+import net.zomis.games.rules.StandaloneStateOwner
+import net.zomis.games.rules.StateOwner
 import kotlin.random.Random
 
 object AlchemistsDelegationGame {
@@ -34,9 +38,14 @@ object AlchemistsDelegationGame {
         Reputation,
         VictoryPoints,
     }
+    sealed interface StackItem {
+        val ruleSpec: RuleSpec<Model, Unit>
+
+    }
 
     class TurnOrderChoice(val player: Model.Player, val turnOrder: Model.TurnOrder, var resources: ResourceMap)
     class Model(override val ctx: Context, master: GameConfig<Boolean>) : Entity(ctx), ContextHolder {
+        val stack: GameStack<StackItem> = GameStack()
         var currentActionSpace: HasAction? = null
         val master by value { false }.setup { config(master) }
         val queue by component { mutableListOf<ActionDefinition<Model, Any>>() }.publicView { it.map { s -> s.actionType.name } }
@@ -52,6 +61,9 @@ object AlchemistsDelegationGame {
                 replayable.randomFromList("solution", list.shuffled(), list.size, Ingredient::toString)
             }
         val alchemySolution get() = Alchemists.solutionWith(solution)
+        val baseRule by rule<Model, Unit>(Unit) {
+            AlchemistRules.baseRule.invoke(this)
+        }
         data class TurnOrder(
             val gold: Int, val favors: Int, val ingredients: Int,
             val choosable: Boolean = true, var chosenBy: Int? = null
@@ -183,6 +195,7 @@ object AlchemistsDelegationGame {
         }
 
         inner class Player(val model: Model, ctx: Context, val playerIndex: Int): Entity(ctx) {
+            val stateOwner: StateOwner = StandaloneStateOwner()
             val resourceChange = event<ResourceChange>()
             val resources by component { ResourceMap.of(Resources.Gold to 2, Resources.Reputation to 10).toMutableResourceMap(resourceChange) }.publicView { it.toView() }
             var gold by resource(resources, Resources.Gold)
@@ -324,6 +337,10 @@ object AlchemistsDelegationGame {
         val master = config("master") { false }
         players(2..4)
         init { Model(this.ctx, master) }
+        baseRule(Model::baseRule)
+        with(AlchemistTests) {
+            tests()
+        }
         gameFlow {
             println("SOLUTION: " + game.alchemySolution)
             game.gameInit.invoke(Unit)
