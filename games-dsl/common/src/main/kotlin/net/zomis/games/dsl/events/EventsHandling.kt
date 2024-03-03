@@ -93,4 +93,6 @@ class EventsHandling<GameModel: Any>(val metaScope: GameMetaScope<GameModel>) {
         }
     }
 
+    fun <E : Any> trigger(): EventFactory<E> = MetaEventFactory(metaScope)
+
 }
