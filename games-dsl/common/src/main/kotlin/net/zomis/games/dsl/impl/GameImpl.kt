@@ -239,10 +239,6 @@ class GameImpl<T : Any>(
 
     override suspend fun copy(): GameForkResult<T> = copier.invoke()
 
-    override fun injectStep(name: String, dsl: suspend GameFlowStepScope<T>.() -> Unit) {
-        TODO("Not yet implemented for GameImpl")
-    }
-
     override fun <Owner> addRule(owner: Owner, rule: GameModifierScope<T, Owner>.() -> Unit) {
         val ruleContext = GameModifierImpl(this, owner, rule, StandaloneStateOwner())
         ruleContext.fire()

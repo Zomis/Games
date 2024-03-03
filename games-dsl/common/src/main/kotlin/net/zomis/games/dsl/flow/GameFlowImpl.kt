@@ -151,12 +151,6 @@ class GameFlowImpl<T: Any>(
         feedbacks.clear()
     }
 
-    internal val stepInjectionQueue = mutableListOf<GameFlowStep<T>>()
-    override fun injectStep(name: String, dsl: suspend GameFlowStepScope<T>.() -> Unit) {
-        logger.info { "Add step to queue: $name" }
-        this.stepInjectionQueue.add(GameFlowStep(name, dsl))
-    }
-
     override suspend fun copy(): GameForkResult<T> {
         return when (val unfinished = this.unfinishedFeedback) {
             null -> copier.invoke(null)
@@ -332,15 +326,7 @@ class GameFlowContext<T: Any>(
     }
 
     override suspend fun step(name: String, dsl: suspend GameFlowStepScope<T>.() -> Unit): GameFlowStepResult<T> {
-        println("Run step $name queue is ${flow.stepInjectionQueue.size}")
-        while (flow.stepInjectionQueue.isNotEmpty()) {
-            val step = flow.stepInjectionQueue.removeFirst()
-            println("Run queued step ${step.name}")
-            val impl = GameFlowStepImpl(flow, coroutineScope, "${this.name}/$name", step)
-            impl.runDsl()
-        }
-
-        println("Run step $name queue is ${flow.stepInjectionQueue.size}")
+        println("Run step $name")
         val step = GameFlowStep(name, dsl)
         val impl = GameFlowStepImpl(flow, coroutineScope, "${this.name}/$name", step)
         impl.runDsl()

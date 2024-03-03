@@ -42,8 +42,6 @@ interface GameMetaScope<GameModel: Any>
     override fun <E: Any> config(config: GameConfig<E>): E = configs.get(config)
     val configs: GameConfigs
 
-    @Deprecated("use stack instead")
-    fun injectStep(name: String, dsl: suspend GameFlowStepScope<GameModel>.() -> Unit)
     @Deprecated("apply rules instead, don't add/remove")
     fun <Owner> addRule(owner: Owner, rule: RuleSpec<GameModel, Owner>)
     fun <E: Any> fireEvent(source: EventSource, event: E, performEvent: (E) -> Unit = {})
