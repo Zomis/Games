@@ -162,11 +162,6 @@ class GameImpl<T : Any>(
         TODO("Not yet implemented")
     }
 
-    override fun <Owner> removeRule(rule: GameModifierScope<T, Owner>) {
-        val remove = this.gameModifiers.single { it == rule }
-        this.gameModifiers.remove(remove)
-    }
-
     private val stateKeeper = StateKeeper()
     override val gameType: String = setupContext.gameType
     override fun toString(): String = "${super.toString()}-$gameType"
@@ -181,7 +176,6 @@ class GameImpl<T : Any>(
     private val replayState = ReplayState(stateKeeper)
     override val replayable: ReplayState get() = replayState
     private val rules = GameActionRulesContext(this)
-    private val gameModifiers: MutableList<GameModifierImpl<T, out Any?>> = mutableListOf() // TODO: Unused?
 
     override suspend fun start(coroutineScope: CoroutineScope) {
         if (this.actionsInputJob != null) throw IllegalStateException("Game already started")
@@ -238,13 +232,6 @@ class GameImpl<T : Any>(
     override val feedbackFlow: Channel<FlowStep> = Channel()
 
     override suspend fun copy(): GameForkResult<T> = copier.invoke()
-
-    override fun <Owner> addRule(owner: Owner, rule: GameModifierScope<T, Owner>.() -> Unit) {
-        val ruleContext = GameModifierImpl(this, owner, rule, StandaloneStateOwner())
-        ruleContext.fire()
-        this.gameModifiers.add(ruleContext)
-        ruleContext.executeOnActivate()
-    }
 
     override fun addGlobalActionPrecondition(rule: ActionOptionsScope<T>.() -> Boolean) {
         TODO("Not yet implemented for GameImpl")

@@ -30,13 +30,9 @@ class GameModifierImpl<GameModel: Any, Owner>(
     override val ruleHolder: Owner get() = owner
     override val game: GameModel get() = meta.game
     private val actionTypesEnabled = mutableMapOf<ActionType<GameModel, out Any>, Boolean>()
-    @Deprecated("apply rules instead, don't add/remove")
-    private val activationEffects = mutableListOf<GameModifierApplyScope<GameModel, Owner>.() -> Unit>()
     private val stateChecksBeforeAction = mutableListOf<GameModifierApplyScope<GameModel, Owner>.() -> Unit>()
     private val actionModifiers = mutableListOf<ActionModifier<GameModel>>()
     private val activeConditions = mutableListOf<GameModifierScope<GameModel, Owner>.() -> Boolean>()
-    @Deprecated("apply rules instead, don't add/remove")
-    private var removeCondition: (GameModifierScope<GameModel, Owner>.() -> Boolean)? = null
     private val globalPreconditions = mutableListOf<ActionOptionsScope<GameModel>.() -> Boolean>()
     private val subRules = mutableListOf<GameModifierImpl<GameModel, out Any?>>()
 
@@ -75,12 +71,6 @@ class GameModifierImpl<GameModel: Any, Owner>(
 
     override fun activeWhile(condition: GameModifierScope<GameModel, Owner>.() -> Boolean) {
         this.activeConditions.add(condition)
-    }
-
-    @Deprecated("apply rules instead, don't add/remove")
-    override fun removeWhen(condition: GameModifierScope<GameModel, Owner>.() -> Boolean) {
-        check(this.removeCondition == null)
-        this.removeCondition = condition
     }
 
     override fun <E : Any> on(event: EventFactory<E>, priority: EventPriority): EventModifierScope<GameModel, E> {
@@ -125,19 +115,6 @@ class GameModifierImpl<GameModel: Any, Owner>(
         this.stateChecksBeforeAction.add(doSomething)
     }
 
-    @Deprecated("apply rules instead, don't add/remove")
-    override fun onActivate(doSomething: GameModifierApplyScope<GameModel, Owner>.() -> Unit) {
-        this.activationEffects.add(doSomething)
-    }
-
-    @Deprecated("apply rules instead, don't add/remove")
-    fun executeOnActivate() {
-        val context = createApplyContext()
-        for (effect in this.activationEffects) {
-            effect.invoke(context)
-        }
-    }
-
     private fun createApplyContext(): GameModifierApplyContext<GameModel, Owner>
         = GameModifierApplyContext(ruleHolder, meta)
 
@@ -145,9 +122,6 @@ class GameModifierImpl<GameModel: Any, Owner>(
 
     private fun executeStateCheck(checks: List<GameModifierApplyScope<GameModel, Owner>.() -> Unit>) {
         if (!this.isActive()) return
-        if (this.removeCondition?.invoke(this) == true) {
-            meta.removeRule(this)
-        }
 
         val context = createApplyContext()
         for (effect in checks) {
@@ -183,11 +157,9 @@ class GameModifierImpl<GameModel: Any, Owner>(
     private fun clear() {
         actionTypesEnabled.clear()
         // states.clear() // Do not clear states.
-        activationEffects.clear()
         stateChecksBeforeAction.clear()
         actionModifiers.clear()
         activeConditions.clear()
-        removeCondition = null
         globalPreconditions.clear()
         subRules.clear()
     }

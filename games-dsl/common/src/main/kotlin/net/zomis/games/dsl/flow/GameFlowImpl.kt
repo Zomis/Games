@@ -77,7 +77,6 @@ class GameFlowImpl<T: Any>(
     override val replayable = ReplayState(stateKeeper)
     override val actions = GameFlowActionsImpl({ feedbacks.add(it) }, this)
     override val feedback: (FlowStep) -> Unit = { feedbacks.add(it) }
-    private val rules: MutableList<GameModifierImpl<T, out Any?>> = mutableListOf()
     override fun <E : Any> fireEvent(source: EventSource, event: E, performEvent: (E) -> Unit) {
         logger.info { "fireEvent from source $source with value $event" }
         this.events.fireEvent(source, event, performEvent as (Any) -> Unit)
@@ -120,18 +119,6 @@ class GameFlowImpl<T: Any>(
             old.invoke()
             function.invoke()
         }
-    }
-
-    override fun <Owner> addRule(owner: Owner, rule: GameModifierScope<T, Owner>.() -> Unit) {
-        val ruleContext = GameModifierImpl(this, owner, rule, StandaloneStateOwner())
-        ruleContext.fire()
-        this.rules.add(ruleContext)
-        ruleContext.executeOnActivate()
-    }
-
-    override fun <Owner> removeRule(rule: GameModifierScope<T, Owner>) {
-        val remove = this.rules.single { it == rule }
-        this.rules.remove(remove)
     }
 
     override fun stop() {
@@ -257,7 +244,7 @@ class GameFlowImpl<T: Any>(
         setupContext.flowRulesDsl?.invoke(GameFlowRulesContext(this, state, this))
         when (state) {
             GameFlowRulesState.AFTER_ACTIONS -> { /* ignore */ }
-            GameFlowRulesState.BEFORE_RETURN -> this.rules.toList().forEach { it.executeBeforeAction() }
+            GameFlowRulesState.BEFORE_RETURN -> { /* ignore */ }
             GameFlowRulesState.FIRE_EVENT -> { /* ignore */ }
         }
     }
