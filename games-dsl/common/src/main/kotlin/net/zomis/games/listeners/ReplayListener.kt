@@ -30,6 +30,14 @@ class ReplayListener(val gameType: String) : GameListener {
         }
     }
 
-    fun data(): ReplayData = ReplayData(gameType, playerCount!!, config!!, gameStartedState, actions)
+    fun data(): ReplayData {
+        return ReplayData(
+            gameType = gameType,
+            playerCount = playerCount ?: throw ReplayException("playerCount not set"),
+            config = config ?: throw ReplayException("config not set"),
+            initialState = gameStartedState,
+            actions = actions,
+        )
+    }
 
 }

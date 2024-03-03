@@ -12,7 +12,9 @@ import net.zomis.games.dsl.listeners.BlockingGameListener
 import net.zomis.games.listeners.ReplayingListener
 import kotlin.reflect.KClass
 
-class ReplayException(override val message: String?, override val cause: Throwable?): Exception(message, cause)
+class ReplayException(override val message: String?, override val cause: Throwable?): Exception(message, cause) {
+    constructor(message: String?): this(message, null)
+}
 
 class Replay<T : Any>(
     private val coroutineScope: CoroutineScope,
