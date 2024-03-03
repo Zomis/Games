@@ -92,6 +92,7 @@ class AllGamesTest {
             awaiting.awaitGameEnd()
             Assertions.assertTrue(game.isGameOver())
         } catch (ex: Exception) {
+            ex.printStackTrace()
             val filename = "failed-game-${gameType.gameType}-${System.currentTimeMillis()}.json"
             FileReplay(Path.of(filename), replay).save()
             throw ReplayException("Sanity check failed for game ${gameType.gameType}. Saved replay to $filename", ex)
