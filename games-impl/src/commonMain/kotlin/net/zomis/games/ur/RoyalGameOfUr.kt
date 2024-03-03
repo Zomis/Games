@@ -1,6 +1,6 @@
 package net.zomis.games.ur
 
-import net.zomis.games.Dice
+import net.zomis.games.Die
 import net.zomis.games.dsl.ReplayStateI
 
 /*
@@ -58,7 +58,7 @@ class RoyalGameOfUr {
             return NO_WINNER
         }
 
-    private val dice = Dice.d(2).times(4).randomiser("roll")
+    private val dice = Die(listOf(0, 1)).times(4).randomiser("roll")
 
     fun randomRoll(replayable: ReplayStateI): List<Int> {
         if (!isRollTime()) {
