@@ -12,14 +12,14 @@ object AlchemistTests {
             state("startingIngredients-0", listOf("C", "B", "A"))
             initialize()
 
-            action(0, game.favors.discardFavor.actionType, Favors.FavorType.SAGE)
+            action(0, Favors.discardFavor, Favors.FavorType.SAGE)
 //            actionAllowed(0, game.favors.herbalistDiscard, listOf("A", "B"))
 
             state("herbalist", listOf("E", "F", "G"))
-            action(1, game.favors.discardFavor.actionType, Favors.FavorType.ASSOCIATE)
+            action(1, Favors.discardFavor, Favors.FavorType.ASSOCIATE)
 
             actionNotAllowed(0, game.turnPicker.action.actionType, game.turnPicker.options.first { it.ingredients == 2 })
-            action(0, game.favors.herbalistDiscard.actionType, PotionActions.IngredientsMix(0, Ingredient.GRAY_TREE to Ingredient.RED_SCORPION))
+            action(0, Favors.herbalistDiscard, PotionActions.IngredientsMix(0, Ingredient.GRAY_TREE to Ingredient.RED_SCORPION))
             expectEquals(listOf(Ingredient.PURPLE_MUSHROOM, Ingredient.GREEN_PLANT, Ingredient.BROWN_FROG, Ingredient.BLUE_FLOWER), game.players[0].ingredients.cards)
         }
         testCase(2, name = "Play first round") {
@@ -38,9 +38,9 @@ object AlchemistTests {
             state("startingIngredients-1", listOf("D", "E", "F"))
             initialize()
 
-            action(0, game.favors.discardFavor.actionType, Favors.FavorType.HERBALIST)
+            action(0, Favors.discardFavor, Favors.FavorType.HERBALIST)
             state("ingredients-slots", listOf("A", "B", "C", "D", "E"))
-            action(1, game.favors.discardFavor.actionType, Favors.FavorType.SAGE)
+            action(1, Favors.discardFavor, Favors.FavorType.SAGE)
 
             state("ingredients", listOf("C", "A"))
             action(0, game.turnPicker.action.actionType, game.turnPicker.options.first { it.ingredients == 2 })

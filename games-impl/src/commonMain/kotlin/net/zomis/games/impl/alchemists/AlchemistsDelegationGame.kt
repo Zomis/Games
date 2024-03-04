@@ -7,6 +7,7 @@ import net.zomis.games.common.next
 import net.zomis.games.components.resources.GameResource
 import net.zomis.games.components.resources.ResourceChange
 import net.zomis.games.components.resources.ResourceMap
+import net.zomis.games.context.ActivePhases
 import net.zomis.games.context.Context
 import net.zomis.games.context.ContextHolder
 import net.zomis.games.context.Entity
@@ -14,9 +15,6 @@ import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.GameConfig
 import net.zomis.games.dsl.GameSerializable
 import net.zomis.games.dsl.flow.ActionDefinition
-import net.zomis.games.dsl.flow.GameFlowScope
-import net.zomis.games.dsl.flow.GameFlowStepScope
-import net.zomis.games.dsl.flow.actions.ActionChoice
 import net.zomis.games.dsl.flow.actions.SmartActionBuilder
 import net.zomis.games.impl.GameStack
 import net.zomis.games.rules.RuleSpec
@@ -57,9 +55,10 @@ object AlchemistsDelegationGame {
     class TurnOrderChoice(val player: Model.Player, val turnOrder: Model.TurnOrder, var resources: ResourceMap)
     class Model(override val ctx: Context, master: GameConfig<Boolean>) : Entity(ctx), ContextHolder {
         val stack: GameStack<StackItem> = GameStack()
+        var phase = ActivePhases(Phases.phases)
+
         var currentActionSpace: HasAction? = null
         val master by value { false }.setup { config(master) }
-        val queue by component { mutableListOf<ActionDefinition<Model, Any>>() }.publicView { it.map { s -> s.actionType.name } }
         val chosenTurnOrder = event<TurnOrderChoice>()
         val newRound = event<Int>()
         val gameInit = event<Unit>()
@@ -327,23 +326,6 @@ object AlchemistsDelegationGame {
         )
     }
 
-    private fun checkQueue(scope: GameFlowStepScope<Model>) {
-        val item = scope.game.queue.first()
-        if (item.actionType.name == scope.game.favors.herbalistActionName) {
-            val player = scope.game.players.first { it.favors.cards.contains(Favors.FavorType.HERBALIST) }
-            scope.game.ingredients.deck.randomWithRefill(scope.game.ingredients.discardPile, scope.replayable, 3, "herbalist") { it.serialize() }
-                .forEach { it.moveTo(player.ingredients) }
-        }
-        scope.enableAction(item)
-    }
-    suspend fun stateChecks(scope: GameFlowScope<Model>) {
-        if (scope.game.queue.isNotEmpty()) {
-            scope.step("empty queue") {
-                checkQueue(this)
-            }.loopUntil { scope.game.queue.isEmpty() }
-        }
-    }
-
     val game = GamesApi.gameContext("Alchemists", Model::class) {
         val master = config("master") { false }
         players(2..4)
@@ -356,16 +338,7 @@ object AlchemistsDelegationGame {
             println("SOLUTION: " + game.alchemySolution)
             game.gameInit.invoke(Unit)
             // Discard favors step. Next step self - discarding player, until none are left.
-            step("choose favors") {
-                enableAction(game.favors.discardFavor)
-            }.loopUntil { game.favors.playersDiscardingSetupFavor.isEmpty() }
-            // Use a stack and a rule that checks if stack is empty and anyone has a herbalist.
-            game.players.forEach { player ->
-                repeat(player.favors.cards.count { it == Favors.FavorType.HERBALIST }) {
-                    game.queue.add(game.favors.herbalistDiscard as ActionDefinition<Model, Any>)
-                }
-            }
-            stateChecks(this)
+            game.stack.add(Favors.FavorDiscard(game.players.toMutableList()))
 
             // Sequential steps, round 1-6
             for (round in 1..6) {
@@ -374,43 +347,51 @@ object AlchemistsDelegationGame {
                 log { "Round $round" }
                 // Sequential nested step, turn picker. Next step self(with nextPlayer) until all players picked.
                 step("round $round - turnPicker") {
-                    if (game.queue.isNotEmpty()) checkQueue(this)
-                    else enableAction(game.turnPicker.action)
+                    enableAction(game.turnPicker.action)
                 }.loopUntil {
-                    game.queue.isEmpty()
-                        && game.players.indices.all { player -> game.turnPicker.options.any { it.chosenBy == player } }
+                    game.players.indices.all { player -> game.turnPicker.options.any { it.chosenBy == player } }
                 }
-
-                stateChecks(this)
+                println("round $round - turnpick done")
 
                 // Sequential nested step, place actions. Next step self(with nextPlayer) until all players placed.
                 step("round $round - placeActions") {
                     enableAction(game.actionPlacement)
                     enableAction(game.favors.assistant)
                 }.loopUntil { game.turnPicker.options.all { it.chosenBy == null } }
+                println("round $round - place actions done")
 
                 // Sequential nested step, resolve spaces. Next step self until all spaces are done.
                 for (space in game.actionSpaces) {
                     game.currentActionSpace = space
                     step("resolve round $round ${space.actionSpace.name}") {
-                        if (game.queue.isNotEmpty()) {
-                            checkQueue(this)
-                        } else {
-                            enableAction(space.action)
-                            enableAction(game.cancelAction(space))
-                            space.extraActions().forEach { enableAction(it) }
-                            space.extraHandlers().forEach {
-                                actionHandler(it.first, it.second)
-                            }
+                        enableAction(space.action)
+                        enableAction(game.cancelAction(space))
+                        space.extraActions().forEach { enableAction(it) }
+                        space.extraHandlers().forEach {
+                            actionHandler(it.first, it.second)
                         }
                     }.loopUntil {
                         action?.parameter !is Favors.FavorType
-                            && game.queue.isEmpty()
+                            && game.stack.isEmpty()
                             && space.actionSpace.rows.all { it == null || it.cubes.all { cubes -> cubes.used } }
                     }
                     game.spaceDone.invoke(space)
                 }
             }
+
+            game.players.forEach {  player ->
+                player.resources[Resources.VictoryPoints] =
+                    player.artifacts.cards.sumOf { it.victoryPoints ?: 0 } +
+                        player.reputation +
+                        player.gold / 3
+            }
+
+            /*
+              VP = Reputation + Magic Mirror + Artifacts + Feather in Cap + Crystal Cabinet +
+                Grants + Gold + Big Revelation + Wisdom Idol
+            */
+            val playerScores = game.players.map { it.playerIndex to (it.resources[Resources.VictoryPoints] ?: 0) }
+            eliminations.eliminateBy(playerScores, compareBy { it })
         }
     }
 

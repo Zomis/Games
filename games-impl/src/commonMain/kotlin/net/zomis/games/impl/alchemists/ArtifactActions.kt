@@ -73,6 +73,9 @@ object ArtifactActions {
             game.stack.add(BootsOfSpeed(ruleHolder.owner.playerIndex, event) { usedBootsOfSpeed = true })
         }
     }
+    class BootsOfSpeedUsage(private val playerIndex: Int, position: AlchemistsDelegationGame.HasAction) : AlchemistsDelegationGame.StackItem {
+        override val ruleSpec: RuleSpec<AlchemistsDelegationGame.Model, Unit> = {}
+    }
     class BootsOfSpeed(private val playerIndex: Int, event: AlchemistsDelegationGame.HasAction, private val onPerform: () -> Unit) : AlchemistsDelegationGame.StackItem {
         override val ruleSpec: RuleSpec<AlchemistsDelegationGame.Model, Unit> = {
             action(bootsOfSpeedAction) {
@@ -81,7 +84,7 @@ object ArtifactActions {
                 perform {
                     if (!action.parameter) return@perform
                     onPerform.invoke()
-                    game.queue.add(event.action as ActionDefinition<AlchemistsDelegationGame.Model, Any>)
+                    game.stack.add(BootsOfSpeedUsage(playerIndex, event))
                     log { "$player uses boots of speed at ${event.actionSpace.name}" }
                 }
             }

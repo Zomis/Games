@@ -7,6 +7,7 @@ import net.zomis.games.dsl.GameActionCreator
 import net.zomis.games.dsl.GameSerializable
 import net.zomis.games.dsl.flow.ActionDefinition
 import net.zomis.games.dsl.flow.GameFlowActionScope
+import net.zomis.games.rules.RuleSpec
 
 object TheoryActions {
 
@@ -126,20 +127,26 @@ object TheoryActions {
                     // If debunked at least one, give option of direct publishing
                     val debunkAction = action
                     if (game.publishTheory.actionSpace.has(playerIndex)) {
-                        game.queue.add(action<AlchemistsDelegationGame.Model, Boolean>("instantPublish", Boolean::class) {
+                        game.stack.add(SingleActionStep(action<AlchemistsDelegationGame.Model, Boolean>("instantPublish", Boolean::class) {
                             precondition { playerIndex == debunkAction.playerIndex }
                             options { listOf(true, false) }
                             perform {
-                                game.queue.removeAt(0)
+                                game.stack.pop()
                                 if (action.parameter) {
                                     game.publishTheory.actionSpace.resolveNext(playerIndex)
-                                    game.queue.add(createPublishFromDebunkAction(playerIndex, debunked))
+                                    game.stack.add(SingleActionStep(createPublishFromDebunkAction(playerIndex, debunked)))
                                 }
                             }
-                        } as ActionDefinition<AlchemistsDelegationGame.Model, Any>)
+                        } as ActionDefinition<AlchemistsDelegationGame.Model, Any>))
                     }
                 }
             }
+        }
+    }
+
+    class SingleActionStep(private val action: ActionDefinition<AlchemistsDelegationGame.Model, out Any>) : AlchemistsDelegationGame.StackItem {
+        override val ruleSpec: RuleSpec<AlchemistsDelegationGame.Model, Unit> = {
+            action(action)
         }
     }
 
