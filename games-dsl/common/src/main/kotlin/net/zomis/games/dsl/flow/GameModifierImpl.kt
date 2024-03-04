@@ -2,6 +2,8 @@ package net.zomis.games.dsl.flow
 
 import net.zomis.games.dsl.*
 import net.zomis.games.dsl.events.*
+import net.zomis.games.dsl.flow.actions.SmartActionBuilder
+import net.zomis.games.dsl.flow.actions.SmartActionScope
 import net.zomis.games.dsl.impl.LogActionContext
 import net.zomis.games.dsl.impl.LogContext
 import net.zomis.games.rules.Rule
@@ -26,10 +28,10 @@ class GameModifierImpl<GameModel: Any, Owner>(
     private val stateOwner: StateOwner,
 ): GameModifierScope<GameModel, Owner>, StateOwner by stateOwner {
     private var active: Boolean = true
+    override var name: String = "(unnamed rule)"
 
     override val ruleHolder: Owner get() = owner
     override val game: GameModel get() = meta.game
-    private val actionTypesEnabled = mutableMapOf<ActionType<GameModel, out Any>, Boolean>()
     private val stateChecksBeforeAction = mutableListOf<GameModifierApplyScope<GameModel, Owner>.() -> Unit>()
     private val actionModifiers = mutableListOf<ActionModifier<GameModel>>()
     private val activeConditions = mutableListOf<GameModifierScope<GameModel, Owner>.() -> Boolean>()
@@ -37,7 +39,7 @@ class GameModifierImpl<GameModel: Any, Owner>(
     private val subRules = mutableListOf<GameModifierImpl<GameModel, out Any?>>()
 
     override fun enableAction(actionType: ActionType<GameModel, out Any>) {
-        actionTypesEnabled[actionType] = true
+        TODO("has no effect")
     }
 
     override fun applyRule(condition: () -> Boolean, rule: RuleSpec<GameModel, out Any>): Rule<GameModel, out Any> {
@@ -85,10 +87,21 @@ class GameModifierImpl<GameModel: Any, Owner>(
         return impl
     }
 
+    override fun <A : Any> actionHandler(
+        action: ActionType<GameModel, A>,
+        dsl: SmartActionScope<GameModel, A>.() -> Unit
+    ) {
+        meta.addActionHandler(action, dsl)
+    }
+
+    override fun <A : Any> actionHandler(action: ActionType<GameModel, A>, handler: SmartActionBuilder<GameModel, A>) {
+        meta.addAction(action, handler)
+    }
+
     override fun <C : Any> config(config: GameConfig<C>): C = meta.config(config)
 
-    override fun <A : Any> action(action: ActionDefinition<GameModel, A>): ActionRule<GameModel, A> {
-        TODO("Not yet implemented")
+    override fun <A : Any> action(action: ActionDefinition<GameModel, A>) {
+        action(action.actionType, action.actionDsl)
     }
 
     override fun <A : Any> action(
@@ -155,7 +168,6 @@ class GameModifierImpl<GameModel: Any, Owner>(
     }
 
     private fun clear() {
-        actionTypesEnabled.clear()
         // states.clear() // Do not clear states.
         stateChecksBeforeAction.clear()
         actionModifiers.clear()
@@ -164,7 +176,7 @@ class GameModifierImpl<GameModel: Any, Owner>(
         subRules.clear()
     }
 
-    override fun toString(): String = "Rule(ruleSpec=$ruleSpec, owner=$owner, state=$stateOwner)"
+    override fun toString(): String = "Rule(name=$name, owner=$owner, state=$stateOwner, stateChecks=${stateChecksBeforeAction.size}, actionModifiers=${actionModifiers.size}, subRules=${subRules.size})"
 
 }
 

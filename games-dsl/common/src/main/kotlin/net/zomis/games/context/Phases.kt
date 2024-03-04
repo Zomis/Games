@@ -11,4 +11,6 @@ class ActivePhases<T>(sequence: Sequence<T>) {
         phaseIndex++
         current = iterator.next()
     }
+
+    override fun toString(): String = "ActivePhase($phaseIndex = $current)"
 }

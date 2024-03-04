@@ -19,6 +19,7 @@ class GameStack<T> {
     fun popOrNull(): T? = if (stack.isEmpty()) null else pop()
     fun clear() = stack.clear()
     fun isNotEmpty(): Boolean = !isEmpty()
+    override fun toString(): String = "GameStack($stack)"
 }
 
 data class CoupChallengedClaim(val claim: CoupClaim, val challengedBy: Int): CoupLoseInfluence {

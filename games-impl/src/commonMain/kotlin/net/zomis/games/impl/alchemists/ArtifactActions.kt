@@ -18,15 +18,21 @@ import net.zomis.games.rules.RuleSpec
 
 object ArtifactActions {
     data class OwnedArtifact(val owner: AlchemistsDelegationGame.Model.Player, val artifact: Artifact)
-    data class Artifact(
+    class Artifact(
         val name: String,
         val description: String,
         val level: Int,
         val cost: Int,
         val victoryPoints: Int?,
         val immediateEffect: ActionRuleScope<AlchemistsDelegationGame.Model, Artifact>.() -> Unit = {},
-        val rule: RuleSpec<AlchemistsDelegationGame.Model, OwnedArtifact> = {}
+        rule: RuleSpec<AlchemistsDelegationGame.Model, OwnedArtifact> = {}
     ): GameSerializable, Viewable {
+        val rule: RuleSpec<AlchemistsDelegationGame.Model, OwnedArtifact> = {
+            name = this@Artifact.name
+            rule.invoke(this)
+        }
+
+        override fun toString(): String = name
         override fun serialize(): String = name
         override fun toView(viewer: PlayerIndex) = mapOf("name" to name, "description" to description, "level" to level, "cost" to cost, "victoryPoints" to victoryPoints)
     }

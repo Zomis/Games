@@ -38,6 +38,10 @@ class SanityCheckListener(val game: Game<out Any>): GameListener {
             blockingListener.await()
         }
 
+        if (step is FlowStep.GameException) {
+            throw IllegalStateException("Sanity check caught exception", step.e)
+        }
+
         if (step is FlowStep.ActionPerformed<*>) {
             // Perform the same action with the same state in the live replay game
             val replayGame = replay?.game ?: throw IllegalStateException("Replay game is not initialized")

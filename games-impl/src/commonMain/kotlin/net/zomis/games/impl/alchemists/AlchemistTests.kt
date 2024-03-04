@@ -11,12 +11,15 @@ object AlchemistTests {
             state("startingPlayer", 1)
             state("startingIngredients-0", listOf("C", "B", "A"))
             initialize()
+            expectEquals(listOf(Ingredient.PURPLE_MUSHROOM, Ingredient.GREEN_PLANT, Ingredient.BROWN_FROG), game.players[0].ingredients.cards)
 
             action(0, Favors.discardFavor, Favors.FavorType.SAGE)
 //            actionAllowed(0, game.favors.herbalistDiscard, listOf("A", "B"))
 
-            state("herbalist", listOf("E", "F", "G"))
+            state("herbalist-0", listOf("G", "F", "E"))
             action(1, Favors.discardFavor, Favors.FavorType.ASSOCIATE)
+
+            expectEquals(listOf(Ingredient.PURPLE_MUSHROOM, Ingredient.GREEN_PLANT, Ingredient.BROWN_FROG, Ingredient.BLUE_FLOWER, Ingredient.GRAY_TREE, Ingredient.RED_SCORPION), game.players[0].ingredients.cards)
 
             actionNotAllowed(0, game.turnPicker.action.actionType, game.turnPicker.options.first { it.ingredients == 2 })
             action(0, Favors.herbalistDiscard, PotionActions.IngredientsMix(0, Ingredient.GRAY_TREE to Ingredient.RED_SCORPION))

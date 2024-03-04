@@ -37,9 +37,9 @@ object GameExamples {
             onState(condition = { damage >= 10 }) { eliminations.eliminateRemaining(WinResult.WIN) }
             enableAction(other)
             enableAction(rest)
-            action(other).cost(::energy, -1)
+//            action(other).cost(::energy, -1)
             val rule1 = applyRule(condition = { energy <= 2 }) {
-                action(other).deny()
+//                action(other).deny()
                 // force "rest" action
                 allActionsPrecondition { actionType == rest.actionType.name }
             }

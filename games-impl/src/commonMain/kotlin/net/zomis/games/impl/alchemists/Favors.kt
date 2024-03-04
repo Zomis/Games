@@ -10,6 +10,7 @@ import net.zomis.games.context.Entity
 import net.zomis.games.dsl.GameSerializable
 import net.zomis.games.dsl.flow.ActionDefinition
 import net.zomis.games.dsl.flow.GameModifierScope
+import net.zomis.games.rules.Rule
 import net.zomis.games.rules.RuleSpec
 
 object Favors {
@@ -17,18 +18,28 @@ object Favors {
     val discardFavor = GamesApi.gameCreator(AlchemistsDelegationGame.Model::class).action("discardFavor", FavorType::class).serializer { it.serialize() }
     val herbalistDiscard = GamesApi.gameCreator(AlchemistsDelegationGame.Model::class).action("herbalist", PotionActions.IngredientsMix::class).serializer { it.serialize() }
 
-    val herbalistRule: RuleSpec<AlchemistsDelegationGame.Model, Unit> = {
+    fun herbalistRule(rule: Rule<*, *>): RuleSpec<AlchemistsDelegationGame.Model, Unit> = lambda@{
+        name = "Herbalist rule"
+        if (game.phase.current is Phases.Phase.Setup) return@lambda
+        val herbalistPlayers = game.players.filter { player -> player.favors.cards.any { it == FavorType.HERBALIST } }
+        if (herbalistPlayers.isNotEmpty()) {
+            rule.disable()
+        }
+
         stateCheckBeforeAction {
             if (!game.stack.isEmpty()) return@stateCheckBeforeAction
+            var addedAny = false
 
             game.players.forEach { player ->
                 if (player.favors.cards.any { it == FavorType.HERBALIST }) {
                     player.favors.card(FavorType.HERBALIST).moveTo(game.favors.discardPile)
-                    game.ingredients.deck.randomWithRefill(game.ingredients.discardPile, meta.replayable, 3, "herbalist") { it.serialize() }
+                    game.ingredients.deck.randomWithRefill(game.ingredients.discardPile, meta.replayable, 3, "herbalist-" + player.playerIndex) { it.serialize() }
                         .forEach { it.moveTo(player.ingredients) }
                     game.stack.add(FavorDeck.HerbalistDiscard(player.playerIndex))
+                    addedAny = true
                 }
             }
+            if (addedAny) game.stack.add(FavorDeck.HerbalistDiscard(-1)) // TODO: Ugly hack.
         }
     }
 
@@ -75,11 +86,10 @@ object Favors {
             }
         }
 
-        class HerbalistDiscard(private val playerIndex: Int) : AlchemistsDelegationGame.StackItem {
+        data class HerbalistDiscard(private val playerIndex: Int) : AlchemistsDelegationGame.StackItem {
             override val ruleSpec: RuleSpec<AlchemistsDelegationGame.Model, Unit> = {
                 action(herbalistDiscard) {
-                    precondition { game.players[playerIndex].favors.cards.contains(FavorType.HERBALIST)
-                            && playerIndex == game.players.first { it.favors.cards.contains(FavorType.HERBALIST) }.playerIndex }
+                    precondition { playerIndex == this@HerbalistDiscard.playerIndex }
                     choose {
                         recursive(emptyList<Ingredient>()) {
                             until { chosen.size == 2 }
@@ -94,12 +104,12 @@ object Favors {
                         }
                     }
                     perform {
+                        game.stack.pop()
                         game.players[playerIndex].ingredients.card(action.parameter.ingredients.first).moveTo(game.ingredients.discardPile)
                         game.players[playerIndex].ingredients.card(action.parameter.ingredients.second).moveTo(game.ingredients.discardPile)
                         log { "$player discards two ingredients because of herbalist" }
                     }
                 }
-
             }
         }
 
@@ -110,7 +120,6 @@ object Favors {
 
     class FavorDiscard(private val discardingPlayers: MutableList<AlchemistsDelegationGame.Model.Player>) : AlchemistsDelegationGame.StackItem {
         override val ruleSpec: RuleSpec<AlchemistsDelegationGame.Model, Unit> = {
-
             action(discardFavor) {
                 precondition { discardingPlayers.any { it.playerIndex == playerIndex } }
                 perform { discardingPlayers.removeAll { it.playerIndex == playerIndex } }

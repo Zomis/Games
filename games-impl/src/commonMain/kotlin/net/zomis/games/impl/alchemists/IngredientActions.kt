@@ -18,7 +18,7 @@ object IngredientActions {
         val slots by cards<Ingredient>()
             .on(model.spaceDone) {
                 // TODO: This should happen LATER than Speed of Boots, which is why we're temporarily checking for transmute instead
-                if (event == model.transmute) value.cards.clear()
+                if (event == model.transmute) value.moveAllTo(discardPile)
             }
             .on(model.newRound) {
                 println("Refilling ingredients for round $event")
