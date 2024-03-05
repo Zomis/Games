@@ -45,7 +45,7 @@ object Favors {
 
     enum class FavorType(val count: Int): GameSerializable {
         ASSISTANT(4), // Add a cube, allow play multiple // TODO: Rule modification
-        HERBALIST(4), // Draw 3 ingredients, discard 2, resolve one at a time // TODO: Rule modification? Interject steps
+        HERBALIST(4), // Draw 3 ingredients, discard 2, resolve one at a time
         ASSOCIATE(3), // Place cubes on top row, can use one per action space // TODO: Rule modification
         CUSTODIAN(3), // Drink potion before sell to hero, allow use multiple, can also be used in round 6 // TODO: Rule modification
         SHOPKEEPER(2), // Discount by 1 gold when buying an artifact // TODO: Rule modification
@@ -58,6 +58,9 @@ object Favors {
 
     class FavorDeck(ctx: Context): Entity(ctx) {
         var favorsPlayed by cards<FavorType>()
+        val discardFavors by viewOnly {
+            actionRaw(discardFavor).options()
+        }
 
         fun allowFavors(vararg favorType: FavorType): ActionDefinition<AlchemistsDelegationGame.Model, FavorType> {
             return action("favor", FavorType::class) {

@@ -4,8 +4,8 @@ import net.zomis.games.rules.RuleSpec
 
 object Phases {
 
-    sealed class Phase(val ruleSpec: RuleSpec<AlchemistsDelegationGame.Model, Unit>) {
-        object Setup : Phase({
+    sealed class Phase(val name: String, val ruleSpec: RuleSpec<AlchemistsDelegationGame.Model, Unit>) {
+        object Setup : Phase("setup phase", {
             name = "setup phase"
             println("Run setup rule")
             // Discard favors step. Next step self - discarding player, until none are left.
@@ -17,7 +17,7 @@ object Phases {
                 game.phase.next()
             }
         })
-        data class PrepareRound(val round: Int) : Phase({
+        data class PrepareRound(val round: Int) : Phase("prepare round $round", {
             name = "prepare round phase $round"
             stateCheckBeforeAction {
                 game.newRound(round)
@@ -25,19 +25,19 @@ object Phases {
                 log { "Round $round" }
             }
         })
-        data class ChooseTurnOrder(val round: Int) : Phase({
+        data class ChooseTurnOrder(val round: Int) : Phase("turn order round $round", {
             name = "turn order phase $round"
             action(game.turnPicker.action)
 //            .loopUntil { game.players.indices.all { player -> game.turnPicker.options.any { it.chosenBy == player } } }
         })
-        data class PlaceActions(val round: Int) : Phase({
+        data class PlaceActions(val round: Int) : Phase("place actions for round $round", {
             name = "place actions phase $round"
             // Sequential nested step, place actions. Next step self(with nextPlayer) until all players placed.
             action(game.actionPlacement)
             action(game.favors.assistant)
 //            .loopUntil { game.turnPicker.options.all { it.chosenBy == null } }
         })
-        data class ResolveActions(val round: Int, val space: AlchemistsDelegationGame.HasAction) : Phase({
+        data class ResolveActions(val round: Int, val space: AlchemistsDelegationGame.HasAction) : Phase("resolve ${space.actionSpace.name}", {
             name = "resolve actions $round ${space.actionSpace.name}"
             // Sequential nested step, resolve spaces. Next step self until all spaces are done.
             game.currentActionSpace = space
@@ -55,7 +55,7 @@ object Phases {
             game.spaceDone.invoke(space)
         })
 
-        object BigRevelation : Phase({
+        object BigRevelation : Phase("big revelation", {
             name = "big revelation phase"
             stateCheckBeforeAction {
                 game.players.forEach {  player ->

@@ -54,8 +54,8 @@ object AlchemistsDelegationGame {
 
     class TurnOrderChoice(val player: Model.Player, val turnOrder: Model.TurnOrder, var resources: ResourceMap)
     class Model(override val ctx: Context, master: GameConfig<Boolean>) : Entity(ctx), ContextHolder {
-        val stack: GameStack<StackItem> = GameStack()
-        var phase = ActivePhases(Phases.phases(this))
+        val stack: GameStack<StackItem> by component<GameStack<StackItem>> { GameStack() }.view { i -> i.stack.map { it::class.simpleName } }
+        var phase by component { ActivePhases(Phases.phases(this@Model)) }.view { it.current.name }
 
         var currentActionSpace: HasAction? = null
         val master by value { false }.setup { config(master) }
@@ -70,6 +70,7 @@ object AlchemistsDelegationGame {
                 val list = Ingredient.values().toList()
                 replayable.randomFromList("solution", list.shuffled(), list.size, Ingredient::toString)
             }
+            .view { it.map { i -> i.serialize() } }
         val alchemySolution get() = Alchemists.solutionWith(solution)
         val baseRule by rule<Model, Unit>(Unit) {
             AlchemistRules.baseRule.invoke(this)
@@ -124,7 +125,7 @@ object AlchemistsDelegationGame {
                         game.favors.deck.randomWithRefill(game.favors.discardPile, replayable, favors, "favors") { it.serialize() }
                             .forEach { game.favors.giveFavor(game, it, game.players[playerIndex]) }
                     }
-                    log { "$player chose turn order ${action.toStateString()}" }
+                    log { "${this.player} chose turn order ${action.toStateString()}" }
                 }
             }
         }

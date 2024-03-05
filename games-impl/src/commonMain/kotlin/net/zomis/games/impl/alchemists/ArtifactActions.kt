@@ -285,7 +285,7 @@ object ArtifactActions {
                     zone.cards.addAll(replayable.randomFromList("artifacts-$level", artifacts.filter { it.level == level }, 3) { a -> a.name })
                 }
                 zone
-            }
+            }.view { it.cards.groupBy { a -> a.level }.values }
         val forSale: CardZone<Artifact> by cards<Artifact>().on(model.newRound) {
             val zone = value as CardZone<Artifact>
             val artifactsLevel = when (event) {

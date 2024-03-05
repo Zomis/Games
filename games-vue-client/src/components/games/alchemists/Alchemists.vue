@@ -32,9 +32,7 @@
               </template>
             </div>
             <div class="artifacts-favor-flexbox d-flex">
-              <img v-for="(artifact, artifactIndex) in artifacts" :key="'artifact-' + artifactIndex"
-               class="gamecard" :src="`${path}artifact_${artifact}.jpg`" />
-
+              <Artifact v-for="(artifact, artifactIndex) in artifacts" :key="'artifact-' + artifactIndex" :name="artifact" />
               <div class="favor-deck label ml-auto gamecard">{{ view.favors.deck }}</div>
             </div>
 
@@ -45,10 +43,7 @@
               </div>
               <div class="d-flex justify-space-between">
                 <!-- position bottom, from left to right -->
-                <img v-for="(ingredient, ingredientIndex) in view.ingredients.slots" :key="'ingredient-' + ingredientIndex"
-                 :src="`${path}ingredient_${ingredient}.png`"
-                 class="gamecard"
-                />
+                <Ingredient v-for="(ingredient, ingredientIndex) in view.ingredients.slots" :key="'ingredient-' + ingredientIndex" :id="ingredient" />
               </div>
             </div>
             <div class="d-flex flex-column justify-end action-cube-area" v-for="actionCubeArea in actionCubeAreas" :key="actionCubeArea.name" :class="actionCubeArea.name">
@@ -87,12 +82,53 @@
       </v-col>
     </v-row>
     <v-row justify="center">
+      <div>
+        <h3>General info</h3>
+        {{ view.phase }}
+        {{ view.stack }}
+        {{ view.master }}
+        {{ view.round }}
+        {{ view.solution }}
+        {{ view.favors }}
+      </div>
+      <div>
+        <h3>Players</h3>
+        <Favor name="ASSOCIATE" />
+        {{ view.startingPlayer }}
+        {{ view.actionCubeCount }}
+        {{ view.players }}
+      </div>
+      <div>
+        <h3>Turn picker</h3>
+        {{ view.turnPicker }}
+      </div>
+      <div>
+        <h3>Theory board</h3>
+        {{ view.theoryBoard }}
+      </div>
+      <div>
+        <h3>Spaces</h3>
+        <p>{{ view.ingredients }}</p>
+        <p>{{ view.transmute }}</p>
+        <p>{{ view.custodian }}</p>
+        <p>{{ view.sellPotion }}</p>
+        <p>{{ view.buyArtifact }}</p>
+        <p>{{ view.debunkTheory }}</p>
+        <p>{{ view.publishTheory }}<p>
+        <p>{{ view.testStudent }}</p>
+        <p>{{ view.testSelf }}</p>
+        <p>{{ view.exhibition }}</p>
+      </div>
     </v-row>
   </v-container>
 </template>
 
 <script>
 import AlchemistsActionCubesRow from "./AlchemistsActionCubesRow";
+import AlchComponents from "./AlchComponents";
+const Favor = AlchComponents.Favor;
+const Ingredient = AlchComponents.Ingredient;
+const Artifact = AlchComponents.Artifact;
 //import PlayerProfile from "@/components/games/common/PlayerProfile"
 //import CardZone from "@/components/games/common/CardZone"
 /*    CardZone,
@@ -102,7 +138,8 @@ export default {
   name: "Alchemists",
   props: ["view", "actions", "context"],
   components: {
-    AlchemistsActionCubesRow
+    AlchemistsActionCubesRow,
+    Favor, Ingredient, Artifact,
   },
   methods: {
     chooseTurnOrder(key) {
@@ -114,14 +151,6 @@ export default {
   data() {
     return {
       path: "https://d3ux78k3bc7mem.cloudfront.net/games/alc/",
-      artifactIds: {
-        "Periscope": 0,
-        "Magic Mortar": 1,
-        "Boots of Speed": 2,
-        "Discount Card": 3,
-        "Printing Press": 4,
-        "Robe of Respect": 5
-      }
     }
   },
   computed: {
