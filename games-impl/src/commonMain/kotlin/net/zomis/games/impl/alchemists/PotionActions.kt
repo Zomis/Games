@@ -26,6 +26,9 @@ object PotionActions {
     }
 
     class TestStudent(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
+        val actionable by viewOnly {
+            actionRaw(action.actionType).nextStepsAll().mapValues { true }
+        }
         override fun actionAvailable(playerIndex: Int, chosen: List<AlchemistsDelegationGame.Model.ActionChoice>): Boolean
             = model.round <= 5
         var poisoned by component { false }
@@ -54,6 +57,9 @@ object PotionActions {
     }
 
     class Custodian(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
+        val actionable by viewOnly {
+            actionRaw(action.actionType).nextStepsAll()
+        }
         override fun actionAvailable(playerIndex: Int, chosen: List<AlchemistsDelegationGame.Model.ActionChoice>): Boolean? {
             val have = model.players[playerIndex].favors.cards.count { it == Favors.FavorType.CUSTODIAN }
             val want = chosen.filter { it.spot == this }.sumOf { it.count }
@@ -94,6 +100,9 @@ object PotionActions {
     }
 
     class TestSelf(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
+        val actionable by viewOnly {
+            actionRaw(action.actionType).nextStepsAll()
+        }
         override fun actionAvailable(playerIndex: Int, chosen: List<AlchemistsDelegationGame.Model.ActionChoice>): Boolean = model.round <= 5
         override val actionSpace by component { model.ActionSpace(ctx, "TestSelf") }
             .setup { it.initialize(listOf(1, 1), playerCount) }
@@ -103,6 +112,9 @@ object PotionActions {
     }
 
     class Exhibition(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
+        val actionable by viewOnly {
+            actionRaw(action.actionType).nextStepsAll()
+        }
         override fun actionAvailable(playerIndex: Int, chosen: List<AlchemistsDelegationGame.Model.ActionChoice>): Boolean = model.round >= 6
         override val actionSpace by component { model.ActionSpace(ctx, "Exhibition") }
             .setup { it.initialize(if (playerCount == 4) listOf(1, 1, 1) else listOf(1, 1, 1, 1), playerCount) }

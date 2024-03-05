@@ -22,7 +22,12 @@ const artifactIds = {
 }
 
 const Favor = {
-    props: ['name'],
+    props: ['name', 'onClick'],
+    methods: {
+        click() {
+            this.onClick(this.name);
+        }
+    },
     computed: {
         favorId() {
             switch (this.name) {
@@ -42,24 +47,33 @@ const Favor = {
         },
     },
     render() {
-        return (<img src={this.imageSource} class="gamecard" />);
+        return (<img src={this.imageSource} onClick={this.click} class="gamecard" />);
     } 
 };
 const Ingredient = {
-    props: ['id'],
+    props: ['id', 'onClick'],
+    methods: {
+        click() {
+            this.onClick(this.id);
+        }
+    },
     computed: {
         imageSource() {
             return `${path}ingredient_${this.id}.png`;
         }
     },
     render() {
-      return (<img src={this.imageSource} class="gamecard" />);
+      return (<img src={this.imageSource} onClick={this.click} class="gamecard" />);
     }
 };
 const Artifact = {
-    props: ['name'],
+    props: ['name', 'onClick'],
+    methods: {
+        click() {
+            this.onClick(this.name);
+        }
+    },
     computed: {
-        path() { return path; },
         artifactId() {
             return artifactIds[this.name];
         },
@@ -68,12 +82,24 @@ const Artifact = {
         }
     },
     render() {
-      return (<img class="gamecard" src={this.imageSource} />);
+      return (<img class="gamecard" onClick={this.click} src={this.imageSource} />);
+    } 
+};
+const Cube = {
+    props: ['playerIndex'],
+    computed: {
+        imageSource() {
+            return `${path}cube_${this.playerIndex}.png`;
+        }
+    },
+    render() {
+      return (<img class="cube" src={this.imageSource} />);
     } 
 };
 
 
 export default {
+    Cube: Cube,
     Favor: Favor,
     Ingredient: Ingredient,
     Artifact: Artifact,

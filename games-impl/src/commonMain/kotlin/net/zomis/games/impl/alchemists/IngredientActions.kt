@@ -28,6 +28,9 @@ object IngredientActions {
             }.publicView { it.cards.map { i -> i.serialize() } }
         override val actionSpace by component { model.ActionSpace(ctx, "Ingredients") }
             .setup { it.initialize(if (playerCount == 4) listOf(1, 1) else listOf(1, 1, 1), playerCount) }
+        val actionable by viewOnly {
+            actionRaw(action.actionType).nextStepsAll().mapValues { true }
+        }
         override val action = action<AlchemistsDelegationGame.Model, String>("takeIngredient", String::class) {
             precondition { playerIndex == actionSpace.nextPlayerIndex() }
             options { listOf("") + slots.cards.distinct().map { it.toString() } }
@@ -46,6 +49,9 @@ object IngredientActions {
     }
 
     class Transmute(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
+        val actionable by viewOnly {
+            actionRaw(action.actionType).nextSteps(Ingredient::class).associate { it.serialize() to true }
+        }
         override val actionSpace by component { model.ActionSpace(ctx, "Transmute") }.setup { it.initialize(listOf(1, 2), playerCount) }
         override val action = actionSerializable<AlchemistsDelegationGame.Model, Ingredient>("transmute", Ingredient::class) {
             precondition { playerIndex == actionSpace.nextPlayerIndex() }

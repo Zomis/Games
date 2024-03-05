@@ -1,7 +1,44 @@
 <template>
   <v-container fluid>
     <v-row>
-      <v-col align-self="start">
+      {{ view.master }}
+      {{ view.solution }}
+      {{ view.round }}
+      {{ view.phase }}
+      {{ view.stack }}
+    </v-row>
+    <v-row>
+      <v-col>
+        <v-card v-for="(player, playerIndex) in view.players" :key="'player-' + playerIndex">
+          <div>
+            <PlayerProfile
+              :player="context.players[playerIndex]"
+              :size="32"
+              show-name
+            />
+          </div>
+          <p>
+            {{ player.extraCubes }}
+            {{ player.seals }}
+            <img :src="path + 'coin3D.png'" /> {{ player.resources.Gold }}
+            <Cube :playerIndex="playerIndex" /> {{ view.actionCubeCount }}
+            <img v-if="view.startingPlayer == playerIndex" :src="path + 'startingplayer.png'" class="startingplayer" />
+          </p>
+          <Artifact v-for="artifact in player.artifacts" :key="artifact.name" :name="artifact.name" />
+          <div v-if="playerIndex == view.viewer">
+            <Favor v-for="(favor, favorIndex) in player.favors" :key="'favor-' + favorIndex" :name="favor"
+             :class="{ discardable: view.favors.discardFavors[favor] }" :onClick="favorClick" />
+            <Ingredient v-for="(ingredient, ingredientIndex) in player.ingredients" :key="'ingredient-' + ingredientIndex" :id="ingredient"
+             :class="{ discardable: view.favors.discardIngredients[ingredient] || view.transmute.actionable[ingredient],
+              choosable: view.testSelf.actionable[ingredient] || view.testStudent.actionable[ingredient] }" :onClick="ingredientClick" />
+          </div>
+          <div v-else>
+            {{ player.ingredients }} ingredients.
+            {{ player.favors }} favors.
+          </div>
+        </v-card>
+      </v-col>
+      <v-col align-self="end">
         <v-card>
           <div class="board" :class="'players-' + context.players.length">
             <!--
@@ -32,10 +69,14 @@
               </template>
             </div>
             <div class="artifacts-favor-flexbox d-flex">
-              <Artifact v-for="(artifact, artifactIndex) in artifacts" :key="'artifact-' + artifactIndex" :name="artifact" />
+              <Artifact v-for="(artifact, artifactIndex) in view.buyArtifact.forSale" :key="'artifact-' + artifactIndex"
+               :name="artifact.name" :class="{ choosable: view.buyArtifact.actionable[artifact.name] }" :onClick="buyArtifactClick" />
               <div class="favor-deck label ml-auto gamecard">{{ view.favors.deck }}</div>
             </div>
 
+            <div class="cancel-action d-flex flex-row" :class="{ discardable: view.cancellable }" @click="cancelActionClick">
+              <Cube v-for="(playerIndex, cubeIndex) in view.cancelledActions" :key="cubeIndex" :playerIndex="playerIndex" />
+            </div>
             <div class="ingredients-flexbox d-flex flex-column justify-space-between">
               <div class="md-auto d-flex justify-end">
                 <!-- position top-right -->
@@ -43,11 +84,21 @@
               </div>
               <div class="d-flex justify-space-between">
                 <!-- position bottom, from left to right -->
-                <Ingredient v-for="(ingredient, ingredientIndex) in view.ingredients.slots" :key="'ingredient-' + ingredientIndex" :id="ingredient" />
+                <Ingredient v-for="(ingredient, ingredientIndex) in view.ingredients.slots" :key="'ingredient-' + ingredientIndex"
+                  :id="ingredient" :onClick="takeIngredientClick" :class="{ choosable: view.ingredients.actionable[ingredient] }" />
               </div>
             </div>
-            <div class="d-flex flex-column justify-end action-cube-area" v-for="actionCubeArea in actionCubeAreas" :key="actionCubeArea.name" :class="actionCubeArea.name">
-              <AlchemistsActionCubesRow v-for="(row, index) in view[actionCubeArea.name].actionSpace.rows" :cubes="row" :key="index" />
+            <div class="d-flex flex-column justify-end action-cube-area"
+              v-for="actionCubeArea in actionCubeAreas" :key="actionCubeArea.name"
+              :class="{ [actionCubeArea.name]: true, choosable: view.actionPlacementOptions[view[actionCubeArea.name].actionSpace.name] }"
+              @click="actionCubeClick(view[actionCubeArea.name].actionSpace.name)">
+              <AlchemistsActionCubesRow v-for="(row, index) in view[actionCubeArea.name].actionSpace.rows"
+                :actionSpace="view[actionCubeArea.name].actionSpace"
+                :cubes="row" :key="index"
+                :row="index" :actionable="view.actionPlacementOptions"
+                :onClick="actionCubeClick"
+              />
+
       <!--
       let view = this.view;
       let cubes = [];
@@ -82,50 +133,41 @@
       </v-col>
     </v-row>
     <v-row justify="center">
-      <div>
-        <h3>General info</h3>
-        {{ view.phase }}
-        {{ view.stack }}
-        {{ view.master }}
-        {{ view.round }}
-        {{ view.solution }}
-        {{ view.favors }}
-      </div>
-      <div>
-        <h3>Players</h3>
-        <Favor name="ASSOCIATE" />
-        {{ view.startingPlayer }}
-        {{ view.actionCubeCount }}
-        {{ view.players }}
-      </div>
-      <div>
-        <h3>Turn picker</h3>
-        {{ view.turnPicker }}
-      </div>
-      <div>
-        <h3>Theory board</h3>
-        {{ view.theoryBoard }}
-      </div>
-      <div>
-        <h3>Spaces</h3>
-        <p>{{ view.ingredients }}</p>
-        <p>{{ view.transmute }}</p>
-        <p>{{ view.custodian }}</p>
-        <p>{{ view.sellPotion }}</p>
-        <p>{{ view.buyArtifact }}</p>
-        <p>{{ view.debunkTheory }}</p>
-        <p>{{ view.publishTheory }}<p>
-        <p>{{ view.testStudent }}</p>
-        <p>{{ view.testSelf }}</p>
-        <p>{{ view.exhibition }}</p>
-      </div>
+      <v-col>
+        <div>
+          <h3>Played favors</h3>
+          {{ view.favors.favorsPlayed }}
+        </div>
+        <div>
+          <h3>Theory board</h3>
+          <p>
+            {{ view.theoryBoard }}
+          </p>
+          <img :src="path + 'theory_board.jpg'" />
+        </div>
+        <div>
+          <h3>Spaces</h3>
+          <p>{{ view.ingredients }}</p>
+          <p>{{ view.transmute }}</p>
+          <p>{{ view.custodian }}</p>
+          <p>{{ view.sellPotion }}</p>
+          <p>{{ view.buyArtifact }}</p>
+          <p>{{ view.debunkTheory }}</p>
+          <p>{{ view.publishTheory }}<p>
+          <p>{{ view.testStudent }}</p>
+          <p>{{ view.testSelf }}</p>
+          <p>{{ view.exhibition }}</p>
+        </div>
+      </v-col>
     </v-row>
   </v-container>
 </template>
 
 <script>
+import PlayerProfile from "@/components/games/common/PlayerProfile"
 import AlchemistsActionCubesRow from "./AlchemistsActionCubesRow";
 import AlchComponents from "./AlchComponents";
+const Cube = AlchComponents.Cube;
 const Favor = AlchComponents.Favor;
 const Ingredient = AlchComponents.Ingredient;
 const Artifact = AlchComponents.Artifact;
@@ -139,9 +181,52 @@ export default {
   props: ["view", "actions", "context"],
   components: {
     AlchemistsActionCubesRow,
+    PlayerProfile,
+    Cube,
     Favor, Ingredient, Artifact,
   },
   methods: {
+    cancelActionClick() {
+      this.actions.actionParameter('cancel', {});
+    },
+    actionCubeClick(areaName) {
+      console.log(areaName);
+      if (this.view.actionPlacementOptions[areaName]) {
+        this.actions.choose('action', areaName);
+        this.actions.choose('action', 'no associate');
+      }
+    },
+    buyArtifactClick(artifact) {
+      if (this.view.buyArtifact.actionable[artifact]) {
+        this.actions.actionParameter('buyArtifact', artifact);
+      }
+    },
+    takeIngredientClick(ingredient) {
+      if (this.view.ingredients.actionable[ingredient]) {
+        this.actions.choose('takeIngredient', ingredient);
+      }
+    },
+    transmuteClick(ingredient) {
+      if (this.view.transmute.actionable[ingredient]) {
+        this.actions.choose('transmute', ingredient);
+      }
+    },
+    ingredientClick(ingredient) {
+      if (this.view.favors.discardIngredients[ingredient]) {
+        this.actions.choose('herbalist', ingredient);
+      }
+      if (this.view.testSelf.actionable[ingredient]) {
+        this.actions.choose('testSelf', ingredient);
+      }
+      if (this.view.testStudent.actionable[ingredient]) {
+        this.actions.choose('testStudent', ingredient);
+      }
+    },
+    favorClick(favor) {
+      if (this.view.favors.discardFavors[favor]) {
+        this.actions.actionParameter('discardFavor', favor);
+      }
+    },
     chooseTurnOrder(key) {
       this.actions.actionParameter("turn", key)
     }
@@ -196,10 +281,17 @@ export default {
 <style scoped>
 .board {
   position: relative;
-  background-image: url("https://d3ux78k3bc7mem.cloudfront.net/games/alc/board2.jpg");
   border: 0;
   width: 1157px;
   height: 605px;
+}
+
+.board.players-1, .board.players-2, .board.players-3 {
+  background-image: url("https://d3ux78k3bc7mem.cloudfront.net/games/alc/board2.jpg");
+}
+
+.board.players-4 {
+  background-image: url("https://d3ux78k3bc7mem.cloudfront.net/games/alc/board4.jpg");
 }
 
 .hidden {
@@ -220,6 +312,7 @@ export default {
 .gamecard {
   width: 92px;
   height: 142px;
+  margin: 3px;
 }
 
 .ingredients-flexbox {
@@ -248,6 +341,12 @@ export default {
   line-height: 142px;
   background-image: url("https://d3ux78k3bc7mem.cloudfront.net/games/alc/favour_back.jpg");
   background-size: 92px 142px;
+}
+
+.cancel-action {
+  position: absolute;
+  left: 930px;
+  top: 170px;
 }
 
 .action-cube-area {
@@ -341,6 +440,19 @@ export default {
   height: 81px;
   top: 72px;
   left: 121px;
+}
+
+.startingplayer {
+  width: 48px;
+  height: 48px;
+}
+
+.discardable {
+  border: 2px solid red;
+}
+
+.choosable {
+  border: 2px solid lime;
 }
 
 .sell-area {

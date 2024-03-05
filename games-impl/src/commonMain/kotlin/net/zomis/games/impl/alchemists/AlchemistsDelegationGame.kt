@@ -51,11 +51,13 @@ object AlchemistsDelegationGame {
                 }
             )
         })
+    val cancel = GamesApi.gameCreator(Model::class).action("cancel", Unit::class)
 
     class TurnOrderChoice(val player: Model.Player, val turnOrder: Model.TurnOrder, var resources: ResourceMap)
     class Model(override val ctx: Context, master: GameConfig<Boolean>) : Entity(ctx), ContextHolder {
         val stack: GameStack<StackItem> by component<GameStack<StackItem>> { GameStack() }.view { i -> i.stack.map { it::class.simpleName } }
         var phase by component { ActivePhases(Phases.phases(this@Model)) }.view { it.current.name }
+        val viewer by viewOnly<Model> { viewer ?: -1 }
 
         var currentActionSpace: HasAction? = null
         val master by value { false }.setup { config(master) }
@@ -250,6 +252,9 @@ object AlchemistsDelegationGame {
             override fun serialize(): List<String> = chosen.map { "${it.associate}/${it.count}/${it.spot.actionSpace.name}" }
         }
         fun nextActionPlacer(): Int? = turnPicker.options.lastOrNull { it.chosenBy != null }?.chosenBy
+        val actionPlacementOptions by viewOnly {
+            actionRaw(actionPlacement.actionType).nextStepsAll().mapValues { true }
+        }
         val actionPlacement = action<Model, ActionPlacement>(actionPlaceType) {
             precondition {
                 playerIndex == nextActionPlacer()
@@ -310,7 +315,10 @@ object AlchemistsDelegationGame {
         val exhibition by component { PotionActions.Exhibition(this@Model, ctx) }
         val theoryBoard by component { TheoryActions.TheoryBoard(this@Model, ctx) }
         val cancelledActions by value { mutableListOf<Int>() }
-        fun cancelAction(space: HasAction) = action<Model, Unit>("cancel", Unit::class) {
+        val cancellable by viewOnly {
+            actionRaw(cancel).anyAvailable()
+        }
+        fun cancelAction(space: HasAction) = action(cancel) {
             precondition { playerIndex == space.actionSpace.nextPlayerIndex() }
             perform {
                 val count = space.actionSpace.resolveNext()

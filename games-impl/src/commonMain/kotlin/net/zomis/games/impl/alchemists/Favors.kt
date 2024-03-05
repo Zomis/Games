@@ -59,7 +59,10 @@ object Favors {
     class FavorDeck(ctx: Context): Entity(ctx) {
         var favorsPlayed by cards<FavorType>()
         val discardFavors by viewOnly {
-            actionRaw(discardFavor).options()
+            actionRaw(discardFavor).nextStepsAll().mapValues { true }
+        }
+        val discardIngredients by viewOnly {
+            actionRaw(herbalistDiscard).nextStepsAll().mapValues { true }
         }
 
         fun allowFavors(vararg favorType: FavorType): ActionDefinition<AlchemistsDelegationGame.Model, FavorType> {

@@ -80,6 +80,9 @@ object TheoryActions {
     }
 
     class DebunkTheory(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
+        val actionable by viewOnly {
+            actionRaw(action.actionType).nextStepsAll()
+        }
         override fun actionAvailable(playerIndex: Int, chosen: List<AlchemistsDelegationGame.Model.ActionChoice>): Boolean = model.round >= 2
         override val actionSpace by component { model.ActionSpace(ctx, "DebunkTheory") }
             .setup { it.initialize(listOf(1, 2), playerCount) }
@@ -210,6 +213,9 @@ object TheoryActions {
         = if (game.players[playerIndex].artifacts.cards.contains(ArtifactActions.printingPress)) 0 else 1
 
     class PublishTheory(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
+        val actionable by viewOnly {
+            actionRaw(action.actionType).nextStepsAll()
+        }
         override fun actionAvailable(playerIndex: Int, chosen: List<AlchemistsDelegationGame.Model.ActionChoice>): Boolean = model.round >= 2
         override val actionSpace by component { model.ActionSpace(ctx, "PublishTheory") }
             .setup { it.initialize(listOf(1, 2), playerCount) }

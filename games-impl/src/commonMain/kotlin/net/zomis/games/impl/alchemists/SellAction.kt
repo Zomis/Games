@@ -32,6 +32,9 @@ object SellAction {
 
     data class Hero(val id: Int, val requests: List<AlchemistsPotion>)
     class SellHero(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
+        val actionable by viewOnly {
+            actionRaw(action.actionType).nextStepsAll()
+        }
         val heroes by component { mutableListOf<Hero>() }
             .setup {
                 // Order of potions does matter for three-player games, where selling one may lock another

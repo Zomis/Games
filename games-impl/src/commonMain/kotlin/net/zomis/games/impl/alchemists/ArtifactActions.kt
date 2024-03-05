@@ -271,6 +271,12 @@ object ArtifactActions {
     val buyArtifactAction = GamesApi.gameCreator(AlchemistsDelegationGame.Model::class).action("buyArtifact", Artifact::class).serializer { it.serialize() }
 
     class BuyArtifact(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
+        val actionable by viewOnly {
+            val all = actionRaw(action.actionType).nextStepsAll().map { it.toString() }
+            all.associateWith {
+                actionRaw(action.actionType).choose(it).anyAvailable()
+            }
+        }
         override fun extraActions() = listOf(model.favors.allowFavors(Favors.FavorType.SHOPKEEPER))
         override fun extraHandlers() = listOf(buyArtifactAction to BuyArtifactAction()) as List<Pair<ActionType<AlchemistsDelegationGame.Model, Any>, SmartActionBuilder<AlchemistsDelegationGame.Model, Any>>>
         var usedDiscountCard = false
