@@ -81,4 +81,23 @@ object Combinatorics {
         return result
     }
 
+    fun combinations(options: IntArray): Long = options.fold(1L) { a, b -> a * b }
+
+    /**
+     * Example [2, 3, 4] has 2*3*4 = 24 combinations. combinationNumber is 0..23 and returns e.g. [0, 2, 3]
+     */
+    fun specificPermutation(options: IntArray, combinationNumber: Long): IntArray {
+        require(options.isNotEmpty())
+        require(combinationNumber >= 0)
+        val runningCombinations = options.runningFold(1L) { a, b -> a * b }.drop(1) // e.g. 3, 2, 3, 2 --> 3, 6, 18, 36
+        require(combinationNumber < runningCombinations.last())
+        return IntArray(options.size) {
+            // first: combinationNumber mod runningCombinations[0] == 0/1/2
+            // second: combinationNumber / running[0] mod running[1]
+            // third: combinationNumber / running[1] mod running[2]
+            val previous = runningCombinations.getOrElse(it - 1) { 1L }
+            (combinationNumber / previous).mod(options[it])
+        }
+    }
+
 }
