@@ -6,9 +6,11 @@ import net.zomis.games.dsl.impl.GameSetupImpl
 import net.zomis.games.impl.*
 import net.zomis.games.impl.alchemists.AlchemistsDelegationGame
 import net.zomis.games.impl.cards.Grizzled
+import net.zomis.games.impl.cards.SixNimmt
 import net.zomis.games.impl.cards.TheCrew
 import net.zomis.games.impl.grids.Battleship
 import net.zomis.games.impl.grids.KingDomino
+import net.zomis.games.impl.logic.TuringMachineGame
 import net.zomis.games.impl.minesweeper.Flags
 import net.zomis.games.impl.minesweeper.specials.OpenFieldChallenge
 import net.zomis.games.impl.paths.Backgammon
@@ -19,6 +21,8 @@ import net.zomis.games.impl.words.Wordle
 object ServerGames {
 
     val beta = listOf(
+        TuringMachineGame.game,
+        SixNimmt.game,
         Pentago.game,
         Battleship.game,
         Decrypto.game,
