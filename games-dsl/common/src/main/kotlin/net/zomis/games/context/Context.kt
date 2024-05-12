@@ -168,9 +168,10 @@ open class Entity(protected open val ctx: Context) {
     }
 
     fun <E: Any> event(): EventFactory<E> = EventContextFactory(ctx)
-    fun <E> playerComponent(function: ContextHolder.(Int) -> E): DelegateFactory<List<E>, ComponentDelegate<List<E>>> {
+    fun <E> playerComponent(function: ContextHolder.(Int) -> E): DelegateFactory<List<E>, ComponentDelegate<List<E>>> = listComponent(ctx.playerIndices.count(), function)
+    fun <E> listComponent(size: Int, function: ContextHolder.(Int) -> E): DelegateFactory<List<E>, ComponentDelegate<List<E>>> {
         fun listFactory(context: Context): ComponentDelegate<List<E>> {
-            val list = ctx.playerIndices.map { index ->
+            val list = (0 until size).map { index ->
                 val playerContext by delegate(context) { ComponentDelegate(function.invoke(ContextHolderImpl(it), index)) }
                     .also { it.name = index }
                 playerContext
