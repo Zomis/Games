@@ -70,7 +70,7 @@ class ActionComplexBlockRun<T: Any, P: Any>(
             // first = choice key (serialized in some way), second = choice value.
             // It's probably okay to contain multiple of the same here, as some choices may serialize to the same value. They should be equivalent.
             val nextE = evaluated.firstOrNull { it.first == nextChosenKey || it.second == nextChosenKey }
-                ?: throw IllegalStateException("Expected it.first == $nextChosenKey (${nextChosenKey::class}) but evaluated contains $evaluated")
+                ?: throw IllegalStateException("Problem handling upcoming choices ${upcomingChoices}. Expected it.first == $nextChosenKey (${nextChosenKey::class}) but evaluated contains $evaluated")
 
             val nextScope = ActionComplexBlockRun(actionType, chosen + nextE.second, nextChosenList, context)
             next.invoke(nextScope, nextE.second)
