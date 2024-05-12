@@ -43,7 +43,7 @@ object IngredientActions {
                     slots.card(slots.cards.first { it.toString() == action.parameter })
                         .moveTo(game.players[playerIndex].ingredients)
                 }
-                log { "$player took ingredient ${action.ifEmpty { "from deck" }}" }
+                game.log.add(LogItem.TakeIngredient(playerIndex, action.parameter.takeIf { it.isNotEmpty() }))
             }
         }
     }
@@ -61,7 +61,7 @@ object IngredientActions {
                 game.players[playerIndex].ingredients.card(action.parameter).moveTo(game.ingredients.discardPile)
                 game.players[playerIndex].gold += 1 + game.favors.favorsPlayed.cards.count { it == Favors.FavorType.SAGE }
                 game.favors.favorsPlayed.moveAllTo(game.favors.discardPile)
-                logSecret(playerIndex) { "$player transmuted ingredient $action" }.publicLog { "$player transmuted an ingredient" }
+                game.log.add(LogItem.Transmute(playerIndex, action.parameter))
             }
         }
         override fun extraActions() = listOf(model.favors.allowFavors(Favors.FavorType.SAGE))

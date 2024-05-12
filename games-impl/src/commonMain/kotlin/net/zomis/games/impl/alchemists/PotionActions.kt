@@ -49,8 +49,7 @@ object PotionActions {
                 model.playerMixPotion.invoke(action.parameter)
                 if (poisoned) model.players[playerIndex].gold--
                 if (result.sign == AlchemistsSign.NEGATIVE) poisoned = true
-                logSecret(playerIndex) { "$player mixed ingredients ${action.ingredients.toList()} and got result $result" }
-                    .publicLog { "$player tested a potion on a student and got $result" }
+                game.log.add(LogItem.PotionTest(playerIndex, actionSpace, action.parameter, result))
             }
             requires { action.parameter.ingredients.toList().distinct().size == 2 }
         }
@@ -91,8 +90,8 @@ object PotionActions {
             if (result.negative) {
                 when (result.color) {
                     AlchemistsColor.BLUE -> game.players[playerIndex].reputation--
-                    AlchemistsColor.GREEN -> game.turnPicker.options.firstOrNull { it.chosenBy == null && !it.choosable }?.chosenBy = playerIndex
-                    AlchemistsColor.RED -> game.players[playerIndex].extraCubes--
+                    AlchemistsColor.GREEN -> game.poisoned.add(playerIndex)// game.turnPicker.options.firstOrNull { it.chosenBy == null && !it.choosable }?.chosenBy = playerIndex
+                    AlchemistsColor.RED -> game.hospital.add(playerIndex)// game.players[playerIndex].extraCubes--
                     else -> throw IllegalStateException("Unexpected potion: $result")
                 }
             }

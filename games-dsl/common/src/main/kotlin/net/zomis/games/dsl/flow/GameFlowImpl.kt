@@ -377,7 +377,9 @@ interface GameFlowStepScope<T: Any> : UsageScope {
     fun <A: Any> actionHandler(action: ActionType<T, A>, handler: SmartActionBuilder<T, A>)
     fun <A: Any> actionHandler(action: ActionType<T, A>, dsl: SmartActionScope<T, A>.() -> Unit)
     fun yieldView(key: String, value: ViewScope<T>.() -> Any?)
+    @Deprecated("use GameLog class instead")
     suspend fun log(logging: LogScope<T>.() -> String)
+    @Deprecated("use GameLog class instead")
     suspend fun logSecret(player: PlayerIndex, logging: LogScope<T>.() -> String): LogSecretScope<T>
 }
 @GameMarker
@@ -388,7 +390,9 @@ interface GameFlowScope<T: Any>: EventTools, UsageScope {
     override val replayable: ReplayStateI
     suspend fun loop(function: suspend GameFlowScope<T>.() -> Unit)
     suspend fun step(name: String, dsl: suspend GameFlowStepScope<T>.() -> Unit): GameFlowStepResult<T>
+    @Deprecated("use GameLog class instead")
     suspend fun log(logging: LogScope<T>.() -> String)
+    @Deprecated("use GameLog class instead")
     suspend fun logSecret(player: PlayerIndex, logging: LogScope<T>.() -> String): LogSecretScope<T>
 }
 

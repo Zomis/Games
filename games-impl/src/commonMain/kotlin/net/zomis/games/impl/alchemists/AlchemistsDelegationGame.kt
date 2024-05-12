@@ -4,6 +4,7 @@ import net.zomis.games.api.GamesApi
 import net.zomis.games.common.PlayerIndex
 import net.zomis.games.common.Players
 import net.zomis.games.common.next
+import net.zomis.games.components.GameLog
 import net.zomis.games.components.resources.GameResource
 import net.zomis.games.components.resources.ResourceChange
 import net.zomis.games.components.resources.ResourceMap
@@ -41,6 +42,7 @@ object AlchemistsDelegationGame {
         val ruleSpec: RuleSpec<Model, Unit>
 
     }
+    val cancel = GamesApi.gameCreator(Model::class).action("cancel", Unit::class)
     val actionPlaceType = GamesApi.gameCreator(Model::class).action("action", Model.ActionPlacement::class)
         .serialization<List<String>>({ it.serialize() }, { deserialized ->
             Model.ActionPlacement(
@@ -51,10 +53,10 @@ object AlchemistsDelegationGame {
                 }
             )
         })
-    val cancel = GamesApi.gameCreator(Model::class).action("cancel", Unit::class)
 
     class TurnOrderChoice(val player: Model.Player, val turnOrder: Model.TurnOrder, var resources: ResourceMap)
     class Model(override val ctx: Context, master: GameConfig<Boolean>) : Entity(ctx), ContextHolder {
+        val log: GameLog<LogItem> by component { GameLog() }
         val stack: GameStack<StackItem> by component<GameStack<StackItem>> { GameStack() }.view { i -> i.stack.map { it::class.simpleName } }
         var phase by component { ActivePhases(Phases.phases(this@Model)) }.view { it.current.name }
         val viewer by viewOnly<Model> { viewer ?: -1 }
@@ -124,10 +126,9 @@ object AlchemistsDelegationGame {
                         game.ingredients.deck.randomWithRefill(game.ingredients.discardPile, replayable, ingredients, "ingredients") { it.serialize() }.forEach {
                             it.moveTo(game.players[playerIndex].ingredients)
                         }
-                        game.favors.deck.randomWithRefill(game.favors.discardPile, replayable, favors, "favors") { it.serialize() }
-                            .forEach { game.favors.giveFavor(game, it, game.players[playerIndex]) }
+                        game.favors.giveFavors(replayable, game.players[playerIndex], favors)
                     }
-                    log { "${this.player} chose turn order ${action.toStateString()}" }
+                    game.log.add(LogItem.TurnOrderChoice(player, action.parameter))
                 }
             }
         }
@@ -220,7 +221,9 @@ object AlchemistsDelegationGame {
                     model.favors.deck.random(replayable, 2, "favors-$playerIndex") { it.serialize() }.forEach { it.moveTo(myFavors) }
                     myFavors
                 }
-            val seals by cards<TheoryActions.Seal>().privateView(playerIndex) { it.cards }
+            val seals by cards<TheoryActions.Seal>().privateView(playerIndex) { it.cards.map { s -> s.toView(playerIndex) } }.publicView { it.cards.size }.onSetup {
+                it.cards.addAll(TheoryActions.seals(this@Player))
+            }
             val actionCubesAvailable by dynamicValue { this@Model.actionCubeCount + extraCubes }
             val ingredients by cards<Ingredient>()
                 .on(gameInit) {
@@ -260,6 +263,7 @@ object AlchemistsDelegationGame {
                 playerIndex == nextActionPlacer()
             }
             requires { action.parameter.chosen.sumOf { it.count } <= players[playerIndex].actionCubesAvailable }
+            requires { action.parameter.chosen.count { it.associate } <= players[playerIndex].favors.cards.count { it == Favors.FavorType.ASSOCIATE } }
             requires { action.parameter.chosen.groupBy { it.spot }.values.all { it.count { c -> c.associate } <= 1 } }
             requires { players[playerIndex].favors.cards.count { it == Favors.FavorType.CUSTODIAN } >= action.parameter.chosen.count { it.spot == custodian } }
             requires { action.parameter.chosen.all { it.spot.actionAvailable(playerIndex, action.parameter.chosen) != false } }
@@ -271,7 +275,7 @@ object AlchemistsDelegationGame {
                     it.key.actionSpace.place(playerIndex, it.value)
                 }
                 turnPicker.options.first { it.chosenBy == playerIndex }.chosenBy = null
-                log { "$player chose actions ${action.chosen.map { it.spot.actionSpace.name }.sorted()}" }
+                game.log.add(LogItem.ActionChoice(playerIndex, action.parameter.chosen))
             }
             choose {
                 recursive(emptyList<ActionChoice>()) {
@@ -282,12 +286,8 @@ object AlchemistsDelegationGame {
                     }.filter {
                         it.second.second != null && it.second.second!! <= players[playerIndex].actionCubesAvailable - chosen.sumOf { c -> c.count }
                     }.filter { it.second.first.actionAvailable(playerIndex, chosen) == true } }) { next ->
-                        if (game.players[playerIndex].favors.cards.contains(Favors.FavorType.ASSOCIATE)) {
-                            optionsWithIds({ listOf("associate" to true, "no associate" to false) }) { useAssociate ->
-                                recursion(next) { acc, n -> acc + ActionChoice(n.first, n.second!!, useAssociate) }
-                            }
-                        } else {
-                            recursion(next) { acc, n -> acc + ActionChoice(n.first, n.second!!, false) }
+                        optionsWithIds({ listOf("associate" to true, "no associate" to false) }) { useAssociate ->
+                            recursion(next) { acc, n -> acc + ActionChoice(n.first, n.second!!, useAssociate) }
                         }
                     }
                 }
@@ -301,6 +301,7 @@ object AlchemistsDelegationGame {
                 else -> 4
             }
         }
+        // TODO: Use a logger functionality, filter it to show players what they know.
 
         val favors by component { Favors.FavorDeck(ctx) }
         val ingredients by component { IngredientActions.Ingredients(this@Model, ctx) }
@@ -315,6 +316,8 @@ object AlchemistsDelegationGame {
         val exhibition by component { PotionActions.Exhibition(this@Model, ctx) }
         val theoryBoard by component { TheoryActions.TheoryBoard(this@Model, ctx) }
         val cancelledActions by value { mutableListOf<Int>() }
+        val poisoned by value { mutableListOf<Int>() }
+        val hospital by value { mutableListOf<Int>() }
         val cancellable by viewOnly {
             actionRaw(cancel).anyAvailable()
         }
@@ -324,7 +327,7 @@ object AlchemistsDelegationGame {
                 val count = space.actionSpace.resolveNext()
                 for (i in 1..count) cancelledActions.add(playerIndex)
                 favors.favorsPlayed.moveAllTo(favors.discardPile)
-                log { "$player cancelled their action" }
+                game.log.add(LogItem.Cancelled(playerIndex))
             }
         }
 

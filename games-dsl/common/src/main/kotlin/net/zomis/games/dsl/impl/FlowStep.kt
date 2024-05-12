@@ -46,6 +46,7 @@ sealed class FlowStep {
                 = ActionReplay(actionType.name, playerIndex, serializedParameter, state)
     }
     data class IllegalAction(val action: Actionable<out Any, out Any>, val results: ActionResult<out Any, out Any>?): FlowStep(), ActionResultStep
+    @Deprecated("use GameLog class instead")
     data class Log(val log: ActionLogEntry): FlowStep()
     data class RuleExecution(val ruleName: String, val values: Any): FlowStep()
     // Use Deferred for PreSetup and PreMove, see https://kotlinlang.org/docs/shared-mutable-state-and-concurrency.html#actors

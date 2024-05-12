@@ -8,6 +8,7 @@ import net.zomis.games.common.toSingleList
 import net.zomis.games.context.Context
 import net.zomis.games.context.Entity
 import net.zomis.games.dsl.GameSerializable
+import net.zomis.games.dsl.ReplayStateI
 import net.zomis.games.dsl.flow.ActionDefinition
 import net.zomis.games.dsl.flow.GameModifierScope
 import net.zomis.games.rules.Rule
@@ -20,7 +21,12 @@ object Favors {
 
     fun herbalistRule(rule: Rule<*, *>): RuleSpec<AlchemistsDelegationGame.Model, Unit> = lambda@{
         name = "Herbalist rule"
-        if (game.phase.current is Phases.Phase.Setup) return@lambda
+        val currentPhase = game.phase.current
+        when (currentPhase) {
+            is Phases.Phase.Setup -> return@lambda
+            is Phases.Phase.CleanupPhase -> return@lambda
+            else -> {}
+        }
         val herbalistPlayers = game.players.filter { player -> player.favors.cards.any { it == FavorType.HERBALIST } }
         if (herbalistPlayers.isNotEmpty()) {
             rule.disable()
@@ -57,7 +63,7 @@ object Favors {
     }
 
     class FavorDeck(ctx: Context): Entity(ctx) {
-        var favorsPlayed by cards<FavorType>()
+        val favorsPlayed by cards<FavorType>()
         val discardFavors by viewOnly {
             actionRaw(discardFavor).nextStepsAll().mapValues { true }
         }
@@ -73,13 +79,14 @@ object Favors {
                 // TODO: proper options, requires...
                 perform {
                     game.players[playerIndex].favors.card(action.parameter).moveTo(favorsPlayed)
-                    log { "$player uses $action" }
+                    game.log.add(LogItem.FavorUse(playerIndex, action.parameter))
                 }
             }
         }
 
-        fun giveFavor(game: AlchemistsDelegationGame.Model, favor: Card<FavorType>, player: AlchemistsDelegationGame.Model.Player) {
-            favor.moveTo(player.favors)
+        fun giveFavors(replayable: ReplayStateI, player: AlchemistsDelegationGame.Model.Player, favors: Int, stateKey: String = "favors") {
+            deck.randomWithRefill(discardPile, replayable, favors, stateKey) { it.serialize() }
+                .forEach { it.moveTo(player.favors) }
         }
 
         val assistant = action<AlchemistsDelegationGame.Model, Unit>("assistant", Unit::class) {
@@ -88,7 +95,7 @@ object Favors {
             perform {
                 game.players[playerIndex].favors.card(FavorType.ASSISTANT).moveTo(discardPile)
                 game.players[playerIndex].extraCubes++
-                log { "$player uses assistant to get one extra cube" }
+                game.log.add(LogItem.FavorUse(playerIndex, FavorType.ASSISTANT))
             }
         }
 
@@ -113,7 +120,7 @@ object Favors {
                         game.stack.pop()
                         game.players[playerIndex].ingredients.card(action.parameter.ingredients.first).moveTo(game.ingredients.discardPile)
                         game.players[playerIndex].ingredients.card(action.parameter.ingredients.second).moveTo(game.ingredients.discardPile)
-                        log { "$player discards two ingredients because of herbalist" }
+                        game.log.add(LogItem.HerbalistDiscard(playerIndex, action.parameter.ingredients))
                     }
                 }
             }
@@ -133,7 +140,7 @@ object Favors {
                 options { game.players[playerIndex].favors.cards.distinct() }
                 perform {
                     game.players[playerIndex].favors.card(action.parameter).moveTo(game.favors.discardPile)
-                    log { "$player discarded $action" }
+                    game.log.add(LogItem.FavorDiscard(playerIndex, action.parameter))
                 }
             }
         }

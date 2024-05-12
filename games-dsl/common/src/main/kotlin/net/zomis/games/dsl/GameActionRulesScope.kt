@@ -58,7 +58,9 @@ interface ActionRuleScope<T : Any, A : Any> : GameUtils, ActionOptionsScope<T>, 
     val action: Actionable<T, A>
     override val eliminations: PlayerEliminationsWrite
     override val replayable: ReplayStateI
+    @Deprecated("use GameLog class instead")
     fun log(logging: LogActionScope<T, A>.() -> String)
+    @Deprecated("use GameLog class instead")
     fun logSecret(player: PlayerIndex, logging: LogActionScope<T, A>.() -> String): LogSecretActionScope<T, A>
 }
 @GameMarker

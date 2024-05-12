@@ -1,5 +1,7 @@
 package net.zomis.games.impl.alchemists
 
+import net.zomis.best
+import net.zomis.games.rules.NoState
 import net.zomis.games.rules.RuleSpec
 
 object Phases {
@@ -22,7 +24,7 @@ object Phases {
             stateCheckBeforeAction {
                 game.newRound(round)
                 game.sellPotion.reset()
-                log { "Round $round" }
+                game.log.add(LogItem.Round(round))
             }
         })
         data class ChooseTurnOrder(val round: Int) : Phase("turn order round $round", {
@@ -53,6 +55,29 @@ object Phases {
 //                        && space.actionSpace.rows.all { it == null || it.cubes.all { cubes -> cubes.used } }
 //            }
             game.spaceDone.invoke(space)
+        })
+        class CleanupPhase(val round: Int) : Phase("cleanup round $round", {
+            name = "cleanup round $round"
+            stateCheckBeforeAction {
+                val topAlchemists = game.players.best(compareBy { game.theoryBoard.countedTheories(it) })
+                if (game.theoryBoard.countedTheories(topAlchemists.random()) >= 1) {
+                    topAlchemists.forEach {
+                        it.reputation++
+                    }
+                }
+
+                val earnedFavors = game.cancelledActions.groupingBy { it }.eachCount().mapValues { it.value / 2 }
+                earnedFavors.forEach { (playerIndex, favorCount) ->
+                    game.favors.giveFavors(meta.replayable, game.players[playerIndex], favorCount, "favors-player-$playerIndex")
+                }
+                game.ingredients.slots.moveAllTo(game.ingredients.discardPile)
+                game.cancelledActions.clear()
+
+                // game.hospital --> game.cancelledActions
+                game.cancelledActions.addAll(game.hospital.toList())
+                game.players.forEach { player -> player.extraCubes = -game.cancelledActions.count { it == player.playerIndex } }
+            }
+            subRule(conference, Unit, NoState)
         })
 
         object BigRevelation : Phase("big revelation", {
@@ -86,6 +111,24 @@ object Phases {
             }
         }
         yield(Phase.BigRevelation)
+    }
+
+    private val conference = RuleSpec<AlchemistsDelegationGame.Model, Unit>("conference") {
+        stateCheckBeforeAction {
+            val theoriesNeededForGain = when (game.round) {
+                3 -> 1
+                5 -> 2
+                else -> return@stateCheckBeforeAction
+            } + if (game.master) 1 else 0
+            val playerReputationChange = game.players.map {
+                val countedTheories = game.theoryBoard.countedTheories(it)
+                if (countedTheories >= theoriesNeededForGain) 1
+                else countedTheories - theoriesNeededForGain
+            }
+            playerReputationChange.forEachIndexed { index, i ->
+                game.players[index].reputation += i
+            }
+        }
     }
 
 }

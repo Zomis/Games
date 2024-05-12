@@ -52,7 +52,7 @@ object ArtifactActions {
                     val owner = game.players[this@AltarOfGold.playerIndex]
                     owner.gold -= action.parameter
                     owner.reputation += action.parameter
-                    log { "$player pays $action gold to get $action reputation" }
+                    game.log.add(LogItem.AltarOfGold(playerIndex, action.parameter))
                 }
             }
         }
@@ -91,7 +91,7 @@ object ArtifactActions {
                     if (!action.parameter) return@perform
                     onPerform.invoke()
                     game.stack.add(BootsOfSpeedUsage(playerIndex, event))
-                    log { "$player uses boots of speed at ${event.actionSpace.name}" }
+                    game.log.add(LogItem.BootsOfSpeed(playerIndex, event.actionSpace.name))
                 }
             }
         }
@@ -133,8 +133,7 @@ object ArtifactActions {
         }
     val hypnoticAmulet =
         Artifact("Hypnotic Amulet", "Immediate effect: Draw 4 favor cards.", 2, 3, 1, immediateEffect = {
-            game.favors.deck.random(meta.replayable, 4, "hypnoticAmulet") { it.name }
-                .forEach { game.favors.giveFavor(game, it, game.players[playerIndex]) }
+            game.favors.giveFavors(meta.replayable, game.players[playerIndex], 4, "hypnoticAmulet")
         })
     val magicMirror =
         Artifact("Magic Mirror", "When scoring artifacts, this is worth 1 victory point for every 5 reputation points you had at the end of the final round.", 3, 4, null) {
@@ -319,7 +318,7 @@ object ArtifactActions {
                 game.favors.favorsPlayed.moveAllTo(game.favors.discardPile)
             }
             perform {
-                log { "$player buys artifact ${action.name}" }
+                game.log.add(LogItem.BuyArtifact(playerIndex, action.parameter))
             }
         }
     }

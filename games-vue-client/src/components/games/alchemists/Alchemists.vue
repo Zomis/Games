@@ -19,7 +19,6 @@
           </div>
           <p>
             {{ player.extraCubes }}
-            {{ player.seals }}
             <img :src="path + 'coin3D.png'" /> {{ player.resources.Gold }}
             <Cube :playerIndex="playerIndex" /> {{ view.actionCubeCount }}
             <img v-if="view.startingPlayer == playerIndex" :src="path + 'startingplayer.png'" class="startingplayer" />
@@ -35,6 +34,7 @@
           <div v-else>
             {{ player.ingredients }} ingredients.
             {{ player.favors }} favors.
+            {{ player.seals }} seals.
           </div>
         </v-card>
       </v-col>
@@ -122,7 +122,7 @@
             </div>
 
             <div class="sell-area">
-              <img v-if="view.sellPotion.heroes[0]" :style="{ left: '8px', top: '392px', width: '93px', height: '144px' }"
+              <img v-if="view.sellPotion.heroes[0]" :style="{ left: '0px', top: '392px', width: '93px', height: '144px' }"
                :src="`${path}hero_n${view.sellPotion.heroes[0].id}.jpg`" />
 
               <img v-if="view.sellPotion.heroes[1]" :style="{ left: '-108px', top: '392px', width: '93px', height: '144px' }"
@@ -130,20 +130,33 @@
             </div>
           </div>
         </v-card>
+        <div v-if="view.sellPotion.heroes[0]">
+          <Potion v-for="slot in view.sellPotion.actionableSlot" :key="slot" :potion="view.sellPotion.heroes[0].requests[slot]" :onClick="potionSell" :slotNumber="slot" />
+          <v-btn v-for="guarantee in view.sellPotion.actionableGuarantee" :key="guarantee">
+            {{ guarantee }}
+          </v-btn>
+        </div>
       </v-col>
+    </v-row>
+    <v-row justify="center">
+      <div>
+        <h3>Theory board</h3>
+        <div class="theoryboard">
+          <div v-for="ing in view.theoryBoard.ingredients" :key="ing" :class="'ing-' + ing" class="ing">
+
+          </div>
+        </div>
+        {{ view.theoryBoard.assignableAlchemicals }}
+        <div v-if="view.players[view.viewer]">
+          <Seal v-for="(seal, sealIndex) in view.players[view.viewer].seals" :key="sealIndex" :seal="seal" :playerIndex="view.viewer" />
+        </div>
+      </div>
     </v-row>
     <v-row justify="center">
       <v-col>
         <div>
           <h3>Played favors</h3>
           {{ view.favors.favorsPlayed }}
-        </div>
-        <div>
-          <h3>Theory board</h3>
-          <p>
-            {{ view.theoryBoard }}
-          </p>
-          <img :src="path + 'theory_board.jpg'" />
         </div>
         <div>
           <h3>Spaces</h3>
@@ -158,6 +171,10 @@
           <p>{{ view.testSelf }}</p>
           <p>{{ view.exhibition }}</p>
         </div>
+        <div>
+          <h3>All</h3>
+          {{ view }}
+        </div>
       </v-col>
     </v-row>
   </v-container>
@@ -168,6 +185,8 @@ import PlayerProfile from "@/components/games/common/PlayerProfile"
 import AlchemistsActionCubesRow from "./AlchemistsActionCubesRow";
 import AlchComponents from "./AlchComponents";
 const Cube = AlchComponents.Cube;
+const Seal = AlchComponents.Seal;
+const Potion = AlchComponents.Potion;
 const Favor = AlchComponents.Favor;
 const Ingredient = AlchComponents.Ingredient;
 const Artifact = AlchComponents.Artifact;
@@ -182,7 +201,7 @@ export default {
   components: {
     AlchemistsActionCubesRow,
     PlayerProfile,
-    Cube,
+    Cube, Seal, Potion,
     Favor, Ingredient, Artifact,
   },
   methods: {
@@ -206,12 +225,10 @@ export default {
         this.actions.choose('takeIngredient', ingredient);
       }
     },
-    transmuteClick(ingredient) {
-      if (this.view.transmute.actionable[ingredient]) {
-        this.actions.choose('transmute', ingredient);
-      }
-    },
     ingredientClick(ingredient) {
+      if (this.view.transmute.actionable[ingredient]) {
+        this.actions.actionParameter('transmute', ingredient);
+      }
       if (this.view.favors.discardIngredients[ingredient]) {
         this.actions.choose('herbalist', ingredient);
       }
@@ -226,6 +243,9 @@ export default {
       if (this.view.favors.discardFavors[favor]) {
         this.actions.actionParameter('discardFavor', favor);
       }
+    },
+    potionSell(slot) {
+      this.actions.choose('sell', slot);
     },
     chooseTurnOrder(key) {
       this.actions.actionParameter("turn", key)
@@ -279,6 +299,62 @@ export default {
 //@import "../../assets/games-animations.css";
 </script>
 <style scoped>
+.theoryboard {
+  background-image: url("https://d3ux78k3bc7mem.cloudfront.net/games/alc/theory_board.jpg");
+  position: relative;
+  border: 0;
+  width: 724px;
+  height: 553px;
+}
+.theoryboard .ing {
+  position: absolute;
+  width: 150px;
+  height: 110px;
+}
+.theoryboard .seal {
+  left: 80px;
+  width: 72px;
+  height: 32px;
+}
+.theoryboard .seal-1 {
+  top: 32px;
+}
+.theoryboard .seal-2 {
+  top: 64px;
+}
+.theoryboard .ing-A {
+  left: 134px;
+  top: 96px;
+}
+.theoryboard .ing-B {
+  left: 134px;
+  top: 346px;
+}
+.theoryboard .ing-C {
+  left: 466px;
+  top: 96px;
+}
+.theoryboard .ing-D {
+  left: 83px;
+  top: 221px;
+}
+.theoryboard .ing-E {
+  left: 466px;
+  top: 346px;
+}
+.theoryboard .ing-F {
+  left: 300px;
+  top: 418px;
+}
+.theoryboard .ing-G {
+  left: 300px;
+  top: 36px;
+}
+.theoryboard .ing-H {
+  left: 517px;
+  top: 221px;
+}
+
 .board {
   position: relative;
   border: 0;
@@ -307,6 +383,12 @@ export default {
   width: 407px;
   height: 142px;
   position: absolute;
+}
+
+.seal {
+  margin: 2px;
+  width: 40px;
+  height: 64px;
 }
 
 .gamecard {
@@ -375,15 +457,15 @@ export default {
   height: 100px;
 }
 
-.action-cube-area.debunkTheory {
-  left: 117px;
-  top: 71px;
-  width: 100px;
-  height: 100px;
+.action-cube-area.sellPotion {
+  left: 180px;
+  top: 420px;
+  width: 60px;
+  height: 150px;
 }
 
-.action-cube-area.publishTheory {
-  left: 304px;
+.action-cube-area.debunkTheory {
+  left: 117px;
   top: 71px;
   width: 100px;
   height: 100px;
@@ -456,7 +538,7 @@ export default {
 }
 
 .sell-area {
-  background-color: #7f7f7f7f;
+  background-color: #7f7f7f4f;
   width: 217px;
   height: 203px;
   position: absolute;

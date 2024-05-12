@@ -32,8 +32,14 @@ object SellAction {
 
     data class Hero(val id: Int, val requests: List<AlchemistsPotion>)
     class SellHero(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx), AlchemistsDelegationGame.HasAction {
-        val actionable by viewOnly {
-            actionRaw(action.actionType).nextStepsAll()
+        val actionableSlot by viewOnly {
+            chosenActions(action.actionType).nextSteps(Int::class).associateWith { true }
+        }
+        val actionableGuarantee by viewOnly {
+            chosenActions(action.actionType).nextSteps(Guarantee::class).associate { it.level to true }
+        }
+        val actionableIngredients by viewOnly {
+            chosenActions(action.actionType).nextSteps(Ingredient::class).associate { it.serialize() to true }
         }
         val heroes by component { mutableListOf<Hero>() }
             .setup {
@@ -87,7 +93,7 @@ object SellAction {
                         }
                         sellOrder = discounts.sortedBy { it.second }.map { it.first }
                     }
-                    logSecret(playerIndex) { "$player has chosen discount ${action.discount} to the hero" }.publicLog { "$player has chosen a discount for the hero" }
+                    game.log.add(LogItem.Discount(playerIndex, action.parameter))
                 }
             } else {
                 precondition { playerIndex == actionSpace.nextPlayerIndex() }
@@ -112,11 +118,11 @@ object SellAction {
                     slots[action.parameter.slot!!] = playerIndex
                     val result = game.alchemySolution.mixPotion(action.parameter.ingredients!!.ingredients)
                     val request = heroes[0].requests[action.parameter.slot!!]
+                    val guarantee = action.parameter.guarantee
                     val sellResult = action.parameter.guarantee!!.result(request, result)
                     game.players[playerIndex].gold += sellResult.price
                     game.favors.favorsPlayed.moveAllTo(game.favors.discardPile)
-                    logSecret(playerIndex) { "$player mixed ${action.ingredients} to mix ${result.textRepresentation} which was $sellResult" }
-                        .publicLog { "$player sold a potion to the hero, yielding the result $sellResult" }
+                    game.log.add(LogItem.PotionSell(playerIndex, action.parameter.ingredients!!, request, guarantee!!, sellResult))
                 }
             }
         }

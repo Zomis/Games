@@ -64,7 +64,9 @@ interface GameModifierApplyScope<GameModel: Any, Owner>: UsageScope {
     val game: GameModel
     val meta: GameMetaScope<GameModel>
     val eliminations: PlayerEliminationsWrite get() = meta.eliminations
+    @Deprecated("use GameLog class instead")
     fun log(logging: LogScope<GameModel>.() -> String)
+    @Deprecated("use GameLog class instead")
     fun logSecret(playerIndex: Int, logging: LogScope<GameModel>.() -> String): LogSecretScope<GameModel>
 }
 

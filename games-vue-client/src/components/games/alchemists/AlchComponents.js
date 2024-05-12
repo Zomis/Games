@@ -97,10 +97,65 @@ const Cube = {
     } 
 };
 
+const Seal = {
+    props: ['playerIndex', 'seal', 'onClick'],
+    methods: {
+        click() {
+            this.onClick(this.seal);
+        }
+    },
+    computed: {
+        sealId() {
+            if (!this.seal) return "back";
+            if (this.seal.hedge == 'RED') return 0;
+            if (this.seal.hedge == 'GREEN') return 1;
+            if (this.seal.hedge == 'BLUE') return 2;
+            if (this.seal.victoryPoints == 3) return 3;
+            if (this.seal.victoryPoints == 5) return 4;
+            return -1;
+        },
+        imageSource() {
+            return `${path}seal_${this.playerIndex}_${this.sealId}.jpg`;
+        }
+    },
+    render() {
+      return (<img class="seal" src={this.imageSource} onClick={this.click} />);
+    } 
+}
+
+const Potion = {
+    props: ['potion', 'slotNumber', 'onClick'],
+    methods: {
+        click() {
+            this.onClick(this.slotNumber);
+        }
+    },
+    computed: {
+        colorId() {
+            if (this.potion.color === "RED") return "0";
+            if (this.potion.color === "GREEN") return "1";
+            if (this.potion.color === "BLUE") return "2";
+            return "undef";
+        },
+        signId() {
+            if (this.potion.sign === "POSITIVE") return "1";
+            if (this.potion.sign === "NEGATIVE") return "0";
+            return "undef";
+        },
+        imageSource() {
+            return `${path}potionG_${this.signId}_${this.colorId}.png`;
+        }
+    },
+    render() {
+      return (<img class="potion" src={this.imageSource} onClick={this.click} />);
+    } 
+}
 
 export default {
     Cube: Cube,
     Favor: Favor,
     Ingredient: Ingredient,
     Artifact: Artifact,
+    Seal: Seal,
+    Potion: Potion,
 }

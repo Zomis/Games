@@ -1,10 +1,12 @@
 package net.zomis.games.impl.alchemists
 
+import net.zomis.games.common.PlayerIndex
 import net.zomis.games.context.ActionFactory
 import net.zomis.games.context.Context
 import net.zomis.games.context.Entity
 import net.zomis.games.dsl.GameActionCreator
 import net.zomis.games.dsl.GameSerializable
+import net.zomis.games.dsl.Viewable
 import net.zomis.games.dsl.flow.ActionDefinition
 import net.zomis.games.dsl.flow.GameFlowActionScope
 import net.zomis.games.rules.RuleSpec
@@ -17,13 +19,15 @@ object TheoryActions {
             val diffs = diff(solution, this.alchemical)
             return seals.filter { !it.properlyHedged(diffs) }.map { it.owner }
         }
+        fun inConflict(): Boolean = false
+
         private fun diff(x: AlchemistsChemical, y: AlchemistsChemical): List<AlchemistsColor> {
             return AlchemistsColor.values().filter { x.properties.getValue(it).sign != y.properties.getValue(it).sign }
         }
     }
 
-    data class Seal(val hedge: AlchemistsColor?, val victoryPoints: Int, val owner: AlchemistsDelegationGame.Model.Player): GameSerializable {
-        override fun serialize(): String = "($hedge/$victoryPoints)"
+    data class Seal(val hedge: AlchemistsColor?, val victoryPoints: Int, val owner: AlchemistsDelegationGame.Model.Player): GameSerializable, Viewable {
+        override fun serialize(): String = "${owner.playerIndex}/($hedge/$victoryPoints)"
         fun properlyHedged(differences: List<AlchemistsColor>): Boolean {
             return when (differences.count()) {
                 0 -> true
@@ -34,6 +38,8 @@ object TheoryActions {
                 else -> false
             }
         }
+
+        override fun toView(viewer: PlayerIndex): Any = if (owner.playerIndex == viewer) mapOf("hedge" to hedge?.name, "victoryPoints" to victoryPoints) else mapOf<String, Any>()
     }
 
     fun seals(player: AlchemistsDelegationGame.Model.Player): List<Seal> {
@@ -74,8 +80,18 @@ object TheoryActions {
     }
 
     class TheoryBoard(val model: AlchemistsDelegationGame.Model, ctx: Context): Entity(ctx) {
+        val ingredients by viewOnly<AlchemistsDelegationGame.Model> { Ingredient.values().toList().map { it.serialize() } }
+        val assignableAlchemicals by viewOnly<AlchemistsDelegationGame.Model> { Alchemists.alchemyValues.associate { alc ->
+            alc.representation to theories.none { it.alchemical == alc }
+        } }
+
         fun find(theory: TheoryAction): Theory? = theories.find { it.ingredient == theory.ingredient }
             ?.also { check(it.alchemical == theory.alchemical) }
+
+        fun countedTheories(player: AlchemistsDelegationGame.Model.Player): Int {
+            return theories.filterNot { it.inConflict() }.sumOf { theory -> theory.seals.count { it.owner == player } }
+        }
+
         val theories by component { mutableListOf<Theory>() }
     }
 
@@ -123,7 +139,7 @@ object TheoryActions {
                     return@perform
                 }
                 val debunked = action.parameter.findDebunkedTheories(game.alchemySolution, game.theoryBoard)
-                log { "$player tries to debunk ${action.aspect} of ${action.ingredient} which debunks $debunked" }
+                game.log.add(LogItem.Debunk(playerIndex, action.parameter.aspect, action.parameter.ingredient, debunked))
                 if (debunked.isEmpty()) {
                     game.players[playerIndex].reputation--
                 } else {
@@ -206,7 +222,7 @@ object TheoryActions {
             val reputationGain = if (game.players[this.playerIndex].artifacts.cards.contains(ArtifactActions.sealOfAuthority)) 3 else 1
             game.players[this.playerIndex].reputation += reputationGain
             game.players[this.playerIndex].seals.card(action.parameter.seal).remove()
-            log { "$player publishes a theory about $action" }
+            game.log.add(LogItem.PublishTheory(this.playerIndex, action.parameter))
         }
     }
     fun goldBankCost(game: AlchemistsDelegationGame.Model, playerIndex: Int): Int
