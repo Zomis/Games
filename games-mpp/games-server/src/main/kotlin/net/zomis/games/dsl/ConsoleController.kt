@@ -74,7 +74,10 @@ class ConsoleController<T: Any> {
                 if (actionsCount > 0) {
                     println("$playerIndex ${actionType.name}: $actionsCount$plus actions")
                     if (actionsCount <= MAX_PRINT_AVAILABLE_ACTIONS) {
-                        actionsAvailable.map { it.parameter }.forEach { println(it) }
+                        actionsAvailable.map { it.parameter }.forEach {
+                            if (it is IntArray) println(it.contentToString())
+                            else println(it)
+                        }
                     }
                 }
             }
@@ -89,7 +92,12 @@ class ConsoleController<T: Any> {
             println("  " + act.size + " choices")
             val entryList = act.entries.toList()
             entryList.forEachIndexed { index, value ->
-                println("$index. ${value.key} - ${value.value.map { it.serialized }}")
+                val v = value.key
+                if (v is IntArray) {
+                    println("$index. ${v.contentToString()} - ${value.value.map { it.serialized }}")
+                } else {
+                    println("$index. ${value.key} - ${value.value.map { it.serialized }}")
+                }
             }
 
             val choice = scanner.nextLine().toIntOrNull() ?: return null
