@@ -3,7 +3,7 @@ package net.zomis.games.rules
 import net.zomis.games.dsl.flow.GameModifierImpl
 import net.zomis.games.dsl.flow.GameModifierScope
 
-typealias RuleSpec<GameModel, Owner> = GameModifierScope<GameModel, Owner>.() -> Unit
+typealias RuleSpec<GameModel, Owner> = suspend GameModifierScope<GameModel, Owner>.() -> Unit
 typealias Rule<GameModel, Owner> = GameModifierImpl<GameModel, Owner>
 
 fun <GameModel : Any, Owner> RuleSpec(name: String, lambda: RuleSpec<GameModel, Owner>): RuleSpec<GameModel, Owner> = {

@@ -85,6 +85,7 @@ class GameFlowImpl<T: Any>(
     override val meta: GameMetaScope<T> get() = this
     private val baseRule = Rule(this, Unit, setupContext.getBaseRule(model) ?: {}, NoState)
 
+    val instantChoices = Channel<Int>()
     override val actionsInput: Channel<Actionable<T, out Any>> = Channel()
     var job: Job? = null
     override suspend fun start(coroutineScope: CoroutineScope) {
@@ -119,6 +120,14 @@ class GameFlowImpl<T: Any>(
             old.invoke()
             function.invoke()
         }
+    }
+
+    override suspend fun <T : Any> playerChoice(playerIndex: Int, options: List<T>): T {
+        this.feedbackFlow.send(FlowStep.Choice(playerIndex, options.map {
+            (it as Replayable).toStateString()
+        }))
+        val chosenIndex = this.instantChoices.receive()
+        return options[chosenIndex]
     }
 
     override fun stop() {

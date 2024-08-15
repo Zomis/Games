@@ -163,7 +163,11 @@ class GameImpl<T : Any>(
         = this.events.fireEvent(source, event, performEvent as (Any) -> Unit)
 
     override fun onNoActions(function: () -> Unit) {
-        TODO("Not yet implemented")
+        TODO("Should not be necessary for this class")
+    }
+
+    override suspend fun <T : Any> playerChoice(playerIndex: Int, options: List<T>): T {
+        TODO("Should not be necessary for this class")
     }
 
     private val stateKeeper = StateKeeper()

@@ -6,6 +6,7 @@ import kotlinx.coroutines.sync.withLock
 import net.zomis.games.dsl.ActionType
 import net.zomis.games.dsl.Actionable
 import net.zomis.games.dsl.GameListener
+import net.zomis.games.dsl.flow.GameFlowImpl
 import net.zomis.games.dsl.impl.FlowStep
 import net.zomis.games.dsl.impl.Game
 
@@ -13,17 +14,29 @@ class BlockingGameListener: GameListener {
     val lock = Mutex(locked = true)
     val gameEnd = Mutex(locked = true)
     lateinit var game: Game<Any>
+    var choices: List<String> = emptyList()
+    var choicePlayer = -1
 
     override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
         when (step) {
-            is FlowStep.GameSetup<*> -> game = step.game as Game<Any>
+            is FlowStep.GameStarted<*> -> game = step.game as Game<Any>
             is FlowStep.ProceedStep -> {
                 if (step is FlowStep.GameEnd && gameEnd.isLocked) gameEnd.unlock()
                 if (lock.isLocked) lock.unlock()
             }
             is FlowStep.PreMove -> if (!lock.isLocked) lock.lock()
+            is FlowStep.Choice -> {
+                choicePlayer = step.playerIndex
+                choices = step.choices
+                if (lock.isLocked) lock.unlock()
+            }
             else -> {}
         }
+    }
+
+    suspend fun choose(value: String) {
+        lock.lock()
+        (game as GameFlowImpl<*>).instantChoices.send(choices.indexOf(value))
     }
 
     suspend fun await() = lock.withLock {}

@@ -4,6 +4,12 @@ import kotlinx.coroutines.CoroutineScope
 import net.zomis.games.dsl.GameListener
 import net.zomis.games.dsl.impl.FlowStep
 
+object AllStepsPrinter : GameListener {
+    override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
+        println(step)
+    }
+}
+
 object ExceptionPrinter : GameListener {
     override suspend fun handle(coroutineScope: CoroutineScope, step: FlowStep) {
         if (step is FlowStep.GameException) {

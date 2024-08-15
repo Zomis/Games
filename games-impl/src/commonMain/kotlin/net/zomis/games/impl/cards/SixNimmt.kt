@@ -6,6 +6,7 @@ import net.zomis.games.context.ContextHolder
 import net.zomis.games.context.Entity
 import net.zomis.games.dsl.GameSerializable
 import net.zomis.games.dsl.flow.GameModifierScope
+import net.zomis.games.rules.RuleSpec
 import kotlin.math.abs
 
 object SixNimmt {
@@ -89,7 +90,7 @@ object SixNimmt {
             } while (players.any { it.playedCard != null })
         }
 
-        val rule: GameModifierScope<Model, Unit>.() -> Unit = {
+        val rule: RuleSpec<Model, Unit> = {
             if (players.all { it.playedCard != null }) {
                 // Check for lowest card
                 val lowestCard = players.minBy { it.playedCard!!.value }

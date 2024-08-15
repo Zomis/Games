@@ -64,4 +64,5 @@ sealed class FlowStep {
     object AwaitInput: FlowStep(), ProceedStep
     object NextView : FlowStep()
     data class GameException(val e: Throwable) : FlowStep()
+    data class Choice(val playerIndex: Int, val choices: List<String>) : FlowStep()
 }

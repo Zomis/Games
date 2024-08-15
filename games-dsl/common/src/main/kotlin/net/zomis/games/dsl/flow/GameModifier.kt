@@ -32,10 +32,12 @@ interface GameModifierScope<GameModel: Any, Owner> : UsageScope, StateOwner {
     val ruleHolder: Owner
     val game: GameModel
     val ruleSpec: RuleSpec<GameModel, Owner>
+    val playerCount: Int
+    val playerIndices: IntRange
 
     fun conflictsWith(rule: Rule<GameModel, out Any>)
     fun overrides(rule: Rule<GameModel, out Any>)
-    fun <Owner2> subRule(rule: RuleSpec<GameModel, Owner2>, owner: Owner2, stateOwner: StateOwner): Rule<GameModel, Owner2>
+    suspend fun <Owner2> subRule(rule: RuleSpec<GameModel, Owner2>, owner: Owner2, stateOwner: StateOwner): Rule<GameModel, Owner2>
     fun applyRule(condition: () -> Boolean, rule: RuleSpec<GameModel, out Any>): Rule<GameModel, out Any>
 
     fun onState(condition: () -> Boolean, thenPerform: GameModifierApplyScope<GameModel, Owner>.() -> Unit)
@@ -57,6 +59,7 @@ interface GameModifierScope<GameModel: Any, Owner> : UsageScope, StateOwner {
     // enable/disable entire rule, enable/disable part of rule, change some value - e.g. how much cost reduction is applied
     fun allActionsPrecondition(precondition: ActionOptionsScope<GameModel>.() -> Boolean)
     fun onNoActions(function: () -> Unit)
+    suspend fun <T : Any> playerChoice(playerIndex: Int, options: List<T>): T
 }
 
 interface GameModifierApplyScope<GameModel: Any, Owner>: UsageScope {

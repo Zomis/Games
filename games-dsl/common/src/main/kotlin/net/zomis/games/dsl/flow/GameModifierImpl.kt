@@ -32,6 +32,8 @@ class GameModifierImpl<GameModel: Any, Owner>(
 
     override val ruleHolder: Owner get() = owner
     override val game: GameModel get() = meta.game
+    override val playerCount: Int = meta.eliminations.playerCount
+    override val playerIndices: IntRange = meta.eliminations.playerIndices
     private val stateChecksBeforeAction = mutableListOf<GameModifierApplyScope<GameModel, Owner>.() -> Unit>()
     private val actionModifiers = mutableListOf<ActionModifier<GameModel>>()
     private val activeConditions = mutableListOf<GameModifierScope<GameModel, Owner>.() -> Boolean>()
@@ -46,7 +48,7 @@ class GameModifierImpl<GameModel: Any, Owner>(
         TODO("Not yet implemented")
     }
 
-    override fun <Owner2> subRule(rule: RuleSpec<GameModel, Owner2>, owner: Owner2, stateOwner: StateOwner): Rule<GameModel, Owner2> {
+    override suspend fun <Owner2> subRule(rule: RuleSpec<GameModel, Owner2>, owner: Owner2, stateOwner: StateOwner): Rule<GameModel, Owner2> {
         val context = GameModifierImpl(meta, owner, rule, stateOwner)
         rule.invoke(context)
         subRules.add(context)
@@ -62,6 +64,10 @@ class GameModifierImpl<GameModel: Any, Owner>(
     }
 
     override fun onNoActions(function: () -> Unit) = meta.onNoActions(function)
+
+    override suspend fun <T : Any> playerChoice(playerIndex: Int, options: List<T>): T {
+        return meta.playerChoice(playerIndex, options)
+    }
 
     override fun onState(condition: () -> Boolean, thenPerform: GameModifierApplyScope<GameModel, Owner>.() -> Unit) {
         stateCheckBeforeAction {
@@ -153,7 +159,7 @@ class GameModifierImpl<GameModel: Any, Owner>(
         return this.activeConditions.all { it.invoke(this) }
     }
 
-    fun fire() {
+    suspend fun fire() {
         clear()
         this.active = true
         ruleSpec.invoke(this)

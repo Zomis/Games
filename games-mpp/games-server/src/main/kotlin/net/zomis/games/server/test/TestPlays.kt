@@ -83,6 +83,10 @@ private class TestPlayRoot(private val mapper: ObjectMapper, val file: File) {
                     is FlowStep.GameException -> {
                         step.e.printStackTrace()
                     }
+
+                    is FlowStep.Choice -> {
+                        TODO()
+                    }
                 }
             }
         }

@@ -7,7 +7,7 @@ class ActiveRules<GameModel : Any>(private val metaScope: GameMetaScope<GameMode
     private val activeRules = mutableListOf<Rule<GameModel, out Any?>>()
     private val nextRules = mutableListOf<Rule<GameModel, out Any?>>()
 
-    fun fireRules(baseRule: Rule<GameModel, out Any>?) {
+    suspend fun fireRules(baseRule: Rule<GameModel, out Any>?) {
         baseRule?.fire()
         // check applicable rules
         // add actions, event listeners

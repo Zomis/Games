@@ -45,4 +45,5 @@ interface GameMetaScope<GameModel: Any>
     fun <E: Any> fireEvent(source: EventSource, event: E, performEvent: (E) -> Unit = {})
     fun addGlobalActionPrecondition(rule: ActionOptionsScope<GameModel>.() -> Boolean)
     fun onNoActions(function: () -> Unit)
+    suspend fun <T : Any> playerChoice(playerIndex: Int, options: List<T>): T
 }
