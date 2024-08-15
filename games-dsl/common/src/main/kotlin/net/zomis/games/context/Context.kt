@@ -209,10 +209,18 @@ open class Entity(protected open val ctx: Context) {
     }
     fun sharedIdGenerator() = ctx.gameContext.idGenerator
 }
-class GameContext(val meta: GameMetaScope<Any>, val events: EventsHandling<Any>, val playerCount: Int, val eliminations: PlayerEliminationsWrite, val configLookup: (GameConfig<Any>) -> Any) {
+
+class GameContext(
+    val meta: GameMetaScope<Any>,
+    val events: EventsHandling<Any>,
+    val playerCount: Int,
+    val eliminations: PlayerEliminationsWrite,
+    val configLookup: (GameConfig<Any>) -> Any,
+) {
     val idGenerator = IdGenerator()
     internal val onSetup = mutableListOf<GameStartScope<Any>.() -> Unit>()
 }
+
 interface ContextHolder {
     val ctx: Context
     fun <E: Any> config(config: GameConfig<E>): E = ctx.gameContext.configLookup.invoke(config as GameConfig<Any>) as E
