@@ -49,8 +49,8 @@ class BlockingGameListener: GameListener {
 
     suspend fun <T: Any, P: Any> awaitAndPerform(playerIndex: Int, type: ActionType<T, P>, parameter: P) {
         await()
-        lock.lock()
         val action = createAction(playerIndex, type, parameter)
+        lock.lock()
         game.actionsInput.send(action as Actionable<Any, out Any>)
     }
 
