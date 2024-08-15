@@ -215,6 +215,7 @@ class GameContext(
     val events: EventsHandling<Any>,
     val playerCount: Int,
     val eliminations: PlayerEliminationsWrite,
+    val refs: Map<KClass<*>, Refs<*>>,
     val configLookup: (GameConfig<Any>) -> Any,
 ) {
     val idGenerator = IdGenerator()
@@ -252,9 +253,18 @@ class Context(val gameContext: GameContext, private val parent: Context?, val na
         return newContext
     }
 
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> refs(clazz: KClass<T>): List<T> {
+        val refs = gameContext.refs[clazz] ?: throw IllegalArgumentException("No refs found for $clazz")
+        return refs.values.map { it as T }
+    }
+
     val playerIndices get() = (0 until gameContext.playerCount)
     internal val children = mutableListOf<Context>()
 }
+
+inline fun <reified T : Any> Context.refs(): List<T> = this.refs(T::class)
+
 class EventListenerContext(
     val gameContext: GameContext,
     private val eventFactory: EventFactory<Any>,
@@ -276,6 +286,8 @@ class EventListenerContext(
     }
 
 }
+class Refs<T : Any>(val clazz: KClass<T>, val values: List<T>, key: (T) -> String)
+
 class GameCreatorContext<T: ContextHolder>(val gameType: String, val function: GameCreatorContextScope<T>.() -> Unit): GameCreatorContextScope<T> {
     private var playerRange = 0..0
     private lateinit var init: ContextHolder.() -> T
@@ -288,6 +300,7 @@ class GameCreatorContext<T: ContextHolder>(val gameType: String, val function: G
     private val context = GameDslContext<T>(gameType)
     private var baseRule: ((T) -> RuleSpec<T, Unit>)? = null
     private val testCases = mutableListOf<GameTestCaseContext<T>>()
+    private val refs = mutableMapOf<KClass<*>, Refs<*>>()
 
     override fun players(players: IntRange) {
         this.playerRange = players
@@ -319,6 +332,11 @@ class GameCreatorContext<T: ContextHolder>(val gameType: String, val function: G
         this.configs.add(config)
     }
 
+    override fun <R : Any> refs(clazz: KClass<R>, vararg values: R, key: (R) -> String) {
+        check(!this.refs.containsKey(clazz)) { "Refs for $clazz has already been specified" }
+        refs[clazz] = Refs(clazz, values.toList(), key)
+    }
+
     override val scorers: ScorerFactory<T> = context.scorers
     override fun ai(name: String, block: GameAIScope<T>.() -> Unit): GameAI<T> = context.ai(name, block)
 
@@ -334,7 +352,13 @@ class GameCreatorContext<T: ContextHolder>(val gameType: String, val function: G
                     this.game.ctx.gameContext.onSetup.forEach { it.invoke(this as GameStartScope<Any>) }
                 }
                 init {
-                    val gc = GameContext(this.meta as GameMetaScope<Any>, this.events as EventsHandling<Any>, this.playerCount, this.eliminationCallback) { config(it) }
+                    val gc = GameContext(
+                        this.meta as GameMetaScope<Any>,
+                        this.events as EventsHandling<Any>,
+                        this.playerCount,
+                        this.eliminationCallback,
+                        this@GameCreatorContext.refs,
+                    ) { config(it) }
                     val context = Context(gc, null, "")
                     context.view = {
                         context.children.associate { it.name to it.view }
@@ -376,6 +400,11 @@ interface GameCreatorContextScope<T: Any>: UsageScope {
     fun <E : Any> config(key: String, default: () -> E): GameConfig<E>
     fun ai(name: String, block: GameAIScope<T>.() -> Unit): GameAI<T>
     fun <C : Any> addConfig(config: GameConfig<C>)
+    fun <R : Any> refs(clazz: KClass<R>, vararg values: R, key: (R) -> String)
 
     val scorers: ScorerFactory<T>
+}
+
+inline fun <reified T : Any> GameCreatorContextScope<*>.refs(vararg values: T, noinline key: (T) -> String) {
+    return this.refs(T::class, *values, key = key)
 }
