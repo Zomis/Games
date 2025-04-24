@@ -22,7 +22,6 @@ shapely
 short
 skinny
 stocky
-ugly
 unkempt
 unsightly
 ashy
@@ -59,7 +58,6 @@ powerful
 rich
 shy
 tender
-unimportant
 uninterested
 vast
 wrong
@@ -101,7 +99,6 @@ mysterious
 nervous
 obnoxious
 panicky
-pitiful
 repulsive
 scary
 thoughtless
