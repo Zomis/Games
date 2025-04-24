@@ -18,6 +18,7 @@ import PlayGame from "@/components/PlayGame";
 
 import Alchemists from "@/components/games/alchemists/Alchemists";
 import Grizzled from "@/components/games/grizzled/Grizzled";
+import Cryptid from "@/components/games/Cryptid";
 import Backgammon from "@/components/games/paths/Backgammon";
 import RoyalGameOfUR from "@/components/RoyalGameOfUR";
 import DungeonMayhem from "@/components/games/dungeon-mayhem/DungeonMayhem"
@@ -95,6 +96,12 @@ function upgradeSpice(spice) {
 
 
 const supportedGames = {
+    "Cryptid": {
+        enabled: true,
+        component: Cryptid,
+        playTime: 30,
+        amountOfPlayers: '2-5'
+    },
     "Alchemists": {
         enabled: false,
         component: Alchemists,

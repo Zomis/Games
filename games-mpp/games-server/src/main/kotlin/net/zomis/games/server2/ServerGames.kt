@@ -9,6 +9,7 @@ import net.zomis.games.impl.cards.Grizzled
 import net.zomis.games.impl.cards.SixNimmt
 import net.zomis.games.impl.cards.TheCrew
 import net.zomis.games.impl.grids.Battleship
+import net.zomis.games.impl.grids.Cryptid
 import net.zomis.games.impl.grids.KingDomino
 import net.zomis.games.impl.logic.TuringMachineGame
 import net.zomis.games.impl.minesweeper.Flags
@@ -31,6 +32,7 @@ object ServerGames {
     )
 
     val games = listOf(
+        Cryptid.game,
         TheCrew.game,
         Flags.game,
         OpenFieldChallenge.game,
