@@ -1,6 +1,7 @@
 package net.zomis.games.components.grids
 
 import net.zomis.Best
+import net.zomis.games.components.Point
 
 data class Position(val x: Int, val y: Int, val sizeX: Int, val sizeY: Int) {
     fun next(): Position? {
@@ -17,6 +18,7 @@ data class Position(val x: Int, val y: Int, val sizeX: Int, val sizeY: Int) {
     internal fun flipY(): Position
             = Position(this.x, this.sizeY - 1 - this.y, this.sizeX, this.sizeY)
     fun transform(transformation: Transformation): Position = transformation.transform(this)
+    fun point(): Point = Point(x, y)
 }
 
 enum class TransformationType(val transforming: (Position) -> Position, val reverse: (Position) -> Position) {
@@ -26,7 +28,7 @@ enum class TransformationType(val transforming: (Position) -> Position, val reve
     ;
 }
 
-enum class Transformation(private val transformations: List<TransformationType>) {
+enum class Transformation(internal val transformations: List<TransformationType>) {
     // FLIP_XY with matrix (0, 1) (1, 0) is possible by using FLIP_X / FLIP_Y with rotation.
     NO_CHANGE(listOf()),
     FLIP_X(listOf(TransformationType.FLIP_X)),

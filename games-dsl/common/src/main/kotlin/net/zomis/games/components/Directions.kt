@@ -1,5 +1,7 @@
 package net.zomis.games.components
 
+import net.zomis.games.components.grids.Transformation
+import net.zomis.games.components.grids.TransformationType
 import net.zomis.games.dsl.GameSerializable
 
 enum class Direction4(val deltaX: Int, val deltaY: Int) {
@@ -8,6 +10,9 @@ enum class Direction4(val deltaX: Int, val deltaY: Int) {
     UP(0, -1),
     DOWN(0, 1),
     ;
+
+    val isHorizontal get() = this == LEFT || this == RIGHT
+    val isVertical get() = this == UP || this == DOWN
 
     fun order(): Int {
         return when (this) {
@@ -28,6 +33,16 @@ enum class Direction4(val deltaX: Int, val deltaY: Int) {
     }
 
     fun delta(): Point = Point(deltaX, deltaY)
+
+    fun transform(transformation: Transformation): Direction4 {
+        return transformation.transformations.fold(this) { acc, next ->
+            when (next) {
+                TransformationType.ROTATE -> acc.rotateClockwise()
+                TransformationType.FLIP_X -> if (acc.isHorizontal) acc.opposite() else acc
+                TransformationType.FLIP_Y -> if (acc.isVertical) acc.opposite() else acc
+            }
+        }
+    }
 }
 
 enum class Direction8 constructor(val deltaX: Int, val deltaY: Int): GameSerializable {
