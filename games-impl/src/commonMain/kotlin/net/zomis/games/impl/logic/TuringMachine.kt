@@ -37,6 +37,58 @@ class TuringNumber(private val _values: IntArray) : Comparable<TuringNumber> {
 }
 fun TuringNumber.toInt() = this[0] * 100 + this[1] * 10 + this[2]
 object TuringMachine {
+    fun ai() {
+        val levels = TuringMachine.levels.filter { it.allPossibleVerifiers().size == 1 }
+            .filter { it.solution.asInt() == 111 }
+//    val level = levels.first()
+//    val level = TuringMachine.levels.last { it.allPossibleVerifiers().size == 1 } // My machine: 5 questions (two rounds)
+//    val level = TuringMachine.Level(TuringNumber(intArrayOf(4, 5, 2)), intArrayOf(3, 6, 12, 16)) // My machine: 2 questions
+//    val level = TuringMachine.Level(TuringNumber(intArrayOf(1, 2, 2)), intArrayOf(2, 5, 10, 16)) // Only two solutions: 122, 522. My machine: 1 question.
+
+        // #C654GZ7
+//    val level = TuringMachine.Level(TuringNumber(intArrayOf(1, 1, 4)), intArrayOf(33, 36, 40, 44, 47, 48))
+        val level = TuringMachine.Level(TuringNumber(intArrayOf(4, 4, 3)), intArrayOf(3, 9, 12, 17, 20))
+
+        /*
+        * interesting level:
+        * 2: blue vs 3
+        * 5: blue even or odd
+        * 10: number of 4s
+        * 16: more even or odd numbers
+        *
+        * Blue = 3 implies blue odd
+        * 3 4s implies blue > 4, blue even, and more even than odd
+        * 2 4s implies more even than odd
+        * Numbers that should not be allowed: 322, 244, 144, 344, 544, 444
+        */
+        println(level)
+        val checkers = level.checkers()
+        val verifiers = level.verifiers()
+        val ai = TuringMachineGame.AI(checkers)
+        ai.disqualifyImplies()
+        var questionsAsked = 0
+        var number: TuringNumber? = null
+        while (ai.needsMoreInformation()) {
+            println("AI Needs more information.")
+            ai.printInformation()
+            println("Possible proposals: " + ai.pickBestProposal())
+            if (number == null || questionsAsked >= 3) {
+                questionsAsked = 0
+                number = ai.pickBestProposal().random()
+            }
+
+            val checker = ai.pickBestQuestion(number)
+            val indexAsk = checkers.indexOf(checker)
+            val result = verifiers[indexAsk].check(number)
+            questionsAsked++
+
+            println("result was $result when checking $number criteria index $indexAsk")
+            ai.learn(number, indexAsk, result)
+            println()
+        }
+        ai.printInformation()
+    }
+
     val digitCounts = (0..3).toList()
     val digitCountsExceptMax = digitCounts.dropLast(1)
     fun turingNumber(i: Int): TuringNumber {
