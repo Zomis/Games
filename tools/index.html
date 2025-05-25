@@ -45,11 +45,17 @@
             Card numbers with spaces
             <input type="text" id="turingCards" value="4 8 15 16" />
         </div>
-
         <div>
             Correct answer
             <input type="text" id="turingAnswer" value="543" />
         </div>
+        <button id="turingNext">Next</button>
+        <div id="turingCombinations">
+            <div id="turingVerifierOptions"></div>
+            Option indices (space separated indices)
+            <input type="text" id="turingVerifierChosenOptions" value="" />
+        </div>
+
         <textarea id="turingSolution" rows="20" cols="50">Answer will be revealed here</textarea>
         <br />
         <button id="turingSolve">Figure it out!</button>
@@ -64,9 +70,9 @@
     <script src="games-games-dsl.js"></script>
     <script src="games-games-impl.js"></script>
     <script>
-function toggleShowPath() {
-    document.getElementById("path").classList.toggle('invisible');
-}
+        function toggleShowPath() {
+            document.getElementById("path").classList.toggle('invisible');
+        }
         window.addEventListener('load', () => {
             impl = window['games:games-impl'];
             const ricochetPathButton = document.getElementById('ricochetPath');
@@ -76,7 +82,7 @@ function toggleShowPath() {
                 let pieces = document.getElementById('pieces').value;
                 let goalColor = document.getElementById('targetColor').value;
                 let goalSymbol = document.getElementById('targetSymbol').value;
-		let result = impl.ricochetTool(mapConfig, pieces, goalColor, goalSymbol);
+                let result = impl.ricochetTool(mapConfig, pieces, goalColor, goalSymbol);
                 document.getElementById('path').textContent = "Path: " + result.path;
                 document.getElementById('timex').textContent = "Time:" + result.timeTaken;
                 document.getElementById('distance').textContent = "Distance: " + result.distance;
@@ -84,8 +90,19 @@ function toggleShowPath() {
             turingSolve.addEventListener('click', () => {
                 let cards = document.getElementById('turingCards').value;
                 let answer = document.getElementById('turingAnswer').value;
-		let result = impl.turingMachineTool(cards, answer);
-                document.getElementById('turingSolution').value = result;
+                let chosenVerifierOptions = document.getElementById('turingVerifierChosenOptions').value;
+                if (chosenVerifierOptions.length == 0) {
+                    let result = impl.turingMachineTool(cards, answer, []);
+                    if (result.verifierOptions.length == 0) {
+                        document.getElementById('turingSolution').value = result.process;
+                    } else {
+                        document.getElementById('turingSolution').value = JSON.stringify(result, null, 2);
+                    }
+                } else {
+                    let verifierOptions = chosenVerifierOptions.split(' ').map(e => parseInt(e, 10));
+                    let result = impl.turingMachineTool(cards, answer, verifierOptions);
+                    document.getElementById('turingSolution').value = result.process;
+                }
             });
         });
     </script>

@@ -168,19 +168,20 @@ object TuringMachineGame {
 
         fun scoreAfterQuestion(checker: TuringMachine.Checker<Any>, number: TuringNumber): Double {
             val checkerDistribution = solutionsForChecker(checker, options)
+            if (checkerDistribution.count { it != 0 } == 1) return 1000.0 // Only one option, no need to ask this.
             val checkerCorrect = checker.options.map { checker.creator.invoke(it).check(number) }
-            // Calculate probability of green vs. red, and how the distribution will look if that's the result
-            val greenDistribution = checkerDistribution.zip(checkerCorrect).map { (results, correct) ->
+            // Calculate probability of right vs. wrong, and how the distribution will look if that's the result
+            val rightDistribution = checkerDistribution.zip(checkerCorrect).map { (results, correct) ->
                 if (correct) results else 0
             }
-            val redDistribution = checkerDistribution.zip(checkerCorrect).map { (results, correct) ->
+            val wrongDistribution = checkerDistribution.zip(checkerCorrect).map { (results, correct) ->
                 if (!correct) results else 0
             }
-            val greenProbability = greenDistribution.sum() / (greenDistribution.sum() + redDistribution.sum()).toDouble()
-            val redProbability = (1 - greenProbability)
-
+            val rightProbability = rightDistribution.sum() / (rightDistribution.sum() + wrongDistribution.sum()).toDouble()
+            val wrongProbability = (1 - rightProbability)
+            val score = rightProbability * checkerDistributionScore(rightDistribution) + wrongProbability * checkerDistributionScore(wrongDistribution)
             // Score = a weight of green result and red results based on the probabilities and the individual distributions
-            return greenProbability * checkerDistributionScore(greenDistribution) + redProbability * checkerDistributionScore(redDistribution)
+            return score
             /*
             * TODO: choose the number that minimizes the sum of possibleCriteria throughout all the cards
             * TODO: when asking a question, choose the question that minimizes either the sum or the percent of possibleCriteria compared to before

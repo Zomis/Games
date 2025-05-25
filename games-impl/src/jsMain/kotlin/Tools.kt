@@ -7,6 +7,12 @@ import net.zomis.games.impl.logic.TuringMachineGame
 import net.zomis.games.impl.logic.TuringNumber
 import kotlin.time.measureTimedValue
 
+/*
+ * These tools are for comparing your performance to the computer.
+ * Not to be used for cheating.
+ * To build run `gradlew :games-impl:jsBrowserDevelopmentLibraryDistribution`
+ */
+
 private fun String.asPos(): Point {
     check(this.length == 2)
     val x = this.first().digitToInt(16)
@@ -49,13 +55,21 @@ fun ricochetTool(mapConfig: String, pieces: String, goalColor: String, goalSymbo
 }
 
 @JsExport
-fun turingMachineTool(cards: String, answer: String): String {
-    val cardNames = cards.split(" ")
-    val cardList = cardNames.map { it.toInt() }
-    val level = TuringMachine.level(answer.toInt(), *cardList.toIntArray())
+data class TuringMachineAnswer(val process: String, val verifierOptions: List<List<Any>>)
 
+@JsExport
+fun turingMachineTool(cards: String, answer: String, verifierOptions: Array<Int>): TuringMachineAnswer {
+    val cardList = cards.split(" ").map { it.toInt() }
+    val level = TuringMachine.level(answer.toInt(), *cardList.toIntArray())
     val checkers = level.checkers()
-    val verifiers = level.verifiers()
+    val verifiers: List<TuringMachine.Verifier> = if (verifierOptions.isEmpty()) {
+        if (level.allPossibleVerifiers().size == 1) {
+            level.verifiers()
+        } else return TuringMachineAnswer("", checkers.map { it.options })
+    } else {
+        verifierOptions.mapIndexed { index, i -> checkers[index].option(i) }
+    }
+
     val ai = TuringMachineGame.AI(checkers)
     ai.disqualifyImplies()
     var questionsAsked = 0
@@ -80,7 +94,7 @@ fun turingMachineTool(cards: String, answer: String): String {
         str.appendLine()
     }
     str.appendLine(ai.infoToString())
-    return str.toString()
+    return TuringMachineAnswer(str.toString(), emptyList())
 }
 
 private fun TuringMachineGame.AI.infoToString(): String {

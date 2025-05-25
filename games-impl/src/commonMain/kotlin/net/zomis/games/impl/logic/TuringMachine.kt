@@ -47,7 +47,9 @@ object TuringMachine {
 
         // #C654GZ7
 //    val level = TuringMachine.Level(TuringNumber(intArrayOf(1, 1, 4)), intArrayOf(33, 36, 40, 44, 47, 48))
-        val level = TuringMachine.Level(TuringNumber(intArrayOf(4, 4, 3)), intArrayOf(3, 9, 12, 17, 20))
+//        val level = TuringMachine.Level(TuringNumber(intArrayOf(4, 4, 3)), intArrayOf(3, 9, 12, 17, 20))
+        val level = TuringMachine.Level(TuringNumber(intArrayOf(1, 3, 3)), intArrayOf(1, 22, 31, 38, 41))
+        val verifierOptions = arrayOf(0, 1, 1, 0, 1)
 
         /*
         * interesting level:
@@ -63,7 +65,9 @@ object TuringMachine {
         */
         println(level)
         val checkers = level.checkers()
-        val verifiers = level.verifiers()
+        val verifiers = if (verifierOptions.isEmpty()) level.verifiers() else verifierOptions.mapIndexed { index, i ->
+            checkers[index].option(i)
+        }
         val ai = TuringMachineGame.AI(checkers)
         ai.disqualifyImplies()
         var questionsAsked = 0
@@ -103,7 +107,7 @@ object TuringMachine {
         return TuringNumber(result)
     }
 
-    val colors = Color.values().toList()
+    val colors = Color.entries.toList()
     class Level(val solution: TuringNumber, val cards: IntArray) {
         fun checkers(): List<Checker<Any>> = Criterias.forCards(cards)
 
@@ -185,6 +189,8 @@ object TuringMachine {
     )
 
     class Checker<T>(val options: List<T>, val creator: (T) -> Verifier) {
+        fun option(i: Int) = creator.invoke(options[i])
+
         constructor(options: Iterable<T>, creator: (T) -> Verifier) : this(options.toList(), creator)
     }
     fun interface Verifier {
@@ -209,7 +215,7 @@ object TuringMachine {
         }
         fun forCards(cards: IntArray): List<Checker<Any>> = cards.map { forCard(it) }
 
-        val comparisons = Comparison.values().toList()
+        val comparisons = Comparison.entries.toList()
         fun comparisonsFor(value: Int) = when (value) {
             1 -> listOf(Comparison.Equal, Comparison.More)
             2, 3, 4 -> comparisons
@@ -278,7 +284,7 @@ object TuringMachine {
             largest(),// 15
             countCompare(),
             numberOf { EvenOdd.Even.matches(it) },// 17
-            Checker(EvenOdd.values().toList()) { evenOdd ->
+            Checker(EvenOdd.entries.toList()) { evenOdd ->
                 Verifier { ints -> evenOdd.matches(ints.sum()) }
             },
             Checker(comparisons) { comp ->
@@ -290,11 +296,17 @@ object TuringMachine {
             Checker(listOf(false, true)) { exactlyTwice ->
                 Verifier { ints -> ints.values.groupingBy { it }.eachCount().values.any { it == 2 } == exactlyTwice }
             },
-            Checker(listOf(-1, 0, 1)) { order ->
+            Checker(listOf(-1, 0, 1)) { order -> // Descending, No order, Ascending
                 Verifier { ints ->
                     // 134 (ascending) / 345 (ascending) / 321 (descending) / 243 (no order)
-                    val actualValue = ints.blue.compareTo(ints.yellow) + ints.yellow.compareTo(ints.purple)
-                    actualValue.sign == order
+                    // 133 is also "no order"
+                    val a = ints.blue.compareTo(ints.yellow) // returns -1 if blue is less than yellow (ascending)
+                    val b = ints.yellow.compareTo(ints.purple)
+                    when {
+                        a == -1 && b == -1 -> 1 == order
+                        a == 1 && b == 1 -> -1 == order
+                        else -> 0 == order
+                    }
                 }
             },
             compare({ it.sum() }, { 6 }),
