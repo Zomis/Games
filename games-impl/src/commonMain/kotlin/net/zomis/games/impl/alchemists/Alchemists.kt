@@ -32,7 +32,7 @@ data class AlchemistsProperty(val sign: AlchemistsSign, val size: AlchemistsSize
         if (this.size == other.size) return null
         return this.sign
     }
-    fun toString(c: Char): String = (if (big) c.toUpperCase() else c) + sign.toString()
+    fun toString(c: Char): String = (if (big) c.uppercaseChar() else c) + sign.toString()
 
     val small = size == AlchemistsSize.SMALL
     val big = size == AlchemistsSize.BIG

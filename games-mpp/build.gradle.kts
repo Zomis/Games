@@ -2,8 +2,8 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
     kotlin("multiplatform")
-    id("com.github.johnrengelman.shadow") version "5.2.0"
-    id("com.github.ben-manes.versions") version "0.39.0"
+    id("com.github.johnrengelman.shadow") version "7.1.2"
+    id("com.github.ben-manes.versions") version "0.52.0"
 }
 
 group = "net.zomis"
@@ -60,7 +60,7 @@ kotlin {
                 implementation(kotlin("scripting-jsr223"))
                 implementation(kotlin("scripting-common"))
                 implementation(kotlin("script-runtime"))
-                implementation(kotlin("script-util"))
+//                implementation(kotlin("script-util"))
 
                 implementation(libs.jackson.core)
                 implementation(libs.jackson.annotations)
@@ -132,8 +132,7 @@ tasks {
         }
         archiveClassifier.set("all")
         from(kotlin.jvm().compilations.getByName("main").output)
-        configurations =
-            mutableListOf(kotlin.jvm().compilations.getByName("main").compileDependencyFiles as Configuration)
+        configurations = mutableListOf(kotlin.jvm().compilations.getByName("main").compileDependencyFiles)
     }
     val build by existing {
         dependsOn(shadowCreate)

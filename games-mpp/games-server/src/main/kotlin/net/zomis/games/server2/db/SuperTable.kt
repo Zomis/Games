@@ -62,7 +62,7 @@ class SuperTable(private val dynamoDB: AmazonDynamoDB) {
         PLAYER, SESSION, OAUTH, ALIAS,
         ;
 
-        val prefix = this.name.toLowerCase() + ":"
+        val prefix = this.name.lowercase() + ":"
         fun extract(fieldValue: String): String {
             if (!fieldValue.startsWith(prefix)) {
                 throw IllegalArgumentException("$fieldValue does not begin with $prefix")

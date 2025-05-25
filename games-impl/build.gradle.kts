@@ -13,7 +13,10 @@ kotlin {
         }
     }
     js(IR) {
-        browser()
+        browser {
+            commonWebpackConfig {}
+        }
+        binaries.library()
     }
 
     sourceSets {

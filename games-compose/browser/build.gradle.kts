@@ -1,6 +1,6 @@
 plugins {
     kotlin("js")
-    id("org.jetbrains.compose") version "1.3.1"
+    id("org.jetbrains.compose") version "1.8.1"
 }
 
 group = "me.simon"

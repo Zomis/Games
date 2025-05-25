@@ -1,4 +1,7 @@
 [versions]
+kotlin = "2.1.21"
+compose-plugin = "1.8.1"
+
 archunit = "1.0.0"
 aws = "1.11.1031"
 caffeine = "2.9.1"
@@ -89,3 +92,8 @@ ktor-jvm-server-netty = { module = "io.ktor:ktor-server-netty-jvm", version.ref 
 steamworks4j = { module = "com.code-disaster.steamworks4j:steamworks4j", version.ref = "steamworks4j" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 truth = { module = "com.google.truth:truth", version.ref = "truth" }
+
+[plugins]
+jetbrainsCompose = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

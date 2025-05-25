@@ -1,15 +1,9 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-buildscript {
-    repositories {
-        gradlePluginPortal()
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.20") // Upgrading may cause incompatibility with Compose compiler
-        // classpath("com.android.tools.build:gradle:7.0.4")
-    }
+plugins {
+    alias(libs.plugins.kotlinMultiplatform)
+    id("com.github.johnrengelman.shadow") version "7.1.2" apply false
+    id("com.github.ben-manes.versions") version "0.52.0" apply false
 }
 
 allprojects {
