@@ -3,6 +3,7 @@ server2.conf
 /console-view.json
 /db
 
+/.kotlin/
 .idea/
 */build/
 
