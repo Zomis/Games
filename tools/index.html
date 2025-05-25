@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Kotlin JS Example</title>
+    <style>
+	.invisible {
+	    display: none;
+	}
+    </style>
+</head>
+<body>
+    <h1>Ricochet Robots</h1>
+    <div id="output">
+	<div id="timex"></div>
+	<div id="distance"></div>
+	<input type="checkbox" id="revealPath" onchange="toggleShowPath()">HOW!?</button>
+	<div id="path" class="invisible">Path will be revealed here</div>
+    </div>
+    <div>
+	<div>
+        Red cog, halfmoon, planet, star. Hexadecimal (xy).
+        <input type="text" id="mapConfig" value="3e eb 24 b3" />
+	</div>
+
+	<div>
+        Blue Green Red Yellow Wildcard. Hexadecimal (xy).
+        <input type="text" id="pieces" value="b9 1b 32 f4 ef" />
+	</div>
+
+	<div>
+        Target Color: Blue Green Red Yellow
+        <input type="text" id="targetColor" value="red" />
+	</div>
+
+	<div>
+        Target Symbol: cog halfmoon planet starsign
+        <input type="text" id="targetSymbol" value="starsign" />
+	</div>
+        <button id="ricochetPath">Find Path</button>
+    </div>
+    <h1>Turing Machine</h1>
+    <div>
+        <div>
+            Card numbers with spaces
+            <input type="text" id="turingCards" value="4 8 15 16" />
+        </div>
+
+        <div>
+            Correct answer
+            <input type="text" id="turingAnswer" value="543" />
+        </div>
+        <textarea id="turingSolution" rows="20" cols="50">Answer will be revealed here</textarea>
+        <br />
+        <button id="turingSolve">Figure it out!</button>
+    </div>
+
+    <script src="kotlin-kotlin-stdlib.js"></script>
+    <script src="88b0986a7186d029-atomicfu-js-ir.js"></script>
+    <script src="kotlin-kotlinx-atomicfu-runtime-js-ir.js"></script>
+    <script src="kotlinx.coroutines-kotlinx-coroutines-core-js-ir.js"></script>
+    <script src="klog.js"></script>
+    <script src="games-games-analyze.js"></script>
+    <script src="games-games-dsl.js"></script>
+    <script src="games-games-impl.js"></script>
+    <script>
+function toggleShowPath() {
+    document.getElementById("path").classList.toggle('invisible');
+}
+        window.addEventListener('load', () => {
+            impl = window['games:games-impl'];
+            const ricochetPathButton = document.getElementById('ricochetPath');
+
+            ricochetPathButton.addEventListener('click', () => {
+                let mapConfig = document.getElementById('mapConfig').value;
+                let pieces = document.getElementById('pieces').value;
+                let goalColor = document.getElementById('targetColor').value;
+                let goalSymbol = document.getElementById('targetSymbol').value;
+		let result = impl.ricochetTool(mapConfig, pieces, goalColor, goalSymbol);
+                document.getElementById('path').textContent = "Path: " + result.path;
+                document.getElementById('timex').textContent = "Time:" + result.timeTaken;
+                document.getElementById('distance').textContent = "Distance: " + result.distance;
+            });
+            turingSolve.addEventListener('click', () => {
+                let cards = document.getElementById('turingCards').value;
+                let answer = document.getElementById('turingAnswer').value;
+		let result = impl.turingMachineTool(cards, answer);
+                document.getElementById('turingSolution').value = result;
+            });
+        });
+    </script>
+</body>
+</html>
