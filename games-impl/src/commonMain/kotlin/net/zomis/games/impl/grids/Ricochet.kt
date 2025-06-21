@@ -3,6 +3,8 @@ package net.zomis.games.impl.grids
 import net.zomis.games.components.Direction4
 import net.zomis.games.components.Point
 import net.zomis.games.components.grids.*
+import net.zomis.games.search.BFS
+import net.zomis.games.search.SearchStrategy
 
 private val Direction4.char: Char get() {
     return when (this) {
@@ -110,49 +112,19 @@ object Ricochet {
             pieces[color] = point
         }
 
-        fun findPath(target: Target, returnFirst: Boolean = true): List<Move> {
-            // Relevant color position, other color positions
+        fun findPath(target: Target): Sequence<List<Move>> {
             val targetColor = target.color.takeIf { it != Color.Wildcard }
-            val start = Pieces(pieces.toMap())
             val targetPoint = targets.entries.single { it.key.matches(target) }.value
-            if (start.colorMatch(targetColor, targetPoint)) return emptyList()
 
-            val open = mutableMapOf<Pieces, List<Move>>()
-            val seen = mutableSetOf<PiecePositions>()
-            val foundPaths = mutableListOf<List<Move>>()
-
-            open[start] = emptyList()
-            val openNext = mutableMapOf<Pieces, List<Move>>()
-
-            // Breadth-first-search
-            var step = 0
-            while (true) {
-                step++
-                for (e in open) {
-                    val pieces = e.key
-                    val moves = pieces.possibleMoves()
-                    for (move in moves) {
-                        val next = pieces.afterMove(move)
-                        if (next.colorMatch(targetColor, targetPoint)) {
-                            if (returnFirst) return e.value + move
-                            foundPaths.add(e.value + move)
-                        }
-                        if (seen.add(next.positions(targetColor))) {
-                            openNext[next] = e.value + move
-                        }
-                    }
-                }
-                open.clear()
-                open.putAll(openNext)
-                if (foundPaths.isNotEmpty()) {
-                    println("Found ${foundPaths.size} paths")
-                    foundPaths.forEach { println(it) }
-                    return foundPaths.random()
-                }
-            }
+            return BFS(object : SearchStrategy<Pieces, PiecePositions, Move> {
+                override fun possibleMoves(state: Pieces): Sequence<Move> = state.possibleMoves().asSequence()
+                override fun nextState(state: Pieces, step: Move): Pieces = state.afterMove(step)
+                override fun isGoal(state: Pieces): Boolean = state.colorMatch(targetColor, targetPoint)
+                override fun uniqueState(state: Pieces): PiecePositions = state.positions(targetColor)
+            }).findAllShortest(Pieces(pieces.toMap()))
         }
 
-        private val allMoves = Color.values().flatMap { it.moves() }
+        private val allMoves = Color.entries.flatMap { it.moves() }
         override fun toString(): String {
             val targetsInverse = targets.entries.associate { it.value to it.key }
             return (0 until 16).joinToString("\n") { y ->
@@ -161,7 +133,7 @@ object Ricochet {
                     val tile = bigMap.get(x, y)
                     val target = targetsInverse[Point(x, y)]
                     val s = StringBuilder("|")
-                    Direction4.values().forEach {
+                    Direction4.entries.forEach {
                         if (tile.walls.contains(it)) s.append(it.char)
                         else s.append(' ')
                     }
@@ -196,7 +168,7 @@ object Ricochet {
 
         fun shufflePieces() {
             val allPoints = bigMap.points().toList()
-            for (color in Color.values()) {
+            for (color in Color.entries) {
                 var point = allPoints.random()
                 while (targets.values.contains(point) || pieces.values.contains(point) || isCenter(point)) {
                     point = allPoints.random()
@@ -243,7 +215,7 @@ object Ricochet {
 
         private fun wallDirection(pair: Pair<Point, Point>, tile: Point): Direction4 {
             val other = if (tile == pair.first) pair.second else pair.first
-            return Direction4.values().first { tile + it.delta() == other }
+            return Direction4.entries.first { tile + it.delta() == other }
         }
 
         fun holeTransformation(hole: Point): Transformation {
@@ -316,7 +288,7 @@ object Ricochet {
     )
 
     fun createMap(): GameMap = GameMap()
-    fun targets(): List<Target> = Color.values().flatMap { it.targets() }
+    fun targets(): List<Target> = Color.entries.flatMap { it.targets() }
 
     data class Target(val color: Color, val symbol: Symbol, val walls: Set<Direction4>) {
         init {
