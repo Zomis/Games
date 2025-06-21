@@ -48,7 +48,7 @@ fun ricochetTool(mapConfig: String, pieces: String, goalColor: String, goalSymbo
     val target = Ricochet.Target(color, symbol, emptySet())
 
     val path = measureTimedValue {
-        map.findPath(target)
+        map.findPath(target).first()
     }
     str.append("Target $target: ${path.value.size} (${path.duration})")
     return RicochetResult(path.duration.toString(), path.value.size, path.value.toString())
@@ -93,7 +93,7 @@ fun turingMachineTool(cards: String, answer: String, verifierOptions: Array<Int>
         ai.learn(number, indexAsk, result)
         str.appendLine()
     }
-    str.appendLine(ai.infoToString())
+    str.appendLine(ai.infoToString()) // or just .append ?
     return TuringMachineAnswer(str.toString(), emptyList())
 }
 

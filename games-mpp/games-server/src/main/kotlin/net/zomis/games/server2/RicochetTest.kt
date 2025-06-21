@@ -32,7 +32,7 @@ object RicochetTest {
     private fun findAll(map: Ricochet.GameMap) {
         Ricochet.targets().forEach {
             val path = measureTimedValue {
-                map.findPath(it)
+                map.findPath(it).first()
             }
             println("Target $it: ${path.value.size} (${path.duration})")
             println(path.value)
