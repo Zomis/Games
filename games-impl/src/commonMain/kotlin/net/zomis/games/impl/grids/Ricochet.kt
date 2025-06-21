@@ -285,6 +285,117 @@ object Ricochet {
                 Point(5, 7) to Point(6, 7),
             )
         ),
+
+        Board(
+            hole = Point(0, 7),
+            tiles = mapOf(
+                Point(2, 2) to Color.Red.starSign.wall(Direction4.LEFT, Direction4.DOWN),
+                Point(4, 1) to Color.Yellow.cog.wall(Direction4.RIGHT, Direction4.DOWN),
+                Point(2, 7) to Color.Wildcard.wildcard.wall(Direction4.DOWN, Direction4.LEFT),
+                Point(3, 5) to Color.Green.planet.wall(Direction4.UP, Direction4.RIGHT),
+                Point(6, 6) to Color.Blue.halfMoon.wall(Direction4.UP, Direction4.LEFT),
+            ),
+            walls = listOf(
+                Point(0, 0) to Point(1, 0),
+                Point(7, 3) to Point(7, 4),
+            )
+        ),
+        Board(
+            hole = Point(0, 0),
+            tiles = mapOf(
+                Point(4, 1) to Color.Blue.planet.wall(Direction4.UP, Direction4.RIGHT),
+                Point(1, 4) to Color.Yellow.starSign.wall(Direction4.UP, Direction4.LEFT),
+                Point(6, 5) to Color.Green.cog.wall(Direction4.LEFT, Direction4.DOWN),
+                Point(3, 6) to Color.Red.halfMoon.wall(Direction4.RIGHT, Direction4.DOWN),
+            ),
+            walls = listOf(
+                Point(5, 7) to Point(6, 7),
+                Point(7, 1) to Point(7, 2),
+            )
+        ),
+
+        Board(
+            hole = Point(7, 0),
+            tiles = mapOf(
+                Point(4, 1) to Color.Yellow.halfMoon.wall(Direction4.LEFT, Direction4.DOWN),
+                Point(1, 2) to Color.Green.starSign.wall(Direction4.UP, Direction4.RIGHT),
+                Point(6, 5) to Color.Blue.cog.wall(Direction4.UP, Direction4.LEFT),
+                Point(2, 6) to Color.Red.planet.wall(Direction4.RIGHT, Direction4.DOWN),
+            ),
+            walls = listOf(
+                Point(0, 3) to Point(0, 4),
+                Point(3, 7) to Point(4, 7),
+            )
+        ),
+        Board(
+            hole = Point(7, 7),
+            tiles = mapOf(
+                Point(5, 2) to Color.Blue.starSign.wall(Direction4.RIGHT, Direction4.DOWN),
+                Point(2, 4) to Color.Green.halfMoon.wall(Direction4.UP, Direction4.RIGHT),
+                Point(7, 5) to Color.Red.cog.wall(Direction4.LEFT, Direction4.DOWN),
+                Point(1, 6) to Color.Yellow.planet.wall(Direction4.UP, Direction4.LEFT),
+            ),
+            walls = listOf(
+                Point(3, 0) to Point(4, 0),
+                Point(0, 4) to Point(0, 5),
+            )
+        ),
+
+        Board(
+            hole = Point(0, 7),
+            tiles = mapOf(
+                Point(4, 1) to Color.Green.planet.wall(Direction4.LEFT, Direction4.UP),
+                Point(6, 2) to Color.Red.starSign.wall(Direction4.LEFT, Direction4.DOWN),
+                Point(0, 3) to Color.Wildcard.wildcard.wall(Direction4.LEFT, Direction4.DOWN),
+                Point(1, 6) to Color.Blue.halfMoon.wall(Direction4.RIGHT, Direction4.DOWN),
+                Point(3, 7) to Color.Yellow.cog.wall(Direction4.UP, Direction4.RIGHT),
+            ),
+            walls = listOf(
+                Point(2, 0) to Point(3, 0),
+                Point(7, 4) to Point(7, 5),
+            )
+        ),
+        Board(
+            hole = Point(0, 0),
+            tiles = mapOf(
+                Point(4, 1) to Color.Red.halfMoon.wall(Direction4.UP, Direction4.RIGHT),
+                Point(1, 2) to Color.Blue.planet.wall(Direction4.LEFT, Direction4.DOWN),
+                Point(6, 5) to Color.Green.cog.wall(Direction4.RIGHT, Direction4.DOWN),
+                Point(1, 6) to Color.Yellow.starSign.wall(Direction4.UP, Direction4.LEFT),
+            ),
+            walls = listOf(
+                Point(2, 7) to Point(3, 7),
+                Point(7, 1) to Point(7, 2),
+            )
+        ),
+        Board(
+            hole = Point(7, 0),
+            tiles = mapOf(
+                Point(3, 1) to Color.Blue.cog.wall(Direction4.RIGHT, Direction4.DOWN),
+                Point(5, 3) to Color.Red.planet.wall(Direction4.LEFT, Direction4.UP),
+                Point(1, 5) to Color.Yellow.halfMoon.wall(Direction4.LEFT, Direction4.DOWN),
+                Point(6, 6) to Color.Green.starSign.wall(Direction4.UP, Direction4.RIGHT),
+            ),
+            walls = listOf(
+                Point(0, 2) to Point(0, 3),
+                Point(4, 7) to Point(5, 7),
+            )
+        ),
+        Board(
+            hole = Point(7, 7),
+            tiles = mapOf(
+                Point(1, 1) to Color.Red.cog.wall(Direction4.LEFT, Direction4.DOWN),
+                Point(6, 2) to Color.Green.halfMoon.wall(Direction4.UP, Direction4.RIGHT),
+                Point(2, 4) to Color.Blue.starSign.wall(Direction4.RIGHT, Direction4.DOWN),
+                Point(7, 5) to Color.Yellow.planet.wall(Direction4.LEFT, Direction4.UP),
+            ),
+            walls = listOf(
+                Point(3, 0) to Point(4, 0),
+                Point(0, 5) to Point(0, 6),
+            )
+        ),
+
+
     )
 
     fun createMap(): GameMap = GameMap()
