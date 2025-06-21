@@ -65,7 +65,9 @@ fun turingMachineTool(cards: String, answer: String, verifierOptions: Array<Int>
     val verifiers: List<TuringMachine.Verifier> = if (verifierOptions.isEmpty()) {
         if (level.allPossibleVerifiers().size == 1) {
             level.verifiers()
-        } else return TuringMachineAnswer("", checkers.map { it.options })
+        } else return TuringMachineAnswer("", checkers.map { checker ->
+            checker.options.mapIndexed { index, option -> checker.option(index).name ?: option }
+        })
     } else {
         verifierOptions.mapIndexed { index, i -> checkers[index].option(i) }
     }
@@ -85,11 +87,19 @@ fun turingMachineTool(cards: String, answer: String, verifierOptions: Array<Int>
         }
 
         val checker = ai.pickBestQuestion(number)
+        if (checker == null) {
+            number = null
+            str.appendLine("No more questions to ask right now.")
+            str.appendLine()
+            continue
+        }
+
         val indexAsk = checkers.indexOf(checker)
+        val checkerCharacter = 'A' + indexAsk
         val result = verifiers[indexAsk].check(number)
         questionsAsked++
 
-        str.appendLine("result was $result when checking $number criteria index $indexAsk")
+        str.appendLine("result was $result when checking $number criteria $checkerCharacter")
         ai.learn(number, indexAsk, result)
         str.appendLine()
     }
@@ -103,7 +113,8 @@ private fun TuringMachineGame.AI.infoToString(): String {
     str.appendLine("${potentialSolutions.size} possible numbers: $potentialSolutions")
     str.appendLine("Options: ${criteriaCards.map { it.options }}")
     for (i in criteriaCards.indices) {
-        str.appendLine("$i: " + solutionsForChecker(criteriaCards[i]))
+        val ch = 'A' + i
+        str.appendLine("$ch: " + solutionsForChecker(criteriaCards[i]))
     }
     return str.toString()
 }

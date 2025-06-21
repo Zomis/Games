@@ -78,15 +78,24 @@ object TuringMachine {
             println("Possible proposals: " + ai.pickBestProposal())
             if (number == null || questionsAsked >= 3) {
                 questionsAsked = 0
-                number = ai.pickBestProposal().random()
+                val proposals = ai.pickBestProposal()
+                number = proposals.random()
             }
 
             val checker = ai.pickBestQuestion(number)
+            if (checker == null) {
+                number = null
+                println("No more questions to ask right now.")
+                println()
+                continue
+            }
+
             val indexAsk = checkers.indexOf(checker)
+            val checkerCharacter = 'A' + indexAsk
             val result = verifiers[indexAsk].check(number)
             questionsAsked++
 
-            println("result was $result when checking $number criteria index $indexAsk")
+            println("result was $result when checking $number criteria $checkerCharacter")
             ai.learn(number, indexAsk, result)
             println()
         }
@@ -193,7 +202,9 @@ object TuringMachine {
 
         constructor(options: Iterable<T>, creator: (T) -> Verifier) : this(options.toList(), creator)
     }
-    class Verifier(val name: String = "???", val check: (TuringNumber) -> Boolean)
+    class Verifier(val name: String? = null, val check: (TuringNumber) -> Boolean) {
+        override fun toString(): String = name ?: "???"
+    }
 
     enum class Comparison {
         Less, Equal, More;
@@ -221,13 +232,13 @@ object TuringMachine {
             else -> throw IllegalArgumentException("$value must be within range 1..5")
         }
         fun compare(a: (TuringNumber) -> Int, b: (TuringNumber) -> Int): Checker<Comparison> = Checker(comparisons) { comp ->
-            Verifier { comp.check(a.invoke(it), b.invoke(it)) }
+            Verifier(comp.toString()) { comp.check(a.invoke(it), b.invoke(it)) }
         }
         fun compare(color: Color, value: Int): Checker<Comparison> = Checker(comparisonsFor(value)) { comp ->
-            Verifier { comp.check(it.color(color), value) }
+            Verifier("$color $comp $value") { comp.check(it.color(color), value) }
         }
         fun compare(a: Color, b: Color) = Checker(comparisons) { comp ->
-            Verifier { comp.check(it.color(a), it.color(b)) }
+            Verifier("$a $comp $b") { comp.check(it.color(a), it.color(b)) }
         }
         fun specificColor(condition: (Int) -> Boolean) = Checker(colors) {
             Verifier { ints -> condition.invoke(ints.color(it)) }
@@ -235,23 +246,23 @@ object TuringMachine {
         fun color(condition: (Color, TuringNumber) -> Boolean) = Checker(colors) {
             Verifier { ints -> condition.invoke(it, ints) }
         }
-        fun evenOdd(color: Color) = Checker(EvenOdd.values().toList()) {
+        fun evenOdd(color: Color) = Checker(EvenOdd.entries.toList()) {
             Verifier { ints -> it.matches(ints[color]) }
         }
         fun mod(color: Color, value: Int) = Checker((0 until value).toList()) { mod ->
-            Verifier { it.color(color) % value == mod }
+            Verifier("$color modulo $value == $mod") { it.color(color) % value == mod }
         }
         fun numberOf(condition: (Int) -> Boolean) = Checker((0..3).toList()) { count ->
             Verifier { num -> num.count(condition) == count }
         }
         fun smallest() = Checker(colors) { color ->
-            Verifier { it.color(color) < it.color(color.other1) && it.color(color) < it.color(color.other2) }
+            Verifier("$color is smallest") { it.color(color) < it.color(color.other1) && it.color(color) < it.color(color.other2) }
         }
         fun largest() = Checker(colors) { color ->
-            Verifier { it.color(color) > it.color(color.other1) && it.color(color) > it.color(color.other2) }
+            Verifier("$color is largest") { it.color(color) > it.color(color.other1) && it.color(color) > it.color(color.other2) }
         }
         fun countCompare() = Checker(EvenOdd.entries.toList()) { evenOdd ->
-            Verifier { ints -> ints.count { evenOdd.matches(it) } > ints.count { evenOdd.other.matches(it) } }
+            Verifier("More $evenOdd than ${evenOdd.other}") { ints -> ints.count { evenOdd.matches(it) } > ints.count { evenOdd.other.matches(it) } }
         }
         fun <A, B> combined(a: List<A>, b: List<B>, creator: (A, B) -> Verifier) = Checker(
             (0 until a.size * b.size).map {
@@ -264,7 +275,7 @@ object TuringMachine {
             creator.invoke(i.first, i.second)
         }
 
-        val criterias = listOf(
+        private val criterias = listOf(
             compare(Color.Blue, 1),
             compare(Color.Blue, 3),
             compare(Color.Yellow, 3),
@@ -283,19 +294,21 @@ object TuringMachine {
             countCompare(),
             numberOf { EvenOdd.Even.matches(it) },// 17
             Checker(EvenOdd.entries.toList()) { evenOdd ->
-                Verifier { ints -> evenOdd.matches(ints.sum()) }
+                Verifier("Sum of numbers is $evenOdd") { ints -> evenOdd.matches(ints.sum()) }
             },
             Checker(comparisons) { comp ->
-                Verifier { ints -> comp.check(ints.blue + ints.yellow, 6) }
+                Verifier("Blue + Yellow $comp 6") { ints -> comp.check(ints.blue + ints.yellow, 6) }
             },
             Checker((3 downTo 1).toList()) { repeats -> // 20: triple number, double number, no repetition
-                Verifier { ints -> ints.values.groupingBy { it }.eachCount().values.max() == repeats }
+                Verifier("$repeats equal numbers") { ints -> ints.values.groupingBy { it }.eachCount().values.max() == repeats }
             },
             Checker(listOf(false, true)) { exactlyTwice ->
-                Verifier { ints -> ints.values.groupingBy { it }.eachCount().values.any { it == 2 } == exactlyTwice }
+                val name = if (exactlyTwice) "exactly twice" else "not exactly twice"
+                Verifier(name) { ints -> ints.values.groupingBy { it }.eachCount().values.any { it == 2 } == exactlyTwice }
             },
-            Checker(listOf(-1, 0, 1)) { order -> // Descending, No order, Ascending
-                Verifier { ints ->
+            Checker(listOf(-1 to "descending", 0 to "no", 1 to "ascending")) { param ->
+                val order = param.first
+                Verifier("Numbers are in ${param.second} order") { ints ->
                     // 134 (ascending) / 345 (ascending) / 321 (descending) / 243 (no order)
                     // 133 is also "no order"
                     val a = ints.blue.compareTo(ints.yellow) // returns -1 if blue is less than yellow (ascending)
@@ -309,14 +322,14 @@ object TuringMachine {
             },
             compare({ it.sum() }, { 6 }),
             Checker(1..3) { ascending -> // Sequence of ascending numbers
-                Verifier { ints ->
+                Verifier("$ascending consecutive ascending numbers") { ints ->
                     val diff1 = ints.purple - ints.yellow
                     val diff2 = ints.yellow - ints.blue
                     listOf(1, diff1, diff2).count { it == 1 } == ascending
                 }
             },
             Checker(1..3) { consecutiveSequence -> // 25: Sequence of ascending or descending numbers
-                Verifier { ints ->
+                Verifier("$consecutiveSequence consecutive numbers (ascending or descending)") { ints ->
                     // 543, 123, 234 --> 3
                     // 431, 532, 124 --> 2
                     // 531 --> 1
@@ -338,48 +351,48 @@ object TuringMachine {
             specificColor { it > 1 },
             specificColor { it > 3 },
             combined(colors, EvenOdd.entries.toList()) { color, evenOdd ->
-                Verifier { ints -> evenOdd.matches(ints.color(color)) }
+                Verifier("$color is $evenOdd") { ints -> evenOdd.matches(ints.color(color)) }
             },
             color { color, ints -> ints.color(color) <= ints.color(color.other1) && ints.color(color) <= ints.color(color.other2) },
             color { color, ints -> ints.color(color) >= ints.color(color.other1) && ints.color(color) >= ints.color(color.other2) },// 35
             Checker(3..5) { divisor ->
-                Verifier { ints -> ints.sum() % divisor == 0 }
+                Verifier("Sum of numbers is divisible by $divisor") { ints -> ints.sum() % divisor == 0 }
             },
             color { color, ints -> ints.sum() - ints.color(color) == 4 },
             color { color, ints -> ints.sum() - ints.color(color) == 6 },
             combined(colors, listOf(Comparison.Equal, Comparison.More)) { color, comp ->
-                Verifier { ints -> comp.check(ints.color(color), 1) }
+                Verifier("$color $comp 1") { ints -> comp.check(ints.color(color), 1) }
             },
             combined(colors, comparisons) { color, comp ->// 40
-                Verifier { ints -> comp.check(ints.color(color), 3) }
+                Verifier("$color $comp 3") { ints -> comp.check(ints.color(color), 3) }
             },
             combined(colors, comparisons) { color, comp ->
-                Verifier { ints -> comp.check(ints.color(color), 4) }
+                Verifier("$color $comp 4") { ints -> comp.check(ints.color(color), 4) }
             },
             combined(colors, listOf(Comparison.Less, Comparison.More)) { color, comp -> // 42: color is the smallest or largest
-                Verifier { ints -> comp.check(ints[color], ints[color.other1]) && comp.check(ints[color], ints[color.other2]) }
+                Verifier("$color is the most $comp") { ints -> comp.check(ints[color], ints[color.other1]) && comp.check(ints[color], ints[color.other2]) }
             },
             combined(colors.minus(Color.Blue), comparisons) { color, comp ->
-                Verifier { ints -> comp.check(ints.blue, ints[color]) }
+                Verifier("Blue $comp $color") { ints -> comp.check(ints.blue, ints[color]) }
             },
             combined(colors.minus(Color.Yellow), comparisons) { color, comp ->
-                Verifier { ints -> comp.check(ints.yellow, ints[color]) }
+                Verifier("Yellow $comp $color") { ints -> comp.check(ints.yellow, ints[color]) }
             },
             combined(digitCountsExceptMax, listOf(1, 3)) { count, value ->
-                Verifier { ints -> ints.count { it == value } == count }
+                Verifier("There are $count $value's") { ints -> ints.count { it == value } == count }
             },
             combined(digitCountsExceptMax, listOf(3, 4)) { count, value ->
-                Verifier { ints -> ints.count { it == value } == count }
+                Verifier("There are $count $value's") { ints -> ints.count { it == value } == count }
             },
             combined(digitCountsExceptMax, listOf(1, 4)) { count, value ->
-                Verifier { ints -> ints.count { it == value } == count }
+                Verifier("There are $count $value's") { ints -> ints.count { it == value } == count }
             },
-            combined(colors, comparisons) { excludeColor, comparison ->
-                Verifier { ints ->
-                    val colors = Color.entries.filter { it != excludeColor }
-                    check(colors.size == 2)
-                    val first = colors.first()
-                    val second = colors.last()
+            combined(colors.reversed(), comparisons) { excludeColor, comparison ->
+                val colors = Color.entries.filter { it != excludeColor }
+                check(colors.size == 2)
+                val first = colors.first()
+                val second = colors.last()
+                Verifier("$first $comparison $second") { ints ->
                     comparison.check(ints[first], ints[second])
                 }
             },

@@ -156,7 +156,7 @@ object TuringMachineGame {
                 for ((index, checker) in criteriaCards.withIndex()) {
                     val currentDistribution = currentSolutionsForCheckers[index]
                     val currentScore = checkerDistributionScore(currentDistribution)
-                    val nextScore = scoreAfterQuestion(checker, turingNumber)
+                    val nextScore = scoreAfterQuestion(checker, turingNumber) ?: 1000.0
                     sum += (nextScore / currentScore)
                 }
                 best.next(-sum) { turingNumber }
@@ -166,9 +166,9 @@ object TuringMachineGame {
 
         fun checkerDistributionScore(distribution: List<Int>): Double = distribution.sum().toDouble()
 
-        fun scoreAfterQuestion(checker: TuringMachine.Checker<Any>, number: TuringNumber): Double {
+        private fun scoreAfterQuestion(checker: TuringMachine.Checker<Any>, number: TuringNumber): Double? {
             val checkerDistribution = solutionsForChecker(checker, options)
-            if (checkerDistribution.count { it != 0 } == 1) return 1000.0 // Only one option, no need to ask this.
+            if (checkerDistribution.count { it != 0 } == 1) return null // Only one option, no need to ask this.
             val checkerCorrect = checker.options.map { checker.creator.invoke(it).check(number) }
             // Calculate probability of right vs. wrong, and how the distribution will look if that's the result
             val rightDistribution = checkerDistribution.zip(checkerCorrect).map { (results, correct) ->
@@ -177,6 +177,11 @@ object TuringMachineGame {
             val wrongDistribution = checkerDistribution.zip(checkerCorrect).map { (results, correct) ->
                 if (!correct) results else 0
             }
+            if (rightDistribution.sum() == 0 || wrongDistribution.sum() == 0) {
+                // No need to ask this, we know the answer
+                return null
+            }
+
             val rightProbability = rightDistribution.sum() / (rightDistribution.sum() + wrongDistribution.sum()).toDouble()
             val wrongProbability = (1 - rightProbability)
             val score = rightProbability * checkerDistributionScore(rightDistribution) + wrongProbability * checkerDistributionScore(wrongDistribution)
@@ -192,13 +197,15 @@ object TuringMachineGame {
             TODO()
         }
 
-        fun pickBestQuestion(proposal: TuringNumber): TuringMachine.Checker<Any> {
+        fun pickBestQuestion(proposal: TuringNumber): Checker<Any>? {
             // Check "How many possible solutions can remain after I check this number against this verifier?"
             val best = GreedyIterator<Checker<Any>>()
             for (checker in criteriaCards) {
-                best.next(-scoreAfterQuestion(checker, proposal)) { checker }
+                val score = scoreAfterQuestion(checker, proposal)
+                if (score != null) best.next(-score) { checker }
             }
             println("Best questions: ${best.getBest()} with score ${best.getBestValue()}")
+            if (best.getBest().isEmpty()) return null
             return best.getBest().random()
             // TODO: Advanced strategy:
             // Loop through all options of all checkers
@@ -232,7 +239,8 @@ object TuringMachineGame {
             println("${potentialSolutions.size} possible numbers: $potentialSolutions")
             println("Options: ${criteriaCards.map { it.options }}")
             for (i in criteriaCards.indices) {
-                println("$i: " + solutionsForChecker(criteriaCards[i]))
+                val ch = 'A' + i
+                println("$ch: " + solutionsForChecker(criteriaCards[i]))
             }
         }
 
