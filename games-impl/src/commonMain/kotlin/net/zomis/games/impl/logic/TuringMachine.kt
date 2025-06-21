@@ -93,8 +93,8 @@ object TuringMachine {
         ai.printInformation()
     }
 
-    val digitCounts = (0..3).toList()
-    val digitCountsExceptMax = digitCounts.dropLast(1)
+    private val digitCounts = (0..3).toList()
+    private val digitCountsExceptMax = digitCounts.dropLast(1)
     fun turingNumber(i: Int): TuringNumber {
         if (i == 0) return TuringNumber()
         check(i >= 111)
@@ -193,9 +193,7 @@ object TuringMachine {
 
         constructor(options: Iterable<T>, creator: (T) -> Verifier) : this(options.toList(), creator)
     }
-    fun interface Verifier {
-        fun check(number: TuringNumber): Boolean
-    }
+    class Verifier(val name: String = "???", val check: (TuringNumber) -> Boolean)
 
     enum class Comparison {
         Less, Equal, More;
@@ -252,7 +250,7 @@ object TuringMachine {
         fun largest() = Checker(colors) { color ->
             Verifier { it.color(color) > it.color(color.other1) && it.color(color) > it.color(color.other2) }
         }
-        fun countCompare() = Checker(EvenOdd.values().toList()) { evenOdd ->
+        fun countCompare() = Checker(EvenOdd.entries.toList()) { evenOdd ->
             Verifier { ints -> ints.count { evenOdd.matches(it) } > ints.count { evenOdd.other.matches(it) } }
         }
         fun <A, B> combined(a: List<A>, b: List<B>, creator: (A, B) -> Verifier) = Checker(
@@ -339,7 +337,7 @@ object TuringMachine {
             specificColor { it == 4 },// 30
             specificColor { it > 1 },
             specificColor { it > 3 },
-            combined(colors, EvenOdd.values().toList()) { color, evenOdd ->
+            combined(colors, EvenOdd.entries.toList()) { color, evenOdd ->
                 Verifier { ints -> evenOdd.matches(ints.color(color)) }
             },
             color { color, ints -> ints.color(color) <= ints.color(color.other1) && ints.color(color) <= ints.color(color.other2) },
@@ -377,7 +375,13 @@ object TuringMachine {
                 Verifier { ints -> ints.count { it == value } == count }
             },
             combined(colors, comparisons) { excludeColor, comparison ->
-                Verifier { ints -> comparison.check(ints[excludeColor.other1], ints[excludeColor.other2]) }
+                Verifier { ints ->
+                    val colors = Color.entries.filter { it != excludeColor }
+                    check(colors.size == 2)
+                    val first = colors.first()
+                    val second = colors.last()
+                    comparison.check(ints[first], ints[second])
+                }
             },
         )
     }
