@@ -28,7 +28,6 @@ import net.zomis.games.server2.invites.InviteSystem
 import net.zomis.games.server2.invites.LobbySystem
 import net.zomis.games.server2.steam.Steam
 import net.zomis.games.server2.ws.WebsocketMessageHandler
-//import org.jetbrains.kotlin.script.jsr223.KotlinJsr223JvmLocalScriptEngineFactory
 import java.io.File
 import java.util.UUID
 import kotlin.io.path.Path
@@ -181,19 +180,7 @@ class Server2(val events: EventSystem) {
         messageRouter.route("invites", inviteSystem.router)
         messageRouter.route("testGames", TestGamesRoute(inviteSystem).router)
 
-        /*
-        // TODO: https://kotlinlang.org/docs/custom-script-deps-tutorial.html
-        val kotlinScriptEngineFactory = KotlinJsr223JvmLocalScriptEngineFactory()
-        events.listen("Kotlin script", ConsoleEvent::class, {it.input.startsWith("kt ")}, {
-            val jarFile = "games-1.0-SNAPSHOT-all.jar"
-            if (File(jarFile).exists()) {
-                System.setProperty("kotlin.script.classpath", jarFile)
-            }
-            val script = it.input.substring("kt ".length)
-            val result = kotlinScriptEngineFactory.scriptEngine.eval(script)
-            println(result)
-        })
-        */
+        // TODO: Migrate to a JVM-only module to make scripts work. https://kotlinlang.org/docs/custom-script-deps-tutorial.html
 
         events.with(TTTQLearn(Path("db/QLearn-ttt.json"))::setup)
         events.execute(StartupEvent(System.currentTimeMillis()))
