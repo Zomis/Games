@@ -106,6 +106,8 @@ interface Grid<T> {
             mapper.invoke(this.get(x, y))
         }
     }
+
+    fun copy(): Grid<T> = map { it }
 }
 
 class GridImpl<T>(override val sizeX: Int, override val sizeY: Int, val factory: (x: Int, y: Int) -> T) : Grid<T> {

@@ -1,5 +1,6 @@
 package net.zomis.games.components
 
+import net.zomis.games.common.fmod
 import net.zomis.games.dsl.GameSerializable
 import kotlin.math.*
 
@@ -7,15 +8,16 @@ data class Point(val x: Int, val y: Int): GameSerializable {
     fun abs(): Point = Point(this.x.absoluteValue, this.y.absoluteValue)
     fun distance(): Double = sqrt(this.x.toDouble() * this.x + this.y.toDouble() * this.y)
     fun manhattanDistance(other: Point): Int = abs(x - other.x) + abs(y - other.y)
-    fun manhattanDistance(): Int = abs(x) + abs(y)
     operator fun plus(other: Point) = Point(x + other.x, y + other.y)
     operator fun minus(other: Point): Point = Point(x - other.x, y - other.y)
     fun toStateString(): String = "${x},${y}"
     override fun serialize(): Any = toStateString()
     operator fun times(multiplier: Int): Point = Point(x * multiplier, y * multiplier)
     fun topLeftOfRect(sizeX: Int, sizeY: Int): Rect = Rect(y, x, x + sizeX - 1, y + sizeY - 1)
+    fun fmod(sizeX: Int, sizeY: Int): Point = Point(this.x.fmod(sizeX), this.y.fmod(sizeY))
 
     companion object {
+        val ORIGO = Point(0, 0)
         fun fromString(string: String): Point {
             val x = string.substringBefore(',').toInt()
             val y = string.substringAfter(',').toInt()
