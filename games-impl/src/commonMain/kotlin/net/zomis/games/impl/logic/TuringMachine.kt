@@ -2,7 +2,6 @@ package net.zomis.games.impl.logic
 
 import net.zomis.games.cards.probabilities.Combinatorics
 import kotlin.math.absoluteValue
-import kotlin.math.sign
 
 class TuringNumber(private val _values: IntArray) : Comparable<TuringNumber> {
     init {
@@ -70,36 +69,34 @@ object TuringMachine {
         }
         val ai = TuringMachineGame.AI(checkers)
         ai.disqualifyImplies()
-        var questionsAsked = 0
-        var number: TuringNumber? = null
-        while (ai.needsMoreInformation()) {
-            println("AI Needs more information.")
-            ai.printInformation()
-            println("Possible proposals: " + ai.pickBestProposal())
-            if (number == null || questionsAsked >= 3) {
-                questionsAsked = 0
-                val proposals = ai.pickBestProposal()
-                number = proposals.random()
-            }
-
-            val checker = ai.pickBestQuestion(number)
-            if (checker == null) {
-                number = null
-                println("No more questions to ask right now.")
-                println()
-                continue
-            }
-
-            val indexAsk = checkers.indexOf(checker)
-            val checkerCharacter = 'A' + indexAsk
-            val result = verifiers[indexAsk].check(number)
-            questionsAsked++
-
-            println("result was $result when checking $number criteria $checkerCharacter")
-            ai.learn(number, indexAsk, result)
-            println()
+        val rounds = ai.playFullGame(verifiers)
+        rounds.forEach {
+            println(it.text())
         }
+        println(ai.resultsText(rounds))
+
+        // Algorithm
+//        ai.printRound(verifiers, TuringNumber.int(514), "ACD")
+//        ai.printRound(verifiers, TuringNumber.int(411), "DBE")
+//        ai.printRound(verifiers, TuringNumber.int(134), "BE")
+        // Algorithm preferred
+//        ai.printRound(verifiers, TuringNumber.int(514), "EDC")
+//        ai.printRound(verifiers, TuringNumber.int(411), "BED")
+//        ai.printRound(verifiers, TuringNumber.int(134), "E")
+
+
+                println()
+//        ai.printRound(verifiers, TuringNumber.int(134), "EDA")
+//        ai.printRound(verifiers, TuringNumber.int(152), "ABD")
+//        ai.printRound(verifiers, TuringNumber.int(132), "EC")
+
+            val checkerCharacter = 'A' + indexAsk
+//        ai.printRound(verifiers, TuringNumber.int(134), "EDA")
+//        ai.printRound(verifiers, TuringNumber.int(152), "ABE")
+//        ai.printRound(verifiers, TuringNumber.int(132), "EC")
+
         ai.printInformation()
+        return
     }
 
     private val digitCounts = (0..3).toList()

@@ -132,10 +132,6 @@ object TuringMachineGame {
             }
         }
 
-        private fun applyLogic() {
-            excludeCriteriaOptions()
-        }
-
         private fun excludeCriteriaOptions() {
             // Look at solutionsForChecker, use that information to turn off possible criteria options
             for (cardIndex in criteriaCards.indices) {
@@ -146,7 +142,7 @@ object TuringMachineGame {
         }
 
         fun pickBestProposal(): List<TuringNumber> {
-            applyLogic()
+            excludeCriteriaOptions()
             val currentSolutionsForCheckers = this.criteriaCards.map { solutionsForChecker(it, options) }
 
             // Check all possible numbers
@@ -204,7 +200,7 @@ object TuringMachineGame {
                 val score = scoreAfterQuestion(checker, proposal)
                 if (score != null) best.next(-score) { checker }
             }
-            println("Best questions: ${best.getBest()} with score ${best.getBestValue()}")
+            println("Best questions: ${best.getBest().map { 'A' + criteriaCards.indexOf(it) }} with score ${best.getBestValue()}")
             if (best.getBest().isEmpty()) return null
             return best.getBest().random()
             // TODO: Advanced strategy:
@@ -245,6 +241,114 @@ object TuringMachineGame {
         }
 
         fun needsMoreInformation(): Boolean = possibleSolutions().size > 1
+
+        data class Knowledge(
+            val possibleSolutions: List<TuringNumber>,
+            val criteriaSolutions: List<List<Int>>,
+        ) {
+            fun text(): String {
+                val str = StringBuilder()
+                str.appendLine("${possibleSolutions.size} possible numbers: $possibleSolutions")
+                for (i in criteriaSolutions.indices) {
+                    val ch = 'A' + i
+                    str.appendLine("$ch: " + criteriaSolutions[i])
+                }
+                return str.toString()
+            }
+        }
+        data class QuestionResult(
+            val question: Char,
+            val number: TuringNumber,
+            val result: Boolean,
+            val knowledge: Knowledge
+        ) {
+            fun text(): String = "Asking $question with $number returned $result"
+        }
+        data class RoundResult(
+            val number: TuringNumber,
+            val before: Knowledge,
+            val after: List<QuestionResult>,
+        ) {
+            fun text(): String {
+                val str = StringBuilder()
+                str.appendLine("ROUND START! Number $number")
+                str.appendLine(before.text())
+                str.appendLine()
+                after.forEach {
+                    str.appendLine(it.text())
+                    str.appendLine("Resulting in:")
+                    str.appendLine(it.knowledge.text())
+                    str.appendLine()
+                }
+                return str.toString()
+            }
+        }
+
+        fun playRound(verifiers: List<TuringMachine.Verifier>, number: TuringNumber, verifiersToQuestion: String): RoundResult {
+            require(verifiersToQuestion.length <= 3)
+            val before = createKnowledge()
+            val results = mutableListOf<QuestionResult>()
+            for (ch in verifiersToQuestion) {
+                val indexAsk: Int = ch - 'A'
+                require(indexAsk in verifiers.indices)
+                val result = verifiers[indexAsk].check(number)
+                learn(number, indexAsk, result)
+                results.add(QuestionResult(ch, number, result, createKnowledge()))
+            }
+            return RoundResult(number, before, results)
+        }
+
+        fun createKnowledge() = Knowledge(possibleSolutions(), criteriaCards.map { solutionsForChecker(it) })
+
+        fun printRound(verifiers: List<TuringMachine.Verifier>, int: TuringNumber, s: String) {
+            println(playRound(verifiers, int, s).text())
+        }
+
+        fun playFullGame(verifiers: List<TuringMachine.Verifier>): List<RoundResult> {
+            var questionsAsked = 0
+            var number: TuringNumber? = null
+            val rounds = mutableListOf<RoundResult>()
+            var beforeRound: Knowledge = createKnowledge()
+            val after = mutableListOf<QuestionResult>()
+            while (needsMoreInformation()) {
+                if (number == null) {
+                    questionsAsked = 0
+                    val proposals = pickBestProposal()
+                    number = proposals.random()
+                    beforeRound = createKnowledge()
+                }
+
+                val checker = pickBestQuestion(number)
+                if (checker == null) {
+                    rounds.add(RoundResult(number, beforeRound, after.toList()))
+                    after.clear()
+                    number = null
+                    continue
+                }
+
+                val indexAsk = criteriaCards.indexOf(checker)
+                val result = verifiers[indexAsk].check(number)
+                val checkerCharacter = 'A' + indexAsk
+                learn(number, indexAsk, result)
+                after.add(QuestionResult(checkerCharacter, number, result, createKnowledge()))
+                questionsAsked++
+                if (questionsAsked >= 3) {
+                    rounds.add(RoundResult(number, beforeRound, after.toList()))
+                    after.clear()
+                    number = null
+                }
+            }
+            if (after.isNotEmpty()) rounds.add(RoundResult(number!!, beforeRound, after))
+            return rounds
+        }
+
+        fun resultsText(rounds: List<RoundResult>): String {
+            val str = StringBuilder()
+            str.appendLine("RESULTS")
+            str.appendLine(createKnowledge().text())
+            str.appendLine("Found after ${rounds.size} rounds with ${rounds.map { it.after.size }} questions in each round")
+            return str.toString()
+        }
 
     }
 

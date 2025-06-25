@@ -74,47 +74,11 @@ fun turingMachineTool(cards: String, answer: String, verifierOptions: Array<Int>
 
     val ai = TuringMachineGame.AI(checkers)
     ai.disqualifyImplies()
-    var questionsAsked = 0
-    var number: TuringNumber? = null
+    val rounds = ai.playFullGame(verifiers)
     val str = StringBuilder()
-    while (ai.needsMoreInformation()) {
-        str.appendLine("AI Needs more information.")
-        str.appendLine(ai.infoToString())
-        str.appendLine("Possible proposals: " + ai.pickBestProposal())
-        if (number == null || questionsAsked >= 3) {
-            questionsAsked = 0
-            number = ai.pickBestProposal().random()
-        }
-
-        val checker = ai.pickBestQuestion(number)
-        if (checker == null) {
-            number = null
-            str.appendLine("No more questions to ask right now.")
-            str.appendLine()
-            continue
-        }
-
-        val indexAsk = checkers.indexOf(checker)
-        val checkerCharacter = 'A' + indexAsk
-        val result = verifiers[indexAsk].check(number)
-        questionsAsked++
-
-        str.appendLine("result was $result when checking $number criteria $checkerCharacter")
-        ai.learn(number, indexAsk, result)
-        str.appendLine()
+    rounds.forEach {
+        str.append(it.text())
     }
-    str.appendLine(ai.infoToString()) // or just .append ?
+    str.append(ai.resultsText(rounds))
     return TuringMachineAnswer(str.toString(), emptyList())
-}
-
-private fun TuringMachineGame.AI.infoToString(): String {
-    val str = StringBuilder()
-    val potentialSolutions = possibleSolutions()
-    str.appendLine("${potentialSolutions.size} possible numbers: $potentialSolutions")
-    str.appendLine("Options: ${criteriaCards.map { it.options }}")
-    for (i in criteriaCards.indices) {
-        val ch = 'A' + i
-        str.appendLine("$ch: " + solutionsForChecker(criteriaCards[i]))
-    }
-    return str.toString()
 }
