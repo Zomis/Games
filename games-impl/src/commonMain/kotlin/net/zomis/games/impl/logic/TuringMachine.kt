@@ -1,9 +1,10 @@
 package net.zomis.games.impl.logic
 
 import net.zomis.games.cards.probabilities.Combinatorics
+import net.zomis.games.dsl.GameSerializable
 import kotlin.math.absoluteValue
 
-class TuringNumber(private val _values: IntArray) : Comparable<TuringNumber> {
+class TuringNumber(private val _values: IntArray) : Comparable<TuringNumber>, GameSerializable {
     init {
         require(_values.size == 3)
         require(_values.all { it in 1..5 })
@@ -21,7 +22,9 @@ class TuringNumber(private val _values: IntArray) : Comparable<TuringNumber> {
     val values get() = _values.toList()
     fun asInt() = blue * 100 + yellow * 10 + purple
     override fun compareTo(other: TuringNumber): Int = this.asInt().compareTo(other.asInt())
-    override fun hashCode(): Int = asInt().hashCode()
+    override fun hashCode(): Int = asInt()
+    override fun serialize(): Int = asInt()
+
     override fun equals(other: Any?): Boolean {
         return (other is TuringNumber) && other.asInt() == asInt()
     }

@@ -35,7 +35,6 @@ object TuringMachineGame {
             }
         }
         gameFlow {
-
             loop {
                 step("compose") {
                     yieldAction(compose) {
