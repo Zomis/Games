@@ -62,6 +62,7 @@ object Combinatorics {
         return result
     }
 
+    @Deprecated("use specificPermutationLong instead")
     fun specificPermutation(elements: Int, combinationNumber: Int): IntArray {
         require(elements >= 1)
         require(combinationNumber >= 0) { "combination number must be >= 0" }
@@ -99,5 +100,27 @@ object Combinatorics {
             (combinationNumber / previous).mod(options[it])
         }
     }
+
+    fun factorialLong(size: Int): Long = (1L..size).reduce { acc, i -> acc * i }
+
+    fun specificPermutationLong(elements: Int, combinationNumber: Long): IntArray {
+        require(elements >= 1)
+        require(combinationNumber >= 0) { "combination number must be >= 0" }
+        val factorial = nPr(elements, elements)
+        require(combinationNumber < factorial) { "combination number must be < factorial(elements) ($factorial)" }
+        val result = IntArray(elements)
+        var remainingCombinationNumber = combinationNumber
+        val numbers = (0 until elements).toMutableList()
+        for (i in 0 until elements) {
+            val elementsRemaining = elements - i
+            val div = remainingCombinationNumber / elementsRemaining
+            val mod = (remainingCombinationNumber % elementsRemaining).toInt()
+            result[i] = numbers[mod]
+            numbers.removeAt(mod)
+            remainingCombinationNumber = div
+        }
+        return result
+    }
+
 
 }
