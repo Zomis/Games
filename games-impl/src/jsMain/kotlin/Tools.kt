@@ -1,10 +1,10 @@
 @file:OptIn(ExperimentalJsExport::class)
 
+import net.zomis.games.common.asIndexRange
 import net.zomis.games.components.Point
 import net.zomis.games.impl.grids.Ricochet
 import net.zomis.games.impl.logic.TuringMachine
 import net.zomis.games.impl.logic.TuringMachineGame
-import net.zomis.games.impl.logic.TuringNumber
 import kotlin.time.measureTimedValue
 
 /*
@@ -61,20 +61,20 @@ data class TuringMachineAnswer(val process: String, val verifierOptions: List<Li
 fun turingMachineTool(cards: String, answer: String, verifierOptions: Array<Int>): TuringMachineAnswer {
     val cardList = cards.split(" ").map { it.toInt() }
     val level = TuringMachine.level(answer.toInt(), *cardList.toIntArray())
-    val checkers = level.checkers()
-    val verifiers: List<TuringMachine.Verifier> = if (verifierOptions.isEmpty()) {
-        if (level.allPossibleVerifiers().size == 1) {
-            level.verifiers()
-        } else return TuringMachineAnswer("", checkers.map { checker ->
-            checker.options.mapIndexed { index, option -> checker.option(index).name ?: option }
+    val verifiers = level.verifiers
+    val criteria: List<TuringMachine.Criterion> = if (verifierOptions.isEmpty()) {
+        if (level.allPossibleCriteria().size == 1) {
+            level.criteria
+        } else return TuringMachineAnswer("", verifiers.map { verifier ->
+            verifier.options.asIndexRange().map { index -> verifier.option(index).name ?: index }
         })
     } else {
-        verifierOptions.mapIndexed { index, i -> checkers[index].option(i) }
+        verifierOptions.mapIndexed { index, i -> verifiers[index].option(i) }
     }
 
-    val ai = TuringMachineGame.AI(checkers)
+    val ai = TuringMachineGame.AI(verifiers)
     ai.disqualifyImplies()
-    val rounds = ai.playFullGame(verifiers)
+    val rounds = ai.playFullGame(criteria)
     val str = StringBuilder()
     rounds.forEach {
         str.append(it.text())

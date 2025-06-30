@@ -9,7 +9,6 @@ class TuringNumber(private val _values: IntArray) : Comparable<TuringNumber>, Ga
         require(_values.size == 3)
         require(_values.all { it in 1..5 })
     }
-    constructor() : this(intArrayOf())
     override fun toString(): String = _values.joinToString("")
     operator fun get(i: Int) = _values[i]
     operator fun get(color: TuringMachine.Color) = color(color)
@@ -37,11 +36,10 @@ class TuringNumber(private val _values: IntArray) : Comparable<TuringNumber>, Ga
         }
     }
 }
-fun TuringNumber.toInt() = this[0] * 100 + this[1] * 10 + this[2]
 object TuringMachine {
     fun ai() {
-        val levels = TuringMachine.levels.filter { it.allPossibleVerifiers().size == 1 }
-            .filter { it.solution.asInt() == 111 }
+//        val levels = TuringMachine.levels.filter { it.allPossibleVerifiers().size == 1 }
+//            .filter { it.solution.asInt() == 111 }
 //    val level = levels.first()
 //    val level = TuringMachine.levels.last { it.allPossibleVerifiers().size == 1 } // My machine: 5 questions (two rounds)
 //    val level = TuringMachine.Level(TuringNumber(intArrayOf(4, 5, 2)), intArrayOf(3, 6, 12, 16)) // My machine: 2 questions
@@ -50,8 +48,15 @@ object TuringMachine {
         // #C654GZ7
 //    val level = TuringMachine.Level(TuringNumber(intArrayOf(1, 1, 4)), intArrayOf(33, 36, 40, 44, 47, 48))
 //        val level = TuringMachine.Level(TuringNumber(intArrayOf(4, 4, 3)), intArrayOf(3, 9, 12, 17, 20))
-        val level = TuringMachine.Level(TuringNumber(intArrayOf(1, 3, 3)), intArrayOf(1, 22, 31, 38, 41))
-        val verifierOptions = arrayOf(0, 1, 1, 0, 1)
+        val level = Level.extreme(
+            TuringNumber(intArrayOf(4, 5, 5)),
+            arrayOf(
+                intArrayOf(12, 22), intArrayOf(23, 8), intArrayOf(48,2),
+                intArrayOf(5, 24), intArrayOf(19, 9), intArrayOf(3, 43),
+            ),
+            mapOf(22 to 2, 23 to 2, 48 to 0, 24 to 1, 9 to 0, 43 to 1)
+        )
+//        val verifierOptions = arrayOf(0, 1, 2, 1, 1)
 
         /*
         * interesting level:
@@ -66,18 +71,16 @@ object TuringMachine {
         * Numbers that should not be allowed: 322, 244, 144, 344, 544, 444
         */
         println(level)
-        val checkers = level.checkers()
-        val verifiers = if (verifierOptions.isEmpty()) level.verifiers() else verifierOptions.mapIndexed { index, i ->
-            checkers[index].option(i)
-        }
-        val ai = TuringMachineGame.AI(checkers)
+        val ai = TuringMachineGame.AI(level.verifiers)
         ai.disqualifyImplies()
-        val rounds = ai.playFullGame(verifiers)
+        val rounds = ai.playFullGame(level.criteria)
         rounds.forEach {
             println(it.text())
         }
         println(ai.resultsText(rounds))
 
+//        val level = Level.classic(TuringNumber(intArrayOf(1, 5, 4)), intArrayOf(24, 31, 36, 47, 48))
+//        val verifierOptions = arrayOf(0, 1, 2, 1, 1)
         // Algorithm
 //        ai.printRound(verifiers, TuringNumber.int(514), "ACD")
 //        ai.printRound(verifiers, TuringNumber.int(411), "DBE")
@@ -88,12 +91,12 @@ object TuringMachine {
 //        ai.printRound(verifiers, TuringNumber.int(134), "E")
 
 
-                println()
+        // M
 //        ai.printRound(verifiers, TuringNumber.int(134), "EDA")
 //        ai.printRound(verifiers, TuringNumber.int(152), "ABD")
 //        ai.printRound(verifiers, TuringNumber.int(132), "EC")
 
-            val checkerCharacter = 'A' + indexAsk
+        // M improved
 //        ai.printRound(verifiers, TuringNumber.int(134), "EDA")
 //        ai.printRound(verifiers, TuringNumber.int(152), "ABE")
 //        ai.printRound(verifiers, TuringNumber.int(132), "EC")
@@ -104,46 +107,75 @@ object TuringMachine {
 
     private val digitCounts = (0..3).toList()
     private val digitCountsExceptMax = digitCounts.dropLast(1)
-    fun turingNumber(i: Int): TuringNumber {
-        if (i == 0) return TuringNumber()
-        check(i >= 111)
-        check(i <= 555)
-        val result = IntArray(3)
-        result[0] = i / 100
-        result[1] = (i / 10) % 10
-        result[2] = i % 10
-        check(result.all { it in 1..5 })
-        return TuringNumber(result)
-    }
+    fun turingNumber(i: Int): TuringNumber = TuringNumber.int(i)
 
     val colors = Color.entries.toList()
-    class Level(val solution: TuringNumber, val cards: IntArray) {
-        fun checkers(): List<Checker<Any>> = Criterias.forCards(cards)
 
-        fun allPossibleVerifiers(): List<List<Verifier>> {
-            val checkers = checkers()
-            val choices = checkers.map { it.options.size }.toIntArray()
-            val combinations = Combinatorics.combinations(choices)
-            return (0 until combinations).map {
-                createVerifierCombination(checkers, Combinatorics.specificPermutation(choices, it))
-            }.filter { verifiers ->
-                verifiers.all { it.check(solution) }
+    class Level(
+        val solution: TuringNumber,
+        val verifiers: List<Verifier>,
+        cardOptions: IntArray?, // null to auto-select
+        val mixedCardsAnswers: Boolean, // nightmare mode, don't know which solution card is connected to which checker card
+    ) {
+        fun allPossibleCriteria() = Companion.allPossibleCriteria(verifiers, solution)
+
+        val criteria = if (cardOptions != null) cardOptions.withIndex().map {
+            verifiers[it.index].option(it.value)
+        } else singleCriteria()
+
+        init {
+            require(mixedCardsAnswers.not()) { "Nightmare mode not supported yet" }
+            val criteriaAnswers = criteria.map { it.check(solution) }
+            require(criteriaAnswers.all { it }) { "All criteria does not match solution: $criteriaAnswers" }
+            val possibleAnswers = turingNumbers.filter { num -> criteria.all { it.check(num) } }
+            require(possibleAnswers.size == 1) { "Criteria does not give a unique answer. Possible answers are $possibleAnswers" }
+        }
+
+        fun singleCriteria(): List<Criterion> {
+            val possibleVerifiers = allPossibleCriteria()
+            return possibleVerifiers.singleOrNull() ?:
+                throw IllegalStateException("${possibleVerifiers.size} verifier combinations valid for $solution with verifiers $verifiers")
+        }
+
+        override fun toString(): String = "Level($solution, $verifiers)"
+
+        companion object {
+            fun classic(solution: TuringNumber, checkers: IntArray): Level {
+                return Level(solution, checkers.map { Verifier(listOf(Criterias.forCard(it))) }, null, mixedCardsAnswers = false)
+            }
+
+            fun allPossibleCriteria(verifiers: List<Verifier>, solution: TuringNumber): List<List<Criterion>> {
+                val choices = verifiers.map { it.options }.toIntArray()
+                val combinations = Combinatorics.combinations(choices)
+                return (0 until combinations).map {
+                    createVerifierCombination(verifiers, Combinatorics.specificPermutation(choices, it))
+                }.filter { criteria ->
+                    criteria.all { it.check(solution) }
+                }
+            }
+
+            fun extreme(
+                answer: TuringNumber,
+                verifierCards: Array<IntArray>,
+                verifierOptionIndices: Map<Int, Int>
+            ): Level {
+                val verifiers = verifierCards.map { cards ->
+                    Verifier(cards.map { Criterias.forCard(it) })
+                }
+                val cardOptions = verifierCards.mapIndexed { index, cards ->
+                    val optionEntry = verifierOptionIndices.entries.single { it.key in cards }
+                    val cardIndex = cards.indexOf(optionEntry.key)
+                    verifiers[index].cardIndexOption(cardIndex, optionEntry.value)
+                }.toIntArray()
+                return Level(answer, verifiers, cardOptions, mixedCardsAnswers = false)
             }
         }
-
-        fun verifiers(): List<Verifier> {
-            val possibleVerifiers = allPossibleVerifiers()
-            return possibleVerifiers.singleOrNull() ?: throw IllegalStateException("${possibleVerifiers.size} verifier combinations valid for $solution with cards ${cards.contentToString()}")
-        }
-
-        override fun toString(): String = "Level($solution, ${cards.contentToString()})"
     }
-    fun level(solution: Int, vararg cards: Int) = Level(turingNumber(solution), cards)
+    fun level(solution: Int, vararg cards: Int) = Level.classic(turingNumber(solution), cards)
 
-    fun createVerifierCombination(checkers: List<Checker<out Any>>, chosen: IntArray): List<Verifier> {
-        return checkers.mapIndexed { index, it ->
-            val checker = it as Checker<Any>
-            checker.creator.invoke(checker.options[chosen[index]])
+    fun createVerifierCombination(criteriaCards: List<Verifier>, chosen: IntArray): List<Criterion> {
+        return criteriaCards.mapIndexed { index, it ->
+            it.option(chosen[index])
         }
     }
 
@@ -191,19 +223,48 @@ object TuringMachine {
         level(253, 5, 14, 18, 19, 20),
         level(243, 2, 7, 12, 16, 19, 22),
         // More than one possible combination of checker options below:
-        level(133, 21, 31, 37, 39),
-        level(331, 23, 28, 41, 48),
-        level(224, 19, 24, 30, 31, 38),
-        level(411, 11, 22, 30, 33, 34, 40),
+//        level(133, 21, 31, 37, 39),
+//        level(331, 23, 28, 41, 48),
+//        level(224, 19, 24, 30, 31, 38),
+//        level(411, 11, 22, 30, 33, 34, 40),
     )
 
-    class Checker<T>(val options: List<T>, val creator: (T) -> Verifier) {
+    class Verifier(private val cards: List<CriteriaCard<*>>) {
+        val options = cards.sumOf { it.criteriaOptions }
+        fun option(optionIndex: Int): Criterion {
+            require(optionIndex < options)
+            var cardIndex = 0
+            var i = optionIndex
+            while (i >= cards[cardIndex].criteriaOptions) {
+                i -= cards[cardIndex].criteriaOptions
+                cardIndex++
+            }
+            return cards[cardIndex].option(i)
+        }
+
+        fun cardIndexOption(cardIndex: Int, optionIndex: Int): Int {
+            return cards.take(cardIndex).sumOf { it.criteriaOptions } + optionIndex
+        }
+    }
+    class CriteriaCard<T>(private val options: List<T>, private val creator: (T) -> Criterion) {
+        val criteriaOptions: Int = options.size
+
         fun option(i: Int) = creator.invoke(options[i])
 
-        constructor(options: Iterable<T>, creator: (T) -> Verifier) : this(options.toList(), creator)
+        /*
+        fun or(other: CriteriaCard<*>): CriteriaCard<Any> {
+            val newOptions = criteriaOptions + other.criteriaOptions
+            return CriteriaCard<Int>((0 until newOptions).toList()) {
+                if (it < criteriaOptions) option(it) else other.option(it - criteriaOptions)
+            } as CriteriaCard<Any>
+        }
+        */
+
+        constructor(options: Iterable<T>, creator: (T) -> Criterion) : this(options.toList(), creator)
     }
-    class Verifier(val name: String? = null, val check: (TuringNumber) -> Boolean) {
+    class Criterion(val name: String? = null, val check: (TuringNumber) -> Boolean) {
         override fun toString(): String = name ?: "???"
+        // TODO: fun withName(name: String): Verifier = Verifier(name, check)
     }
 
     enum class Comparison {
@@ -217,12 +278,12 @@ object TuringMachine {
     }
 
     object Criterias {
-        fun forCard(card: Int): Checker<Any> {
+        fun forCard(card: Int): CriteriaCard<Any> {
             require(card >= 1)
             require(card <= criterias.size) { "Criteria size is ${criterias.size}, cannot find card $card" }
-            return criterias[card - 1] as Checker<Any>
+            return criterias[card - 1] as CriteriaCard<Any>
         }
-        fun forCards(cards: IntArray): List<Checker<Any>> = cards.map { forCard(it) }
+        fun forCards(cards: IntArray): List<CriteriaCard<Any>> = cards.map { forCard(it) }
 
         val comparisons = Comparison.entries.toList()
         fun comparisonsFor(value: Int) = when (value) {
@@ -231,40 +292,40 @@ object TuringMachine {
             5 -> listOf(Comparison.Less, Comparison.Equal)
             else -> throw IllegalArgumentException("$value must be within range 1..5")
         }
-        fun compare(a: (TuringNumber) -> Int, b: (TuringNumber) -> Int): Checker<Comparison> = Checker(comparisons) { comp ->
-            Verifier(comp.toString()) { comp.check(a.invoke(it), b.invoke(it)) }
+        fun compare(a: (TuringNumber) -> Int, b: (TuringNumber) -> Int): CriteriaCard<Comparison> = CriteriaCard(comparisons) { comp ->
+            Criterion(comp.toString()) { comp.check(a.invoke(it), b.invoke(it)) }
         }
-        fun compare(color: Color, value: Int): Checker<Comparison> = Checker(comparisonsFor(value)) { comp ->
-            Verifier("$color $comp $value") { comp.check(it.color(color), value) }
+        fun compare(color: Color, value: Int): CriteriaCard<Comparison> = CriteriaCard(comparisonsFor(value)) { comp ->
+            Criterion("$color $comp $value") { comp.check(it.color(color), value) }
         }
-        fun compare(a: Color, b: Color) = Checker(comparisons) { comp ->
-            Verifier("$a $comp $b") { comp.check(it.color(a), it.color(b)) }
+        fun compare(a: Color, b: Color) = CriteriaCard(comparisons) { comp ->
+            Criterion("$a $comp $b") { comp.check(it.color(a), it.color(b)) }
         }
-        fun specificColor(condition: (Int) -> Boolean) = Checker(colors) {
-            Verifier { ints -> condition.invoke(ints.color(it)) }
+        fun specificColor(condition: (Int) -> Boolean) = CriteriaCard(colors) {
+            Criterion { ints -> condition.invoke(ints.color(it)) }
         }
-        fun color(condition: (Color, TuringNumber) -> Boolean) = Checker(colors) {
-            Verifier { ints -> condition.invoke(it, ints) }
+        fun color(condition: (Color, TuringNumber) -> Boolean) = CriteriaCard(colors) {
+            Criterion { ints -> condition.invoke(it, ints) }
         }
-        fun evenOdd(color: Color) = Checker(EvenOdd.entries.toList()) {
-            Verifier { ints -> it.matches(ints[color]) }
+        fun evenOdd(color: Color) = CriteriaCard(EvenOdd.entries.toList()) {
+            Criterion { ints -> it.matches(ints[color]) }
         }
-        fun mod(color: Color, value: Int) = Checker((0 until value).toList()) { mod ->
-            Verifier("$color modulo $value == $mod") { it.color(color) % value == mod }
+        fun mod(color: Color, value: Int) = CriteriaCard((0 until value).toList()) { mod ->
+            Criterion("$color modulo $value == $mod") { it.color(color) % value == mod }
         }
-        fun numberOf(condition: (Int) -> Boolean) = Checker((0..3).toList()) { count ->
-            Verifier { num -> num.count(condition) == count }
+        fun numberOf(condition: (Int) -> Boolean) = CriteriaCard((0..3).toList()) { count ->
+            Criterion { num -> num.count(condition) == count }
         }
-        fun smallest() = Checker(colors) { color ->
-            Verifier("$color is smallest") { it.color(color) < it.color(color.other1) && it.color(color) < it.color(color.other2) }
+        fun smallest() = CriteriaCard(colors) { color ->
+            Criterion("$color is smallest") { it.color(color) < it.color(color.other1) && it.color(color) < it.color(color.other2) }
         }
-        fun largest() = Checker(colors) { color ->
-            Verifier("$color is largest") { it.color(color) > it.color(color.other1) && it.color(color) > it.color(color.other2) }
+        fun largest() = CriteriaCard(colors) { color ->
+            Criterion("$color is largest") { it.color(color) > it.color(color.other1) && it.color(color) > it.color(color.other2) }
         }
-        fun countCompare() = Checker(EvenOdd.entries.toList()) { evenOdd ->
-            Verifier("More $evenOdd than ${evenOdd.other}") { ints -> ints.count { evenOdd.matches(it) } > ints.count { evenOdd.other.matches(it) } }
+        fun countCompare() = CriteriaCard(EvenOdd.entries.toList()) { evenOdd ->
+            Criterion("More $evenOdd than ${evenOdd.other}") { ints -> ints.count { evenOdd.matches(it) } > ints.count { evenOdd.other.matches(it) } }
         }
-        fun <A, B> combined(a: List<A>, b: List<B>, creator: (A, B) -> Verifier) = Checker(
+        fun <A, B> combined(a: List<A>, b: List<B>, creator: (A, B) -> Criterion) = CriteriaCard(
             (0 until a.size * b.size).map {
                 val chosenIndices = Combinatorics.specificPermutation(intArrayOf(a.size, b.size), it.toLong())
                 val chosenA = a[chosenIndices[0]]
@@ -293,22 +354,22 @@ object TuringMachine {
             largest(),// 15
             countCompare(),
             numberOf { EvenOdd.Even.matches(it) },// 17
-            Checker(EvenOdd.entries.toList()) { evenOdd ->
-                Verifier("Sum of numbers is $evenOdd") { ints -> evenOdd.matches(ints.sum()) }
+            CriteriaCard(EvenOdd.entries.toList()) { evenOdd ->
+                Criterion("Sum of numbers is $evenOdd") { ints -> evenOdd.matches(ints.sum()) }
             },
-            Checker(comparisons) { comp ->
-                Verifier("Blue + Yellow $comp 6") { ints -> comp.check(ints.blue + ints.yellow, 6) }
+            CriteriaCard(comparisons) { comp ->
+                Criterion("Blue + Yellow $comp 6") { ints -> comp.check(ints.blue + ints.yellow, 6) }
             },
-            Checker((3 downTo 1).toList()) { repeats -> // 20: triple number, double number, no repetition
-                Verifier("$repeats equal numbers") { ints -> ints.values.groupingBy { it }.eachCount().values.max() == repeats }
+            CriteriaCard((3 downTo 1).toList()) { repeats -> // 20: triple number, double number, no repetition
+                Criterion("$repeats equal numbers") { ints -> ints.values.groupingBy { it }.eachCount().values.max() == repeats }
             },
-            Checker(listOf(false, true)) { exactlyTwice ->
+            CriteriaCard(listOf(false, true)) { exactlyTwice ->
                 val name = if (exactlyTwice) "exactly twice" else "not exactly twice"
-                Verifier(name) { ints -> ints.values.groupingBy { it }.eachCount().values.any { it == 2 } == exactlyTwice }
+                Criterion(name) { ints -> ints.values.groupingBy { it }.eachCount().values.any { it == 2 } == exactlyTwice }
             },
-            Checker(listOf(-1 to "descending", 0 to "no", 1 to "ascending")) { param ->
+            CriteriaCard(listOf(1 to "ascending", -1 to "descending", 0 to "no")) { param ->
                 val order = param.first
-                Verifier("Numbers are in ${param.second} order") { ints ->
+                Criterion("Numbers are in ${param.second} order") { ints ->
                     // 134 (ascending) / 345 (ascending) / 321 (descending) / 243 (no order)
                     // 133 is also "no order"
                     val a = ints.blue.compareTo(ints.yellow) // returns -1 if blue is less than yellow (ascending)
@@ -321,15 +382,15 @@ object TuringMachine {
                 }
             },
             compare({ it.sum() }, { 6 }),
-            Checker(1..3) { ascending -> // Sequence of ascending numbers
-                Verifier("$ascending consecutive ascending numbers") { ints ->
+            CriteriaCard(1..3) { ascending -> // Sequence of ascending numbers
+                Criterion("$ascending consecutive ascending numbers") { ints ->
                     val diff1 = ints.purple - ints.yellow
                     val diff2 = ints.yellow - ints.blue
                     listOf(1, diff1, diff2).count { it == 1 } == ascending
                 }
             },
-            Checker(1..3) { consecutiveSequence -> // 25: Sequence of ascending or descending numbers
-                Verifier("$consecutiveSequence consecutive numbers (ascending or descending)") { ints ->
+            CriteriaCard(1..3) { consecutiveSequence -> // 25: Sequence of ascending or descending numbers
+                Criterion("$consecutiveSequence consecutive numbers (ascending or descending)") { ints ->
                     // 543, 123, 234 --> 3
                     // 431, 532, 124 --> 2
                     // 531 --> 1
@@ -351,48 +412,48 @@ object TuringMachine {
             specificColor { it > 1 },
             specificColor { it > 3 },
             combined(colors, EvenOdd.entries.toList()) { color, evenOdd ->
-                Verifier("$color is $evenOdd") { ints -> evenOdd.matches(ints.color(color)) }
+                Criterion("$color is $evenOdd") { ints -> evenOdd.matches(ints.color(color)) }
             },
             color { color, ints -> ints.color(color) <= ints.color(color.other1) && ints.color(color) <= ints.color(color.other2) },
             color { color, ints -> ints.color(color) >= ints.color(color.other1) && ints.color(color) >= ints.color(color.other2) },// 35
-            Checker(3..5) { divisor ->
-                Verifier("Sum of numbers is divisible by $divisor") { ints -> ints.sum() % divisor == 0 }
+            CriteriaCard(3..5) { divisor ->
+                Criterion("Sum of numbers is divisible by $divisor") { ints -> ints.sum() % divisor == 0 }
             },
             color { color, ints -> ints.sum() - ints.color(color) == 4 },
             color { color, ints -> ints.sum() - ints.color(color) == 6 },
             combined(colors, listOf(Comparison.Equal, Comparison.More)) { color, comp ->
-                Verifier("$color $comp 1") { ints -> comp.check(ints.color(color), 1) }
+                Criterion("$color $comp 1") { ints -> comp.check(ints.color(color), 1) }
             },
             combined(colors, comparisons) { color, comp ->// 40
-                Verifier("$color $comp 3") { ints -> comp.check(ints.color(color), 3) }
+                Criterion("$color $comp 3") { ints -> comp.check(ints.color(color), 3) }
             },
             combined(colors, comparisons) { color, comp ->
-                Verifier("$color $comp 4") { ints -> comp.check(ints.color(color), 4) }
+                Criterion("$color $comp 4") { ints -> comp.check(ints.color(color), 4) }
             },
             combined(colors, listOf(Comparison.Less, Comparison.More)) { color, comp -> // 42: color is the smallest or largest
-                Verifier("$color is the most $comp") { ints -> comp.check(ints[color], ints[color.other1]) && comp.check(ints[color], ints[color.other2]) }
+                Criterion("$color is the most $comp") { ints -> comp.check(ints[color], ints[color.other1]) && comp.check(ints[color], ints[color.other2]) }
             },
             combined(colors.minus(Color.Blue), comparisons) { color, comp ->
-                Verifier("Blue $comp $color") { ints -> comp.check(ints.blue, ints[color]) }
+                Criterion("Blue $comp $color") { ints -> comp.check(ints.blue, ints[color]) }
             },
             combined(colors.minus(Color.Yellow), comparisons) { color, comp ->
-                Verifier("Yellow $comp $color") { ints -> comp.check(ints.yellow, ints[color]) }
+                Criterion("Yellow $comp $color") { ints -> comp.check(ints.yellow, ints[color]) }
             },
             combined(digitCountsExceptMax, listOf(1, 3)) { count, value ->
-                Verifier("There are $count $value's") { ints -> ints.count { it == value } == count }
+                Criterion("There are $count $value's") { ints -> ints.count { it == value } == count }
             },
             combined(digitCountsExceptMax, listOf(3, 4)) { count, value ->
-                Verifier("There are $count $value's") { ints -> ints.count { it == value } == count }
+                Criterion("There are $count $value's") { ints -> ints.count { it == value } == count }
             },
             combined(digitCountsExceptMax, listOf(1, 4)) { count, value ->
-                Verifier("There are $count $value's") { ints -> ints.count { it == value } == count }
+                Criterion("There are $count $value's") { ints -> ints.count { it == value } == count }
             },
             combined(colors.reversed(), comparisons) { excludeColor, comparison ->
                 val colors = Color.entries.filter { it != excludeColor }
                 check(colors.size == 2)
                 val first = colors.first()
                 val second = colors.last()
-                Verifier("$first $comparison $second") { ints ->
+                Criterion("$first $comparison $second") { ints ->
                     comparison.check(ints[first], ints[second])
                 }
             },
