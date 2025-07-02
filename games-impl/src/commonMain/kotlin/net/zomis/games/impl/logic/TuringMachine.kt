@@ -112,26 +112,31 @@ object TuringMachine {
     val colors = Color.entries.toList()
 
     class Level(
-        val solution: TuringNumber,
+        val solution: TuringNumber?,
         val verifiers: List<Verifier>,
         cardOptions: IntArray?, // null to auto-select
         val mixedCardsAnswers: Boolean, // nightmare mode, don't know which solution card is connected to which checker card
     ) {
-        fun allPossibleCriteria() = Companion.allPossibleCriteria(verifiers, solution)
+        fun allPossibleCriteria(): List<List<Criterion>> {
+            check(solution != null)
+            return Companion.allPossibleCriteria(verifiers, solution)
+        }
 
-        val criteria = if (cardOptions != null) cardOptions.withIndex().map {
+        val criteria = cardOptions?.withIndex()?.map {
             verifiers[it.index].option(it.value)
-        } else singleCriteria()
+        } ?: singleCriteria()
 
         init {
-            require(mixedCardsAnswers.not()) { "Nightmare mode not supported yet" }
-            val criteriaAnswers = criteria.map { it.check(solution) }
-            require(criteriaAnswers.all { it }) { "All criteria does not match solution: $criteriaAnswers" }
+//            require(mixedCardsAnswers.not()) { "Nightmare mode not supported yet" }
+            if (solution != null) {
+                val criteriaAnswers = criteria.map { it.check(solution) }
+                require(criteriaAnswers.all { it }) { "All criteria does not match solution: $criteriaAnswers" }
+            }
             val possibleAnswers = turingNumbers.filter { num -> criteria.all { it.check(num) } }
             require(possibleAnswers.size == 1) { "Criteria does not give a unique answer. Possible answers are $possibleAnswers" }
         }
 
-        fun singleCriteria(): List<Criterion> {
+        private fun singleCriteria(): List<Criterion> {
             val possibleVerifiers = allPossibleCriteria()
             return possibleVerifiers.singleOrNull() ?:
                 throw IllegalStateException("${possibleVerifiers.size} verifier combinations valid for $solution with verifiers $verifiers")
@@ -169,11 +174,13 @@ object TuringMachine {
                 }.toIntArray()
                 return Level(answer, verifiers, cardOptions, mixedCardsAnswers = false)
             }
+
+            fun verifiers(cardIds: IntArray): List<Verifier> = cardIds.map { Verifier(listOf(Criterias.forCard(it))) }
         }
     }
     fun level(solution: Int, vararg cards: Int) = Level.classic(turingNumber(solution), cards)
 
-    fun createVerifierCombination(criteriaCards: List<Verifier>, chosen: IntArray): List<Criterion> {
+    fun createVerifierCombination(criteriaCards: List<IVerifier>, chosen: IntArray): List<Criterion> {
         return criteriaCards.mapIndexed { index, it ->
             it.option(chosen[index])
         }
@@ -229,9 +236,14 @@ object TuringMachine {
 //        level(411, 11, 22, 30, 33, 34, 40),
     )
 
-    class Verifier(private val cards: List<CriteriaCard<*>>) {
-        val options = cards.sumOf { it.criteriaOptions }
-        fun option(optionIndex: Int): Criterion {
+    interface IVerifier {
+        val options: Int
+        fun option(optionIndex: Int): Criterion
+    }
+
+    class Verifier(private val cards: List<CriteriaCard<*>>) : IVerifier {
+        override val options = cards.sumOf { it.criteriaOptions }
+        override fun option(optionIndex: Int): Criterion {
             require(optionIndex < options)
             var cardIndex = 0
             var i = optionIndex
@@ -285,6 +297,7 @@ object TuringMachine {
         }
         fun forCards(cards: IntArray): List<CriteriaCard<Any>> = cards.map { forCard(it) }
 
+        val FALSE: Criterion = Criterion("(never)") { false }
         val comparisons = Comparison.entries.toList()
         fun comparisonsFor(value: Int) = when (value) {
             1 -> listOf(Comparison.Equal, Comparison.More)

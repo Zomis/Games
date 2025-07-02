@@ -59,13 +59,129 @@ object TuringMachineGame {
         }
     }
 
-    class AI(val verifiers: List<TuringMachine.Verifier>) {
+    class NightmareAI(private val verifiers: List<TuringMachine.Verifier>) : TuringDeducer {
+        private val totalOptions = verifiers.sumOf { it.options }
+        private val optionIndexStartsAt = verifiers.runningFold(0) { acc, next -> acc + next.options }
+        private val possibleCriteria = verifiers.map { totalOptions.asIndexRange().map { true }.toMutableList() }
+
+        private fun realAI(): AI {
+            val bigVerifiers: List<TuringMachine.IVerifier> = verifiers.indices.map { realVerifierIndex ->
+                object : TuringMachine.IVerifier {
+                    override val options: Int = totalOptions
+                    override fun option(optionIndex: Int): TuringMachine.Criterion {
+                        val realVerifierStartIndex = optionIndexStartsAt.withIndex().last { it.value <= optionIndex }
+                        if (!possibleCriteria[realVerifierIndex][optionIndex]) return TuringMachine.Criterias.FALSE // TODO: Test
+                        return verifiers[realVerifierStartIndex.index].option(optionIndex - realVerifierStartIndex.value)
+                    }
+                }
+            }
+            val bigSolutions = possibleSolutions()
+            return AI(bigVerifiers).apply {
+                retainOptions(bigSolutions)
+                excludeCriteriaOptions()
+            }
+        }
+
+        inner class PermutationAI(val permutation: IntArray, val ai: AI)
+
+        fun bigKnowledge(): AI.Knowledge {
+            val result = verifiers.indices.map {
+                totalOptions.asIndexRange().map { 0 }.toMutableList()
+            }.toList()
+            permutations.forEach { permutationAI ->
+                val aiKnowledge = permutationAI.ai.createKnowledge()
+                verifiers.indices.forEach { originalIndex ->
+                    val thisIndex = permutationAI.permutation[originalIndex]
+                    val startIndex = optionIndexStartsAt[thisIndex]
+                    val aiVerifierSolutions = aiKnowledge.criteriaSolutions[originalIndex]
+                    aiVerifierSolutions.indices.forEach {
+                        result[originalIndex][startIndex + it] += aiVerifierSolutions[it]
+                    }
+                }
+            }
+            return AI.Knowledge(possibleSolutions(), result)
+        }
+
+        val factorial = Combinatorics.factorialLong(verifiers.size)
+        private val permutations = (0 until factorial).map {
+            val v = Combinatorics.specificPermutationLong(verifiers.size, it) // e.g. 2 1 3 0 --> C B D A. this A = original C, B=B, C=D, D=A
+            val verifiers = List(verifiers.size) { i -> verifiers[v[i]] }
+            PermutationAI(v, AI(verifiers))
+        }.toMutableSet()
+
+        override fun playFullGame(criteria: List<TuringMachine.Criterion>): List<AI.RoundResult> {
+            TODO("Not yet implemented")
+        }
+
+        override fun possibleSolutions(): List<TuringNumber> {
+            val aiSolutions = mutableSetOf<TuringNumber>()
+            permutations.forEach { aiSolutions.addAll(it.ai.possibleSolutions()) }
+            return aiSolutions.toList()
+        }
+
+        override fun pickBestProposal(): List<TuringNumber> {
+            return realAI().pickBestProposal()
+        }
+
+        override fun pickBestQuestion(proposal: TuringNumber): TuringMachine.IVerifier? {
+            return realAI().pickBestQuestion(proposal)
+        }
+
+        override fun learn(testedNumber: TuringNumber, verifierIndex: Int, result: Boolean) {
+            permutations.forEach { it.ai.learn(testedNumber, verifierIndex, result) }
+            val bigKnowledge = bigKnowledge()
+            totalOptions.asIndexRange().forEach { optionIndex ->
+                if (bigKnowledge.criteriaSolutions[verifierIndex][optionIndex] == 0) {
+                    possibleCriteria[verifierIndex][optionIndex] = false
+                }
+            }
+        }
+
+        fun disqualifyImplies() {
+            permutations.forEach { it.ai.disqualifyImplies() }
+            val bigKnowledge = bigKnowledge()
+            verifiers.indices.forEach { verifierIndex ->
+                totalOptions.asIndexRange().forEach { optionIndex ->
+                    if (bigKnowledge.criteriaSolutions[verifierIndex][optionIndex] == 0) {
+                        possibleCriteria[verifierIndex][optionIndex] = false
+                    }
+                }
+            }
+        }
+    }
+
+    interface TuringDeducer {
+        fun playFullGame(criteria: List<TuringMachine.Criterion>): List<AI.RoundResult>
+        fun possibleSolutions(): List<TuringNumber>
+        fun pickBestProposal(): List<TuringNumber>
+        fun pickBestQuestion(proposal: TuringNumber): TuringMachine.IVerifier?
+        fun learn(testedNumber: TuringNumber, verifierIndex: Int, result: Boolean)
+    }
+
+    class AI(val verifiers: List<TuringMachine.IVerifier>) : TuringDeducer {
+        private fun <T> List<T>.iterateIndex(index: Int, countPerItem: (T) -> Int): Pair<Int, Int> {
+            var i = index
+            var itemIndex = 0
+            val size = this.size
+            while (true) {
+                if (itemIndex >= size) throw IllegalArgumentException("index exceeds total countPerItem. Size is $size. Trying to find item $itemIndex")
+                val countInItem = countPerItem.invoke(this[itemIndex])
+                if (i < countInItem) return itemIndex to i
+                itemIndex++
+                i -= countInItem
+            }
+        }
 
         private val possibleCriteria = verifiers.map { it.options.asIndexRange().map { true }.toBooleanArray() }
         private val options = possibleSolutions().toMutableList()
 
-        fun possibleSolutions(): List<TuringNumber> {
-            val choices = verifiers.map { it.options }.toIntArray()
+        fun retainOptions(solutions: List<TuringNumber>) {
+            options.retainAll(solutions)
+            excludeCriteriaOptions()
+        }
+
+        override fun possibleSolutions(): List<TuringNumber> {
+            val choices = verifiers.map { it.options }.toIntArray() // TODO: Problem with big verifiers
             val combinations = Combinatorics.combinations(choices)
             val potentialSolutions = mutableSetOf<TuringNumber>()
             for (i in (0 until combinations)) {
@@ -84,13 +200,14 @@ object TuringMachineGame {
             return potentialSolutions.sortedBy { it }
         }
 
-        fun disqualifyImplies() {
+        data class VerifierOption(val verifierIndex: Int, val optionIndex: Int)
+        fun disqualifyImplies(): List<VerifierOption> {
             // TODO: Add support for multiple verifier implies, e.g. blue odd + blue equals purple --> purple odd
-            val disqualified = mutableListOf<Pair<Int, Int>>()
+            val disqualified = mutableListOf<VerifierOption>()
             // Loop through criteria cards
             for ((checkerIndex, checker) in verifiers.withIndex()) {
                 // Loop through possible options on that card
-                for (optionIndex in checker.options.asIndexRange()) {
+                for (optionIndex in checker.options.asIndexRange()) { // TODO: Problem with big verifiers, although this is not used with big verifiers
                     val verifier = checker.option(optionIndex)
                     // Pretend that it is true -- find all numbers where it is true
                     val trueForNumbers = TuringMachine.turingNumbers.filter { verifier.check(it) }
@@ -101,14 +218,15 @@ object TuringMachineGame {
                     }
                     // "A implies B, but the verifier for B should be useful, therefore not A."
                     if (impliedSolution) {
-                        disqualified.add(checkerIndex to optionIndex)
+                        disqualified.add(VerifierOption(checkerIndex, optionIndex))
                     }
                 }
             }
-            disqualified.forEach {
-                possibleCriteria[it.first][it.second] = false
+            disqualified.forEach { // Cannot do this earlier as that would change the results
+                possibleCriteria[it.verifierIndex][it.optionIndex] = false
             }
             updateOptions()
+            return disqualified
         }
 
         private fun updateOptions() {
@@ -116,16 +234,15 @@ object TuringMachineGame {
             options.retainAll(solutions2)
         }
 
-        fun solutionsForChecker(verifier: TuringMachine.Verifier, possibleSolutions: List<TuringNumber> = options): List<Int> {
-            // TODO: Use `possibleCriteria` values?
+        fun solutionsForChecker(verifier: TuringMachine.IVerifier, possibleSolutions: List<TuringNumber> = options): List<Int> {
             return verifier.options.asIndexRange().map { index ->
                 if (!possibleCriteria[verifiers.indexOf(verifier)][index]) return@map 0
                 val criterion = verifier.option(index)
-                possibleSolutions.count { criterion.check(it) }
+                possibleSolutions.count { criterion.check(it) } // TODO: Problem with big verifiers?
             }
         }
 
-        private fun excludeCriteriaOptions() {
+        fun excludeCriteriaOptions() {
             // Look at solutionsForChecker, use that information to turn off possible criteria options
             for (cardIndex in verifiers.indices) {
                 solutionsForChecker(verifiers[cardIndex]).forEachIndexed { index, i ->
@@ -134,28 +251,37 @@ object TuringMachineGame {
             }
         }
 
-        fun pickBestProposal(): List<TuringNumber> {
+        fun solutionsForCheckers(): List<List<Int>> {
             excludeCriteriaOptions()
-            val currentSolutionsForCheckers = this.verifiers.map { solutionsForChecker(it, options) }
+            return this.verifiers.map { solutionsForChecker(it, options) }
+        }
+
+        override fun pickBestProposal(): List<TuringNumber> {
+            excludeCriteriaOptions()
+            updateOptions()
+            val currentSolutionsForCheckers = solutionsForCheckers()
 
             // Check all possible numbers
             val best = GreedyIterator<TuringNumber>()
             for (turingNumber in TuringMachine.turingNumbers) {
-                var sum = 0.0
-                for ((index, verifier) in verifiers.withIndex()) {
-                    val currentDistribution = currentSolutionsForCheckers[index]
-                    val currentScore = checkerDistributionScore(currentDistribution)
-                    val nextScore = scoreAfterQuestion(verifier, turingNumber) ?: 1000.0
-                    sum += (nextScore / currentScore)
-                }
-                best.next(-sum) { turingNumber }
+                val score = proposalScore(turingNumber, currentSolutionsForCheckers)
+                best.next(score) { turingNumber }
             }
             return best.getBest()
         }
 
-        fun checkerDistributionScore(distribution: List<Int>): Double = distribution.sum().toDouble()
+        fun proposalScore(proposal: TuringNumber, currentSolutionsForCheckers: List<List<Int>>): Double {
+            var sum = 0.0
+            for ((index, verifier) in verifiers.withIndex()) {
+                val currentDistribution = currentSolutionsForCheckers[index]
+                val currentScore = checkerDistributionScore(currentDistribution)
+                val nextScore = scoreAfterQuestion(verifier, proposal) ?: 1000.0
+                sum += (nextScore / currentScore)
+            }
+            return -sum
+        }
 
-        private fun scoreAfterQuestion(verifier: TuringMachine.Verifier, number: TuringNumber): Double? {
+        fun scoreAfterQuestion(verifier: TuringMachine.IVerifier, number: TuringNumber): Double? {
             val checkerDistribution = solutionsForChecker(verifier, options)
             if (checkerDistribution.count { it != 0 } == 1) return null // Only one option, no need to ask this.
             val checkerCorrect = verifier.options.asIndexRange().map { verifier.option(it).check(number) }
@@ -186,11 +312,12 @@ object TuringMachineGame {
             TODO()
         }
 
-        fun pickBestQuestion(proposal: TuringNumber): TuringMachine.Verifier? {
+        override fun pickBestQuestion(proposal: TuringNumber): TuringMachine.IVerifier? {
             // Check "How many possible solutions can remain after I check this number against this verifier?"
-            val best = GreedyIterator<TuringMachine.Verifier>()
+            val best = GreedyIterator<TuringMachine.IVerifier>()
             for (verifier in verifiers) {
                 val score = scoreAfterQuestion(verifier, proposal)
+                println("$verifier scored $score for $proposal")
                 if (score != null) best.next(-score) { verifier }
             }
             println("Best questions: ${best.getBest().map { 'A' + verifiers.indexOf(it) }} with score ${best.getBestValue()}")
@@ -209,11 +336,11 @@ object TuringMachineGame {
             // 5, 1, 2, 3 --> 5/11 * 5 + 1/11 * 1 + 2/11 * 2 + 3/11 * 3 --> 3.54
         }
 
-        fun learn(testedNumber: TuringNumber, verifierIndex: Int, result: Boolean) {
+        override fun learn(testedNumber: TuringNumber, verifierIndex: Int, result: Boolean) {
             // need to keep track of possible Checker parameters,
             // as any result might not eliminate actual numbers, just possible checker parameters (for the advanced checkers)
             val criteria = verifiers[verifierIndex]
-            val optionResults = criteria.options.asIndexRange().map { criteria.option(it) }.map { it.check(testedNumber) }
+            val optionResults = criteria.options.asIndexRange().map { criteria.option(it).check(testedNumber) }
 
             for ((criteriaIndex, opt) in optionResults.withIndex()) {
                 if (result != opt) {
@@ -297,7 +424,7 @@ object TuringMachineGame {
             println(playRound(criteria, int, verifiersToQuestion).text())
         }
 
-        fun playFullGame(criteria: List<TuringMachine.Criterion>): List<RoundResult> {
+        override fun playFullGame(criteria: List<TuringMachine.Criterion>): List<RoundResult> {
             var questionsAsked = 0
             var number: TuringNumber? = null
             val rounds = mutableListOf<RoundResult>()
@@ -341,6 +468,10 @@ object TuringMachineGame {
             str.appendLine(createKnowledge().text())
             str.appendLine("Found after ${rounds.size} rounds with ${rounds.map { it.after.size }} questions in each round")
             return str.toString()
+        }
+
+        companion object {
+            fun checkerDistributionScore(distribution: List<Int>): Double = distribution.sum().toDouble()
         }
 
     }
