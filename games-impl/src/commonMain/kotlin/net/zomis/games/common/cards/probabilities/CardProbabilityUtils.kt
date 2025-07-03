@@ -37,6 +37,19 @@ object Combinatorics {
         return start
     }
 
+    fun nCrLong(n: Int, r: Int): Long {
+        if (r > n || r < 0) return 0L
+        if (r == 0 || r == n) return 1L
+        var start = 1L
+        for (i in 0 until r) {
+            start *= (n - i)
+        }
+        for (i in 0 until r) {
+            start /= (r - i)
+        }
+        return start
+    }
+
     fun specificCombination(elements: Int, size: Int, combinationNumber: Double): IntArray {
         require(combinationNumber > 0) { "Combination must be positive" }
         require(!(elements < 0 || size < 0)) { "Elements and size cannot be negative" }
@@ -50,6 +63,31 @@ object Combinatorics {
             val ncr = nCr(remainingElements - 1, remainingSize - 1)
             require(ncr > 0) { "Combination out of range: $combinationNumber with $elements elements and size $size" }
             if (combination.compareTo(ncr) <= 0) {
+                result[resultIndex] = nextNumber
+                remainingSize--
+                resultIndex++
+            } else {
+                combination -= ncr
+            }
+            remainingElements--
+            nextNumber++
+        }
+        return result
+    }
+
+    fun specificCombinationLong(elements: Int, size: Int, combinationNumber: Long): IntArray {
+        require(combinationNumber > 0) { "Combination must be positive" }
+        require(!(elements < 0 || size < 0)) { "Elements and size cannot be negative" }
+        val result = IntArray(size)
+        var resultIndex = 0
+        var nextNumber = 0
+        var combination = combinationNumber
+        var remainingSize = size
+        var remainingElements = elements
+        while (remainingSize > 0) {
+            val ncr = nCrLong(remainingElements - 1, remainingSize - 1)
+            require(ncr > 0) { "Combination out of range: $combinationNumber with $elements elements and size $size" }
+            if (combination <= ncr) {
                 result[resultIndex] = nextNumber
                 remainingSize--
                 resultIndex++
