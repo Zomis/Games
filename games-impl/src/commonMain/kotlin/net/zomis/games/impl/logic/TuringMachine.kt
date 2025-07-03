@@ -48,14 +48,20 @@ object TuringMachine {
         // #C654GZ7
 //    val level = TuringMachine.Level(TuringNumber(intArrayOf(1, 1, 4)), intArrayOf(33, 36, 40, 44, 47, 48))
 //        val level = TuringMachine.Level(TuringNumber(intArrayOf(4, 4, 3)), intArrayOf(3, 9, 12, 17, 20))
-        val level = Level.extreme(
-            TuringNumber(intArrayOf(4, 5, 5)),
-            arrayOf(
-                intArrayOf(12, 22), intArrayOf(23, 8), intArrayOf(48,2),
-                intArrayOf(5, 24), intArrayOf(19, 9), intArrayOf(3, 43),
-            ),
-            mapOf(22 to 2, 23 to 2, 48 to 0, 24 to 1, 9 to 0, 43 to 1)
-        )
+//        val level = Level.extreme(
+//            TuringNumber(intArrayOf(4, 5, 5)),
+//            arrayOf(
+//                intArrayOf(12, 22), intArrayOf(23, 8), intArrayOf(48,2),
+//                intArrayOf(5, 24), intArrayOf(19, 9), intArrayOf(3, 43),
+//            ),
+//            mapOf(22 to 2, 23 to 2, 48 to 0, 24 to 1, 9 to 0, 43 to 1)
+//        )
+//        val level = Level.nightmare(intArrayOf(6, 22, 23, 33, 34, 43))
+
+//        println(s.sum()) // 183 criteria on 48 cards
+        //        30 + 21 + 25 + 19 = 95   validation cards
+        // 3 4s, 3 3s, 3 1s will never happen
+
 //        val verifierOptions = arrayOf(0, 1, 2, 1, 1)
 
         /*
@@ -70,14 +76,15 @@ object TuringMachine {
         * 2 4s implies more even than odd
         * Numbers that should not be allowed: 322, 244, 144, 344, 544, 444
         */
-        println(level)
-        val ai = TuringMachineGame.AI(level.verifiers)
-        ai.disqualifyImplies()
-        val rounds = ai.playFullGame(level.criteria)
-        rounds.forEach {
-            println(it.text())
-        }
-        println(ai.resultsText(rounds))
+
+//        println(level)
+//        val ai = TuringMachineGame.AI(level.verifiers)
+//        ai.disqualifyImplies()
+//        val rounds = ai.playFullGame(level.criteria)
+//        rounds.forEach {
+//            println(it.text())
+//        }
+//        println(ai.resultsText(rounds))
 
 //        val level = Level.classic(TuringNumber(intArrayOf(1, 5, 4)), intArrayOf(24, 31, 36, 47, 48))
 //        val verifierOptions = arrayOf(0, 1, 2, 1, 1)
@@ -100,8 +107,60 @@ object TuringMachine {
 //        ai.printRound(verifiers, TuringNumber.int(134), "EDA")
 //        ai.printRound(verifiers, TuringNumber.int(152), "ABE")
 //        ai.printRound(verifiers, TuringNumber.int(132), "EC")
+//        val ai = TuringMachineGame.AI(Level.verifiers(intArrayOf(6, 22, 23, 33, 34, 43))) // #I65AAK5
+//        val ai = TuringMachineGame.NightmareAI(Level.verifiers(intArrayOf(2, 5, 10, 16))) // Simple level, two possible numbers (122 / 522)
+//        val ai = TuringMachineGame.NightmareAI(Level.verifiers(intArrayOf(2, 9, 13, 17))) // #G48I75
+//        val ai = TuringMachineGame.NightmareAI(Level.verifiers(intArrayOf(3, 11, 15, 17))) // #G49GFC
+//        val ai = TuringMachineGame.NightmareAI(Level.verifiers(intArrayOf(3, 11, 15, 17))) // #G49GFC
+//        val ai = TuringMachineGame.NightmareAI(Level.verifiers(intArrayOf(3, 6, 10, 17))) // #G4976E
+        val ai = TuringMachineGame.NightmareAI(Level.verifiers(intArrayOf(16, 19, 24, 25, 31, 42))) // #I648E6J
 
-        ai.printInformation()
+//        val ai = TuringMachineGame.NightmareAI(Level.verifiers(intArrayOf(18, 22, 31, 41, 42))) // #I5TA7F
+
+        ai.disqualifyImplies()
+//        val sols = ai.nightmareSolutions()
+//        sols.forEach {
+//            println(it.verifierOptions.values)
+//        }
+//        println("sols ${sols.size}")
+
+        println("Option Indices: " + ai.optionIndexStartsAt)
+        println("Options Count: " + ai.optionsCount)
+
+        // TODO: Aim to reduce possible answers, not the solution count.
+
+//        ai.printInformation()
+        if (ai is TuringMachineGame.NightmareAI) {
+            println()
+            println("TEST BIG KNOWLEDGE:")
+            val bigKnowledge = ai.bigKnowledge()
+            val total = bigKnowledge.criteriaSolutions[0].sum()
+            println("Total $total")
+            println(bigKnowledge.text())
+        }
+        if (ai is TuringMachineGame.NightmareAI) {
+            ai.cleanSolutions()
+
+            println()
+            println("TEST BIG KNOWLEDGE 2:")
+            val bigKnowledge = ai.bigKnowledge2()
+            val total = bigKnowledge.criteriaSolutions[0].sum()
+            println("Total $total")
+            println(bigKnowledge.text())
+        }
+        println("Possible solutions: " + ai.possibleSolutions())
+
+        val proposals = ai.pickBestProposal()
+        println("${proposals.size} Best proposals: $proposals")
+
+        val proposal = TuringNumber.int(134)
+//        val proposal = proposals.random()
+        println("Chose proposal $proposal")
+
+        val questions = ai.pickBestQuestion(proposal)
+        val questionVerifierIndex = ai.verifiers.indexOf(questions)
+        println("Best questions: $questionVerifierIndex ($questions) for proposal $proposal")
+
         return
     }
 

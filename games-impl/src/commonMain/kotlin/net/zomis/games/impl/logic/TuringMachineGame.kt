@@ -1,9 +1,11 @@
 package net.zomis.games.impl.logic
 
 import net.zomis.GreedyIterator
+import net.zomis.bestOf
 import net.zomis.games.api.GamesApi
 import net.zomis.games.cards.probabilities.Combinatorics
 import net.zomis.games.common.asIndexRange
+import kotlin.math.absoluteValue
 
 object TuringMachineGame {
 
@@ -58,11 +60,75 @@ object TuringMachineGame {
 
         }
     }
+    data class NightmareSolution(val verifierOptions: Map<Int, Int>)
+    private fun recursiveSolutions(
+        remainingVerifiers: List<Int>,
+        optionsStartAt: List<Int>,
+        optionsCount: List<Int>,
+        remainingOptions: List<Int>,
+        validSolution: (Map<Int, Int>) -> Boolean,
+        setValues: Map<Int, Int> = emptyMap(),
+    ): Sequence<NightmareSolution> = sequence {
+        if (remainingVerifiers.isEmpty()) {
+            if (validSolution.invoke(setValues)) yield(NightmareSolution(setValues))
+            return@sequence
+        }
+        fun verifierIndexOptions(optionIndexStart: Int, optionsCount: Int): List<Int> {
+            return (0 until optionsCount).map { it + optionIndexStart }
+        }
+        val verifier = remainingVerifiers.first()
+        val nextVerifiers = remainingVerifiers.drop(1)
+        remainingOptions.forEach { option ->
+            val verifierIndexIncludingOption = optionsStartAt.indexOfLast { it <= option }
+            val takenOptions = verifierIndexOptions(optionsStartAt[verifierIndexIncludingOption], optionsCount[verifierIndexIncludingOption])
+            yieldAll(
+                recursiveSolutions(
+                    remainingVerifiers = nextVerifiers,
+                    optionsStartAt = optionsStartAt,
+                    optionsCount = optionsCount,
+                    remainingOptions = remainingOptions.minus(takenOptions.toSet()),
+                    setValues = setValues.plus(verifier to option),
+                    validSolution = validSolution
+                )
+            )
+        }
+    }
 
-    class NightmareAI(private val verifiers: List<TuringMachine.Verifier>) : TuringDeducer {
-        private val totalOptions = verifiers.sumOf { it.options }
-        private val optionIndexStartsAt = verifiers.runningFold(0) { acc, next -> acc + next.options }
+    class NightmareAI(val verifiers: List<TuringMachine.Verifier>) : TuringDeducer {
+        val totalOptions = verifiers.sumOf { it.options }
+
+        private val megaVerifier: TuringMachine.IVerifier = object : TuringMachine.IVerifier {
+            override val options: Int = totalOptions
+            override fun option(optionIndex: Int): TuringMachine.Criterion {
+                val realVerifierStartIndex = optionIndexStartsAt.withIndex().last { it.value <= optionIndex }
+//                if (!possibleCriteria[realVerifierIndex][optionIndex]) return TuringMachine.Criterias.FALSE // TODO: Test
+                return verifiers[realVerifierStartIndex.index].option(optionIndex - realVerifierStartIndex.value)
+            }
+        }
+
+        val optionIndexStartsAt = verifiers.runningFold(0) { acc, next -> acc + next.options }
+        val optionsCount = verifiers.map { it.options }
+
         private val possibleCriteria = verifiers.map { totalOptions.asIndexRange().map { true }.toMutableList() }
+        private val nightmareSolution: MutableSet<NightmareSolution>
+            = recursiveSolutions(verifiers.indices.toList(), optionIndexStartsAt, verifiers.map { it.options },
+                remainingOptions = totalOptions.asIndexRange().toList(),
+                validSolution = ::isValidVerifierCombination
+            ).toMutableSet()
+
+        fun isValidVerifierCombination(sol: Map<Int, Int>): Boolean {
+            if (!sol.all { option -> possibleCriteria.any { it[option.value] } }) return false
+            return solutionToVerifierCombination(sol) != null
+        }
+
+        fun solutionToVerifierCombination(solution: Map<Int, Int>): TuringNumber? {
+            val criteria = solution.values.map { megaVerifier.option(it) }
+            return TuringMachine.turingNumbers.singleOrNull { num ->
+                criteria.all { it.check(num) }
+            }
+        }
+
+        fun nightmareSolutions() = nightmareSolution.toList()
 
         private fun realAI(): AI {
             val bigVerifiers: List<TuringMachine.IVerifier> = verifiers.indices.map { realVerifierIndex ->
@@ -102,6 +168,23 @@ object TuringMachineGame {
             return AI.Knowledge(possibleSolutions(), result)
         }
 
+        fun bigKnowledge2(): AI.Knowledge {
+            val result = verifiers.indices.map {
+                totalOptions.asIndexRange().map { 0 }.toMutableList()
+            }.toList()
+            val numberSolutions = mutableSetOf<TuringNumber>()
+            nightmareSolution.forEach { sol ->
+                if (!isValidVerifierCombination(sol.verifierOptions)) return@forEach
+                val solutionAnswer = solutionToVerifierCombination(sol.verifierOptions)
+                if (solutionAnswer != null) numberSolutions.add(solutionAnswer)
+
+                sol.verifierOptions.forEach { solEntry ->
+                    result[solEntry.key][solEntry.value]++
+                }
+            }
+            return AI.Knowledge(numberSolutions.toList().sorted(), result)
+        }
+
         val factorial = Combinatorics.factorialLong(verifiers.size)
         private val permutations = (0 until factorial).map {
             val v = Combinatorics.specificPermutationLong(verifiers.size, it) // e.g. 2 1 3 0 --> C B D A. this A = original C, B=B, C=D, D=A
@@ -116,15 +199,54 @@ object TuringMachineGame {
         override fun possibleSolutions(): List<TuringNumber> {
             val aiSolutions = mutableSetOf<TuringNumber>()
             permutations.forEach { aiSolutions.addAll(it.ai.possibleSolutions()) }
-            return aiSolutions.toList()
+            return aiSolutions.toList().sorted()
         }
 
         override fun pickBestProposal(): List<TuringNumber> {
-            return realAI().pickBestProposal()
+//            return realAI().pickBestProposal()
+            val knowledge = bigKnowledge2()
+            val currentPossibilities = nightmareSolution.size
+
+            val proposalValues = TuringMachine.turingNumbers.associateWith { proposal ->
+                val correctCountPerVerifier = verifiers.indices.map { verifierIndex ->
+                    totalOptions.asIndexRange().sumOf { option ->
+                        if (megaVerifier.option(option)
+                                .check(proposal)
+                        ) knowledge.criteriaSolutions[verifierIndex][option] else 0
+                    }
+                }
+                val incorrectPerVerifier = correctCountPerVerifier.map { currentPossibilities - it }
+                val diffs = verifiers.indices.map { correctCountPerVerifier[it] - incorrectPerVerifier[it] }
+                    .map { it.absoluteValue }
+                val question = diffs.withIndex().filter { incorrectPerVerifier[it.index] > 0 && correctCountPerVerifier[it.index] > 0 }
+                question.sumOf { it.value }.takeIf { question.isNotEmpty() }
+            }
+            return proposalValues.entries.filter { it.value != null }.bestOf { -it.value!!.toDouble() }.map { it.key }
         }
 
         override fun pickBestQuestion(proposal: TuringNumber): TuringMachine.IVerifier? {
-            return realAI().pickBestQuestion(proposal)
+//            return realAI().pickBestQuestion(proposal)
+
+            val knowledge = bigKnowledge2()
+            val currentPossibilities = nightmareSolution.size
+
+            val correctCountPerVerifier = verifiers.indices.map { verifierIndex ->
+                totalOptions.asIndexRange().sumOf { option ->
+                    if (megaVerifier.option(option).check(proposal)) knowledge.criteriaSolutions[verifierIndex][option] else 0
+                }
+            }
+            val incorrectPerVerifier = correctCountPerVerifier.map { currentPossibilities - it }
+            val diffs = verifiers.indices.map { correctCountPerVerifier[it] - incorrectPerVerifier[it] }.map { it.absoluteValue }
+
+            val question = diffs.withIndex().filter { incorrectPerVerifier[it.index] > 0 && correctCountPerVerifier[it.index] > 0 }
+            val verifierIndex = question.minByOrNull { it.value }?.index
+            return if (verifierIndex != null) verifiers[verifierIndex] else null
+        }
+
+        fun cleanSolutions() {
+            this.nightmareSolution.retainAll {
+                isValidVerifierCombination(it.verifierOptions)
+            }
         }
 
         override fun learn(testedNumber: TuringNumber, verifierIndex: Int, result: Boolean) {
@@ -134,6 +256,11 @@ object TuringMachineGame {
                 if (bigKnowledge.criteriaSolutions[verifierIndex][optionIndex] == 0) {
                     possibleCriteria[verifierIndex][optionIndex] = false
                 }
+            }
+
+            this.nightmareSolution.retainAll {
+                val v = it.verifierOptions.getValue(verifierIndex)
+                this.megaVerifier.option(v).check(testedNumber) == result
             }
         }
 
