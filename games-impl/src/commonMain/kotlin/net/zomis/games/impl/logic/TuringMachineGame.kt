@@ -1,11 +1,10 @@
 package net.zomis.games.impl.logic
 
 import net.zomis.GreedyIterator
-import net.zomis.bestOf
 import net.zomis.games.api.GamesApi
 import net.zomis.games.cards.probabilities.Combinatorics
 import net.zomis.games.common.asIndexRange
-import kotlin.math.absoluteValue
+import net.zomis.games.components.entropy
 
 object TuringMachineGame {
 
@@ -95,6 +94,8 @@ object TuringMachineGame {
             )
         }
     }
+    fun entropy(solutions: Collection<NightmareSolution>): Double
+        = entropy(solutions.groupingBy { it.answer }.eachCount().map { it.value })
 
     class NightmareAI(val verifiers: List<TuringMachine.Verifier>) : TuringDeducer {
         val totalOptions = verifiers.sumOf { it.options }
@@ -118,6 +119,8 @@ object TuringMachineGame {
                 remainingOptions = totalOptions.asIndexRange().toList(),
                 solution = ::solutionToVerifierCombination
             ).toMutableSet()
+
+        fun entropy(): Double = entropy(solutionDistribution().map { it.value })
 
         fun solutionToVerifierCombination(solution: Map<Int, Int>): TuringNumber? {
             val criteria = solution.values.map { megaVerifier.option(it) }
@@ -155,41 +158,75 @@ object TuringMachineGame {
         }
 
         override fun pickBestProposal(): List<TuringNumber> {
-            val knowledge = bigKnowledge2()
-            val currentPossibilities = nightmareSolution.size
-
-            val proposalValues = TuringMachine.turingNumbers.associateWith { proposal ->
-                val correctCountPerVerifier = verifiers.indices.map { verifierIndex ->
-                    totalOptions.asIndexRange().sumOf { option ->
-                        if (megaVerifier.option(option).check(proposal)) {
-                            knowledge.criteriaSolutions[verifierIndex][option]
-                        } else 0
-                    }
-                }
-                val incorrectPerVerifier = correctCountPerVerifier.map { currentPossibilities - it }
-                val diffs = verifiers.indices.map { correctCountPerVerifier[it] - incorrectPerVerifier[it] }
-                    .map { it.absoluteValue }
-                val question = diffs.withIndex().filter { incorrectPerVerifier[it.index] > 0 && correctCountPerVerifier[it.index] > 0 }
-                question.sumOf { it.value }.takeIf { question.isNotEmpty() }
+            val best = GreedyIterator<TuringNumber>()
+            TuringMachine.turingNumbers.forEach {
+                best.next(minEntropyForProposal(it)) { it }
             }
-            return proposalValues.entries.filter { it.value != null }.bestOf { -it.value!!.toDouble() }.map { it.key }
+            return best.getBest()
+        }
+
+        private fun minEntropyForProposal(proposal: TuringNumber): Double {
+            val n = verifiers.size
+            val r = verifiers.size.coerceAtMost(3)
+            val answers = r.asIndexRange().map { 2 }.toIntArray()
+            val answerCombinations = Combinatorics.combinations(answers)
+            val verifierCombinations = Combinatorics.nCrLong(n, r)
+            val best = GreedyIterator<Double>()
+            val allPossibilities = nightmareSolution.size.toDouble()
+
+            // Loop through all combinations of verifiers that can be chosen (up to 3)
+            // and all the possible answers those verifiers can give
+            for (comb in 1..verifierCombinations) {
+                val chosenVerifiers = Combinatorics.specificCombinationLong(n, r, comb)
+                var expectedEntropy = 0.0
+
+                for (ans in 0 until answerCombinations) {
+                    val answerCombination = Combinatorics.specificPermutation(answers, ans).map { it == 1 }
+                    val applicableSolutions = nightmareSolution.filter { sol ->
+                        chosenVerifiers.withIndex().all { chosenVerifier ->
+                            val option = sol.verifierOptions.getValue(chosenVerifier.value)
+                            val answer = megaVerifier.option(option).check(proposal)
+                            answerCombination[chosenVerifier.index] == answer
+                        }
+                    }
+                    val probability = applicableSolutions.size / allPossibilities
+                    expectedEntropy += probability * entropy(applicableSolutions)
+                }
+                best.next(-expectedEntropy) { -expectedEntropy }
+            }
+            return best.getBestValue()
         }
 
         override fun pickBestQuestion(proposal: TuringNumber): TuringMachine.IVerifier? {
             val knowledge = bigKnowledge2()
             val currentPossibilities = nightmareSolution.size
-
+            val correctOptions = totalOptions.asIndexRange().filter { option ->
+                megaVerifier.option(option).check(proposal)
+            }.toSet()
             val correctCountPerVerifier = verifiers.indices.map { verifierIndex ->
                 totalOptions.asIndexRange().sumOf { option ->
                     if (megaVerifier.option(option).check(proposal)) knowledge.criteriaSolutions[verifierIndex][option] else 0
                 }
             }
-            val incorrectPerVerifier = correctCountPerVerifier.map { currentPossibilities - it }
-            val diffs = verifiers.indices.map { correctCountPerVerifier[it] - incorrectPerVerifier[it] }.map { it.absoluteValue }
-
-            val question = diffs.withIndex().filter { incorrectPerVerifier[it.index] > 0 && correctCountPerVerifier[it.index] > 0 }
-            val verifierIndex = question.minByOrNull { it.value }?.index
-            return if (verifierIndex != null) verifiers[verifierIndex] else null
+            val correctProbability = verifiers.indices.map {
+                correctCountPerVerifier[it] / currentPossibilities.toDouble()
+            }
+            val distributionIfCorrect = verifiers.indices.map { verifierIndex ->
+                nightmareSolution.filter { it.verifierOptions[verifierIndex] in correctOptions }
+            }
+            val distributionIfIncorrect = verifiers.indices.map { verifierIndex ->
+                nightmareSolution.filter { it.verifierOptions[verifierIndex] !in correctOptions }
+            }
+            val correctDistribution = distributionIfCorrect.map { s -> s.groupingBy { it.answer }.eachCount().map { it.value } }
+            val incorrectDistribution = distributionIfIncorrect.map { s -> s.groupingBy { it.answer }.eachCount().map { it.value } }
+            val expectedEntropy = verifiers.indices.map { verifierIndex ->
+                val correctEntropy = correctProbability[verifierIndex] * entropy(correctDistribution[verifierIndex])
+                val incorrectEntropy = (1 - correctProbability[verifierIndex]) * entropy(incorrectDistribution[verifierIndex])
+                correctEntropy + incorrectEntropy
+            }
+            val resultIndex = expectedEntropy.withIndex().minBy { it.value }.index
+            if (correctCountPerVerifier[resultIndex] == 0 || correctCountPerVerifier[resultIndex] == currentPossibilities) return null
+            return verifiers[resultIndex]
         }
 
         fun cleanSolutions() {
@@ -273,7 +310,7 @@ object TuringMachineGame {
             // Loop through criteria cards
             for ((checkerIndex, checker) in verifiers.withIndex()) {
                 // Loop through possible options on that card
-                for (optionIndex in checker.options.asIndexRange()) { // TODO: Problem with big verifiers, although this is not used with big verifiers
+                for (optionIndex in checker.options.asIndexRange()) {
                     val verifier = checker.option(optionIndex)
                     // Pretend that it is true -- find all numbers where it is true
                     val trueForNumbers = TuringMachine.turingNumbers.filter { verifier.check(it) }

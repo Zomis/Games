@@ -141,6 +141,7 @@ object TuringMachine {
             println(bigKnowledge.text())
             println()
             println("Solution distribution: " + ai.solutionDistribution())
+            println("Entropy: " + ai.entropy())
         }
         println("Possible solutions: " + ai.possibleSolutions())
 
