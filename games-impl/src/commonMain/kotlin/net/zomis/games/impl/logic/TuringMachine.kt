@@ -131,14 +131,6 @@ object TuringMachine {
 
 //        ai.printInformation()
         if (ai is TuringMachineGame.NightmareAI) {
-            println()
-            println("TEST BIG KNOWLEDGE:")
-            val bigKnowledge = ai.bigKnowledge()
-            val total = bigKnowledge.criteriaSolutions[0].sum()
-            println("Total $total")
-            println(bigKnowledge.text())
-        }
-        if (ai is TuringMachineGame.NightmareAI) {
             ai.cleanSolutions()
 
             println()
@@ -147,6 +139,8 @@ object TuringMachine {
             val total = bigKnowledge.criteriaSolutions[0].sum()
             println("Total $total")
             println(bigKnowledge.text())
+            println()
+            println("Solution distribution: " + ai.solutionDistribution())
         }
         println("Possible solutions: " + ai.possibleSolutions())
 
