@@ -10,6 +10,11 @@ object Players {
     fun startingWith(playerIndices: List<Int>, firstPlayer: Int): List<Int> = playerIndices.shifted(firstPlayer)
 }
 
+fun Int.asIndexRange(): IntRange {
+    require(this > 0) { "Number must be positive: $this" }
+    return 0 until this
+}
+
 infix fun Int.fmod(other: Int) = ((this % other) + other) % other
 fun Int.withLeadingZeros(minSize: Int): String {
     return '0'.toString().repeat(minSize - this.toString().length) +
